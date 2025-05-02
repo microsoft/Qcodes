@@ -3,13 +3,14 @@ This file holds auto ranging logic that is independent of plotting backend
 """
 
 import numpy as np
+import numpy.typing as npt
 
 # turn off limiting percentiles by default
 DEFAULT_PERCENTILE = (50, 50)
 
 
 def auto_range_iqr(
-    data_array: np.ndarray,
+    data_array: npt.NDArray,
     cutoff_percentile: tuple[float, float] | float = DEFAULT_PERCENTILE,
 ) -> tuple[float, float]:
     """

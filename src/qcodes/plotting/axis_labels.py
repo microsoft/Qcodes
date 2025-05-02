@@ -5,6 +5,7 @@ This file holds scaling logic for axis that is independent of plotting backend
 from collections import OrderedDict
 
 import numpy as np
+import numpy.typing as npt
 
 _UNITS_FOR_RESCALING: set[str] = {
     # SI units (without some irrelevant ones like candela)
@@ -63,7 +64,7 @@ _THRESHOLDS: dict[float, int] = OrderedDict(
 )
 
 
-def find_scale_and_prefix(data: np.ndarray, unit: str) -> tuple[str, int]:
+def find_scale_and_prefix(data: npt.NDArray, unit: str) -> tuple[str, int]:
     """
     Given a numpy array of data and a unit find the best engineering prefix
     and matching scale that best describes the data.

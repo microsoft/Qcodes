@@ -671,16 +671,16 @@ class GalilDMC4133Arm:
         self._right_top_position: tuple[int, int, int] | None = None
 
         # motion directions (all these values are in quadrature counts)
-        self._a: np.ndarray  # right_top - left_bottom
-        self._b: np.ndarray  # left_top - left_bottom
-        self._c: np.ndarray  # right_top - left_top
-        self._n: np.ndarray
+        self._a: npt.NDArray  # right_top - left_bottom
+        self._b: npt.NDArray  # left_top - left_bottom
+        self._c: npt.NDArray  # right_top - left_top
+        self._n: npt.NDArray
         self.norm_a: float
         self.norm_b: float
         self.norm_c: float
 
         # eqn of the chip plane (in quadrature counts)
-        self._plane_eqn: np.ndarray
+        self._plane_eqn: npt.NDArray
 
         # current vars
         self._current_row: int | None = None
@@ -699,7 +699,7 @@ class GalilDMC4133Arm:
 
         self._arm_pick_up_distance: int
 
-        self._target: np.ndarray
+        self._target: npt.NDArray
 
     @property
     def current_row(self) -> int | None:
@@ -861,7 +861,7 @@ class GalilDMC4133Arm:
         c.begin()
         c.wait_till_motor_motion_complete()
 
-    def _setup_motion(self, rel_vec: np.ndarray, d: float, speed: float) -> None:
+    def _setup_motion(self, rel_vec: npt.NDArray, d: float, speed: float) -> None:
         """
         Sets up motion parameters. all arguments have units in quadrature counts
         """

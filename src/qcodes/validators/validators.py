@@ -12,6 +12,7 @@ from collections.abc import Hashable
 from typing import Any, Generic, Literal, TypeVar, cast, get_args
 
 import numpy as np
+import numpy.typing as npt
 
 BIGSTRING = 1000000000
 BIGINT = int(1e18)
@@ -842,7 +843,7 @@ class MultiTypeAnd(MultiType):
         return "<MultiTypeAnd: {}>".format(", ".join(parts))
 
 
-class Arrays(Validator[np.ndarray]):
+class Arrays(Validator[npt.NDArray]):
     """
     Validator for numerical numpy arrays of numeric types (int, float, complex).
     By default it validates int and float arrays.
@@ -965,7 +966,7 @@ class Arrays(Validator[np.ndarray]):
             self._shape = tuple(shape)
 
     @property
-    def valid_values(self) -> tuple[np.ndarray]:
+    def valid_values(self) -> tuple[npt.NDArray]:
         valid_type = self.valid_types[0]
         if valid_type == np.integer:
             valid_type = np.int32
@@ -977,7 +978,7 @@ class Arrays(Validator[np.ndarray]):
         if self.shape is None:
             return (np.array([self._min_value], dtype=valid_type),)
         else:
-            val_arr: np.ndarray = np.empty(self.shape, dtype=valid_type)
+            val_arr: npt.NDArray = np.empty(self.shape, dtype=valid_type)
             val_arr.fill(self._min_value)
             return (val_arr,)
 
@@ -998,7 +999,7 @@ class Arrays(Validator[np.ndarray]):
         shape = tuple(shape_array)
         return shape
 
-    def validate(self, value: np.ndarray, context: str = "") -> None:
+    def validate(self, value: npt.NDArray, context: str = "") -> None:
         if not isinstance(value, np.ndarray):
             raise TypeError(f"{value!r} is not a numpy array; {context}")
 

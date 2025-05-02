@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Any, ClassVar, TypedDict, cast
 
 import numpy as np
+import numpy.typing as npt
 
 from qcodes.instrument import (
     InstrumentBaseKWArgs,
@@ -72,7 +73,7 @@ class GeneratedSetPoints(Parameter):
         self._stop = stop
         self._n_points = n_points
 
-    def get_raw(self) -> np.ndarray:
+    def get_raw(self) -> npt.NDArray:
         start = self._start()
         assert start is not None
         stop = self._stop()

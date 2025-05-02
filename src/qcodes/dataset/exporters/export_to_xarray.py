@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from collections.abc import Hashable, Mapping
     from pathlib import Path
 
-    import numpy as np
+    import numpy.typing as npt
     import pandas as pd
     import xarray as xr
 
@@ -64,7 +64,7 @@ def _calculate_index_shape(idx: pd.Index | pd.MultiIndex) -> dict[Hashable, int]
 
 def _load_to_xarray_dataarray_dict_no_metadata(
     dataset: DataSetProtocol,
-    datadict: Mapping[str, Mapping[str, np.ndarray]],
+    datadict: Mapping[str, Mapping[str, npt.NDArray]],
     *,
     use_multi_index: Literal["auto", "always", "never"] = "auto",
 ) -> dict[str, xr.DataArray]:
@@ -134,7 +134,7 @@ def _load_to_xarray_dataarray_dict_no_metadata(
 
 def load_to_xarray_dataarray_dict(
     dataset: DataSetProtocol,
-    datadict: Mapping[str, Mapping[str, np.ndarray]],
+    datadict: Mapping[str, Mapping[str, npt.NDArray]],
     *,
     use_multi_index: Literal["auto", "always", "never"] = "auto",
 ) -> dict[str, xr.DataArray]:

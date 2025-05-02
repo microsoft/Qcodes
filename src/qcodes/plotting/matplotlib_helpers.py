@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     import matplotlib.colorbar
 
 import numpy as np
+import numpy.typing as npt
 
 from .auto_range import DEFAULT_PERCENTILE, auto_range_iqr
 
@@ -55,7 +56,7 @@ def apply_color_scale_limits(
     colorbar: matplotlib.colorbar.Colorbar,
     new_lim: tuple[float | None, float | None],
     data_lim: tuple[float, float] | None = None,
-    data_array: np.ndarray | None = None,
+    data_array: npt.NDArray | None = None,
     color_over: Any = DEFAULT_COLOR_OVER,
     color_under: Any = DEFAULT_COLOR_UNDER,
 ) -> None:
@@ -98,7 +99,7 @@ def apply_color_scale_limits(
         )
     if data_lim is None:
         if data_array is None:
-            data_array = cast("np.ndarray", colorbar.mappable.get_array())
+            data_array = cast("npt.NDArray", colorbar.mappable.get_array())
         data_lim = np.nanmin(data_array), np.nanmax(data_array)
     elif data_array is not None:
         raise RuntimeError(
@@ -133,7 +134,7 @@ def apply_color_scale_limits(
 
 def apply_auto_color_scale(
     colorbar: matplotlib.colorbar.Colorbar,
-    data_array: np.ndarray | None = None,
+    data_array: npt.NDArray | None = None,
     cutoff_percentile: tuple[float, float] | float = DEFAULT_PERCENTILE,
     color_over: Any | None = DEFAULT_COLOR_OVER,
     color_under: Any | None = DEFAULT_COLOR_UNDER,
@@ -169,7 +170,7 @@ def apply_auto_color_scale(
     if data_array is None:
         if not isinstance(colorbar.mappable, matplotlib.collections.QuadMesh):
             raise RuntimeError("Can only scale mesh data.")
-        data_array = cast("np.ndarray", colorbar.mappable.get_array())
+        data_array = cast("npt.NDArray", colorbar.mappable.get_array())
     assert data_array is not None
     new_lim = auto_range_iqr(data_array, cutoff_percentile)
     apply_color_scale_limits(
@@ -184,7 +185,7 @@ def apply_auto_color_scale(
 def auto_color_scale_from_config(
     colorbar: matplotlib.colorbar.Colorbar,
     auto_color_scale: bool | None = None,
-    data_array: np.ndarray | None = None,
+    data_array: npt.NDArray | None = None,
     cutoff_percentile: tuple[float, float] | float | None = DEFAULT_PERCENTILE,
     color_over: Any | None = None,
     color_under: Any | None = None,

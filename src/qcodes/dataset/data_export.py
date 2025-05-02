@@ -4,6 +4,7 @@ import logging
 from typing import TYPE_CHECKING
 
 import numpy as np
+import numpy.typing as npt
 from typing_extensions import TypedDict
 
 from qcodes.utils import list_of_data_to_maybe_ragged_nd_array
@@ -23,7 +24,7 @@ class DSPlotData(TypedDict):
     name: str
     unit: str
     label: str
-    data: np.ndarray
+    data: npt.NDArray
     shape: tuple[int, ...] | None
 
 
@@ -62,7 +63,7 @@ def _get_data_from_ds(ds: DataSetProtocol) -> list[list[DSPlotData]]:
     return output
 
 
-def _all_steps_multiples_of_min_step(rows: np.ndarray) -> bool:
+def _all_steps_multiples_of_min_step(rows: npt.NDArray) -> bool:
     """
     Are all steps integer multiples of the smallest step?
     This is used in determining whether the setpoints correspond
@@ -76,7 +77,7 @@ def _all_steps_multiples_of_min_step(rows: np.ndarray) -> bool:
 
     """
 
-    steps_list: list[np.ndarray] = []
+    steps_list: list[npt.NDArray] = []
     for row in rows:
         # TODO: What is an appropriate precision?
         steps_list += list(np.unique(np.diff(row).round(decimals=15)))
@@ -90,7 +91,7 @@ def _all_steps_multiples_of_min_step(rows: np.ndarray) -> bool:
     return asmoms
 
 
-def _rows_from_datapoints(inputsetpoints: np.ndarray) -> np.ndarray:
+def _rows_from_datapoints(inputsetpoints: npt.NDArray) -> npt.NDArray:
     """
     Cast the (potentially) unordered setpoints into rows
     of sorted, unique setpoint values. Because of the way they are ordered,
@@ -126,7 +127,7 @@ def _rows_from_datapoints(inputsetpoints: np.ndarray) -> np.ndarray:
     return list_of_data_to_maybe_ragged_nd_array(rows)
 
 
-def _all_in_group_or_subgroup(rows: np.ndarray) -> bool:
+def _all_in_group_or_subgroup(rows: npt.NDArray) -> bool:
     """
     Detects whether the setpoints correspond to two groups of
     of identical rows, one being contained in the other.
@@ -173,7 +174,7 @@ def _all_in_group_or_subgroup(rows: np.ndarray) -> bool:
     return aigos
 
 
-def _strings_as_ints(inputarray: np.ndarray) -> np.ndarray:
+def _strings_as_ints(inputarray: npt.NDArray) -> npt.NDArray:
     """
     Return an integer-valued array version of a string-valued array. Maps, e.g.
     array(['a', 'b', 'c', 'a', 'c']) to array([0, 1, 2, 0, 2]). Useful for
@@ -189,7 +190,7 @@ def _strings_as_ints(inputarray: np.ndarray) -> np.ndarray:
     return newdata
 
 
-def get_1D_plottype(xpoints: np.ndarray, ypoints: np.ndarray) -> str:
+def get_1D_plottype(xpoints: npt.NDArray, ypoints: npt.NDArray) -> str:
     """
     Determine plot type for a 1D plot by inspecting the data
 
@@ -218,7 +219,7 @@ def get_1D_plottype(xpoints: np.ndarray, ypoints: np.ndarray) -> str:
         return datatype_from_setpoints_1d(xpoints)
 
 
-def datatype_from_setpoints_1d(setpoints: np.ndarray) -> str:
+def datatype_from_setpoints_1d(setpoints: npt.NDArray) -> str:
     """
     Figure out what type of visualisation is proper for the
     provided setpoints.
@@ -241,7 +242,7 @@ def datatype_from_setpoints_1d(setpoints: np.ndarray) -> str:
 
 
 def get_2D_plottype(
-    xpoints: np.ndarray, ypoints: np.ndarray, zpoints: np.ndarray
+    xpoints: npt.NDArray, ypoints: npt.NDArray, zpoints: npt.NDArray
 ) -> str:
     """
     Determine plot type for a 2D plot by inspecting the data
@@ -267,7 +268,7 @@ def get_2D_plottype(
     return plottype
 
 
-def datatype_from_setpoints_2d(xpoints: np.ndarray, ypoints: np.ndarray) -> str:
+def datatype_from_setpoints_2d(xpoints: npt.NDArray, ypoints: npt.NDArray) -> str:
     """
     For a 2D plot, figure out what kind of visualisation we can use
     to display the data.
@@ -329,8 +330,8 @@ def datatype_from_setpoints_2d(xpoints: np.ndarray, ypoints: np.ndarray) -> str:
 
 
 def reshape_2D_data(
-    x: np.ndarray, y: np.ndarray, z: np.ndarray
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    x: npt.NDArray, y: npt.NDArray, z: npt.NDArray
+) -> tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
     xrow = np.array(_rows_from_datapoints(x)[0])
     yrow = np.array(_rows_from_datapoints(y)[0])
     nx = len(xrow)

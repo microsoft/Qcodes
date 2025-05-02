@@ -10,6 +10,7 @@ from copy import deepcopy
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
+import numpy.typing as npt
 
 from .param_spec import ParamSpec, ParamSpecBase
 
@@ -270,7 +271,7 @@ class InterDependencies_:
         }
         return output
 
-    def _empty_data_dict(self) -> dict[str, dict[str, np.ndarray]]:
+    def _empty_data_dict(self) -> dict[str, dict[str, npt.NDArray]]:
         """
         Create an dictionary with empty numpy arrays as values
         matching the expected output of ``DataSet``'s ``get_parameter_data`` /
@@ -279,7 +280,7 @@ class InterDependencies_:
         in this class.
         """
 
-        output: dict[str, dict[str, np.ndarray]] = {}
+        output: dict[str, dict[str, npt.NDArray]] = {}
         for dependent, independents in self.dependencies.items():
             dependent_name = dependent.name
             output[dependent_name] = {dependent_name: np.array([])}

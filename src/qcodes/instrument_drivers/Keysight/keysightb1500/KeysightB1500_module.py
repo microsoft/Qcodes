@@ -2,6 +2,7 @@ import re
 from typing import TYPE_CHECKING, Any, NamedTuple, cast
 
 import numpy as np
+import numpy.typing as npt
 from typing_extensions import TypedDict, Unpack, deprecated
 
 from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel
@@ -247,7 +248,7 @@ def get_name_label_unit_of_impedance_model(
 #   it might make more sense to generate one for each **channel**
 
 
-def get_measurement_summary(status_array: "np.ndarray | Sequence[str]") -> str:
+def get_measurement_summary(status_array: "npt.NDArray | Sequence[str]") -> str:
     unique_error_statuses = np.unique(status_array[status_array != "N"])
     if len(unique_error_statuses) > 0:
         summary = " ".join(
