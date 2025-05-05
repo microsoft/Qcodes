@@ -36,9 +36,11 @@ from typing import TYPE_CHECKING, Any
 
 import websockets
 import websockets.exceptions
+from opentelemetry import trace
 
 from qcodes.parameters import Parameter
 
+TRACER = trace.get_tracer(__name__)
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Sequence
 
@@ -50,6 +52,7 @@ SERVER_PORT = 3000
 log = logging.getLogger(__name__)
 
 
+@TRACER.start_as_current_span("qcodes.monitor.Monitor._get_metadata")
 def _get_metadata(
     *parameters: Parameter, use_root_instrument: bool = True
 ) -> dict[str, Any]:
@@ -107,16 +110,17 @@ def _handler(
         """
         while True:
             try:
-                # Update the parameter values
-                try:
-                    meta = _get_metadata(
-                        *parameters, use_root_instrument=use_root_instrument
-                    )
-                except ValueError:
-                    log.exception("Error getting parameters")
-                    break
-                log.debug("sending.. to %r", websocket)
-                await websocket.send(json.dumps(meta))
+                with TRACER.start_as_current_span("qcodes.monitor.Monitor._handler"):
+                    # Update the parameter values
+                    try:
+                        meta = _get_metadata(
+                            *parameters, use_root_instrument=use_root_instrument
+                        )
+                    except ValueError:
+                        log.exception("Error getting parameters")
+                        break
+                    log.debug("sending.. to %r", websocket)
+                    await websocket.send(json.dumps(meta))
                 # Wait for interval seconds and then send again
                 await asyncio.sleep(interval)
             except (CancelledError, websockets.exceptions.ConnectionClosed):
