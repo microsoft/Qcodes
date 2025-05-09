@@ -357,7 +357,7 @@ ruamel-yaml==0.18.10
     #   qcodes
 schema==0.7.7
     # via broadbean
-scipy==1.15.2
+scipy==1.15.3
     # via qcodes (pyproject.toml)
 six==1.17.0
     # via python-dateutil
