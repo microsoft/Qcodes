@@ -1,3 +1,4 @@
-1. Fixed the problem that there is no specific initialization variable in self._RETRY_WRITE_ASK.
-2. Fix the instrument status recognition problem in self.set_field.
-3. Fixed the ramping state recognition issue in wait_while_ramping.
+1. Added missing initialization of `self._RETRY_WRITE_ASK` and `self._RETRY_TIME` in the `write_raw` method to handle communication retries on VisaIOError.
+2. Updated `set_field` to correctly recognize Standby as a valid final state when setting the magnetic field to 0 T.
+3. Modified `wait_while_ramping` to check the actual magnetic field value via `self._get_field()` instead of relying on the status byte, since the instrument may stay in the Ramping state even after reaching the target field.
+4. Fixed unit parsing to handle unexpected trailing characters in the instrument's response. (e.g., "\r").
