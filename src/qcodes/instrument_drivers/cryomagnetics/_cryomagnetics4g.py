@@ -301,10 +301,9 @@ class CryomagneticsModel4G(VisaInstrument):
             self.log.debug("Finished blocking ramp")
             # If we are now holding, it was successful
 
-            if not exit_state.standby:
-                if not exit_state.holding:
-                    msg = "_set_field({}) failed with state: {}"
-                    raise Cryomagnetics4GException(msg.format(field_setpoint, exit_state))
+            if not exit_state.standby and not exit_state.holding:
+                msg = "_set_field({}) failed with state: {}"
+                raise Cryomagnetics4GException(msg.format(field_setpoint, exit_state))
 
     def wait_while_ramping(
         self, value: float, threshold: float = 1e-5
@@ -359,7 +358,7 @@ class CryomagneticsModel4G(VisaInstrument):
             )
 
         # Return value in Tesla, only converting if necessary
-        if "T" in self.units():
+        if self.units().strip() == "T":
             return numeric_value * self.KG_TO_TESLA
         else:
             return numeric_value
