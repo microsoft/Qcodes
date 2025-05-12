@@ -66,7 +66,7 @@ debugpy==1.8.14
     # via ipykernel
 decorator==5.2.1
     # via ipython
-deepdiff==8.4.2
+deepdiff==8.5.0
     # via qcodes (pyproject.toml)
 defusedxml==0.7.1
     # via nbconvert
