@@ -361,7 +361,7 @@ scipy==1.15.3
     # via qcodes (pyproject.toml)
 six==1.17.0
     # via python-dateutil
-snowballstemmer==3.0.0.1
+snowballstemmer==3.0.1
     # via sphinx
 sortedcontainers==2.4.0
     # via hypothesis
