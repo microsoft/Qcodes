@@ -440,7 +440,7 @@ traitlets==5.14.3
     #   nbconvert
     #   nbformat
     #   nbsphinx
-types-jsonschema==4.23.0.20241208
+types-jsonschema==4.23.0.20250516
     # via qcodes (pyproject.toml)
 types-pytz==2025.2.0.20250326
     # via pandas-stubs
