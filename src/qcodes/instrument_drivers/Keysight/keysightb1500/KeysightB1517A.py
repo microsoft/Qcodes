@@ -462,6 +462,9 @@ class KeysightB1500IVSweeper(InstrumentChannel):
         0.001 to 100 for UHVU
         """
 
+        self.iv_sweep: KeysightB1500IVSweeper = self.add_submodule("iv_sweep", KeysightB1500IVSweeper(self, "iv_sweep"))
+        """Instrument module iv_sweep"""
+
     def _set_sweep_mode(self, value: constants.SweepMode) -> None:
         self._sweep_step_parameters["sweep_mode"] = value
         self._set_from_sweep_step_parameters()
@@ -857,7 +860,9 @@ class KeysightB1517A(KeysightB1500Module):
         # We want to snapshot these configuration dictionaries
         self._meta_attrs += ["_measure_config", "_source_config", "_timing_parameters"]
 
-        self.add_submodule("iv_sweep", KeysightB1500IVSweeper(self, "iv_sweep"))
+        self.iv_sweep: KeysightB1500IVSweeper = self.add_submodule("iv_sweep", KeysightB1500IVSweeper(self, "iv_sweep"))
+        """Instrument module iv_sweep"""
+
         self.setup_fnc_already_run: bool = False
         self.power_line_frequency: int = 50
         self._average_coefficient: int = 1
