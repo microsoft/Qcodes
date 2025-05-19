@@ -479,13 +479,17 @@ class GS200(VisaInstrument):
 
         # Check if monitor is present, and if so enable measurement
         monitor_present = "/MON" in self.ask("*OPT?")
-        self.measure: GS200_Monitor = self.add_submodule("measure", GS200_Monitor(self, "measure", monitor_present))
+        self.measure: GS200_Monitor = self.add_submodule(
+            "measure", GS200_Monitor(self, "measure", monitor_present)
+        )
         """Instrument module measure"""
 
         # Reset function
         self.add_function("reset", call_cmd="*RST")
 
-        self.program: GS200Program = self.add_submodule("program", GS200Program(self, "program"))
+        self.program: GS200Program = self.add_submodule(
+            "program", GS200Program(self, "program")
+        )
         """Instrument module program"""
 
         self.BNC_out: Parameter = self.add_parameter(

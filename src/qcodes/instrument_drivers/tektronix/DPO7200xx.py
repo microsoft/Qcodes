@@ -74,15 +74,26 @@ class TektronixDPO7000xx(VisaInstrument):
     ) -> None:
         super().__init__(name, address, **kwargs)
 
-        self.horizontal: TektronixDPOHorizontal = self.add_submodule("horizontal", TektronixDPOHorizontal(self, "horizontal"))
+        self.horizontal: TektronixDPOHorizontal = self.add_submodule(
+            "horizontal", TektronixDPOHorizontal(self, "horizontal")
+        )
         """Instrument module horizontal"""
-        self.data: TektronixDPOData = self.add_submodule("data", TektronixDPOData(self, "data"))
+        self.data: TektronixDPOData = self.add_submodule(
+            "data", TektronixDPOData(self, "data")
+        )
         """Instrument module data"""
-        self.waveform: TektronixDPOWaveformFormat = self.add_submodule("waveform", TektronixDPOWaveformFormat(self, "waveform"))
+        self.waveform: TektronixDPOWaveformFormat = self.add_submodule(
+            "waveform", TektronixDPOWaveformFormat(self, "waveform")
+        )
         """Instrument module waveform"""
-        self.trigger: TektronixDPOTrigger = self.add_submodule("trigger", TektronixDPOTrigger(self, "trigger"))
+        self.trigger: TektronixDPOTrigger = self.add_submodule(
+            "trigger", TektronixDPOTrigger(self, "trigger")
+        )
         """Instrument module trigger"""
-        self.delayed_trigger: TektronixDPOTrigger = self.add_submodule("delayed_trigger", TektronixDPOTrigger(self, "delayed_trigger", delayed_trigger=True))
+        self.delayed_trigger: TektronixDPOTrigger = self.add_submodule(
+            "delayed_trigger",
+            TektronixDPOTrigger(self, "delayed_trigger", delayed_trigger=True),
+        )
         """Instrument module delayed_trigger"""
 
         measurement_list = ChannelList(self, "measurement", TektronixDPOMeasurement)

@@ -983,11 +983,17 @@ mode."""
         ####################################
         # Submodules
 
-        self.display: Keysight344xxADisplay = self.add_submodule("display", Keysight344xxADisplay(self, "display"))
+        self.display: Keysight344xxADisplay = self.add_submodule(
+            "display", Keysight344xxADisplay(self, "display")
+        )
         """Instrument module display"""
-        self.trigger: Keysight344xxATrigger = self.add_submodule("trigger", Keysight344xxATrigger(self, "trigger"))
+        self.trigger: Keysight344xxATrigger = self.add_submodule(
+            "trigger", Keysight344xxATrigger(self, "trigger")
+        )
         """Instrument module trigger"""
-        self.sample: Keysight344xxASample = self.add_submodule("sample", Keysight344xxASample(self, "sample"))
+        self.sample: Keysight344xxASample = self.add_submodule(
+            "sample", Keysight344xxASample(self, "sample")
+        )
         """Instrument module sample"""
 
         ####################################

@@ -519,7 +519,9 @@ class KeysightB1520A(KeysightB1500Module):
         )
         """Parameter capacitance"""
 
-        self.correction: KeysightB1500Correction = self.add_submodule("correction", KeysightB1500Correction(self, "correction"))
+        self.correction: KeysightB1500Correction = self.add_submodule(
+            "correction", KeysightB1500Correction(self, "correction")
+        )
         """Instrument module correction"""
 
         self.phase_compensation_mode: Parameter = self.add_parameter(
@@ -564,7 +566,9 @@ class KeysightB1520A(KeysightB1500Module):
         fluctuations by changing the bias and so on.
         """
 
-        self.cv_sweep: KeysightB1500CVSweeper = self.add_submodule("cv_sweep", KeysightB1500CVSweeper(self, "cv_sweep"))
+        self.cv_sweep: KeysightB1500CVSweeper = self.add_submodule(
+            "cv_sweep", KeysightB1500CVSweeper(self, "cv_sweep")
+        )
         """Instrument module cv_sweep"""
 
         self.adc_coef: GroupParameter = self.add_parameter(
