@@ -462,11 +462,6 @@ class KeysightB1500IVSweeper(InstrumentChannel):
         0.001 to 100 for UHVU
         """
 
-        self.iv_sweep: KeysightB1500IVSweeper = self.add_submodule(
-            "iv_sweep", KeysightB1500IVSweeper(self, "iv_sweep")
-        )
-        """Instrument module iv_sweep"""
-
     def _set_sweep_mode(self, value: constants.SweepMode) -> None:
         self._sweep_step_parameters["sweep_mode"] = value
         self._set_from_sweep_step_parameters()
