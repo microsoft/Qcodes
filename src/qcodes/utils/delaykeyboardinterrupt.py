@@ -46,15 +46,19 @@ class DelayedKeyboardInterrupt:
 
     def __enter__(self) -> None:
         is_main_thread = threading.current_thread() is threading.main_thread()
-        is_default_sig_handler = (
-            signal.getsignal(signal.SIGINT) is signal.default_int_handler
-        )
-        if is_default_sig_handler and is_main_thread:
-            self.old_handler = signal.signal(signal.SIGINT, self.handler)
-        elif is_default_sig_handler:
+        if not is_main_thread:
             log.debug(
                 "Not on main thread cannot intercept interrupts", extra=self._context
             )
+            return
+
+        handler = signal.getsignal(signal.SIGINT)
+        try:
+            is_delayed_sig_handler = handler.__self__.__class__ == DelayedKeyboardInterrupt
+        except Exception:
+            is_delayed_sig_handler = False
+        if not is_delayed_sig_handler:
+            self.old_handler = signal.signal(signal.SIGINT, self.handler)
 
     def handler(self, sig: int, frame: FrameType | None) -> None:
         def create_forceful_handler(
