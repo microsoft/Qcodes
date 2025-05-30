@@ -5,8 +5,11 @@ It will eventually be deprecated and removed
 
 from typing import TYPE_CHECKING, Any, ClassVar
 
+from typing_extensions import deprecated
+
 import qcodes.validators as vals
 from qcodes.parameters import Group, GroupParameter
+from qcodes.utils import QCoDeSDeprecationWarning
 
 from .lakeshore_base import LakeshoreBase
 from .lakeshore_base import LakeshoreBaseOutput as BaseOutput
@@ -26,6 +29,11 @@ if TYPE_CHECKING:
     from qcodes.instrument import VisaInstrumentKWArgs
 
 
+@deprecated(
+    "Model_336 is deprecated. Please use qcodes.instrument_drivers.Lakeshore.LakeshoreModel336 instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
 class Model_336(LakeshoreBase):
     """
     Lakeshore Model 336 Temperature Controller Driver

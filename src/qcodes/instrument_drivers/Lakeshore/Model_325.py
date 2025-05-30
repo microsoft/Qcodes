@@ -8,6 +8,8 @@ from enum import IntFlag
 from itertools import takewhile
 from typing import TYPE_CHECKING, Any, Optional, TextIO, cast
 
+from typing_extensions import deprecated
+
 from qcodes.instrument import (
     ChannelList,
     InstrumentChannel,
@@ -15,6 +17,7 @@ from qcodes.instrument import (
     VisaInstrumentKWArgs,
 )
 from qcodes.parameters import Group, GroupParameter
+from qcodes.utils import QCoDeSDeprecationWarning
 from qcodes.validators import Enum, Numbers
 
 from .Lakeshore_model_325 import LakeshoreModel325Curve as Model_325_Curve
@@ -28,6 +31,11 @@ if TYPE_CHECKING:
     from typing_extensions import Unpack
 
 
+@deprecated(
+    "Model_325 is deprecated. Please use qcodes.instrument_drivers.Lakeshore.LakeshoreModel325 instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
 class Model_325(VisaInstrument):
     """
     Lakeshore Model 325 Temperature Controller Driver

@@ -5,6 +5,8 @@ It will eventually be deprecated and removed
 
 from typing import TYPE_CHECKING, Any, ClassVar
 
+from typing_extensions import deprecated
+
 import qcodes.validators as vals
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (
     LakeshoreBase,
@@ -16,6 +18,7 @@ from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (
     LakeshoreBaseSensorChannel as BaseSensorChannel,
 )
 from qcodes.parameters import Group, GroupParameter
+from qcodes.utils import QCoDeSDeprecationWarning
 
 from .Lakeshore_model_372 import LakeshoreModel372Channel as Model_372_Channel
 from .Lakeshore_model_372 import LakeshoreModel372Output as Output_372
@@ -29,6 +32,11 @@ if TYPE_CHECKING:
 _n_channels = 16
 
 
+@deprecated(
+    "Model_372 is deprecated. Please use qcodes.instrument_drivers.Lakeshore.LakeshoreModel372 instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
 class Model_372(LakeshoreBase):
     """
     Lakeshore Model 372 Temperature Controller Driver
