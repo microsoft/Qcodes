@@ -8,11 +8,9 @@ from typing import TYPE_CHECKING, Any, ClassVar
 import qcodes.validators as vals
 from qcodes.parameters import Group, GroupParameter
 
-from .lakeshore_base import (
-    BaseOutput,  # pyright: ignore
-    BaseSensorChannel,  # pyright: ignore
-    LakeshoreBase,
-)
+from .lakeshore_base import LakeshoreBase
+from .lakeshore_base import LakeshoreBaseOutput as BaseOutput
+from .lakeshore_base import LakeshoreBaseSensorChannel as BaseSensorChannel
 from .Lakeshore_model_336 import LakeshoreModel336Channel as Model_336_Channel
 from .Lakeshore_model_336 import (
     LakeshoreModel336CurrentSource as Output_336_CurrentSource,

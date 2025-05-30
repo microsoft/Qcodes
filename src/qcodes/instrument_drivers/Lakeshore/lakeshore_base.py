@@ -3,7 +3,7 @@ from bisect import bisect
 from typing import TYPE_CHECKING, Any, ClassVar, Generic
 
 import numpy as np
-from typing_extensions import TypeVar, deprecated
+from typing_extensions import TypeVar
 
 from qcodes import validators as vals
 from qcodes.instrument import (
@@ -14,7 +14,6 @@ from qcodes.instrument import (
     VisaInstrumentKWArgs,
 )
 from qcodes.parameters import Group, GroupParameter, Parameter
-from qcodes.utils import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -507,15 +506,6 @@ class LakeshoreBaseOutput(InstrumentChannel):
             time.sleep(wait_cycle_time)
 
 
-@deprecated(
-    "Base class renamed to LakeshoreBaseOutput",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class BaseOutput(LakeshoreBaseOutput):
-    pass
-
-
 class LakeshoreBaseSensorChannel(InstrumentChannel):
     # A dictionary of sensor statuses that assigns a string representation of
     # the status to a status bit weighting (e.g. {4: 'VMIX OVL'})
@@ -668,15 +658,6 @@ class LakeshoreBaseSensorChannel(InstrumentChannel):
             terms_left = terms_left[terms_left <= number]
 
         return terms_in_number
-
-
-@deprecated(
-    "Base class renamed to LakeshoreBaseSensorChannel",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class BaseSensorChannel(LakeshoreBaseSensorChannel):
-    pass
 
 
 ChanType_co = TypeVar(
