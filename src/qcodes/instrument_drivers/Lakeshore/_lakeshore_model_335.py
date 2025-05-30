@@ -183,7 +183,7 @@ class LakeshoreModel335CurrentSource(LakeshoreBaseOutput):
         self.D.vals = vals.Numbers(0, 200)
 
 
-class LakeshoreModel335(LakeshoreBase):
+class LakeshoreModel335(LakeshoreBase[LakeshoreModel335Channel]):
     """
     Lakeshore Model 335 Temperature Controller Driver
     """

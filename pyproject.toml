@@ -76,7 +76,7 @@ test = [
     "hypothesis>=6.130.0",
     "lxml>=4.9.4",
     "lxml-stubs>=0.4.0",
-    "mypy>=0.971",
+    "mypy>=1.16.0",
     "pandas-stubs>=1.2.0.1",
     "pytest>=8.2.0",
     "pytest-asyncio>=0.24.0",
@@ -178,7 +178,6 @@ disallow_incomplete_defs = false
 
 # these are packages that we import
 # but don't have installed by default
-# ruamel https://github.com/python/mypy/issues/12664
 [[tool.mypy.overrides]]
 module = [
     "clr",
@@ -186,7 +185,6 @@ module = [
     "mcl_RF_Switch_Controller64",
     "mcl_RF_Switch_Controller_NET45",
     "pywinusb.*",
-    "ruamel",
     "spyder.utils.site",
     "spyder_kernels.customize",
     "System.IO",
