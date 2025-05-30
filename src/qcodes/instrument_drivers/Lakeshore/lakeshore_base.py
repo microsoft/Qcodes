@@ -731,7 +731,8 @@ class LakeshoreBase(VisaInstrument):
             channel = self.CHANNEL_CLASS(self, channel_name, command)
             channels.append(channel)
             self.add_submodule(channel_name, channel)
-        self.add_submodule("channels", channels.to_channel_tuple())
+        self.channels = self.add_submodule("channels", channels.to_channel_tuple())
+        """A ChannelTuple of sensor channels on the Lakeshore instrument."""
 
         # on Model335 we need to change serial port settings
         # before we can communicate
