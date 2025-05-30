@@ -286,9 +286,7 @@ class Parameter(ParameterBase):
                     exec_str=exec_str_ask,
                 )
             self._gettable = True
-            # mypy resolves the type of self.get_raw to object here.
-            # this may be resolvable if Command above is correctly wrapped in MethodType
-            self.get = self._wrap_get(self.get_raw)  # type: ignore[arg-type]
+            self.get = self._wrap_get(self.get_raw)
 
         if self._implements_set_raw and set_cmd not in (None, False):
             raise TypeError(

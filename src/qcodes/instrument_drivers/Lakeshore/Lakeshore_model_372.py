@@ -327,7 +327,7 @@ class LakeshoreModel372Channel(LakeshoreBaseSensorChannel):
         )
 
 
-class LakeshoreModel372(LakeshoreBase):
+class LakeshoreModel372(LakeshoreBase[LakeshoreModel372Channel]):
     """
     QCoDeS driver for Lakeshore Model 372 Temperature Controller.
 

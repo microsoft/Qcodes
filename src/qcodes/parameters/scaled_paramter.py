@@ -93,15 +93,10 @@ class ScaledParameter(Parameter):
 
         if division is not None:
             self.role = ScaledParameter.Role.DIVISION
-            # Unfortunately mypy does not support
-            # properties where the setter has different types than
-            # the actual property. We use that here to cast different inputs
-            # to the same type.
-            # https://github.com/python/mypy/issues/3004
-            self._multiplier = division  # type: ignore[assignment]
+            self._multiplier = division
         elif gain is not None:
             self.role = ScaledParameter.Role.GAIN
-            self._multiplier = gain  # type: ignore[assignment]
+            self._multiplier = gain
 
         # extend metadata
         self._meta_attrs.extend(["division"])
@@ -148,7 +143,7 @@ class ScaledParameter(Parameter):
     @division.setter
     def division(self, division: float | Parameter) -> None:
         self.role = ScaledParameter.Role.DIVISION
-        self._multiplier = division  # type: ignore[assignment]
+        self._multiplier = division
 
     # Gain of the scaler
     @property
@@ -164,7 +159,7 @@ class ScaledParameter(Parameter):
     @gain.setter
     def gain(self, gain: float | Parameter) -> None:
         self.role = ScaledParameter.Role.GAIN
-        self._multiplier = gain  # type: ignore[assignment]
+        self._multiplier = gain
 
     # Getter and setter for the real value
     def get_raw(self) -> float:

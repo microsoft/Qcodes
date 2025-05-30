@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 import pyvisa.constants
 import pyvisa.resources
+import pyvisa.resources.serial
 
 import qcodes.validators as vals
 from qcodes.parameters import Group, GroupParameter
@@ -182,7 +183,7 @@ class LakeshoreModel335CurrentSource(LakeshoreBaseOutput):
         self.D.vals = vals.Numbers(0, 200)
 
 
-class LakeshoreModel335(LakeshoreBase):
+class LakeshoreModel335(LakeshoreBase[LakeshoreModel335Channel]):
     """
     Lakeshore Model 335 Temperature Controller Driver
     """

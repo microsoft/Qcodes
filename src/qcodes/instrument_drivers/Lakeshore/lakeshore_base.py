@@ -1,9 +1,9 @@
 import time
 from bisect import bisect
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Generic
 
 import numpy as np
-from typing_extensions import deprecated
+from typing_extensions import TypeVar, deprecated
 
 from qcodes import validators as vals
 from qcodes.instrument import (
@@ -677,7 +677,15 @@ class BaseSensorChannel(LakeshoreBaseSensorChannel):
     pass
 
 
-class LakeshoreBase(VisaInstrument):
+ChanType_co = TypeVar(
+    "ChanType_co",
+    bound=LakeshoreBaseSensorChannel,
+    default=LakeshoreBaseSensorChannel,
+    covariant=True,
+)
+
+
+class LakeshoreBase(VisaInstrument, Generic[ChanType_co]):
     """
     This base class has been written to be that base for the Lakeshore 336
     and 372. There are probably other lakeshore modes that can use the
@@ -693,9 +701,12 @@ class LakeshoreBase(VisaInstrument):
     constructor via `add_submodule` method.
     """
 
-    # Redefine this in the model-specific class in case you want to use a
+    # Define this in the model-specific class in case you want to use a
     # different class for sensor channels
-    CHANNEL_CLASS = LakeshoreBaseSensorChannel
+    # type error. It's not clear to me why assigning a value that matches the
+    # default of the TypeVar is an error but both mypy and pyright
+    # flags it here.
+    CHANNEL_CLASS: type[ChanType_co] = LakeshoreBaseSensorChannel  # type: ignore[assignment]
 
     # This dict has channel name in the driver as keys, and channel "name" that
     # is used in instrument commands as values. For example, if channel called
@@ -731,7 +742,8 @@ class LakeshoreBase(VisaInstrument):
             channel = self.CHANNEL_CLASS(self, channel_name, command)
             channels.append(channel)
             self.add_submodule(channel_name, channel)
-        self.add_submodule("channels", channels.to_channel_tuple())
+        self.channels = self.add_submodule("channels", channels.to_channel_tuple())
+        """A ChannelTuple of sensor channels on the Lakeshore instrument."""
 
         # on Model335 we need to change serial port settings
         # before we can communicate
