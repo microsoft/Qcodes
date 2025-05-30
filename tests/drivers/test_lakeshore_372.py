@@ -11,10 +11,10 @@ import pytest
 from typing_extensions import ParamSpec
 
 from qcodes.instrument import InstrumentBase
+from qcodes.instrument_drivers.Lakeshore import LakeshoreModel372
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (
     LakeshoreBaseSensorChannel,
 )
-from qcodes.instrument_drivers.Lakeshore.Model_372 import Model_372
 from qcodes.logger import get_instrument_logger
 from qcodes.utils import QCoDeSDeprecationWarning
 
@@ -138,7 +138,7 @@ class DictClass:
         self._attrs[name] = value
 
 
-class Model_372_Mock(MockVisaInstrument, Model_372):
+class LakeshoreModel372Mock(MockVisaInstrument, LakeshoreModel372):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
@@ -365,7 +365,7 @@ def instrument_fixture(
 
 @instrument_fixture(scope="function")
 def lakeshore_372():
-    return Model_372_Mock(
+    return LakeshoreModel372Mock(
         "lakeshore_372_fixture",
         "GPIB::3::INSTR",
         pyvisa_sim_file="lakeshore_model372.yaml",
