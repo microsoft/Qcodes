@@ -238,6 +238,7 @@ filterwarnings = [
     'ignore:unclosed database in:ResourceWarning', # internal should be fixed
     'ignore:ConnectionPlus is deprecated:qcodes.utils.deprecate.QCoDeSDeprecationWarning',  # remove once deprecated ConnectionPlus has been removed
     'ignore:make_connection_plus_from is deprecated:qcodes.utils.deprecate.QCoDeSDeprecationWarning',  # remove once deprecated ConnectionPlus has been removed
+    'ignore:Model_336 is deprecated:qcodes.utils.deprecate.QCoDeSDeprecationWarning',  # remove once deprecated Lakeshore Model_336 and its tests has been removed
 ]
 
 [tool.ruff]

@@ -1,0 +1,3 @@
+The deprecated aliases to Lakeshore modules in `qcodes.instrument_drivers.Lakeshore.lakeshore_base` have been removed.
+The aliases to lakeshore drivers in `qcodes.instrument_drivers.Lakeshore.Model_325`, `qcodes.instrument_drivers.Lakeshore.Model_336` and `qcodes.instrument_drivers.Lakeshore.Model_372`
+have been removed. Please make sure that all Lakeshore related imports are from `qcodes.instrument_drivers.Lakeshore` avoiding any submodules.

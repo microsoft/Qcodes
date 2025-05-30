@@ -2,9 +2,11 @@ import logging
 import time
 
 from qcodes.instrument import InstrumentBase
-from qcodes.instrument_drivers.Lakeshore.Model_336 import Model_336
+from qcodes.instrument_drivers.Lakeshore.Model_336 import (
+    Model_336,  # pyright: ignore[reportDeprecated]
+)
 
-from .test_lakeshore import (
+from .test_lakeshore_372 import (
     DictClass,
     MockVisaInstrument,
     command,
@@ -18,7 +20,7 @@ log = logging.getLogger(__name__)
 VISA_LOGGER = ".".join((InstrumentBase.__module__, "com", "visa"))
 
 
-class Model_336_Mock(MockVisaInstrument, Model_336):
+class Model_336_Mock(MockVisaInstrument, Model_336):  # pyright: ignore[reportDeprecated]
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 

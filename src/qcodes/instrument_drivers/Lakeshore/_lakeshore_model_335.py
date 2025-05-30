@@ -206,7 +206,19 @@ class LakeshoreModel335(LakeshoreBase[LakeshoreModel335Channel]):
             self.visa_handle.data_bits = 7
             self.visa_handle.parity = pyvisa.constants.Parity(1)
 
-        self.output_1 = LakeshoreModel335CurrentSource(self, "output_1", 1)
-        self.output_2 = LakeshoreModel335CurrentSource(self, "output_2", 2)
+        self.output_1: LakeshoreModel335CurrentSource = self.add_submodule(
+            name="output_1",
+            submodule=LakeshoreModel335CurrentSource(self, "output_1", 1),
+        )
+        """
+        An InstrumentChannel for the first current source of Lakeshore Model 335.
+        """
+        self.output_2 = self.add_submodule(
+            name="output_2",
+            submodule=LakeshoreModel335CurrentSource(self, "output_2", 2),
+        )
+        """
+        An InstrumentChannel for the second current source of Lakeshore Model 335.
+        """
 
         self.connect_message()

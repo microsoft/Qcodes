@@ -3,7 +3,7 @@ from bisect import bisect
 from typing import TYPE_CHECKING, Any, ClassVar, Generic
 
 import numpy as np
-from typing_extensions import TypeVar, deprecated
+from typing_extensions import TypeVar
 
 from qcodes import validators as vals
 from qcodes.instrument import (
@@ -14,12 +14,13 @@ from qcodes.instrument import (
     VisaInstrumentKWArgs,
 )
 from qcodes.parameters import Group, GroupParameter, Parameter
-from qcodes.utils import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from typing_extensions import Unpack
+
+    from qcodes.instrument.channel import ChannelTuple
 
 
 class LakeshoreBaseOutput(InstrumentChannel):
@@ -505,15 +506,6 @@ class LakeshoreBaseOutput(InstrumentChannel):
             time.sleep(wait_cycle_time)
 
 
-@deprecated(
-    "Base class renamed to LakeshoreBaseOutput",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class BaseOutput(LakeshoreBaseOutput):
-    pass
-
-
 class LakeshoreBaseSensorChannel(InstrumentChannel):
     # A dictionary of sensor statuses that assigns a string representation of
     # the status to a status bit weighting (e.g. {4: 'VMIX OVL'})
@@ -668,15 +660,6 @@ class LakeshoreBaseSensorChannel(InstrumentChannel):
         return terms_in_number
 
 
-@deprecated(
-    "Base class renamed to LakeshoreBaseSensorChannel",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class BaseSensorChannel(LakeshoreBaseSensorChannel):
-    pass
-
-
 ChanType_co = TypeVar(
     "ChanType_co",
     bound=LakeshoreBaseSensorChannel,
@@ -742,7 +725,9 @@ class LakeshoreBase(VisaInstrument, Generic[ChanType_co]):
             channel = self.CHANNEL_CLASS(self, channel_name, command)
             channels.append(channel)
             self.add_submodule(channel_name, channel)
-        self.channels = self.add_submodule("channels", channels.to_channel_tuple())
+        self.channels: ChannelTuple[ChanType_co] = self.add_submodule(
+            "channels", channels.to_channel_tuple()
+        )
         """A ChannelTuple of sensor channels on the Lakeshore instrument."""
 
         # on Model335 we need to change serial port settings
