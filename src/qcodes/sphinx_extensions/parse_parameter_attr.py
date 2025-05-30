@@ -190,13 +190,23 @@ def qcodes_parameter_attr_getter(
             attr = None
             for classobj in mro:
                 try:
+                    LOGGER.debug(
+                        "Trying to parse %s on %s for %s",
+                        name,
+                        classobj,
+                        object_to_document_attr_on,
+                    )
                     param_dict = eval_params_from_code(
                         inspect.getsource(classobj), classobj.__name__
                     )
                     if param_dict.get(name) is not None:
                         attr = param_dict[name]
                         break
-                except TypeError:
+                except (TypeError, OSError) as e:
+                    LOGGER.debug(
+                        f"Could not parse {name} on {classobj} for "
+                        f"{object_to_document_attr_on}: {e}"
+                    )
                     continue
             if attr is None:
                 LOGGER.debug(
