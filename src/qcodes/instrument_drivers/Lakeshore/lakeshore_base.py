@@ -21,6 +21,8 @@ if TYPE_CHECKING:
 
     from typing_extensions import Unpack
 
+    from qcodes.instrument.channel import ChannelTuple
+
 
 class LakeshoreBaseOutput(InstrumentChannel):
     MODES: ClassVar[dict[str, int]] = {}
@@ -742,7 +744,9 @@ class LakeshoreBase(VisaInstrument, Generic[ChanType_co]):
             channel = self.CHANNEL_CLASS(self, channel_name, command)
             channels.append(channel)
             self.add_submodule(channel_name, channel)
-        self.channels = self.add_submodule("channels", channels.to_channel_tuple())
+        self.channels: ChannelTuple[ChanType_co] = self.add_submodule(
+            "channels", channels.to_channel_tuple()
+        )
         """A ChannelTuple of sensor channels on the Lakeshore instrument."""
 
         # on Model335 we need to change serial port settings

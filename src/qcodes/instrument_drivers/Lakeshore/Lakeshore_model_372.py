@@ -350,7 +350,25 @@ class LakeshoreModel372(LakeshoreBase[LakeshoreModel372Channel]):
         super().__init__(name, address, **kwargs)
 
         heaters = {"sample_heater": 0, "warmup_heater": 1, "analog_heater": 2}
-        for heater_name, heater_index in heaters.items():
-            self.add_submodule(
-                heater_name, LakeshoreModel372Output(self, heater_name, heater_index)
-            )
+
+        self.sample_heater: LakeshoreModel372Output = self.add_submodule(
+            "sample_heater",
+            LakeshoreModel372Output(self, "sample_heater", heaters["sample_heater"]),
+        )
+        """
+        Sample heater output channel.
+        """
+        self.warmup_heater: LakeshoreModel372Output = self.add_submodule(
+            "warmup_heater",
+            LakeshoreModel372Output(self, "warmup_heater", heaters["warmup_heater"]),
+        )
+        """
+        Warm-up heater output channel.
+        """
+        self.analog_heater: LakeshoreModel372Output = self.add_submodule(
+            "analog_heater",
+            LakeshoreModel372Output(self, "analog_heater", heaters["analog_heater"]),
+        )
+        """
+        Analog heater output channel.
+        """
