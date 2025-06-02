@@ -1,9 +1,9 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
-    rev: 'v0.11.8'
+    rev: 'v0.11.12'
     hooks:
-    - id: ruff
+    - id: ruff-check
       types_or: [python, pyi, jupyter, toml]
       args: [ --fix, --exit-non-zero-on-fix ]
     - id: ruff-format
@@ -22,7 +22,7 @@ repos:
     - id: mixed-line-ending
       args: ['--fix=no']
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.25.1
+    rev: v8.26.0
     hooks:
     - id: gitleaks
   - repo: https://github.com/jumanjihouse/pre-commit-hooks
