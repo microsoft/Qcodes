@@ -1,0 +1,3 @@
+`InstrumentLoggerAdapter` now merges the extra dict from the log record with information
+inserted by the LoggerAdapter. This makes it possible to add additional information to a
+log message logged via the instruments log attribute e.g. `myinst.visa_log.info("message", extra={"this": "that"})`
