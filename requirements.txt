@@ -102,7 +102,7 @@ h5py==3.13.0
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.131.30
+hypothesis==6.132.0
     # via qcodes (pyproject.toml)
 idna==3.10
     # via requests
@@ -116,7 +116,7 @@ ipykernel==6.29.5
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-ipython==9.2.0
+ipython==9.3.0
     # via
     #   qcodes (pyproject.toml)
     #   ipykernel
@@ -351,7 +351,7 @@ rpds-py==0.25.1
     # via
     #   jsonschema
     #   referencing
-ruamel-yaml==0.18.11
+ruamel-yaml==0.18.12
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -446,7 +446,7 @@ types-pytz==2025.2.0.20250516
     # via pandas-stubs
 types-pywin32==310.0.0.20250516
     # via qcodes (pyproject.toml)
-types-requests==2.32.0.20250515
+types-requests==2.32.0.20250602
     # via
     #   qcodes (pyproject.toml)
     #   types-tqdm

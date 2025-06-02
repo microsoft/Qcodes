@@ -301,6 +301,26 @@ def test_instrument_connect_message(caplog: LogCaptureFixture) -> None:
     assert any(rec.msg == expected_con_mssg for rec in setup_records)
 
 
+def test_instrument_logger_extra_info(awg5208, caplog: LogCaptureFixture) -> None:
+    """
+    Test that the connect_message method logs as expected
+
+    This test kind of belongs both here and in the tests for the instrument
+    code, but it is more conveniently written here
+    """
+    extra_key = "some_extra"
+    extra_val = "extra_value"
+
+    with caplog.at_level(logging.INFO):
+        awg5208.visa_log.info("test message")
+    assert not hasattr(caplog.records[0], extra_key)
+    caplog.clear()
+
+    with caplog.at_level(logging.INFO):
+        awg5208.visa_log.info("test message", extra={extra_key: extra_val})
+    assert getattr(caplog.records[0], extra_key) == "extra_value"
+
+
 def test_installation_info_logging() -> None:
     """
     Test that installation information is logged upon starting the logging
