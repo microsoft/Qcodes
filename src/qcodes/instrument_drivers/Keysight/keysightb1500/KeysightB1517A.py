@@ -857,7 +857,11 @@ class KeysightB1517A(KeysightB1500Module):
         # We want to snapshot these configuration dictionaries
         self._meta_attrs += ["_measure_config", "_source_config", "_timing_parameters"]
 
-        self.add_submodule("iv_sweep", KeysightB1500IVSweeper(self, "iv_sweep"))
+        self.iv_sweep: KeysightB1500IVSweeper = self.add_submodule(
+            "iv_sweep", KeysightB1500IVSweeper(self, "iv_sweep")
+        )
+        """Instrument module iv_sweep"""
+
         self.setup_fnc_already_run: bool = False
         self.power_line_frequency: int = 50
         self._average_coefficient: int = 1
