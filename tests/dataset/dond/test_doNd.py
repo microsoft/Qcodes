@@ -4,6 +4,7 @@ These are the basic black box tests for the doNd functions.
 
 import logging
 import re
+from functools import partial
 from typing import assert_type
 
 import hypothesis.strategies as hst
@@ -35,8 +36,13 @@ from qcodes.instrument_drivers.mock_instruments import (
     Multi2DSetPointParam2Sizes,
     MultiSetPointParam,
 )
-from qcodes.parameters import ManualParameter, Parameter, ParameterBase
-from qcodes.validators import Ints
+from qcodes.parameters import (
+    ManualParameter,
+    Parameter,
+    ParameterBase,
+    ParameterWithSetpoints,
+)
+from qcodes.validators import Arrays, Ints
 from tests.dataset.conftest import ArrayshapedParam
 
 
@@ -355,6 +361,34 @@ def test_dond_0d_verify_shape(
     for name, data_inner in data.items():
         for param_data in data_inner.values():
             assert param_data.shape == expected_shapes[name]
+
+
+@pytest.mark.usefixtures("experiment")
+def test_dond_0d_pws_with_register_name_has_correct_shape() -> None:
+    numpoints = 101
+    setpoints = Parameter(
+        "setpoints",
+        get_cmd=partial(np.linspace, 0, 1, numpoints),
+        vals=Arrays(shape=(numpoints,)),
+    )
+
+    def complex_get_cmd() -> np.ndarray:
+        reals: np.ndarray = np.linspace(0, 10, numpoints)
+        imags: np.ndarray = np.linspace(0, 10, numpoints)
+        return reals + 1.0j * imags
+
+    pws_with_register_name = ParameterWithSetpoints(
+        name="pws",
+        setpoints=[setpoints],
+        get_cmd=complex_get_cmd,
+        vals=Arrays(shape=(numpoints,), valid_types=[np.complexfloating]),
+        register_name="register_pws",
+    )
+    ds, _, _ = dond(pws_with_register_name, measurement_name="With register_name")
+
+    expected_shape = {"register_pws": (numpoints,)}
+    assert isinstance(ds, DataSetProtocol)
+    assert ds.description.shapes == expected_shape
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
