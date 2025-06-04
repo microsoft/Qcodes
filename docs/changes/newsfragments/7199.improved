@@ -3,3 +3,5 @@ to use `parameter.register_name` when creating shape dictionaries for storage in
 
 Previously, these methods used `parameter.full_name` which could result in shapes not being stored
 or used correctly for parameters that use `parameter.register_name`
+
+closes #7198
