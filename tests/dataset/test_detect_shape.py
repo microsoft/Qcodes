@@ -131,6 +131,28 @@ def test_get_shape_for_pws_from_shape(
     assert (dummyinstrument.A.dummy_n_points(),) == param.vals.shape
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@pytest.mark.parametrize("range_func", [range, np.arange])
+@given(
+    loop_shape=hst.lists(
+        hst.integers(min_value=1, max_value=1000), min_size=1, max_size=10
+    ),
+    n_points=hst.integers(min_value=1, max_value=1000),
+)
+def test_get_shape_for_pws_with_register_name_from_shape(
+    dummyinstrument, loop_shape, range_func, n_points
+) -> None:
+    param = dummyinstrument.A.dummy_parameter_with_setpoints
+    param._register_name = f"register_{param.full_name}"  # register_name can ordinarily only be set at init
+    dummyinstrument.A.dummy_n_points(n_points)
+    loop_sequence = tuple(range_func(x) for x in loop_shape)
+    shapes = detect_shape_of_measurement((param,), loop_sequence)
+    expected_shapes = {}
+    expected_shapes[param.register_name] = tuple(loop_shape) + tuple(param.vals.shape)
+    assert shapes == expected_shapes
+    assert (dummyinstrument.A.dummy_n_points(),) == param.vals.shape
+
+
 @given(
     loop_shape=hst.lists(
         hst.integers(min_value=1, max_value=1000), min_size=1, max_size=10
