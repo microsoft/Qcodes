@@ -54,9 +54,9 @@ def detect_shape_of_measurement(
         if isinstance(param, MultiParameter):
             array_shapes.update(_get_shapes_of_multi_parameter(param=param))
         elif _param_is_array_like(param):
-            array_shapes[param.full_name] = _get_shape_of_arrayparam(param)
+            array_shapes[param.register_name] = _get_shape_of_arrayparam(param)
         else:
-            array_shapes[param.full_name] = ()
+            array_shapes[param.register_name] = ()
 
     shapes: dict[str, tuple[int, ...]] = {}
 
