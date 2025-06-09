@@ -710,13 +710,13 @@ def plot_on_a_plain_grid(
         x_strings = np.unique(x)
         x = _strings_as_ints(x)
     else:
-        x_strings = []
+        x_strings = np.array([])
 
     if y_is_stringy:
         y_strings = np.unique(y)
         y = _strings_as_ints(y)
     else:
-        y_strings = []
+        y_strings = np.array([])
 
     if z_is_stringy:
         z_strings = [str(elem) for elem in np.unique(z)]

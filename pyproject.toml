@@ -138,7 +138,6 @@ exclude_lines = [
 [tool.mypy]
 strict_optional = true
 show_column_numbers = true
-plugins = "numpy.typing.mypy_plugin"
 show_error_codes = true
 enable_error_code = "ignore-without-code"
 # strict confic. Eventually we would like to
