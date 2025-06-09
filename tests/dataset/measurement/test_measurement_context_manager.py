@@ -849,8 +849,8 @@ def test_datasaver_arrays_lists_tuples(bg_writing, N) -> None:
 
     # save lists
     with meas.run(write_in_background=bg_writing) as datasaver:
-        freqax2 = list(np.linspace(1e6, 2e6, N))
-        signal2 = list(np.random.randn(N))
+        freqax2 = np.linspace(1e6, 2e6, N).tolist()
+        signal2 = np.random.randn(N).tolist()
 
         datasaver.add_result(
             ("freqax", freqax2), ("signal", signal2), ("gate_voltage", 0)
@@ -860,8 +860,8 @@ def test_datasaver_arrays_lists_tuples(bg_writing, N) -> None:
 
     # save tuples
     with meas.run(write_in_background=bg_writing) as datasaver:
-        freqax3 = tuple(np.linspace(1e6, 2e6, N))
-        signal3 = tuple(np.random.randn(N))
+        freqax3 = tuple(np.linspace(1e6, 2e6, N).tolist())
+        signal3 = tuple(np.random.randn(N).tolist())
 
         datasaver.add_result(
             ("freqax", freqax3), ("signal", signal3), ("gate_voltage", 0)
