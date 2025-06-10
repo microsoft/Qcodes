@@ -327,6 +327,7 @@ def _process_single_dataset(
         # Check if dataset has already been exported to NetCDF
         existing_netcdf_path = dataset.export_info.export_paths.get("nc")
         
+        need_export = True
         if existing_netcdf_path is not None:
             # Check if the existing export path matches the desired export path
             existing_path = Path(existing_netcdf_path)
@@ -335,14 +336,15 @@ def _process_single_dataset(
             if existing_path.exists() and existing_path.parent == export_path:
                 log.info(f"Dataset {run_id} already exported to NetCDF at {existing_netcdf_path}")
                 netcdf_export_path = existing_netcdf_path
+                need_export = False
             else:
                 # Export to the new location
                 log.info(f"Dataset {run_id} was exported to different location, re-exporting to {export_path}")
-                dataset.export("netcdf", path=export_path)
-                netcdf_export_path = dataset.export_info.export_paths.get("nc")
         else:
             # Try to export to NetCDF
             log.info(f"Attempting to export dataset {run_id} to NetCDF")
+        
+        if need_export:
             dataset.export("netcdf", path=export_path)
             netcdf_export_path = dataset.export_info.export_paths.get("nc")
         
@@ -366,8 +368,8 @@ def _process_single_dataset(
         
         return "exported"
         
-    except Exception as e:
-        log.warning(f"Failed to export dataset {run_id} to NetCDF: {e}, copying as-is")
+    except Exception:
+        log.exception(f"Failed to export dataset {run_id} to NetCDF, copying as-is")
         return _copy_dataset_as_is(dataset, target_conn, target_exp_id)
 
 
