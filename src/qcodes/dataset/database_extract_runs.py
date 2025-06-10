@@ -229,7 +229,7 @@ def export_datasets_and_create_metadata_db(
     # Create export directory if it doesn't exist
     try:
         export_path.mkdir(parents=True, exist_ok=True)
-    except Exception as e:
+    except Exception:
         log.exception(f"Failed to create export directory {export_path}")
         raise
     
@@ -279,15 +279,15 @@ def export_datasets_and_create_metadata_db(
                 )
                 result_status[run_id] = status
                 
-            except Exception as e:
+            except Exception:
                 log.exception(f"Failed to process dataset {run_id}")
-                result_status[run_id] = f"failed: {str(e)}"
+                result_status[run_id] = "failed"
         
         log.info(f"Processing complete. Status summary: {result_status}")
         return result_status
         
-    except Exception as e:
-        log.exception(f"Database operation failed")
+    except Exception:
+        log.exception("Database operation failed")
         raise
     finally:
         if source_conn is not None:
@@ -387,6 +387,6 @@ def _copy_dataset_as_is(
             _extract_single_dataset_into_db(dataset, target_conn_atomic, target_exp_id)
         log.info(f"Successfully copied dataset {dataset.run_id} as-is")
         return "copied_as_is"
-    except Exception as e:
+    except Exception:
         log.exception(f"Failed to copy dataset {dataset.run_id} as-is")
-        return f"failed: {str(e)}"
+        return "failed"
