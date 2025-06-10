@@ -93,7 +93,7 @@ h5netcdf==1.6.1
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-h5py==3.13.0
+h5py==3.14.0
     # via
     #   qcodes (pyproject.toml)
     #   h5netcdf
