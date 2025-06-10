@@ -824,34 +824,47 @@ class KeysightB1520A(KeysightB1500Module):
                     raise AssertionError("Polarity of start and end is not same.")
 
         def linear_sweep(start: float, end: float, steps: int) -> tuple[float, ...]:
-            sweep_val = np.linspace(start, end, steps).tolist()
+            sweep_val = np.linspace(start, end, steps).flatten().tolist()
             return tuple(sweep_val)
 
         def log_sweep(start: float, end: float, steps: int) -> tuple[float, ...]:
-            sweep_val = np.logspace(np.log10(start), np.log10(end), steps).tolist()
+            sweep_val = (
+                np.logspace(np.log10(start), np.log10(end), steps).flatten().tolist()
+            )
             return tuple(sweep_val)
 
         def linear_2way_sweep(
             start: float, end: float, steps: int
         ) -> tuple[float, ...]:
             if steps % 2 == 0:
-                half_list = np.linspace(start, end, steps // 2).tolist()
+                half_list = np.linspace(start, end, steps // 2).flatten().tolist()
                 sweep_val = [*half_list, *half_list[::-1]]
             else:
-                half_list = np.linspace(start, end, steps // 2, endpoint=False).tolist()
+                half_list = (
+                    np.linspace(start, end, steps // 2, endpoint=False)
+                    .flatten()
+                    .tolist()
+                )
                 sweep_val = [*half_list, float(np.float64(end)), *half_list[::-1]]
             return tuple(sweep_val)
 
         def log_2way_sweep(start: float, end: float, steps: int) -> tuple[float, ...]:
             if steps % 2 == 0:
-                half_list = np.logspace(
-                    np.log10(start), np.log10(end), steps // 2
-                ).tolist()
+                half_list = (
+                    np.logspace(np.log10(start), np.log10(end), steps // 2)
+                    .flatten()
+                    .tolist()
+                )
+
                 sweep_val = half_list + half_list[::-1]
             else:
-                half_list = np.logspace(
-                    np.log10(start), np.log10(end), steps // 2, endpoint=False
-                ).tolist()
+                half_list = (
+                    np.logspace(
+                        np.log10(start), np.log10(end), steps // 2, endpoint=False
+                    )
+                    .flatten()
+                    .tolist()
+                )
 
                 sweep_val = [*half_list, np.float64(end), *half_list[::-1]]
             return tuple(sweep_val)
