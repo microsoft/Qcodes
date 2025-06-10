@@ -218,36 +218,55 @@ def export_datasets_and_create_metadata_db(
     else:
         export_path = Path(export_path)
     
+    # Validate source database exists
+    if not source_db_path.exists():
+        raise FileNotFoundError(f"Source database file not found: {source_db_path}")
+    
     log.info(f"Starting export process from {source_db_path} to {target_db_path}")
     log.info(f"NetCDF files will be exported to {export_path}")
     
     # Check database versions
-    (s_v, new_v) = get_db_version_and_newest_available_version(source_db_path)
-    if s_v < new_v and not upgrade_source_db:
-        warn(
-            f"Source DB version is {s_v}, but this function needs it to be"
-            f" in version {new_v}. Run this function again with "
-            "upgrade_source_db=True to auto-upgrade the source DB file."
-        )
-        return {}
-
-    if target_db_path.exists():
-        (t_v, new_v) = get_db_version_and_newest_available_version(target_db_path)
-        if t_v < new_v and not upgrade_target_db:
+    try:
+        (s_v, new_v) = get_db_version_and_newest_available_version(source_db_path)
+        if s_v < new_v and not upgrade_source_db:
             warn(
-                f"Target DB version is {t_v}, but this function needs it to "
-                f"be in version {new_v}. Run this function again with "
-                "upgrade_target_db=True to auto-upgrade the target DB file."
+                f"Source DB version is {s_v}, but this function needs it to be"
+                f" in version {new_v}. Run this function again with "
+                "upgrade_source_db=True to auto-upgrade the source DB file."
             )
             return {}
+    except Exception as e:
+        log.error(f"Failed to check source database version: {e}")
+        raise
+
+    if target_db_path.exists():
+        try:
+            (t_v, new_v) = get_db_version_and_newest_available_version(target_db_path)
+            if t_v < new_v and not upgrade_target_db:
+                warn(
+                    f"Target DB version is {t_v}, but this function needs it to "
+                    f"be in version {new_v}. Run this function again with "
+                    "upgrade_target_db=True to auto-upgrade the target DB file."
+                )
+                return {}
+        except Exception as e:
+            log.error(f"Failed to check target database version: {e}")
+            raise
 
     # Create export directory if it doesn't exist
-    export_path.mkdir(parents=True, exist_ok=True)
+    try:
+        export_path.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        log.error(f"Failed to create export directory {export_path}: {e}")
+        raise
     
-    source_conn = connect(source_db_path)
-    target_conn = connect(target_db_path)
+    source_conn = None
+    target_conn = None
     
     try:
+        source_conn = connect(source_db_path)
+        target_conn = connect(target_db_path)
+        
         # Get all run IDs from the source database
         run_ids = get_runs(source_conn)
         log.info(f"Found {len(run_ids)} datasets to process")
@@ -296,9 +315,14 @@ def export_datasets_and_create_metadata_db(
         log.info(f"Processing complete. Status summary: {result_status}")
         return result_status
         
+    except Exception as e:
+        log.error(f"Database operation failed: {e}")
+        raise
     finally:
-        source_conn.close()
-        target_conn.close()
+        if source_conn is not None:
+            source_conn.close()
+        if target_conn is not None:
+            target_conn.close()
 
 
 def _process_single_dataset(
@@ -331,20 +355,23 @@ def _process_single_dataset(
     try:
         # Try to export to NetCDF
         log.info(f"Attempting to export dataset {run_id} to NetCDF")
-        netcdf_path = dataset.export("netcdf", path=export_path)
+        dataset.export("netcdf", path=export_path)
         
-        if netcdf_path is None:
+        # Check if export was successful by checking export_info
+        netcdf_export_path = dataset.export_info.export_paths.get("nc")
+        if netcdf_export_path is None:
             log.warning(f"Failed to export dataset {run_id} to NetCDF, copying as-is")
             return _copy_dataset_as_is(dataset, target_conn, target_exp_id)
             
-        # Load from NetCDF to create metadata-only dataset
-        log.info(f"Loading dataset {run_id} from NetCDF to create metadata-only version")
-        netcdf_dataset = load_from_netcdf(netcdf_path)
+        log.info(f"Successfully exported dataset {run_id} to {netcdf_export_path}")
         
-        # Insert metadata-only version into target database
+        # Create metadata-only version by copying dataset structure without raw data
+        log.info(f"Creating metadata-only version of dataset {run_id}")
+        
         with atomic(target_conn) as target_conn_atomic:
+            # Add run metadata to runs table, preserving original captured_run_id
             _, _, target_table_name = _add_run_to_runs_table(
-                netcdf_dataset, target_conn_atomic, target_exp_id
+                dataset, target_conn_atomic, target_exp_id
             )
             
             # Note: We deliberately don't populate the results table to keep only metadata
