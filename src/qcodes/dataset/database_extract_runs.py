@@ -1,14 +1,18 @@
 from __future__ import annotations
 
+import logging
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING
 from warnings import warn
 
 import numpy as np
 
 from qcodes.dataset.data_set import DataSet
+from qcodes.dataset.data_set_in_memory import load_from_netcdf
 from qcodes.dataset.dataset_helpers import _add_run_to_runs_table
 from qcodes.dataset.experiment_container import _create_exp_if_needed
+from qcodes.dataset.export_config import get_data_export_path
 from qcodes.dataset.sqlite.connection import AtomicConnection, atomic
 from qcodes.dataset.sqlite.database import (
     connect,
@@ -19,11 +23,14 @@ from qcodes.dataset.sqlite.queries import (
     get_exp_ids_from_run_ids,
     get_experiment_attributes_by_exp_id,
     get_runid_from_guid,
+    get_runs,
     is_run_id_in_database,
 )
 
 if TYPE_CHECKING:
-    from pathlib import Path
+    pass
+
+log = logging.getLogger(__name__)
 
 
 def extract_runs_into_db(
@@ -168,3 +175,202 @@ def _extract_single_dataset_into_db(
     _populate_results_table(
         source_conn, target_conn, dataset.table_name, target_table_name
     )
+
+
+def export_datasets_and_create_metadata_db(
+    source_db_path: str | Path,
+    target_db_path: str | Path,
+    export_path: str | Path | None = None,
+    upgrade_source_db: bool = False,
+    upgrade_target_db: bool = False,
+) -> dict[int, str]:
+    """
+    Export all datasets from a source database to NetCDF files and create
+    a new database file containing only metadata (no raw data) for those exported
+    datasets. Datasets that cannot be exported to NetCDF will be transferred
+    as-is to the new database.
+
+    This function is useful for reducing the size of database files by offloading
+    raw data to NetCDF files while preserving all metadata and structural information.
+
+    Args:
+        source_db_path: Path to the source database file
+        target_db_path: Path to the target database file. Will be created if it doesn't exist.
+        export_path: Optional path where NetCDF files should be exported. If None,
+            uses the default export path from QCoDeS configuration.
+        upgrade_source_db: If the source DB is found to be in a version that is
+            not the newest, should it be upgraded?
+        upgrade_target_db: If the target DB is found to be in a version that is
+            not the newest, should it be upgraded?
+
+    Returns:
+        A dictionary mapping run_id to status ('exported' or 'copied_as_is')
+
+    Raises:
+        ValueError: If there are issues with the database files or datasets
+    """
+    # Convert paths to Path objects
+    source_db_path = Path(source_db_path)
+    target_db_path = Path(target_db_path)
+    
+    if export_path is None:
+        export_path = get_data_export_path()
+    else:
+        export_path = Path(export_path)
+    
+    log.info(f"Starting export process from {source_db_path} to {target_db_path}")
+    log.info(f"NetCDF files will be exported to {export_path}")
+    
+    # Check database versions
+    (s_v, new_v) = get_db_version_and_newest_available_version(source_db_path)
+    if s_v < new_v and not upgrade_source_db:
+        warn(
+            f"Source DB version is {s_v}, but this function needs it to be"
+            f" in version {new_v}. Run this function again with "
+            "upgrade_source_db=True to auto-upgrade the source DB file."
+        )
+        return {}
+
+    if target_db_path.exists():
+        (t_v, new_v) = get_db_version_and_newest_available_version(target_db_path)
+        if t_v < new_v and not upgrade_target_db:
+            warn(
+                f"Target DB version is {t_v}, but this function needs it to "
+                f"be in version {new_v}. Run this function again with "
+                "upgrade_target_db=True to auto-upgrade the target DB file."
+            )
+            return {}
+
+    # Create export directory if it doesn't exist
+    export_path.mkdir(parents=True, exist_ok=True)
+    
+    source_conn = connect(source_db_path)
+    target_conn = connect(target_db_path)
+    
+    try:
+        # Get all run IDs from the source database
+        run_ids = get_runs(source_conn)
+        log.info(f"Found {len(run_ids)} datasets to process")
+        
+        if not run_ids:
+            log.warning("No datasets found in source database")
+            return {}
+        
+        # Process datasets by experiment to preserve structure
+        result_status = {}
+        processed_experiments = {}  # Map source exp_id to target exp_id
+        
+        for run_id in run_ids:
+            try:
+                dataset = DataSet(run_id=run_id, conn=source_conn)
+                exp_id = dataset.exp_id
+                
+                # Create experiment in target DB if not already done
+                if exp_id not in processed_experiments:
+                    exp_attrs = get_experiment_attributes_by_exp_id(source_conn, exp_id)
+                    
+                    with atomic(target_conn) as target_conn_atomic:
+                        target_exp_id = _create_exp_if_needed(
+                            target_conn_atomic,
+                            exp_attrs["name"],
+                            exp_attrs["sample_name"],
+                            exp_attrs["format_string"],
+                            exp_attrs["start_time"],
+                            exp_attrs["end_time"],
+                        )
+                    processed_experiments[exp_id] = target_exp_id
+                    log.info(f"Created experiment '{exp_attrs['name']}' in target database")
+                else:
+                    target_exp_id = processed_experiments[exp_id]
+                
+                # Try to export dataset to NetCDF and create metadata-only version
+                status = _process_single_dataset(
+                    dataset, source_conn, target_conn, export_path, target_exp_id
+                )
+                result_status[run_id] = status
+                
+            except Exception as e:
+                log.error(f"Failed to process dataset {run_id}: {e}")
+                result_status[run_id] = f"failed: {str(e)}"
+        
+        log.info(f"Processing complete. Status summary: {result_status}")
+        return result_status
+        
+    finally:
+        source_conn.close()
+        target_conn.close()
+
+
+def _process_single_dataset(
+    dataset: DataSet,
+    source_conn: AtomicConnection,
+    target_conn: AtomicConnection,
+    export_path: Path,
+    target_exp_id: int,
+) -> str:
+    """
+    Process a single dataset: export to NetCDF and create metadata-only version
+    or copy as-is if export fails.
+    
+    Returns:
+        Status string indicating what was done with the dataset
+    """
+    run_id = dataset.run_id
+    
+    # Check if dataset is already in target database
+    existing_run_id = get_runid_from_guid(target_conn, dataset.guid)
+    if existing_run_id is not None:
+        log.info(f"Dataset {run_id} (GUID: {dataset.guid}) already exists in target database")
+        return "already_exists"
+    
+    # Check if dataset is completed
+    if not dataset.completed:
+        log.warning(f"Dataset {run_id} is not completed, copying as-is")
+        return _copy_dataset_as_is(dataset, target_conn, target_exp_id)
+    
+    try:
+        # Try to export to NetCDF
+        log.info(f"Attempting to export dataset {run_id} to NetCDF")
+        netcdf_path = dataset.export("netcdf", path=export_path)
+        
+        if netcdf_path is None:
+            log.warning(f"Failed to export dataset {run_id} to NetCDF, copying as-is")
+            return _copy_dataset_as_is(dataset, target_conn, target_exp_id)
+            
+        # Load from NetCDF to create metadata-only dataset
+        log.info(f"Loading dataset {run_id} from NetCDF to create metadata-only version")
+        netcdf_dataset = load_from_netcdf(netcdf_path)
+        
+        # Insert metadata-only version into target database
+        with atomic(target_conn) as target_conn_atomic:
+            _, _, target_table_name = _add_run_to_runs_table(
+                netcdf_dataset, target_conn_atomic, target_exp_id
+            )
+            
+            # Note: We deliberately don't populate the results table to keep only metadata
+            log.info(f"Successfully created metadata-only version of dataset {run_id}")
+        
+        return "exported"
+        
+    except Exception as e:
+        log.warning(f"Failed to export dataset {run_id} to NetCDF: {e}, copying as-is")
+        return _copy_dataset_as_is(dataset, target_conn, target_exp_id)
+
+
+def _copy_dataset_as_is(
+    dataset: DataSet,
+    target_conn: AtomicConnection,
+    target_exp_id: int,
+) -> str:
+    """
+    Copy a dataset as-is (with raw data) to the target database.
+    This is used as a fallback when NetCDF export fails.
+    """
+    try:
+        with atomic(target_conn) as target_conn_atomic:
+            _extract_single_dataset_into_db(dataset, target_conn_atomic, target_exp_id)
+        log.info(f"Successfully copied dataset {dataset.run_id} as-is")
+        return "copied_as_is"
+    except Exception as e:
+        log.error(f"Failed to copy dataset {dataset.run_id} as-is: {e}")
+        return f"failed: {str(e)}"
