@@ -83,23 +83,24 @@ def test_export_datasets_and_create_metadata_db_basic(tmp_path, simple_dataset):
     # Check that target database has the run
     target_conn = connect(target_db_path)
     target_runs = get_runs(target_conn)
-        assert len(target_runs) == 1
-        target_conn.close()
-        
-        # Check that NetCDF file was created if export was successful
-        if result[run_id] == "exported":
-            netcdf_files = list(export_path.glob("*.nc"))
-            assert len(netcdf_files) > 0
-
-
-def test_export_datasets_preserve_experiment_structure(tmp_path):
-    """Test that experiment structure is preserved in the target database"""
-    source_db_path = tmp_path / "source.db"
-    target_db_path = tmp_path / "target.db"
-    export_path = tmp_path / "exports"
+    assert len(target_runs) == 1
+    target_conn.close()
     
-    # Create source database with multiple experiments
-    source_conn = connect(source_db_path)
+    # Check that NetCDF file was created if export was successful
+    if result[run_id] == "exported":
+        netcdf_files = list(export_path.glob("*.nc"))
+        assert len(netcdf_files) > 0
+
+
+def test_export_datasets_preserve_experiment_structure():
+    """Test that experiment structure is preserved in the target database"""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        source_db_path = Path(temp_dir) / "source.db"
+        target_db_path = Path(temp_dir) / "target.db"
+        export_path = Path(temp_dir) / "exports"
+        
+        # Create source database with multiple experiments
+        source_conn = connect(source_db_path)
         
         # Create first experiment
         exp1 = load_or_create_experiment(
@@ -338,6 +339,7 @@ def test_export_datasets_readonly_target():
 
 
 
+
 def test_export_datasets_large_dataset_scenario():
     """Test handling of a scenario with multiple datasets including edge cases"""
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -399,34 +401,77 @@ def test_export_datasets_large_dataset_scenario():
         assert result[incomplete_dataset.run_id] == "copied_as_is"
 
 
-def test_export_datasets_status_reporting(tmp_path, dataset_factory):
-    """Test that the function returns detailed status information"""
-    source_db_path, run_id, dataset = dataset_factory(tmp_path, name="status_test")
+def test_export_datasets_prevents_overwriting_target(tmp_path, simple_dataset):
+    """Test that the function prevents overwriting existing target database files"""
+    source_db_path, run_id, _ = simple_dataset
     target_db_path = tmp_path / "target.db"
     export_path = tmp_path / "exports"
     
-    # Run the export function
-    result = export_datasets_and_create_metadata_db(
-        source_db_path=source_db_path,
-        target_db_path=target_db_path,
-        export_path=export_path,
-    )
+    # Create an existing target database file
+    target_db_path.touch()
     
-    # Check return value structure
-    assert isinstance(result, dict)
-    assert len(result) == 1
-    assert run_id in result
-    
-    # Status should be one of the expected values
-    status = result[run_id]
-    expected_statuses = ["exported", "copied_as_is", "already_exists"]
-    assert status in expected_statuses, f"Unexpected status: {status}"
-    
-    # If we run again, should report already_exists
-    result2 = export_datasets_and_create_metadata_db(
-        source_db_path=source_db_path,
-        target_db_path=target_db_path,
-        export_path=export_path,
-    )
-    
-    assert result2[run_id] == "already_exists"
+    # Should raise FileExistsError when target already exists
+    with pytest.raises(FileExistsError, match="Target database file already exists"):
+        export_datasets_and_create_metadata_db(
+            source_db_path=source_db_path,
+            target_db_path=target_db_path,
+            export_path=export_path,
+        )
+
+
+def test_export_datasets_status_reporting():
+    """Test that the function returns detailed status information"""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        source_db_path = Path(temp_dir) / "source.db"
+        target_db_path = Path(temp_dir) / "target.db"
+        export_path = Path(temp_dir) / "exports"
+        
+        # Create source database with a completed dataset
+        source_conn = connect(source_db_path)
+        exp = load_or_create_experiment(
+            experiment_name="test_exp",
+            sample_name="test_sample",
+            conn=source_conn
+        )
+        
+        # Create interdependencies
+        x = ParamSpec("x", "numeric", unit="V")
+        y = ParamSpec("y", "numeric", unit="A")
+        interdeps = InterDependencies_(dependencies={y: (x,)})
+        
+        # Create and complete a dataset
+        dataset = DataSet(conn=source_conn, exp_id=exp.exp_id)
+        dataset.set_interdependencies(interdeps)
+        dataset.mark_started()
+        
+        for i in range(5):
+            dataset.add_results([{"x": i, "y": i**2}])
+        
+        dataset.mark_completed()
+        source_conn.close()
+        
+        # Run the export function
+        result = export_datasets_and_create_metadata_db(
+            source_db_path=source_db_path,
+            target_db_path=target_db_path,
+            export_path=export_path,
+        )
+        
+        # Check return value structure
+        assert isinstance(result, dict)
+        assert len(result) == 1
+        assert dataset.run_id in result
+        
+        # Status should be one of the expected values
+        status = result[dataset.run_id]
+        expected_statuses = ["exported", "copied_as_is", "already_exists"]
+        assert status in expected_statuses, f"Unexpected status: {status}"
+        
+        # If we run again, should report already_exists
+        result2 = export_datasets_and_create_metadata_db(
+            source_db_path=source_db_path,
+            target_db_path=target_db_path,
+            export_path=export_path,
+        )
+        
+        assert result2[dataset.run_id] == "already_exists"
