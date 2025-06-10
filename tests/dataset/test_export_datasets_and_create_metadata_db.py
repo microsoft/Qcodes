@@ -245,6 +245,94 @@ def test_export_datasets_default_export_path(simple_dataset):
         assert run_id in result
 
 
+def test_export_datasets_handles_export_failure():
+    """Test that the function handles export failures gracefully"""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        source_db_path = Path(temp_dir) / "source.db"
+        target_db_path = Path(temp_dir) / "target.db"
+        export_path = Path(temp_dir) / "exports"
+        
+        # Create source database
+        source_conn = connect(source_db_path)
+        exp = load_or_create_experiment(
+            experiment_name="test_exp",
+            sample_name="test_sample",
+            conn=source_conn
+        )
+        
+        # Create interdependencies with problematic data that might fail export
+        x = ParamSpec("x", "text", unit="")  # Text data might be harder to export
+        y = ParamSpec("y", "numeric", unit="A")
+        interdeps = InterDependencies_(dependencies={y: (x,)})
+        
+        # Create dataset with mixed data types
+        dataset = DataSet(conn=source_conn, exp_id=exp.exp_id)
+        dataset.set_interdependencies(interdeps)
+        dataset.mark_started()
+        
+        # Add some data that might be challenging to export
+        for i in range(3):
+            dataset.add_results([{"x": f"text_{i}", "y": i**2}])
+        
+        dataset.mark_completed()
+        source_conn.close()
+        
+        # Run the export function
+        result = export_datasets_and_create_metadata_db(
+            source_db_path=source_db_path,
+            target_db_path=target_db_path,
+            export_path=export_path,
+        )
+        
+        # Should handle the dataset one way or another
+        assert len(result) == 1
+        assert dataset.run_id in result
+        # Should either export or copy as-is
+        assert result[dataset.run_id] in ["exported", "copied_as_is"]
+
+
+def test_export_datasets_nonexistent_source():
+    """Test behavior with non-existent source database"""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        source_db_path = Path(temp_dir) / "nonexistent.db"
+        target_db_path = Path(temp_dir) / "target.db"
+        export_path = Path(temp_dir) / "exports"
+        
+        # Should handle non-existent source gracefully
+        with pytest.raises((FileNotFoundError, OSError)):
+            export_datasets_and_create_metadata_db(
+                source_db_path=source_db_path,
+                target_db_path=target_db_path,
+                export_path=export_path,
+            )
+
+
+def test_export_datasets_readonly_target():
+    """Test behavior when target path is not writable"""
+    source_db_path, run_id = simple_dataset
+    
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Create a read-only directory for target
+        readonly_dir = Path(temp_dir) / "readonly"
+        readonly_dir.mkdir()
+        readonly_dir.chmod(0o444)  # Read-only
+        
+        try:
+            target_db_path = readonly_dir / "target.db"
+            export_path = Path(temp_dir) / "exports"
+            
+            # Should handle permission errors gracefully
+            with pytest.raises((PermissionError, OSError)):
+                export_datasets_and_create_metadata_db(
+                    source_db_path=source_db_path,
+                    target_db_path=target_db_path,
+                    export_path=export_path,
+                )
+        finally:
+            # Restore permissions for cleanup
+            readonly_dir.chmod(0o755)
+
+
 @pytest.mark.parametrize(
     "upgrade_source,upgrade_target",
     [
@@ -274,3 +362,122 @@ def test_export_datasets_upgrade_flags(simple_dataset, upgrade_source, upgrade_t
         # Function should complete successfully regardless of upgrade flags
         # (assuming databases are already current version)
         assert isinstance(result, dict)
+
+
+def test_export_datasets_large_dataset_scenario():
+    """Test handling of a scenario with multiple datasets including edge cases"""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        source_db_path = Path(temp_dir) / "source.db"
+        target_db_path = Path(temp_dir) / "target.db"
+        export_path = Path(temp_dir) / "exports"
+        
+        # Create source database
+        source_conn = connect(source_db_path)
+        exp = load_or_create_experiment(
+            experiment_name="test_exp",
+            sample_name="test_sample",
+            conn=source_conn
+        )
+        
+        # Create interdependencies
+        x = ParamSpec("x", "numeric", unit="V")
+        y = ParamSpec("y", "numeric", unit="A")
+        interdeps = InterDependencies_(dependencies={y: (x,)})
+        
+        created_datasets = []
+        
+        # Create several datasets with different characteristics
+        for i in range(5):
+            dataset = DataSet(conn=source_conn, exp_id=exp.exp_id)
+            dataset.set_interdependencies(interdeps)
+            dataset.mark_started()
+            
+            # Add varying amounts of data
+            for j in range(i + 1):  # 1, 2, 3, 4, 5 data points respectively
+                dataset.add_results([{"x": j, "y": j * (i + 1)}])
+            
+            if i < 4:  # Leave one dataset incomplete
+                dataset.mark_completed()
+            
+            created_datasets.append(dataset)
+        
+        source_conn.close()
+        
+        # Run the export function
+        result = export_datasets_and_create_metadata_db(
+            source_db_path=source_db_path,
+            target_db_path=target_db_path,
+            export_path=export_path,
+        )
+        
+        # Check that all datasets were processed
+        assert len(result) == 5
+        
+        # Check that target database has all runs
+        target_conn = connect(target_db_path)
+        target_runs = get_runs(target_conn)
+        target_conn.close()
+        
+        assert len(target_runs) == 5
+        
+        # The incomplete dataset should be copied as-is
+        incomplete_dataset = created_datasets[-1]
+        assert result[incomplete_dataset.run_id] == "copied_as_is"
+
+
+def test_export_datasets_status_reporting():
+    """Test that the function returns detailed status information"""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        source_db_path = Path(temp_dir) / "source.db"
+        target_db_path = Path(temp_dir) / "target.db"
+        export_path = Path(temp_dir) / "exports"
+        
+        # Create source database with a completed dataset
+        source_conn = connect(source_db_path)
+        exp = load_or_create_experiment(
+            experiment_name="test_exp",
+            sample_name="test_sample",
+            conn=source_conn
+        )
+        
+        # Create interdependencies
+        x = ParamSpec("x", "numeric", unit="V")
+        y = ParamSpec("y", "numeric", unit="A")
+        interdeps = InterDependencies_(dependencies={y: (x,)})
+        
+        # Create and complete a dataset
+        dataset = DataSet(conn=source_conn, exp_id=exp.exp_id)
+        dataset.set_interdependencies(interdeps)
+        dataset.mark_started()
+        
+        for i in range(5):
+            dataset.add_results([{"x": i, "y": i**2}])
+        
+        dataset.mark_completed()
+        source_conn.close()
+        
+        # Run the export function
+        result = export_datasets_and_create_metadata_db(
+            source_db_path=source_db_path,
+            target_db_path=target_db_path,
+            export_path=export_path,
+        )
+        
+        # Check return value structure
+        assert isinstance(result, dict)
+        assert len(result) == 1
+        assert dataset.run_id in result
+        
+        # Status should be one of the expected values
+        status = result[dataset.run_id]
+        expected_statuses = ["exported", "copied_as_is", "already_exists"]
+        assert status in expected_statuses, f"Unexpected status: {status}"
+        
+        # If we run again, should report already_exists
+        result2 = export_datasets_and_create_metadata_db(
+            source_db_path=source_db_path,
+            target_db_path=target_db_path,
+            export_path=export_path,
+        )
+        
+        assert result2[dataset.run_id] == "already_exists"
