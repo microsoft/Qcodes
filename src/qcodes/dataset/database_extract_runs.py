@@ -353,18 +353,16 @@ def _process_single_dataset(
             
         log.info(f"Dataset {run_id} available as NetCDF at {netcdf_export_path}")
         
-        # Create metadata-only version by copying dataset structure without raw data
+        # Create metadata-only version by loading from NetCDF and writing metadata to target database
         log.info(f"Creating metadata-only version of dataset {run_id}")
         
-        with atomic(target_conn) as target_conn_atomic:
-            # Add run metadata to runs table, preserving original GUID and captured_run_id
-            # Using _add_run_to_runs_table as it's the appropriate API for dataset extraction
-            _, _, target_table_name = _add_run_to_runs_table(
-                dataset, target_conn_atomic, target_exp_id
-            )
-            
-            # Note: We deliberately don't populate the results table to keep only metadata
-            log.info(f"Successfully created metadata-only version of dataset {run_id}")
+        # Load dataset from the NetCDF file
+        netcdf_dataset = load_from_netcdf(netcdf_export_path, path_to_db=target_conn.path_to_dbfile)
+        
+        # Write only metadata (no raw data) to the target database
+        netcdf_dataset.write_metadata_to_db(path_to_db=target_conn.path_to_dbfile)
+        
+        log.info(f"Successfully created metadata-only version of dataset {run_id}")
         
         return "exported"
         
