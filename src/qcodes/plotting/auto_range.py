@@ -10,7 +10,7 @@ DEFAULT_PERCENTILE = (50, 50)
 
 
 def auto_range_iqr(
-    data_array: npt.NDArray,
+    data_array: npt.NDArray[np.floating],
     cutoff_percentile: tuple[float, float] | float = DEFAULT_PERCENTILE,
 ) -> tuple[float, float]:
     """
@@ -50,12 +50,12 @@ def auto_range_iqr(
     # also test for zrange to be 0.0 to avoid division by 0.
     # all This is possibly to careful...
     if zrange == 0.0 or IQR / zrange < 1e-8:
-        vmin = zmin
-        vmax = zmax
+        vmin = float(zmin)
+        vmax = float(zmax)
     else:
-        vmin = max(q1 - 1.5 * IQR, zmin)
-        vmax = min(q3 + 1.5 * IQR, zmax)
+        vmin = max(float(q1 - 1.5 * IQR), float(zmin))
+        vmax = min(float(q3 + 1.5 * IQR), float(zmax))
         # do not clip more than cutoff_percentile:
-        vmin = min(vmin, pmin)
-        vmax = max(vmax, pmax)
+        vmin = min(vmin, float(pmin))
+        vmax = max(vmax, float(pmax))
     return vmin, vmax
