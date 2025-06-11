@@ -69,3 +69,9 @@ The **start time** is automatically added upon creation, and the **end time** is
 The **GUID** is a run identifier that aims to go `beyond` the current database. The motivation for the GUID is that collaboration and data sharing across several machines requires a run to be labelled by something more than its name and number in the local database. The GUID is a standard 36 character string GUID composed from three integer codes and a timestamp. The codes are: location code (1-256), work station code (1-16777216), sample code (1-4294967296). The idea is that the people in a certain collaboration will label their locations, machines, and samples according to a scheme agreed upon `within` the relevant collaboration. That way, each run is uniquely identifiable in a human-readable way. This extra label for runs is offered as a convenience as is as such not essential for any functionality in QCoDeS.
 
 For an example notebook showing details of ``DataSet`` class and its usage, see the :doc:`DataSet class walkthrough notebook <../examples/DataSet/DataSet-class-walkthrough>` and :doc:`Accessing data in DataSet notebook <../examples/DataSet/Accessing-data-in-DataSet>`.
+
+For dataset operations, QCoDeS provides functions for:
+
+- **Exporting datasets**: :doc:`Exporting data to other file formats <../examples/DataSet/Exporting-data-to-other-file-formats>`
+- **Extracting runs between databases**: :doc:`Extracting runs from one DB file to another <../examples/DataSet/Extracting-runs-from-one-DB-file-to-another>` and :func:`qcodes.dataset.extract_runs_into_db`
+- **Bulk export and metadata-only databases**: :func:`qcodes.dataset.export_datasets_and_create_metadata_db` for creating lightweight metadata-only databases while exporting all data to NetCDF files
