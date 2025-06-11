@@ -8,14 +8,15 @@ from typing import Literal
 from warnings import warn
 
 import numpy as np
-
 from tqdm.auto import tqdm
 
 from qcodes.dataset.data_set import DataSet, load_by_id
 from qcodes.dataset.data_set_in_memory import load_from_netcdf
 from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.dataset_helpers import _add_run_to_runs_table
-from qcodes.dataset.experiment_container import _create_exp_if_needed, load_or_create_experiment
+from qcodes.dataset.experiment_container import (
+    _create_exp_if_needed,
+)
 from qcodes.dataset.export_config import get_data_export_path
 from qcodes.dataset.sqlite.connection import AtomicConnection, atomic
 from qcodes.dataset.sqlite.database import (
@@ -200,6 +201,7 @@ def export_datasets_and_create_metadata_db(
 
     Returns:
         A dictionary mapping run_id to status ('exported', 'copied_as_is', 'already_exists', or 'failed')
+
     """
     source_db_path = Path(source_db_path)
 
@@ -210,37 +212,46 @@ def export_datasets_and_create_metadata_db(
         run_ids = sorted(get_runs(source_con))
         log.debug(f"Found {len(run_ids)} datasets to process")
         if not run_ids:
-            log.warning("No datasets found in source database {source_db_path}, nothing to export")
+            log.warning(
+                "No datasets found in source database {source_db_path}, nothing to export"
+            )
             return {}
-    
+
     target_db_path = Path(target_db_path)
 
     if target_db_path.exists():
-        raise FileExistsError(f"Target database file already exists: {target_db_path}. "
-                             "Please choose a different path or remove the existing file.")
-    
+        raise FileExistsError(
+            f"Target database file already exists: {target_db_path}. "
+            "Please choose a different path or remove the existing file."
+        )
+
     if export_path is None:
         export_path = get_data_export_path()
     else:
-        export_path = Path(export_path)    
-    
+        export_path = Path(export_path)
+
     try:
         export_path.mkdir(parents=True, exist_ok=True)
     except Exception as e:
         raise RuntimeError(f"Failed to create export directory {export_path}") from e
 
-    log.info(f"Starting NetCDF export process from {source_db_path} to {export_path}, and creating metadata-only database file {target_db_path}.")
-    
+    log.info(
+        f"Starting NetCDF export process from {source_db_path} to {export_path}, and creating metadata-only database file {target_db_path}."
+    )
+
     # Process datasets by experiment to preserve structure
     result_status = {}
     processed_experiments = {}  # Map source exp_id to target exp_id
-    
-    with closing(connect(source_db_path)) as source_conn, closing(connect(target_db_path)) as target_conn:
+
+    with (
+        closing(connect(source_db_path)) as source_conn,
+        closing(connect(target_db_path)) as target_conn,
+    ):
         for run_id in tqdm(run_ids):
             try:
                 dataset = load_by_id(run_id, conn=source_conn)
                 exp_id = dataset.exp_id
-                
+
                 # Create experiment in target DB if not already done
                 if exp_id not in processed_experiments:
                     exp_attrs = get_experiment_attributes_by_exp_id(source_conn, exp_id)
@@ -254,24 +265,26 @@ def export_datasets_and_create_metadata_db(
                             exp_attrs["start_time"],
                             exp_attrs["end_time"],
                         )
-                    
+
                     processed_experiments[exp_id] = target_exp_id
-                    log.info(f"Created experiment '{exp_attrs['name']}' with ID {target_exp_id} in target database")
+                    log.info(
+                        f"Created experiment '{exp_attrs['name']}' with ID {target_exp_id} in target database"
+                    )
                 else:
                     target_exp_id = processed_experiments[exp_id]
-                
+
                 # Try to export dataset to NetCDF and create metadata-only version
                 status = _process_single_dataset(
                     dataset, source_conn, target_conn, export_path, target_exp_id
                 )
                 result_status[run_id] = status
-                
+
             except Exception as e:
                 log.exception(f"Failed to process dataset {run_id}")
                 log.warning(f"Failed to process dataset {run_id}: {e}")
                 result_status[run_id] = "failed"
-        
-    log.info(f"Exporting complete.")
+
+    log.info("Exporting complete.")
     return result_status
 
 
@@ -286,17 +299,20 @@ def _process_single_dataset(
     Export a dataset to NetCDF and add its metadata
     to target database file, or, if it fails, copy directily
     into the target database file.
-    
+
     Returns:
         Status string indicating what was done with the dataset
+
     """
     run_id = dataset.run_id
-    
+
     existing_run_id = get_runid_from_guid(target_conn, dataset.guid)
     if existing_run_id is not None:
-        log.debug(f"Dataset {run_id} (GUID: {dataset.guid}) already exists in target database")
+        log.debug(
+            f"Dataset {run_id} (GUID: {dataset.guid}) already exists in target database"
+        )
         return "already_exists"
-    
+
     netcdf_export_path = None
 
     existing_netcdf_path = dataset.export_info.export_paths.get("nc")
@@ -304,30 +320,40 @@ def _process_single_dataset(
         existing_path = Path(existing_netcdf_path)
         # Check if the existing export path matches the desired export path
         if existing_path.exists() and existing_path.parent == export_path:
-            log.debug(f"Dataset {run_id} already exported to NetCDF at {existing_netcdf_path}")
+            log.debug(
+                f"Dataset {run_id} already exported to NetCDF at {existing_netcdf_path}"
+            )
             netcdf_export_path = existing_netcdf_path
         else:
-            log.info(f"Dataset {run_id} was exported to different location, re-exporting to {export_path}")
+            log.info(
+                f"Dataset {run_id} was exported to different location, re-exporting to {export_path}"
+            )
     else:
         log.debug(f"Attempting to export dataset {run_id} to NetCDF")
-    
+
     if netcdf_export_path is None:
         try:
             dataset.export("netcdf", path=export_path)
             netcdf_export_path = dataset.export_info.export_paths.get("nc")
             assert netcdf_export_path is not None
         except Exception:
-            log.exception(f"Failed to export dataset {run_id} to NetCDF to {export_path}")
+            log.exception(
+                f"Failed to export dataset {run_id} to NetCDF to {export_path}"
+            )
             log.warning(f"Failed to export dataset {run_id} to NetCDF, copying as-is")
             return _copy_dataset_as_is(dataset, source_conn, target_conn, target_exp_id)
-        
+
     log.debug(f"Dataset {run_id} available as NetCDF at {netcdf_export_path}")
-        
-    netcdf_dataset = load_from_netcdf(netcdf_export_path, path_to_db=target_conn.path_to_dbfile)
+
+    netcdf_dataset = load_from_netcdf(
+        netcdf_export_path, path_to_db=target_conn.path_to_dbfile
+    )
     netcdf_dataset.write_metadata_to_db()
-        
-    log.info(f"Successfully wrote dataset metadata of {run_id} to {target_conn.path_to_dbfile}")
-        
+
+    log.info(
+        f"Successfully wrote dataset metadata of {run_id} to {target_conn.path_to_dbfile}"
+    )
+
     return "exported"
 
 
@@ -340,7 +366,9 @@ def _copy_dataset_as_is(
     try:
         dataset_obj = DataSet(run_id=dataset.run_id, conn=source_conn)
         with atomic(target_conn) as target_conn_atomic:
-            _extract_single_dataset_into_db(dataset_obj, target_conn_atomic, target_exp_id)
+            _extract_single_dataset_into_db(
+                dataset_obj, target_conn_atomic, target_exp_id
+            )
         log.debug(f"Successfully copied dataset {dataset.run_id} as-is")
         return "copied_as_is"
     except Exception:
