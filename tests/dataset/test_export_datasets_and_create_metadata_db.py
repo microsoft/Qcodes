@@ -5,11 +5,11 @@ Tests for the export_datasets_and_create_metadata_db functionality
 import pytest
 
 from qcodes.dataset import (
-    DataSet,
     connect,
     export_datasets_and_create_metadata_db,
     load_or_create_experiment,
 )
+from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec
 from qcodes.dataset.sqlite.queries import get_runs
