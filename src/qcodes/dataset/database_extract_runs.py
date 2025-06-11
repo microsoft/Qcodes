@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import logging
 import os
+from contextlib import closing
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 from warnings import warn
 
 import numpy as np
@@ -229,7 +230,7 @@ def export_datasets_and_create_metadata_db(
     try:
         export_path.mkdir(parents=True, exist_ok=True)
     except Exception as e:
-        raise RuntimeException(f"Failed to create export directory {export_path}") from e
+        raise RuntimeError(f"Failed to create export directory {export_path}") from e
 
     log.info(f"Starting NetCDF export process from {source_db_path} to {export_path}, and creating metadata-only database file {target_db_path}.")
     
@@ -324,6 +325,10 @@ def _process_single_dataset(
             return _copy_dataset_as_is(dataset, source_conn, target_conn, target_exp_id)
         
     log.debug(f"Dataset {run_id} available as NetCDF at {netcdf_export_path}")
+    
+    if netcdf_export_path is None:
+        log.error(f"NetCDF export path is None for dataset {run_id}, copying as-is")
+        return _copy_dataset_as_is(dataset, source_conn, target_conn, target_exp_id)
         
     netcdf_dataset = load_from_netcdf(netcdf_export_path, path_to_db=target_conn.path_to_dbfile)
     netcdf_dataset.write_metadata_to_db()
