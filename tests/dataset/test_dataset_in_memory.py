@@ -511,19 +511,27 @@ def test_load_from_file_by_id(meas_with_registered_param, DMM, DAC, tmp_path) ->
     assert not isinstance(loaded_ds_from_db, DataSetInMem)
 
 
-def test_load_from_netcdf_non_completed_dataset(
-    meas_with_registered_param, DMM, DAC, tmp_path
-) -> None:
+def test_load_from_netcdf_non_completed_dataset(tmp_path) -> None:
     """Test that non-completed datasets can be loaded from netcdf files."""
-    with meas_with_registered_param.run(
-        dataset_class=DataSetType.DataSetInMem
-    ) as datasaver:
-        for set_v in np.linspace(0, 25, 5):
-            DAC.ch1.set(set_v)
-            get_v = DMM.v1()
-            datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
+    # Create a non-completed dataset by NOT using the measurement context manager
+    # which automatically completes the dataset on exit
+    ds = DataSetInMem._create_new_run(name="test-dataset")
     
-    ds = datasaver.dataset
+    # Set up interdependencies with simple parameters  
+    from qcodes.dataset.descriptions.dependencies import InterDependencies_
+    from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+    
+    x_param = ParamSpecBase("x", paramtype="numeric")
+    y_param = ParamSpecBase("y", paramtype="numeric")
+    idps = InterDependencies_(dependencies={y_param: (x_param,)})
+    ds._set_interdependencies(idps)
+    ds._perform_start_actions()
+    
+    # Add some data points
+    for x_val in np.linspace(0, 25, 5):
+        y_val = x_val ** 2  # simple function
+        ds.add_results([{x_param.name: x_val, y_param.name: y_val}])
+    
     # Note: do NOT call ds.mark_completed() to keep it non-completed
     
     # Verify that the dataset is not completed
