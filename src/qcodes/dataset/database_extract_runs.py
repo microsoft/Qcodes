@@ -198,7 +198,7 @@ def export_datasets_and_create_metadata_db(
             uses the default export path from QCoDeS configuration.
 
     Returns:
-        A dictionary mapping run_id to status ('exported' or 'copied_as_is')
+        A dictionary mapping run_id to status ('exported', 'copied_as_is', 'already_exists', or 'failed')
 
     Raises:
         ValueError: If there are issues with the database files or datasets
@@ -328,6 +328,8 @@ def _process_single_dataset(
         existing_netcdf_path = dataset.export_info.export_paths.get("nc")
         
         need_export = True
+        netcdf_export_path = None
+        
         if existing_netcdf_path is not None:
             # Check if the existing export path matches the desired export path
             existing_path = Path(existing_netcdf_path)
@@ -362,7 +364,7 @@ def _process_single_dataset(
         netcdf_dataset = load_from_netcdf(netcdf_export_path, path_to_db=target_conn.path_to_dbfile)
         
         # Write only metadata (no raw data) to the target database
-        netcdf_dataset.write_metadata_to_db(path_to_db=target_conn.path_to_dbfile)
+        netcdf_dataset.write_metadata_to_db()
         
         log.info(f"Successfully created metadata-only version of dataset {run_id}")
         
