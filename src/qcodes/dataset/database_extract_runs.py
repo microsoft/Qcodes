@@ -10,6 +10,7 @@ import numpy as np
 
 from qcodes.dataset.data_set import DataSet, load_by_id
 from qcodes.dataset.data_set_in_memory import load_from_netcdf
+from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.dataset_helpers import _add_run_to_runs_table
 from qcodes.dataset.experiment_container import _create_exp_if_needed, load_or_create_experiment
 from qcodes.dataset.export_config import get_data_export_path
@@ -297,7 +298,7 @@ def export_datasets_and_create_metadata_db(
 
 
 def _process_single_dataset(
-    dataset: DataSet,
+    dataset: DataSetProtocol,
     source_conn: AtomicConnection,
     target_conn: AtomicConnection,
     export_path: Path,
@@ -321,7 +322,7 @@ def _process_single_dataset(
     # Check if dataset is completed
     if not dataset.completed:
         log.warning(f"Dataset {run_id} is not completed, copying as-is")
-        return _copy_dataset_as_is(dataset, target_conn, target_exp_id)
+        return _copy_dataset_as_is(dataset, source_conn, target_conn, target_exp_id)
     
     try:
         # Check if dataset has already been exported to NetCDF
@@ -353,7 +354,7 @@ def _process_single_dataset(
         # Check if export was successful
         if netcdf_export_path is None:
             log.warning(f"Failed to export dataset {run_id} to NetCDF, copying as-is")
-            return _copy_dataset_as_is(dataset, target_conn, target_exp_id)
+            return _copy_dataset_as_is(dataset, source_conn, target_conn, target_exp_id)
             
         log.info(f"Dataset {run_id} available as NetCDF at {netcdf_export_path}")
         
@@ -372,11 +373,12 @@ def _process_single_dataset(
         
     except Exception:
         log.exception(f"Failed to export dataset {run_id} to NetCDF, copying as-is")
-        return _copy_dataset_as_is(dataset, target_conn, target_exp_id)
+        return _copy_dataset_as_is(dataset, source_conn, target_conn, target_exp_id)
 
 
 def _copy_dataset_as_is(
-    dataset: DataSet,
+    dataset: DataSetProtocol,
+    source_conn: AtomicConnection,
     target_conn: AtomicConnection,
     target_exp_id: int,
 ) -> str:
@@ -385,8 +387,10 @@ def _copy_dataset_as_is(
     This is used as a fallback when NetCDF export fails.
     """
     try:
+        # Create a DataSet instance for the low-level extraction function
+        dataset_obj = DataSet(run_id=dataset.run_id, conn=source_conn)
         with atomic(target_conn) as target_conn_atomic:
-            _extract_single_dataset_into_db(dataset, target_conn_atomic, target_exp_id)
+            _extract_single_dataset_into_db(dataset_obj, target_conn_atomic, target_exp_id)
         log.info(f"Successfully copied dataset {dataset.run_id} as-is")
         return "copied_as_is"
     except Exception:
