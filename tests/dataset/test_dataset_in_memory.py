@@ -511,6 +511,45 @@ def test_load_from_file_by_id(meas_with_registered_param, DMM, DAC, tmp_path) ->
     assert not isinstance(loaded_ds_from_db, DataSetInMem)
 
 
+def test_load_from_netcdf_non_completed_dataset(
+    meas_with_registered_param, DMM, DAC, tmp_path
+) -> None:
+    """Test that non-completed datasets can be loaded from netcdf files."""
+    with meas_with_registered_param.run(
+        dataset_class=DataSetType.DataSetInMem
+    ) as datasaver:
+        for set_v in np.linspace(0, 25, 5):
+            DAC.ch1.set(set_v)
+            get_v = DMM.v1()
+            datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
+    
+    ds = datasaver.dataset
+    # Note: do NOT call ds.mark_completed() to keep it non-completed
+    
+    # Verify that the dataset is not completed
+    assert ds.completed_timestamp_raw is None
+    assert not ds.completed
+    
+    # Export the non-completed dataset to NetCDF
+    ds.export(export_type="netcdf", path=str(tmp_path))
+    
+    # Load the dataset from NetCDF 
+    loaded_ds = DataSetInMem._load_from_netcdf(
+        tmp_path / f"qcodes_{ds.captured_run_id}_{ds.guid}.nc"
+    )
+    
+    # Verify that the loaded dataset is still non-completed
+    assert isinstance(loaded_ds, DataSetInMem)
+    assert loaded_ds.completed_timestamp_raw is None
+    assert not loaded_ds.completed
+    
+    # Compare other properties
+    assert loaded_ds.captured_run_id == ds.captured_run_id
+    assert loaded_ds.guid == ds.guid
+    assert loaded_ds.name == ds.name
+    assert loaded_ds.run_timestamp_raw == ds.run_timestamp_raw
+
+
 def test_load_from_netcdf_legacy_version(non_created_db) -> None:
     # Qcodes 0.26 exported netcdf files did not contain
     # the parent dataset links and used a different engine to write data
