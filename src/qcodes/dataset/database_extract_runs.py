@@ -319,10 +319,9 @@ def _process_single_dataset(
             dataset.export("netcdf", path=export_path)
             netcdf_export_path = dataset.export_info.export_paths.get("nc")
             assert netcdf_export_path is not None
-        except Exception as e:
+        except Exception:
             log.exception(f"Failed to export dataset {run_id} to NetCDF to {export_path}")
             log.warning(f"Failed to export dataset {run_id} to NetCDF, copying as-is")
-            # TODO: in this case add metadata to runs table as well
             return _copy_dataset_as_is(dataset, source_conn, target_conn, target_exp_id)
         
     log.debug(f"Dataset {run_id} available as NetCDF at {netcdf_export_path}")
