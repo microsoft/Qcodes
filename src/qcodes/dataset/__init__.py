@@ -89,6 +89,7 @@ __all__ = [
     "dond",
     "dond_into",
     "experiments",
+    "export_datasets_and_create_metadata_db",
     "extract_runs_into_db",
     "get_data_export_path",
     "get_default_experiment_id",
