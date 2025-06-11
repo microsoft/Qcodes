@@ -4,7 +4,7 @@ import logging
 import os
 from contextlib import closing
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 from warnings import warn
 
 import numpy as np
@@ -30,9 +30,6 @@ from qcodes.dataset.sqlite.queries import (
     get_runs,
     is_run_id_in_database,
 )
-
-if TYPE_CHECKING:
-    pass
 
 log = logging.getLogger(__name__)
 
