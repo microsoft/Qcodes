@@ -4,7 +4,7 @@ import logging
 import os
 from contextlib import closing
 from pathlib import Path
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 from warnings import warn
 
 import numpy as np
@@ -12,7 +12,6 @@ from tqdm.auto import tqdm
 
 from qcodes.dataset.data_set import DataSet, load_by_id
 from qcodes.dataset.data_set_in_memory import load_from_netcdf
-from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.dataset_helpers import _add_run_to_runs_table
 from qcodes.dataset.experiment_container import (
     _create_exp_if_needed,
@@ -31,6 +30,9 @@ from qcodes.dataset.sqlite.queries import (
     get_runs,
     is_run_id_in_database,
 )
+
+if TYPE_CHECKING:
+    from qcodes.dataset.data_set_protocol import DataSetProtocol
 
 log = logging.getLogger(__name__)
 
