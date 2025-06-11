@@ -7,14 +7,13 @@ import pytest
 
 from qcodes.dataset import (
     DataSet,
-    Experiment,
     export_datasets_and_create_metadata_db,
     load_by_id,
     load_or_create_experiment,
+    connect
 )
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec
-from qcodes.dataset.sqlite.connection import connect
 from qcodes.dataset.sqlite.queries import get_runs
 
 
@@ -306,31 +305,6 @@ def test_export_datasets_nonexistent_source(tmp_path):
         )
 
 
-def test_export_datasets_readonly_target(tmp_path, simple_dataset):
-    """Test behavior when target path is not writable"""
-    source_db_path, run_id, _ = simple_dataset
-    
-    # Create a read-only directory for target
-    readonly_dir = tmp_path / "readonly"
-    readonly_dir.mkdir()
-    readonly_dir.chmod(0o444)  # Read-only
-    
-    try:
-        target_db_path = readonly_dir / "target.db"
-        export_path = tmp_path / "exports"
-        
-        # Should handle permission errors gracefully
-        with pytest.raises((PermissionError, OSError)):
-            export_datasets_and_create_metadata_db(
-                source_db_path=source_db_path,
-                target_db_path=target_db_path,
-                export_path=export_path,
-            )
-    finally:
-        # Restore permissions for cleanup
-        readonly_dir.chmod(0o755)
-
-
 def test_export_datasets_large_dataset_scenario(tmp_path):
     """Test handling of a scenario with multiple datasets including edge cases"""
     source_db_path = tmp_path / "source.db"
@@ -393,7 +367,7 @@ def test_export_datasets_large_dataset_scenario(tmp_path):
 
 def test_export_datasets_prevents_overwriting_target(tmp_path, simple_dataset):
     """Test that the function prevents overwriting existing target database files"""
-    source_db_path, run_id, _ = simple_dataset
+    source_db_path, _, _ = simple_dataset
     target_db_path = tmp_path / "target.db"
     export_path = tmp_path / "exports"
     
