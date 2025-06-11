@@ -2,6 +2,9 @@
 Tests for the export_datasets_and_create_metadata_db functionality
 """
 
+from contextlib import closing
+from unittest import mock
+
 import pytest
 
 from qcodes.dataset import (
@@ -12,6 +15,7 @@ from qcodes.dataset import (
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec
+from qcodes.dataset.export_config import get_data_export_path
 from qcodes.dataset.sqlite.queries import get_runs
 
 
@@ -29,25 +33,28 @@ def dataset_factory():
         db_path = tmp_path / f"{name}.db"
 
         # Create experiment and dataset
-        exp = load_or_create_experiment(
-            experiment_name=exp_name, sample_name=sample_name, conn=connect(db_path)
-        )
+        with closing(connect(db_path)) as conn:
+            exp = load_or_create_experiment(
+                experiment_name=exp_name, sample_name=sample_name, conn=conn
+            )
 
-        # Create interdependencies
-        x = ParamSpec("x", "numeric", unit="V")
-        y = ParamSpec("y", "numeric", unit="A")
-        interdeps = InterDependencies_(dependencies={y: (x,)})
+            # Create interdependencies
+            x = ParamSpec("x", "numeric", unit="V")
+            y = ParamSpec("y", "numeric", unit="A")
+            interdeps = InterDependencies_(dependencies={y: (x,)})
 
-        # Create dataset
-        dataset = DataSet(conn=exp.conn, exp_id=exp.exp_id)
-        dataset.set_interdependencies(interdeps)
-        dataset.mark_started()
+            # Create dataset
+            dataset = DataSet(conn=exp.conn, exp_id=exp.exp_id)
+            dataset.set_interdependencies(interdeps)
+            dataset.mark_started()
 
-        # Add some data
-        for i in range(num_points):
-            dataset.add_results([{"x": i, "y": i**2}])
+            # Add some data
+            for i in range(num_points):
+                dataset.add_results([{"x": i, "y": i**2}])
 
-        dataset.mark_completed()
+            dataset.mark_completed()
+            dataset.conn.close()
+            exp.conn.close()
 
         return db_path, dataset.run_id, dataset
 
@@ -60,7 +67,9 @@ def simple_dataset(tmp_path, dataset_factory):
     return dataset_factory(tmp_path)
 
 
-def test_export_datasets_and_create_metadata_db_basic(tmp_path, simple_dataset):
+def test_export_datasets_and_create_metadata_db_basic(
+    tmp_path, simple_dataset, request
+):
     """Test basic functionality of export_datasets_and_create_metadata_db"""
     source_db_path, run_id, _ = simple_dataset
 
@@ -77,24 +86,23 @@ def test_export_datasets_and_create_metadata_db_basic(tmp_path, simple_dataset):
     # Check that the function returned a result
     assert isinstance(result, dict)
     assert run_id in result
-    assert result[run_id] in ["exported", "copied_as_is"]
+    assert result[run_id] == "exported"
 
     # Check that target database was created
     assert target_db_path.exists()
 
     # Check that target database has the run
     target_conn = connect(target_db_path)
+    request.addfinalizer(target_conn.close)
     target_runs = get_runs(target_conn)
     assert len(target_runs) == 1
-    target_conn.close()
 
     # Check that NetCDF file was created if export was successful
-    if result[run_id] == "exported":
-        netcdf_files = list(export_path.glob("*.nc"))
-        assert len(netcdf_files) > 0
+    netcdf_files = list(export_path.glob("*.nc"))
+    assert len(netcdf_files) == 1, netcdf_files
 
 
-def test_export_datasets_preserve_experiment_structure(tmp_path):
+def test_export_datasets_preserve_experiment_structure(tmp_path, request):
     """Test that experiment structure is preserved in the target database"""
     source_db_path = tmp_path / "source.db"
     target_db_path = tmp_path / "target.db"
@@ -102,6 +110,7 @@ def test_export_datasets_preserve_experiment_structure(tmp_path):
 
     # Create source database with multiple experiments
     source_conn = connect(source_db_path)
+    request.addfinalizer(source_conn.close)
 
     # Create first experiment
     exp1 = load_or_create_experiment(
@@ -133,8 +142,6 @@ def test_export_datasets_preserve_experiment_structure(tmp_path):
             dataset.mark_completed()
             datasets.append(dataset)
 
-    source_conn.close()
-
     # Run the export function
     result = export_datasets_and_create_metadata_db(
         source_db_path=source_db_path,
@@ -147,12 +154,18 @@ def test_export_datasets_preserve_experiment_structure(tmp_path):
 
     # Check that target database has all runs
     target_conn = connect(target_db_path)
+    request.addfinalizer(target_conn.close)
     target_runs = get_runs(target_conn)
     assert len(target_runs) == 4
-    target_conn.close()
+
+    # TODO: assert netcdf files, and result statuses
 
 
-def test_export_datasets_with_incomplete_dataset(tmp_path):
+@pytest.mark.xfail(
+    run=True,
+    reason="For incomplete datasets, this should not fail but either succeed or copy as is",
+)
+def test_export_datasets_with_incomplete_dataset(tmp_path, request):
     """Test behavior when source database contains incomplete datasets"""
     source_db_path = tmp_path / "source.db"
     target_db_path = tmp_path / "target.db"
@@ -160,6 +173,7 @@ def test_export_datasets_with_incomplete_dataset(tmp_path):
 
     # Create source database
     source_conn = connect(source_db_path)
+    request.addfinalizer(source_conn.close)
     exp = load_or_create_experiment(
         experiment_name="test_exp", sample_name="test_sample", conn=source_conn
     )
@@ -185,8 +199,6 @@ def test_export_datasets_with_incomplete_dataset(tmp_path):
         dataset2.add_results([{"x": i, "y": i**3}])
     # Note: not marking as completed
 
-    source_conn.close()
-
     # Run the export function
     result = export_datasets_and_create_metadata_db(
         source_db_path=source_db_path,
@@ -200,7 +212,8 @@ def test_export_datasets_with_incomplete_dataset(tmp_path):
     assert dataset2.run_id in result
 
     # Incomplete dataset should be copied as-is
-    assert result[dataset2.run_id] == "copied_as_is"
+    assert result[dataset1.run_id] == "exported"
+    assert result[dataset2.run_id] == "failed"
 
 
 def test_export_datasets_empty_database(tmp_path):
@@ -222,6 +235,7 @@ def test_export_datasets_empty_database(tmp_path):
 
     # Should return empty result
     assert result == {}
+    assert not target_db_path.exists()
 
 
 def test_export_datasets_default_export_path(tmp_path, simple_dataset):
@@ -241,8 +255,13 @@ def test_export_datasets_default_export_path(tmp_path, simple_dataset):
     assert isinstance(result, dict)
     assert run_id in result
 
+    # Check that NetCDF file was created in default location
+    default_export_path = get_data_export_path()
+    netcdf_files = list(default_export_path.glob("*.nc"))
+    assert len(netcdf_files) == 1, f"Expected 1 NetCDF file, found {len(netcdf_files)}"
 
-def test_export_datasets_handles_export_failure(tmp_path):
+
+def test_export_datasets_handles_export_failure(tmp_path, request):
     """Test that the function handles export failures gracefully"""
     source_db_path = tmp_path / "source.db"
     target_db_path = tmp_path / "target.db"
@@ -250,12 +269,13 @@ def test_export_datasets_handles_export_failure(tmp_path):
 
     # Create source database
     source_conn = connect(source_db_path)
+    request.addfinalizer(source_conn.close)
     exp = load_or_create_experiment(
         experiment_name="test_exp", sample_name="test_sample", conn=source_conn
     )
 
     # Create interdependencies with problematic data that might fail export
-    x = ParamSpec("x", "text", unit="")  # Text data might be harder to export
+    x = ParamSpec("x", "text", unit="")
     y = ParamSpec("y", "numeric", unit="A")
     interdeps = InterDependencies_(dependencies={y: (x,)})
 
@@ -269,20 +289,20 @@ def test_export_datasets_handles_export_failure(tmp_path):
         dataset.add_results([{"x": f"text_{i}", "y": i**2}])
 
     dataset.mark_completed()
-    source_conn.close()
 
-    # Run the export function
-    result = export_datasets_and_create_metadata_db(
-        source_db_path=source_db_path,
-        target_db_path=target_db_path,
-        export_path=export_path,
-    )
+    with mock.patch.object(
+        DataSet, "export", side_effect=Exception("Export intentionally failed")
+    ):
+        # Run the export function
+        result = export_datasets_and_create_metadata_db(
+            source_db_path=source_db_path,
+            target_db_path=target_db_path,
+            export_path=export_path,
+        )
 
-    # Should handle the dataset one way or another
     assert len(result) == 1
     assert dataset.run_id in result
-    # Should either export or copy as-is
-    assert result[dataset.run_id] in ["exported", "copied_as_is"]
+    assert result[dataset.run_id] == "copied_as_is"
 
 
 def test_export_datasets_nonexistent_source(tmp_path):
@@ -300,14 +320,18 @@ def test_export_datasets_nonexistent_source(tmp_path):
         )
 
 
-def test_export_datasets_large_dataset_scenario(tmp_path):
-    """Test handling of a scenario with multiple datasets including edge cases"""
+@pytest.mark.xfail(
+    run=True,
+    reason="load_from_netcdf fails when loading incomplete datasets, once it is fixed, the test will work",
+)
+def test_export_datasets_many_datasets_and_edge_case(tmp_path, request):
     source_db_path = tmp_path / "source.db"
     target_db_path = tmp_path / "target.db"
     export_path = tmp_path / "exports"
 
     # Create source database
     source_conn = connect(source_db_path)
+    request.addfinalizer(source_conn.close)
     exp = load_or_create_experiment(
         experiment_name="test_exp", sample_name="test_sample", conn=source_conn
     )
@@ -334,8 +358,6 @@ def test_export_datasets_large_dataset_scenario(tmp_path):
 
         created_datasets.append(dataset)
 
-    source_conn.close()
-
     # Run the export function
     result = export_datasets_and_create_metadata_db(
         source_db_path=source_db_path,
@@ -344,18 +366,14 @@ def test_export_datasets_large_dataset_scenario(tmp_path):
     )
 
     # Check that all datasets were processed
-    assert len(result) == 5
+    assert len(result) == 5, result
+    assert set(result.values()) == {"exported"}, result
 
     # Check that target database has all runs
     target_conn = connect(target_db_path)
+    request.addfinalizer(target_conn.close)
     target_runs = get_runs(target_conn)
-    target_conn.close()
-
     assert len(target_runs) == 5
-
-    # The incomplete dataset should be copied as-is
-    incomplete_dataset = created_datasets[-1]
-    assert result[incomplete_dataset.run_id] == "copied_as_is"
 
 
 def test_export_datasets_prevents_overwriting_target(tmp_path, simple_dataset):
@@ -374,58 +392,3 @@ def test_export_datasets_prevents_overwriting_target(tmp_path, simple_dataset):
             target_db_path=target_db_path,
             export_path=export_path,
         )
-
-
-def test_export_datasets_status_reporting(tmp_path):
-    """Test that the function returns detailed status information"""
-    source_db_path = tmp_path / "source.db"
-    target_db_path = tmp_path / "target.db"
-    export_path = tmp_path / "exports"
-
-    # Create source database with a completed dataset
-    source_conn = connect(source_db_path)
-    exp = load_or_create_experiment(
-        experiment_name="test_exp", sample_name="test_sample", conn=source_conn
-    )
-
-    # Create interdependencies
-    x = ParamSpec("x", "numeric", unit="V")
-    y = ParamSpec("y", "numeric", unit="A")
-    interdeps = InterDependencies_(dependencies={y: (x,)})
-
-    # Create and complete a dataset
-    dataset = DataSet(conn=source_conn, exp_id=exp.exp_id)
-    dataset.set_interdependencies(interdeps)
-    dataset.mark_started()
-
-    for i in range(5):
-        dataset.add_results([{"x": i, "y": i**2}])
-
-    dataset.mark_completed()
-    source_conn.close()
-
-    # Run the export function
-    result = export_datasets_and_create_metadata_db(
-        source_db_path=source_db_path,
-        target_db_path=target_db_path,
-        export_path=export_path,
-    )
-
-    # Check return value structure
-    assert isinstance(result, dict)
-    assert len(result) == 1
-    assert dataset.run_id in result
-
-    # Status should be one of the expected values
-    status = result[dataset.run_id]
-    expected_statuses = ["exported", "copied_as_is", "already_exists"]
-    assert status in expected_statuses, f"Unexpected status: {status}"
-
-    # If we run again, should report already_exists
-    result2 = export_datasets_and_create_metadata_db(
-        source_db_path=source_db_path,
-        target_db_path=target_db_path,
-        export_path=export_path,
-    )
-
-    assert result2[dataset.run_id] == "already_exists"

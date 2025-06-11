@@ -185,7 +185,7 @@ def export_datasets_and_create_metadata_db(
     source_db_path: str | Path,
     target_db_path: str | Path,
     export_path: str | Path | None = None,
-) -> dict[int, Literal["exported", "copied_as_is", "failed", "already_exists"]]:
+) -> dict[int, Literal["exported", "copied_as_is", "failed"]]:
     """
     Export all datasets from a source database to NetCDF files and create
     a new database file containing only metadata (no raw data) for those exported
@@ -202,7 +202,7 @@ def export_datasets_and_create_metadata_db(
             uses the default export path from QCoDeS configuration.
 
     Returns:
-        A dictionary mapping run_id to status ('exported', 'copied_as_is', 'already_exists', or 'failed')
+        A dictionary mapping run_id to status ('exported', 'copied_as_is', or 'failed')
 
     """
     source_db_path = Path(source_db_path)
@@ -296,7 +296,7 @@ def _process_single_dataset(
     target_conn: AtomicConnection,
     export_path: Path,
     target_exp_id: int,
-) -> Literal["exported", "copied_as_is", "failed", "already_exists"]:
+) -> Literal["exported", "copied_as_is", "failed"]:
     """
     Export a dataset to NetCDF and add its metadata
     to target database file, or, if it fails, copy directily
@@ -307,13 +307,6 @@ def _process_single_dataset(
 
     """
     run_id = dataset.run_id
-
-    existing_run_id = get_runid_from_guid(target_conn, dataset.guid)
-    if existing_run_id is not None:
-        log.debug(
-            f"Dataset {run_id} (GUID: {dataset.guid}) already exists in target database"
-        )
-        return "already_exists"
 
     netcdf_export_path = None
 
