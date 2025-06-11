@@ -129,6 +129,10 @@ omit = [
     "src/qcodes/__init__.py",
     "*/__init__.py",
 ]
+disable_warnings = ["module-not-measured"]
+# this warning is triggered when pytest-cov is used together with pytest-xdist
+# https://github.com/pytest-dev/pytest-cov/issues/693
+# coverage however, still seems to work fine.
 [tool.coverage.report]
 exclude_lines = [
     "pragma: no cover",
