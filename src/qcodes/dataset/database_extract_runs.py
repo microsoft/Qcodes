@@ -4,7 +4,7 @@ import logging
 import os
 from contextlib import closing
 from pathlib import Path
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 from warnings import warn
 
 import numpy as np
@@ -12,12 +12,8 @@ from tqdm.auto import tqdm
 
 from qcodes.dataset.data_set import DataSet, load_by_id
 from qcodes.dataset.data_set_in_memory import load_from_netcdf
-from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.dataset_helpers import _add_run_to_runs_table
-from qcodes.dataset.experiment_container import (
-    _create_exp_if_needed,
-    load_or_create_experiment,
-)
+from qcodes.dataset.experiment_container import _create_exp_if_needed
 from qcodes.dataset.export_config import get_data_export_path
 from qcodes.dataset.sqlite.connection import AtomicConnection, atomic
 from qcodes.dataset.sqlite.database import (
@@ -32,6 +28,9 @@ from qcodes.dataset.sqlite.queries import (
     get_runs,
     is_run_id_in_database,
 )
+
+if TYPE_CHECKING:
+    from qcodes.dataset.data_set_protocol import DataSetProtocol
 
 _LOG = logging.getLogger(__name__)
 
@@ -214,7 +213,7 @@ def export_datasets_and_create_metadata_db(
         _LOG.debug(f"Found {len(run_ids)} datasets to process")
         if not run_ids:
             _LOG.warning(
-                "No datasets found in source database {source_db_path}, nothing to export"
+                f"No datasets found in source database {source_db_path}, nothing to export"
             )
             return {}
 
@@ -281,7 +280,7 @@ def export_datasets_and_create_metadata_db(
                 )
                 result_status[run_id] = status
 
-            except Exception as e:
+            except Exception:
                 _LOG.exception(f"Failed to process dataset {run_id}")
                 result_status[run_id] = "failed"
 
@@ -329,9 +328,15 @@ def _process_single_dataset(
         try:
             dataset.export("netcdf", path=export_path)
             netcdf_export_path = dataset.export_info.export_paths.get("nc")
-            assert netcdf_export_path is not None
+            if netcdf_export_path is None:
+                raise RuntimeError(
+                    f"Failed to get NetCDF export path for dataset {run_id}. "
+                    "Export appears to have succeeded but no path was recorded."
+                )
         except Exception:
-            _LOG.exception(f"Failed to export dataset {run_id} to NetCDF, copying as-is")
+            _LOG.exception(
+                f"Failed to export dataset {run_id} to NetCDF, copying as-is"
+            )
             return _copy_dataset_as_is(dataset, source_conn, target_conn, target_exp_id)
 
     _LOG.debug(f"Dataset {run_id} available as NetCDF at {netcdf_export_path}")
