@@ -3,6 +3,7 @@ Tests for the export_datasets_and_create_metadata_db functionality
 """
 
 from contextlib import closing
+from typing import TYPE_CHECKING
 from unittest import mock
 
 import pytest
@@ -18,18 +19,22 @@ from qcodes.dataset.descriptions.param_spec import ParamSpec
 from qcodes.dataset.export_config import get_data_export_path
 from qcodes.dataset.sqlite.queries import get_runs
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from pathlib import Path
+
 
 @pytest.fixture
-def dataset_factory():
+def dataset_factory() -> "Callable[..., tuple[Path, int, DataSet]]":
     """Factory fixture for creating datasets with configurable parameters"""
 
     def _create_dataset(
-        tmp_path,
-        name="test_dataset",
-        exp_name="test_exp",
-        sample_name="test_sample",
-        num_points=10,
-    ):
+        tmp_path: "Path",
+        name: str = "test_dataset",
+        exp_name: str = "test_exp",
+        sample_name: str = "test_sample",
+        num_points: int = 10,
+    ) -> "tuple[Path, int, DataSet]":
         db_path = tmp_path / f"{name}.db"
 
         # Create experiment and dataset
@@ -62,14 +67,18 @@ def dataset_factory():
 
 
 @pytest.fixture
-def simple_dataset(tmp_path, dataset_factory):
+def simple_dataset(
+    tmp_path: "Path", dataset_factory: "Callable[..., tuple[Path, int, DataSet]]"
+) -> "tuple[Path, int, DataSet]":
     """Create a simple dataset for testing"""
     return dataset_factory(tmp_path)
 
 
 def test_export_datasets_and_create_metadata_db_basic(
-    tmp_path, simple_dataset, request
-):
+    tmp_path: "Path",
+    simple_dataset: "tuple[Path, int, DataSet]",
+    request: pytest.FixtureRequest,
+) -> None:
     """Test basic functionality of export_datasets_and_create_metadata_db"""
     source_db_path, run_id, _ = simple_dataset
 
@@ -102,7 +111,9 @@ def test_export_datasets_and_create_metadata_db_basic(
     assert len(netcdf_files) == 1, netcdf_files
 
 
-def test_export_datasets_preserve_experiment_structure(tmp_path, request):
+def test_export_datasets_preserve_experiment_structure(
+    tmp_path: "Path", request: pytest.FixtureRequest
+) -> None:
     """Test that experiment structure is preserved in the target database"""
     source_db_path = tmp_path / "source.db"
     target_db_path = tmp_path / "target.db"
@@ -165,7 +176,9 @@ def test_export_datasets_preserve_experiment_structure(tmp_path, request):
     run=True,
     reason="For incomplete datasets, this should not fail but either succeed or copy as is",
 )
-def test_export_datasets_with_incomplete_dataset(tmp_path, request):
+def test_export_datasets_with_incomplete_dataset(
+    tmp_path: "Path", request: pytest.FixtureRequest
+) -> None:
     """Test behavior when source database contains incomplete datasets"""
     source_db_path = tmp_path / "source.db"
     target_db_path = tmp_path / "target.db"
@@ -216,7 +229,7 @@ def test_export_datasets_with_incomplete_dataset(tmp_path, request):
     assert result[dataset2.run_id] == "failed"
 
 
-def test_export_datasets_empty_database(tmp_path):
+def test_export_datasets_empty_database(tmp_path: "Path") -> None:
     """Test behavior with empty source database"""
     source_db_path = tmp_path / "empty.db"
     target_db_path = tmp_path / "target.db"
@@ -238,7 +251,9 @@ def test_export_datasets_empty_database(tmp_path):
     assert not target_db_path.exists()
 
 
-def test_export_datasets_default_export_path(tmp_path, simple_dataset):
+def test_export_datasets_default_export_path(
+    tmp_path: "Path", simple_dataset: "tuple[Path, int, DataSet]"
+) -> None:
     """Test that default export path is used when none provided"""
     source_db_path, run_id, _ = simple_dataset
 
@@ -261,7 +276,9 @@ def test_export_datasets_default_export_path(tmp_path, simple_dataset):
     assert len(netcdf_files) == 1, f"Expected 1 NetCDF file, found {len(netcdf_files)}"
 
 
-def test_export_datasets_handles_export_failure(tmp_path, request):
+def test_export_datasets_handles_export_failure(
+    tmp_path: "Path", request: pytest.FixtureRequest
+) -> None:
     """Test that the function handles export failures gracefully"""
     source_db_path = tmp_path / "source.db"
     target_db_path = tmp_path / "target.db"
@@ -305,7 +322,7 @@ def test_export_datasets_handles_export_failure(tmp_path, request):
     assert result[dataset.run_id] == "copied_as_is"
 
 
-def test_export_datasets_nonexistent_source(tmp_path):
+def test_export_datasets_nonexistent_source(tmp_path: "Path") -> None:
     """Test behavior with non-existent source database"""
     source_db_path = tmp_path / "nonexistent.db"
     target_db_path = tmp_path / "target.db"
@@ -324,7 +341,9 @@ def test_export_datasets_nonexistent_source(tmp_path):
     run=True,
     reason="load_from_netcdf fails when loading incomplete datasets, once it is fixed, the test will work",
 )
-def test_export_datasets_many_datasets_and_edge_case(tmp_path, request):
+def test_export_datasets_many_datasets_and_edge_case(
+    tmp_path: "Path", request: pytest.FixtureRequest
+) -> None:
     source_db_path = tmp_path / "source.db"
     target_db_path = tmp_path / "target.db"
     export_path = tmp_path / "exports"
@@ -376,7 +395,9 @@ def test_export_datasets_many_datasets_and_edge_case(tmp_path, request):
     assert len(target_runs) == 5
 
 
-def test_export_datasets_prevents_overwriting_target(tmp_path, simple_dataset):
+def test_export_datasets_prevents_overwriting_target(
+    tmp_path: "Path", simple_dataset: "tuple[Path, int, DataSet]"
+) -> None:
     """Test that the function prevents overwriting existing target database files"""
     source_db_path, _, _ = simple_dataset
     target_db_path = tmp_path / "target.db"
