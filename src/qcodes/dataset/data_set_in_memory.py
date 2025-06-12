@@ -283,7 +283,7 @@ class DataSetInMem(BaseDataSet):
             completed_timestamp_raw = getattr(loaded_data, 'completed_timestamp_raw', None)
             if completed_timestamp_raw is not None:
                 completed_timestamp_raw = float(completed_timestamp_raw)
-            
+
             ds = cls(
                 run_id=run_id,
                 captured_run_id=int(loaded_data.captured_run_id),
