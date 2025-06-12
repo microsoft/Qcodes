@@ -256,12 +256,14 @@ def export_datasets_and_create_metadata_db(
                     exp_attrs = get_experiment_attributes_by_exp_id(source_conn, exp_id)
 
                     with atomic(target_conn) as target_conn_atomic:
-                        target_exp = load_or_create_experiment(
+                        target_exp_id = _create_exp_if_needed(
+                            target_conn_atomic,
                             exp_attrs["name"],
                             exp_attrs["sample_name"],
-                            conn=target_conn_atomic,
+                            exp_attrs["format_string"],
+                            exp_attrs["start_time"],
+                            exp_attrs["end_time"],
                         )
-                        target_exp_id = target_exp.exp_id
 
                     processed_experiments[exp_id] = target_exp_id
                     log.info(
