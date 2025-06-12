@@ -91,6 +91,27 @@ def test_many_guids_from_list_str() -> None:
     assert guids_from_list_str(str(guids)) == tuple(guids)
 
 
+def test_many_guids_from_list_str_with_int() -> None:
+    # none str members are dropped from the list
+    guids = [
+        "aaaaaaaa-0d00-000d-0000-017662aded3d",
+        "aaaaaaaa-0d00-000d-0000-017662ae5fec",
+        "aaaaaaaa-0d00-000d-0000-017662b01bb7",
+        "aaaaaaaa-0d00-000d-0000-017662b18452",
+        "aaaaaaaa-0d00-000d-0000-017662b298c2",
+        "aaaaaaaa-0d00-000d-0000-017662b2a878",
+        "aaaaaaaa-0d00-000d-0000-01766827cfaf",
+        121345,
+    ]
+    assert guids_from_list_str(str(guids)) == tuple(guids[:-1])
+
+
+def test_guid_from_not_str() -> None:
+    # none str members are dropped from the list
+    guid = 123456
+    assert guids_from_list_str(str(guid)) == ()
+
+
 def test_get_guids_from_multiple_run_ids(tmp_path: "Path") -> None:
     def generate_local_exp(dbpath: "Path") -> tuple[list[str], "AtomicConnection"]:
         with initialised_database_at(str(dbpath)):
