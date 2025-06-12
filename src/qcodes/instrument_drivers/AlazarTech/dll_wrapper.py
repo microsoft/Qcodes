@@ -94,7 +94,7 @@ def _convert_bytes_to_str(
 
 
 class Signature(NamedTuple):
-    return_type: type[Any] = RETURN_CODE
+    return_type: Any = RETURN_CODE
     argument_types: Sequence[type[Any]] = ()
 
 
@@ -180,11 +180,12 @@ class WrappedDll(metaclass=DllWrapperMeta):
 
             ret_type = signature.return_type
             if ret_type is RETURN_CODE:
-                # since the output from NewType is type there
-                # is no way for the type checker to understand
+                # since RETURN_CODE is a NewType checking that
+                # ret_type is RETURN_CODE only narrows the type
+                # of it to type. The type checker therefor does not know
                 # that this type has a __supertype__ attribute
                 ret_type = (
-                    ret_type.__supertype__  # pyright: ignore[reportAttributeAccessIssue]
+                    ret_type.__supertype__  # pyright: ignore[reportAttributeAccessIssue,reportFunctionMemberAccess]
                 )
                 c_func.errcheck = _check_error_code
             elif ret_type in (
