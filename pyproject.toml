@@ -239,7 +239,7 @@ filterwarnings = [
     'ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning', # jupyter
     'ignore:Parsing dates involving a day of month without a year specified is ambiguious:DeprecationWarning', # ipykernel 3.13+
     'ignore:unclosed database in:ResourceWarning', # internal should be fixed
-    'ignore:unclosed\\ <socket\\.socket:ResourceWarning', # not clear from where this is coming
+    'ignore:unclosed\ <socket\.socket:ResourceWarning', # not clear from where this is coming
     'ignore:ConnectionPlus is deprecated:qcodes.utils.deprecate.QCoDeSDeprecationWarning',  # remove once deprecated ConnectionPlus has been removed
     'ignore:make_connection_plus_from is deprecated:qcodes.utils.deprecate.QCoDeSDeprecationWarning',  # remove once deprecated ConnectionPlus has been removed
     'ignore:Model_336 is deprecated:qcodes.utils.deprecate.QCoDeSDeprecationWarning',  # remove once deprecated Lakeshore Model_336 and its tests has been removed
