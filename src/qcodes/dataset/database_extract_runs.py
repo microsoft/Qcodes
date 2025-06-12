@@ -4,7 +4,7 @@ import logging
 import os
 from contextlib import closing
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 from warnings import warn
 
 import numpy as np
@@ -12,8 +12,12 @@ from tqdm.auto import tqdm
 
 from qcodes.dataset.data_set import DataSet, load_by_id
 from qcodes.dataset.data_set_in_memory import load_from_netcdf
+from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.dataset_helpers import _add_run_to_runs_table
-from qcodes.dataset.experiment_container import load_or_create_experiment
+from qcodes.dataset.experiment_container import (
+    _create_exp_if_needed,
+    load_or_create_experiment,
+)
 from qcodes.dataset.export_config import get_data_export_path
 from qcodes.dataset.sqlite.connection import AtomicConnection, atomic
 from qcodes.dataset.sqlite.database import (
@@ -28,9 +32,6 @@ from qcodes.dataset.sqlite.queries import (
     get_runs,
     is_run_id_in_database,
 )
-
-if TYPE_CHECKING:
-    from qcodes.dataset.data_set_protocol import DataSetProtocol
 
 log = logging.getLogger(__name__)
 
@@ -116,18 +117,20 @@ def extract_runs_into_db(
     # matching both the name and sample_name
 
     try:
-        with atomic(target_conn) as target_conn_atomic:
-            target_exp = load_or_create_experiment(
-                exp_attrs["name"], exp_attrs["sample_name"], conn=target_conn_atomic
+        with atomic(target_conn) as target_conn:
+            target_exp_id = _create_exp_if_needed(
+                target_conn,
+                exp_attrs["name"],
+                exp_attrs["sample_name"],
+                exp_attrs["format_string"],
+                exp_attrs["start_time"],
+                exp_attrs["end_time"],
             )
-            target_exp_id = target_exp.exp_id
 
             # Finally insert the runs
             for run_id in run_ids:
                 _extract_single_dataset_into_db(
-                    DataSet(run_id=run_id, conn=source_conn),
-                    target_conn_atomic,
-                    target_exp_id,
+                    DataSet(run_id=run_id, conn=source_conn), target_conn, target_exp_id
                 )
     finally:
         source_conn.close()
