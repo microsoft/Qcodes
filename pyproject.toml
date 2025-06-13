@@ -194,7 +194,6 @@ ignore_missing_imports = true
 include = ["src","tests"]
 ignore = [
     "src/qcodes/instrument_drivers/Harvard/Decadac.py",
-    "tests/test_deprecate.py"
     ]
 reportMissingTypeStubs = true
 reportDeprecated = true
