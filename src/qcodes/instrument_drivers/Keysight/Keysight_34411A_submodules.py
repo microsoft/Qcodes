@@ -1,9 +1,5 @@
 from typing import TYPE_CHECKING
 
-from typing_extensions import deprecated
-
-from qcodes.utils import QCoDeSDeprecationWarning
-
 from .private.Keysight_344xxA_submodules import Keysight344xxA
 
 if TYPE_CHECKING:
@@ -25,10 +21,3 @@ class Keysight34411A(Keysight344xxA):
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ):
         super().__init__(name, address, silent, **kwargs)
-
-
-@deprecated("Use Keysight34411A", category=QCoDeSDeprecationWarning, stacklevel=2)
-class Keysight_34411A(Keysight34411A):
-    """
-    Alias for backwards compatibility.
-    """
