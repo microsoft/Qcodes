@@ -616,18 +616,6 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         return self.full_name
 
     @property
-    @deprecated(
-        "The private attribute `_name` is deprecated and will be removed. Use `full_name` instead.",
-        category=QCoDeSDeprecationWarning,
-    )
-    def _name(self) -> str:
-        """
-        Private alias kept here for backwards compatibility
-        see https://github.com/zhinst/zhinst-qcodes/issues/27
-        """
-        return self.full_name
-
-    @property
     def short_name(self) -> str:
         """
         Short name of the instrument.
