@@ -10,10 +10,8 @@ from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
 
 import numpy as np
 import numpy.typing as npt
-from typing_extensions import deprecated
 
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs
-from qcodes.utils import QCoDeSDeprecationWarning
 
 from .ats_api import AlazarATSAPI
 from .constants import NUMBER_OF_CHANNELS_FROM_BYTE_REPR, max_buffer_size
@@ -904,15 +902,6 @@ class AcquisitionInterface(Generic[OutputType]):
 
         """
         pass
-
-
-@deprecated(
-    "AlazarTech_ATS is deprecated, use AlazarTechATS instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class AlazarTech_ATS(AlazarTechATS):
-    pass
 
 
 class AcquisitionController(Instrument, AcquisitionInterface[Any], Generic[OutputType]):
