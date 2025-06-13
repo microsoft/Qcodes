@@ -3,10 +3,9 @@ from typing import TYPE_CHECKING, Any, NamedTuple, cast
 
 import numpy as np
 import numpy.typing as npt
-from typing_extensions import TypedDict, Unpack, deprecated
+from typing_extensions import TypedDict, Unpack
 
 from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel
-from qcodes.utils import QCoDeSDeprecationWarning
 
 from . import constants
 from .constants import ChannelName, ChNr, MeasurementStatus, ModuleKind, SlotNr
@@ -373,11 +372,6 @@ class KeysightB1500Module(InstrumentChannel):
         (FMT3 and FMT4).
         """
         self.root_instrument.clear_timer_count(chnum=self.channels)
-
-
-@deprecated("Use KeysightB1500Module", category=QCoDeSDeprecationWarning, stacklevel=2)
-class B1500Module(KeysightB1500Module):
-    pass
 
 
 class StatusMixin:

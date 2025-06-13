@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import numpy.typing as npt
 from packaging import version
-from typing_extensions import deprecated
 
 import qcodes.validators as vals
 from qcodes.instrument import (
@@ -22,7 +21,6 @@ from qcodes.instrument_drivers.Keysight.private.error_handling import (
 )
 from qcodes.parameters import Parameter, ParameterWithSetpoints
 from qcodes.utils import (
-    QCoDeSDeprecationWarning,
     convert_legacy_version_to_supported_version,
 )
 
@@ -1355,42 +1353,6 @@ mode."""
             self.range(self.ranges[index + decrease_by])
         else:
             self.range(self.ranges[0])
-
-
-@deprecated(
-    "Base class for Keysight 344xxA renamed Keysight344xxA",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class _Keysight_344xxA(Keysight344xxA):
-    pass
-
-
-@deprecated(
-    "Trigger class for Keysight 344xxA renamed Keysight344xxATrigger",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class Trigger(Keysight344xxATrigger):
-    pass
-
-
-@deprecated(
-    "Sample class for Keysight 344xxA renamed Keysight344xxASample",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class Sample(Keysight344xxASample):
-    pass
-
-
-@deprecated(
-    "Display class for Keysight 344xxA renamed Keysight344xxADisplay",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class Display(Keysight344xxADisplay):
-    pass
 
 
 def _raw_vals_to_array(raw_vals: str) -> npt.NDArray:

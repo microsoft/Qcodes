@@ -2,8 +2,6 @@ import logging
 from functools import partial
 from typing import TYPE_CHECKING
 
-from typing_extensions import deprecated
-
 from qcodes import validators as vals
 from qcodes.instrument import (
     Instrument,
@@ -12,7 +10,6 @@ from qcodes.instrument import (
     VisaInstrument,
     VisaInstrumentKWArgs,
 )
-from qcodes.utils import QCoDeSDeprecationWarning
 
 from .private.error_handling import KeysightErrorQueueMixin
 
@@ -427,12 +424,3 @@ class Keysight33xxx(KeysightErrorQueueMixin, VisaInstrument):
 
         if not silent:
             self.connect_message()
-
-
-@deprecated(
-    "The base class for Keysight33xxx waveform generators has been renamed to Keysight33xxx",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class WaveformGenerator_33XXX(Keysight33xxx):
-    pass
