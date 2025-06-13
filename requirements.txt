@@ -299,7 +299,7 @@ pytest==8.4.0
     #   pytest-mock
     #   pytest-rerunfailures
     #   pytest-xdist
-pytest-asyncio==0.26.0
+pytest-asyncio==1.0.0
     # via qcodes (pyproject.toml)
 pytest-cov==6.2.0
     # via qcodes (pyproject.toml)
