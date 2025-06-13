@@ -46,7 +46,6 @@ from .measurements import Measurement
 from .plotting import plot_by_id, plot_dataset
 from .sqlite.connection import (
     AtomicConnection,
-    ConnectionPlus,  # pyright: ignore[reportDeprecated]
 )
 from .sqlite.database import (
     connect,
@@ -66,7 +65,6 @@ __all__ = [
     "ArraySweep",
     "AtomicConnection",
     "BreakConditionInterrupt",
-    "ConnectionPlus",
     "DataSetDefinition",
     "DataSetProtocol",
     "DataSetType",
