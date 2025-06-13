@@ -4,15 +4,12 @@ import logging
 import re
 from typing import TYPE_CHECKING
 
-from typing_extensions import deprecated
-
 from qcodes.instrument import (
     ChannelList,
     Instrument,
     InstrumentBaseKWArgs,
     InstrumentChannel,
 )
-from qcodes.utils import QCoDeSDeprecationWarning
 from qcodes.validators import Ints
 
 if TYPE_CHECKING:
@@ -73,15 +70,6 @@ class MiniCircuitsSPDTSwitchChannelBase(InstrumentChannel):
         raise NotImplementedError()
 
 
-@deprecated(
-    "Deprecated alias, use MiniCircuitsSPDTSwitchChannelBase.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class SwitchChannelBase(MiniCircuitsSPDTSwitchChannelBase):
-    pass
-
-
 class MiniCircuitsSPDTBase(Instrument):
     """
     Base class for MiniCircuits SPDT Switch instruments.
@@ -138,12 +126,3 @@ class MiniCircuitsSPDTBase(Instrument):
                 f" the model '{model}', it might not be supported"
             )
         return int(channels)
-
-
-@deprecated(
-    "Deprecated alias, use MiniCircuitsSPDTBase.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class SPDT_Base(MiniCircuitsSPDTBase):
-    pass
