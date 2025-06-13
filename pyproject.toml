@@ -40,8 +40,6 @@ dependencies = [
     "uncertainties>=3.2.0",
     "versioningit>=2.2.1",
     "websockets>=11.0",
-    "wrapt>=1.15.0; python_version < '3.12'",
-    "wrapt>=1.16.0; python_version >= '3.12'",
     "xarray>=2022.06.0",
     "cf_xarray>=0.8.4",
     "opentelemetry-api>=1.17.0",
@@ -151,7 +149,7 @@ warn_unused_configs = true
 # waiting for variadic generics so we
 # can type numpy array constructors
 disallow_any_generics = false
-# we subclass non typed classes (from ipython / wrapt)
+# we subclass non typed classes (from ipython)
 disallow_subclassing_any = false
 # we are calling into untyped code from 3th parties
 disallow_untyped_calls = false
@@ -188,8 +186,6 @@ module = [
     "mcl_RF_Switch_Controller64",
     "mcl_RF_Switch_Controller_NET45",
     "pywinusb.*",
-    "spyder.utils.site",
-    "spyder_kernels.customize",
     "System.IO",
 ]
 ignore_missing_imports = true
@@ -198,7 +194,6 @@ ignore_missing_imports = true
 include = ["src","tests"]
 ignore = [
     "src/qcodes/instrument_drivers/Harvard/Decadac.py",
-    "tests/test_deprecate.py"
     ]
 reportMissingTypeStubs = true
 reportDeprecated = true
@@ -234,14 +229,11 @@ markers = "serial"
 # and error on all other warnings
 filterwarnings = [
     'error',
-    'ignore:QCoDeS deprecation logic is deprecated:qcodes.utils.deprecate.QCoDeSDeprecationWarning', # deprecation of internal qcodes deprecated.
     'ignore:open_binary is deprecated:DeprecationWarning', # pyvisa-sim
     'ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning', # jupyter
     'ignore:Parsing dates involving a day of month without a year specified is ambiguious:DeprecationWarning', # ipykernel 3.13+
     'ignore:unclosed database in:ResourceWarning', # internal should be fixed
     'ignore:unclosed\ <socket\.socket:ResourceWarning', # not clear from where this is coming
-    'ignore:ConnectionPlus is deprecated:qcodes.utils.deprecate.QCoDeSDeprecationWarning',  # remove once deprecated ConnectionPlus has been removed
-    'ignore:make_connection_plus_from is deprecated:qcodes.utils.deprecate.QCoDeSDeprecationWarning',  # remove once deprecated ConnectionPlus has been removed
     'ignore:Model_336 is deprecated:qcodes.utils.deprecate.QCoDeSDeprecationWarning',  # remove once deprecated Lakeshore Model_336 and its tests has been removed
 ]
 
