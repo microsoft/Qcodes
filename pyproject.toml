@@ -40,8 +40,6 @@ dependencies = [
     "uncertainties>=3.2.0",
     "versioningit>=2.2.1",
     "websockets>=11.0",
-    "wrapt>=1.15.0; python_version < '3.12'",
-    "wrapt>=1.16.0; python_version >= '3.12'",
     "xarray>=2022.06.0",
     "cf_xarray>=0.8.4",
     "opentelemetry-api>=1.17.0",
@@ -151,7 +149,7 @@ warn_unused_configs = true
 # waiting for variadic generics so we
 # can type numpy array constructors
 disallow_any_generics = false
-# we subclass non typed classes (from ipython / wrapt)
+# we subclass non typed classes (from ipython)
 disallow_subclassing_any = false
 # we are calling into untyped code from 3th parties
 disallow_untyped_calls = false
