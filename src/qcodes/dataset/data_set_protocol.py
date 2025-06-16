@@ -283,6 +283,51 @@ class DataSetProtocol(Protocol):
 class BaseDataSet(DataSetProtocol, Protocol):
     # shared methods between all implementations of the dataset
 
+    def _collect_all_related_parameters(
+        self, 
+        interdeps: InterDependencies_, 
+        initial_params: set[ParamSpecBase], 
+        result_dict: Mapping[ParamSpecBase, npt.NDArray]
+    ) -> set[ParamSpecBase]:
+        """
+        Transitively collect all parameters that are related to the initial set of parameters.
+        This includes parameters that any parameter in the set is inferred from, and parameters
+        that depend on or are inferred from those parameters, etc.
+        
+        Only includes parameters that are present in result_dict.
+        """
+        collected = set(initial_params)
+        to_process = set(initial_params)
+        
+        while to_process:
+            current = to_process.pop()
+            
+            # Add parameters that current parameter is inferred from
+            inferred_from = set(interdeps.inferences.get(current, ()))
+            new_inferred = inferred_from - collected
+            # Only add if they're in result_dict
+            new_inferred = new_inferred.intersection(result_dict.keys())
+            collected.update(new_inferred)
+            to_process.update(new_inferred)
+            
+            # Add parameters that depend on current parameter
+            dependents = set(interdeps._dependencies_inv.get(current, ()))
+            new_dependents = dependents - collected
+            # Only add if they're in result_dict
+            new_dependents = new_dependents.intersection(result_dict.keys())
+            collected.update(new_dependents)
+            to_process.update(new_dependents)
+            
+            # Add parameters that are inferred from current parameter
+            infers = set(interdeps._inferences_inv.get(current, ()))
+            new_infers = infers - collected
+            # Only add if they're in result_dict
+            new_infers = new_infers.intersection(result_dict.keys())
+            collected.update(new_infers)
+            to_process.update(new_infers)
+        
+        return collected
+
     def the_same_dataset_as(self, other: DataSetProtocol) -> bool:
         """
         Check if two datasets correspond to the same run by comparing
@@ -547,57 +592,6 @@ class BaseDataSet(DataSetProtocol, Protocol):
         Return all the parameters that explicitly depend on other parameters
         """
         return tuple(self.description.interdeps.dependencies.keys())
-
-
-class DataSetMixin:
-    """
-    Mixin class to provide shared functionality between DataSet implementations.
-    """
-    
-    def _collect_all_related_parameters(
-        self, 
-        interdeps: InterDependencies_, 
-        initial_params: set[ParamSpecBase], 
-        result_dict: Mapping[ParamSpecBase, npt.NDArray]
-    ) -> set[ParamSpecBase]:
-        """
-        Transitively collect all parameters that are related to the initial set of parameters.
-        This includes parameters that any parameter in the set is inferred from, and parameters
-        that depend on or are inferred from those parameters, etc.
-        
-        Only includes parameters that are present in result_dict.
-        """
-        collected = set(initial_params)
-        to_process = set(initial_params)
-        
-        while to_process:
-            current = to_process.pop()
-            
-            # Add parameters that current parameter is inferred from
-            inferred_from = set(interdeps.inferences.get(current, ()))
-            new_inferred = inferred_from - collected
-            # Only add if they're in result_dict
-            new_inferred = new_inferred.intersection(result_dict.keys())
-            collected.update(new_inferred)
-            to_process.update(new_inferred)
-            
-            # Add parameters that depend on current parameter
-            dependents = set(interdeps._dependencies_inv.get(current, ()))
-            new_dependents = dependents - collected
-            # Only add if they're in result_dict
-            new_dependents = new_dependents.intersection(result_dict.keys())
-            collected.update(new_dependents)
-            to_process.update(new_dependents)
-            
-            # Add parameters that are inferred from current parameter
-            infers = set(interdeps._inferences_inv.get(current, ()))
-            new_infers = infers - collected
-            # Only add if they're in result_dict
-            new_infers = new_infers.intersection(result_dict.keys())
-            collected.update(new_infers)
-            to_process.update(new_infers)
-        
-        return collected
 
 
 class DataSetType(str, Enum):
