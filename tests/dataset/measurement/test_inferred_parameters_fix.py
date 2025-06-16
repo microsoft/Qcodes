@@ -103,34 +103,42 @@ def test_inferred_parameters_in_actual_measurement():
         # Create delegate parameter
         del_param = DelegateParameter("del_param_1", label="del param 1", source=dac.ch1)
         
+        # Create a standalone parameter to test that standalone handling still works
+        standalone_param = Parameter("standalone", get_cmd=lambda: 3.14)
+        
         # Create measurement
         meas = Measurement(name="test_measurement", exp=exp)
         
         # Register parameters  
-        meas.register_parameter(dac.ch1)
-        meas.register_parameter(del_param, basis=(dac.ch1,))
+        meas.register_parameter(dac.ch1)  # This should be standalone
+        meas.register_parameter(del_param, basis=(dac.ch1,))  # This should be inferred from dac.ch1
+        meas.register_parameter(standalone_param)  # This should be standalone
         
         # Run measurement
         with meas.run() as datasaver:
             # Set values and add results
             dac.ch1.set(0.5)
             del_param.set(0.5) 
+            standalone_param.set(3.14)
             
             datasaver.add_result(
                 (dac.ch1, dac.ch1()),
                 (del_param, del_param()),
+                (standalone_param, standalone_param()),
             )
             
         # Retrieve the dataset
         dataset = datasaver.dataset
         
-        # Get parameter data - both parameters should be present
+        # Get parameter data - all parameters should be present
         param_data = dataset.get_parameter_data()
         
-        # Both parameters should be in the dataset
+        # All parameters should be in the dataset
         assert "dac_ch1" in param_data, "dac_ch1 should be in parameter data"
-        assert "del_param_1" in param_data, "del_param_1 should be in parameter data"
+        assert "del_param_1" in param_data, "del_param_1 should be in parameter data"  
+        assert "standalone" in param_data, "standalone parameter should be in parameter data"
         
         # Check that the data is correct
         assert len(param_data["dac_ch1"]["dac_ch1"]) == 1
         assert len(param_data["del_param_1"]["del_param_1"]) == 1
+        assert len(param_data["standalone"]["standalone"]) == 1
