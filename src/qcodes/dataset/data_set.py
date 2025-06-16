@@ -21,6 +21,7 @@ from qcodes.dataset.data_set_protocol import (
     SPECS,
     BaseDataSet,
     CompletedError,
+    DataSetMixin,
     DataSetProtocol,
     ParameterData,
     SpecsOrInterDeps,
@@ -182,7 +183,7 @@ class _WriterStatus:
 _WRITERS: dict[str, _WriterStatus] = {}
 
 
-class DataSet(BaseDataSet):
+class DataSet(DataSetMixin, BaseDataSet):
     # the "persistent traits" are the attributes/properties of the DataSet
     # that are NOT tied to the representation of the DataSet in any particular
     # database
