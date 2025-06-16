@@ -640,6 +640,51 @@ class DataSetInMem(BaseDataSet):
 
         self._export_info = export_info
 
+    def _collect_all_related_parameters(
+        self, 
+        interdeps: "InterDependencies_", 
+        initial_params: set[ParamSpecBase], 
+        result_dict: Mapping[ParamSpecBase, npt.NDArray]
+    ) -> set[ParamSpecBase]:
+        """
+        Transitively collect all parameters that are related to the initial set of parameters.
+        This includes parameters that any parameter in the set is inferred from, and parameters
+        that depend on or are inferred from those parameters, etc.
+        
+        Only includes parameters that are present in result_dict.
+        """
+        collected = set(initial_params)
+        to_process = set(initial_params)
+        
+        while to_process:
+            current = to_process.pop()
+            
+            # Add parameters that current parameter is inferred from
+            inferred_from = set(interdeps.inferences.get(current, ()))
+            new_inferred = inferred_from - collected
+            # Only add if they're in result_dict
+            new_inferred = new_inferred.intersection(result_dict.keys())
+            collected.update(new_inferred)
+            to_process.update(new_inferred)
+            
+            # Add parameters that depend on current parameter
+            dependents = set(interdeps._dependencies_inv.get(current, ()))
+            new_dependents = dependents - collected
+            # Only add if they're in result_dict
+            new_dependents = new_dependents.intersection(result_dict.keys())
+            collected.update(new_dependents)
+            to_process.update(new_dependents)
+            
+            # Add parameters that are inferred from current parameter
+            infers = set(interdeps._inferences_inv.get(current, ()))
+            new_infers = infers - collected
+            # Only add if they're in result_dict
+            new_infers = new_infers.intersection(result_dict.keys())
+            collected.update(new_infers)
+            to_process.update(new_infers)
+        
+        return collected
+
     def _enqueue_results(
         self, result_dict: Mapping[ParamSpecBase, npt.NDArray]
     ) -> None:
@@ -664,6 +709,10 @@ class DataSetInMem(BaseDataSet):
             inff_params = set(interdeps.inferences.get(toplevel_param, ()))
             deps_params = set(interdeps.dependencies.get(toplevel_param, ()))
             all_params = inff_params.union(deps_params).union({toplevel_param})
+            
+            # Transitively collect all parameters that are related to any parameter
+            # in the current tree, including parameters that dependencies are inferred from
+            all_params = self._collect_all_related_parameters(interdeps, all_params, result_dict)
 
             new_results[toplevel_param.name] = {}
             new_results[toplevel_param.name][toplevel_param.name] = (
