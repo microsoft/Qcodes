@@ -548,6 +548,12 @@ class BaseDataSet(DataSetProtocol, Protocol):
         """
         return tuple(self.description.interdeps.dependencies.keys())
 
+
+class DataSetMixin:
+    """
+    Mixin class to provide shared functionality between DataSet implementations.
+    """
+    
     def _collect_all_related_parameters(
         self, 
         interdeps: InterDependencies_, 
