@@ -13,6 +13,7 @@ from threading import Thread
 from typing import TYPE_CHECKING, Any, Literal
 
 import numpy
+import numpy.typing as npt
 from tqdm.auto import trange
 
 import qcodes
@@ -1226,7 +1227,7 @@ class DataSet(BaseDataSet):
         return "\n".join(out)
 
     def _enqueue_results(
-        self, result_dict: Mapping[ParamSpecBase, numpy.ndarray]
+        self, result_dict: Mapping[ParamSpecBase, npt.NDArray]
     ) -> None:
         """
         Enqueue the results into self._results
@@ -1245,7 +1246,7 @@ class DataSet(BaseDataSet):
 
         toplevel_params = set(interdeps.dependencies).intersection(set(result_dict))
 
-        new_results: dict[str, dict[str, numpy.ndarray]] = {}
+        new_results: dict[str, dict[str, npt.NDArray]] = {}
 
         for toplevel_param in toplevel_params:
             inff_params = set(interdeps.inferences.get(toplevel_param, ()))
@@ -1347,7 +1348,7 @@ class DataSet(BaseDataSet):
 
     @staticmethod
     def _finalize_res_dict_numeric_text_or_complex(
-        result_dict: Mapping[ParamSpecBase, numpy.ndarray],
+        result_dict: Mapping[ParamSpecBase, npt.NDArray],
         toplevel_param: ParamSpecBase,
         inff_params: set[ParamSpecBase],
         deps_params: set[ParamSpecBase],
@@ -1371,7 +1372,7 @@ class DataSet(BaseDataSet):
         else:
             # We first massage all values into np.arrays of the same
             # shape
-            flat_results: dict[str, numpy.ndarray] = {}
+            flat_results: dict[str, npt.NDArray] = {}
 
             toplevel_val = result_dict[toplevel_param]
             flat_results[toplevel_param.name] = toplevel_val.ravel()
@@ -1398,7 +1399,7 @@ class DataSet(BaseDataSet):
 
     @staticmethod
     def _finalize_res_dict_standalones(
-        result_dict: Mapping[ParamSpecBase, numpy.ndarray],
+        result_dict: Mapping[ParamSpecBase, npt.NDArray],
     ) -> list[dict[str, VALUE]]:
         """
         Massage all standalone parameters into the correct shape
