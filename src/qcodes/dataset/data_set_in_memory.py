@@ -16,6 +16,7 @@ from qcodes.dataset.data_set_protocol import (
     SPECS,
     BaseDataSet,
     CompletedError,
+    DataSetMixin,
     ParameterData,
 )
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
@@ -63,7 +64,7 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-class DataSetInMem(BaseDataSet):
+class DataSetInMem(DataSetMixin, BaseDataSet):
     def __init__(
         self,
         run_id: int,
