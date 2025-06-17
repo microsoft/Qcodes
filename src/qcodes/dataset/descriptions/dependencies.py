@@ -290,6 +290,11 @@ class InterDependencies_:  # noqa: PLW1641
         for standalone in (ps.name for ps in self.standalones):
             output[standalone] = {}
             output[standalone][standalone] = np.array([])
+        # Add inferred parameters as their own trees
+        for inferred in self.inferences.keys():
+            inferred_name = inferred.name
+            if inferred_name not in output:
+                output[inferred_name] = {inferred_name: np.array([])}
         return output
 
     def _construct_subdict(self, treename: str) -> dict[str, Any]:
