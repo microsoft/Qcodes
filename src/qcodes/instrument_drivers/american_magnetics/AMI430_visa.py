@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, ClassVar, Concatenate, TypeVar, cast
 
 import numpy as np
 from pyvisa import VisaIOError
-from typing_extensions import ParamSpec, deprecated
+from typing_extensions import ParamSpec
 
 from qcodes.instrument import (
     Instrument,
@@ -600,15 +600,6 @@ class AMIModel430(VisaInstrument):
             else:
                 raise err
         return result
-
-
-@deprecated(
-    "Use qcodes.instrument_drivers.american_magnetics.AMIModel430 instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class AMI430(AMIModel430):
-    pass
 
 
 class AMIModel4303D(Instrument):
@@ -1271,12 +1262,3 @@ class AMIModel4303D(Instrument):
         self._adjust_child_instruments(setpoint_values)
 
         self._set_point = set_point
-
-
-@deprecated(
-    "Use qcodes.instrument_drivers.american_magnetics.AMIModel4303D instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class AMI430_3D(AMIModel4303D):
-    pass
