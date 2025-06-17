@@ -70,8 +70,6 @@ deepdiff==8.5.0
     # via qcodes (pyproject.toml)
 defusedxml==0.7.1
     # via nbconvert
-deprecated==1.2.18
-    # via opentelemetry-api
 docutils==0.21.2
     # via
     #   nbsphinx
@@ -123,6 +121,8 @@ ipython==9.3.0
     #   ipywidgets
     #   qcodes
     #   qcodes-loop
+ipython-pygments-lexers==1.1.1
+    # via ipython
 ipywidgets==8.1.7
     # via
     #   qcodes (pyproject.toml)
@@ -262,6 +262,8 @@ parso==0.8.4
     # via jedi
 partd==1.4.2
     # via dask
+pathspec==0.12.1
+    # via mypy
 pillow==11.2.1
     # via
     #   qcodes (pyproject.toml)
@@ -270,7 +272,9 @@ pillow==11.2.1
 platformdirs==4.3.8
     # via jupyter-core
 pluggy==1.6.0
-    # via pytest
+    # via
+    #   pytest
+    #   pytest-cov
 prompt-toolkit==3.0.51
     # via ipython
 psutil==7.0.0
@@ -287,7 +291,9 @@ pygments==2.19.1
     # via
     #   furo
     #   ipython
+    #   ipython-pygments-lexers
     #   nbconvert
+    #   pytest
     #   sphinx
 pyparsing==3.2.3
     # via matplotlib
@@ -328,10 +334,11 @@ pywin32==310; sys_platform == 'win32'
 pyyaml==6.0.2
     # via
     #   dask
-    #   libcst
     #   pyvisa-sim
     #   sphinx-jsonschema
     #   zhinst-timing-models
+pyyaml-ft==8.0.0
+    # via libcst
 pyzmq==27.0.0
     # via
     #   ipykernel
@@ -347,6 +354,8 @@ requests==2.32.4
     # via
     #   sphinx
     #   sphinx-jsonschema
+roman-numerals-py==3.1.0
+    # via sphinx
 rpds-py==0.25.1
     # via
     #   jsonschema
@@ -355,6 +364,8 @@ ruamel-yaml==0.18.14
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
+ruamel-yaml-clib==0.2.12
+    # via ruamel-yaml
 schema==0.7.7
     # via broadbean
 scipy==1.15.3
@@ -459,6 +470,7 @@ typing-extensions==4.14.0
     #   qcodes (pyproject.toml)
     #   beautifulsoup4
     #   mypy
+    #   opentelemetry-api
     #   pyvisa
     #   pyvisa-sim
     #   qcodes
@@ -495,10 +507,7 @@ websockets==15.0.1
 widgetsnbextension==4.0.14
     # via ipywidgets
 wrapt==1.17.2
-    # via
-    #   qcodes (pyproject.toml)
-    #   deprecated
-    #   qcodes
+    # via qcodes
 xarray==2025.6.1
     # via
     #   qcodes (pyproject.toml)
