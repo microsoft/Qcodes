@@ -134,32 +134,8 @@ class AMI430SwitchHeater(InstrumentChannel):
         self.write(cmd="CONF:PS 1")
         self._enabled = True
 
-    @deprecated(
-        "Use enabled parameter to enable/disable the switch heater.",
-        category=QCoDeSDeprecationWarning,
-        stacklevel=2,
-    )
-    def disable(self) -> None:
-        self._disable()
-
-    @deprecated(
-        "Use enabled parameter to enable/disable the switch heater.",
-        category=QCoDeSDeprecationWarning,
-        stacklevel=2,
-    )
-    def enable(self) -> None:
-        self._enable()
-
     def _check_enabled(self) -> bool:
         return bool(int(self.ask("PS:INST?").strip()))
-
-    @deprecated(
-        "Use enabled parameter to inspect switch heater status.",
-        category=QCoDeSDeprecationWarning,
-        stacklevel=2,
-    )
-    def check_enabled(self) -> bool:
-        return self._check_enabled()
 
     @_Decorators.check_enabled
     def _on(self) -> None:
@@ -167,40 +143,16 @@ class AMI430SwitchHeater(InstrumentChannel):
         while self._parent.ramping_state() == "heating switch":
             self._parent._sleep(0.5)
 
-    @deprecated(
-        "Use state parameter to turn on the switch heater.",
-        category=QCoDeSDeprecationWarning,
-        stacklevel=2,
-    )
-    def on(self) -> None:
-        self._on()
-
     @_Decorators.check_enabled
     def _off(self) -> None:
         self.write("PS 0")
         while self._parent.ramping_state() == "cooling switch":
             self._parent._sleep(0.5)
 
-    @deprecated(
-        "Use state parameter to turn off the switch heater.",
-        category=QCoDeSDeprecationWarning,
-        stacklevel=2,
-    )
-    def off(self) -> None:
-        self._off()
-
     def _check_state(self) -> bool:
         if self.enabled() is False:
             return False
         return bool(int(self.ask("PS?").strip()))
-
-    @deprecated(
-        "Use state parameter to inspect if switch heater is on.",
-        category=QCoDeSDeprecationWarning,
-        stacklevel=2,
-    )
-    def check_state(self) -> bool:
-        return self._check_state()
 
 
 class AMIModel430(VisaInstrument):
