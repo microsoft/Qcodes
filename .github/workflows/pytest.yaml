@@ -91,20 +91,31 @@ jobs:
         echo "version=$PYRIGHT_VERSION" >> $GITHUB_OUTPUT
       working-directory: .github
       shell: bash
-    - uses: jakebailey/pyright-action@b5d50e5cde6547546a5c4ac92e416a8c2c1a1dfe # v2.3.2
+
+    # below we use always to ensure that the steps are run
+    # even if the previous steps fail. This allows users to get feedback
+    # from both typechecking and tests even if one of them fails.
+    - name: Run Pyright
+      uses: jakebailey/pyright-action@b5d50e5cde6547546a5c4ac92e416a8c2c1a1dfe # v2.3.2
       with:
         version: ${{ steps.pyright-version.outputs.version }}
-      if: ${{ !matrix.min-version }}
+      if: ${{ !matrix.min-version && always() }}
+      id: pyright
     - name: Run Mypy
       run: mypy -p qcodes
-      if: ${{ !matrix.min-version }}
+      if: ${{ !matrix.min-version && always() }}
+      id: mypy
     - name: Run parallel tests
+      if: ${{ always() }}
       run: |
         pytest -m "not serial" --cov --cov-report xml --hypothesis-profile ci  --durations=20 $PYTEST_OPT tests
+      id: parallel_tests
 # a subset of the tests fails when run in parallel on Windows so run those in serial here
     - name: Run serial tests
+      if: ${{ always() }}
       run: |
         pytest -m "serial" -n 0 --dist no --cov --cov-report xml --cov-append --hypothesis-profile ci $PYTEST_OPT tests
+      id: serial_tests
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
       with:
