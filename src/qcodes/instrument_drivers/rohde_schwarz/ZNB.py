@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import numpy.typing as npt
-from typing_extensions import deprecated
 
 import qcodes.validators as vals
 from qcodes.instrument import (
@@ -23,7 +22,6 @@ from qcodes.parameters import (
     ParamRawDataType,
     create_on_off_val_mapping,
 )
-from qcodes.utils import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
@@ -1227,12 +1225,3 @@ class RohdeSchwarzZNBBase(VisaInstrument):
         for submodule in self.submodules.values():
             if isinstance(submodule, ChannelList):
                 submodule.clear()
-
-
-@deprecated(
-    "The ZNB base class has been renamed RohdeSchwarzZNBBase",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class ZNB(RohdeSchwarzZNBBase):
-    pass

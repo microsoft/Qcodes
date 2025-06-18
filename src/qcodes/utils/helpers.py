@@ -17,7 +17,6 @@ from qcodes.parameters.permissive_range import permissive_range
 from qcodes.parameters.sequence_helpers import is_sequence, is_sequence_of
 from qcodes.parameters.sweep_values import make_sweep
 from qcodes.parameters.val_mapping import create_on_off_val_mapping
-from qcodes.utils.deprecate import deprecate  # pyright: ignore[reportDeprecated]
 
 from .abstractmethod import qcodes_abstractmethod as abstractmethod
 from .attribute_helpers import (
@@ -32,9 +31,6 @@ from .function_helpers import is_function
 from .json_utils import NumpyJSONEncoder
 from .partial_utils import partial_with_docstring
 from .path_helpers import QCODES_USER_PATH_ENV, get_qcodes_path, get_qcodes_user_path
-from .spyder_utils import (
-    add_to_spyder_UMR_excludelist,  # pyright: ignore[reportDeprecated]
-)
 
 
 # on longer in used but left for backwards compatibility until

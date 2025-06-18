@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import numpy.typing as npt
 from pyvisa import constants, errors
-from typing_extensions import deprecated
 
 from qcodes.instrument import (
     ChannelList,
@@ -20,7 +19,6 @@ from qcodes.parameters import (
     ParameterWithSetpoints,
     create_on_off_val_mapping,
 )
-from qcodes.utils import QCoDeSDeprecationWarning
 from qcodes.validators import Arrays, Bool, Enum, Ints, Numbers
 
 if TYPE_CHECKING:
@@ -98,7 +96,7 @@ class FormattedSweep(ParameterWithSetpoints):
         """
         if self.instrument is None:
             raise RuntimeError("Cannot return setpoints if not attached to instrument")
-        root_instrument: PNABase = self.root_instrument  # type: ignore[assignment]
+        root_instrument: KeysightPNABase = self.root_instrument  # type: ignore[assignment]
         sweep_type = root_instrument.sweep_type()
         if sweep_type == "LIN":
             return (root_instrument.frequency_axis,)
@@ -828,13 +826,3 @@ class KeysightPNAxBase(KeysightPNABase):
             vals=Numbers(min_value=self.min_freq, max_value=self.max_freq),
         )
         """Parameter aux_frequency"""
-
-
-@deprecated("Use KeysightPNABase", category=QCoDeSDeprecationWarning, stacklevel=2)
-class PNABase(KeysightPNABase):
-    pass
-
-
-@deprecated("Use KeysightPNAxBase", category=QCoDeSDeprecationWarning, stacklevel=2)
-class PNAxBase(KeysightPNAxBase):
-    pass

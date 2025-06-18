@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import numpy.typing as npt
 from broadbean.sequence import InvalidForgedSequenceError, fs_schema
-from typing_extensions import deprecated
 
 from qcodes import validators as vals
 from qcodes.instrument import (
@@ -25,7 +24,6 @@ from qcodes.instrument import (
     VisaInstrumentKWArgs,
 )
 from qcodes.parameters import create_on_off_val_mapping
-from qcodes.utils import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -1592,12 +1590,3 @@ class TektronixAWG70000Base(VisaInstrument):
         )
 
         return xmlstr
-
-
-@deprecated(
-    "Base class renamed TektronixAWG70000Base",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class AWG70000A(TektronixAWG70000Base):
-    pass
