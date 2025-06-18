@@ -183,7 +183,7 @@ def test_two_nested_atomics() -> None:
     assert atomic_in_progress == atomic_conn_2.atomic_in_progress
 
 
-def test_that_use_of_atomic_commits_only_at_outermost_context_atomic_connection(
+def test_that_use_of_atomic_commits_only_at_outermost_context(
     tmp_path,
 ) -> None:
     """
