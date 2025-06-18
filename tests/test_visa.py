@@ -11,6 +11,7 @@ import pyvisa.resources
 from pytest import FixtureRequest
 
 from qcodes.instrument import Instrument, VisaInstrument
+from qcodes.instrument_drivers.AimTTi import AimTTiPL601
 from qcodes.instrument_drivers.american_magnetics import AMIModel430
 from qcodes.validators import Numbers
 
@@ -240,8 +241,6 @@ def test_both_visahandle_and_pyvisa_sim_file_raises() -> None:
 
 
 def test_load_pyvisa_sim_file_implict_module(request: FixtureRequest) -> None:
-    from qcodes.instrument_drivers.AimTTi import AimTTiPL601
-
     driver = AimTTiPL601(
         "AimTTi", address="GPIB::1::INSTR", pyvisa_sim_file="AimTTi_PL601P.yaml"
     )
@@ -255,8 +254,6 @@ def test_load_pyvisa_sim_file_implict_module(request: FixtureRequest) -> None:
 
 
 def test_load_pyvisa_sim_file_explicit_module(request: FixtureRequest) -> None:
-    from qcodes.instrument_drivers.AimTTi import AimTTiPL601
-
     driver = AimTTiPL601(
         "AimTTi",
         address="GPIB::1::INSTR",
@@ -272,8 +269,6 @@ def test_load_pyvisa_sim_file_explicit_module(request: FixtureRequest) -> None:
 
 
 def test_load_pyvisa_sim_file_invalid_file_raises(request: FixtureRequest) -> None:
-    from qcodes.instrument_drivers.AimTTi import AimTTiPL601
-
     with pytest.raises(
         FileNotFoundError,
         match=re.escape(
@@ -288,8 +283,6 @@ def test_load_pyvisa_sim_file_invalid_file_raises(request: FixtureRequest) -> No
 
 
 def test_load_pyvisa_sim_file_invalid_module_raises(request: FixtureRequest) -> None:
-    from qcodes.instrument_drivers.AimTTi import AimTTiPL601
-
     with pytest.raises(
         ModuleNotFoundError,
         match=re.escape("No module named 'qcodes.instrument.not_a_module'"),

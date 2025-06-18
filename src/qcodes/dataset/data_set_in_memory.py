@@ -140,7 +140,7 @@ class DataSetInMem(BaseDataSet):
         return run_id is not None
 
     def write_metadata_to_db(self, path_to_db: str | Path | None = None) -> None:
-        from .experiment_container import load_or_create_experiment
+        from .experiment_container import load_or_create_experiment  # noqa: PLC0415
 
         if path_to_db is None:
             path_to_db = self.path_to_db

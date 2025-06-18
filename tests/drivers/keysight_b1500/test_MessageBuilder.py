@@ -5,6 +5,7 @@ import pytest
 import qcodes.instrument_drivers.Keysight.keysightb1500.constants as c
 from qcodes.instrument_drivers.Keysight.keysightb1500.message_builder import (
     MessageBuilder,
+    as_csv,
 )
 
 
@@ -14,8 +15,6 @@ def mb():
 
 
 def test_as_csv() -> None:
-    from qcodes.instrument_drivers.Keysight.keysightb1500.message_builder import as_csv
-
     assert "1" == as_csv([1])
 
     assert "1,2,3" == as_csv([1, 2, 3])

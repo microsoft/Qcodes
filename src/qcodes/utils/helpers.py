@@ -10,7 +10,7 @@ from typing import Any, Optional
 # for backwards compatibility since this module used
 # to contain logic that would abstract between yaml
 # libraries.
-from ruamel.yaml import YAML
+from ruamel.yaml import YAML  # noqa: TID253
 
 from qcodes.parameters.named_repr import named_repr
 from qcodes.parameters.permissive_range import permissive_range

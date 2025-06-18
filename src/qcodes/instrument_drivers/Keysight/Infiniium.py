@@ -1,4 +1,7 @@
 import re
+from datetime import datetime
+from io import BytesIO
+from os.path import splitext
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
@@ -1269,10 +1272,7 @@ class KeysightInfiniium(VisaInstrument):
 
         return np.array if sucessfully saved, else return None
         """
-        from datetime import datetime
-        from io import BytesIO
-        from os.path import splitext
-
+        # we lazy import PIL here to avoid importing pillow when unused
         from PIL.Image import open as pil_open
 
         if isinstance(path, Path):

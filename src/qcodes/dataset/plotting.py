@@ -387,7 +387,7 @@ def plot_and_save_image(
     """
     from matplotlib.figure import Figure
 
-    from qcodes import config
+    from qcodes import config  # noqa: PLC0415
 
     dataid = data.captured_run_id
     axes, cbs = plot_dataset(data)
