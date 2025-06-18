@@ -224,6 +224,8 @@ class ParameterMixin():
         mixin_docs = [m.__doc__ or "" for m in all_applied_mixins]
         base_doc = parameter_base_leaf.__doc__ if parameter_base_leaf else "No documentation available."
 
+        mixin_docs_text = '\n\n'.join(mixin_docs) if mixin_docs else 'None'
+
         additional_doc = (
             f"This Parameter has been extended by the following ParameterMixins: \n    "
             f"{', '.join(mixin_names) if mixin_names else 'None'}\n"
@@ -232,7 +234,7 @@ class ParameterMixin():
             f"Base Class Docstring:\n"
             f"{base_doc}\n"
             f"Mixin Docstrings:\n"
-            f"{'\n\n'.join(mixin_docs) if mixin_docs else 'None'}"
+            f"{mixin_docs_text}"
         )
         original_doc = cls.__doc__ or ""
         cls.__doc__ = (original_doc.strip() + "\n\n" + additional_doc).strip()
