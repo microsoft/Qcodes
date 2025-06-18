@@ -1,3 +1,5 @@
+**Removal of deprecated code**
+
 **Removed modules:**
 
 - Removed the deprecated ``qcodes.instrument_drivers.american_magnetics.AMI430`` module. Use ``AMIModel4303D`` from ``qcodes.instrument_drivers.american_magnetics`` instead.
