@@ -1,5 +1,5 @@
 import pytest
-from typing import Any
+from typing import Any, cast
 from qcodes.parameters import Parameter, OnCacheChangeParameterMixin
 from qcodes.instrument import Instrument
 
@@ -70,7 +70,7 @@ def mock_instr():
 
 
 @pytest.mark.parametrize("invalid_callback", ["not_a_callable", 123, [], {}])
-def test_error_on_non_callable_callback(mock_instr, invalid_callback):
+def test_error_on_non_callable_callback(mock_instr, invalid_callback) -> None:
     test_parameter: OnCacheChangeParameter = mock_instr.add_parameter(
         name="test_parameter",
         parameter_class=OnCacheChangeParameter,
@@ -80,7 +80,7 @@ def test_error_on_non_callable_callback(mock_instr, invalid_callback):
         test_parameter.on_cache_change = invalid_callback
 
 
-def test_no_callback_invocation_on_init_or_get(store, callback_flag, callback, mock_instr):
+def test_no_callback_invocation_on_init_or_get(store, callback_flag, callback, mock_instr) -> None:
     test_parameter: OnCacheChangeParameter = mock_instr.add_parameter(
         name="test_parameter",
         parameter_class=OnCacheChangeParameter,
@@ -94,7 +94,7 @@ def test_no_callback_invocation_on_init_or_get(store, callback_flag, callback, m
     assert not callback_flag["called"], "Callback invoked unexpectedly."
 
 
-def test_callback_invoked_on_set(store, callback_flag, callback, mock_instr):
+def test_callback_invoked_on_set(store, callback_flag, callback, mock_instr) -> None:
     test_parameter: OnCacheChangeParameter = mock_instr.add_parameter(
         name="test_parameter",
         parameter_class=OnCacheChangeParameter,
@@ -107,7 +107,7 @@ def test_callback_invoked_on_set(store, callback_flag, callback, mock_instr):
     assert callback_flag["called"], "Callback not invoked on cache change."
 
 
-def test_changing_callback_after_init(store, callback_flag, callback, mock_instr):
+def test_changing_callback_after_init(store, callback_flag, callback, mock_instr) -> None:
     test_parameter: OnCacheChangeParameter = mock_instr.add_parameter(
         name="test_parameter",
         parameter_class=OnCacheChangeParameter,
@@ -123,7 +123,9 @@ def test_changing_callback_after_init(store, callback_flag, callback, mock_instr
     assert callback_flag["called"]
 
 
-def test_callback_on_get_value_change(callback_flag, callback, mock_instr):
+def test_callback_on_get_value_change(callback_flag, callback, mock_instr) -> None:
+    get_reply = None
+
     test_parameter: OnCacheChangeParameter = mock_instr.add_parameter(
         name="test_parameter",
         parameter_class=OnCacheChangeParameter,
@@ -132,7 +134,6 @@ def test_callback_on_get_value_change(callback_flag, callback, mock_instr):
         docstring="A parameter with dynamic get behavior."
     )
 
-    get_reply = None
     assert test_parameter.get() is None
 
     get_reply = 42
@@ -140,7 +141,7 @@ def test_callback_on_get_value_change(callback_flag, callback, mock_instr):
     assert callback_flag["called"], "Callback not invoked on value change."
 
 
-def test_callback_on_direct_cache_update(store, callback_data, data_callback, mock_instr):
+def test_callback_on_direct_cache_update(store, callback_data, data_callback, mock_instr) -> None:
     test_parameter: OnCacheChangeParameter = mock_instr.add_parameter(
         name="test_parameter",
         parameter_class=OnCacheChangeParameter,
@@ -155,7 +156,7 @@ def test_callback_on_direct_cache_update(store, callback_data, data_callback, mo
     assert callback_data[0]["value_new"] == 5
 
 
-def test_no_callback_if_value_unchanged(store, callback_data, data_callback, mock_instr):
+def test_no_callback_if_value_unchanged(store, callback_data, data_callback, mock_instr) -> None:
     test_parameter: OnCacheChangeParameter = mock_instr.add_parameter(
         name="test_parameter",
         parameter_class=OnCacheChangeParameter,
@@ -173,7 +174,7 @@ def test_no_callback_if_value_unchanged(store, callback_data, data_callback, moc
     assert not callback_data
 
 
-def test_callback_value_parsers(store, callback_data, mock_instr):
+def test_callback_value_parsers(store, callback_data, mock_instr) -> None:
     def cb(**kwargs):
         callback_data.append((
             kwargs.get("value_old"),
@@ -182,15 +183,18 @@ def test_callback_value_parsers(store, callback_data, mock_instr):
             kwargs.get("raw_value_new")
         ))
 
-    test_parameter: OnCacheChangeParameter = mock_instr.add_parameter(
-        name="test_param",
-        parameter_class=OnCacheChangeParameter,
-        on_cache_change=cb,
-        set_cmd=lambda x: store.update({"value": x}),
-        get_cmd=lambda: None if store.get("value") is None else store.get("value"),
-        set_parser=lambda v: v * 2,
-        get_parser=lambda v: None if v is None else v / 2,
-        docstring="A parameter with set_parser."
+    mock_instr.test_parameter = cast(
+        OnCacheChangeParameter,
+        mock_instr.add_parameter(
+            name="test_param",
+            parameter_class=OnCacheChangeParameter,
+            on_cache_change=cb,
+            set_cmd=lambda x: store.update({"value": x}),
+            get_cmd=lambda: None if store.get("value") is None else store.get("value"),
+            set_parser=lambda v: v * 2,
+            get_parser=lambda v: None if v is None else v / 2,
+            docstring="A parameter with set_parser."
+        )
     )
 
     assert mock_instr.test_param.get() is None

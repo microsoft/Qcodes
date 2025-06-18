@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import (
     Any,
     Callable,
+    cast,
     Dict,
     Final,
     List,
@@ -66,12 +67,6 @@ class ParameterMixin():
     _COMPATIBLE_BASES: List[Type[ParameterBase]] = []
     _INCOMPATIBLE_BASES: List[Type[ParameterBase]] = []
 
-    cache: _CacheProtocol
-    instrument: InstrumentBase
-    get: Callable[..., Any]
-    name: str    
-    get_parser: Optional[Callable[[Any], Any]] = None
-
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
 
@@ -100,6 +95,7 @@ class ParameterMixin():
                                 exclude_base_type=ParameterBase)
 
         apply_to_parameter_base = False
+        parameter_base_leaf: Optional[Type[ParameterBase]] = None
         if issubclass(cls, ParameterBase):
             apply_to_parameter_base = True
             parameter_base_leaves = cls._get_leaf_classes(
@@ -140,7 +136,8 @@ class ParameterMixin():
             if apply_to_parameter_base:
                 raise TypeError(
                     f"Multiple ParameterMixin are applied together with "
-                    f"{parameter_base_leaf.__name__}. Combine them into a single ParameterMixin "
+                    f"{parameter_base_leaf.__name__ if parameter_base_leaf is not None else 'None'}."
+                    f"Combine them into a single ParameterMixin "
                     f"class before combining with a ParameterBase class."
                 )
             else:
@@ -379,8 +376,8 @@ class OnCacheChangeParameterMixin(ParameterMixin):
         """
         Wrap the parameter's cache update method to include callback logic.
         """
-        original_update_cache = self.cache._update_with
-        parameter = self
+        parameter = cast(ParameterBase, self)
+        original_update_cache = parameter.cache._update_with
 
         @wraps(original_update_cache)
         def wrapped_cache_update(
@@ -399,14 +396,14 @@ class OnCacheChangeParameterMixin(ParameterMixin):
             value_new = parameter.cache.get(get_if_invalid=False)
 
             if (value_old != value_new) or (raw_value_old != raw_value_new):
-                parameter._handle_on_cache_change(
+                self._handle_on_cache_change(
                     value_old=value_old,
                     value_new=value_new,
                     raw_value_old=raw_value_old,
                     raw_value_new=raw_value_new,
                 )
 
-        self.cache._update_with = wrapped_cache_update
+        parameter.cache._update_with = wrapped_cache_update # type: ignore[method-assign]
 
     def _handle_on_cache_change(
         self,
@@ -534,7 +531,8 @@ class InterdependentParameterMixin(OnCacheChangeParameterMixin):
         Register dependencies with other parameters in the same instrument.
         """
         for dep_name in self.dependent_on:
-            dep_param = getattr(self.instrument, dep_name, None)
+            instrument = cast(ParameterBase, self).instrument
+            dep_param = getattr(instrument, dep_name, None)
             if not isinstance(dep_param, InterdependentParameterMixin):
                 raise TypeError(
                     f"Dependent parameter '{dep_name}' must be an instance of "
@@ -587,7 +585,7 @@ class InterdependentParameterMixin(OnCacheChangeParameterMixin):
         for dep_param in self._dependent_params:
             if dep_param.dependency_update_method:
                 dep_param.dependency_update_method()
-                dep_param.get()
+                cast(ParameterBase, dep_param).get()
 
         if self.dependency_update_method:
             self.dependency_update_method()
@@ -692,20 +690,22 @@ class SetCacheValueOnResetParameterMixin(ParameterMixin):
 
         if self.cache_value_after_reset is SetCacheValueOnResetParameterMixin._UNSET:
             message = (
-                f"cache_value_after_reset for parameter '{self.name}' is not set."
+                f"cache_value_after_reset for parameter '{cast(ParameterBase, self).name}' is not set."
             )
             log.warning(message)
             warnings.warn(message, UserWarning)
 
         if self.reset_group_names is None:
             message = (
-                f"No reset_group_name(s) provided for parameter '{self.name}'."
+                f"No reset_group_name(s) provided for parameter '{cast(ParameterBase, self).name}'."
             )
             log.warning(message)
             warnings.warn(message, UserWarning)
 
         if set_parser is not None:
-            self.get_parser = lambda x: self.cache.get(get_if_invalid=False)
+            self.get_parser: Callable[..., Any] | None = (
+                lambda x: cast(ParameterBase, self).cache.get(get_if_invalid=False)
+            )
 
         if reset_group_names:
             self._register_reset_callbacks(reset_group_names)
@@ -722,7 +722,7 @@ class SetCacheValueOnResetParameterMixin(ParameterMixin):
         self._reset_group_names = value
 
     def reset_cache_value(self) -> None:
-        self.cache.set(self.cache_value_after_reset)
+        cast(ParameterBase, self).cache.set(self.cache_value_after_reset)
 
     def _register_reset_callbacks(self, group_names: List[str]) -> None:
         for group_name in group_names:

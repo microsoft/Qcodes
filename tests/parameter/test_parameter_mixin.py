@@ -44,37 +44,37 @@ class IncompatibleParameterMixin(ParameterMixin):
 # Tests for Naming Conventions and Compatibility
 #################################################
 
-def test_correct_parameter_mixin_naming():
+def test_correct_parameter_mixin_naming() -> None:
     class CorrectNamedParameterMixin(ParameterMixin):
         _COMPATIBLE_BASES = [CompatibleParameter]
 
     assert CorrectNamedParameterMixin.__name__ == "CorrectNamedParameterMixin"
 
 
-def test_incorrect_parameter_mixin_naming():
+def test_incorrect_parameter_mixin_naming() -> None:
     with pytest.raises(ValueError):
         class IncorrectNamedMixin(ParameterMixin):
             _COMPATIBLE_BASES = [CompatibleParameter]
 
 
-def test_compatible_bases_must_be_list():
+def test_compatible_bases_must_be_list() -> None:
     with pytest.raises(TypeError):
         class IncorrectParameterMixin(ParameterMixin):
-            _COMPATIBLE_BASES = CompatibleParameter
+            _COMPATIBLE_BASES = CompatibleParameter # type: ignore[assignment]
 
 
-def test_incompatible_bases_must_be_list():
+def test_incompatible_bases_must_be_list() -> None:
     with pytest.raises(TypeError):
         class IncorrectParameterMixin(ParameterMixin):
             _COMPATIBLE_BASES = [CompatibleParameter]
-            _INCOMPATIBLE_BASES = IncompatibleParameter
+            _INCOMPATIBLE_BASES = IncompatibleParameter # type: ignore[assignment]
 
 
 ##############################
 # Tests for Docstring Updates
 ##############################
 
-def test_docstring_update():
+def test_docstring_update() -> None:
     class BaseParameter(Parameter):
         """Base Parameter Documentation."""
 
@@ -93,6 +93,7 @@ def test_docstring_update():
         """Combined Parameter Documentation."""
 
     doc = CombinedParameter.__doc__
+    assert (doc is not None)
     assert "This Parameter has been extended by the following ParameterMixins" in doc
     assert "BaseParameter" in doc
     assert "Base Parameter Documentation." in doc
@@ -107,84 +108,84 @@ def test_docstring_update():
 # Tests for Compatibility Checks
 #################################
 
-def test_warning_when_parameter_not_explicitly_compatible():
+def test_warning_when_parameter_not_explicitly_compatible() -> None:
     with pytest.warns(UserWarning, match="is not explicitly compatible"):
         class TestParameter(CompatibleParameterMixin, AnotherCompatibleParameter):
             pass
 
 
-def test_explicitly_compatible_base_parameter():
+def test_explicitly_compatible_base_parameter() -> None:
     class TestParameter(IntermediateParameterMixin, AnotherCompatibleParameter):
         pass
 
 
-def test_leaf_parameter_mixin_with_another_base():
+def test_leaf_parameter_mixin_with_another_base() -> None:
     with pytest.warns(UserWarning, match="is not explicitly compatible"):
         class TestParameter(LeafParameterMixin, AnotherCompatibleParameter):
             pass
 
 
-def test_multiple_parameter_mixins_without_compatibility():
+def test_multiple_parameter_mixins_without_compatibility() -> None:
     class ComplexParameterMixin(ParameterMixin):
         _COMPATIBLE_BASES = [AnotherCompatibleParameter]
 
     with pytest.raises(TypeError, match="does not have any common compatible ParameterBase classes"):
-        class LeafComplexParameterMixin(ComplexParameterMixin, LeafParameterMixin):
+        class LeafComplexAParameterMixin(ComplexParameterMixin, LeafParameterMixin):
             _PARAMETER_MIXIN_CLASSES_COMPATIBLE: Final[bool] = True
 
     with pytest.warns(UserWarning, match="Multiple ParameterMixin are combined without"):
-        class LeafComplexParameterMixin(ComplexParameterMixin, LeafParameterMixin):
+        class LeafComplexBParameterMixin(ComplexParameterMixin, LeafParameterMixin):
             _COMPATIBLE_BASES = [CompatibleParameter]
 
 
-def test_multiple_parameter_mixins_with_compatibility():
+def test_multiple_parameter_mixins_with_compatibility() -> None:
     class ComplexParameterMixin(ParameterMixin):
         _COMPATIBLE_BASES = [AnotherCompatibleParameter]
 
-    class LeafComplexParameterMixin(ComplexParameterMixin, LeafParameterMixin):
+    class LeafComplexCParameterMixin(ComplexParameterMixin, LeafParameterMixin):
         _PARAMETER_MIXIN_CLASSES_COMPATIBLE: Final[bool] = True
         _COMPATIBLE_BASES = [CompatibleParameter]
 
-    class LeafComplexParameter(LeafComplexParameterMixin, CompatibleParameter):
+    class LeafComplexParameter(LeafComplexCParameterMixin, CompatibleParameter):
         pass
 
 
-def test_multiple_parameter_mixins_explicit_compatibility_warnings():
+def test_multiple_parameter_mixins_explicit_compatibility_warnings() -> None:
     class ComplexParameterMixin(ParameterMixin):
         _COMPATIBLE_BASES = [AnotherCompatibleParameter]
 
     with pytest.warns(UserWarning, match="is not explicitly compatible"):
-        class ComplexParameter(ComplexParameterMixin, CompatibleParameter):
+        class ComplexParameterA(ComplexParameterMixin, CompatibleParameter):
             pass
 
 
-def test_mixing_complex_and_intermediate():
+def test_mixing_complex_and_intermediate() -> None:
     class ComplexParameterMixin(ParameterMixin):
         _COMPATIBLE_BASES = [AnotherCompatibleParameter]
 
     # Warn when multiple ParameterMixins combined without declared compatibility
     with pytest.warns(UserWarning, match="Multiple ParameterMixin are combined without"):
-        class IntermediateComplexParameterMixin(ComplexParameterMixin, IntermediateParameterMixin):
+        class IntermediateComplexAParameterMixin(ComplexParameterMixin, IntermediateParameterMixin):
             pass
 
     # Adding compatibility resolves this
-    class IntermediateComplexParameterMixin(ComplexParameterMixin, IntermediateParameterMixin):
+    class IntermediateComplexBParameterMixin(ComplexParameterMixin, IntermediateParameterMixin):
         _PARAMETER_MIXIN_CLASSES_COMPATIBLE: Final[bool] = True
         _COMPATIBLE_BASES = [CompatibleParameter]
 
-    class ComplexParameter(IntermediateComplexParameterMixin, CompatibleParameter):
+    class ComplexParameterB(IntermediateComplexBParameterMixin, CompatibleParameter):
         pass
 
     # Without explicit compatibility, warns again
-    class IntermediateComplexParameterMixin(ComplexParameterMixin, IntermediateParameterMixin):
+    class IntermediateComplexCParameterMixin(ComplexParameterMixin, IntermediateParameterMixin):
         _PARAMETER_MIXIN_CLASSES_COMPATIBLE: Final[bool] = True
 
     with pytest.warns(UserWarning, match="is not explicitly compatible"):
-        class ComplexParameter(IntermediateComplexParameterMixin, CompatibleParameter):
+        class ComplexParameterC(IntermediateComplexCParameterMixin, CompatibleParameter):
             pass
 
     # Using AnotherCompatibleParameter should now pass without warning
-    class ComplexParameter(IntermediateComplexParameterMixin, AnotherCompatibleParameter):
+    class ComplexParameterD(IntermediateComplexCParameterMixin, AnotherCompatibleParameter):
         pass
 
 
@@ -192,7 +193,7 @@ def test_mixing_complex_and_intermediate():
 # Tests for _get_leaf_classes and _get_mixin_classes
 #####################################################
 
-def test_get_leaf_classes_single_leaf():
+def test_get_leaf_classes_single_leaf() -> None:
     class TestParameter(LeafParameterMixin, CompatibleParameter):
         pass
 
@@ -201,7 +202,7 @@ def test_get_leaf_classes_single_leaf():
     assert IntermediateParameterMixin not in leaf_classes
 
 
-def test_get_leaf_classes_multiple_leaves():
+def test_get_leaf_classes_multiple_leaves() -> None:
     class ComplexParameterMixin(AnotherCompatibleParameterMixin, LeafParameterMixin):
         _PARAMETER_MIXIN_CLASSES_COMPATIBLE: Final[bool] = True
 
@@ -212,14 +213,14 @@ def test_get_leaf_classes_multiple_leaves():
     assert ComplexParameterMixin not in leaf_classes
 
 
-def test_get_leaf_classes_on_combined_parameter():
+def test_get_leaf_classes_on_combined_parameter() -> None:
     class ComplexParameterMixin(AnotherCompatibleParameterMixin, LeafParameterMixin):
         _PARAMETER_MIXIN_CLASSES_COMPATIBLE: Final[bool] = True
 
-    class ComplexParameter(ComplexParameterMixin, CompatibleParameter):
+    class ComplexParameterE(ComplexParameterMixin, CompatibleParameter):
         pass
 
-    leaf_classes = ComplexParameter._get_leaf_classes(ParameterMixin, ParameterBase)
+    leaf_classes = ComplexParameterE._get_leaf_classes(ParameterMixin, ParameterBase)
     
     assert ComplexParameterMixin in leaf_classes
 
@@ -232,24 +233,24 @@ def test_get_leaf_classes_on_combined_parameter():
     assert ParameterMixin not in leaf_classes
 
 
-def test_get_mixin_classes():
+def test_get_mixin_classes() -> None:
     class ExtraParameterMixin(ParameterMixin):
         _COMPATIBLE_BASES = [CompatibleParameter]
 
     class ComplexParameterMixin(ExtraParameterMixin, LeafParameterMixin):
         _PARAMETER_MIXIN_CLASSES_COMPATIBLE: Final[bool] = True
 
-    class ComplexParameter(ComplexParameterMixin, CompatibleParameter):
+    class ComplexParameterF(ComplexParameterMixin, CompatibleParameter):
         pass
 
-    all_mixins = ComplexParameter._get_mixin_classes(ParameterMixin)
+    all_mixins = ComplexParameterF._get_mixin_classes(ParameterMixin)
 
     assert ExtraParameterMixin in all_mixins
     assert CompatibleParameterMixin in all_mixins
     assert LeafParameterMixin in all_mixins
     assert IntermediateParameterMixin in all_mixins
 
-    assert ComplexParameter not in all_mixins
+    assert ComplexParameterF not in all_mixins
 
     assert ParameterBase not in all_mixins
     assert ParameterMixin not in all_mixins

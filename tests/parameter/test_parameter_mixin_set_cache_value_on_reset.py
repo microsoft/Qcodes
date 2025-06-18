@@ -45,7 +45,7 @@ def clear_reset_registry():
     SetCacheValueOnResetParameterMixin._reset_group_registry.clear()
 
 
-def test_cache_resets_to_value(store, reset_instr):
+def test_cache_resets_to_value(store, reset_instr) -> None:
     test_param: ResetTestParameter = reset_instr.add_parameter(
         name="test_param",
         parameter_class=ResetTestParameter,
@@ -61,7 +61,7 @@ def test_cache_resets_to_value(store, reset_instr):
     assert test_param.get() == 42
 
 
-def test_warning_if_cache_value_unset(store, reset_instr):
+def test_warning_if_cache_value_unset(store, reset_instr) -> None:
     with pytest.warns(UserWarning, match="cache_value_after_reset for parameter 'test_param' is not set"):
         reset_instr.add_parameter(
             name="test_param",
@@ -72,7 +72,7 @@ def test_warning_if_cache_value_unset(store, reset_instr):
         )
 
 
-def test_cache_resets_to_none(store, reset_instr):
+def test_cache_resets_to_none(store, reset_instr) -> None:
     test_param: ResetTestParameter = reset_instr.add_parameter(
         name="test_param_none",
         parameter_class=ResetTestParameter,
@@ -88,7 +88,7 @@ def test_cache_resets_to_none(store, reset_instr):
     assert test_param.get() is None
 
 
-def test_set_parser_with_default_get_parser(store, reset_instr):
+def test_set_parser_with_default_get_parser(store, reset_instr) -> None:
     test_param: ResetTestParameter = reset_instr.add_parameter(
         name="test_param",
         parameter_class=ResetTestParameter,
@@ -105,7 +105,7 @@ def test_set_parser_with_default_get_parser(store, reset_instr):
     assert test_param.get() == 10
 
 
-def test_direct_cache_update_and_reset(store, reset_instr):
+def test_direct_cache_update_and_reset(store, reset_instr) -> None:
     test_param: ResetTestParameter = reset_instr.add_parameter(
         name="test_param",
         parameter_class=ResetTestParameter,
@@ -122,7 +122,7 @@ def test_direct_cache_update_and_reset(store, reset_instr):
     assert test_param.get() == 50
 
 
-def test_error_if_get_cmd_supplied(reset_instr):
+def test_error_if_get_cmd_supplied(reset_instr) -> None:
     with pytest.warns(QCoDeSDeprecationWarning, match="does not correctly pass kwargs"):
         # with pytest.raises(KeyError, match="Duplicate parameter name managed_param on instrument"):
             with pytest.raises(TypeError, match="without 'get_cmd'"):
@@ -137,7 +137,7 @@ def test_error_if_get_cmd_supplied(reset_instr):
                 )
 
 
-def test_error_if_get_parser_supplied(reset_instr):
+def test_error_if_get_parser_supplied(reset_instr) -> None:
     with pytest.warns(QCoDeSDeprecationWarning, match="does not correctly pass kwargs"):
         # with pytest.raises(KeyError, match="Duplicate parameter name managed_param on instrument"):
             with pytest.raises(TypeError, match="Supplying 'get_parser' is not allowed"):
@@ -152,12 +152,12 @@ def test_error_if_get_parser_supplied(reset_instr):
                 )
 
 
-def test_warning_no_callbacks_for_group():
+def test_warning_no_callbacks_for_group() -> None:
     with pytest.warns(UserWarning, match="No callbacks registered for reset group 'empty_group'"):
         SetCacheValueOnResetParameterMixin.reset_group("empty_group")
 
 
-def test_multiple_callbacks_in_group(store, reset_instr):
+def test_multiple_callbacks_in_group(store, reset_instr) -> None:
     call_order = []
 
     def callback_one():
@@ -177,7 +177,7 @@ def test_multiple_callbacks_in_group(store, reset_instr):
     assert store["callback_two"] is True
 
 
-def test_parameter_in_multiple_reset_groups(store, reset_instr):
+def test_parameter_in_multiple_reset_groups(store, reset_instr) -> None:
     test_param: ResetTestParameter = reset_instr.add_parameter(
         name="test_param",
         parameter_class=ResetTestParameter,
@@ -196,7 +196,7 @@ def test_parameter_in_multiple_reset_groups(store, reset_instr):
     assert test_param.get() == 100
 
 
-def test_callback_execution_order(reset_instr):
+def test_callback_execution_order(reset_instr) -> None:
     execution_sequence = []
 
     def first_callback():
