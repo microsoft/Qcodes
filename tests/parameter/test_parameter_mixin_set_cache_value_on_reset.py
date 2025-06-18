@@ -101,8 +101,10 @@ def test_set_parser_with_default_get_parser(store, reset_instr) -> None:
 
     test_param.set(5)
     assert test_param.get() == 5
+    assert test_param.get_raw() == 15    
     reset_instr.perform_reset()
     assert test_param.get() == 10
+    assert test_param.get_raw() == 30 
 
 
 def test_direct_cache_update_and_reset(store, reset_instr) -> None:
@@ -210,3 +212,24 @@ def test_callback_execution_order(reset_instr) -> None:
 
     SetCacheValueOnResetParameterMixin.reset_group("order_group")
     assert execution_sequence == ["first", "second"]
+
+
+def test_get_raw_with_val_mapping(reset_instr) -> None:
+    class MyParam(SetCacheValueOnResetParameterMixin, Parameter):
+        pass
+
+    p = reset_instr.add_parameter(
+        name="valmap_param",
+        parameter_class=MyParam,
+        reset_group_names=["reset_group_general"],
+        cache_value_after_reset="ASCII",
+        val_mapping={"ASCII": "1", "Binary": "2"},
+        set_cmd=lambda x: None
+    )
+
+    p.set("Binary")
+    assert p.get() == "Binary"
+    assert p.get_raw() == "2"
+    reset_instr.perform_reset()
+    assert p.get() == "ASCII"
+    assert p.get_raw() == "1"
