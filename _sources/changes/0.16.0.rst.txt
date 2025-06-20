@@ -1,0 +1,50 @@
+Changelog for QCoDeS 0.16.0
+==============================================
+
+The July 2020 release of QCoDeS.
+
+Note: this will be the **last** QCoDeS release to support python 3.6
+
+
+Breaking Changes:
+_________________
+
+* ``math`` has been renamed to ``math_utils`` (:pr:`2040`).
+* The deprecated `default_measurement` of the `Station` is now removed (:pr:`2058`)
+* The deprecated methods `get_data` and `get_values` of the `DataSet` have now been removed (:pr:`2067`)
+* The `get_setpoints` method of the `DataSet` has been deprecated (:pr:`2068`)
+
+
+New drivers:
+____________
+
+
+Improved drivers:
+_________________
+* The Keithley 2450 driver got a bunch of new parameters and methods (:pr:`1970`, :pr:`2052`)
+* The Keysight B1500 driver now checks errors after setting each parameter (:pr:`2041`) and outputs `NaN` instead of `199.999e99` when compliance is reached (:pr:`2074`)
+* The Keysight B1520A driver saw a bunch of improvements:
+   * sweep API was restructured more logically (:pr:`2044`)
+   * the driver now supports all possible impedance models (:pr:`2047`)
+   * the measurement status is retrieved after each sweep (:pr:`2050`)
+   * added `get_cmds` for `sweep_auto_abort` and `post_sweep_auto_abort` (:pr:`2049`)
+* The Keysight B1517A driver had the following improvements:
+   * the measurement status is retrieved after each sweep (:pr:`2050`).
+   * added `get_cmds` for `sweep_auto_abort` and `post_sweep_auto_abort` (:pr:`2049`)
+   * added measurement status to current/voltage parameters (:pr:`2051`)
+
+Improved:
+_________
+* All master-slave references from drivers have been removed or deprecated (:pr:`2066`)
+* QCoDeS now comes with a code of conduct (:pr:`2078`)
+
+Under the hood:
+_______________
+
+* Better execution of the test suite and hardening of tests (:pr:`2016`, :pr:`2037`, :pr:`2038`, :pr:`2039`, :pr:`2040`, :pr:`2042`, :pr:`2045`, :pr:`2056`, :pr:`2057`, :pr:`2063`, :pr:`2064`, :pr:`2070`, :pr:`2073`, :pr:`2077`, :pr:`2076`). Special highlights from this massive work:
+   * The test suite now runs in parallel, a major win for all developers
+   * Much better handling of the QCoDeS config system as a result
+* Update of dependencies to `mypy` 0.782 (:pr:`2034`, :pr:`2075`) and `pyqtgraph` 0.11.0 (:pr:`2036`)
+* The `measurements.py` module is now slightly better type-annotated (:pr:`2065`)
+* Documentation is built with Spinx 3.1.2 (:pr:`2069`, :pr:`2072`)
+* Added support for (upcoming) `pytest` 6 and explicit dependency on `packaging` (:pr:`2076`)
