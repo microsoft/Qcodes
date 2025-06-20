@@ -484,7 +484,7 @@ uncertainties==3.2.3
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-urllib3==2.4.0
+urllib3==2.5.0
     # via
     #   requests
     #   types-requests
