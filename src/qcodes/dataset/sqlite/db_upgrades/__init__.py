@@ -253,7 +253,9 @@ def perform_db_upgrade_2_to_3(
     dependencies tables represented as the json output of a RunDescriber
     object
     """
-    from qcodes.dataset.sqlite.db_upgrades.upgrade_2_to_3 import upgrade_2_to_3
+    from qcodes.dataset.sqlite.db_upgrades.upgrade_2_to_3 import (  # noqa: PLC0415
+        upgrade_2_to_3,
+    )
 
     upgrade_2_to_3(conn, show_progress_bar)
 
@@ -271,7 +273,9 @@ def perform_db_upgrade_3_to_4(
     correctly for parameters that were neither dependencies nor dependent on
     other parameters. Both have since been fixed so rerun the upgrade.
     """
-    from qcodes.dataset.sqlite.db_upgrades.upgrade_3_to_4 import upgrade_3_to_4
+    from qcodes.dataset.sqlite.db_upgrades.upgrade_3_to_4 import (  # noqa: PLC0415
+        upgrade_3_to_4,
+    )
 
     upgrade_3_to_4(conn, show_progress_bar)
 
@@ -308,7 +312,9 @@ def perform_db_upgrade_5_to_6(
     called 'version'. Note that version changes of the runs_description will
     not be tracked as schema upgrades.
     """
-    from qcodes.dataset.sqlite.db_upgrades.upgrade_5_to_6 import upgrade_5_to_6
+    from qcodes.dataset.sqlite.db_upgrades.upgrade_5_to_6 import (  # noqa: PLC0415
+        upgrade_5_to_6,
+    )
 
     upgrade_5_to_6(conn, show_progress_bar)
 

@@ -332,7 +332,9 @@ known-first-party = ["qcodes"]
 # There modules are relatively slow to import
 # and only required in specific places so
 # don't import them at module level
-banned-module-level-imports = ["xarray", "pandas", "opencensus", "tqdm.dask", "dask", "matplotlib", "IPython"]
+banned-module-level-imports = [
+    "xarray", "cf_xarray","pandas", "opencensus", "tqdm.dask", "dask",
+    "matplotlib", "IPython", "ruamel", "tabulate", "h5netcdf", "PIL", "qcodes_loop"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

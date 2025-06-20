@@ -269,7 +269,8 @@ class Monitor(Thread):
 
 
 def main() -> None:
-    import http.server
+    # no need to import this if we are not running the web server
+    import http.server  # noqa: PLC0415
 
     # If this file is run, create a simple webserver that serves a simple
     # website that can be used to view monitored parameters.

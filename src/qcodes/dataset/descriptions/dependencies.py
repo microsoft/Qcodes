@@ -50,7 +50,8 @@ class InferenceError(Exception):
         )
 
 
-class InterDependencies_:
+class InterDependencies_:  # noqa: PLW1641
+    # todo: not clear if this should implement __hash__.
     """
     Object containing a group of ParamSpecs and the information about their
     internal relations to each other

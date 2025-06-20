@@ -146,9 +146,9 @@ class KeysightB1500(VisaInstrument):
     # FMT1,0: ASCII (12 digits data with header) <CR/LF^EOI>
 
     def _find_modules(self) -> None:
-        from .constants import UNT
-
-        r = self.ask(MessageBuilder().unt_query(mode=UNT.Mode.MODULE_INFO_ONLY).message)
+        r = self.ask(
+            MessageBuilder().unt_query(mode=constants.UNT.Mode.MODULE_INFO_ONLY).message
+        )
 
         slot_population = parse_module_query_response(r)
 

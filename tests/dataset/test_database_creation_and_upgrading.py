@@ -4,6 +4,7 @@ import os
 from contextlib import contextmanager
 from copy import deepcopy
 
+import numpy as np
 import pytest
 from pytest import LogCaptureFixture
 
@@ -25,6 +26,7 @@ from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.guids import parse_guid
+from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.connection import AtomicConnection, atomic_transaction
 from qcodes.dataset.sqlite.database import get_db_version_and_newest_available_version
 from qcodes.dataset.sqlite.db_upgrades import (
@@ -47,6 +49,7 @@ from qcodes.dataset.sqlite.query_helpers import (
     is_column_in_table,
     one,
 )
+from qcodes.parameters import Parameter
 from tests.common import error_caused_by, skip_if_no_fixtures
 from tests.dataset.conftest import temporarily_copied_DB
 
@@ -748,10 +751,6 @@ def test_perform_actual_upgrade_6_to_newest_add_new_data() -> None:
     Insert new runs on top of existing runs upgraded and verify that they
     get the correct captured_run_id and captured_counter
     """
-    import numpy as np
-
-    from qcodes.dataset.measurements import Measurement
-    from qcodes.parameters import Parameter
 
     fixpath = os.path.join(fixturepath, "db_files", "version6")
 

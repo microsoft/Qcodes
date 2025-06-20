@@ -5,6 +5,7 @@ import os
 import random
 import re
 import traceback
+from functools import reduce
 from time import sleep
 from typing import Any
 
@@ -2100,7 +2101,6 @@ def test_datasaver_2d_multi_parameters_array(
     sp_name_2 = "dummy_channel_inst_ChanA_multi_2d_setpoint_param_that_setpoint"
     p_name_1 = "dummy_channel_inst_ChanA_this"
     p_name_2 = "dummy_channel_inst_ChanA_that"
-    from functools import reduce
 
     meas = Measurement()
     param = channel_array_instrument.A.dummy_2d_multi_parameter
