@@ -159,3 +159,19 @@ def test_dictization_of_current_version(some_interdeps) -> None:
         assert ser["interdependencies_"] == idps._to_dict()
         assert ser["shapes"] is None
         assert len(ser.keys()) == 4
+
+
+def test_experiment(some_interdeps) -> None:
+    """
+    Test conversion to dictionary of a RunDescriber
+    """
+    for idps in some_interdeps:
+        desc = RunDescriber(idps)
+        idps_old = new_to_old(desc.interdeps)
+
+        ser = desc._to_dict()
+        assert ser["version"] == 3
+        assert ser["interdependencies"] == idps_old._to_dict()
+        assert ser["interdependencies_"] == idps._to_dict()
+        assert ser["shapes"] is None
+        assert len(ser.keys()) == 4
