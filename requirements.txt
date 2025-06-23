@@ -287,7 +287,7 @@ pyarrow==20.0.0
     #   qcodes
 pyelftools==0.32
     # via zhinst-toolkit
-pygments==2.19.1
+pygments==2.19.2
     # via
     #   furo
     #   ipython
