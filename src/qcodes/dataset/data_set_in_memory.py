@@ -667,7 +667,9 @@ class DataSetInMem(BaseDataSet):
             
             # Transitively collect all parameters that are related to any parameter
             # in the current tree, including parameters that dependencies are inferred from
-            all_params = self._collect_all_related_parameters(interdeps, all_params, result_dict)
+            all_params = interdeps.collect_all_related_parameters(all_params)
+            # Only include parameters that are present in result_dict
+            all_params = all_params.intersection(result_dict.keys())
 
             new_results[toplevel_param.name] = {}
             new_results[toplevel_param.name][toplevel_param.name] = (

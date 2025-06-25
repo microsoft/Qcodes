@@ -407,6 +407,53 @@ class InterDependencies_:  # noqa: PLW1641
         new_interdependencies._graph = graph
         return new_interdependencies
 
+    def collect_all_related_parameters(
+        self, 
+        initial_params: set[ParamSpecBase]
+    ) -> set[ParamSpecBase]:
+        """
+        Transitively collect all parameters that are related to the initial set of parameters.
+        This includes parameters that any parameter in the set is inferred from, and parameters
+        that depend on or are inferred from those parameters, etc.
+        
+        Args:
+            initial_params: The set of parameters to start the traversal from
+            
+        Returns:
+            Set of all parameters transitively related to the initial parameters
+        """
+        collected = set(initial_params)
+        to_process = set(initial_params)
+        
+        while to_process:
+            current = to_process.pop()
+            
+            # Add parameters that current parameter is inferred from
+            inferred_from = set(self.inferences.get(current, ()))
+            new_inferred = inferred_from - collected
+            collected.update(new_inferred)
+            to_process.update(new_inferred)
+            
+            # Add parameters that depend on current parameter
+            # But exclude other toplevel parameters to avoid cross-contamination
+            # between different parameter trees (unless they're already in our collected set)
+            dependents = set(self._dependencies_inv.get(current, ()))
+            # Exclude toplevel parameters that are not already in our tree
+            toplevel_params = set(self.dependencies.keys())
+            # Only exclude toplevel params that aren't already part of our collection
+            dependents = dependents - (toplevel_params - collected)
+            new_dependents = dependents - collected
+            collected.update(new_dependents)
+            to_process.update(new_dependents)
+            
+            # Add parameters that are inferred from current parameter
+            infers = set(self._inferences_inv.get(current, ()))
+            new_infers = infers - collected
+            collected.update(new_infers)
+            to_process.update(new_infers)
+        
+        return collected
+
     @classmethod
     def _from_dict(cls, ser: InterDependencies_Dict) -> InterDependencies_:
         """
