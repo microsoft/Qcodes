@@ -311,7 +311,13 @@ class BaseDataSet(DataSetProtocol, Protocol):
             to_process.update(new_inferred)
             
             # Add parameters that depend on current parameter
+            # But exclude other toplevel parameters to avoid cross-contamination
+            # between different parameter trees (unless they're already in our collected set)
             dependents = set(interdeps._dependencies_inv.get(current, ()))
+            # Exclude toplevel parameters that are not already in our tree
+            toplevel_params = set(interdeps.dependencies.keys())
+            # Only exclude toplevel params that aren't already part of our collection
+            dependents = dependents - (toplevel_params - collected)
             new_dependents = dependents - collected
             # Only add if they're in result_dict
             new_dependents = new_dependents.intersection(result_dict.keys())
