@@ -175,3 +175,5 @@ def test_experiment(some_interdeps) -> None:
         assert ser["interdependencies_"] == idps._to_dict()
         assert ser["shapes"] is None
         assert len(ser.keys()) == 4
+        edd = desc.interdeps._empty_data_dict()
+        assert isinstance(edd, dict)

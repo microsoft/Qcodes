@@ -282,19 +282,36 @@ class InterDependencies_:  # noqa: PLW1641
         """
 
         output: dict[str, dict[str, npt.NDArray]] = {}
+
+        # Handle dependent parameters and their dependencies
         for dependent, independents in self.dependencies.items():
             dependent_name = dependent.name
             output[dependent_name] = {dependent_name: np.array([])}
             for independent in independents:
                 output[dependent_name][independent.name] = np.array([])
+
+        # Handle standalone parameters
         for standalone in (ps.name for ps in self.standalones):
             output[standalone] = {}
             output[standalone][standalone] = np.array([])
-        # Add inferred parameters as their own trees
-        for inferred in self.inferences.keys():
+
+        # Handle inferred parameters - include basis parameters in their trees
+        for inferred, basis_params in self.inferences.items():
             inferred_name = inferred.name
             if inferred_name not in output:
                 output[inferred_name] = {inferred_name: np.array([])}
+                # Add basis parameters to the inferred parameter's tree
+                for basis_param in basis_params:
+                    output[inferred_name][basis_param.name] = np.array([])
+
+        # Add inferred parameters to trees of parameters they're inferred from
+        for inferred, basis_params in self.inferences.items():
+            inferred_name = inferred.name
+            for basis_param in basis_params:
+                basis_name = basis_param.name
+                if inferred_name in output:
+                    output[inferred_name][basis_name] = np.array([])
+
         return output
 
     def _construct_subdict(self, treename: str) -> dict[str, Any]:
