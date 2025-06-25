@@ -61,28 +61,25 @@ def test_inferred_parameters_transitively_collected():
         del_param_spec = interdeps._id_to_paramspec["del_param_1"] 
         dac_spec = interdeps._id_to_paramspec["dac_ch1"]
         
-        # Test the _collect_all_related_parameters method directly
-        from qcodes.dataset.data_set import DataSet
+        # Test the collect_all_related_parameters method directly
         
-        # Create a dummy dataset to access the method
-        with meas.run() as datasaver:
-            dataset = datasaver.dataset
-            
-            # Simulate a result_dict that would be passed to _enqueue_results
-            result_dict = {
-                measurement_spec: [1.0],
-                del_param_spec: [0.5],
-                dac_spec: [0.1]
-            }
-            
-            # Test the helper method
-            initial_params = {measurement_spec, del_param_spec}
-            collected = dataset._collect_all_related_parameters(interdeps, initial_params, result_dict)
-            
-            # Verify that all three parameters are collected
-            collected_names = {p.name for p in collected}
-            expected_names = {"measurement", "del_param_1", "dac_ch1"}
-            assert collected_names == expected_names, f"Expected {expected_names}, got {collected_names}"
+        # Simulate a result_dict that would be passed to _enqueue_results
+        result_dict = {
+            measurement_spec: [1.0],
+            del_param_spec: [0.5],
+            dac_spec: [0.1]
+        }
+        
+        # Test the helper method
+        initial_params = {measurement_spec, del_param_spec}
+        collected = interdeps.collect_all_related_parameters(initial_params)
+        # Filter to only include parameters that are in result_dict (same as the original behavior)
+        collected = collected.intersection(result_dict.keys())
+        
+        # Verify that all three parameters are collected
+        collected_names = {p.name for p in collected}
+        expected_names = {"measurement", "del_param_1", "dac_ch1"}
+        assert collected_names == expected_names, f"Expected {expected_names}, got {collected_names}"
 
 
 def test_inferred_parameters_in_actual_measurement():
@@ -184,39 +181,41 @@ def test_multiple_dependent_parameters_no_cross_contamination():
         y1_spec = interdeps._id_to_paramspec["y1"] 
         y2_spec = interdeps._id_to_paramspec["y2"]
         
-        # Test the _collect_all_related_parameters method directly
-        with meas.run() as datasaver:
-            dataset = datasaver.dataset
-            
-            # Simulate a result_dict that would be passed to _enqueue_results
-            result_dict = {
-                x_spec: [1.0],
-                y1_spec: [2.0],
-                y2_spec: [3.0]
-            }
-            
-            # Test collecting parameters for y1 tree
-            # Should include x (its dependency) and y1, but NOT y2
-            initial_params = {y1_spec}
-            collected = dataset._collect_all_related_parameters(interdeps, initial_params, result_dict)
-            
-            collected_names = {p.name for p in collected}
-            expected_names = {"x", "y1"}
-            
-            assert collected_names == expected_names, (
-                f"y1 tree should only contain x and y1, but got {collected_names}. "
-                f"This suggests y2 was incorrectly included due to cross-contamination."
-            )
-            
-            # Test collecting parameters for y2 tree
-            # Should include x (its dependency) and y2, but NOT y1
-            initial_params = {y2_spec}
-            collected = dataset._collect_all_related_parameters(interdeps, initial_params, result_dict)
-            
-            collected_names = {p.name for p in collected}
-            expected_names = {"x", "y2"}
-            
-            assert collected_names == expected_names, (
-                f"y2 tree should only contain x and y2, but got {collected_names}. "
-                f"This suggests y1 was incorrectly included due to cross-contamination."
-            )
+        # Test the collect_all_related_parameters method directly
+        
+        # Simulate a result_dict that would be passed to _enqueue_results
+        result_dict = {
+            x_spec: [1.0],
+            y1_spec: [2.0],
+            y2_spec: [3.0]
+        }
+        
+        # Test collecting parameters for y1 tree
+        # Should include x (its dependency) and y1, but NOT y2
+        initial_params = {y1_spec}
+        collected = interdeps.collect_all_related_parameters(initial_params)
+        # Filter to only include parameters that are in result_dict (same as the original behavior)
+        collected = collected.intersection(result_dict.keys())
+        
+        collected_names = {p.name for p in collected}
+        expected_names = {"x", "y1"}
+        
+        assert collected_names == expected_names, (
+            f"y1 tree should only contain x and y1, but got {collected_names}. "
+            f"This suggests y2 was incorrectly included due to cross-contamination."
+        )
+        
+        # Test collecting parameters for y2 tree
+        # Should include x (its dependency) and y2, but NOT y1
+        initial_params = {y2_spec}
+        collected = interdeps.collect_all_related_parameters(initial_params)
+        # Filter to only include parameters that are in result_dict (same as the original behavior)
+        collected = collected.intersection(result_dict.keys())
+        
+        collected_names = {p.name for p in collected}
+        expected_names = {"x", "y2"}
+        
+        assert collected_names == expected_names, (
+            f"y2 tree should only contain x and y2, but got {collected_names}. "
+            f"This suggests y1 was incorrectly included due to cross-contamination."
+        )
