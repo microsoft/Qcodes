@@ -412,7 +412,7 @@ class InterDependencies_:  # noqa: PLW1641
         initial_params: set[ParamSpecBase]
     ) -> set[ParamSpecBase]:
         """
-        Transitively collect all parameters that are related to the initial set of parameters.
+        Recursively collect all parameters that are related to the initial set of parameters.
         This includes parameters that any parameter in the set is inferred from, and parameters
         that depend on or are inferred from those parameters, etc.
         
@@ -422,35 +422,43 @@ class InterDependencies_:  # noqa: PLW1641
         Returns:
             Set of all parameters transitively related to the initial parameters
         """
-        collected = set(initial_params)
-        to_process = set(initial_params)
+        collected: set[ParamSpecBase] = set()
         
-        while to_process:
-            current = to_process.pop()
+        def _collect_related(param: ParamSpecBase) -> None:
+            """
+            Recursively collect all parameters related to the given parameter.
+            Terminates immediately if the parameter has already been processed.
+            """
+            if param in collected:
+                return
             
-            # Add parameters that current parameter is inferred from
-            inferred_from = set(self.inferences.get(current, ()))
-            new_inferred = inferred_from - collected
-            collected.update(new_inferred)
-            to_process.update(new_inferred)
+            # Add the current parameter to collected set
+            collected.add(param)
             
-            # Add parameters that depend on current parameter
+            # Recursively process parameters that current parameter is inferred from (basis parameters)
+            for basis_param in self.inferences.get(param, ()):
+                _collect_related(basis_param)
+            
+            # Recursively process parameters that current parameter depends on (setpoints)
+            for setpoint_param in self.dependencies.get(param, ()):
+                _collect_related(setpoint_param)
+            
+            # Recursively process parameters that depend on current parameter (dependents)
             # But exclude other toplevel parameters to avoid cross-contamination
             # between different parameter trees (unless they're already in our collected set)
-            dependents = set(self._dependencies_inv.get(current, ()))
-            # Exclude toplevel parameters that are not already in our tree
             toplevel_params = set(self.dependencies.keys())
-            # Only exclude toplevel params that aren't already part of our collection
-            dependents = dependents - (toplevel_params - collected)
-            new_dependents = dependents - collected
-            collected.update(new_dependents)
-            to_process.update(new_dependents)
+            for dependent_param in self._dependencies_inv.get(param, ()):
+                # Only process if it's not a toplevel parameter, or if it's already in our collection
+                if dependent_param not in toplevel_params or dependent_param in collected:
+                    _collect_related(dependent_param)
             
-            # Add parameters that are inferred from current parameter
-            infers = set(self._inferences_inv.get(current, ()))
-            new_infers = infers - collected
-            collected.update(new_infers)
-            to_process.update(new_infers)
+            # Recursively process parameters that are inferred from current parameter
+            for inferred_param in self._inferences_inv.get(param, ()):
+                _collect_related(inferred_param)
+        
+        # Start the recursive collection from all initial parameters
+        for param in initial_params:
+            _collect_related(param)
         
         return collected
 
