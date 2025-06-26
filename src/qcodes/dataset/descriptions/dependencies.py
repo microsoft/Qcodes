@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from .versioning.rundescribertypes import InterDependencies_Dict
 
 ParamSpecTree = dict[ParamSpecBase, tuple[ParamSpecBase, ...]]
-ParamNameTree = dict[str, tuple[str, ...]]
+ParamNameTree = dict[str, list[str]]
 ErrorTuple = tuple[type[Exception], str]
 
 
@@ -71,7 +71,7 @@ class InterDependencies_:
         for paramspec in paramspecs:
             self._graph.add_node(paramspec.name, value=paramspec)
 
-    def add_interdeps_by_type(
+    def _add_interdeps_by_type(
         self, links: list[tuple[ParamSpecBase, ParamSpecBase]], type: str
     ) -> None:
         for link in links:
@@ -79,12 +79,11 @@ class InterDependencies_:
             if self._graph.has_edge(
                 paramspec_from.name, paramspec_to.name
             ) or self._graph.has_edge(paramspec_to.name, paramspec_from.name):
-                raise ValueError("Link already exists")
+                raise ValueError(
+                    f"An edge between {paramspec_from.name} and {paramspec_to.name} already exists. \n"
+                    "The relationship between them is not well-defined"
+                )
             self._graph.add_edge(paramspec_from.name, paramspec_to.name, type=type)
-        if not nx.is_forest(self.graph):
-            raise ValueError(
-                "Adding these interdependencies caused the graph to become cyclic"
-            )
 
     def add_dependencies(self, dependencies: ParamSpecTree) -> None:
         self._add_interdeps(dependencies, type="depends_on")
@@ -100,7 +99,47 @@ class InterDependencies_:
             flat_specs = list(chain.from_iterable([(spec_dep,), spec_indeps]))
             flat_deps = list(product((spec_dep,), spec_indeps))
             self.add_paramspecs(flat_specs)
-            self.add_interdeps_by_type(flat_deps, type=type)
+            self._add_interdeps_by_type(flat_deps, type=type)
+        self._validate_interdependencies(interdeps)
+
+    def _validate_interdependencies(self, interdeps: ParamSpecTree) -> None:
+        self._validate_acyclic(interdeps)
+        self._validate_no_chained_dependencies(interdeps)
+
+    def _validate_acyclic(self, interdeps: ParamSpecTree) -> None:
+        if not nx.is_forest(self.graph):
+            raise ValueError(
+                f"Adding these interdependencies {interdeps} caused the graph to become cyclic"
+            )
+
+    def _validate_no_chained_dependencies(self, interdeps: ParamSpecTree) -> None:
+        for node, in_degree in self._dependency_subgraph.in_degree:
+            out_degree = self._dependency_subgraph.out_degree(node)
+            if in_degree > 0 and out_degree > 0:
+                depends_on_nodes = list(self._dependency_subgraph.successors(node))
+                depended_on_nodes = list(self._dependency_subgraph.predecessors(node))
+                raise ValueError(
+                    f"Paramspec {node} both depends on {depends_on_nodes} and is depended upon by {depended_on_nodes} \n"
+                    f"This was caused while adding these interdependencies {interdeps}"
+                )
+
+    @property
+    def _dependency_subgraph(self) -> nx.DiGraph:
+        depends_on_edges = [
+            edge
+            for edge in self.graph.edges
+            if self.graph.edges[edge]["type"] == "depends_on"
+        ]
+        return cast("nx.DiGraph", self.graph.edge_subgraph(depends_on_edges))
+
+    @property
+    def _inference_subgraph(self) -> nx.DiGraph:
+        inferred_from_edges = [
+            edge
+            for edge in self.graph.edges
+            if self.graph.edges[edge]["type"] == "inferred_from"
+        ]
+        return cast("nx.DiGraph", self.graph.edge_subgraph(inferred_from_edges))
 
     def extend(
         self,
@@ -232,3 +271,133 @@ class InterDependencies_:
         for edge_dict in graph_json["edges"]:
             edge_dict["classes"] = edge_dict["data"]["type"]
         return graph_json
+
+    @staticmethod
+    def validate_paramspectree(paramspectree: ParamSpecTree) -> ErrorTuple | None:
+        """
+        Validate a ParamSpecTree. Apart from adhering to the type, a
+        ParamSpecTree must not have any cycles.
+
+        Returns:
+            A tuple with an exception type and an error message or None, if
+            the paramtree is valid
+
+        """
+
+        # Validate the type
+
+        if not isinstance(paramspectree, dict):
+            return (TypeError, "ParamSpecTree must be a dict")
+
+        for key, values in paramspectree.items():
+            if not isinstance(key, ParamSpecBase):
+                return (TypeError, "ParamSpecTree must have ParamSpecs as keys")
+            if not isinstance(values, tuple):
+                return (TypeError, "ParamSpecTree must have tuple values")
+            for value in values:
+                if not isinstance(value, ParamSpecBase):
+                    return (
+                        TypeError,
+                        ("ParamSpecTree can only have tuples of ParamSpecs as values"),
+                    )
+
+        # check for cycles
+
+        roots = set(paramspectree.keys())
+        leafs = {ps for tup in paramspectree.values() for ps in tup}
+
+        if roots.intersection(leafs) != set():
+            return (ValueError, "ParamSpecTree can not have cycles")
+
+        return None
+
+    def validate_subset(self, paramspecs: Sequence[ParamSpecBase]) -> None:
+        subset_nodes = [paramspec.name for paramspec in paramspecs]
+        # We construct a set of all edges to subset nodes such that:
+        #   1. The edge leads out from the subset node (depends_on or inferred_from)
+        #   2. There is an inferred_from edge into the subset node
+        # We exclude depends_on in-edges, because those are formally part of a different tree
+        # We then include any standalone nodes in the subset
+        edges_to_subset_nodes = [
+            (out_node, in_node)
+            for out_node, in_node in self.graph.edges
+            if (out_node in subset_nodes)
+            or (
+                in_node in subset_nodes
+                and self.graph[out_node][in_node]["type"] == "inferred_from"
+            )
+        ]
+
+        standalone_subset_nodes = [
+            node
+            for node in self.graph.nodes
+            if self.graph.degree(node) == 0  # pyright: ignore[reportCallIssue]
+        ]
+        if not set(
+            chain.from_iterable(edges_to_subset_nodes + standalone_subset_nodes)
+        ) == set(subset_nodes):
+            raise ValueError  # TODO: add a good message here
+
+    @classmethod
+    def _from_dict(cls, ser: InterDependencies_Dict) -> InterDependencies_:
+        """
+        Construct an InterDependencies_ object from a dictionary
+        representation of such an object
+        """
+        params = ser["parameters"]
+        deps = cls._extract_deps_from_dict(ser)
+
+        inffs = cls._extract_inffs_from_dict(ser)
+
+        stdls = tuple(
+            ParamSpecBase._from_dict(params[ps_id]) for ps_id in ser["standalones"]
+        )
+
+        return cls(dependencies=deps, inferences=inffs, standalones=stdls)
+
+    @classmethod
+    def _extract_inffs_from_dict(cls, ser: InterDependencies_Dict) -> ParamSpecTree:
+        params = ser["parameters"]
+        inffs = {}
+        for key, value in ser["inferences"].items():
+            inffs_key = ParamSpecBase._from_dict(params[key])
+            inffs_vals = tuple(ParamSpecBase._from_dict(params[val]) for val in value)
+            inffs.update({inffs_key: inffs_vals})
+        return inffs
+
+    @classmethod
+    def _extract_deps_from_dict(cls, ser: InterDependencies_Dict) -> ParamSpecTree:
+        params = ser["parameters"]
+        deps = {}
+        for key, value in ser["dependencies"].items():
+            deps_key = ParamSpecBase._from_dict(params[key])
+            deps_vals = tuple(ParamSpecBase._from_dict(params[val]) for val in value)
+            deps.update({deps_key: deps_vals})
+        return deps
+
+    def _to_dict(self) -> InterDependencies_Dict:
+        """
+        Write out this object as a dictionary
+        """
+        parameters = {
+            node_id: data["value"] for node_id, data in self.graph.nodes(data=True)
+        }
+
+        dependencies = paramspec_tree_to_param_name_tree(self.dependencies)
+        inferences = paramspec_tree_to_param_name_tree(self.inferences)
+        standalones = [paramspec.name for paramspec in self.standalones]
+        output: InterDependencies_Dict = {
+            "parameters": parameters,
+            "dependencies": dependencies,
+            "inferences": inferences,
+            "standalones": standalones,
+        }
+        return output
+
+
+def paramspec_tree_to_param_name_tree(
+    paramspec_tree: ParamSpecTree,
+) -> ParamNameTree:
+    return {
+        key.name: [item.name for item in items] for key, items in paramspec_tree.items()
+    }
