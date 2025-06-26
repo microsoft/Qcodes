@@ -157,10 +157,14 @@ class InterDependencies_:
 
     @property
     def standalones(self) -> tuple[ParamSpecBase, ...]:
+        degree_iterator = self.graph.degree
+        assert not isinstance(
+            degree_iterator, int
+        )  # without arguments, graph.degree returns an iterable
         return tuple(
             [
                 self._node_to_paramspec(node_id)
-                for node_id, degree in graph.degree
+                for node_id, degree in degree_iterator
                 if degree == 0
             ]
         )
@@ -219,3 +223,12 @@ class InterDependencies_:
     @property
     def graph(self) -> nx.DiGraph:
         return self._graph
+
+    def to_ipycytoscape_json(self) -> dict[str, list[dict[str, Any]]]:
+        graph_json: dict[str, list[dict[str, Any]]] = nx.cytoscape_data(self.graph)[
+            "elements"
+        ]
+        # TODO: Add different node types?
+        for edge_dict in graph_json["edges"]:
+            edge_dict["classes"] = edge_dict["data"]["type"]
+        return graph_json
