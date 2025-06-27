@@ -82,14 +82,21 @@ class InterDependencies_:
     def add_dependencies(self, dependencies: ParamSpecTree | None) -> None:
         if dependencies is None or dependencies == {}:
             return
+        self.validate_paramspectree(dependencies, type="dependencies")
         self._add_interdeps(dependencies, type="depends_on")
 
     def add_inferences(self, inferences: ParamSpecTree | None) -> None:
         if inferences is None or inferences == {}:
             return
+        self.validate_paramspectree(inferences, type="inferences")
         self._add_interdeps(inferences, type="inferred_from")
 
     def add_standalones(self, standalones: tuple[ParamSpecBase, ...]) -> None:
+        for ps in standalones:
+            if not isinstance(ps, ParamSpecBase):
+                raise ValueError("Invalid standalones") from TypeError(
+                    "Standalones must be a sequence of ParamSpecs"
+                )
         self.add_paramspecs(list(standalones))
 
     def _add_interdeps(self, interdeps: ParamSpecTree, type: str) -> None:
@@ -275,7 +282,9 @@ class InterDependencies_:
         return graph_json
 
     @staticmethod
-    def validate_paramspectree(paramspectree: ParamSpecTree) -> ErrorTuple | None:
+    def validate_paramspectree(
+        paramspectree: ParamSpecTree, type: str | None = None
+    ) -> None:
         """
         Validate a ParamSpecTree. Apart from adhering to the type, a
         ParamSpecTree must not have any cycles.
@@ -285,33 +294,38 @@ class InterDependencies_:
             the paramtree is valid
 
         """
+        type = type or "ParamSpecTree"
+        cause: str | None = None
 
         # Validate the type
-
         if not isinstance(paramspectree, dict):
-            return (TypeError, "ParamSpecTree must be a dict")
+            cause = "ParamSpecTree must be a dict"
+        if cause is None:
+            for key, values in paramspectree.items():
+                if not isinstance(key, ParamSpecBase):
+                    cause = "ParamSpecTree must have ParamSpecs as keys"
+                    break
+                if not isinstance(values, tuple):
+                    cause = "ParamSpecTree must have tuple values"
+                    break
+                for value in values:
+                    if not isinstance(value, ParamSpecBase):
+                        cause = (
+                            "ParamSpecTree can only have tuples of ParamSpecs as values"
+                        )
+                        break
 
-        for key, values in paramspectree.items():
-            if not isinstance(key, ParamSpecBase):
-                return (TypeError, "ParamSpecTree must have ParamSpecs as keys")
-            if not isinstance(values, tuple):
-                return (TypeError, "ParamSpecTree must have tuple values")
-            for value in values:
-                if not isinstance(value, ParamSpecBase):
-                    return (
-                        TypeError,
-                        ("ParamSpecTree can only have tuples of ParamSpecs as values"),
-                    )
+        if cause is None:
+            # check for cycles
+            roots = set(paramspectree.keys())
+            leafs = {ps for tup in paramspectree.values() for ps in tup}
 
-        # check for cycles
-
-        roots = set(paramspectree.keys())
-        leafs = {ps for tup in paramspectree.values() for ps in tup}
-
-        if roots.intersection(leafs) != set():
-            return (ValueError, "ParamSpecTree can not have cycles")
-
-        return None
+            if roots.intersection(leafs) != set():
+                raise ValueError(f"Invalid {type}") from ValueError(
+                    "ParamSpecTree can not have cycles"
+                )
+        else:
+            raise ValueError(f"Invalid {type}") from TypeError(cause)
 
     def validate_subset(self, paramspecs: Sequence[ParamSpecBase]) -> None:
         subset_nodes = set([paramspec.name for paramspec in paramspecs])
