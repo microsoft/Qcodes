@@ -88,6 +88,12 @@ from .scaled_paramter import ScaledParameter
 from .specialized_parameters import ElapsedTimeParameter, InstrumentRefParameter
 from .sweep_values import SweepFixedValues, SweepValues
 from .val_mapping import create_on_off_val_mapping
+from .parameter_mixin import (
+    ParameterMixin,
+    OnCacheChangeParameterMixin,
+    InterdependentParameterMixin,
+    SetCacheValueOnResetParameterMixin,
+)
 
 __all__ = [
     "ArrayParameter",
@@ -116,4 +122,8 @@ __all__ = [
     "create_on_off_val_mapping",
     "expand_setpoints_helper",
     "invert_val_mapping",
+    "ParameterMixin",
+    "OnCacheChangeParameterMixin",
+    "InterdependentParameterMixin",
+    "SetCacheValueOnResetParameterMixin",
 ]
