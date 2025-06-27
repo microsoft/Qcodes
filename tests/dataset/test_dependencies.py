@@ -3,10 +3,10 @@ import re
 from copy import deepcopy
 
 import pytest
+from networkx import NetworkXError
 
 from qcodes.dataset.descriptions.dependencies import (
-    DependencyError,
-    InferenceError,
+    IncompleteSubsetError,
     InterDependencies_,
 )
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
@@ -233,48 +233,6 @@ def test_new_to_old(some_paramspecbases) -> None:
     assert new_to_old(idps_new) == idps_old_expected
 
 
-def test_extend_with_paramspec(some_paramspecs) -> None:
-    ps1 = some_paramspecs[1]["ps1"]
-    ps2 = some_paramspecs[1]["ps2"]
-    ps3 = some_paramspecs[1]["ps3"]
-    ps4 = some_paramspecs[1]["ps4"]
-    ps5 = some_paramspecs[1]["ps5"]
-    ps6 = some_paramspecs[1]["ps6"]
-
-    ps1_base = ps1.base_version()
-    ps2_base = ps2.base_version()
-    ps3_base = ps3.base_version()
-    ps4_base = ps4.base_version()
-    ps5_base = ps5.base_version()
-    ps6_base = ps6.base_version()
-
-    idps_bare = InterDependencies_(standalones=(ps1_base,))
-    idps_extended = InterDependencies_(inferences={ps3_base: (ps1_base,)})
-
-    assert idps_bare._extend_with_paramspec(ps3) == idps_extended
-
-    idps_bare = InterDependencies_(
-        standalones=(ps2_base,), inferences={ps3_base: (ps1_base,)}
-    )
-    idps_extended = InterDependencies_(
-        inferences={ps3_base: (ps1_base,), ps4_base: (ps2_base,)}
-    )
-
-    assert idps_bare._extend_with_paramspec(ps4) == idps_extended
-
-    idps_bare = InterDependencies_(standalones=(ps1_base, ps2_base))
-    idps_extended = InterDependencies_(
-        inferences={ps3_base: (ps1_base,), ps4_base: (ps2_base,)},
-        dependencies={ps5_base: (ps3_base, ps4_base), ps6_base: (ps3_base, ps4_base)},
-    )
-    assert (
-        idps_bare._extend_with_paramspec(ps3)
-        ._extend_with_paramspec(ps4)
-        ._extend_with_paramspec(ps5)
-        ._extend_with_paramspec(ps6)
-    ) == idps_extended
-
-
 def test_validate_subset(some_paramspecbases) -> None:
     ps1, ps2, ps3, ps4 = some_paramspecbases
 
@@ -288,30 +246,30 @@ def test_validate_subset(some_paramspecbases) -> None:
     idps.validate_subset(())
     idps.validate_subset([])
 
-    with pytest.raises(DependencyError) as exc_info1:
+    with pytest.raises(IncompleteSubsetError) as exc_info1:
         idps.validate_subset((ps1,))
-    assert exc_info1.value._param_name == "psb1"
-    assert exc_info1.value._missing_params == {"psb2", "psb3"}
+    assert exc_info1.value._subset_parans == {"psb1"}
+    assert exc_info1.value._missing_params == {"psb2", "psb3", "psb4"}
 
-    with pytest.raises(DependencyError) as exc_info2:
+    with pytest.raises(IncompleteSubsetError) as exc_info2:
         idps.validate_subset((ps1, ps2, ps4))
-    assert exc_info2.value._param_name == "psb1"
+    assert exc_info2.value._subset_parans == {"psb1", "psb2", "psb4"}
     assert exc_info2.value._missing_params == {"psb3"}
 
-    with pytest.raises(InferenceError) as exc_info3:
+    with pytest.raises(IncompleteSubsetError) as exc_info3:
         idps.validate_subset((ps3,))
-    assert exc_info3.value._param_name == "psb3"
+    assert exc_info3.value._subset_parans == {"psb3"}
     assert exc_info3.value._missing_params == {"psb4"}
 
-    with pytest.raises(InferenceError) as exc_info4:
+    with pytest.raises(IncompleteSubsetError) as exc_info4:
         idps2 = InterDependencies_(
             dependencies={ps1: (ps2, ps3)}, inferences={ps3: (ps4,)}
         )
         idps2.validate_subset((ps1, ps2, ps3))
-    assert exc_info4.value._param_name == "psb3"
+    assert exc_info4.value._subset_parans == {"psb1", "psb2", "psb3"}
     assert exc_info4.value._missing_params == {"psb4"}
 
-    with pytest.raises(ValueError, match="ps42"):
+    with pytest.raises(NetworkXError, match="ps42"):
         ps42 = ParamSpecBase("ps42", paramtype="text", label="", unit="it")
         idps.validate_subset((ps2, ps42, ps4))
 
