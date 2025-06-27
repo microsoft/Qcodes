@@ -7,8 +7,9 @@ which parameters depend on each other is handled here.
 from __future__ import annotations
 
 from collections import defaultdict
+from copy import deepcopy
 from itertools import chain, product
-from typing import TYPE_CHECKING, Any, Self, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import networkx as nx
 import numpy as np
@@ -17,7 +18,7 @@ import numpy.typing as npt
 from .param_spec import ParamSpecBase
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Sequence
 
     from .versioning.rundescribertypes import InterDependencies_Dict
 
@@ -26,28 +27,15 @@ ParamNameTree = dict[str, list[str]]
 ErrorTuple = tuple[type[Exception], str]
 
 
-class DependencyError(Exception):
-    def __init__(self, param_name: str, missing_params: set[str], *args: Any):
+class IncompleteSubsetError(Exception):
+    def __init__(self, subset_parans: set[str], missing_params: set[str], *args: Any):
         super().__init__(*args)
-        self._param_name = param_name
+        self._subset_parans = subset_parans
         self._missing_params = missing_params
 
     def __str__(self) -> str:
         return (
-            f"{self._param_name} has the following dependencies that are "
-            f"missing: {self._missing_params}"
-        )
-
-
-class InferenceError(Exception):
-    def __init__(self, param_name: str, missing_params: set[str], *args: Any):
-        super().__init__(*args)
-        self._param_name = param_name
-        self._missing_params = missing_params
-
-    def __str__(self) -> str:
-        return (
-            f"{self._param_name} has the following inferences that are "
+            f"{self._subset_parans} is not a complete subset. The following interdependencies are "
             f"missing: {self._missing_params}"
         )
 
@@ -60,12 +48,9 @@ class InterDependencies_:
         standalones: tuple[ParamSpecBase, ...] = (),
     ):
         self._graph: nx.DiGraph = nx.DiGraph()
-        if dependencies is not None:
-            self.add_dependencies(dependencies)
-        if inferences is not None:
-            self.add_inferences(inferences)
-        if standalones != ():
-            self.add_standalones(standalones)
+        self.add_dependencies(dependencies)
+        self.add_inferences(inferences)
+        self.add_standalones(standalones)
 
     def add_paramspecs(self, paramspecs: list[ParamSpecBase]) -> None:
         for paramspec in paramspecs:
@@ -76,19 +61,24 @@ class InterDependencies_:
     ) -> None:
         for link in links:
             paramspec_from, paramspec_to = link
-            if self._graph.has_edge(
-                paramspec_from.name, paramspec_to.name
-            ) or self._graph.has_edge(paramspec_to.name, paramspec_from.name):
+            if self._graph.has_edge(paramspec_to.name, paramspec_from.name) or (
+                self._graph.has_edge(paramspec_from.name, paramspec_to.name)
+                and self.graph[paramspec_from.name][paramspec_to.name]["type"] != type
+            ):
                 raise ValueError(
                     f"An edge between {paramspec_from.name} and {paramspec_to.name} already exists. \n"
                     "The relationship between them is not well-defined"
                 )
             self._graph.add_edge(paramspec_from.name, paramspec_to.name, type=type)
 
-    def add_dependencies(self, dependencies: ParamSpecTree) -> None:
+    def add_dependencies(self, dependencies: ParamSpecTree | None) -> None:
+        if dependencies is None or dependencies == {}:
+            return
         self._add_interdeps(dependencies, type="depends_on")
 
-    def add_inferences(self, inferences: ParamSpecTree) -> None:
+    def add_inferences(self, inferences: ParamSpecTree | None) -> None:
+        if inferences is None or inferences == {}:
+            return
         self._add_interdeps(inferences, type="inferred_from")
 
     def add_standalones(self, standalones: tuple[ParamSpecBase, ...]) -> None:
@@ -107,7 +97,7 @@ class InterDependencies_:
         self._validate_no_chained_dependencies(interdeps)
 
     def _validate_acyclic(self, interdeps: ParamSpecTree) -> None:
-        if not nx.is_forest(self.graph):
+        if not nx.is_directed_acyclic_graph(self.graph):
             raise ValueError(
                 f"Adding these interdependencies {interdeps} caused the graph to become cyclic"
             )
@@ -146,14 +136,13 @@ class InterDependencies_:
         dependencies: ParamSpecTree | None = None,
         inferences: ParamSpecTree | None = None,
         standalones: tuple[ParamSpecBase, ...] = (),
-    ) -> Self:
-        if dependencies is not None:
-            self.add_dependencies(dependencies)
-        if inferences is not None:
-            self.add_inferences(inferences)
-        if standalones != ():
-            self.add_standalones(standalones)
-        return self
+    ) -> InterDependencies_:
+        new_interdependencies = InterDependencies_._from_graph(deepcopy(self.graph))
+
+        new_interdependencies.add_dependencies(dependencies)
+        new_interdependencies.add_inferences(inferences)
+        new_interdependencies.add_standalones(standalones)
+        return new_interdependencies
 
     def _paramspec_tree_by_type(self, type: str) -> ParamSpecTree:
         paramspec_tree_list: dict[ParamSpecBase, list[ParamSpecBase]] = defaultdict(
@@ -195,12 +184,12 @@ class InterDependencies_:
         return self._paramspec_tree_by_type("inferred_from")
 
     @property
-    def standalones(self) -> tuple[ParamSpecBase, ...]:
+    def standalones(self) -> frozenset[ParamSpecBase]:
         degree_iterator = self.graph.degree
         assert not isinstance(
             degree_iterator, int
         )  # without arguments, graph.degree returns an iterable
-        return tuple(
+        return frozenset(
             [
                 self._node_to_paramspec(node_id)
                 for node_id, degree in degree_iterator
@@ -236,9 +225,14 @@ class InterDependencies_:
         )
         return non_dependencies_sorted_by_name
 
-    def remove(self, paramspec: ParamSpecBase) -> Self:
-        self._graph.remove_node(paramspec.name)
-        return self
+    def remove(self, paramspec: ParamSpecBase) -> InterDependencies_:
+        if self.graph.in_degree(paramspec.name) > 0:
+            raise ValueError(
+                f"Cannot remove {paramspec.name}, other parameters depend on or are inferred from it"
+            )
+        new_graph = deepcopy(self.graph)
+        new_graph.remove_node(paramspec.name)
+        return InterDependencies_._from_graph(new_graph)
 
     def __repr__(self) -> str:
         rep = (
@@ -312,31 +306,21 @@ class InterDependencies_:
         return None
 
     def validate_subset(self, paramspecs: Sequence[ParamSpecBase]) -> None:
-        subset_nodes = [paramspec.name for paramspec in paramspecs]
-        # We construct a set of all edges to subset nodes such that:
-        #   1. The edge leads out from the subset node (depends_on or inferred_from)
-        #   2. There is an inferred_from edge into the subset node
-        # We exclude depends_on in-edges, because those are formally part of a different tree
-        # We then include any standalone nodes in the subset
-        edges_to_subset_nodes = [
-            (out_node, in_node)
-            for out_node, in_node in self.graph.edges
-            if (out_node in subset_nodes)
-            or (
-                in_node in subset_nodes
-                and self.graph[out_node][in_node]["type"] == "inferred_from"
-            )
-        ]
+        subset_nodes = set([paramspec.name for paramspec in paramspecs])
+        for subset_node in subset_nodes:
+            descendant_nodes_per_subset_node = nx.descendants(self.graph, subset_node)
+            if missing_nodes := descendant_nodes_per_subset_node.difference(
+                subset_nodes
+            ):
+                raise IncompleteSubsetError(
+                    subset_parans=subset_nodes, missing_params=missing_nodes
+                )
 
-        standalone_subset_nodes = [
-            node
-            for node in self.graph.nodes
-            if self.graph.degree(node) == 0  # pyright: ignore[reportCallIssue]
-        ]
-        if not set(
-            chain.from_iterable(edges_to_subset_nodes + standalone_subset_nodes)
-        ) == set(subset_nodes):
-            raise ValueError  # TODO: add a good message here
+    @classmethod
+    def _from_graph(cls, graph: nx.DiGraph) -> InterDependencies_:
+        new_interdependencies = cls()
+        new_interdependencies._graph = graph
+        return new_interdependencies
 
     @classmethod
     def _from_dict(cls, ser: InterDependencies_Dict) -> InterDependencies_:
@@ -380,7 +364,8 @@ class InterDependencies_:
         Write out this object as a dictionary
         """
         parameters = {
-            node_id: data["value"] for node_id, data in self.graph.nodes(data=True)
+            node_id: data["value"]._to_dict()
+            for node_id, data in self.graph.nodes(data=True)
         }
 
         dependencies = paramspec_tree_to_param_name_tree(self.dependencies)
@@ -392,6 +377,34 @@ class InterDependencies_:
             "inferences": inferences,
             "standalones": standalones,
         }
+        return output
+
+    @property
+    def _id_to_paramspec(self) -> dict[str, ParamSpecBase]:
+        return {node_id: data["value"] for node_id, data in self.graph.nodes(data=True)}
+
+    @property
+    def _paramspec_to_id(self) -> dict[ParamSpecBase, str]:
+        return {data["value"]: node_id for node_id, data in self.graph.nodes(data=True)}
+
+    def _empty_data_dict(self) -> dict[str, dict[str, npt.NDArray]]:
+        """
+        Create an dictionary with empty numpy arrays as values
+        matching the expected output of ``DataSet``'s ``get_parameter_data`` /
+        ``cache.data`` so that the order of keys in the returned dictionary
+        is the same as the order of parameters in the interdependencies
+        in this class.
+        """
+
+        output: dict[str, dict[str, npt.NDArray]] = {}
+        for dependent, independents in self.dependencies.items():
+            dependent_name = dependent.name
+            output[dependent_name] = {dependent_name: np.array([])}
+            for independent in independents:
+                output[dependent_name][independent.name] = np.array([])
+        for standalone in (ps.name for ps in self.standalones):
+            output[standalone] = {}
+            output[standalone][standalone] = np.array([])
         return output
 
 
