@@ -54,6 +54,14 @@ class InterDependencies_:
 
     def add_paramspecs(self, paramspecs: list[ParamSpecBase]) -> None:
         for paramspec in paramspecs:
+            if (
+                paramspec.name in self.graph.nodes
+                and self.graph.nodes[paramspec.name]["value"] != paramspec
+            ):
+                raise ValueError(
+                    f"A ParamSpecBase with name {paramspec.name} already exists in the graph and\n"
+                    f"{paramspec} != {self.graph.nodes[paramspec.name]['value']} "
+                )
             self._graph.add_node(paramspec.name, value=paramspec)
 
     def _add_interdeps_by_type(

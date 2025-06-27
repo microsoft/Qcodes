@@ -283,14 +283,8 @@ def test_extend(some_paramspecbases) -> None:
     idps_expected = InterDependencies_(standalones=(ps2,), dependencies={ps1: (ps3,)})
     assert idps_ext == idps_expected
 
-    # lazily check that we get brand new objects
-    idps._id_to_paramspec[ps1.name].label = "Something new and awful"
-    idps._id_to_paramspec[ps2.name].unit = "Ghastly unit"
-    assert idps_ext._id_to_paramspec[ps1.name].label == "blah"
-    assert idps_ext._id_to_paramspec[ps2.name].unit == "V"
-    # reset the objects that are never supposed to be mutated
-    idps._id_to_paramspec[ps1.name].label = "blah"
-    idps._id_to_paramspec[ps2.name].unit = "V"
+    assert idps_ext is not idps
+    assert idps_ext.graph is not idps.graph
 
     idps = InterDependencies_(standalones=(ps2,))
     idps_ext = idps.extend(dependencies={ps1: (ps2,)})
@@ -310,13 +304,16 @@ def test_extend(some_paramspecbases) -> None:
     ps_nu = deepcopy(ps1)
     ps_nu.unit += "/s"
     idps = InterDependencies_(standalones=(ps1,))
+    with pytest.raises(ValueError, match="already exists"):
+        idps_ext = idps.extend(standalones=(ps_nu,))
+    ps_nu.name = "psbnu"
     idps_ext = idps.extend(standalones=(ps_nu,))
+
     idps_expected = InterDependencies_(standalones=(ps_nu, ps1))
     assert idps_ext == idps_expected
 
     idps = InterDependencies_(dependencies={ps1: (ps2,)})
-    match = re.escape("Invalid dependencies/inferences")
-    with pytest.raises(ValueError, match=match):
+    with pytest.raises(ValueError, match="already exists"):
         idps_ext = idps.extend(inferences={ps2: (ps1,)})
 
 
