@@ -93,11 +93,11 @@ def test_init_validation_raises(some_paramspecbases) -> None:
 
     # Now test trees that are invalid together
 
-    invalid_trees_2 = [{"deps": {ps1: (ps2, ps3)}, "inffs": {ps2: (ps4, ps1)}}]
+    invalid_trees_2 = [
+        {"deps": {ps1: (ps2, ps3)}, "inffs": {ps2: (ps4, ps1)}},
+    ]
     for inv in invalid_trees_2:
-        with pytest.raises(
-            ValueError, match=re.escape("Invalid dependencies/inferences")
-        ):
+        with pytest.raises(ValueError, match="already exists"):
             InterDependencies_(
                 dependencies=inv["deps"],  # type: ignore[arg-type]
                 inferences=inv["inffs"],  # type: ignore[arg-type]
