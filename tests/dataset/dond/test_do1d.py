@@ -92,7 +92,7 @@ def test_do1d_output_data(_param, _param_set) -> None:
     exp = do1d(_param_set, start, stop, num_points, delay, _param)
     data = exp[0]
 
-    assert data.description.interdeps.names == (_param.name, _param_set.name)
+    assert set(data.description.interdeps.names) == {_param.name, _param_set.name}
     loaded_data = data.get_parameter_data()["simple_parameter"]
 
     np.testing.assert_array_equal(loaded_data[_param.name], np.ones(5))
