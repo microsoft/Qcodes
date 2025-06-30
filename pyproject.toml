@@ -291,6 +291,10 @@ known-first-party = ["qcodes"]
 [tool.ruff.lint.per-file-ignores]
 # deprecated modules left
 # for backwards compatibility
+"src/qcodes/utils/command.py" = ["F401"]
+"src/qcodes/utils/dataset/__init__.py" = ["F401"]
+"src/qcodes/utils/dataset/doNd.py" = ["F401"]
+"src/qcodes/utils/installation.py" = ["F401"]
 "src/qcodes/utils/validators.py" = ["F401"]
 "src/qcodes/utils/threading.py" = ["F401"]
 "src/qcodes/utils/plotting.py" = ["F401"]
