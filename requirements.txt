@@ -488,7 +488,7 @@ urllib3==2.5.0
     # via
     #   requests
     #   types-requests
-versioningit==3.2.0
+versioningit==3.3.0
     # via
     #   qcodes (pyproject.toml)
     #   broadbean
