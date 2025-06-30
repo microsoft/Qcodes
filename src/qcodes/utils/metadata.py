@@ -7,7 +7,7 @@ import warnings
 
 from qcodes.dataset.snapshot_utils import diff_param_values_by_id
 from qcodes.metadatable import Metadatable
-from qcodes.utils import QCoDeSDeprecationWarning
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 from .snapshot_helpers import (
     ParameterDiff,

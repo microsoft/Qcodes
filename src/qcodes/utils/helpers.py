@@ -18,7 +18,7 @@ from qcodes.parameters.permissive_range import permissive_range
 from qcodes.parameters.sequence_helpers import is_sequence, is_sequence_of
 from qcodes.parameters.sweep_values import make_sweep
 from qcodes.parameters.val_mapping import create_on_off_val_mapping
-from qcodes.utils import QCoDeSDeprecationWarning
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 from .abstractmethod import qcodes_abstractmethod as abstractmethod
 from .attribute_helpers import (

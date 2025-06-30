@@ -1,6 +1,6 @@
 import warnings
 
-from qcodes.utils import QCoDeSDeprecationWarning
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 warnings.warn(
     "The `qcodes.utils.dataset` module is deprecated. "

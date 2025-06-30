@@ -14,7 +14,7 @@ from qcodes.plotting import (
 )
 from qcodes.plotting.axis_labels import _ENGINEERING_PREFIXES, _UNITS_FOR_RESCALING
 from qcodes.plotting.matplotlib_helpers import _set_colorbar_extend
-from qcodes.utils import QCoDeSDeprecationWarning
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 warnings.warn(
     "The `qcodes.utils.plotting` module is deprecated. "

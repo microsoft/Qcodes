@@ -4,7 +4,7 @@ Backwards compatible. New code should import from qcodes.validators
 
 import warnings
 
-from qcodes.utils import QCoDeSDeprecationWarning
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 from qcodes.validators import (
     Anything,
     Arrays,

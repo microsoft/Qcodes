@@ -13,7 +13,7 @@ from qcodes.dataset.threading import (
     call_params_threaded,
     process_params_meas,
 )
-from qcodes.utils import QCoDeSDeprecationWarning
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 from .threading_utils import RespondingThread, thread_map
 
