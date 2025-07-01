@@ -87,7 +87,7 @@ fsspec==2025.5.1
     # via dask
 furo==2024.8.6
     # via qcodes (pyproject.toml)
-h5netcdf==1.6.1
+h5netcdf==1.6.3
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -100,7 +100,7 @@ h5py==3.14.0
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.135.14
+hypothesis==6.135.20
     # via qcodes (pyproject.toml)
 idna==3.10
     # via requests
@@ -171,7 +171,7 @@ libcst==1.8.2
     # via qcodes (pyproject.toml)
 locket==1.0.0
     # via partd
-lxml==5.4.0
+lxml==6.0.0
     # via qcodes (pyproject.toml)
 lxml-stubs==0.5.1
     # via qcodes (pyproject.toml)
@@ -488,7 +488,7 @@ urllib3==2.5.0
     # via
     #   requests
     #   types-requests
-versioningit==3.2.0
+versioningit==3.3.0
     # via
     #   qcodes (pyproject.toml)
     #   broadbean

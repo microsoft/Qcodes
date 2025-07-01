@@ -4,6 +4,7 @@ Please do not import from this in any new code
 """
 
 import logging
+import warnings
 from collections.abc import Hashable
 from typing import Any, Optional
 
@@ -17,6 +18,7 @@ from qcodes.parameters.permissive_range import permissive_range
 from qcodes.parameters.sequence_helpers import is_sequence, is_sequence_of
 from qcodes.parameters.sweep_values import make_sweep
 from qcodes.parameters.val_mapping import create_on_off_val_mapping
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 from .abstractmethod import qcodes_abstractmethod as abstractmethod
 from .attribute_helpers import (
@@ -40,3 +42,11 @@ def warn_units(class_name: str, instance: object) -> None:
         f"`units` is deprecated for the `{class_name}` "
         f"class, use `unit` instead. {instance!r}"
     )
+
+
+warnings.warn(
+    "The `qcodes.utils.helpers` module is deprecated. "
+    "Please consult the api documentation at https://microsoft.github.io/Qcodes/api/index.html for alternatives.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=2,
+)

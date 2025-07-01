@@ -11,7 +11,7 @@ from .parameter_base import ParamDataType, ParameterBase, ParamRawDataType
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, Sequence
 
-    from qcodes.instrument.base import InstrumentBase
+    from qcodes.instrument import InstrumentBase
 
     from .parameter import Parameter
 
