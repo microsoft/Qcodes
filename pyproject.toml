@@ -320,9 +320,6 @@ known-first-party = ["qcodes"]
 "src/qcodes/instrument_drivers/HP/HP8753D.py" = ["F401"]
 "src/qcodes/instrument_drivers/Keysight/N9030B.py" = ["F401"]
 
-"src/qcodes/instrument_drivers/Keysight/KtM960x.py" = ["F405"]
-"src/qcodes/instrument_drivers/Keysight/KtMAwg.py" = ["F405"]
-
 # TID253 these imports are fine at module level
 # in tests and examples
 "docs/*" = ["TID253"]
