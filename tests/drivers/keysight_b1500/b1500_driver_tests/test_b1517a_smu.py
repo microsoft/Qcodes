@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, call
 
 import pytest
 
-from qcodes.instrument.base import InstrumentBase
+from qcodes.instrument import InstrumentBase
 from qcodes.instrument_drivers.Keysight.keysightb1500 import constants
 from qcodes.instrument_drivers.Keysight.keysightb1500.constants import (
     MM,

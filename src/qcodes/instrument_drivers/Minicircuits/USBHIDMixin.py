@@ -18,7 +18,7 @@ except ImportError:
     # Raising an exception here will cause CI to fail under Linux
     imported_hid = False
 
-from qcodes.instrument.base import Instrument
+from qcodes.instrument import Instrument
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack

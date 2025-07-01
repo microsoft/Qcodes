@@ -34,7 +34,7 @@ import jsonschema.exceptions
 import qcodes
 import qcodes.instrument_drivers
 from qcodes import validators
-from qcodes.instrument.base import Instrument, InstrumentBase
+from qcodes.instrument import Instrument, InstrumentBase
 from qcodes.instrument.channel import ChannelTuple
 from qcodes.metadatable import Metadatable, MetadatableWithName
 from qcodes.monitor.monitor import Monitor

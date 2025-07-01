@@ -2,6 +2,9 @@
 Backwards compatible. New code should import from qcodes.validators
 """
 
+import warnings
+
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 from qcodes.validators import (
     Anything,
     Arrays,
@@ -36,27 +39,9 @@ from qcodes.validators.validators import (
     shape_type,
 )
 
-__all__ = [
-    "Anything",
-    "Arrays",
-    "Bool",
-    "Callable",
-    "ComplexNumbers",
-    "Dict",
-    "Enum",
-    "Ints",
-    "Lists",
-    "MultiType",
-    "MultiTypeAnd",
-    "MultiTypeOr",
-    "Multiples",
-    "Nothing",
-    "Numbers",
-    "OnOff",
-    "PermissiveInts",
-    "PermissiveMultiples",
-    "Sequence",
-    "Strings",
-    "Validator",
-    "validate_all",
-]
+warnings.warn(
+    "The `qcodes.utils.validators` module is deprecated. "
+    "Please consult the api documentation at https://microsoft.github.io/Qcodes/api/index.html for alternatives.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=2,
+)
