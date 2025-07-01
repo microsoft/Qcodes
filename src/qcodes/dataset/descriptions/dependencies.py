@@ -40,7 +40,13 @@ class IncompleteSubsetError(Exception):
         )
 
 
-class InterDependencies_:
+class InterDependencies_:  # noqa: PLW1641
+    # todo: not clear if this should implement __hash__.
+    """
+    Object containing a group of ParamSpecs and the information about their
+    internal relations to each other
+    """
+
     def __init__(
         self,
         dependencies: ParamSpecTree | None = None,
@@ -120,6 +126,9 @@ class InterDependencies_:
     def _validate_no_chained_dependencies(self, interdeps: ParamSpecTree) -> None:
         for node, in_degree in self._dependency_subgraph.in_degree:
             out_degree = self._dependency_subgraph.out_degree(node)
+            assert isinstance(out_degree, int), (
+                "The out_degree method with arguments should have returned an int"
+            )
             if in_degree > 0 and out_degree > 0:
                 depends_on_nodes = list(self._dependency_subgraph.successors(node))
                 depended_on_nodes = list(self._dependency_subgraph.predecessors(node))
@@ -241,7 +250,11 @@ class InterDependencies_:
         return non_dependencies_sorted_by_name
 
     def remove(self, paramspec: ParamSpecBase) -> InterDependencies_:
-        if self.graph.in_degree(paramspec.name) > 0:
+        paramspec_in_degree = self.graph.in_degree(paramspec.name)
+        assert isinstance(paramspec_in_degree, int), (
+            "The in_degree method with arguments should have returned an int"
+        )
+        if paramspec_in_degree > 0:
             raise ValueError(
                 f"Cannot remove {paramspec.name}, other parameters depend on or are inferred from it"
             )
@@ -260,7 +273,7 @@ class InterDependencies_:
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, InterDependencies_):
             return False
-        return nx.utils.misc.graphs_equal(self.graph, other.graph)
+        return nx.utils.graphs_equal(self.graph, other.graph)
 
     def __contains__(self, ps: ParamSpecBase) -> bool:
         return ps.name in self.graph
