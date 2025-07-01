@@ -161,6 +161,10 @@ class InterDependencies_:  # noqa: PLW1641
         inferences: ParamSpecTree | None = None,
         standalones: tuple[ParamSpecBase, ...] = (),
     ) -> InterDependencies_:
+        """
+        Create a new :class:`InterDependencies_` object
+        that is an extension of this instance with the provided input
+        """
         new_interdependencies = InterDependencies_._from_graph(deepcopy(self.graph))
 
         new_interdependencies.add_dependencies(dependencies)
@@ -198,9 +202,32 @@ class InterDependencies_:  # noqa: PLW1641
         return self._paramspec_tree_by_type("depends_on")
 
     def what_depends_on(self, ps: ParamSpecBase) -> tuple[ParamSpecBase, ...]:
+        """
+        Return a tuple of the parameters that depend on the given parameter.
+        Returns an empty tuple if nothing depends on the given parameter
+
+        Args:
+            ps: the parameter to look up
+
+        Raises:
+            ValueError: If the parameter is not part of this object
+
+        """
         return self._paramspec_predecessors_by_type(ps, type="depends_on")
 
     def what_is_inferred_from(self, ps: ParamSpecBase) -> tuple[ParamSpecBase, ...]:
+        """
+        Return a tuple of the parameters thatare inferred from the given
+        parameter. Returns an empty tuple if nothing is inferred from the given
+        parameter
+
+        Args:
+            ps: the parameter to look up
+
+        Raises:
+            ValueError: If the parameter is not part of this object
+
+        """
         return self._paramspec_predecessors_by_type(ps, type="inferred_from")
 
     @property
@@ -223,6 +250,9 @@ class InterDependencies_:  # noqa: PLW1641
 
     @property
     def names(self) -> tuple[str, ...]:
+        """
+        Return all the names of the parameters of this instance
+        """
         return tuple(self.graph)
 
     @property
@@ -250,6 +280,10 @@ class InterDependencies_:  # noqa: PLW1641
         return non_dependencies_sorted_by_name
 
     def remove(self, paramspec: ParamSpecBase) -> InterDependencies_:
+        """
+        Create a new :class:`InterDependencies_` object that is similar
+        to this instance, but has the given parameter removed.
+        """
         paramspec_in_degree = self.graph.in_degree(paramspec.name)
         assert isinstance(paramspec_in_degree, int), (
             "The in_degree method with arguments should have returned an int"
@@ -341,6 +375,19 @@ class InterDependencies_:  # noqa: PLW1641
             raise ValueError(f"Invalid {type}") from TypeError(cause)
 
     def validate_subset(self, paramspecs: Sequence[ParamSpecBase]) -> None:
+        """
+        Validate that the given parameters form a valid subset of the
+        parameters of this instance, meaning that all the given parameters are
+        actually found in this instance and that there are no missing
+        dependencies/inferences.
+
+        Args:
+            paramspecs: The collection of ParamSpecBases to validate
+
+        Raises:
+            InterdependencyError: If a dependency or inference is missing
+
+        """
         subset_nodes = set([paramspec.name for paramspec in paramspecs])
         for subset_node in subset_nodes:
             descendant_nodes_per_subset_node = nx.descendants(self.graph, subset_node)
