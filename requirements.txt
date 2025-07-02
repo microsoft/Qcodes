@@ -313,7 +313,7 @@ pytest-mock==3.14.1
     # via qcodes (pyproject.toml)
 pytest-rerunfailures==15.1
     # via qcodes (pyproject.toml)
-pytest-xdist==3.7.0
+pytest-xdist==3.8.0
     # via qcodes (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via
