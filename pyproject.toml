@@ -235,6 +235,7 @@ filterwarnings = [
     'ignore:unclosed database in:ResourceWarning', # internal should be fixed
     'ignore:unclosed\ <socket\.socket:ResourceWarning', # not clear from where this is coming
     'ignore:Model_336 is deprecated:qcodes.utils.deprecate.QCoDeSDeprecationWarning',  # remove once deprecated Lakeshore Model_336 and its tests has been removed
+    "ignore:'mode' parameter is deprecated and will be removed in Pillow 13:DeprecationWarning",  # deprecation warning in pillow triggered by matplotlib should be fixed in mpl 3.10.4
 ]
 
 [tool.ruff]
