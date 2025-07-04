@@ -282,14 +282,36 @@ class InterDependencies_:  # noqa: PLW1641
         """
 
         output: dict[str, dict[str, npt.NDArray]] = {}
+
+        # Handle dependent parameters and their dependencies
         for dependent, independents in self.dependencies.items():
             dependent_name = dependent.name
             output[dependent_name] = {dependent_name: np.array([])}
             for independent in independents:
                 output[dependent_name][independent.name] = np.array([])
+
+        # Handle standalone parameters
         for standalone in (ps.name for ps in self.standalones):
             output[standalone] = {}
             output[standalone][standalone] = np.array([])
+
+        # Handle inferred parameters - include basis parameters in their trees
+        for inferred, basis_params in self.inferences.items():
+            inferred_name = inferred.name
+            if inferred_name not in output:
+                output[inferred_name] = {inferred_name: np.array([])}
+                # Add basis parameters to the inferred parameter's tree
+                for basis_param in basis_params:
+                    output[inferred_name][basis_param.name] = np.array([])
+
+        # Add inferred parameters to trees of parameters they're inferred from
+        for inferred, basis_params in self.inferences.items():
+            inferred_name = inferred.name
+            for basis_param in basis_params:
+                basis_name = basis_param.name
+                if inferred_name in output:
+                    output[inferred_name][basis_name] = np.array([])
+
         return output
 
     def _construct_subdict(self, treename: str) -> dict[str, Any]:
@@ -502,6 +524,61 @@ class InterDependencies_:  # noqa: PLW1641
             missing_inffs = inffs.difference(params)
             if missing_inffs:
                 raise InferenceError(param, missing_inffs)
+
+    def collect_all_related_parameters(
+        self, 
+        initial_params: set[ParamSpecBase]
+    ) -> set[ParamSpecBase]:
+        """
+        Recursively collect all parameters that are related to the initial set of parameters.
+        This includes parameters that any parameter in the set is inferred from, and parameters
+        that depend on or are inferred from those parameters, etc.
+        
+        Args:
+            initial_params: The set of parameters to start the traversal from
+            
+        Returns:
+            Set of all parameters transitively related to the initial parameters
+        """
+        collected: set[ParamSpecBase] = set()
+        
+        def _collect_related(param: ParamSpecBase) -> None:
+            """
+            Recursively collect all parameters related to the given parameter.
+            Terminates immediately if the parameter has already been processed.
+            """
+            if param in collected:
+                return
+            
+            # Add the current parameter to collected set
+            collected.add(param)
+            
+            # Recursively process parameters that current parameter is inferred from (basis parameters)
+            for basis_param in self.inferences.get(param, ()):
+                _collect_related(basis_param)
+            
+            # Recursively process parameters that current parameter depends on (setpoints)
+            for setpoint_param in self.dependencies.get(param, ()):
+                _collect_related(setpoint_param)
+            
+            # Recursively process parameters that depend on current parameter (dependents)
+            # But exclude other toplevel parameters to avoid cross-contamination
+            # between different parameter trees (unless they're already in our collected set)
+            toplevel_params = set(self.dependencies.keys())
+            for dependent_param in self._dependencies_inv.get(param, ()):
+                # Only process if it's not a toplevel parameter, or if it's already in our collection
+                if dependent_param not in toplevel_params or dependent_param in collected:
+                    _collect_related(dependent_param)
+            
+            # Recursively process parameters that are inferred from current parameter
+            for inferred_param in self._inferences_inv.get(param, ()):
+                _collect_related(inferred_param)
+        
+        # Start the recursive collection from all initial parameters
+        for param in initial_params:
+            _collect_related(param)
+        
+        return collected
 
     @classmethod
     def _from_dict(cls, ser: InterDependencies_Dict) -> InterDependencies_:
