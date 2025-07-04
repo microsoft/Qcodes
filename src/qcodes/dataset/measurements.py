@@ -35,8 +35,7 @@ from qcodes.dataset.data_set_protocol import (
     ValuesType,
 )
 from qcodes.dataset.descriptions.dependencies import (
-    DependencyError,
-    InferenceError,
+    IncompleteSubsetError,
     InterDependencies_,
 )
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
@@ -437,7 +436,7 @@ class DataSaver:
         """
         try:
             self._interdeps.validate_subset(list(results_dict.keys()))
-        except (DependencyError, InferenceError) as err:
+        except IncompleteSubsetError as err:
             raise ValueError(
                 "Can not add result, some required parameters are missing."
             ) from err
