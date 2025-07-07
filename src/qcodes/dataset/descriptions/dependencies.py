@@ -53,7 +53,7 @@ class InterDependencies_:  # noqa: PLW1641
         inferences: ParamSpecTree | None = None,
         standalones: tuple[ParamSpecBase, ...] = (),
     ):
-        self._graph: nx.DiGraph = nx.DiGraph()
+        self._graph: nx.DiGraph[str] = nx.DiGraph()
         self.add_dependencies(dependencies)
         self.add_inferences(inferences)
         self.add_standalones(standalones)
@@ -138,22 +138,22 @@ class InterDependencies_:  # noqa: PLW1641
                 )
 
     @property
-    def _dependency_subgraph(self) -> nx.DiGraph:
+    def _dependency_subgraph(self) -> nx.DiGraph[str]:
         depends_on_edges = [
             edge
             for edge in self.graph.edges
             if self.graph.edges[edge]["type"] == "depends_on"
         ]
-        return cast("nx.DiGraph", self.graph.edge_subgraph(depends_on_edges))
+        return cast("nx.DiGraph[str]", self.graph.edge_subgraph(depends_on_edges))
 
     @property
-    def _inference_subgraph(self) -> nx.DiGraph:
+    def _inference_subgraph(self) -> nx.DiGraph[str]:
         inferred_from_edges = [
             edge
             for edge in self.graph.edges
             if self.graph.edges[edge]["type"] == "inferred_from"
         ]
-        return cast("nx.DiGraph", self.graph.edge_subgraph(inferred_from_edges))
+        return cast("nx.DiGraph[str]", self.graph.edge_subgraph(inferred_from_edges))
 
     def extend(
         self,
@@ -316,7 +316,7 @@ class InterDependencies_:  # noqa: PLW1641
         return self._node_to_paramspec(name)
 
     @property
-    def graph(self) -> nx.DiGraph:
+    def graph(self) -> nx.DiGraph[str]:
         return self._graph
 
     def to_ipycytoscape_json(self) -> dict[str, list[dict[str, Any]]]:
@@ -399,7 +399,7 @@ class InterDependencies_:  # noqa: PLW1641
                 )
 
     @classmethod
-    def _from_graph(cls, graph: nx.DiGraph) -> InterDependencies_:
+    def _from_graph(cls, graph: nx.DiGraph[str]) -> InterDependencies_:
         new_interdependencies = cls()
         new_interdependencies._graph = graph
         return new_interdependencies
