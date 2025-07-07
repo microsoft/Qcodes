@@ -30,12 +30,12 @@ ErrorTuple = tuple[type[Exception], str]
 class IncompleteSubsetError(Exception):
     def __init__(self, subset_params: set[str], missing_params: set[str], *args: Any):
         super().__init__(*args)
-        self.subset_params = subset_params
+        self._subset_params = subset_params
         self._missing_params = missing_params
 
     def __str__(self) -> str:
         return (
-            f"{self.subset_params} is not a complete subset. The following interdependencies are "
+            f"{self._subset_params} is not a complete subset. The following interdependencies are "
             f"missing: {self._missing_params}"
         )
 
@@ -77,7 +77,7 @@ class InterDependencies_:  # noqa: PLW1641
             paramspec_from, paramspec_to = link
             if self._graph.has_edge(paramspec_to.name, paramspec_from.name) or (
                 self._graph.has_edge(paramspec_from.name, paramspec_to.name)
-                and self.graph[paramspec_from.name][paramspec_to.name]["type"]
+                and self.graph[paramspec_from.name][paramspec_to.name]["interdep_type"]
                 != interdep_type
             ):
                 raise ValueError(
@@ -145,7 +145,7 @@ class InterDependencies_:  # noqa: PLW1641
         depends_on_edges = [
             edge
             for edge in self.graph.edges
-            if self.graph.edges[edge]["type"] == "depends_on"
+            if self.graph.edges[edge]["interdep_type"] == "depends_on"
         ]
         return cast("nx.DiGraph[str]", self.graph.edge_subgraph(depends_on_edges))
 
@@ -154,7 +154,7 @@ class InterDependencies_:  # noqa: PLW1641
         inferred_from_edges = [
             edge
             for edge in self.graph.edges
-            if self.graph.edges[edge]["type"] == "inferred_from"
+            if self.graph.edges[edge]["interdep_type"] == "inferred_from"
         ]
         return cast("nx.DiGraph[str]", self.graph.edge_subgraph(inferred_from_edges))
 
@@ -180,7 +180,7 @@ class InterDependencies_:  # noqa: PLW1641
             list
         )
         for node_from, node_to, edge_data in self.graph.out_edges(data=True):
-            if edge_data["type"] == interdep_type:
+            if edge_data["interdep_type"] == interdep_type:
                 paramspec_tree_list[self._node_to_paramspec(node_from)].append(
                     self._node_to_paramspec(node_to)
                 )
@@ -197,7 +197,7 @@ class InterDependencies_:  # noqa: PLW1641
             for node_from, _, edge_data in self.graph.in_edges(
                 paramspec.name, data=True
             )
-            if edge_data["type"] == interdep_type
+            if edge_data["interdep_type"] == interdep_type
         )
 
     @property
@@ -328,7 +328,7 @@ class InterDependencies_:  # noqa: PLW1641
         ]
         # TODO: Add different node types?
         for edge_dict in graph_json["edges"]:
-            edge_dict["classes"] = edge_dict["data"]["type"]
+            edge_dict["classes"] = edge_dict["data"]["interdep_type"]
         return graph_json
 
     @staticmethod

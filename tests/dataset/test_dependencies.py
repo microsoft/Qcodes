@@ -248,17 +248,17 @@ def test_validate_subset(some_paramspecbases) -> None:
 
     with pytest.raises(IncompleteSubsetError) as exc_info1:
         idps.validate_subset((ps1,))
-    assert exc_info1.value._subset_parans == {"psb1"}
+    assert exc_info1.value._subset_params == {"psb1"}
     assert exc_info1.value._missing_params == {"psb2", "psb3", "psb4"}
 
     with pytest.raises(IncompleteSubsetError) as exc_info2:
         idps.validate_subset((ps1, ps2, ps4))
-    assert exc_info2.value._subset_parans == {"psb1", "psb2", "psb4"}
+    assert exc_info2.value._subset_params == {"psb1", "psb2", "psb4"}
     assert exc_info2.value._missing_params == {"psb3"}
 
     with pytest.raises(IncompleteSubsetError) as exc_info3:
         idps.validate_subset((ps3,))
-    assert exc_info3.value._subset_parans == {"psb3"}
+    assert exc_info3.value._subset_params == {"psb3"}
     assert exc_info3.value._missing_params == {"psb4"}
 
     with pytest.raises(IncompleteSubsetError) as exc_info4:
@@ -266,7 +266,7 @@ def test_validate_subset(some_paramspecbases) -> None:
             dependencies={ps1: (ps2, ps3)}, inferences={ps3: (ps4,)}
         )
         idps2.validate_subset((ps1, ps2, ps3))
-    assert exc_info4.value._subset_parans == {"psb1", "psb2", "psb3"}
+    assert exc_info4.value._subset_params == {"psb1", "psb2", "psb3"}
     assert exc_info4.value._missing_params == {"psb4"}
 
     with pytest.raises(NetworkXError, match="ps42"):
