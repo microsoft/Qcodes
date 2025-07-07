@@ -28,14 +28,14 @@ ErrorTuple = tuple[type[Exception], str]
 
 
 class IncompleteSubsetError(Exception):
-    def __init__(self, subset_parans: set[str], missing_params: set[str], *args: Any):
+    def __init__(self, subset_params: set[str], missing_params: set[str], *args: Any):
         super().__init__(*args)
-        self._subset_parans = subset_parans
+        self.subset_params = subset_params
         self._missing_params = missing_params
 
     def __str__(self) -> str:
         return (
-            f"{self._subset_parans} is not a complete subset. The following interdependencies are "
+            f"{self.subset_params} is not a complete subset. The following interdependencies are "
             f"missing: {self._missing_params}"
         )
 
@@ -58,7 +58,7 @@ class InterDependencies_:  # noqa: PLW1641
         self.add_inferences(inferences)
         self.add_standalones(standalones)
 
-    def add_paramspecs(self, paramspecs: list[ParamSpecBase]) -> None:
+    def add_paramspecs(self, paramspecs: Sequence[ParamSpecBase]) -> None:
         for paramspec in paramspecs:
             if (
                 paramspec.name in self.graph.nodes
@@ -71,31 +71,34 @@ class InterDependencies_:  # noqa: PLW1641
             self._graph.add_node(paramspec.name, value=paramspec)
 
     def _add_interdeps_by_type(
-        self, links: list[tuple[ParamSpecBase, ParamSpecBase]], type: str
+        self, links: Sequence[tuple[ParamSpecBase, ParamSpecBase]], interdep_type: str
     ) -> None:
         for link in links:
             paramspec_from, paramspec_to = link
             if self._graph.has_edge(paramspec_to.name, paramspec_from.name) or (
                 self._graph.has_edge(paramspec_from.name, paramspec_to.name)
-                and self.graph[paramspec_from.name][paramspec_to.name]["type"] != type
+                and self.graph[paramspec_from.name][paramspec_to.name]["type"]
+                != interdep_type
             ):
                 raise ValueError(
                     f"An edge between {paramspec_from.name} and {paramspec_to.name} already exists. \n"
                     "The relationship between them is not well-defined"
                 )
-            self._graph.add_edge(paramspec_from.name, paramspec_to.name, type=type)
+            self._graph.add_edge(
+                paramspec_from.name, paramspec_to.name, interdep_type=interdep_type
+            )
 
     def add_dependencies(self, dependencies: ParamSpecTree | None) -> None:
         if dependencies is None or dependencies == {}:
             return
-        self.validate_paramspectree(dependencies, type="dependencies")
-        self._add_interdeps(dependencies, type="depends_on")
+        self.validate_paramspectree(dependencies, interdep_type="dependencies")
+        self._add_interdeps(dependencies, interdep_type="depends_on")
 
     def add_inferences(self, inferences: ParamSpecTree | None) -> None:
         if inferences is None or inferences == {}:
             return
-        self.validate_paramspectree(inferences, type="inferences")
-        self._add_interdeps(inferences, type="inferred_from")
+        self.validate_paramspectree(inferences, interdep_type="inferences")
+        self._add_interdeps(inferences, interdep_type="inferred_from")
 
     def add_standalones(self, standalones: tuple[ParamSpecBase, ...]) -> None:
         for ps in standalones:
@@ -105,12 +108,12 @@ class InterDependencies_:  # noqa: PLW1641
                 )
         self.add_paramspecs(list(standalones))
 
-    def _add_interdeps(self, interdeps: ParamSpecTree, type: str) -> None:
+    def _add_interdeps(self, interdeps: ParamSpecTree, interdep_type: str) -> None:
         for spec_dep, spec_indeps in interdeps.items():
             flat_specs = list(chain.from_iterable([(spec_dep,), spec_indeps]))
             flat_deps = list(product((spec_dep,), spec_indeps))
             self.add_paramspecs(flat_specs)
-            self._add_interdeps_by_type(flat_deps, type=type)
+            self._add_interdeps_by_type(flat_deps, interdep_type=interdep_type)
         self._validate_interdependencies(interdeps)
 
     def _validate_interdependencies(self, interdeps: ParamSpecTree) -> None:
@@ -172,12 +175,12 @@ class InterDependencies_:  # noqa: PLW1641
         new_interdependencies.add_standalones(standalones)
         return new_interdependencies
 
-    def _paramspec_tree_by_type(self, type: str) -> ParamSpecTree:
+    def _paramspec_tree_by_type(self, interdep_type: str) -> ParamSpecTree:
         paramspec_tree_list: dict[ParamSpecBase, list[ParamSpecBase]] = defaultdict(
             list
         )
         for node_from, node_to, edge_data in self.graph.out_edges(data=True):
-            if edge_data["type"] == type:
+            if edge_data["type"] == interdep_type:
                 paramspec_tree_list[self._node_to_paramspec(node_from)].append(
                     self._node_to_paramspec(node_to)
                 )
@@ -187,14 +190,14 @@ class InterDependencies_:  # noqa: PLW1641
         return cast("ParamSpecBase", self.graph.nodes[node_id]["value"])
 
     def _paramspec_predecessors_by_type(
-        self, paramspec: ParamSpecBase, type: str
+        self, paramspec: ParamSpecBase, interdep_type: str
     ) -> tuple[ParamSpecBase, ...]:
         return tuple(
             self._node_to_paramspec(node_from)
             for node_from, _, edge_data in self.graph.in_edges(
                 paramspec.name, data=True
             )
-            if edge_data["type"] == type
+            if edge_data["type"] == interdep_type
         )
 
     @property
@@ -213,7 +216,7 @@ class InterDependencies_:  # noqa: PLW1641
             ValueError: If the parameter is not part of this object
 
         """
-        return self._paramspec_predecessors_by_type(ps, type="depends_on")
+        return self._paramspec_predecessors_by_type(ps, interdep_type="depends_on")
 
     def what_is_inferred_from(self, ps: ParamSpecBase) -> tuple[ParamSpecBase, ...]:
         """
@@ -228,7 +231,7 @@ class InterDependencies_:  # noqa: PLW1641
             ValueError: If the parameter is not part of this object
 
         """
-        return self._paramspec_predecessors_by_type(ps, type="inferred_from")
+        return self._paramspec_predecessors_by_type(ps, interdep_type="inferred_from")
 
     @property
     def inferences(self) -> ParamSpecTree:
@@ -330,7 +333,7 @@ class InterDependencies_:  # noqa: PLW1641
 
     @staticmethod
     def validate_paramspectree(
-        paramspectree: ParamSpecTree, type: str | None = None
+        paramspectree: ParamSpecTree, interdep_type: str | None = None
     ) -> None:
         """
         Validate a ParamSpecTree. Apart from adhering to the type, a
@@ -341,7 +344,7 @@ class InterDependencies_:  # noqa: PLW1641
             the paramtree is valid
 
         """
-        type = type or "ParamSpecTree"
+        interdep_type = interdep_type or "ParamSpecTree"
         cause: str | None = None
 
         # Validate the type
@@ -368,11 +371,11 @@ class InterDependencies_:  # noqa: PLW1641
             leafs = {ps for tup in paramspectree.values() for ps in tup}
 
             if roots.intersection(leafs) != set():
-                raise ValueError(f"Invalid {type}") from ValueError(
+                raise ValueError(f"Invalid {interdep_type}") from ValueError(
                     "ParamSpecTree can not have cycles"
                 )
         else:
-            raise ValueError(f"Invalid {type}") from TypeError(cause)
+            raise ValueError(f"Invalid {interdep_type}") from TypeError(cause)
 
     def validate_subset(self, paramspecs: Sequence[ParamSpecBase]) -> None:
         """
@@ -395,7 +398,7 @@ class InterDependencies_:  # noqa: PLW1641
                 subset_nodes
             ):
                 raise IncompleteSubsetError(
-                    subset_parans=subset_nodes, missing_params=missing_nodes
+                    subset_params=subset_nodes, missing_params=missing_nodes
                 )
 
     @classmethod
