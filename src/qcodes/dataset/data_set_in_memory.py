@@ -664,7 +664,7 @@ class DataSetInMem(BaseDataSet):
             inff_params = set(interdeps.inferences.get(toplevel_param, ()))
             deps_params = set(interdeps.dependencies.get(toplevel_param, ()))
             all_params = inff_params.union(deps_params).union({toplevel_param})
-            
+
             # Transitively collect all parameters that are related to any parameter
             # in the current tree, including parameters that dependencies are inferred from
             all_params = interdeps.collect_all_related_parameters(all_params)
