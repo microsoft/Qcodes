@@ -411,59 +411,93 @@ class InterDependencies_:  # noqa: PLW1641
         self, initial_params: set[ParamSpecBase]
     ) -> set[ParamSpecBase]:
         """
-        Recursively collect all parameters that are related to the initial set of parameters.
-        This includes parameters that any parameter in the set is inferred from, and parameters
-        that depend on or are inferred from those parameters, etc.
+        Collect all parameters that are transitively related to the initial set of parameters.
+        This uses NetworkX to efficiently find all connected parameters in the dependency/inference graph.
 
         Args:
             initial_params: The set of parameters to start the traversal from
 
         Returns:
             Set of all parameters transitively related to the initial parameters
-
         """
-        collected: set[ParamSpecBase] = set()
+        if not initial_params:
+            return set()
 
-        def _collect_related(param: ParamSpecBase) -> None:
-            """
-            Recursively collect all parameters related to the given parameter.
-            Terminates immediately if the parameter has already been processed.
-            """
-            if param in collected:
-                return
-
-            # Add the current parameter to collected set
-            collected.add(param)
-
-            # Recursively process parameters that current parameter is inferred from (basis parameters)
-            for basis_param in self.inferences.get(param, ()):
-                _collect_related(basis_param)
-
-            # Recursively process parameters that current parameter depends on (setpoints)
-            for setpoint_param in self.dependencies.get(param, ()):
-                _collect_related(setpoint_param)
-
-            # Recursively process parameters that depend on current parameter (dependents)
-            # But exclude other toplevel parameters to avoid cross-contamination
-            # between different parameter trees (unless they're already in our collected set)
-            toplevel_params = set(self.dependencies.keys())
-            for dependent_param in self._dependencies_inv.get(param, ()):
-                # Only process if it's not a toplevel parameter, or if it's already in our collection
-                if (
-                    dependent_param not in toplevel_params
-                    or dependent_param in collected
-                ):
-                    _collect_related(dependent_param)
-
-            # Recursively process parameters that are inferred from current parameter
-            for inferred_param in self._inferences_inv.get(param, ()):
-                _collect_related(inferred_param)
-
-        # Start the recursive collection from all initial parameters
+        # Use NetworkX to find all nodes reachable from initial parameters
+        collected_nodes: set[str] = set()
+        
         for param in initial_params:
-            _collect_related(param)
+            if param.name not in self.graph:
+                continue
+                
+            # Add the parameter itself
+            collected_nodes.add(param.name)
+            
+            # Get all nodes reachable going backwards (ancestors) and forwards (descendants)
+            # This covers all transitively related parameters
+            try:
+                ancestors = nx.ancestors(self.graph, param.name)
+                descendants = nx.descendants(self.graph, param.name)
+                collected_nodes.update(ancestors)
+                collected_nodes.update(descendants)
+            except nx.NetworkXError:
+                # Handle any graph-related errors gracefully
+                pass
+        
+        # Convert node names back to ParamSpecBase objects
+        collected_params: set[ParamSpecBase] = set()
+        for node_name in collected_nodes:
+            if node_name in self.graph.nodes:
+                collected_params.add(self._node_to_paramspec(node_name))
+        
+        # Apply cross-contamination prevention: filter out toplevel parameters 
+        # that are not part of the initial set or directly connected to them
+        toplevel_params = set(self.dependencies.keys())
+        
+        # Start with initial parameters (always allowed if they're toplevel)
+        allowed_toplevel_params = {param for param in initial_params if param in toplevel_params}
+        
+        # For each initial parameter, check which toplevel parameters should be included
+        for param in initial_params:
+            if param.name not in self.graph:
+                continue
+                
+            # Include toplevel parameters that are in the same dependency tree
+            for other_param in toplevel_params:
+                if other_param in allowed_toplevel_params:
+                    continue
+                    
+                # Check if they're connected through the dependency subgraph
+                if self._are_in_same_dependency_tree(param, other_param):
+                    allowed_toplevel_params.add(other_param)
+        
+        # Filter the collected parameters
+        filtered_params = {
+            param for param in collected_params
+            if param not in toplevel_params or param in allowed_toplevel_params
+        }
+        
+        return filtered_params
 
-        return collected
+    def _are_in_same_dependency_tree(self, param1: ParamSpecBase, param2: ParamSpecBase) -> bool:
+        """
+        Check if two parameters are in the same dependency tree using the dependency subgraph.
+        """
+        if param1.name not in self.graph or param2.name not in self.graph:
+            return False
+            
+        dep_subgraph = self._dependency_subgraph
+        
+        # Check if both parameters are in the dependency subgraph and connected
+        if param1.name not in dep_subgraph or param2.name not in dep_subgraph:
+            return False
+            
+        try:
+            # Check if there's a path between them in either direction
+            return (nx.has_path(dep_subgraph, param1.name, param2.name) or
+                    nx.has_path(dep_subgraph, param2.name, param1.name))
+        except nx.NetworkXError:
+            return False
 
     @classmethod
     def _from_dict(cls, ser: InterDependencies_Dict) -> InterDependencies_:
