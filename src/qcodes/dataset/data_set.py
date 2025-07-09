@@ -1252,7 +1252,7 @@ class DataSet(BaseDataSet):
             inff_params = set(interdeps.inferences.get(toplevel_param, ()))
             deps_params = set(interdeps.dependencies.get(toplevel_param, ()))
             all_params = inff_params.union(deps_params).union({toplevel_param})
-            
+
             # Transitively collect all parameters that are related to any parameter
             # in the current tree, including parameters that dependencies are inferred from
             all_params = interdeps.collect_all_related_parameters(all_params)
@@ -1289,9 +1289,12 @@ class DataSet(BaseDataSet):
                             # We need to determine if it's inferred or dependency based
                             # For simplicity, we'll treat it as inferred
                             collected_inff_params.add(param)
-                            
+
                 res_list = self._finalize_res_dict_numeric_text_or_complex(
-                    result_dict, toplevel_param, collected_inff_params, collected_deps_params
+                    result_dict,
+                    toplevel_param,
+                    collected_inff_params,
+                    collected_deps_params,
                 )
             else:
                 res_dict: dict[str, VALUE] = {
