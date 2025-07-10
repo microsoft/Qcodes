@@ -123,7 +123,7 @@ class DataSetCache(Generic[DatasetType_co]):
         """
 
         if self._data == {}:
-            self._data = self.rundescriber.interdeps._empty_data_dict()
+            self._data = self._empty_data_dict(self.rundescriber.interdeps)
         else:
             raise RuntimeError("Cannot prepare a cache that is not empty")
 
