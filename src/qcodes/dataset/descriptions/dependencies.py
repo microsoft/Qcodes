@@ -436,7 +436,9 @@ class InterDependencies_:  # noqa: PLW1641
             # This covers all transitively related parameters
             try:
                 descendants = nx.descendants(self.graph, param.name)
+                ancestors = nx.ancestors(self.graph, param.name)
                 collected_nodes.update(descendants)
+                collected_nodes.update(ancestors)
             except nx.NetworkXError:
                 # Handle any graph-related errors gracefully
                 pass
