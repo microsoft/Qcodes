@@ -218,7 +218,7 @@ class InterDependencies_:  # noqa: PLW1641
 
     def what_is_inferred_from(self, ps: ParamSpecBase) -> tuple[ParamSpecBase, ...]:
         """
-        Return a tuple of the parameters thatare inferred from the given
+        Return a tuple of the parameters that are inferred from the given
         parameter. Returns an empty tuple if nothing is inferred from the given
         parameter
 
@@ -435,9 +435,7 @@ class InterDependencies_:  # noqa: PLW1641
             # Get all nodes reachable going backwards (ancestors) and forwards (descendants)
             # This covers all transitively related parameters
             try:
-                ancestors = nx.ancestors(self.graph, param.name)
                 descendants = nx.descendants(self.graph, param.name)
-                collected_nodes.update(ancestors)
                 collected_nodes.update(descendants)
             except nx.NetworkXError:
                 # Handle any graph-related errors gracefully
