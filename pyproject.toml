@@ -114,6 +114,9 @@ docs = [
 refactor = [
     "libcst>=1.2.0"
 ]
+live_plotting = [
+    "ipycytoscape>=1.2.2"
+]
 
 [project.scripts]
 qcodes-monitor = "qcodes.monitor.monitor:main"
