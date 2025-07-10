@@ -11,7 +11,7 @@ from qcodes.dataset.experiment_container import new_experiment
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.database import initialise_or_create_database_at
 from qcodes.instrument_drivers.mock_instruments import DummyInstrument
-from qcodes.parameters import DelegateParameter, Parameter
+from qcodes.parameters import DelegateParameter, ManualParameter, Parameter
 
 
 def test_inferred_parameters_transitively_collected(tmp_path):
@@ -96,7 +96,7 @@ def test_inferred_parameters_in_actual_measurement(tmp_path):
     del_param = DelegateParameter("del_param_1", label="del param 1", source=dac.ch1)
 
     # Create a standalone parameter to test that standalone handling still works
-    standalone_param = Parameter("standalone", get_cmd=lambda: 3.14)
+    standalone_param = ManualParameter("standalone")
 
     # Create measurement
     meas = Measurement(name="test_measurement", exp=exp)
