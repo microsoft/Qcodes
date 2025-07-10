@@ -12,8 +12,6 @@ from itertools import chain, product
 from typing import TYPE_CHECKING, Any, cast
 
 import networkx as nx
-import numpy as np
-import numpy.typing as npt
 
 from .param_spec import ParamSpecBase
 
@@ -419,20 +417,21 @@ class InterDependencies_:  # noqa: PLW1641
 
         Returns:
             Set of all parameters transitively related to the initial parameters
+
         """
         if not initial_params:
             return set()
 
         # Use NetworkX to find all nodes reachable from initial parameters
         collected_nodes: set[str] = set()
-        
+
         for param in initial_params:
             if param.name not in self.graph:
                 continue
-                
+
             # Add the parameter itself
             collected_nodes.add(param.name)
-            
+
             # Get all nodes reachable going backwards (ancestors) and forwards (descendants)
             # This covers all transitively related parameters
             try:
@@ -443,59 +442,65 @@ class InterDependencies_:  # noqa: PLW1641
             except nx.NetworkXError:
                 # Handle any graph-related errors gracefully
                 pass
-        
+
         # Convert node names back to ParamSpecBase objects
         collected_params: set[ParamSpecBase] = set()
         for node_name in collected_nodes:
             if node_name in self.graph.nodes:
                 collected_params.add(self._node_to_paramspec(node_name))
-        
-        # Apply cross-contamination prevention: filter out toplevel parameters 
+
+        # Apply cross-contamination prevention: filter out toplevel parameters
         # that are not part of the initial set or directly connected to them
         toplevel_params = set(self.dependencies.keys())
-        
+
         # Start with initial parameters (always allowed if they're toplevel)
-        allowed_toplevel_params = {param for param in initial_params if param in toplevel_params}
-        
+        allowed_toplevel_params = {
+            param for param in initial_params if param in toplevel_params
+        }
+
         # For each initial parameter, check which toplevel parameters should be included
         for param in initial_params:
             if param.name not in self.graph:
                 continue
-                
+
             # Include toplevel parameters that are in the same dependency tree
             for other_param in toplevel_params:
                 if other_param in allowed_toplevel_params:
                     continue
-                    
+
                 # Check if they're connected through the dependency subgraph
                 if self._are_in_same_dependency_tree(param, other_param):
                     allowed_toplevel_params.add(other_param)
-        
+
         # Filter the collected parameters
         filtered_params = {
-            param for param in collected_params
+            param
+            for param in collected_params
             if param not in toplevel_params or param in allowed_toplevel_params
         }
-        
+
         return filtered_params
 
-    def _are_in_same_dependency_tree(self, param1: ParamSpecBase, param2: ParamSpecBase) -> bool:
+    def _are_in_same_dependency_tree(
+        self, param1: ParamSpecBase, param2: ParamSpecBase
+    ) -> bool:
         """
         Check if two parameters are in the same dependency tree using the dependency subgraph.
         """
         if param1.name not in self.graph or param2.name not in self.graph:
             return False
-            
+
         dep_subgraph = self._dependency_subgraph
-        
+
         # Check if both parameters are in the dependency subgraph and connected
         if param1.name not in dep_subgraph or param2.name not in dep_subgraph:
             return False
-            
+
         try:
             # Check if there's a path between them in either direction
-            return (nx.has_path(dep_subgraph, param1.name, param2.name) or
-                    nx.has_path(dep_subgraph, param2.name, param1.name))
+            return nx.has_path(dep_subgraph, param1.name, param2.name) or nx.has_path(
+                dep_subgraph, param2.name, param1.name
+            )
         except nx.NetworkXError:
             return False
 
@@ -563,26 +568,6 @@ class InterDependencies_:  # noqa: PLW1641
     @property
     def _paramspec_to_id(self) -> dict[ParamSpecBase, str]:
         return {data["value"]: node_id for node_id, data in self.graph.nodes(data=True)}
-
-    def _empty_data_dict(self) -> dict[str, dict[str, npt.NDArray]]:
-        """
-        Create an dictionary with empty numpy arrays as values
-        matching the expected output of ``DataSet``'s ``get_parameter_data`` /
-        ``cache.data`` so that the order of keys in the returned dictionary
-        is the same as the order of parameters in the interdependencies
-        in this class.
-        """
-
-        output: dict[str, dict[str, npt.NDArray]] = {}
-        for dependent, independents in self.dependencies.items():
-            dependent_name = dependent.name
-            output[dependent_name] = {dependent_name: np.array([])}
-            for independent in independents:
-                output[dependent_name][independent.name] = np.array([])
-        for standalone in (ps.name for ps in self.standalones):
-            output[standalone] = {}
-            output[standalone][standalone] = np.array([])
-        return output
 
 
 def paramspec_tree_to_param_name_tree(

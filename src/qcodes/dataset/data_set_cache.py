@@ -24,6 +24,7 @@ if TYPE_CHECKING:
 
     import pandas as pd
     import xarray as xr
+    from qcdodes.dataset.descriptions.dependencies import InterDependencies_
 
     from qcodes.dataset.descriptions.rundescriber import RunDescriber
     from qcodes.dataset.sqlite.connection import AtomicConnection
@@ -90,6 +91,29 @@ class DataSetCache(Generic[DatasetType_co]):
             self.load_data_from_db()
 
         return self._data
+
+    @staticmethod
+    def _empty_data_dict(
+        interdeps: InterDependencies_,
+    ) -> dict[str, dict[str, npt.NDArray]]:
+        """
+        Create an dictionary with empty numpy arrays as values
+        matching the expected output of ``DataSet``'s ``get_parameter_data`` /
+        ``cache.data`` so that the order of keys in the returned dictionary
+        is the same as the order of parameters in the interdependencies
+        in this class.
+        """
+
+        output: dict[str, dict[str, npt.NDArray]] = {}
+        for dependent, independents in interdeps.items():
+            dependent_name = dependent.name
+            output[dependent_name] = {dependent_name: np.array([])}
+            for independent in independents:
+                output[dependent_name][independent.name] = np.array([])
+        for standalone in (ps.name for ps in interdeps.standalones):
+            output[standalone] = {}
+            output[standalone][standalone] = np.array([])
+        return output
 
     def prepare(self) -> None:
         """
