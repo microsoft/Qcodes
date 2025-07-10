@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Generic, Literal, TypeVar
 
+import networkx as nx
 import numpy as np
 import numpy.typing as npt
 
@@ -24,8 +25,8 @@ if TYPE_CHECKING:
 
     import pandas as pd
     import xarray as xr
-    from qcdodes.dataset.descriptions.dependencies import InterDependencies_
 
+    from qcodes.dataset.descriptions.dependencies import InterDependencies_
     from qcodes.dataset.descriptions.rundescriber import RunDescriber
     from qcodes.dataset.sqlite.connection import AtomicConnection
 
@@ -105,11 +106,12 @@ class DataSetCache(Generic[DatasetType_co]):
         """
 
         output: dict[str, dict[str, npt.NDArray]] = {}
-        for dependent, independents in interdeps.items():
+        for dependent in interdeps.dependencies.keys():
             dependent_name = dependent.name
+            independent_names = nx.descendants(interdeps.graph, dependent_name)
             output[dependent_name] = {dependent_name: np.array([])}
-            for independent in independents:
-                output[dependent_name][independent.name] = np.array([])
+            for independent_name in independent_names:
+                output[dependent_name][independent_name] = np.array([])
         for standalone in (ps.name for ps in interdeps.standalones):
             output[standalone] = {}
             output[standalone][standalone] = np.array([])
