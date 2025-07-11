@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Generic, Literal, TypeVar
 
+import networkx as nx
 import numpy as np
 import numpy.typing as npt
 
@@ -25,6 +26,7 @@ if TYPE_CHECKING:
     import pandas as pd
     import xarray as xr
 
+    from qcodes.dataset.descriptions.dependencies import InterDependencies_
     from qcodes.dataset.descriptions.rundescriber import RunDescriber
     from qcodes.dataset.sqlite.connection import AtomicConnection
 
@@ -91,6 +93,30 @@ class DataSetCache(Generic[DatasetType_co]):
 
         return self._data
 
+    @staticmethod
+    def _empty_data_dict(
+        interdeps: InterDependencies_,
+    ) -> dict[str, dict[str, npt.NDArray]]:
+        """
+        Create an dictionary with empty numpy arrays as values
+        matching the expected output of ``DataSet``'s ``get_parameter_data`` /
+        ``cache.data`` so that the order of keys in the returned dictionary
+        is the same as the order of parameters in the interdependencies
+        in this class.
+        """
+
+        output: dict[str, dict[str, npt.NDArray]] = {}
+        for dependent in interdeps.dependencies.keys():
+            dependent_name = dependent.name
+            independent_names = nx.descendants(interdeps.graph, dependent_name)
+            output[dependent_name] = {dependent_name: np.array([])}
+            for independent_name in independent_names:
+                output[dependent_name][independent_name] = np.array([])
+        for standalone in (ps.name for ps in interdeps.standalones):
+            output[standalone] = {}
+            output[standalone][standalone] = np.array([])
+        return output
+
     def prepare(self) -> None:
         """
         Set up the internal datastructure of the cache.
@@ -99,7 +125,7 @@ class DataSetCache(Generic[DatasetType_co]):
         """
 
         if self._data == {}:
-            self._data = self.rundescriber.interdeps._empty_data_dict()
+            self._data = self._empty_data_dict(self.rundescriber.interdeps)
         else:
             raise RuntimeError("Cannot prepare a cache that is not empty")
 
