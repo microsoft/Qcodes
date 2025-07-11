@@ -231,7 +231,7 @@ opentelemetry-api==1.34.1
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-orderly-set==5.4.1
+orderly-set==5.5.0
     # via deepdiff
 packaging==25.0
     # via
