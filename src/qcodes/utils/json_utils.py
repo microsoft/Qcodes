@@ -4,6 +4,7 @@ import numbers
 from typing import Any
 
 import numpy as np
+import uncertainties  # type: ignore[import-untyped]
 
 
 class NumpyJSONEncoder(json.JSONEncoder):
@@ -39,7 +40,6 @@ class NumpyJSONEncoder(json.JSONEncoder):
         * Other objects which cannot be serialized get converted to their
           string representation (using the ``str`` function).
         """
-        import uncertainties  # type: ignore[import-untyped]
 
         if isinstance(o, np.generic) and not isinstance(o, np.complexfloating):
             # for numpy scalars

@@ -492,5 +492,5 @@ def update(d: dict[Any, Any], u: Mapping[Any, Any]) -> dict[Any, Any]:
             r = update(d.get(k, {}), v)
             d[k] = r
         else:
-            d[k] = u[k]
+            d[k] = v
     return d

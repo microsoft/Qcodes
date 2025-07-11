@@ -6,7 +6,7 @@ from qcodes.instrument import Instrument, InstrumentBaseKWArgs, InstrumentChanne
 from qcodes.parameters import Parameter, create_on_off_val_mapping
 from qcodes.validators import Numbers
 
-from .KtMAwgDefs import *  # noqa F403
+from . import KtMAwgDefs
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
@@ -45,17 +45,17 @@ class KeysightM9336AAWGChannel(InstrumentChannel):
             label="Output Terminal Configuration",
             get_cmd=partial(
                 self.root_instrument._get_vi_int,
-                KTMAWG_ATTR_TERMINAL_CONFIGURATION,
+                KtMAwgDefs.KTMAWG_ATTR_TERMINAL_CONFIGURATION,
                 ch=self._channel,
             ),
             set_cmd=partial(
                 self.root_instrument._set_vi_int,
-                KTMAWG_ATTR_TERMINAL_CONFIGURATION,
+                KtMAwgDefs.KTMAWG_ATTR_TERMINAL_CONFIGURATION,
                 ch=self._channel,
             ),
             val_mapping={
-                "differential": KTMAWG_VAL_TERMINAL_CONFIGURATION_DIFFERENTIAL,
-                "single": KTMAWG_VAL_TERMINAL_CONFIGURATION_SINGLE_ENDED,
+                "differential": KtMAwgDefs.KTMAWG_VAL_TERMINAL_CONFIGURATION_DIFFERENTIAL,
+                "single": KtMAwgDefs.KTMAWG_VAL_TERMINAL_CONFIGURATION_SINGLE_ENDED,
             },
         )
         """Parameter output_term_config"""
@@ -65,17 +65,17 @@ class KeysightM9336AAWGChannel(InstrumentChannel):
             label="Operating Mode",
             get_cmd=partial(
                 self.root_instrument._get_vi_int,
-                KTMAWG_ATTR_OPERATION_MODE,
+                KtMAwgDefs.KTMAWG_ATTR_OPERATION_MODE,
                 ch=self._channel,
             ),
             set_cmd=partial(
                 self.root_instrument._set_vi_int,
-                KTMAWG_ATTR_OPERATION_MODE,
+                KtMAwgDefs.KTMAWG_ATTR_OPERATION_MODE,
                 ch=self._channel,
             ),
             val_mapping={
-                "continuous": KTMAWG_VAL_OPERATE_CONTINUOUS,
-                "burst": KTMAWG_VAL_OPERATE_BURST,
+                "continuous": KtMAwgDefs.KTMAWG_VAL_OPERATE_CONTINUOUS,
+                "burst": KtMAwgDefs.KTMAWG_VAL_OPERATE_BURST,
             },
         )
         """Parameter operation"""
@@ -85,12 +85,12 @@ class KeysightM9336AAWGChannel(InstrumentChannel):
             label="Output Enable",
             get_cmd=partial(
                 self.root_instrument._get_vi_bool,
-                KTMAWG_ATTR_OUTPUT_ENABLED,
+                KtMAwgDefs.KTMAWG_ATTR_OUTPUT_ENABLED,
                 ch=self._channel,
             ),
             set_cmd=partial(
                 self.root_instrument._set_vi_bool,
-                KTMAWG_ATTR_OUTPUT_ENABLED,
+                KtMAwgDefs.KTMAWG_ATTR_OUTPUT_ENABLED,
                 ch=self._channel,
             ),
             val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
@@ -103,8 +103,8 @@ class KeysightM9336AAWGChannel(InstrumentChannel):
             set_cmd=self._set_gain_control,
             get_cmd=self._get_gain_control,
             val_mapping={
-                "composite": KTMAWG_VAL_GAIN_CONTROL_COMPOSITE,
-                "component": KTMAWG_VAL_GAIN_CONTROL_COMPONENT,
+                "composite": KtMAwgDefs.KTMAWG_VAL_GAIN_CONTROL_COMPOSITE,
+                "component": KtMAwgDefs.KTMAWG_VAL_GAIN_CONTROL_COMPONENT,
             },
         )
         """Parameter gain_config"""
@@ -265,23 +265,25 @@ class KeysightM9336A(Instrument):
             self.add_submodule(ch_name, channel)
 
         self._get_driver_desc = partial(
-            self._get_vi_string, KTMAWG_ATTR_SPECIFIC_DRIVER_DESCRIPTION
+            self._get_vi_string, KtMAwgDefs.KTMAWG_ATTR_SPECIFIC_DRIVER_DESCRIPTION
         )
         self._get_driver_prefix = partial(
-            self._get_vi_string, KTMAWG_ATTR_SPECIFIC_DRIVER_PREFIX
+            self._get_vi_string, KtMAwgDefs.KTMAWG_ATTR_SPECIFIC_DRIVER_PREFIX
         )
         self._get_driver_revision = partial(
-            self._get_vi_string, KTMAWG_ATTR_SPECIFIC_DRIVER_REVISION
+            self._get_vi_string, KtMAwgDefs.KTMAWG_ATTR_SPECIFIC_DRIVER_REVISION
         )
         self._get_firmware_revision = partial(
-            self._get_vi_string, KTMAWG_ATTR_INSTRUMENT_FIRMWARE_REVISION
+            self._get_vi_string, KtMAwgDefs.KTMAWG_ATTR_INSTRUMENT_FIRMWARE_REVISION
         )
-        self._get_model = partial(self._get_vi_string, KTMAWG_ATTR_INSTRUMENT_MODEL)
+        self._get_model = partial(
+            self._get_vi_string, KtMAwgDefs.KTMAWG_ATTR_INSTRUMENT_MODEL
+        )
         self._get_serial_number = partial(
-            self._get_vi_string, KTMAWG_ATTR_MODULE_SERIAL_NUMBER
+            self._get_vi_string, KtMAwgDefs.KTMAWG_ATTR_MODULE_SERIAL_NUMBER
         )
         self._get_manufacturer = partial(
-            self._get_vi_string, KTMAWG_ATTR_INSTRUMENT_MANUFACTURER
+            self._get_vi_string, KtMAwgDefs.KTMAWG_ATTR_INSTRUMENT_MANUFACTURER
         )
 
         self._connect()

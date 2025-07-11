@@ -17,15 +17,12 @@ from copy import copy
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from typing_extensions import deprecated
-
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
     from types import TracebackType
 
 import qcodes as qc
 from qcodes.utils import (
-    QCoDeSDeprecationWarning,
     get_all_installed_package_versions,
     get_qcodes_user_path,
     is_qcodes_installed_editably,
@@ -74,22 +71,6 @@ _urllib3_connection_filter = logging.Filter(name="urllib3.connection")
 _azure_monitor_opentelemetry_exporter_filter = logging.Filter(
     name="azure.monitor.opentelemetry.exporter"
 )
-
-
-@deprecated(
-    "filter_out_telemetry_log_records is deprecated and will be removed",
-    category=QCoDeSDeprecationWarning,
-)
-def filter_out_telemetry_log_records(record: logging.LogRecord) -> bool:
-    """
-    Here we filter any message that is likely to be thrown from
-    opencensus/opentelemetry so it is not shown in the user console
-    """
-    return (
-        not _opencensus_filter.filter(record)
-        and not _urllib3_connection_filter.filter(record)
-        and not _azure_monitor_opentelemetry_exporter_filter
-    )
 
 
 def get_formatter() -> logging.Formatter:

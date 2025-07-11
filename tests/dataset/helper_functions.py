@@ -5,12 +5,11 @@ from operator import mul
 from typing import TYPE_CHECKING
 
 import numpy as np
+import pandas as pd
 from numpy.testing import assert_array_equal
 
 if TYPE_CHECKING:
     from collections.abc import Hashable, Mapping, Sequence
-
-    import pandas as pd
 
 
 def verify_data_dict(
@@ -92,8 +91,6 @@ def verify_dataframe_for_single_param(
     shapes: Sequence[tuple[int, ...]],
     values,
 ):
-    import pandas as pd
-
     # check that the dataframe has the same elements as index and columns
     pandas_index_names = list(dataframe.index.names)
     pandas_column_names = list(dataframe)

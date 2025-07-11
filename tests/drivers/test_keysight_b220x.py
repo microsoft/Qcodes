@@ -1,3 +1,5 @@
+import itertools
+
 import pytest
 from pyvisa.errors import VisaIOError
 
@@ -262,8 +264,6 @@ class TestParseChannelList:
 
     @staticmethod
     def test_all_combinations_zero_padded() -> None:
-        import itertools
-
         cards = range(5)
         inputs = range(1, 15)
         outputs = range(1, 49)
@@ -275,8 +275,6 @@ class TestParseChannelList:
 
     @staticmethod
     def test_all_combinations_unpadded() -> None:
-        import itertools
-
         cards = range(5)
         inputs = range(1, 15)
         outputs = range(1, 49)

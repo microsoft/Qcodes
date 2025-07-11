@@ -28,6 +28,7 @@ dependencies = [
     "ipykernel>=6.12.0", # implicitly required by ipywidgets >=8.0.5
     "jsonschema>=4.9.0",
     "matplotlib>=3.6.0",
+    "networkx>=3.1",
     "numpy>=1.22.4",
     "packaging>=20.0",
     "pandas>=1.5.0",
@@ -35,13 +36,12 @@ dependencies = [
     "pyvisa>=1.11.0, <1.16.0",
     "ruamel.yaml>=0.16.0,!=0.16.6",
     "tabulate>=0.9.0",
+    "types-networkx >= 3.1", # Version should match the networkx requirment
     "typing_extensions>=4.6.0",
     "tqdm>=4.59.0",
     "uncertainties>=3.2.0",
     "versioningit>=2.2.1",
     "websockets>=11.0",
-    "wrapt>=1.15.0; python_version < '3.12'",
-    "wrapt>=1.16.0; python_version >= '3.12'",
     "xarray>=2022.06.0",
     "cf_xarray>=0.8.4",
     "opentelemetry-api>=1.17.0",
@@ -151,7 +151,7 @@ warn_unused_configs = true
 # waiting for variadic generics so we
 # can type numpy array constructors
 disallow_any_generics = false
-# we subclass non typed classes (from ipython / wrapt)
+# we subclass non typed classes (from ipython)
 disallow_subclassing_any = false
 # we are calling into untyped code from 3th parties
 disallow_untyped_calls = false
@@ -188,8 +188,6 @@ module = [
     "mcl_RF_Switch_Controller64",
     "mcl_RF_Switch_Controller_NET45",
     "pywinusb.*",
-    "spyder.utils.site",
-    "spyder_kernels.customize",
     "System.IO",
 ]
 ignore_missing_imports = true
@@ -198,7 +196,6 @@ ignore_missing_imports = true
 include = ["src","tests"]
 ignore = [
     "src/qcodes/instrument_drivers/Harvard/Decadac.py",
-    "tests/test_deprecate.py"
     ]
 reportMissingTypeStubs = true
 reportDeprecated = true
@@ -234,14 +231,13 @@ markers = "serial"
 # and error on all other warnings
 filterwarnings = [
     'error',
-    'ignore:QCoDeS deprecation logic is deprecated:qcodes.utils.deprecate.QCoDeSDeprecationWarning', # deprecation of internal qcodes deprecated.
     'ignore:open_binary is deprecated:DeprecationWarning', # pyvisa-sim
     'ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning', # jupyter
     'ignore:Parsing dates involving a day of month without a year specified is ambiguious:DeprecationWarning', # ipykernel 3.13+
     'ignore:unclosed database in:ResourceWarning', # internal should be fixed
-    'ignore:ConnectionPlus is deprecated:qcodes.utils.deprecate.QCoDeSDeprecationWarning',  # remove once deprecated ConnectionPlus has been removed
-    'ignore:make_connection_plus_from is deprecated:qcodes.utils.deprecate.QCoDeSDeprecationWarning',  # remove once deprecated ConnectionPlus has been removed
+    'ignore:unclosed\ <socket\.socket:ResourceWarning', # not clear from where this is coming
     'ignore:Model_336 is deprecated:qcodes.utils.deprecate.QCoDeSDeprecationWarning',  # remove once deprecated Lakeshore Model_336 and its tests has been removed
+    "ignore:'mode' parameter is deprecated and will be removed in Pillow 13:DeprecationWarning",  # deprecation warning in pillow triggered by matplotlib should be fixed in mpl 3.10.4
 ]
 
 [tool.ruff]
@@ -298,11 +294,22 @@ known-first-party = ["qcodes"]
 [tool.ruff.lint.per-file-ignores]
 # deprecated modules left
 # for backwards compatibility
+"src/qcodes/utils/command.py" = ["F401"]
+"src/qcodes/utils/dataset/__init__.py" = ["F401"]
+"src/qcodes/utils/dataset/doNd.py" = ["F401"]
+"src/qcodes/utils/installation.py" = ["F401"]
 "src/qcodes/utils/validators.py" = ["F401"]
 "src/qcodes/utils/threading.py" = ["F401"]
 "src/qcodes/utils/plotting.py" = ["F401"]
 "src/qcodes/utils/metadata.py" = ["F401"]
 "src/qcodes/utils/helpers.py" = ["F401"]
+"src/qcodes/instrument/base.py" = ["F401"]
+"src/qcodes/instrument/delegate/grouped_parameter.py" = ["F401"]
+"src/qcodes/instrument/function.py" = ["F401"]
+"src/qcodes/instrument/group_parameter.py" = ["F401"]
+"src/qcodes/instrument/parameter.py" = ["F401"]
+"src/qcodes/instrument/specialized_parameters.py" = ["F401"]
+"src/qcodes/instrument/sweep_values.py" = ["F401"]
 "src/qcodes/instrument_drivers/AimTTi/AimTTi_PL601P_channels.py" = ["F401"]
 "src/qcodes/instrument_drivers/tektronix/Keithley_6500.py" = ["F401"]
 "src/qcodes/instrument_drivers/tektronix/Keithley_2600_channels.py" = ["F401"]
@@ -327,9 +334,6 @@ known-first-party = ["qcodes"]
 "src/qcodes/instrument_drivers/HP/HP8753D.py" = ["F401"]
 "src/qcodes/instrument_drivers/Keysight/N9030B.py" = ["F401"]
 
-"src/qcodes/instrument_drivers/Keysight/KtM960x.py" = ["F405"]
-"src/qcodes/instrument_drivers/Keysight/KtMAwg.py" = ["F405"]
-
 # TID253 these imports are fine at module level
 # in tests and examples
 "docs/*" = ["TID253"]
@@ -339,7 +343,9 @@ known-first-party = ["qcodes"]
 # There modules are relatively slow to import
 # and only required in specific places so
 # don't import them at module level
-banned-module-level-imports = ["xarray", "pandas", "opencensus", "tqdm.dask", "dask", "matplotlib", "IPython"]
+banned-module-level-imports = [
+    "xarray", "cf_xarray","pandas", "opencensus", "tqdm.dask", "dask",
+    "matplotlib", "IPython", "ruamel", "tabulate", "h5netcdf", "PIL", "qcodes_loop"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

@@ -34,7 +34,7 @@ import jsonschema.exceptions
 import qcodes
 import qcodes.instrument_drivers
 from qcodes import validators
-from qcodes.instrument.base import Instrument, InstrumentBase
+from qcodes.instrument import Instrument, InstrumentBase
 from qcodes.instrument.channel import ChannelTuple
 from qcodes.metadatable import Metadatable, MetadatableWithName
 from qcodes.monitor.monitor import Monitor
@@ -495,7 +495,7 @@ class Station(Metadatable, DelegateAttributes):
 
         # Load template schema, and thereby don't fail on instruments that are
         # not included in the user schema.
-        import ruamel.yaml  # lazy import
+        import ruamel.yaml
 
         yaml = ruamel.yaml.YAML().load(config)
         with open(SCHEMA_TEMPLATE_PATH) as f:
@@ -880,7 +880,7 @@ def _merge_yamls(*yamls: str | Path) -> str:
         if no files are given.
 
     """
-    import ruamel.yaml  # lazy import
+    import ruamel.yaml
 
     if len(yamls) == 0:
         return ""

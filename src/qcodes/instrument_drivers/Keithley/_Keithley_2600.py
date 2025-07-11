@@ -660,6 +660,7 @@ class Keithley2600Channel(InstrumentChannel):
 
         """
         try:
+            # lazy import to avoid a geneal dependency on qcodes_loop
             from qcodes_loop.measure import Measure
         except ImportError as e:
             raise ImportError(

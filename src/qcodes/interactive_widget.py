@@ -23,7 +23,6 @@ from ipywidgets import (  # type: ignore[import-untyped]
     Textarea,
     VBox,
 )
-from ruamel.yaml import YAML
 
 from qcodes.dataset import experiments, initialise_or_create_database_at, plot_dataset
 
@@ -343,6 +342,8 @@ def editable_metadata(ds: DataSetProtocol) -> Box:
 
 
 def _yaml_dump(dct: dict[str, Any]) -> str:
+    from ruamel.yaml import YAML
+
     with io.StringIO() as f:
         YAML().dump(dct, f)
         return f.getvalue()

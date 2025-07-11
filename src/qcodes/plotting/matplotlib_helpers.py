@@ -11,6 +11,8 @@ if TYPE_CHECKING:
 import numpy as np
 import numpy.typing as npt
 
+import qcodes
+
 from .auto_range import DEFAULT_PERCENTILE, auto_range_iqr
 
 DEFAULT_COLOR_OVER = "Magenta"
@@ -213,7 +215,6 @@ def auto_color_scale_from_config(
             ``config.plotting.auto_color_scale.color_under``.
 
     """
-    import qcodes
 
     if colorbar is None:
         _LOG.warning(

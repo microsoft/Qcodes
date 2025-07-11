@@ -1,3 +1,5 @@
+import warnings
+
 from qcodes.parameters import (
     ArrayParameter,
     CombinedParameter,
@@ -17,23 +19,11 @@ from qcodes.parameters import (
 )
 from qcodes.parameters import ParameterBase as _BaseParameter
 from qcodes.parameters.parameter_base import GetLatest
+from qcodes.utils import QCoDeSDeprecationWarning
 
-__all__ = [
-    "ArrayParameter",
-    "CombinedParameter",
-    "DelegateParameter",
-    "GetLatest",
-    "InstrumentRefParameter",
-    "ManualParameter",
-    "MultiParameter",
-    "ParamDataType",
-    "ParamRawDataType",
-    "Parameter",
-    "ParameterWithSetpoints",
-    "ScaledParameter",
-    "SweepFixedValues",
-    "_BaseParameter",
-    "combine",
-    "expand_setpoints_helper",
-    "invert_val_mapping",
-]
+warnings.warn(
+    "The `qcodes.instrument.parameter` module is deprecated. "
+    "Please consult the api documentation at https://microsoft.github.io/Qcodes/api/index.html for alternatives.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=2,
+)
