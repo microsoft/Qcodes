@@ -660,15 +660,13 @@ class DataSetInMem(BaseDataSet):
 
         toplevel_params = set(interdeps.dependencies).intersection(set(result_dict))
         new_results: dict[str, dict[str, npt.NDArray]] = {}
-        for toplevel_param in toplevel_params:
-            inff_params = set(interdeps.inferences.get(toplevel_param, ()))
-            deps_params = set(interdeps.dependencies.get(toplevel_param, ()))
-            all_params = inff_params.union(deps_params).union({toplevel_param})
 
+        for toplevel_param in toplevel_params:
             # Transitively collect all parameters that are related to any parameter
             # in the current tree, including parameters that dependencies are inferred from
-            all_params = interdeps.collect_all_related_parameters(all_params)
+            all_params = interdeps.find_all_parameters_in_tree(toplevel_param)
             # Only include parameters that are present in result_dict
+            # warn here if missing parameters
             all_params = all_params.intersection(result_dict.keys())
 
             new_results[toplevel_param.name] = {}

@@ -384,3 +384,31 @@ def test_non_dependents() -> None:
     idps3 = InterDependencies_(dependencies={ps6: (ps1,)}, standalones=(ps2,))
 
     assert idps3.non_dependencies == (ps2, ps6)
+
+
+def test_collect_related(
+    some_paramspecbases: tuple[
+        ParamSpecBase, ParamSpecBase, ParamSpecBase, ParamSpecBase
+    ],
+) -> None:
+    """
+    Test that find_all_parameters_in_tree collects all parameters
+    """
+
+    (ps1, ps2, ps3, ps4) = some_paramspecbases
+
+    idps1 = InterDependencies_(dependencies={ps1: (ps2,)})
+
+    collected_params = idps1.find_all_parameters_in_tree(ps1)
+
+    assert collected_params == {ps1, ps2}
+
+    idps2 = InterDependencies_(dependencies={ps1: (ps2,)}, inferences={ps2: (ps3,)})
+    collected_params = idps2.find_all_parameters_in_tree(ps1)
+    assert collected_params == {ps1, ps2, ps3}
+
+    idps3 = InterDependencies_(
+        dependencies={ps1: (ps2,)}, inferences={ps2: (ps3,), ps4: (ps1,)}
+    )
+    collected_params = idps3.find_all_parameters_in_tree(ps1)
+    assert collected_params == {ps1, ps2, ps4, ps3}
