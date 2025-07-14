@@ -6,6 +6,7 @@ which parameters depend on each other is handled here.
 
 from __future__ import annotations
 
+import logging
 from collections import defaultdict
 from copy import deepcopy
 from itertools import chain, product
@@ -19,7 +20,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from .versioning.rundescribertypes import InterDependencies_Dict
-
+_LOGGER = logging.getLogger(__name__)
 ParamSpecTree = dict[ParamSpecBase, tuple[ParamSpecBase, ...]]
 ParamNameTree = dict[str, list[str]]
 ErrorTuple = tuple[type[Exception], str]
@@ -405,81 +406,56 @@ class InterDependencies_:  # noqa: PLW1641
         new_interdependencies._graph = graph
         return new_interdependencies
 
-    def collect_all_related_parameters(
-        self, initial_params: set[ParamSpecBase]
+    def find_all_parameters_in_tree(
+        self, initial_param: ParamSpecBase
     ) -> set[ParamSpecBase]:
         """
-        Collect all parameters that are transitively related to the initial set of parameters.
-        This uses NetworkX to efficiently find all connected parameters in the dependency/inference graph.
+        Collect all parameters that are transitively related to the initial parameter.
+
+        This includes dependencies of the the initial parameter and parameters that are inferred from
+        the initial parameter, as well as parameters that are inferred from its dependencies.
+        The parameter must be a top level parameter that is not a dependency of any other parameter.
+
 
         Args:
-            initial_params: The set of parameters to start the traversal from
+            initial_param: The parameter to start the traversal from.
 
         Returns:
             Set of all parameters transitively related to the initial parameters
 
         """
-        if not initial_params:
-            return set()
 
         # Use NetworkX to find all nodes reachable from initial parameters
         collected_nodes: set[str] = set()
 
-        for param in initial_params:
-            if param.name not in self.graph:
-                continue
+        if initial_param.name not in self.graph:
+            raise ValueError(f"Parameter {initial_param.name} is not part of the graph")
 
-            # Add the parameter itself
-            collected_nodes.add(param.name)
+        # Add the parameter itself
+        collected_nodes.add(initial_param.name)
 
-            # Get all nodes reachable going backwards (ancestors) and forwards (descendants)
-            # This covers all transitively related parameters
-            try:
-                descendants = nx.descendants(self.graph, param.name)
-                ancestors = nx.ancestors(self.graph, param.name)
+        # find all parameters that this parameter depends on
+        if initial_param.name in self._dependency_subgraph:
+            dep_descendants = nx.descendants(
+                self._dependency_subgraph, initial_param.name
+            )
+            collected_nodes.update(dep_descendants)
+
+        # find all parameters that are inferred from the parameter or its dependencies
+
+        for param_name in collected_nodes.copy():
+            if param_name in self._inference_subgraph:
+                descendants = nx.descendants(self._inference_subgraph, param_name)
+                ancestors = nx.ancestors(self._inference_subgraph, param_name)
                 collected_nodes.update(descendants)
                 collected_nodes.update(ancestors)
-            except nx.NetworkXError:
-                # Handle any graph-related errors gracefully
-                pass
 
         # Convert node names back to ParamSpecBase objects
         collected_params: set[ParamSpecBase] = set()
         for node_name in collected_nodes:
             if node_name in self.graph.nodes:
                 collected_params.add(self._node_to_paramspec(node_name))
-
-        # Apply cross-contamination prevention: filter out toplevel parameters
-        # that are not part of the initial set or directly connected to them
-        toplevel_params = set(self.dependencies.keys())
-
-        # Start with initial parameters (always allowed if they're toplevel)
-        allowed_toplevel_params = {
-            param for param in initial_params if param in toplevel_params
-        }
-
-        # For each initial parameter, check which toplevel parameters should be included
-        for param in initial_params:
-            if param.name not in self.graph:
-                continue
-
-            # Include toplevel parameters that are in the same dependency tree
-            for other_param in toplevel_params:
-                if other_param in allowed_toplevel_params:
-                    continue
-
-                # Check if they're connected through the dependency subgraph
-                if self._are_in_same_dependency_tree(param, other_param):
-                    allowed_toplevel_params.add(other_param)
-
-        # Filter the collected parameters
-        filtered_params = {
-            param
-            for param in collected_params
-            if param not in toplevel_params or param in allowed_toplevel_params
-        }
-
-        return filtered_params
+        return collected_params
 
     def _are_in_same_dependency_tree(
         self, param1: ParamSpecBase, param2: ParamSpecBase
