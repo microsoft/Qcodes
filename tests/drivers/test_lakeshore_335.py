@@ -4,7 +4,7 @@ import time
 from qcodes.instrument import InstrumentBase
 from qcodes.instrument_drivers.Lakeshore import LakeshoreModel335
 
-from .test_lakeshore import (
+from .test_lakeshore_372 import (
     DictClass,
     MockVisaInstrument,
     command,

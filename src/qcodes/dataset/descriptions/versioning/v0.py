@@ -8,7 +8,8 @@ if TYPE_CHECKING:
     from .rundescribertypes import InterDependenciesDict
 
 
-class InterDependencies:
+class InterDependencies:  # noqa: PLW1641
+    # TODO not clear if this should implement __hash__
     """
     Object containing the ParamSpecs of a given run
     """

@@ -20,6 +20,7 @@ from time import perf_counter
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 import numpy as np
+import numpy.typing as npt
 from opentelemetry import trace
 
 import qcodes as qc
@@ -34,8 +35,7 @@ from qcodes.dataset.data_set_protocol import (
     ValuesType,
 )
 from qcodes.dataset.descriptions.dependencies import (
-    DependencyError,
-    InferenceError,
+    IncompleteSubsetError,
     InterDependencies_,
 )
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
@@ -54,8 +54,7 @@ from qcodes.utils import DelayedKeyboardInterrupt
 
 if TYPE_CHECKING:
     from types import TracebackType
-
-    from typing_extensions import Self
+    from typing import Self
 
     from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
     from qcodes.dataset.experiment_container import Experiment
@@ -165,7 +164,7 @@ class DataSaver:
         # of all parameters. This also allows users to call
         # add_result with the arguments in any particular order, i.e. NOT
         # enforcing that setpoints come before dependent variables.
-        results_dict: dict[ParamSpecBase, np.ndarray] = {}
+        results_dict: dict[ParamSpecBase, npt.NDArray] = {}
 
         parameter_names = tuple(
             partial_result[0].register_name
@@ -235,7 +234,7 @@ class DataSaver:
         parameter: ParameterWithSetpoints,
         parameter_names: Sequence[str],
         partial_result: ResType,
-    ) -> dict[ParamSpecBase, np.ndarray]:
+    ) -> dict[ParamSpecBase, npt.NDArray]:
         local_results = {}
         setpoint_names = tuple(
             setpoint.register_name for setpoint in parameter.setpoints
@@ -259,7 +258,7 @@ class DataSaver:
 
     def _unpack_partial_result(
         self, partial_result: ResType
-    ) -> dict[ParamSpecBase, np.ndarray]:
+    ) -> dict[ParamSpecBase, npt.NDArray]:
         """
         Unpack a partial result (not containing :class:`ArrayParameters` or
         class:`MultiParameters`) into a standard results dict form and return
@@ -287,7 +286,7 @@ class DataSaver:
 
     def _unpack_arrayparameter(
         self, partial_result: ResType
-    ) -> dict[ParamSpecBase, np.ndarray]:
+    ) -> dict[ParamSpecBase, npt.NDArray]:
         """
         Unpack a partial result containing an :class:`Arrayparameter` into a
         standard results dict form and return that dict
@@ -325,7 +324,7 @@ class DataSaver:
 
     def _unpack_multiparameter(
         self, partial_result: ResType
-    ) -> dict[ParamSpecBase, np.ndarray]:
+    ) -> dict[ParamSpecBase, npt.NDArray]:
         """
         Unpack the `subarrays` and `setpoints` from a :class:`MultiParameter`
         and into a standard results dict form and return that dict
@@ -388,7 +387,7 @@ class DataSaver:
         setpoints: Sequence[Any],
         sp_names: Sequence[str] | None,
         fallback_sp_name: str,
-    ) -> dict[ParamSpecBase, np.ndarray]:
+    ) -> dict[ParamSpecBase, npt.NDArray]:
         """
         Unpack the `setpoints` and their values from a
         :class:`ArrayParameter` or :class:`MultiParameter`
@@ -437,7 +436,7 @@ class DataSaver:
         """
         try:
             self._interdeps.validate_subset(list(results_dict.keys()))
-        except (DependencyError, InferenceError) as err:
+        except IncompleteSubsetError as err:
             raise ValueError(
                 "Can not add result, some required parameters are missing."
             ) from err
@@ -470,7 +469,7 @@ class DataSaver:
 
     @staticmethod
     def _validate_result_types(
-        results_dict: Mapping[ParamSpecBase, np.ndarray],
+        results_dict: Mapping[ParamSpecBase, npt.NDArray],
     ) -> None:
         """
         Validate the type of the results

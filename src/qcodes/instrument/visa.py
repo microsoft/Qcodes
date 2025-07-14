@@ -22,8 +22,9 @@ from .instrument_base import InstrumentBase, InstrumentBaseKWArgs
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
+    from typing import NotRequired
 
-    from typing_extensions import NotRequired, Unpack
+    from typing_extensions import Unpack
 
 VISA_LOGGER = ".".join((InstrumentBase.__module__, "com", "visa"))
 

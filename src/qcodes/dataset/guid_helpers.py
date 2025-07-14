@@ -68,7 +68,8 @@ def guids_from_list_str(s: str) -> tuple[str, ...] | None:
     Get tuple of guids from a python/json string representation of a list.
 
     Extracts the guids from a string representation of a list, tuple,
-    or set of guids or a single guid.
+    or set of guids or a single guid. Any None str members are dropped from the
+    collection.
 
     Args:
         s: input string
@@ -107,7 +108,7 @@ def guids_from_list_str(s: str) -> tuple[str, ...] | None:
     parsed = parsed_expression.body
 
     if isinstance(parsed, ast.Constant):
-        if len(parsed.value) > 0:
+        if isinstance(parsed.value, str) and len(parsed.value) > 0:
             return (parsed.value,)
         else:
             return tuple()
@@ -119,4 +120,4 @@ def guids_from_list_str(s: str) -> tuple[str, ...] | None:
         return None
 
     str_elts = cast("tuple[ast.Constant, ...]", tuple(parsed.elts))
-    return tuple(s.value for s in str_elts)
+    return tuple(s.value for s in str_elts if isinstance(s.value, str))

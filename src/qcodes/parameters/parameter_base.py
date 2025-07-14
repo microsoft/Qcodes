@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from qcodes.dataset.descriptions.param_spec import ParamSpecBase
-    from qcodes.instrument.base import InstrumentBase
+    from qcodes.instrument import InstrumentBase
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 
 LOG = logging.getLogger(__name__)

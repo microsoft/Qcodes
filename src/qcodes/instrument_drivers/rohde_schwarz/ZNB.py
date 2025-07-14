@@ -3,7 +3,7 @@ from functools import partial
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
-from typing_extensions import deprecated
+import numpy.typing as npt
 
 import qcodes.validators as vals
 from qcodes.instrument import (
@@ -22,7 +22,6 @@ from qcodes.parameters import (
     ParamRawDataType,
     create_on_off_val_mapping,
 )
-from qcodes.utils import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
@@ -89,7 +88,7 @@ class FixedFrequencyTraceIQ(MultiParameter):
         self.setpoints = ((t,), (t,))
         self.shapes = ((npts,), (npts,))
 
-    def get_raw(self) -> tuple[np.ndarray, np.ndarray]:
+    def get_raw(self) -> tuple[npt.NDArray, npt.NDArray]:
         """
         Gets the raw real and imaginary part of the data. If parameter
         `cw_check_sweep_first` is set to `True` then at the cost of a few ms
@@ -886,7 +885,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
                     pass
         self.sweep_time()
 
-    def _get_sweep_data(self, force_polar: bool = False) -> np.ndarray:
+    def _get_sweep_data(self, force_polar: bool = False) -> npt.NDArray:
         if not self._parent.rf_power():
             log.warning("RF output is off when getting sweep data")
         # It is possible that the instrument and QCoDeS disagree about
@@ -998,7 +997,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
         # Cache the sweep time so it is up to date when setting timeouts
         self.sweep_time()
 
-    def _get_cw_data(self) -> tuple[np.ndarray, np.ndarray]:
+    def _get_cw_data(self) -> tuple[npt.NDArray, npt.NDArray]:
         # Make the checking optional such that we can do super fast sweeps as
         # well, skipping the overhead of the other commands.
         if self.cw_check_sweep_first():
@@ -1226,12 +1225,3 @@ class RohdeSchwarzZNBBase(VisaInstrument):
         for submodule in self.submodules.values():
             if isinstance(submodule, ChannelList):
                 submodule.clear()
-
-
-@deprecated(
-    "The ZNB base class has been renamed RohdeSchwarzZNBBase",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class ZNB(RohdeSchwarzZNBBase):
-    pass

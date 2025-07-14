@@ -11,11 +11,11 @@ by computer.
 To learn more about QCoDeS, browse our `homepage <http://microsoft.github.io/Qcodes>`_ .
 
 To get a feeling of QCoDeS read
-`15 minutes to QCoDeS <http://microsoft.github.io/Qcodes/examples/15_minutes_to_QCoDeS.html>`__,
+`15 minutes to QCoDeS <https://microsoft.github.io/Qcodes/examples/basic_examples/15_minutes_to_QCoDeS.html>`__,
 and/or browse the Jupyter notebooks in `docs/examples
 <https://github.com/QCoDeS/Qcodes/tree/main/docs/examples>`__ .
 
-QCoDeS is compatible with Python 3.10+. It is
+QCoDeS is compatible with Python 3.11+. It is
 primarily intended for use from Jupyter notebooks, but can be used from
 traditional terminal-based shells and in stand-alone scripts as well. The
 features in `qcodes.utils.magic` are exclusively for Jupyter notebooks.

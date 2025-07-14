@@ -17,8 +17,7 @@ from qcodes.utils import RespondingThread
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
     from types import TracebackType
-
-    from typing_extensions import Self
+    from typing import Self
 
     from qcodes.dataset.data_set_protocol import ValuesType
     from qcodes.parameters import ParamDataType, ParameterBase
@@ -49,7 +48,7 @@ class _ParamCaller:
 def _instrument_to_param(
     params: Sequence[ParamMeasT],
 ) -> dict[str | None, tuple[ParameterBase, ...]]:
-    from qcodes.parameters import ParameterBase
+    from qcodes.parameters import ParameterBase  # noqa: PLC0415
 
     real_parameters = [param for param in params if isinstance(param, ParameterBase)]
 
@@ -94,7 +93,7 @@ def call_params_threaded(param_meas: Sequence[ParamMeasT]) -> OutType:
 
 
 def _call_params(param_meas: Sequence[ParamMeasT]) -> OutType:
-    from qcodes.parameters import ParameterBase
+    from qcodes.parameters import ParameterBase  # noqa: PLC0415
 
     output: OutType = []
 
@@ -110,7 +109,7 @@ def _call_params(param_meas: Sequence[ParamMeasT]) -> OutType:
 def process_params_meas(
     param_meas: Sequence[ParamMeasT], use_threads: bool | None = None
 ) -> OutType:
-    from qcodes import config
+    from qcodes import config  # noqa: PLC0415
 
     if use_threads is None:
         use_threads = config.dataset.use_threads

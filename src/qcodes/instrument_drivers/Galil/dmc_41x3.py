@@ -526,12 +526,30 @@ class GalilDMC4133Controller(GalilMotionController):
         """controller will wait for the amount of time specified before executing the next command"""
 
         self._set_default_update_time()
-        self.add_submodule("motor_a", GalilDMC4133Motor(self, "A"))
-        self.add_submodule("motor_b", GalilDMC4133Motor(self, "B"))
-        self.add_submodule("motor_c", GalilDMC4133Motor(self, "C"))
-        self.add_submodule("plane_ab", GalilDMC4133VectorMode(self, "AB"))
-        self.add_submodule("plane_bc", GalilDMC4133VectorMode(self, "BC"))
-        self.add_submodule("plane_ac", GalilDMC4133VectorMode(self, "AC"))
+        self.motor_a: GalilDMC4133Motor = self.add_submodule(
+            "motor_a", GalilDMC4133Motor(self, "A")
+        )
+        """Submodule motor_a"""
+        self.motor_b: GalilDMC4133Motor = self.add_submodule(
+            "motor_b", GalilDMC4133Motor(self, "B")
+        )
+        """Submodule motor_b"""
+        self.motor_c: GalilDMC4133Motor = self.add_submodule(
+            "motor_c", GalilDMC4133Motor(self, "C")
+        )
+        """Submodule motor_c"""
+        self.plane_ab: GalilDMC4133VectorMode = self.add_submodule(
+            "plane_ab", GalilDMC4133VectorMode(self, "AB")
+        )
+        """Submodule plane_ab"""
+        self.plane_bc: GalilDMC4133VectorMode = self.add_submodule(
+            "plane_bc", GalilDMC4133VectorMode(self, "BC")
+        )
+        """Submodule plane_bc"""
+        self.plane_ac: GalilDMC4133VectorMode = self.add_submodule(
+            "plane_ac", GalilDMC4133VectorMode(self, "AC")
+        )
+        """Submodule plane_ac"""
 
     def _set_default_update_time(self) -> None:
         """
@@ -643,7 +661,8 @@ class GalilDMC4133Arm:
             controller: an instance of DMC4133Controller
 
         """
-        self.controller = controller
+        self.controller: GalilDMC4133Controller = controller
+        """The controller attached to the arm."""
 
         # initialization (all these points will have values in quadrature
         # counts)
@@ -652,16 +671,16 @@ class GalilDMC4133Arm:
         self._right_top_position: tuple[int, int, int] | None = None
 
         # motion directions (all these values are in quadrature counts)
-        self._a: np.ndarray  # right_top - left_bottom
-        self._b: np.ndarray  # left_top - left_bottom
-        self._c: np.ndarray  # right_top - left_top
-        self._n: np.ndarray
+        self._a: npt.NDArray  # right_top - left_bottom
+        self._b: npt.NDArray  # left_top - left_bottom
+        self._c: npt.NDArray  # right_top - left_top
+        self._n: npt.NDArray
         self.norm_a: float
         self.norm_b: float
         self.norm_c: float
 
         # eqn of the chip plane (in quadrature counts)
-        self._plane_eqn: np.ndarray
+        self._plane_eqn: npt.NDArray
 
         # current vars
         self._current_row: int | None = None
@@ -680,7 +699,7 @@ class GalilDMC4133Arm:
 
         self._arm_pick_up_distance: int
 
-        self._target: np.ndarray
+        self._target: npt.NDArray
 
     @property
     def current_row(self) -> int | None:
@@ -842,7 +861,7 @@ class GalilDMC4133Arm:
         c.begin()
         c.wait_till_motor_motion_complete()
 
-    def _setup_motion(self, rel_vec: np.ndarray, d: float, speed: float) -> None:
+    def _setup_motion(self, rel_vec: npt.NDArray, d: float, speed: float) -> None:
         """
         Sets up motion parameters. all arguments have units in quadrature counts
         """

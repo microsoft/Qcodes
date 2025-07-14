@@ -4,6 +4,7 @@ import logging
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
+import numpy.typing as npt
 
 from qcodes.instrument import (
     ChannelList,
@@ -53,9 +54,9 @@ class SR86xBufferReadout(ArrayParameter):
             **kwargs,
         )
 
-        self._capture_data: np.ndarray | None = None
+        self._capture_data: npt.NDArray | None = None
 
-    def prepare_readout(self, capture_data: np.ndarray) -> None:
+    def prepare_readout(self, capture_data: npt.NDArray) -> None:
         """
         Prepare this parameter for readout.
 
@@ -72,7 +73,7 @@ class SR86xBufferReadout(ArrayParameter):
         self.setpoint_labels = ("Sample number",)
         self.setpoints = (tuple(np.arange(0, data_len)),)
 
-    def get_raw(self) -> np.ndarray:
+    def get_raw(self) -> npt.NDArray:
         """
         Public method to access the capture data
         """
@@ -368,7 +369,7 @@ class SR86xBuffer(InstrumentChannel):
         while n_captured_bytes < n_bytes_to_capture:
             n_captured_bytes = self.count_capture_bytes()
 
-    def get_capture_data(self, sample_count: int) -> dict[str, np.ndarray]:
+    def get_capture_data(self, sample_count: int) -> dict[str, npt.NDArray]:
         """
         Read the given number of samples of the capture data from the buffer.
 
@@ -404,7 +405,7 @@ class SR86xBuffer(InstrumentChannel):
 
         return data
 
-    def _get_raw_capture_data(self, size_in_kb: int) -> np.ndarray:
+    def _get_raw_capture_data(self, size_in_kb: int) -> npt.NDArray:
         """
         Read data from the buffer from its beginning avoiding the instrument
         limit of 64 kilobytes per reading.
@@ -427,7 +428,7 @@ class SR86xBuffer(InstrumentChannel):
                 f"buffer ({current_capture_length}kB)."
             )
 
-        values: np.ndarray = np.array([])
+        values: npt.NDArray = np.array([])
         data_size_to_read_in_kb = size_in_kb
         n_readings = 0
 
@@ -451,7 +452,7 @@ class SR86xBuffer(InstrumentChannel):
 
     def _get_raw_capture_data_block(
         self, size_in_kb: int, offset_in_kb: int = 0
-    ) -> np.ndarray:
+    ) -> npt.NDArray:
         """
         Read data from the buffer. The maximum amount of data that can be
         read with this function (size_in_kb) is 64kB (this limitation comes
@@ -522,7 +523,7 @@ class SR86xBuffer(InstrumentChannel):
 
     def capture_one_sample_per_trigger(
         self, trigger_count: int, start_triggers_pulsetrain: Callable[..., Any]
-    ) -> dict[str, np.ndarray]:
+    ) -> dict[str, npt.NDArray]:
         """
         Capture one sample per each trigger, and return when the specified
         number of triggers has been received.
@@ -549,7 +550,7 @@ class SR86xBuffer(InstrumentChannel):
 
     def capture_samples_after_trigger(
         self, sample_count: int, send_trigger: Callable[..., Any]
-    ) -> dict[str, np.ndarray]:
+    ) -> dict[str, npt.NDArray]:
         """
         Capture a number of samples after a trigger has been received.
         Please refer to page 135 of the manual for details.
@@ -574,7 +575,7 @@ class SR86xBuffer(InstrumentChannel):
         self.stop_capture()
         return self.get_capture_data(sample_count)
 
-    def capture_samples(self, sample_count: int) -> dict[str, np.ndarray]:
+    def capture_samples(self, sample_count: int) -> dict[str, npt.NDArray]:
         """
         Capture a number of samples at a capture rate, starting immediately.
         Unlike the "continuous" capture mode, here the buffer does not get

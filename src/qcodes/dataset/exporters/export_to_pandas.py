@@ -4,6 +4,7 @@ import warnings
 from typing import TYPE_CHECKING
 
 import numpy as np
+import numpy.typing as npt
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
@@ -39,7 +40,7 @@ def load_to_concatenated_dataframe(datadict: ParameterData) -> pd.DataFrame:
 
 
 def _data_to_dataframe(
-    data: Mapping[str, np.ndarray], index: pd.Index | pd.MultiIndex | None
+    data: Mapping[str, npt.NDArray], index: pd.Index | pd.MultiIndex | None
 ) -> pd.DataFrame:
     import pandas as pd
 
@@ -60,7 +61,7 @@ def _data_to_dataframe(
 
 
 def _generate_pandas_index(
-    data: Mapping[str, np.ndarray],
+    data: Mapping[str, npt.NDArray],
 ) -> pd.Index | pd.MultiIndex | None:
     # the first element in the dict given by parameter_tree is always the dependent
     # parameter and the index is therefore formed from the rest
@@ -94,7 +95,7 @@ def _generate_pandas_index(
 
 
 def _parameter_data_identical(
-    param_dict_a: Mapping[str, np.ndarray], param_dict_b: Mapping[str, np.ndarray]
+    param_dict_a: Mapping[str, npt.NDArray], param_dict_b: Mapping[str, npt.NDArray]
 ) -> bool:
     try:
         np.testing.assert_equal(param_dict_a, param_dict_b)
@@ -105,7 +106,7 @@ def _parameter_data_identical(
 
 
 def _same_setpoints(datadict: ParameterData) -> bool:
-    def _get_setpoints(dd: ParameterData) -> Iterator[dict[str, np.ndarray]]:
+    def _get_setpoints(dd: ParameterData) -> Iterator[dict[str, npt.NDArray]]:
         for dep_name, param_dict in dd.items():
             out = {name: vals for name, vals in param_dict.items() if name != dep_name}
             yield out

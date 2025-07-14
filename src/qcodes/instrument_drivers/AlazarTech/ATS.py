@@ -9,10 +9,9 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
 
 import numpy as np
-from typing_extensions import deprecated
+import numpy.typing as npt
 
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs
-from qcodes.utils import QCoDeSDeprecationWarning
 
 from .ats_api import AlazarATSAPI
 from .constants import NUMBER_OF_CHANNELS_FROM_BYTE_REPR, max_buffer_size
@@ -775,7 +774,7 @@ class Buffer:
 
     def __init__(self, c_sample_type: CtypesTypes, size_bytes: int):
         self.size_bytes = size_bytes
-        self.buffer: np.ndarray
+        self.buffer: npt.NDArray
 
         bytes_per_sample = {
             ctypes.c_uint8: 1,
@@ -864,7 +863,7 @@ class AcquisitionInterface(Generic[OutputType]):
         pass
 
     def handle_buffer(
-        self, buffer: np.ndarray, buffer_number: int | None = None
+        self, buffer: npt.NDArray, buffer_number: int | None = None
     ) -> None:
         """
         This method should store or process the information that is contained
@@ -903,15 +902,6 @@ class AcquisitionInterface(Generic[OutputType]):
 
         """
         pass
-
-
-@deprecated(
-    "AlazarTech_ATS is deprecated, use AlazarTechATS instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class AlazarTech_ATS(AlazarTechATS):
-    pass
 
 
 class AcquisitionController(Instrument, AcquisitionInterface[Any], Generic[OutputType]):

@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import logging
 import struct
-import sys
 import warnings
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
+import numpy.typing as npt
 
 import qcodes.validators as vals
 from qcodes.instrument import (
@@ -29,14 +29,6 @@ if TYPE_CHECKING:
 
     from qcodes_loop.data.data_set import DataSet
     from typing_extensions import Unpack
-
-
-if sys.version_info >= (3, 11):
-    from enum import StrEnum
-else:
-
-    class StrEnum(str, Enum):
-        pass
 
 
 log = logging.getLogger(__name__)
@@ -104,7 +96,7 @@ class LuaSweepParameter(ArrayParameter):
         self.steps = steps
         self.mode = mode
 
-    def get_raw(self) -> np.ndarray:
+    def get_raw(self) -> npt.NDArray:
         if self.instrument is not None:
             data = self.instrument._fast_sweep(
                 self.start, self.stop, self.steps, self.mode
@@ -163,7 +155,7 @@ class TimeTrace(ParameterWithSetpoints):
             self.unit = "V"
             self.label = "Voltage"
 
-    def _time_trace(self) -> np.ndarray:
+    def _time_trace(self) -> npt.NDArray:
         """
         The function that prepares a Lua script for timetrace data acquisition.
 
@@ -197,7 +189,7 @@ class TimeTrace(ParameterWithSetpoints):
 
         return self.instrument._execute_lua(script, npts)
 
-    def get_raw(self) -> np.ndarray:
+    def get_raw(self) -> npt.NDArray:
         if self.instrument is None:
             raise RuntimeError("No instrument attached to Parameter.")
 
@@ -212,7 +204,7 @@ class TimeAxis(Parameter):
     measurement start) at which the points of the time trace were acquired.
     """
 
-    def get_raw(self) -> np.ndarray:
+    def get_raw(self) -> npt.NDArray:
         if self.instrument is None:
             raise RuntimeError("No instrument attached to Parameter.")
 
@@ -668,6 +660,7 @@ class Keithley2600Channel(InstrumentChannel):
 
         """
         try:
+            # lazy import to avoid a geneal dependency on qcodes_loop
             from qcodes_loop.measure import Measure
         except ImportError as e:
             raise ImportError(
@@ -687,7 +680,7 @@ class Keithley2600Channel(InstrumentChannel):
         stop: float,
         steps: int,
         mode: Literal["IV", "VI", "VIfourprobe"] = "IV",
-    ) -> np.ndarray:
+    ) -> npt.NDArray:
         """
         Perform a fast sweep using a deployed Lua script.
         This is the engine that forms the script, uploads it,
@@ -753,7 +746,7 @@ class Keithley2600Channel(InstrumentChannel):
 
         return self._execute_lua(script, steps)
 
-    def _execute_lua(self, _script: list[str], steps: int) -> np.ndarray:
+    def _execute_lua(self, _script: list[str], steps: int) -> npt.NDArray:
         """
         This is the function that sends the Lua script to be executed and
         returns the corresponding data from the buffer.

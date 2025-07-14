@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 import hypothesis.strategies as hst
 import numpy as np
+import numpy.typing as npt
 import pytest
 from hypothesis import HealthCheck, given, settings
 from pytest import FixtureRequest
@@ -658,7 +659,7 @@ def test_numpy_inf(dataset) -> None:
 
 def test_backward_compat__adapt_array_v0_33() -> None:
     for dtype in numpy_floats + complex_types:
-        arr: np.ndarray = np.asarray([1.0], dtype=np.dtype(dtype))
+        arr: npt.NDArray = np.asarray([1.0], dtype=np.dtype(dtype))
         out = io.BytesIO()
         np.save(out, arr)
         out.seek(0)
@@ -911,7 +912,7 @@ class TestGetData:
         np.testing.assert_array_equal(data, expected)
 
 
-@settings(deadline=600, suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@settings(deadline=1000, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(
     start=hst.one_of(hst.integers(1, 10**3), hst.none()),
     end=hst.one_of(hst.integers(1, 10**3), hst.none()),

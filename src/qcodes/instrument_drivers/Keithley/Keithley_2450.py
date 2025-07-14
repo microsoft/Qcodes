@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import numpy as np
+import numpy.typing as npt
 from typing_extensions import TypedDict, Unpack
 
 from qcodes.instrument import InstrumentChannel, VisaInstrument, VisaInstrumentKWArgs
@@ -338,7 +339,7 @@ class Keithley2450Sense(InstrumentChannel):
         buffer_name = self.parent.buffer_name()
         return float(self.ask(f":MEASure? '{buffer_name}'"))
 
-    def _measure_sweep(self) -> np.ndarray:
+    def _measure_sweep(self) -> npt.NDArray:
         source = cast("Keithley2450Source", self.parent.source)
         source.sweep_start()
         buffer_name = self.parent.buffer_name()
@@ -518,7 +519,7 @@ class Keithley2450Source(InstrumentChannel):
         if self.block_during_ramp():
             self.ask("*OPC?")
 
-    def get_sweep_axis(self) -> np.ndarray:
+    def get_sweep_axis(self) -> npt.NDArray:
         if self._sweep_arguments is None:
             raise ValueError(
                 "Please setup the sweep before getting values of this parameter"

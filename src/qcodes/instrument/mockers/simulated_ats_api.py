@@ -10,6 +10,7 @@ import ctypes
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
+import numpy.typing as npt
 
 from qcodes.instrument_drivers.AlazarTech.ats_api import AlazarATSAPI
 from qcodes.instrument_drivers.AlazarTech.constants import (
@@ -32,16 +33,16 @@ class SimulatedATS9360API(AlazarATSAPI):
     def __init__(
         self,
         dll_path: str | None = None,  # Need this for meta super class
-        buffer_generator: "Callable[[np.ndarray], None] | None" = None,
+        buffer_generator: "Callable[[npt.NDArray], None] | None" = None,
     ):
-        def _default_buffer_generator(buffer: np.ndarray) -> None:
+        def _default_buffer_generator(buffer: npt.NDArray) -> None:
             upper = buffer.size // 2
             buffer[0:upper] = 30000 * np.ones(upper)
 
         # don't call `super().__init__` here to avoid dependence on the
         # alazar driver, when loading the dll
         self._buffer_generator = buffer_generator or _default_buffer_generator
-        self.buffers: dict[int, np.ndarray] = {}
+        self.buffers: dict[int, npt.NDArray] = {}
 
     def _sync_dll_call(self, c_name: str, *args: Any) -> None:
         _mark_params_as_updated(*args)

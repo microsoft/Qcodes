@@ -14,7 +14,9 @@ from .instrument_base import InstrumentBase, InstrumentBaseKWArgs
 from .instrument_meta import InstrumentMeta
 
 if TYPE_CHECKING:
-    from typing_extensions import Self, Unpack
+    from typing import Self
+
+    from typing_extensions import Unpack
 
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 

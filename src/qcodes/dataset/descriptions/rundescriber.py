@@ -18,7 +18,8 @@ if TYPE_CHECKING:
     )
 
 
-class RunDescriber:
+class RunDescriber:  # noqa: PLW1641
+    # TODO not clear if this should implement __hash__
     """
     The object that holds the description of each run in the database. This
     object serialises itself to a string and is found under the run_description

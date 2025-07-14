@@ -21,8 +21,8 @@ def test_bad_values() -> None:
 
     a = 0
     b = 10
-    values = np.linspace(a, b, b - a + 2)
-    for j, i in enumerate(values):
+    values = np.linspace(a, b, b - a + 2).flatten()
+    for j, i in enumerate(values.tolist()):
         if j in {0, 11}:
             validator.validate(i)
         else:

@@ -62,7 +62,7 @@ def _register_parameters(
         meas.register_parameter(parameter, setpoints=setpoints)
 
     if shapes is not None:
-        parameter_names = [param.full_name for param in real_parameters]
+        parameter_names = [param.register_name for param in real_parameters]
         for param in real_parameters:
             if isinstance(param, MultiParameter):
                 parameter_names.extend(param.full_names)

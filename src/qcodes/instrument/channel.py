@@ -20,7 +20,9 @@ from qcodes.validators import Validator
 from .instrument_base import InstrumentBase
 
 if TYPE_CHECKING:
-    from typing_extensions import Self, Unpack
+    from typing import Self
+
+    from typing_extensions import Unpack
 
     from .instrument import Instrument
     from .instrument_base import InstrumentBaseKWArgs
@@ -761,7 +763,7 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  #  pyri
             return
         self._locked = True
 
-    def to_channel_tuple(self) -> ChannelTuple:
+    def to_channel_tuple(self) -> ChannelTuple[InstrumentModuleType]:
         """
         Returns a ChannelTuple build from this ChannelList containing the
         same channels but without the ability to be modified.

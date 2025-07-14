@@ -519,7 +519,10 @@ class KeysightB1520A(KeysightB1500Module):
         )
         """Parameter capacitance"""
 
-        self.add_submodule("correction", KeysightB1500Correction(self, "correction"))
+        self.correction: KeysightB1500Correction = self.add_submodule(
+            "correction", KeysightB1500Correction(self, "correction")
+        )
+        """Instrument module correction"""
 
         self.phase_compensation_mode: Parameter = self.add_parameter(
             name="phase_compensation_mode",
@@ -563,7 +566,10 @@ class KeysightB1520A(KeysightB1500Module):
         fluctuations by changing the bias and so on.
         """
 
-        self.add_submodule("cv_sweep", KeysightB1500CVSweeper(self, "cv_sweep"))
+        self.cv_sweep: KeysightB1500CVSweeper = self.add_submodule(
+            "cv_sweep", KeysightB1500CVSweeper(self, "cv_sweep")
+        )
+        """Instrument module cv_sweep"""
 
         self.adc_coef: GroupParameter = self.add_parameter(
             name="adc_coef",
@@ -800,7 +806,7 @@ class KeysightB1520A(KeysightB1500Module):
         case is Capacitance and Dissipation.
         """
 
-    def _cv_sweep_voltages(self) -> tuple[np.floating, ...]:
+    def _cv_sweep_voltages(self) -> tuple[float, ...]:
         def sign(s: float) -> float:
             return s and (1, -1)[s < 0]
 
@@ -817,41 +823,49 @@ class KeysightB1520A(KeysightB1500Module):
                 else:
                     raise AssertionError("Polarity of start and end is not same.")
 
-        def linear_sweep(
-            start: float, end: float, steps: int
-        ) -> tuple[np.floating, ...]:
-            sweep_val = np.linspace(start, end, steps)
+        def linear_sweep(start: float, end: float, steps: int) -> tuple[float, ...]:
+            sweep_val = np.linspace(start, end, steps).flatten().tolist()
             return tuple(sweep_val)
 
-        def log_sweep(start: float, end: float, steps: int) -> tuple[np.floating, ...]:
-            sweep_val = np.logspace(np.log10(start), np.log10(end), steps)
+        def log_sweep(start: float, end: float, steps: int) -> tuple[float, ...]:
+            sweep_val = (
+                np.logspace(np.log10(start), np.log10(end), steps).flatten().tolist()
+            )
             return tuple(sweep_val)
 
         def linear_2way_sweep(
             start: float, end: float, steps: int
-        ) -> tuple[np.floating, ...]:
+        ) -> tuple[float, ...]:
             if steps % 2 == 0:
-                half_list = list(np.linspace(start, end, steps // 2))
+                half_list = np.linspace(start, end, steps // 2).flatten().tolist()
                 sweep_val = [*half_list, *half_list[::-1]]
             else:
-                half_list = list(np.linspace(start, end, steps // 2, endpoint=False))
-                sweep_val = [*half_list, np.float64(end), *half_list[::-1]]
+                half_list = (
+                    np.linspace(start, end, steps // 2, endpoint=False)
+                    .flatten()
+                    .tolist()
+                )
+                sweep_val = [*half_list, float(np.float64(end)), *half_list[::-1]]
             return tuple(sweep_val)
 
-        def log_2way_sweep(
-            start: float, end: float, steps: int
-        ) -> tuple[np.floating, ...]:
+        def log_2way_sweep(start: float, end: float, steps: int) -> tuple[float, ...]:
             if steps % 2 == 0:
-                half_list = list(
+                half_list = (
                     np.logspace(np.log10(start), np.log10(end), steps // 2)
+                    .flatten()
+                    .tolist()
                 )
+
                 sweep_val = half_list + half_list[::-1]
             else:
-                half_list = list(
+                half_list = (
                     np.logspace(
                         np.log10(start), np.log10(end), steps // 2, endpoint=False
                     )
+                    .flatten()
+                    .tolist()
                 )
+
                 sweep_val = [*half_list, np.float64(end), *half_list[::-1]]
             return tuple(sweep_val)
 

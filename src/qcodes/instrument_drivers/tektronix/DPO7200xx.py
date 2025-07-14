@@ -10,7 +10,7 @@ from functools import partial
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import numpy as np
-from typing_extensions import Unpack, deprecated
+import numpy.typing as npt
 
 from qcodes.instrument import (
     ChannelList,
@@ -26,11 +26,12 @@ from qcodes.parameters import (
     ParameterWithSetpoints,
     create_on_off_val_mapping,
 )
-from qcodes.utils import QCoDeSDeprecationWarning
 from qcodes.validators import Arrays, Enum
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from typing_extensions import Unpack
 
 
 def strip_quotes(string: str) -> str:
@@ -69,15 +70,31 @@ class TektronixDPO7000xx(VisaInstrument):
     default_terminator = "\n"
 
     def __init__(
-        self, name: str, address: str, **kwargs: Unpack[VisaInstrumentKWArgs]
+        self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
     ) -> None:
         super().__init__(name, address, **kwargs)
 
-        self.add_submodule("horizontal", TektronixDPOHorizontal(self, "horizontal"))
-
-        self.add_submodule("data", TektronixDPOData(self, "data"))
-
-        self.add_submodule("waveform", TektronixDPOWaveformFormat(self, "waveform"))
+        self.horizontal: TektronixDPOHorizontal = self.add_submodule(
+            "horizontal", TektronixDPOHorizontal(self, "horizontal")
+        )
+        """Instrument module horizontal"""
+        self.data: TektronixDPOData = self.add_submodule(
+            "data", TektronixDPOData(self, "data")
+        )
+        """Instrument module data"""
+        self.waveform: TektronixDPOWaveformFormat = self.add_submodule(
+            "waveform", TektronixDPOWaveformFormat(self, "waveform")
+        )
+        """Instrument module waveform"""
+        self.trigger: TektronixDPOTrigger = self.add_submodule(
+            "trigger", TektronixDPOTrigger(self, "trigger")
+        )
+        """Instrument module trigger"""
+        self.delayed_trigger: TektronixDPOTrigger = self.add_submodule(
+            "delayed_trigger",
+            TektronixDPOTrigger(self, "delayed_trigger", delayed_trigger=True),
+        )
+        """Instrument module delayed_trigger"""
 
         measurement_list = ChannelList(self, "measurement", TektronixDPOMeasurement)
         for measurement_number in range(1, self.number_of_measurements):
@@ -108,13 +125,6 @@ class TektronixDPO7000xx(VisaInstrument):
 
         self.add_submodule("channel", channel_list)
 
-        self.add_submodule("trigger", TektronixDPOTrigger(self, "trigger"))
-
-        self.add_submodule(
-            "delayed_trigger",
-            TektronixDPOTrigger(self, "delayed_trigger", delayed_trigger=True),
-        )
-
         self.connect_message()
 
     def ask_raw(self, cmd: str) -> str:
@@ -137,7 +147,10 @@ class TektronixDPOData(InstrumentChannel):
     """
 
     def __init__(
-        self, parent: InstrumentBase, name: str, **kwargs: Unpack[InstrumentBaseKWArgs]
+        self,
+        parent: InstrumentBase,
+        name: str,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
         super().__init__(parent, name, **kwargs)
         # We can choose to retrieve data from arbitrary
@@ -216,7 +229,7 @@ class TektronixDPOWaveform(InstrumentChannel):
         parent: InstrumentBase,
         name: str,
         identifier: str,
-        **kwargs: Unpack[InstrumentBaseKWArgs],
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
         super().__init__(parent, name, **kwargs)
 
@@ -324,7 +337,7 @@ class TektronixDPOWaveform(InstrumentChannel):
 
         return inner
 
-    def _get_trace_data(self) -> np.ndarray:
+    def _get_trace_data(self) -> npt.NDArray:
         self.root_instrument.data.source(self._identifier)
         waveform = self.root_instrument.waveform
 
@@ -350,24 +363,13 @@ class TektronixDPOWaveform(InstrumentChannel):
 
         return (raw_data - self.raw_data_offset()) * self.scale() + self.offset()
 
-    def _get_trace_setpoints(self) -> np.ndarray:
+    def _get_trace_setpoints(self) -> npt.NDArray:
         """
         Infer the set points of the waveform
         """
         sample_count = self.length()
         x_increment = self.x_increment()
         return np.linspace(0, x_increment * sample_count, sample_count)
-
-
-@deprecated(
-    "TekronixDPOWaveform is deprecated use TektronixDPOWaveform",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class TekronixDPOWaveform(TektronixDPOWaveform):
-    """
-    Deprecated alias for backwards compatibility
-    """
 
 
 class TektronixDPOWaveformFormat(InstrumentChannel):
@@ -381,7 +383,10 @@ class TektronixDPOWaveformFormat(InstrumentChannel):
     """
 
     def __init__(
-        self, parent: InstrumentBase, name: str, **kwargs: Unpack[InstrumentBaseKWArgs]
+        self,
+        parent: InstrumentBase,
+        name: str,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
         super().__init__(parent, name, **kwargs)
 
@@ -435,7 +440,7 @@ class TektronixDPOChannel(InstrumentChannel):
         parent: Instrument | InstrumentChannel,
         name: str,
         channel_number: int,
-        **kwargs: Unpack[InstrumentBaseKWArgs],
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
         super().__init__(parent, name, **kwargs)
         self._identifier = f"CH{channel_number}"
@@ -538,7 +543,7 @@ class TektronixDPOHorizontal(InstrumentChannel):
         self,
         parent: Instrument | InstrumentChannel,
         name: str,
-        **kwargs: Unpack[InstrumentBaseKWArgs],
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
         super().__init__(parent, name, **kwargs)
 
@@ -687,7 +692,7 @@ class TektronixDPOTrigger(InstrumentChannel):
         parent: Instrument,
         name: str,
         delayed_trigger: bool = False,
-        **kwargs: Unpack[InstrumentBaseKWArgs],
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
         super().__init__(parent, name, **kwargs)
         self._identifier = "B" if delayed_trigger else "A"
@@ -752,17 +757,6 @@ class TektronixDPOTrigger(InstrumentChannel):
                 "We currently only support the 'edge' trigger type"
             )
         self.write(f"TRIGger:{self._identifier}:TYPE {value}")
-
-
-@deprecated(
-    "TekronixDPOTrigger is deprecated use TektronixDPOTrigger",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class TekronixDPOTrigger(TektronixDPOTrigger):
-    """
-    Deprecated alias for backwards compatibility
-    """
 
 
 class TektronixDPOMeasurementParameter(Parameter):
@@ -882,7 +876,7 @@ class TektronixDPOMeasurement(InstrumentChannel):
         parent: Instrument,
         name: str,
         measurement_number: int,
-        **kwargs: Unpack[InstrumentBaseKWArgs],
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
         super().__init__(parent, name, **kwargs)
         self._measurement_number = measurement_number
@@ -952,7 +946,10 @@ class TektronixDPOMeasurement(InstrumentChannel):
 
 class TektronixDPOMeasurementStatistics(InstrumentChannel):
     def __init__(
-        self, parent: InstrumentBase, name: str, **kwargs: Unpack[InstrumentBaseKWArgs]
+        self,
+        parent: InstrumentBase,
+        name: str,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
         super().__init__(parent=parent, name=name, **kwargs)
 
