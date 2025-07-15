@@ -279,11 +279,11 @@ class DataSetInMem(BaseDataSet):
                     data = data[0]
                 metadata[str(key)] = data
 
-            completed_timestamp_raw = getattr(loaded_data, 'completed_timestamp_raw', None)
+            completed_timestamp_raw = getattr(loaded_data, "completed_timestamp_raw", None)
             if completed_timestamp_raw is not None:
                 completed_timestamp_raw = float(completed_timestamp_raw)
 
-            run_timestamp_raw = getattr(loaded_data, 'run_timestamp_raw', None)
+            run_timestamp_raw = getattr(loaded_data, "run_timestamp_raw", None)
             if run_timestamp_raw is not None:
                 run_timestamp_raw = float(run_timestamp_raw)
 
