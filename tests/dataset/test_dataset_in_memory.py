@@ -528,7 +528,7 @@ def test_load_from_netcdf_non_completed_dataset(experiment, tmp_path) -> None:
     # Add some data points
     for x_val in np.linspace(0, 25, 5):
         y_val = x_val**2  # simple function
-        ds.add_results([{x_param.name: x_val, y_param.name: y_val}])
+        ds._enqueue_results({x_param: np.array([x_val]), y_param: np.array([y_val])})
 
     # Note: do NOT call ds.mark_completed() to keep it non-completed
 
