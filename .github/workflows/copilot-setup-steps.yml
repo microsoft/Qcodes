@@ -54,6 +54,10 @@ jobs:
           pip install -e .[test] -c requirements.txt
           echo "PYTEST_OPT=" >> $GITHUB_ENV
 
+      - name: install pre-commit
+        run: |
+          pip install pre-commit
+
       - name: Get Pyright Version
         id: pyright-version
         run: |
@@ -62,3 +66,7 @@ jobs:
           echo "version=$PYRIGHT_VERSION" >> $GITHUB_OUTPUT
         working-directory: .github
         shell: bash
+
+      - name: install pyright
+        run: |
+          pip install pyright==${{ steps.pyright-version.outputs.version }}
