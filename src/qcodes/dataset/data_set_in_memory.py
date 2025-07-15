@@ -279,10 +279,13 @@ class DataSetInMem(BaseDataSet):
                     data = data[0]
                 metadata[str(key)] = data
 
-            # Handle completed_timestamp_raw which may not exist for non-completed datasets
             completed_timestamp_raw = getattr(loaded_data, 'completed_timestamp_raw', None)
             if completed_timestamp_raw is not None:
                 completed_timestamp_raw = float(completed_timestamp_raw)
+
+            run_timestamp_raw = getattr(loaded_data, 'run_timestamp_raw', None)
+            if run_timestamp_raw is not None:
+                run_timestamp_raw = float(run_timestamp_raw)
 
             ds = cls(
                 run_id=run_id,
@@ -295,7 +298,7 @@ class DataSetInMem(BaseDataSet):
                 sample_name=loaded_data.sample_name,
                 guid=loaded_data.guid,
                 path_to_db=path_to_db,
-                run_timestamp_raw=float(loaded_data.run_timestamp_raw),
+                run_timestamp_raw=run_timestamp_raw,
                 completed_timestamp_raw=completed_timestamp_raw,
                 metadata=metadata,
                 rundescriber=serial.from_json_to_current(loaded_data.run_description),
