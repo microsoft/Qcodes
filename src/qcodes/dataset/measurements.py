@@ -15,6 +15,7 @@ from collections.abc import Callable, Mapping, MutableMapping, MutableSequence, 
 from contextlib import ExitStack
 from copy import deepcopy
 from inspect import signature
+from itertools import chain
 from numbers import Number
 from time import perf_counter
 from typing import TYPE_CHECKING, Any, TypeVar, cast
@@ -37,6 +38,7 @@ from qcodes.dataset.data_set_protocol import (
 from qcodes.dataset.descriptions.dependencies import (
     IncompleteSubsetError,
     InterDependencies_,
+    ParamSpecTree,
 )
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.export_config import get_data_export_automatic
@@ -839,7 +841,6 @@ class Measurement:
 
     def _paramspecbase_from_strings(
         self,
-        name: str,
         setpoints: Sequence[str] | None = None,
         basis: Sequence[str] | None = None,
     ) -> tuple[tuple[ParamSpecBase, ...], tuple[ParamSpecBase, ...]]:
@@ -851,7 +852,6 @@ class Measurement:
         Called by _register_parameter only.
 
         Args:
-            name: Name of the parameter to register
             setpoints: name(s) of the setpoint parameter(s)
             basis: name(s) of the parameter(s) that this parameter is
                 inferred from
@@ -919,25 +919,77 @@ class Measurement:
         basis: SetpointsType | None = None,
         paramtype: str | None = None,
     ) -> Self:
-        if parameter.param_spec is None:
-            raise ValueError("This shouldn't happen")
+        # Handle setpoints and basis arguments
 
-        for before_param in parameter.register_before:
-            self._self_register_parameter(before_param)
+        if setpoints is not None:
+            parameters_from_setpoints, str_setpoints = (
+                split_str_and_parameterbase_setpoints(setpoints)
+            )
+        else:
+            parameters_from_setpoints = ()
+            str_setpoints = None
 
-        register_setpoints = list(setpoints) if setpoints is not None else []
-        register_setpoints += parameter.register_before
-        self._register_parameter(
-            name=parameter.param_spec.name,
-            label=parameter.param_spec.label,
-            unit=parameter.param_spec.unit,
-            paramtype=paramtype or parameter.param_spec.type,
-            setpoints=register_setpoints,
-            basis=basis,
+        if basis is not None:
+            parameters_from_basis, str_basis = split_str_and_parameterbase_setpoints(
+                basis
+            )
+        else:
+            parameters_from_basis = ()
+            str_basis = None
+
+        dependency_paramspecs_from_str, inference_paramspecs_from_str = (
+            self._paramspecbase_from_strings(setpoints=str_setpoints, basis=str_basis)
         )
 
-        for after_param in parameter.register_after:
-            self._self_register_parameter(parameter=after_param, basis=(parameter,))
+        # Collect dependent and inference parameters
+        dependent_parameters = list(
+            chain.from_iterable((parameters_from_setpoints, parameter.depends_on))
+        )
+
+        inference_parameters = list(
+            chain.from_iterable((parameters_from_basis, parameter.inferred_from))
+        )
+
+        # Combine str-based paramspecs and Parameter paramspecs
+        dependency_paramspecs = set(
+            [param.param_spec for param in dependent_parameters]
+            + list(dependency_paramspecs_from_str)
+        )
+        inference_paramspecs = set(
+            [param.param_spec for param in inference_parameters]
+            + list(inference_paramspecs_from_str)
+        )
+
+        # Make ParamSpecTrees
+        dependencies_tree: ParamSpecTree | None = None
+        if len(dependency_paramspecs) > 0:
+            dependencies_tree = {parameter.param_spec: tuple(dependency_paramspecs)}
+
+        inferences_tree: ParamSpecTree | None = None
+        if len(inference_paramspecs) > 0:
+            inferences_tree = {parameter.param_spec: tuple(inference_paramspecs)}
+
+        standalones = ()
+        if dependencies_tree is None and inferences_tree is None:
+            standalones = (parameter.param_spec,)
+
+        self._interdeps = self._interdeps.extend(
+            dependencies=dependencies_tree,
+            inferences=inferences_tree,
+            standalones=standalones,
+        )
+        if parameter not in self._registered_parameters:
+            self._registered_parameters.append(parameter)
+        # And now register all interdependent parameters of this parameter as well
+        for interdependent_parameter in list(
+            chain.from_iterable(
+                (dependent_parameters, inference_parameters, parameter.component_of)
+            )
+        ):
+            if interdependent_parameter not in self._registered_parameters:
+                self._self_register_parameter(interdependent_parameter)
+                self._registered_parameters.append(interdependent_parameter)
+
         return self
 
     def register_parameter(
@@ -1101,9 +1153,7 @@ class Measurement:
             bs_strings = []
 
         # get the ParamSpecBases
-        depends_on, inf_from = self._paramspecbase_from_strings(
-            name, sp_strings, bs_strings
-        )
+        depends_on, inf_from = self._paramspecbase_from_strings(sp_strings, bs_strings)
 
         if depends_on:
             self._interdeps = self._interdeps.extend(
@@ -1468,3 +1518,20 @@ def str_or_register_name(sp: str | ParameterBase) -> str:
         return sp
     else:
         return sp.register_name
+
+
+def split_str_and_parameterbase_setpoints(
+    setpoints: SetpointsType,
+) -> tuple[tuple[ParameterBase], tuple[str]]:
+    str_setpoints = []
+    param_setpoints = []
+    for setpoint in setpoints:
+        if isinstance(setpoint, str):
+            str_setpoints.append(setpoint)
+        elif isinstance(setpoint, ParameterBase):
+            param_setpoints.append(setpoint)
+        else:
+            raise ValueError(
+                f"Expected Setpoint {setpoint} to be a str or ParameterBase, but got something else"
+            )
+    return tuple(param_setpoints), tuple(str_setpoints)

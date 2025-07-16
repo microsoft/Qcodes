@@ -9,9 +9,10 @@ from datetime import datetime
 from functools import cached_property, wraps
 from typing import TYPE_CHECKING, Any, ClassVar, overload
 
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.metadatable import Metadatable, MetadatableWithName
 from qcodes.utils import DelegateAttributes, full_class, qcodes_abstractmethod
-from qcodes.validators import Enum, Ints, Validator
+from qcodes.validators import Arrays, ComplexNumbers, Enum, Ints, Strings, Validator
 
 from ..utils.types import NumberType
 from .cache import _Cache, _CacheProtocol
@@ -26,7 +27,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Iterable, Mapping, Sequence, Sized
     from types import TracebackType
 
-    from qcodes.dataset.descriptions.param_spec import ParamSpecBase
     from qcodes.instrument import InstrumentBase
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 
@@ -235,7 +235,7 @@ class ParameterBase(MetadatableWithName):
         self._snapshot_value = snapshot_value
         self.snapshot_exclude = snapshot_exclude
         self.on_set_callback = on_set_callback
-
+        self._component_of: tuple[ParameterBase, ...] = ()
         if not isinstance(vals, (Validator, type(None))):
             raise TypeError("vals must be None or a Validator")
         elif val_mapping is not None:
@@ -1146,16 +1146,40 @@ class ParameterBase(MetadatableWithName):
         return self._abstract
 
     @property
-    def param_spec(self) -> ParamSpecBase | None:
-        return None
+    def param_spec(self) -> ParamSpecBase:
+        match self.vals:
+            case Arrays():
+                paramtype = "array"
+            case Strings():
+                paramtype = "text"
+            case ComplexNumbers():
+                paramtype = "complex"
+            case _:
+                paramtype = "numeric"
+
+        return ParamSpecBase(
+            name=self.register_name,
+            paramtype=paramtype,
+            label=None,
+            unit=None,
+        )
 
     @property
-    def register_before(self) -> tuple[ParameterBase, ...]:
+    def depends_on(self) -> tuple[ParameterBase, ...]:
         return ()
 
     @property
-    def register_after(self) -> tuple[ParameterBase, ...]:
+    def inferred_from(self) -> tuple[ParameterBase, ...]:
         return ()
+
+    @property
+    def component_of(self) -> tuple[ParameterBase, ...]:
+        return self._component_of
+
+    def add_component_of(self, parameter: ParameterBase) -> None:
+        mutable_components_of = set(self._component_of)
+        mutable_components_of.add(parameter)
+        self._component_of = tuple(mutable_components_of)
 
 
 class GetLatest(DelegateAttributes):

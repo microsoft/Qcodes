@@ -441,23 +441,11 @@ class Parameter(ParameterBase):
         return SweepFixedValues(self, start=start, stop=stop, step=step, num=num)
 
     @property
-    def param_spec(self) -> ParamSpecBase | None:
-        match self.vals:
-            case Arrays():
-                paramtype = "array"
-            case Strings():
-                paramtype = "text"
-            case ComplexNumbers():
-                paramtype = "complex"
-            case _:
-                paramtype = "numeric"
-
-        return ParamSpecBase(
-            name=self.register_name,
-            paramtype=paramtype,
-            label=self.label,
-            unit=self.unit,
-        )
+    def param_spec(self) -> ParamSpecBase:
+        paramspecbase = super().param_spec  # Sets the name and paramtype
+        paramspecbase.label = self.label
+        paramspecbase.unit = self.unit
+        return paramspecbase
 
 
 class ManualParameter(Parameter):
