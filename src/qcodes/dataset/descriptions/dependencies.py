@@ -10,7 +10,7 @@ import logging
 from collections import defaultdict
 from copy import deepcopy
 from itertools import chain, product
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import networkx as nx
 
@@ -24,6 +24,7 @@ _LOGGER = logging.getLogger(__name__)
 ParamSpecTree = dict[ParamSpecBase, tuple[ParamSpecBase, ...]]
 ParamNameTree = dict[str, list[str]]
 ErrorTuple = tuple[type[Exception], str]
+_InterDepType = Literal["depends_on", "inferred_from"]
 
 
 class IncompleteSubsetError(Exception):
@@ -70,7 +71,9 @@ class InterDependencies_:  # noqa: PLW1641
             self._graph.add_node(paramspec.name, value=paramspec)
 
     def _add_interdeps_by_type(
-        self, links: Sequence[tuple[ParamSpecBase, ParamSpecBase]], interdep_type: str
+        self,
+        links: Sequence[tuple[ParamSpecBase, ParamSpecBase]],
+        interdep_type: _InterDepType,
     ) -> None:
         for link in links:
             paramspec_from, paramspec_to = link
@@ -107,7 +110,9 @@ class InterDependencies_:  # noqa: PLW1641
                 )
         self.add_paramspecs(list(standalones))
 
-    def _add_interdeps(self, interdeps: ParamSpecTree, interdep_type: str) -> None:
+    def _add_interdeps(
+        self, interdeps: ParamSpecTree, interdep_type: _InterDepType
+    ) -> None:
         for spec_dep, spec_indeps in interdeps.items():
             flat_specs = list(chain.from_iterable([(spec_dep,), spec_indeps]))
             flat_deps = list(product((spec_dep,), spec_indeps))
@@ -174,7 +179,7 @@ class InterDependencies_:  # noqa: PLW1641
         new_interdependencies.add_standalones(standalones)
         return new_interdependencies
 
-    def _paramspec_tree_by_type(self, interdep_type: str) -> ParamSpecTree:
+    def _paramspec_tree_by_type(self, interdep_type: _InterDepType) -> ParamSpecTree:
         paramspec_tree_list: dict[ParamSpecBase, list[ParamSpecBase]] = defaultdict(
             list
         )
@@ -189,7 +194,7 @@ class InterDependencies_:  # noqa: PLW1641
         return cast("ParamSpecBase", self.graph.nodes[node_id]["value"])
 
     def _paramspec_predecessors_by_type(
-        self, paramspec: ParamSpecBase, interdep_type: str
+        self, paramspec: ParamSpecBase, interdep_type: _InterDepType
     ) -> tuple[ParamSpecBase, ...]:
         return tuple(
             self._node_to_paramspec(node_from)
@@ -332,7 +337,9 @@ class InterDependencies_:  # noqa: PLW1641
 
     @staticmethod
     def validate_paramspectree(
-        paramspectree: ParamSpecTree, interdep_type: str | None = None
+        paramspectree: ParamSpecTree,
+        interdep_type: Literal["dependencies", "inferences", "ParamSpecTree"]
+        | None = None,
     ) -> None:
         """
         Validate a ParamSpecTree. Apart from adhering to the type, a
@@ -343,7 +350,7 @@ class InterDependencies_:  # noqa: PLW1641
             the paramtree is valid
 
         """
-        interdep_type = interdep_type or "ParamSpecTree"
+        interdep_type_internal = interdep_type or "ParamSpecTree"
         cause: str | None = None
 
         # Validate the type
@@ -370,11 +377,11 @@ class InterDependencies_:  # noqa: PLW1641
             leafs = {ps for tup in paramspectree.values() for ps in tup}
 
             if roots.intersection(leafs) != set():
-                raise ValueError(f"Invalid {interdep_type}") from ValueError(
+                raise ValueError(f"Invalid {interdep_type_internal}") from ValueError(
                     "ParamSpecTree can not have cycles"
                 )
         else:
-            raise ValueError(f"Invalid {interdep_type}") from TypeError(cause)
+            raise ValueError(f"Invalid {interdep_type_internal}") from TypeError(cause)
 
     def validate_subset(self, paramspecs: Sequence[ParamSpecBase]) -> None:
         """
