@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 
 import ipycytoscape
 import ipywidgets
-import netowrkx as nx
+import networkx as nx
 
 if TYPE_CHECKING:
     from qcodes.dataset.descriptions.dependencies import InterDependencies_
