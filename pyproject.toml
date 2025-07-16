@@ -95,6 +95,7 @@ test = [
     "zhinst.qcodes>=0.5", # typecheck zhinst driver alias
     "libcst>=1.2.0", # refactor tests
     "jinja2>=3.1.3", # transitive dependency pin due to cve in earlier version
+    "qcodes[live_plotting]",
 ]
 docs = [
     "autodocsumm>=0.2.9",
