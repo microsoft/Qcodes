@@ -820,7 +820,7 @@ class Measurement:
         self._shapes: Shapes | None = None
         self._parent_datasets: list[dict[str, str]] = []
         self._extra_log_info: str = ""
-        self._registered_parameters: list[ParameterBase] = []
+        self._registered_parameters: set[ParameterBase] = set()
 
     @property
     def parameters(self) -> dict[str, ParamSpecBase]:
@@ -849,7 +849,7 @@ class Measurement:
         error message if the user tries to register a parameter with reference
         (setpoints, basis) to a parameter not registered with this measurement
 
-        Called by _register_parameter only.
+        Called by _register_parameter and _self_register_parameter only.
 
         Args:
             setpoints: name(s) of the setpoint parameter(s)
@@ -917,7 +917,6 @@ class Measurement:
         parameter: ParameterBase,
         setpoints: SetpointsType | None = None,
         basis: SetpointsType | None = None,
-        paramtype: str | None = None,
     ) -> Self:
         # Handle setpoints and basis arguments
 
@@ -960,7 +959,7 @@ class Measurement:
             + list(inference_paramspecs_from_str)
         )
 
-        # Make ParamSpecTrees
+        # Make ParamSpecTrees and extend InterDeps
         dependencies_tree: ParamSpecTree | None = None
         if len(dependency_paramspecs) > 0:
             dependencies_tree = {parameter.param_spec: tuple(dependency_paramspecs)}
@@ -978,9 +977,11 @@ class Measurement:
             inferences=inferences_tree,
             standalones=standalones,
         )
-        if parameter not in self._registered_parameters:
-            self._registered_parameters.append(parameter)
-        # And now register all interdependent parameters of this parameter as well
+        self._registered_parameters.add(parameter)
+        log.info(f"Registered {parameter.register_name} in the Measurement.")
+
+        # And now recursively register all interdependent parameters of this parameter as well
+        # This step includes "component_of" which is the reverse-direction of inferrred_from
         for interdependent_parameter in list(
             chain.from_iterable(
                 (dependent_parameters, inference_parameters, parameter.component_of)
@@ -988,7 +989,6 @@ class Measurement:
         ):
             if interdependent_parameter not in self._registered_parameters:
                 self._self_register_parameter(interdependent_parameter)
-                self._registered_parameters.append(interdependent_parameter)
 
         return self
 
@@ -1055,7 +1055,7 @@ class Measurement:
                 raise RuntimeError(
                     f"Does not know how to register a parameter of type {type(parameter)}"
                 )
-        self._registered_parameters.append(parameter)
+        self._registered_parameters.add(parameter)
 
         return self
 
@@ -1386,7 +1386,7 @@ class Measurement:
                 for param in self._registered_parameters
                 if parameter not in (param.name, param.register_name)
             ]
-            self._registered_parameters = with_parameters_removed
+            self._registered_parameters = set(with_parameters_removed)
 
         log.info(f"Removed {param_name} from Measurement.")
 
@@ -1508,7 +1508,7 @@ class Measurement:
             in_memory_cache=in_memory_cache,
             dataset_class=dataset_class,
             parent_span=parent_span,
-            registered_parameters=self._registered_parameters,
+            registered_parameters=tuple(self._registered_parameters),
         )
 
 
