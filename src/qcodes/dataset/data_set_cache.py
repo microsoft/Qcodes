@@ -105,15 +105,12 @@ class DataSetCache(Generic[DatasetType_co]):
         """
 
         output: dict[str, dict[str, npt.NDArray]] = {}
-        for dependent in interdeps.dependencies.keys():
-            params = interdeps.find_all_parameters_in_tree(dependent)
+        for toplevel_param in interdeps.non_dependencies:
+            params = interdeps.find_all_parameters_in_tree(toplevel_param)
 
-            output[dependent.name] = {dependent.name: np.array([])}
+            output[toplevel_param.name] = {toplevel_param.name: np.array([])}
             for param in params:
-                output[dependent.name][param.name] = np.array([])
-        for standalone in (ps.name for ps in interdeps.standalones):
-            output[standalone] = {}
-            output[standalone][standalone] = np.array([])
+                output[toplevel_param.name][param.name] = np.array([])
         return output
 
     def prepare(self) -> None:
