@@ -1244,7 +1244,7 @@ class DataSet(BaseDataSet):
         self._raise_if_not_writable()
         interdeps = self._rundescriber.interdeps
 
-        toplevel_params = set(interdeps.non_dependencies).intersection(set(result_dict))
+        toplevel_params = interdeps.top_level_params.intersection(set(result_dict))
 
         new_results: dict[str, dict[str, npt.NDArray]] = {}
 

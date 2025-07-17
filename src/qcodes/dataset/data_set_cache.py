@@ -105,7 +105,7 @@ class DataSetCache(Generic[DatasetType_co]):
         """
 
         output: dict[str, dict[str, npt.NDArray]] = {}
-        for toplevel_param in interdeps.non_dependencies:
+        for toplevel_param in interdeps.top_level_params:
             params = interdeps.find_all_parameters_in_tree(toplevel_param)
 
             output[toplevel_param.name] = {toplevel_param.name: np.array([])}
