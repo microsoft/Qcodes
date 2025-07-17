@@ -658,7 +658,7 @@ class DataSetInMem(BaseDataSet):
         self._raise_if_not_writable()
         interdeps = self._rundescriber.interdeps
 
-        toplevel_params = set(interdeps.dependencies).intersection(set(result_dict))
+        toplevel_params = interdeps.top_level_params.intersection(set(result_dict))
         new_results: dict[str, dict[str, npt.NDArray]] = {}
 
         for toplevel_param in toplevel_params:
@@ -683,13 +683,13 @@ class DataSetInMem(BaseDataSet):
 
         # Finally, handle standalone parameters
 
-        standalones = set(interdeps.standalones).intersection(set(result_dict))
+        # standalones = set(interdeps.standalones).intersection(set(result_dict))
 
-        if standalones:
-            for st in standalones:
-                new_results[st.name] = {
-                    st.name: self._reshape_array_for_cache(st, result_dict[st])
-                }
+        # if standalones:
+        #     for st in standalones:
+        #         new_results[st.name] = {
+        #             st.name: self._reshape_array_for_cache(st, result_dict[st])
+        #         }
 
         self.cache.add_data(new_results)
 

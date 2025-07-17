@@ -292,6 +292,19 @@ class InterDependencies_:  # noqa: PLW1641
         )
         return non_dependencies_sorted_by_name
 
+    @property
+    def top_level_params(self) -> set[ParamSpecBase]:
+        """
+        Return all parameters that are not dependencies of other parameters,
+        i.e. return the top level parameters.
+        """
+        top_level_parameters = {
+            self._node_to_paramspec(node_id)
+            for node_id, in_degree in self._graph.in_degree
+            if in_degree == 0
+        }
+        return top_level_parameters
+
     def remove(self, paramspec: ParamSpecBase) -> InterDependencies_:
         """
         Create a new :class:`InterDependencies_` object that is similar
