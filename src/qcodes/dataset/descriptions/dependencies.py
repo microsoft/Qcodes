@@ -280,17 +280,8 @@ class InterDependencies_:  # noqa: PLW1641
         i.e. return the top level parameters. Returned tuple is sorted by
         parameter names.
         """
-        dependencies = {
-            self._node_to_paramspec(node_id)
-            for node_id, in_degree in self._dependency_subgraph.in_degree
-            if in_degree >= 1
-        }
-        non_dependencies = set(self.paramspecs) - dependencies
-
-        non_dependencies_sorted_by_name = tuple(
-            sorted(non_dependencies, key=lambda ps: ps.name)
-        )
-        return non_dependencies_sorted_by_name
+        non_dependencies = tuple(self.standalones) + tuple(self.dependencies.keys())
+        return non_dependencies
 
     @property
     def top_level_params(self) -> set[ParamSpecBase]:
