@@ -322,15 +322,6 @@ class InterDependencies_:  # noqa: PLW1641
     def graph(self) -> nx.DiGraph[str]:
         return self._graph
 
-    def to_ipycytoscape_json(self) -> dict[str, list[dict[str, Any]]]:
-        graph_json: dict[str, list[dict[str, Any]]] = nx.cytoscape_data(self.graph)[
-            "elements"
-        ]
-        # TODO: Add different node types?
-        for edge_dict in graph_json["edges"]:
-            edge_dict["classes"] = edge_dict["data"]["interdep_type"]
-        return graph_json
-
     @staticmethod
     def validate_paramspectree(
         paramspectree: ParamSpecTree, interdep_type: str | None = None
