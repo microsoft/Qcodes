@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     import pandas as pd
     import xarray as xr
 
+    from qcodes.dataset.descriptions.dependencies import InterDependencies_
     from qcodes.dataset.descriptions.rundescriber import RunDescriber
     from qcodes.dataset.sqlite.connection import AtomicConnection
 
@@ -91,6 +92,38 @@ class DataSetCache(Generic[DatasetType_co]):
 
         return self._data
 
+    @staticmethod
+    def _empty_data_dict(
+        interdeps: InterDependencies_,
+    ) -> dict[str, dict[str, npt.NDArray]]:
+        """
+        Create an dictionary with empty numpy arrays as values
+        matching the expected output of ``DataSet``'s ``get_parameter_data`` /
+        ``cache.data`` so that the order of keys in the returned dictionary
+        is the same as the order of parameters in the interdependencies
+        in this class.
+        """
+
+        output: dict[str, dict[str, npt.NDArray]] = {}
+        for toplevel_param in interdeps.top_level_params:
+            params = interdeps.find_all_parameters_in_tree(toplevel_param)
+
+            # currently export relies on the order of the parameters in the dict being
+            # toplevel parameter, then dependencies in the order they were registered.
+            # To do this we first insert the dependencies and then the parameters
+            # that are not dependencies.
+            output[toplevel_param.name] = {toplevel_param.name: np.array([])}
+
+            dependencies = interdeps.dependencies.get(toplevel_param, ())
+
+            for dep in dependencies:
+                output[toplevel_param.name][dep.name] = np.array([])
+                params.remove(dep)
+
+            for param in params:
+                output[toplevel_param.name][param.name] = np.array([])
+        return output
+
     def prepare(self) -> None:
         """
         Set up the internal datastructure of the cache.
@@ -99,7 +132,7 @@ class DataSetCache(Generic[DatasetType_co]):
         """
 
         if self._data == {}:
-            self._data = self.rundescriber.interdeps._empty_data_dict()
+            self._data = self._empty_data_dict(self.rundescriber.interdeps)
         else:
             raise RuntimeError("Cannot prepare a cache that is not empty")
 

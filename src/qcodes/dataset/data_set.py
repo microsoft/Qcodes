@@ -13,6 +13,7 @@ from threading import Thread
 from typing import TYPE_CHECKING, Any, Literal
 
 import numpy
+import numpy.typing as npt
 from tqdm.auto import trange
 
 import qcodes
@@ -1226,7 +1227,7 @@ class DataSet(BaseDataSet):
         return "\n".join(out)
 
     def _enqueue_results(
-        self, result_dict: Mapping[ParamSpecBase, numpy.ndarray]
+        self, result_dict: Mapping[ParamSpecBase, npt.NDArray]
     ) -> None:
         """
         Enqueue the results into self._results
@@ -1243,14 +1244,17 @@ class DataSet(BaseDataSet):
         self._raise_if_not_writable()
         interdeps = self._rundescriber.interdeps
 
-        toplevel_params = set(interdeps.dependencies).intersection(set(result_dict))
+        toplevel_params = interdeps.top_level_params.intersection(set(result_dict))
 
-        new_results: dict[str, dict[str, numpy.ndarray]] = {}
+        new_results: dict[str, dict[str, npt.NDArray]] = {}
 
         for toplevel_param in toplevel_params:
-            inff_params = set(interdeps.inferences.get(toplevel_param, ()))
-            deps_params = set(interdeps.dependencies.get(toplevel_param, ()))
-            all_params = inff_params.union(deps_params).union({toplevel_param})
+            # Transitively collect all parameters that are related to any parameter
+            # in the current tree, including parameters that dependencies are inferred from
+            all_params = interdeps.find_all_parameters_in_tree(toplevel_param)
+            # Only include parameters that are present in result_dict
+            # warn here if missing parameters
+            all_params = all_params.intersection(result_dict.keys())
 
             if self._in_memory_cache:
                 new_results[toplevel_param.name] = {}
@@ -1268,8 +1272,26 @@ class DataSet(BaseDataSet):
             if toplevel_param.type == "array":
                 res_list = self._finalize_res_dict_array(result_dict, all_params)
             elif toplevel_param.type in ("numeric", "text", "complex"):
+                # Separate the all_params back into inferred and dependencies for compatibility
+                collected_inff_params = set()
+                collected_deps_params = set()
+                for param in all_params:
+                    if param != toplevel_param:
+                        if param in interdeps.inferences.get(toplevel_param, ()):
+                            collected_inff_params.add(param)
+                        elif param in interdeps.dependencies.get(toplevel_param, ()):
+                            collected_deps_params.add(param)
+                        else:
+                            # This is a transitively collected parameter
+                            # We need to determine if it's inferred or dependency based
+                            # For simplicity, we'll treat it as inferred
+                            collected_inff_params.add(param)
+
                 res_list = self._finalize_res_dict_numeric_text_or_complex(
-                    result_dict, toplevel_param, inff_params, deps_params
+                    result_dict,
+                    toplevel_param,
+                    collected_inff_params,
+                    collected_deps_params,
                 )
             else:
                 res_dict: dict[str, VALUE] = {
@@ -1278,18 +1300,18 @@ class DataSet(BaseDataSet):
                 res_list = [res_dict]
             self._results += res_list
 
-        # Finally, handle standalone parameters
+        # # Finally, handle standalone parameters
 
-        standalones = set(interdeps.standalones).intersection(set(result_dict))
+        # standalones = set(interdeps.standalones).intersection(set(result_dict))
 
-        if standalones:
-            stdln_dict = {st: result_dict[st] for st in standalones}
-            self._results += self._finalize_res_dict_standalones(stdln_dict)
-            if self._in_memory_cache:
-                for st in standalones:
-                    new_results[st.name] = {
-                        st.name: self._reshape_array_for_cache(st, result_dict[st])
-                    }
+        # if standalones:
+        #     stdln_dict = {st: result_dict[st] for st in standalones}
+        #     self._results += self._finalize_res_dict_standalones(stdln_dict)
+        #     if self._in_memory_cache:
+        #         for st in standalones:
+        #             new_results[st.name] = {
+        #                 st.name: self._reshape_array_for_cache(st, result_dict[st])
+        #             }
 
         if self._in_memory_cache:
             self.cache.add_data(new_results)
@@ -1328,7 +1350,7 @@ class DataSet(BaseDataSet):
 
     @staticmethod
     def _finalize_res_dict_numeric_text_or_complex(
-        result_dict: Mapping[ParamSpecBase, numpy.ndarray],
+        result_dict: Mapping[ParamSpecBase, npt.NDArray],
         toplevel_param: ParamSpecBase,
         inff_params: set[ParamSpecBase],
         deps_params: set[ParamSpecBase],
@@ -1352,7 +1374,7 @@ class DataSet(BaseDataSet):
         else:
             # We first massage all values into np.arrays of the same
             # shape
-            flat_results: dict[str, numpy.ndarray] = {}
+            flat_results: dict[str, npt.NDArray] = {}
 
             toplevel_val = result_dict[toplevel_param]
             flat_results[toplevel_param.name] = toplevel_val.ravel()
@@ -1379,7 +1401,7 @@ class DataSet(BaseDataSet):
 
     @staticmethod
     def _finalize_res_dict_standalones(
-        result_dict: Mapping[ParamSpecBase, numpy.ndarray],
+        result_dict: Mapping[ParamSpecBase, npt.NDArray],
     ) -> list[dict[str, VALUE]]:
         """
         Massage all standalone parameters into the correct shape
