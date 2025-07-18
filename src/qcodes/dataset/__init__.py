@@ -13,7 +13,10 @@ from .data_set import (
 )
 from .data_set_in_memory import load_from_file, load_from_netcdf
 from .data_set_protocol import DataSetProtocol, DataSetType
-from .database_extract_runs import extract_runs_into_db
+from .database_extract_runs import (
+    export_datasets_and_create_metadata_db,
+    extract_runs_into_db,
+)
 from .descriptions.dependencies import InterDependencies_, ParamSpecTree
 from .descriptions.param_spec import ParamSpec
 from .descriptions.rundescriber import RunDescriber
@@ -89,6 +92,7 @@ __all__ = [
     "dond",
     "dond_into",
     "experiments",
+    "export_datasets_and_create_metadata_db",
     "extract_runs_into_db",
     "get_data_export_path",
     "get_default_experiment_id",
