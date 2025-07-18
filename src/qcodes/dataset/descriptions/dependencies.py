@@ -281,7 +281,10 @@ class InterDependencies_:  # noqa: PLW1641
         parameter names.
         """
         non_dependencies = tuple(self.standalones) + tuple(self.dependencies.keys())
-        return non_dependencies
+        non_dependencies_sorted_by_name = tuple(
+            sorted(non_dependencies, key=lambda ps: ps.name)
+        )
+        return non_dependencies_sorted_by_name
 
     @property
     def top_level_params(self) -> set[ParamSpecBase]:
@@ -315,11 +318,13 @@ class InterDependencies_:  # noqa: PLW1641
             all_paramspecs_in_dependency_tree
         )
 
-        return (
+        all_params = (
             dependency_top_level
             | inference_top_level_not_in_dependency_tree
             | standalone_top_level
         )
+
+        return all_params
 
     def remove(self, paramspec: ParamSpecBase) -> InterDependencies_:
         """
@@ -498,29 +503,6 @@ class InterDependencies_:  # noqa: PLW1641
             if node_name in self.graph.nodes:
                 collected_params.add(self._node_to_paramspec(node_name))
         return collected_params
-
-    def _are_in_same_dependency_tree(
-        self, param1: ParamSpecBase, param2: ParamSpecBase
-    ) -> bool:
-        """
-        Check if two parameters are in the same dependency tree using the dependency subgraph.
-        """
-        if param1.name not in self.graph or param2.name not in self.graph:
-            return False
-
-        dep_subgraph = self._dependency_subgraph
-
-        # Check if both parameters are in the dependency subgraph and connected
-        if param1.name not in dep_subgraph or param2.name not in dep_subgraph:
-            return False
-
-        try:
-            # Check if there's a path between them in either direction
-            return nx.has_path(dep_subgraph, param1.name, param2.name) or nx.has_path(
-                dep_subgraph, param2.name, param1.name
-            )
-        except nx.NetworkXError:
-            return False
 
     @classmethod
     def _from_dict(cls, ser: InterDependencies_Dict) -> InterDependencies_:
