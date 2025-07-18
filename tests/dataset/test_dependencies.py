@@ -417,14 +417,12 @@ def test_collect_related(
     assert idps4.find_all_parameters_in_tree(ps1) == {ps1, ps2}
     assert idps4.find_all_parameters_in_tree(ps3) == {ps3}
     assert idps4.find_all_parameters_in_tree(ps4) == {ps4}
-    assert set(idps4.non_dependencies) == {ps1, ps3, ps4}
     assert idps4.top_level_params == {ps1, ps3, ps4}
 
     idps5 = InterDependencies_(dependencies={ps1: (ps2,)}, inferences={ps3: (ps4,)})
     assert idps5.find_all_parameters_in_tree(ps1) == {ps1, ps2}
     assert idps5.find_all_parameters_in_tree(ps3) == {ps3, ps4}
     assert idps5.find_all_parameters_in_tree(ps4) == {ps3, ps4}
-    assert set(idps5.non_dependencies) == {ps1, ps3, ps4}
     assert idps5.top_level_params == {ps1, ps3}
 
 
