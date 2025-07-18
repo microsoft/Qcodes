@@ -426,3 +426,18 @@ def test_collect_related(
     assert idps5.find_all_parameters_in_tree(ps4) == {ps3, ps4}
     assert set(idps5.non_dependencies) == {ps1, ps3, ps4}
     assert idps5.top_level_params == {ps1, ps3}
+
+
+def test_collect_related__complex(
+    some_paramspecbases: tuple[
+        ParamSpecBase, ParamSpecBase, ParamSpecBase, ParamSpecBase
+    ],
+) -> None:
+    (ps1, ps2, ps3, ps4) = some_paramspecbases
+    idps1 = InterDependencies_(dependencies={ps1: (ps2,)}, inferences={ps2: (ps3, ps4)})
+    assert idps1.top_level_params == {ps1}
+    assert idps1.find_all_parameters_in_tree(ps1) == {ps1, ps2, ps3, ps4}
+
+    idps2 = InterDependencies_(dependencies={ps1: (ps2,)}, inferences={ps3: (ps2,)})
+    assert idps2.top_level_params == {ps1}
+    assert idps2.find_all_parameters_in_tree(ps1) == {ps1, ps2, ps3}

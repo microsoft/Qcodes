@@ -298,12 +298,37 @@ class InterDependencies_:  # noqa: PLW1641
         Return all parameters that are not dependencies of other parameters,
         i.e. return the top level parameters.
         """
-        top_level_parameters = {
+        inference_top_level = {
             self._node_to_paramspec(node_id)
-            for node_id, in_degree in self._graph.in_degree
+            for node_id, in_degree in self._inference_subgraph.in_degree
             if in_degree == 0
         }
-        return top_level_parameters
+        dependency_top_level = {
+            self._node_to_paramspec(node_id)
+            for node_id, in_degree in self._dependency_subgraph.in_degree
+            if in_degree == 0
+        }
+        standalone_top_level = {
+            self._node_to_paramspec(node_id)
+            for node_id, degree in self._graph.degree
+            if degree == 0
+        }
+
+        all_paramspecs_in_dependency_tree = set(
+            chain.from_iterable(
+                [self.find_all_parameters_in_tree(ps) for ps in dependency_top_level]
+            )
+        )
+
+        inference_top_level_not_in_dependency_tree = inference_top_level.difference(
+            all_paramspecs_in_dependency_tree
+        )
+
+        return (
+            dependency_top_level
+            | inference_top_level_not_in_dependency_tree
+            | standalone_top_level
+        )
 
     def remove(self, paramspec: ParamSpecBase) -> InterDependencies_:
         """
