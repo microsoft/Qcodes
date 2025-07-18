@@ -113,9 +113,8 @@ class DataSetCache(Generic[DatasetType_co]):
             # To do this we first insert the dependencies and then the parameters
             # that are not dependencies.
             output[toplevel_param.name] = {toplevel_param.name: np.array([])}
-            params.remove(toplevel_param)
 
-            dependencies = interdeps.dependencies[toplevel_param]
+            dependencies = interdeps.dependencies.get(toplevel_param, ())
 
             for dep in dependencies:
                 output[toplevel_param.name][dep.name] = np.array([])
