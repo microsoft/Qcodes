@@ -5,6 +5,7 @@ Tests that inferred parameters are properly collected when adding results
 to a dataset, even when they are transitively related through dependencies.
 """
 
+from itertools import chain
 from pathlib import Path
 
 from qcodes.dataset.experiment_container import new_experiment
@@ -66,7 +67,11 @@ def test_inferred_parameters_transitively_collected(tmp_path):
 
     # Test the helper method
     initial_params = {measurement_spec, del_param_spec}
-    collected = interdeps.collect_all_related_parameters(initial_params)
+    collected = set(
+        chain.from_iterable(
+            interdeps.find_all_parameters_in_tree(param) for param in initial_params
+        )
+    )
     # Filter to only include parameters that are in result_dict (same as the original behavior)
     collected = collected.intersection(result_dict.keys())
 
@@ -187,7 +192,11 @@ def test_multiple_dependent_parameters_no_cross_contamination(tmp_path):
     # Test collecting parameters for y1 tree
     # Should include x (its dependency) and y1, but NOT y2
     initial_params = {y1_spec}
-    collected = interdeps.collect_all_related_parameters(initial_params)
+    collected = set(
+        chain.from_iterable(
+            interdeps.find_all_parameters_in_tree(param) for param in initial_params
+        )
+    )
     # Filter to only include parameters that are in result_dict (same as the original behavior)
     collected = collected.intersection(result_dict.keys())
 
@@ -202,7 +211,11 @@ def test_multiple_dependent_parameters_no_cross_contamination(tmp_path):
     # Test collecting parameters for y2 tree
     # Should include x (its dependency) and y2, but NOT y1
     initial_params = {y2_spec}
-    collected = interdeps.collect_all_related_parameters(initial_params)
+    collected = set(
+        chain.from_iterable(
+            interdeps.find_all_parameters_in_tree(param) for param in initial_params
+        )
+    )
     # Filter to only include parameters that are in result_dict (same as the original behavior)
     collected = collected.intersection(result_dict.keys())
 
