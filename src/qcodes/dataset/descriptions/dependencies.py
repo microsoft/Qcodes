@@ -13,6 +13,9 @@ from itertools import chain, product
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 import networkx as nx
+from typing_extensions import deprecated
+
+from qcodes.utils import QCoDeSDeprecationWarning
 
 from .param_spec import ParamSpecBase
 
@@ -273,6 +276,10 @@ class InterDependencies_:  # noqa: PLW1641
             for _, paramspec in self.graph.nodes(data="value")  # pyright: ignore[reportArgumentType]
         )
 
+    @deprecated(
+        "non_dependencies returns incorrect results and is deprecated. Use top_level_params as an alternative and sort by name if required.",
+        category=QCoDeSDeprecationWarning,
+    )
     @property
     def non_dependencies(self) -> tuple[ParamSpecBase, ...]:
         """
