@@ -851,9 +851,9 @@ class DataSet(BaseDataSet):
 
         """
         if len(params) == 0:
-            valid_param_names = [
-                ps.name for ps in self._rundescriber.interdeps.non_dependencies
-            ]
+            valid_param_names = sorted(
+                [ps.name for ps in self._rundescriber.interdeps.top_level_params]
+            )
         else:
             valid_param_names = self._validate_parameters(*params)
         return get_parameter_data(

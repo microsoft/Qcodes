@@ -159,7 +159,7 @@ def get_parameter_data(
 
     output = {}
     if len(columns) == 0:
-        columns = [ps.name for ps in rundescriber.interdeps.non_dependencies]
+        columns = sorted([ps.name for ps in rundescriber.interdeps.top_level_params])
 
     # loop over all the requested parameters
     for output_param in columns:

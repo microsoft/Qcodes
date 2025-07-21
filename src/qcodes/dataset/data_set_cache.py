@@ -288,7 +288,7 @@ def append_shaped_parameter_data_to_existing_arrays(
         Updated write and read status, and the updated ``data``
 
     """
-    parameters = tuple(ps.name for ps in rundescriber.interdeps.non_dependencies)
+    parameters = tuple(ps.name for ps in rundescriber.interdeps.top_level_params)
     merged_data = {}
 
     updated_write_status = dict(write_status)
