@@ -1300,19 +1300,6 @@ class DataSet(BaseDataSet):
                 res_list = [res_dict]
             self._results += res_list
 
-        # # Finally, handle standalone parameters
-
-        # standalones = set(interdeps.standalones).intersection(set(result_dict))
-
-        # if standalones:
-        #     stdln_dict = {st: result_dict[st] for st in standalones}
-        #     self._results += self._finalize_res_dict_standalones(stdln_dict)
-        #     if self._in_memory_cache:
-        #         for st in standalones:
-        #             new_results[st.name] = {
-        #                 st.name: self._reshape_array_for_cache(st, result_dict[st])
-        #             }
-
         if self._in_memory_cache:
             self.cache.add_data(new_results)
 

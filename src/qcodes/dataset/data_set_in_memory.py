@@ -681,16 +681,6 @@ class DataSetInMem(BaseDataSet):
                         self._reshape_array_for_cache(param, result_dict[param])
                     )
 
-        # Finally, handle standalone parameters
-
-        # standalones = set(interdeps.standalones).intersection(set(result_dict))
-
-        # if standalones:
-        #     for st in standalones:
-        #         new_results[st.name] = {
-        #             st.name: self._reshape_array_for_cache(st, result_dict[st])
-        #         }
-
         self.cache.add_data(new_results)
 
     def _flush_data_to_database(self, block: bool = False) -> None:
