@@ -335,18 +335,18 @@ def _get_data_for_one_param_tree(
     start: int | None,
     end: int | None,
     callback: Callable[[float], None] | None = None,
-) -> tuple[list[tuple[Any, ...]], list[ParamSpecBase], int]:
+) -> tuple[list[tuple[Any, ...]], tuple[ParamSpecBase, ...], int]:
     output_param_spec = interdeps._id_to_paramspec[output_param]
     # find all the dependencies of this param
 
-    dependency_params = list(interdeps.dependencies.get(output_param_spec, ()))
-    dependency_names = [param.name for param in dependency_params]
-    paramspecs = [output_param_spec, *dependency_params]
+    paramspecs = interdeps.all_parameters_in_tree_ordered(output_param_spec)
+    dep_and_infs = paramspecs[1:]
+    dep_and_inf_names = [param.name for param in dep_and_infs]
     res = get_parameter_tree_values(
         conn,
         table_name,
         output_param,
-        *dependency_names,
+        *dep_and_inf_names,
         start=start,
         end=end,
         callback=callback,
