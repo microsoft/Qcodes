@@ -106,20 +106,9 @@ class DataSetCache(Generic[DatasetType_co]):
 
         output: dict[str, dict[str, npt.NDArray]] = {}
         for toplevel_param in interdeps.top_level_params:
-            params = interdeps.find_all_parameters_in_tree(toplevel_param)
+            params = interdeps.all_parameters_in_tree_ordered(toplevel_param)
 
-            # currently export relies on the order of the parameters in the dict being
-            # toplevel parameter, then dependencies in the order they were registered.
-            # To do this we first insert the dependencies and then the parameters
-            # that are not dependencies.
-            output[toplevel_param.name] = {toplevel_param.name: np.array([])}
-
-            dependencies = interdeps.dependencies.get(toplevel_param, ())
-
-            for dep in dependencies:
-                output[toplevel_param.name][dep.name] = np.array([])
-                params.remove(dep)
-
+            output[toplevel_param.name] = {}
             for param in params:
                 output[toplevel_param.name][param.name] = np.array([])
         return output

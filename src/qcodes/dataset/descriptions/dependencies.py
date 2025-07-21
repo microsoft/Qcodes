@@ -504,6 +504,45 @@ class InterDependencies_:  # noqa: PLW1641
                 collected_params.add(self._node_to_paramspec(node_name))
         return collected_params
 
+    def all_parameters_in_tree_ordered(
+        self, initial_param: ParamSpecBase
+    ) -> tuple[ParamSpecBase, ...]:
+        """
+        Collect all parameters that are transitively related to the initial parameter
+        in the order used by get_parameter_data and the cache.
+
+        This includes dependencies of the initial parameter and parameters that are inferred from
+        the initial parameter, as well as parameters that are inferred from its dependencies.
+        The parameter must be a top level parameter that is not a dependency of any other parameter.
+        The parameters are returned with the initial parameter first, followed by its dependencies in the
+        order they were added, and then the inference parameters sorted by their names.
+
+        Args:
+            initial_param: The parameter to start the traversal from.
+
+        Returns:
+            Tuple of all parameters transitively related to the initial parameters in order.
+
+        """
+        collected_params = self.find_all_parameters_in_tree(initial_param)
+
+        sorted_collected_params = [initial_param]
+        collected_params.remove(initial_param)
+
+        dependencies = self.dependencies.get(initial_param, ())
+
+        for dep in dependencies:
+            sorted_collected_params.append(dep)
+            collected_params.remove(dep)
+
+        # Sort the remaining parameters by their names to ensure a consistent order
+        collected_params = sorted(collected_params, key=lambda ps: ps.name)
+
+        for param in collected_params:
+            sorted_collected_params.extend(collected_params)
+
+        return tuple(sorted_collected_params)
+
     @classmethod
     def _from_dict(cls, ser: InterDependencies_Dict) -> InterDependencies_:
         """
