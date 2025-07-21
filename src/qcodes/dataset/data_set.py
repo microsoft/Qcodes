@@ -1244,7 +1244,10 @@ class DataSet(BaseDataSet):
         self._raise_if_not_writable()
         interdeps = self._rundescriber.interdeps
 
-        toplevel_params = interdeps.top_level_params.intersection(set(result_dict))
+        result_parameters = set(result_dict.keys())
+        unused_results = result_parameters.copy()
+
+        toplevel_params = interdeps.top_level_params.intersection(result_parameters)
 
         new_results: dict[str, dict[str, npt.NDArray]] = {}
 
@@ -1254,7 +1257,9 @@ class DataSet(BaseDataSet):
             all_params = interdeps.find_all_parameters_in_tree(toplevel_param)
             # Only include parameters that are present in result_dict
             # warn here if missing parameters
-            all_params = all_params.intersection(result_dict.keys())
+            all_params = all_params.intersection(result_parameters)
+
+            unused_results = unused_results.difference(all_params)
 
             if self._in_memory_cache:
                 new_results[toplevel_param.name] = {}
@@ -1286,6 +1291,13 @@ class DataSet(BaseDataSet):
                 }
                 res_list = [res_dict]
             self._results += res_list
+
+        if len(unused_results) > 0:
+            log.warning(
+                f"Results for parameters {unused_results} were not added to the "
+                "DataSet because they are not part of the interdependencies. "
+                "This will be an error in a future version of QCoDeS. "
+            )
 
         if self._in_memory_cache:
             self.cache.add_data(new_results)
