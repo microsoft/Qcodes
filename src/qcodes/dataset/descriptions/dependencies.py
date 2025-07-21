@@ -276,11 +276,11 @@ class InterDependencies_:  # noqa: PLW1641
             for _, paramspec in self.graph.nodes(data="value")  # pyright: ignore[reportArgumentType]
         )
 
+    @property
     @deprecated(
         "non_dependencies returns incorrect results and is deprecated. Use top_level_params as an alternative and sort by name if required.",
         category=QCoDeSDeprecationWarning,
     )
-    @property
     def non_dependencies(self) -> tuple[ParamSpecBase, ...]:
         """
         Return all parameters that are not dependencies of other parameters,
@@ -545,8 +545,7 @@ class InterDependencies_:  # noqa: PLW1641
         # Sort the remaining parameters by their names to ensure a consistent order
         collected_params = sorted(collected_params, key=lambda ps: ps.name)
 
-        for param in collected_params:
-            sorted_collected_params.extend(collected_params)
+        sorted_collected_params.extend(collected_params)
 
         return tuple(sorted_collected_params)
 
