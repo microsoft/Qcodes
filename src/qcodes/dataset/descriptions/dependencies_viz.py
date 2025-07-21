@@ -30,7 +30,7 @@ INTERDEPENDENCIES_STYLE = [
         },
     },
     {
-        "selector": "node[node_type=`dependency`]",
+        "selector": "node[node_type='dependency']",
         "css": {
             "text-outline-color": "#089222",
             "background-color": "#90C79A",
@@ -38,7 +38,7 @@ INTERDEPENDENCIES_STYLE = [
         },
     },
     {
-        "selector": "node[node_type=`inference`]",
+        "selector": "node[node_type='inference']",
         "css": {
             "text-outline-color": "#920808",
             "background-color": "#D37B7B",
