@@ -1272,26 +1272,13 @@ class DataSet(BaseDataSet):
             if toplevel_param.type == "array":
                 res_list = self._finalize_res_dict_array(result_dict, all_params)
             elif toplevel_param.type in ("numeric", "text", "complex"):
-                # Separate the all_params back into inferred and dependencies for compatibility
-                collected_inff_params = set()
-                collected_deps_params = set()
-                for param in all_params:
-                    if param != toplevel_param:
-                        if param in interdeps.inferences.get(toplevel_param, ()):
-                            collected_inff_params.add(param)
-                        elif param in interdeps.dependencies.get(toplevel_param, ()):
-                            collected_deps_params.add(param)
-                        else:
-                            # This is a transitively collected parameter
-                            # We need to determine if it's inferred or dependency based
-                            # For simplicity, we'll treat it as inferred
-                            collected_inff_params.add(param)
+                collected_params = all_params.copy()
+                collected_params.remove(toplevel_param)
 
                 res_list = self._finalize_res_dict_numeric_text_or_complex(
                     result_dict,
                     toplevel_param,
-                    collected_inff_params,
-                    collected_deps_params,
+                    collected_params,
                 )
             else:
                 res_dict: dict[str, VALUE] = {
@@ -1339,8 +1326,7 @@ class DataSet(BaseDataSet):
     def _finalize_res_dict_numeric_text_or_complex(
         result_dict: Mapping[ParamSpecBase, npt.NDArray],
         toplevel_param: ParamSpecBase,
-        inff_params: set[ParamSpecBase],
-        deps_params: set[ParamSpecBase],
+        params: set[ParamSpecBase],
     ) -> list[dict[str, VALUE]]:
         """
         Make a res_dict in the format expected by DataSet.add_results out
@@ -1350,7 +1336,7 @@ class DataSet(BaseDataSet):
         """
 
         res_list: list[dict[str, VALUE]] = []
-        all_params = inff_params.union(deps_params).union({toplevel_param})
+        all_params = params.union({toplevel_param})
 
         t_map = {"numeric": float, "text": str, "complex": complex}
 
@@ -1366,16 +1352,11 @@ class DataSet(BaseDataSet):
             toplevel_val = result_dict[toplevel_param]
             flat_results[toplevel_param.name] = toplevel_val.ravel()
             N = len(flat_results[toplevel_param.name])
-            for dep in deps_params:
-                if result_dict[dep].shape == ():
-                    flat_results[dep.name] = numpy.repeat(result_dict[dep], N)
+            for param in params:
+                if result_dict[param].shape == ():
+                    flat_results[param.name] = numpy.repeat(result_dict[param], N)
                 else:
-                    flat_results[dep.name] = result_dict[dep].ravel()
-            for inff in inff_params:
-                if numpy.shape(result_dict[inff]) == ():
-                    flat_results[inff.name] = numpy.repeat(result_dict[inff], N)
-                else:
-                    flat_results[inff.name] = result_dict[inff].ravel()
+                    flat_results[param.name] = result_dict[param].ravel()
 
             # And then put everything into the list
 
