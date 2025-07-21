@@ -658,8 +658,11 @@ class DataSetInMem(BaseDataSet):
         self._raise_if_not_writable()
         interdeps = self._rundescriber.interdeps
 
-        toplevel_params = interdeps.top_level_params.intersection(set(result_dict))
+        result_parameters = set(result_dict.keys())
+        toplevel_params = interdeps.top_level_params.intersection(result_parameters)
         new_results: dict[str, dict[str, npt.NDArray]] = {}
+
+        unused_results = result_parameters.copy()
 
         for toplevel_param in toplevel_params:
             # Transitively collect all parameters that are related to any parameter
@@ -668,6 +671,8 @@ class DataSetInMem(BaseDataSet):
             # Only include parameters that are present in result_dict
             # warn here if missing parameters
             all_params = all_params.intersection(result_dict.keys())
+
+            unused_results = unused_results.difference(all_params)
 
             new_results[toplevel_param.name] = {}
             new_results[toplevel_param.name][toplevel_param.name] = (
@@ -680,6 +685,13 @@ class DataSetInMem(BaseDataSet):
                     new_results[toplevel_param.name][param.name] = (
                         self._reshape_array_for_cache(param, result_dict[param])
                     )
+
+        if len(unused_results) > 0:
+            log.warning(
+                f"Results for parameters {unused_results} were not added to the "
+                "DataSet because they are not part of the interdependencies. "
+                "This will be an error in a future version of QCoDeS. "
+            )
 
         self.cache.add_data(new_results)
 
