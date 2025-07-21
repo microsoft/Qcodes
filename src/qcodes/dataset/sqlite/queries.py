@@ -2104,7 +2104,9 @@ def load_new_data_for_rundescriber(
 
     """
 
-    parameters = tuple(ps.name for ps in rundescriber.interdeps.non_dependencies)
+    parameters = tuple(
+        sorted(ps.name for ps in rundescriber.interdeps.top_level_params)
+    )
     updated_read_status: dict[str, int] = dict(read_status)
     new_data_dict: dict[str, dict[str, npt.NDArray]] = {}
 
