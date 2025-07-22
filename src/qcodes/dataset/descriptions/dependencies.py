@@ -518,19 +518,23 @@ class InterDependencies_:  # noqa: PLW1641
     ) -> tuple[ParamSpecBase, tuple[ParamSpecBase, ...], tuple[ParamSpecBase, ...]]:
         """
         Collect all parameters that are transitively related to the initial parameter
-        in the order used by get_parameter_data and the cache.
+        and organize them into three groups.
 
         This includes dependencies of the initial parameter and parameters that are inferred from
         the initial parameter, as well as parameters that are inferred from its dependencies.
-        The parameter must be a top level parameter that is not a dependency of any other parameter.
-        The parameters are returned with the initial parameter first, followed by its dependencies in the
-        order they were added, and then the inference parameters sorted by their names.
+        The parameter must be part of the interdependency graph.
 
         Args:
             initial_param: The parameter to start the traversal from.
 
         Returns:
-            Tuple of all parameters transitively related to the initial parameters in order.
+            A tuple containing:
+            - The initial parameter
+            - A tuple of direct dependencies of the initial parameter
+            - A tuple of all other related parameters (sorted by name)
+
+        Raises:
+            ValueError: If the initial parameter is not part of the graph
 
         """
         collected_params = self.find_all_parameters_in_tree(initial_param)

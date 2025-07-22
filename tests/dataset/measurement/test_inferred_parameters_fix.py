@@ -133,6 +133,8 @@ def test_inferred_parameters_in_actual_measurement_1d(experiment, DAC):
     Test the full measurement flow to ensure inferred parameters are saved correctly.
     """
 
+    num_points = 10
+
     # Create delegate parameter
     del_param = DelegateParameter("del_param_1", label="del param 1", source=DAC.ch1)
 
@@ -153,7 +155,7 @@ def test_inferred_parameters_in_actual_measurement_1d(experiment, DAC):
 
     # Run measurement
     with meas.run() as datasaver:
-        for i in np.linspace(0, 1, 10):
+        for i in np.linspace(0, 1, num_points):
             # Set values and add results
             del_param.set(i)
 
@@ -177,15 +179,40 @@ def test_inferred_parameters_in_actual_measurement_1d(experiment, DAC):
     assert len(meas_param_data) == 3, (
         "meas_parameter tree should have three entries: meas_parameter, del_param_1, and dummy_dac_ch1"
     )
-    assert len(meas_param_data["meas_parameter"]) == 10, (
+    assert len(meas_param_data["meas_parameter"]) == num_points, (
         "meas_parameter should have 10 entries for the 10 setpoints"
     )
-    assert len(meas_param_data["del_param_1"]) == 10, (
+    assert len(meas_param_data["del_param_1"]) == num_points, (
         "del_param_1 should have 10 entries for the 10 setpoints"
     )
-    assert len(meas_param_data["dummy_dac_ch1"]) == 10, (
+    assert len(meas_param_data["dummy_dac_ch1"]) == num_points, (
         "dummy_dac_ch1 should have 10 entries for the 10 setpoints"
     )
+
+    xarr = dataset.to_xarray_dataset()
+
+    # Verify structure: xarray should have the meas_parameter as data variable
+    # and del_param_1 and dummy_dac_ch1 as coordinates
+    assert "meas_parameter" in xarr.data_vars
+    assert "del_param_1" in xarr.coords
+
+    # infeered parameters are not currently exported
+    assert "dummy_dac_ch1" not in xarr.coords
+
+    # Check dimensions
+    assert xarr.meas_parameter.dims == ("del_param_1",)
+    assert len(xarr.meas_parameter.values) == num_points
+
+    # Test export to pandas
+    df = dataset.to_pandas_dataframe()
+
+    # Check that all parameters are present in the DataFrame
+    assert "meas_parameter" in df.columns
+    assert df.index.name == "del_param_1"
+    assert "dummy_dac_ch1" not in df.columns
+
+    # Check that we have the right number of rows
+    assert len(df) == num_points
 
 
 def test_multiple_dependent_parameters_no_cross_contamination(experiment):
