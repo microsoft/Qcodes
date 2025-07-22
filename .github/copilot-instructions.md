@@ -22,3 +22,7 @@ See pytest markers for additional options of running tests.
 
 We use Dependabot from GitHub to keep our dependencies up to date, we use ``requirements.txt``
 as our constraints or "lock" file.
+
+Every Pull Request should have a newsfragment file briefly explaining the change. The text
+should be using restructured text syntax. How to write a newsfragment and what types we
+have is explained the Contributor's guide in the documentation in ``docs/`` folder.
