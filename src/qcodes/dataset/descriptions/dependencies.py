@@ -480,7 +480,12 @@ class InterDependencies_:  # noqa: PLW1641
         collected_nodes: set[str] = set()
 
         if initial_param.name not in self.graph:
-            raise ValueError(f"Parameter {initial_param.name} is not part of the graph")
+            available_params = ", ".join(self.graph.nodes)
+            raise ValueError(
+                f"Parameter '{initial_param.name}' is not part of the graph. "
+                f"Available parameters are: {available_params}. "
+                f"Please check if the parameter name is correct or if the graph has been properly initialized."
+            )
 
         # Add the parameter itself
         collected_nodes.add(initial_param.name)
