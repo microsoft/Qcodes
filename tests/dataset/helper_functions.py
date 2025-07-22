@@ -9,13 +9,13 @@ import pandas as pd
 from numpy.testing import assert_array_equal
 
 if TYPE_CHECKING:
-    from collections.abc import Hashable, Mapping, Sequence
+    from collections.abc import Collection, Hashable, Mapping, Sequence
 
 
 def verify_data_dict(
     data: dict[str, dict[str, np.ndarray]],
     dataframe: dict[str, pd.DataFrame] | None,
-    parameter_names: Sequence[str],
+    parameter_names: Collection[str],
     expected_names: Mapping[str, Sequence[str]],
     expected_shapes: Mapping[str, Sequence[tuple[int, ...]]],
     expected_values: Mapping[str, Sequence[np.ndarray]],
