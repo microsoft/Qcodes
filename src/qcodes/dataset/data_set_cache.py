@@ -106,9 +106,12 @@ class DataSetCache(Generic[DatasetType_co]):
 
         output: dict[str, dict[str, npt.NDArray]] = {}
         for toplevel_param in interdeps.top_level_params:
-            params = interdeps.all_parameters_in_tree_ordered(toplevel_param)
+            toplevel_param, deps, infs = interdeps.all_parameters_in_tree_by_group(
+                toplevel_param
+            )
 
             output[toplevel_param.name] = {}
+            params = [toplevel_param, *deps, *infs]
             for param in params:
                 output[toplevel_param.name][param.name] = np.array([])
         return output
@@ -167,7 +170,7 @@ class DataSetCache(Generic[DatasetType_co]):
 
         """
         data = self.data()
-        return load_to_dataframe_dict(data)
+        return load_to_dataframe_dict(data, self.rundescriber.interdeps)
 
     def to_pandas_dataframe(self) -> pd.DataFrame:
         """
@@ -180,7 +183,7 @@ class DataSetCache(Generic[DatasetType_co]):
 
         """
         data = self.data()
-        return load_to_concatenated_dataframe(data)
+        return load_to_concatenated_dataframe(data, self.rundescriber.interdeps)
 
     def to_xarray_dataarray_dict(
         self, *, use_multi_index: Literal["auto", "always", "never"] = "auto"

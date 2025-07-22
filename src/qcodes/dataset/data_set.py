@@ -904,7 +904,7 @@ class DataSet(BaseDataSet):
 
         """
         datadict = self.get_parameter_data(*params, start=start, end=end)
-        dfs_dict = load_to_dataframe_dict(datadict)
+        dfs_dict = load_to_dataframe_dict(datadict, self.description.interdeps)
         return dfs_dict
 
     def to_pandas_dataframe(
@@ -952,7 +952,7 @@ class DataSet(BaseDataSet):
 
         """
         datadict = self.get_parameter_data(*params, start=start, end=end)
-        return load_to_concatenated_dataframe(datadict)
+        return load_to_concatenated_dataframe(datadict, self.description.interdeps)
 
     def to_xarray_dataarray_dict(
         self,

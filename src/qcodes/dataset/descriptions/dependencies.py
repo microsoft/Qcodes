@@ -511,9 +511,9 @@ class InterDependencies_:  # noqa: PLW1641
                 collected_params.add(self._node_to_paramspec(node_name))
         return collected_params
 
-    def all_parameters_in_tree_ordered(
+    def all_parameters_in_tree_by_group(
         self, initial_param: ParamSpecBase
-    ) -> tuple[ParamSpecBase, ...]:
+    ) -> tuple[ParamSpecBase, tuple[ParamSpecBase, ...], tuple[ParamSpecBase, ...]]:
         """
         Collect all parameters that are transitively related to the initial parameter
         in the order used by get_parameter_data and the cache.
@@ -533,21 +533,17 @@ class InterDependencies_:  # noqa: PLW1641
         """
         collected_params = self.find_all_parameters_in_tree(initial_param)
 
-        sorted_collected_params = [initial_param]
         collected_params.remove(initial_param)
 
         dependencies = self.dependencies.get(initial_param, ())
 
         for dep in dependencies:
-            sorted_collected_params.append(dep)
             collected_params.remove(dep)
 
         # Sort the remaining parameters by their names to ensure a consistent order
         remaining_params_sorted = sorted(collected_params, key=lambda ps: ps.name)
 
-        sorted_collected_params.extend(remaining_params_sorted)
-
-        return tuple(sorted_collected_params)
+        return initial_param, tuple(dependencies), tuple(remaining_params_sorted)
 
     @classmethod
     def _from_dict(cls, ser: InterDependencies_Dict) -> InterDependencies_:

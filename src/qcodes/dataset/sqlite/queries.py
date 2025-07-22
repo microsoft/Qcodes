@@ -339,8 +339,10 @@ def _get_data_for_one_param_tree(
     output_param_spec = interdeps._id_to_paramspec[output_param]
     # find all the dependencies of this param
 
-    paramspecs = interdeps.all_parameters_in_tree_ordered(output_param_spec)
-    dep_and_infs = paramspecs[1:]
+    top_level_param, deps, infs = interdeps.all_parameters_in_tree_by_group(
+        output_param_spec
+    )
+    dep_and_infs = list(deps) + list(infs)
     dep_and_inf_names = [param.name for param in dep_and_infs]
     res = get_parameter_tree_values(
         conn,
@@ -352,7 +354,7 @@ def _get_data_for_one_param_tree(
         callback=callback,
     )
     n_rows = len(res)
-    return res, paramspecs, n_rows
+    return res, tuple([top_level_param, *dep_and_infs]), n_rows
 
 
 def get_parameter_db_row(
