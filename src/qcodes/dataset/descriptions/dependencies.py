@@ -543,9 +543,9 @@ class InterDependencies_:  # noqa: PLW1641
             collected_params.remove(dep)
 
         # Sort the remaining parameters by their names to ensure a consistent order
-        collected_params = sorted(collected_params, key=lambda ps: ps.name)
+        remaining_params_sorted = sorted(collected_params, key=lambda ps: ps.name)
 
-        sorted_collected_params.extend(collected_params)
+        sorted_collected_params.extend(remaining_params_sorted)
 
         return tuple(sorted_collected_params)
 
