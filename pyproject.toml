@@ -231,9 +231,8 @@ markers = "serial"
 # and error on all other warnings
 filterwarnings = [
     'error',
-    'ignore:open_binary is deprecated:DeprecationWarning', # pyvisa-sim
+    'ignore:open_binary is deprecated:DeprecationWarning', # pyvisa-sim deprecated in 3.11 un-deprecated in 3.12. Drop filter once we drop support for 3.11
     'ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning', # jupyter
-    'ignore:Parsing dates involving a day of month without a year specified is ambiguious:DeprecationWarning', # ipykernel 3.13+
     'ignore:unclosed database in:ResourceWarning', # internal should be fixed
     'ignore:unclosed\ <socket\.socket:ResourceWarning', # not clear from where this is coming
     'ignore:Model_336 is deprecated:qcodes.utils.deprecate.QCoDeSDeprecationWarning',  # remove once deprecated Lakeshore Model_336 and its tests has been removed
