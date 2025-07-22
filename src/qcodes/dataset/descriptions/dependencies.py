@@ -247,9 +247,6 @@ class InterDependencies_:  # noqa: PLW1641
     @property
     def standalones(self) -> frozenset[ParamSpecBase]:
         degree_iterator = self.graph.degree
-        assert not isinstance(
-            degree_iterator, int
-        )  # without arguments, graph.degree returns an iterable
         return frozenset(
             [
                 self._node_to_paramspec(node_id)
