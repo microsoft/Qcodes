@@ -15,7 +15,7 @@ correct formatting of the code and linting as well.
 QCoDeS is a typed package, hence all new code should include clear and correct type annotations.
 
 We use ``pyright`` to statically check the correctness of the code with type annotations.
-Run it via ``pyright src/``.
+Run it via ``pyright``. The code that should be typecheked is configured in ``pyproject.toml``.
 
 For running tests, we use ``pytest``. They can be run with ``pytest tests``.
 See pytest markers for additional options of running tests.
