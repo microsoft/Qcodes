@@ -19,6 +19,7 @@ classifiers = [
     "Topic :: Scientific/Engineering",
 ]
 license = "MIT"
+readme = "README.rst"
 requires-python = ">=3.11"
 dependencies = [
     "broadbean>=0.11.0",
@@ -55,10 +56,6 @@ dependencies = [
 ]
 
 dynamic = ["version"]
-
-[project.readme]
-file = "README.rst"
-content-type = "text/x-rst"
 
 [project.urls]
 Homepage = "https://github.com/microsoft/Qcodes"
