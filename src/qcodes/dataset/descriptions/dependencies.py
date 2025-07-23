@@ -513,8 +513,7 @@ class InterDependencies_:  # noqa: PLW1641
         # Convert node names back to ParamSpecBase objects
         collected_params: set[ParamSpecBase] = set()
         for node_name in collected_nodes:
-            if node_name in self.graph.nodes:
-                collected_params.add(self._node_to_paramspec(node_name))
+            collected_params.add(self._node_to_paramspec(node_name))
         return collected_params
 
     def all_parameters_in_tree_by_group(
