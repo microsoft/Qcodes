@@ -79,14 +79,11 @@ def _generate_pandas_index(
     if len(data) == 0:
         return None
 
-    top_level_param, deps, infs = interdeps.all_parameters_in_tree_by_group(
+    _, deps, _ = interdeps.all_parameters_in_tree_by_group(
         interdeps._node_to_paramspec(top_level_param_name)
     )
-    _ = {top_level_param.name: data[top_level_param.name]}
 
     deps_data = {dep.name: data[dep.name] for dep in deps if dep.name in data}
-    # infs are currently unused
-    _ = {inf.name: data[inf.name] for inf in infs if inf.name in data}
 
     keys = list(data.keys())
     if len(deps_data) == 0:
