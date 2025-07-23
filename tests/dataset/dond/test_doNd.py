@@ -1810,7 +1810,7 @@ def test_dond_get_after_set(_param_set, _param_set_2, _param) -> None:
     assert a.set_count == n_points
     assert b.get_count == 0
     assert b.set_count == n_points ** 2
-    assert c.get_count == n_points
+    assert c.get_count == n_points ** 2
     assert c.set_count == 0
 
 
