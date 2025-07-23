@@ -186,7 +186,7 @@ def test_callback_value_parsers(store, callback_data, mock_instr) -> None:
     mock_instr.test_parameter = cast(
         OnCacheChangeParameter,
         mock_instr.add_parameter(
-            name="test_param",
+            name="test_parameter",
             parameter_class=OnCacheChangeParameter,
             on_cache_change=cb,
             set_cmd=lambda x: store.update({"value": x}),
@@ -197,24 +197,24 @@ def test_callback_value_parsers(store, callback_data, mock_instr) -> None:
         )
     )
 
-    assert mock_instr.test_param.get() is None
+    assert mock_instr.test_parameter.get() is None
 
-    mock_instr.test_param.set(5)
+    mock_instr.test_parameter.set(5)
     assert callback_data == [(None, 5, None, 10)]
     callback_data.clear()
-    assert mock_instr.test_param.get() == 5
+    assert mock_instr.test_parameter.get() == 5
     assert callback_data == []
     callback_data.clear()
 
-    mock_instr.test_param.set(7)
+    mock_instr.test_parameter.set(7)
     assert callback_data == [(5, 7, 10, 14)]
     callback_data.clear()
-    assert mock_instr.test_param.get() == 7
+    assert mock_instr.test_parameter.get() == 7
     assert callback_data == []
     callback_data.clear()
 
-    mock_instr.test_param.set(7)
+    mock_instr.test_parameter.set(7)
     assert not callback_data
 
-    mock_instr.test_param.cache._update_with(value=110, raw_value=100)
+    mock_instr.test_parameter.cache._update_with(value=110, raw_value=100)
     assert callback_data == [(7, 110, 14, 100)]
