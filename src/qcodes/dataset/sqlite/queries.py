@@ -354,7 +354,7 @@ def _get_data_for_one_param_tree(
         callback=callback,
     )
     n_rows = len(res)
-    return res, tuple([top_level_param, *dep_and_infs]), n_rows
+    return res, (top_level_param, *dep_and_infs), n_rows
 
 
 def get_parameter_db_row(
