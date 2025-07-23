@@ -671,7 +671,8 @@ class DataSetInMem(BaseDataSet):
             # in the current tree, including parameters that dependencies are inferred from
             all_params = interdeps.find_all_parameters_in_tree(toplevel_param)
             # Only include parameters that are present in result_dict
-            # warn here if missing parameters
+            # we keep track of results unused in any tree and raise a warning at the end
+            # if there are any
             all_params = all_params.intersection(result_dict.keys())
 
             unused_results = unused_results.difference(all_params)
