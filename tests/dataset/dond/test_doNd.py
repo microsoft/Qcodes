@@ -1804,13 +1804,17 @@ def test_dond_get_after_set(_param_set, _param_set_2, _param) -> None:
     assert c.get_count == 0
     assert c.set_count == 0
 
-    dond(LinSweep(a, 0, 10, n_points, get_after_set=True), LinSweep(b, 0, 10, n_points, get_after_set=False), c)
+    dond(
+        LinSweep(a, 0, 10, n_points, get_after_set=True),
+        LinSweep(b, 0, 10, n_points, get_after_set=False),
+        c,
+    )
 
     assert a.get_count == n_points
     assert a.set_count == n_points
     assert b.get_count == 0
-    assert b.set_count == n_points ** 2
-    assert c.get_count == n_points ** 2
+    assert b.set_count == n_points**2
+    assert c.get_count == n_points**2
     assert c.set_count == 0
 
 

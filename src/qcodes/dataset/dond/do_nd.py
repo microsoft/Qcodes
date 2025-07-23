@@ -817,7 +817,7 @@ def dond(
                         time.sleep(set_event.delay)
                         if set_event.get_after_set:
                             set_event.new_value = set_event.parameter()
-                    
+
                     results[set_event.parameter] = set_event.new_value
 
                 meas_value_pair = call_params_meas()
