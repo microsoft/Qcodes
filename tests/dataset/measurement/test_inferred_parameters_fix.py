@@ -191,7 +191,7 @@ def test_inferred_parameters_in_actual_measurement_1d(experiment, DAC):
 
     xarr = dataset.to_xarray_dataset()
 
-    # Verify structure: xarray should have the meas_parameter as data variable
+    # Verify structure: the xarray dataset should have the meas_parameter as a data variable
     # and del_param_1 and dummy_dac_ch1 as coordinates
     assert "meas_parameter" in xarr.data_vars
     assert "del_param_1" in xarr.coords
