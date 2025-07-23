@@ -196,7 +196,7 @@ def test_inferred_parameters_in_actual_measurement_1d(experiment, DAC):
     assert "meas_parameter" in xarr.data_vars
     assert "del_param_1" in xarr.coords
 
-    # infeered parameters are not currently exported
+    # inferred parameters are not currently exported
     assert "dummy_dac_ch1" not in xarr.coords
 
     # Check dimensions
