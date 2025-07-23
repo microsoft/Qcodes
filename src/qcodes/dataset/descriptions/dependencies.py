@@ -291,10 +291,14 @@ class InterDependencies_:  # noqa: PLW1641
         return non_dependencies_sorted_by_name
 
     @property
-    def top_level_params(self) -> set[ParamSpecBase]:
+    def top_level_params(self) -> tuple[ParamSpecBase, ...]:
         """
-        Return all parameters that are not dependencies of other parameters,
+        Return all parameters that are not dependencies or inferred from other parameters,
         i.e. return the top level parameters.
+
+        Returns:
+            A tuple of top level parameters sorted by their names.
+
         """
         inference_top_level = {
             self._node_to_paramspec(node_id)
@@ -328,7 +332,7 @@ class InterDependencies_:  # noqa: PLW1641
             | standalone_top_level
         )
 
-        return all_params
+        return tuple(sorted(all_params, key=lambda ps: ps.name))
 
     def remove(self, paramspec: ParamSpecBase) -> InterDependencies_:
         """

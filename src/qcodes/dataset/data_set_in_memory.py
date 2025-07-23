@@ -659,7 +659,9 @@ class DataSetInMem(BaseDataSet):
         interdeps = self._rundescriber.interdeps
 
         result_parameters = set(result_dict.keys())
-        toplevel_params = interdeps.top_level_params.intersection(result_parameters)
+        toplevel_params = set(interdeps.top_level_params).intersection(
+            result_parameters
+        )
         new_results: dict[str, dict[str, npt.NDArray]] = {}
 
         unused_results = result_parameters.copy()

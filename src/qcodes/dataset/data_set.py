@@ -851,9 +851,10 @@ class DataSet(BaseDataSet):
 
         """
         if len(params) == 0:
-            valid_param_names = sorted(
-                [ps.name for ps in self._rundescriber.interdeps.top_level_params]
-            )
+            valid_param_names = [
+                ps.name for ps in self._rundescriber.interdeps.top_level_params
+            ]
+
         else:
             valid_param_names = self._validate_parameters(*params)
         return get_parameter_data(
@@ -1247,7 +1248,9 @@ class DataSet(BaseDataSet):
         result_parameters = set(result_dict.keys())
         unused_results = result_parameters.copy()
 
-        toplevel_params = interdeps.top_level_params.intersection(result_parameters)
+        toplevel_params = set(interdeps.top_level_params).intersection(
+            result_parameters
+        )
 
         new_results: dict[str, dict[str, npt.NDArray]] = {}
 
