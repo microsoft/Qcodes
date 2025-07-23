@@ -119,7 +119,7 @@ class ParameterMixin():
                     f"Class name '{cls.__name__}' must end with 'ParameterMixin'."
                 )
 
-            if hasattr(cls, '_COMPATIBLE_BASES') and not isinstance(cls._INCOMPATIBLE_BASES, list):
+            if hasattr(cls, '_COMPATIBLE_BASES') and not isinstance(cls._COMPATIBLE_BASES, list):
                 raise TypeError(
                     f"{cls.__name__} must define _COMPATIBLE_BASES as a list."
                 )
