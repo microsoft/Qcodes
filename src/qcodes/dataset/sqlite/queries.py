@@ -159,7 +159,7 @@ def get_parameter_data(
 
     output = {}
     if len(columns) == 0:
-        columns = [ps.name for ps in rundescriber.interdeps.non_dependencies]
+        columns = [ps.name for ps in rundescriber.interdeps.top_level_parameters]
 
     # loop over all the requested parameters
     for output_param in columns:
@@ -335,24 +335,26 @@ def _get_data_for_one_param_tree(
     start: int | None,
     end: int | None,
     callback: Callable[[float], None] | None = None,
-) -> tuple[list[tuple[Any, ...]], list[ParamSpecBase], int]:
+) -> tuple[list[tuple[Any, ...]], tuple[ParamSpecBase, ...], int]:
     output_param_spec = interdeps._id_to_paramspec[output_param]
     # find all the dependencies of this param
 
-    dependency_params = list(interdeps.dependencies.get(output_param_spec, ()))
-    dependency_names = [param.name for param in dependency_params]
-    paramspecs = [output_param_spec, *dependency_params]
+    top_level_param, deps, infs = interdeps.all_parameters_in_tree_by_group(
+        output_param_spec
+    )
+    dep_and_infs = list(deps) + list(infs)
+    dep_and_inf_names = [param.name for param in dep_and_infs]
     res = get_parameter_tree_values(
         conn,
         table_name,
         output_param,
-        *dependency_names,
+        *dep_and_inf_names,
         start=start,
         end=end,
         callback=callback,
     )
     n_rows = len(res)
-    return res, paramspecs, n_rows
+    return res, (top_level_param, *dep_and_infs), n_rows
 
 
 def get_parameter_db_row(
@@ -2104,7 +2106,7 @@ def load_new_data_for_rundescriber(
 
     """
 
-    parameters = tuple(ps.name for ps in rundescriber.interdeps.non_dependencies)
+    parameters = tuple(ps.name for ps in rundescriber.interdeps.top_level_parameters)
     updated_read_status: dict[str, int] = dict(read_status)
     new_data_dict: dict[str, dict[str, npt.NDArray]] = {}
 
