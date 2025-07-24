@@ -441,32 +441,6 @@ def test_collect_related__complex(
     assert idps2.find_all_parameters_in_tree(ps1) == {ps1, ps2, ps3}
 
 
-def test_find_all_parameters_in_tree_raises_on_non_top_level(
-    some_paramspecbases,
-) -> None:
-    (ps1, ps2, ps3, ps4) = some_paramspecbases
-
-    idps = InterDependencies_(dependencies={ps1: (ps2, ps3)}, inferences={ps2: (ps4,)})
-
-    with pytest.raises(ValueError, match="not a top level parameter"):
-        idps.find_all_parameters_in_tree(ps2)
-
-    with pytest.raises(ValueError, match="not a top level parameter"):
-        idps.all_parameters_in_tree_by_group(ps2)
-
-    with pytest.raises(ValueError, match="not a top level parameter"):
-        idps.find_all_parameters_in_tree(ps3)
-
-    with pytest.raises(ValueError, match="not a top level parameter"):
-        idps.all_parameters_in_tree_by_group(ps3)
-
-    with pytest.raises(ValueError, match="not a top level parameter"):
-        idps.find_all_parameters_in_tree(ps4)
-
-    with pytest.raises(ValueError, match="not a top level parameter"):
-        idps.all_parameters_in_tree_by_group(ps4)
-
-
 def test_all_parameters_in_tree_by_group_raises_on_non_top_level(some_paramspecbases):
     (ps1, ps2, ps3, ps4) = some_paramspecbases
 

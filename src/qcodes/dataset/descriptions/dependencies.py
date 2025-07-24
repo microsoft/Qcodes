@@ -474,8 +474,6 @@ class InterDependencies_:  # noqa: PLW1641
 
         This includes dependencies of the the initial parameter and parameters that are inferred from
         the initial parameter, as well as parameters that are inferred from its dependencies.
-        The parameter must be a top level parameter that is not a dependency of any other parameter.
-
 
         Args:
             initial_param: The parameter to start the traversal from.
@@ -484,7 +482,7 @@ class InterDependencies_:  # noqa: PLW1641
             Set of all parameters transitively related to the initial parameters
 
         Raises:
-            ValueError: If the initial parameter is not part of the graph or not a top level parameter.
+            ValueError: If the initial parameter is not part of the graph.
 
         """
 
@@ -497,18 +495,6 @@ class InterDependencies_:  # noqa: PLW1641
                 f"Parameter '{initial_param.name}' is not part of the graph. "
                 f"Available parameters are: {available_params}. "
                 f"Please check if the parameter name is correct or if the graph has been properly initialized."
-            )
-        # ideally this should use self.top_level_params but that would create a loop
-        # cast since in_degree is an int when the input is a single node but the stubs does not yet reflect that
-        in_degree = cast("int", self._graph.in_degree(initial_param.name))
-        if initial_param.name in self._dependency_subgraph:
-            in_degree_dep = self._dependency_subgraph.in_degree[initial_param.name]
-        else:
-            in_degree_dep = None
-
-        if not (in_degree_dep == 0) and in_degree > 0:
-            raise ValueError(
-                f"Parameter {initial_param.name} is not a top level parameter, it is a dependency of or inferred from another parameter"
             )
 
         # Add the parameter itself
@@ -557,7 +543,7 @@ class InterDependencies_:  # noqa: PLW1641
             - A tuple of all other related parameters (sorted by name)
 
         Raises:
-            ValueError: If the initial parameter is not part of the graph or not a top level parameter.
+            ValueError: If the initial parameter is not part of the graph.
 
         """
         collected_params = self.find_all_parameters_in_tree(initial_param)
