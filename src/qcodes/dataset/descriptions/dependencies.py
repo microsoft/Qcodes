@@ -300,6 +300,7 @@ class InterDependencies_:  # noqa: PLW1641
             A tuple of top level parameters sorted by their names.
 
         """
+
         inference_top_level = {
             self._node_to_paramspec(node_id)
             for node_id, in_degree in self._inference_subgraph.in_degree
@@ -478,6 +479,9 @@ class InterDependencies_:  # noqa: PLW1641
         Returns:
             Set of all parameters transitively related to the initial parameters
 
+        Raises:
+            ValueError: If the initial parameter is not part of the graph or not a top level parameter.
+
         """
 
         # Use NetworkX to find all nodes reachable from initial parameters
@@ -489,6 +493,13 @@ class InterDependencies_:  # noqa: PLW1641
                 f"Parameter '{initial_param.name}' is not part of the graph. "
                 f"Available parameters are: {available_params}. "
                 f"Please check if the parameter name is correct or if the graph has been properly initialized."
+            )
+        # ideally this should use self.top_level_params but that would create a loop
+        # cast since in_degree is an int when the input is a single node but the stubs does not yet reflect that
+        in_degree = cast("int", self._graph.in_degree(initial_param.name))
+        if in_degree > 0:
+            raise ValueError(
+                f"Parameter {initial_param.name} is not a top level parameter, it is a dependency of or inferred from another parameter"
             )
 
         # Add the parameter itself
@@ -537,7 +548,7 @@ class InterDependencies_:  # noqa: PLW1641
             - A tuple of all other related parameters (sorted by name)
 
         Raises:
-            ValueError: If the initial parameter is not part of the graph
+            ValueError: If the initial parameter is not part of the graph or not a top level parameter.
 
         """
         collected_params = self.find_all_parameters_in_tree(initial_param)
