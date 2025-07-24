@@ -301,6 +301,10 @@ class InterDependencies_:  # noqa: PLW1641
 
         """
 
+        # is is not sufficient to find all parameters with in_degree == 0
+        # since some of the inferred parameters might be included in the dependency tree
+        # of another parameter since we include inferred parameters both ways.
+        # see test_dependency_on_middle_parameter for a test that illustrates this.
         inference_top_level = {
             self._node_to_paramspec(node_id)
             for node_id, in_degree in self._inference_subgraph.in_degree

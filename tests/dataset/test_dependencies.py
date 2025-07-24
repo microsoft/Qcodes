@@ -481,3 +481,24 @@ def test_all_parameters_in_tree_by_group_raises_on_non_top_level(some_paramspecb
         ValueError, match=f"Parameter '{ps4.name}' is not part of the graph."
     ):
         idps.find_all_parameters_in_tree(ps4)
+
+
+def test_dependency_on_middle_parameter(
+    some_paramspecbases: tuple[
+        ParamSpecBase, ParamSpecBase, ParamSpecBase, ParamSpecBase
+    ],
+) -> None:
+    """
+    Test that a dependency on a middle parameter is correctly handled.
+    """
+    (ps1, ps2, ps3, ps4) = some_paramspecbases
+
+    idps = InterDependencies_(dependencies={ps1: (ps2,)}, inferences={ps2: (ps3,)})
+
+    idps.add_inferences({ps4: (ps2,)})
+
+    # navively one might expect that ps4 is a top level parameter
+    # since it has no in edges. However, since we include inferred parameters
+    # in both directions, ps4 is actually a member of the tree for ps1
+    assert idps.top_level_params == (ps1,)
+    assert idps.find_all_parameters_in_tree(ps1) == {ps1, ps2, ps3, ps4}
