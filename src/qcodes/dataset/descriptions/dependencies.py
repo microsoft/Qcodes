@@ -472,14 +472,14 @@ class InterDependencies_:  # noqa: PLW1641
         """
         Collect all parameters that are transitively related to the initial parameter.
 
-        This includes dependencies of the the initial parameter and parameters that are inferred from
+        This includes dependencies of the initial parameter and parameters that are inferred from
         the initial parameter, as well as parameters that are inferred from its dependencies.
 
         Args:
             initial_param: The parameter to start the traversal from.
 
         Returns:
-            Set of all parameters transitively related to the initial parameters
+            Set of all parameters transitively related to the initial parameter
 
         Raises:
             ValueError: If the initial parameter is not part of the graph.
@@ -540,7 +540,7 @@ class InterDependencies_:  # noqa: PLW1641
             A tuple containing:
             - The initial parameter
             - A tuple of direct dependencies of the initial parameter
-            - A tuple of all other related parameters (sorted by name)
+            - A tuple of parameters inferred from the initial parameter and its dependencies (sorted by name).
 
         Raises:
             ValueError: If the initial parameter is not part of the graph.
