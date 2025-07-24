@@ -335,7 +335,7 @@ def test_get_parameter_data_independent_parameters(
 ) -> None:
     ds = standalone_parameters_dataset
 
-    paramspecs = ds.description.interdeps.top_level_params
+    paramspecs = ds.description.interdeps.top_level_parameters
     params = {ps.name for ps in paramspecs}
     expected_toplevel_params = {"param_1", "param_2", "param_3"}
     assert params == expected_toplevel_params

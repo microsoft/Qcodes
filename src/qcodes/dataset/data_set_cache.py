@@ -105,7 +105,7 @@ class DataSetCache(Generic[DatasetType_co]):
         """
 
         output: dict[str, dict[str, npt.NDArray]] = {}
-        for toplevel_param in interdeps.top_level_params:
+        for toplevel_param in interdeps.top_level_parameters:
             toplevel_param, deps, infs = interdeps.all_parameters_in_tree_by_group(
                 toplevel_param
             )
@@ -291,7 +291,7 @@ def append_shaped_parameter_data_to_existing_arrays(
         Updated write and read status, and the updated ``data``
 
     """
-    parameters = tuple(ps.name for ps in rundescriber.interdeps.top_level_params)
+    parameters = tuple(ps.name for ps in rundescriber.interdeps.top_level_parameters)
     merged_data = {}
 
     updated_write_status = dict(write_status)

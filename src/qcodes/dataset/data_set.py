@@ -852,7 +852,7 @@ class DataSet(BaseDataSet):
         """
         if len(params) == 0:
             valid_param_names = [
-                ps.name for ps in self._rundescriber.interdeps.top_level_params
+                ps.name for ps in self._rundescriber.interdeps.top_level_parameters
             ]
 
         else:
@@ -1248,7 +1248,7 @@ class DataSet(BaseDataSet):
         result_parameters = set(result_dict.keys())
         unused_results = result_parameters.copy()
 
-        toplevel_params = set(interdeps.top_level_params).intersection(
+        toplevel_params = set(interdeps.top_level_parameters).intersection(
             result_parameters
         )
 

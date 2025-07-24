@@ -275,7 +275,7 @@ class InterDependencies_:  # noqa: PLW1641
 
     @property
     @deprecated(
-        "non_dependencies returns incorrect results and is deprecated. Use top_level_params as an alternative and sort by name if required.",
+        "non_dependencies returns incorrect results and is deprecated. Use top_level_parameters as an alternative.",
         category=QCoDeSDeprecationWarning,
     )
     def non_dependencies(self) -> tuple[ParamSpecBase, ...]:
@@ -291,7 +291,7 @@ class InterDependencies_:  # noqa: PLW1641
         return non_dependencies_sorted_by_name
 
     @property
-    def top_level_params(self) -> tuple[ParamSpecBase, ...]:
+    def top_level_parameters(self) -> tuple[ParamSpecBase, ...]:
         """
         Return all parameters that are not dependencies or inferred from other parameters,
         i.e. return the top level parameters.

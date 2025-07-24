@@ -159,7 +159,7 @@ def get_parameter_data(
 
     output = {}
     if len(columns) == 0:
-        columns = [ps.name for ps in rundescriber.interdeps.top_level_params]
+        columns = [ps.name for ps in rundescriber.interdeps.top_level_parameters]
 
     # loop over all the requested parameters
     for output_param in columns:
@@ -2106,7 +2106,7 @@ def load_new_data_for_rundescriber(
 
     """
 
-    parameters = tuple(ps.name for ps in rundescriber.interdeps.top_level_params)
+    parameters = tuple(ps.name for ps in rundescriber.interdeps.top_level_parameters)
     updated_read_status: dict[str, int] = dict(read_status)
     new_data_dict: dict[str, dict[str, npt.NDArray]] = {}
 
