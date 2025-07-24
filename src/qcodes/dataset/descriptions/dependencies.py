@@ -501,7 +501,12 @@ class InterDependencies_:  # noqa: PLW1641
         # ideally this should use self.top_level_params but that would create a loop
         # cast since in_degree is an int when the input is a single node but the stubs does not yet reflect that
         in_degree = cast("int", self._graph.in_degree(initial_param.name))
-        if in_degree > 0:
+        if initial_param.name in self._dependency_subgraph:
+            in_degree_dep = self._dependency_subgraph.in_degree[initial_param.name]
+        else:
+            in_degree_dep = None
+
+        if not (in_degree_dep == 0) and in_degree > 0:
             raise ValueError(
                 f"Parameter {initial_param.name} is not a top level parameter, it is a dependency of or inferred from another parameter"
             )
