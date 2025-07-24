@@ -39,19 +39,19 @@ def test_init(some_paramspecbases) -> None:
     assert idps1 == idps2
     assert idps1.what_depends_on(ps2) == (ps1,)
     assert idps1.what_is_inferred_from(ps2) == ()
-    assert idps1.top_level_params == {ps1}
+    assert idps1.top_level_params == (ps1,)
 
     idps1 = InterDependencies_(dependencies={ps1: (ps2, ps3)})
     idps2 = InterDependencies_(dependencies={ps1: (ps3, ps2)})
 
     assert idps1.what_depends_on(ps2) == (ps1,)
     assert idps1.what_depends_on(ps3) == (ps1,)
-    assert idps1.top_level_params == {ps1}
-    assert idps2.top_level_params == {ps1}
+    assert idps1.top_level_params == (ps1,)
+    assert idps2.top_level_params == (ps1,)
 
     idps = InterDependencies_(dependencies={ps1: (ps3, ps2), ps4: (ps3,)})
     assert set(idps.what_depends_on(ps3)) == {ps1, ps4}
-    assert idps.top_level_params == {ps1, ps4}
+    assert idps.top_level_params == (ps1, ps4)
 
 
 def test_init_validation_raises(some_paramspecbases) -> None:
@@ -375,15 +375,15 @@ def test_non_dependents() -> None:
         inferences={ps4: (ps2,), ps3: (ps1,)},
     )
 
-    assert idps1.top_level_params == {ps5, ps6}
+    assert idps1.top_level_params == (ps5, ps6)
 
     idps2 = InterDependencies_(dependencies={ps2: (ps1,)})
 
-    assert idps2.top_level_params == {ps2}
+    assert idps2.top_level_params == (ps2,)
 
     idps3 = InterDependencies_(dependencies={ps6: (ps1,)}, standalones=(ps2,))
 
-    assert idps3.top_level_params == {ps2, ps6}
+    assert idps3.top_level_params == (ps2, ps6)
 
 
 def test_collect_related(
@@ -417,13 +417,13 @@ def test_collect_related(
     assert idps4.find_all_parameters_in_tree(ps1) == {ps1, ps2}
     assert idps4.find_all_parameters_in_tree(ps3) == {ps3}
     assert idps4.find_all_parameters_in_tree(ps4) == {ps4}
-    assert idps4.top_level_params == {ps1, ps3, ps4}
+    assert idps4.top_level_params == (ps1, ps3, ps4)
 
     idps5 = InterDependencies_(dependencies={ps1: (ps2,)}, inferences={ps3: (ps4,)})
     assert idps5.find_all_parameters_in_tree(ps1) == {ps1, ps2}
     assert idps5.find_all_parameters_in_tree(ps3) == {ps3, ps4}
     assert idps5.find_all_parameters_in_tree(ps4) == {ps3, ps4}
-    assert idps5.top_level_params == {ps1, ps3}
+    assert idps5.top_level_params == (ps1, ps3)
 
 
 def test_collect_related__complex(
@@ -433,9 +433,9 @@ def test_collect_related__complex(
 ) -> None:
     (ps1, ps2, ps3, ps4) = some_paramspecbases
     idps1 = InterDependencies_(dependencies={ps1: (ps2,)}, inferences={ps2: (ps3, ps4)})
-    assert idps1.top_level_params == {ps1}
+    assert idps1.top_level_params == (ps1,)
     assert idps1.find_all_parameters_in_tree(ps1) == {ps1, ps2, ps3, ps4}
 
     idps2 = InterDependencies_(dependencies={ps1: (ps2,)}, inferences={ps3: (ps2,)})
-    assert idps2.top_level_params == {ps1}
+    assert idps2.top_level_params == (ps1,)
     assert idps2.find_all_parameters_in_tree(ps1) == {ps1, ps2, ps3}
