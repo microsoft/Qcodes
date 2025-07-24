@@ -115,21 +115,21 @@ log = logging.getLogger(__name__)
 
 
 # TODO: storing parameters in separate table as an extension (dropping
-# the column parametenrs would be much nicer
+# the column parameters would be much nicer
 
 # TODO: metadata split between well known columns and maybe something else is
 # not such a good idea. The problem is if we allow for specific columns then
-# how do the user/us know which are metatadata?  I THINK the only sane solution
+# how do the user/us know which are metadata?  I THINK the only sane solution
 # is to store JSON in a column called metadata
 
-# TODO: fixix  a subset of metadata that we define well known (and create them)
+# TODO: fixing  a subset of metadata that we define well known (and create them)
 # i.e. no dynamic creation of metadata columns, but add stuff to
 # a json inside a 'metadata' column
 
 
 class _BackgroundWriter(Thread):
     """
-    Write the results from the DataSet's dataqueue in a new thread
+    Write the results from the DataSet's data queue in a new thread
     """
 
     def __init__(self, queue: Queue[Any], conn: AtomicConnection):
@@ -574,7 +574,7 @@ class DataSet(BaseDataSet):
         """
         Adds metadata to the :class:`.DataSet`. The metadata is stored under the
         provided tag. Note that None is not allowed as a metadata value, and the
-        tag has to be a valid python identified (e.g. containing alphanumeric
+        tag has to be a valid python identifier (e.g. containing alphanumeric
         characters and underscores).
 
         Args:
@@ -614,7 +614,7 @@ class DataSet(BaseDataSet):
         """
         Is this :class:`.DataSet` pristine? A pristine :class:`.DataSet` has not yet been started,
         meaning that parameters can still be added and removed, but results
-        can not be added.
+        cannot be added.
         """
         return not (self._started or self._completed)
 
@@ -629,7 +629,7 @@ class DataSet(BaseDataSet):
     @property
     def started(self) -> bool:
         """
-        Has this :class:`.DataSet` been started? A :class:`.DataSet` not started can not have any
+        Has this :class:`.DataSet` been started? A :class:`.DataSet` not started cannot have any
         results added to it.
         """
         return self._started
@@ -712,7 +712,7 @@ class DataSet(BaseDataSet):
 
     def mark_completed(self) -> None:
         """
-        Mark :class:`.DataSet` as complete and thus read only and notify the subscribers
+        Mark :class:`.DataSet` as complete and thus read-only and notify the subscribers
         """
         if self.completed:
             return
@@ -1688,7 +1688,7 @@ def load_by_id(run_id: int, conn: AtomicConnection | None = None) -> DataSetProt
     If no connection is provided, lookup is performed in the database file that
     is specified in the config.
 
-    Note that the ``run_id`` used in this function in not preserved when copying
+    Note that the ``run_id`` used in this function is not preserved when copying
     data to another db file. We recommend using :func:`.load_by_run_spec` which
     does not have this issue and is significantly more flexible.
 
@@ -1774,7 +1774,7 @@ def load_by_counter(
 
     Lookup is performed in the database file that is specified in the config.
 
-    Note that the `counter` used in this function in not preserved when copying
+    Note that the `counter` used in this function is not preserved when copying
     data to another db file. We recommend using :func:`.load_by_run_spec` which
     does not have this issue and is significantly more flexible.
 
