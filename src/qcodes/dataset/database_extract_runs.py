@@ -257,9 +257,9 @@ def export_datasets_and_create_metadata_db(
                 if exp_id not in processed_experiments:
                     exp_attrs = get_experiment_attributes_by_exp_id(source_conn, exp_id)
 
-                    with atomic(target_conn) as target_conn:
+                    with atomic(target_conn) as atomic_target_conn:
                         target_exp_id = _create_exp_if_needed(
-                            target_conn,
+                            atomic_target_conn,
                             exp_attrs["name"],
                             exp_attrs["sample_name"],
                             exp_attrs["format_string"],
