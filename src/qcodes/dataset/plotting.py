@@ -277,7 +277,7 @@ def plot_dataset(
                 if data[2]["name"] not in parameters:
                     indices_to_remove.append(i)
         alldata = [d for (i, d) in enumerate(alldata) if i not in indices_to_remove]
-        
+
     for data, ax, colorbar in zip(alldata, axeslist, colorbars):
         if len(data) == 2:  # 1D PLOTTING
             log.debug(f"Doing a 1D plot with kwargs: {kwargs}")
