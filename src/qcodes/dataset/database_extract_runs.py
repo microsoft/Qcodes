@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Literal
 from warnings import warn
 
 import numpy as np
+from opentelemetry import trace
 from tqdm.auto import tqdm
 
 from qcodes.dataset.data_set import DataSet, load_by_id
@@ -33,8 +34,10 @@ if TYPE_CHECKING:
     from qcodes.dataset.data_set_protocol import DataSetProtocol
 
 _LOG = logging.getLogger(__name__)
+_TRACER = trace.get_tracer(__name__)
 
 
+@_TRACER.start_as_current_span(f"{__name__}.extract_runs_into_db")
 def extract_runs_into_db(
     source_db_path: str | Path,
     target_db_path: str | Path,
@@ -178,7 +181,7 @@ def _extract_single_dataset_into_db(
         source_conn, target_conn, dataset.table_name, target_table_name
     )
 
-
+@_TRACER.start_as_current_span(f"{__name__}.export_datasets_and_create_metadata_db")
 def export_datasets_and_create_metadata_db(
     source_db_path: str | Path,
     target_db_path: str | Path,
@@ -203,6 +206,11 @@ def export_datasets_and_create_metadata_db(
         A dictionary mapping run_id to status ('exported', 'copied_as_is', or 'failed')
 
     """
+    span = trace.get_current_span()
+    span.set_attribute("source_db_path", str(source_db_path))
+    span.set_attribute("target_db_path", str(target_db_path))
+    span.set_attribute("export_path", str(export_path))
+
     source_db_path = Path(source_db_path)
 
     if not source_db_path.exists():
@@ -224,6 +232,8 @@ def export_datasets_and_create_metadata_db(
             f"Target database file already exists: {target_db_path}. "
             "Please choose a different path or remove the existing file."
         )
+
+    span.set_attribute("export_path_from_qcodes_config", str(get_data_export_path()))
 
     if export_path is None:
         export_path = get_data_export_path()
@@ -288,6 +298,7 @@ def export_datasets_and_create_metadata_db(
     return result_status
 
 
+@_TRACER.start_as_current_span(f"{__name__}._process_single_dataset")
 def _process_single_dataset(
     dataset: DataSetProtocol,
     source_conn: AtomicConnection,
@@ -304,11 +315,17 @@ def _process_single_dataset(
         Status string indicating what was done with the dataset
 
     """
+    span = trace.get_current_span()
+    span.set_attribute("guid", dataset.guid)
+    span.set_attribute("given_export_path", str(export_path))
+
     run_id = dataset.run_id
+    span.set_attribute("run_id", run_id)
 
     netcdf_export_path = None
 
     existing_netcdf_path = dataset.export_info.export_paths.get("nc")
+    span.set_attribute("dataset_netcdf_export_path", str(existing_netcdf_path))
     if existing_netcdf_path is not None:
         existing_path = Path(existing_netcdf_path)
         # Check if the existing export path matches the desired export path
