@@ -195,7 +195,7 @@ def export_datasets_and_create_metadata_db(
 
     Args:
         source_db_path: Path to the source database file
-        target_db_path: Path to the target database file. Will be created if it doesn't exist.
+        target_db_path: Path to the target database file that will be created. Error is raised if it already exist.
         export_path: Optional path where NetCDF files should be exported. If None,
             uses the default export path from QCoDeS configuration.
 
