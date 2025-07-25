@@ -337,10 +337,6 @@ def test_export_datasets_nonexistent_source(tmp_path: "Path") -> None:
         )
 
 
-@pytest.mark.xfail(
-    run=True,
-    reason="load_from_netcdf fails when loading incomplete datasets, once it is fixed, the test will work",
-)
 def test_export_datasets_many_datasets_and_edge_case(
     tmp_path: "Path", request: pytest.FixtureRequest
 ) -> None:
