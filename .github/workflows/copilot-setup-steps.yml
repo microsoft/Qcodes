@@ -42,6 +42,13 @@ jobs:
           # we need full history with tags for the version number
           fetch-depth: '0'
 
+      # work around for https://github.com/orgs/community/discussions/163397
+      - name: Fetch main branch
+        run: |
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git fetch origin main:main
+
+
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: 3.13
