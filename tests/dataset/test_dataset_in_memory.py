@@ -14,6 +14,8 @@ import qcodes
 from qcodes.dataset import load_by_id, load_by_run_spec
 from qcodes.dataset.data_set_in_memory import DataSetInMem, load_from_file
 from qcodes.dataset.data_set_protocol import DataSetType
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.sqlite.connection import AtomicConnection, atomic_transaction
 from qcodes.station import Station
 
@@ -509,6 +511,49 @@ def test_load_from_file_by_id(meas_with_registered_param, DMM, DAC, tmp_path) ->
     assert qcodes.config.dataset.load_from_exported_file is False
     loaded_ds_from_db = load_by_id(ds.run_id)
     assert not isinstance(loaded_ds_from_db, DataSetInMem)
+
+
+def test_load_from_netcdf_non_completed_dataset(experiment, tmp_path) -> None:
+    """Test that non-completed datasets can be loaded from netcdf files."""
+    # Create a non-completed dataset by NOT using the measurement context manager
+    # which automatically completes the dataset on exit
+    ds = DataSetInMem._create_new_run(name="test-dataset")
+
+    # Set up interdependencies with simple parameters following the established pattern
+    x_param = ParamSpecBase("x", paramtype="numeric")
+    y_param = ParamSpecBase("y", paramtype="numeric")
+    idps = InterDependencies_(dependencies={y_param: (x_param,)})
+    ds.prepare(interdeps=idps, snapshot={})
+
+    # Add some data points
+    for x_val in np.linspace(0, 25, 5):
+        y_val = x_val**2  # simple function
+        ds._enqueue_results({x_param: np.array([x_val]), y_param: np.array([y_val])})
+
+    # Note: do NOT call ds.mark_completed() to keep it non-completed
+
+    # Verify that the dataset is not completed
+    assert ds.completed_timestamp_raw is None
+    assert not ds.completed
+
+    # Export the non-completed dataset to NetCDF
+    ds.export(export_type="netcdf", path=str(tmp_path))
+
+    # Load the dataset from NetCDF
+    loaded_ds = DataSetInMem._load_from_netcdf(
+        tmp_path / f"qcodes_{ds.captured_run_id}_{ds.guid}.nc"
+    )
+
+    # Verify that the loaded dataset is still non-completed
+    assert isinstance(loaded_ds, DataSetInMem)
+    assert loaded_ds.completed_timestamp_raw is None
+    assert not loaded_ds.completed
+
+    # Compare other properties
+    assert loaded_ds.captured_run_id == ds.captured_run_id
+    assert loaded_ds.guid == ds.guid
+    assert loaded_ds.name == ds.name
+    assert loaded_ds.run_timestamp_raw == ds.run_timestamp_raw
 
 
 def test_load_from_netcdf_legacy_version(non_created_db) -> None:
