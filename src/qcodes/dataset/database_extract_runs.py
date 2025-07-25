@@ -279,7 +279,7 @@ def export_datasets_and_create_metadata_db(
 
                     processed_experiments[exp_id] = target_exp_id
                     _LOG.info(
-                        f"Created experiment '{exp_attrs['name']}' with ID {target_exp_id} in target database"
+                        f"Created experiment `{exp_attrs['name']}` on `{exp_attrs['sample_name']}` with ID {target_exp_id} in target database"
                     )
                 else:
                     target_exp_id = processed_experiments[exp_id]
