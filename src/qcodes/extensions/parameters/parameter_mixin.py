@@ -8,7 +8,7 @@ log = logging.getLogger(__name__)
 
 
 class ParameterMixin:
-    """
+    '''
     A mixin for extending QCoDeS Parameters with additional functionalities.
 
     This mixin enforces naming conventions and verifies compatibility with
@@ -44,7 +44,7 @@ class ParameterMixin:
             _INCOMPATIBLE_BASES: List[Type[ParameterBase]] = []
         ```
 
-    """
+    '''
 
     _COMPATIBLE_BASES: ClassVar[list[type["ParameterBase"]]] = []
     _INCOMPATIBLE_BASES: ClassVar[list[type["ParameterBase"]]] = []
