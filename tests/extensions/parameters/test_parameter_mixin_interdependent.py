@@ -1,19 +1,24 @@
-import pytest
 from typing import Any, cast
+
+import pytest
+
 from qcodes.instrument import Instrument
-from qcodes.parameters import Parameter, InterdependentParameterMixin
+from qcodes.parameters import InterdependentParameterMixin, Parameter
 from qcodes.utils import QCoDeSDeprecationWarning
+
 
 class MockInstrument(Instrument):
     """
     A mock instrument that can host parameters.
     """
+
     def __init__(self, name: str, **kwargs):
         super().__init__(name, **kwargs)
 
 
 class InterdependentParameter(InterdependentParameterMixin, Parameter):
     pass
+
 
 @pytest.fixture
 def store():
@@ -36,8 +41,10 @@ def callback(callback_flag):
     """
     Provides a callback that sets callback_flag["called"] to True.
     """
+
     def _callback(**kwargs: Any) -> None:
         callback_flag["called"] = True
+
     return _callback
 
 
@@ -54,8 +61,10 @@ def data_callback(callback_data):
     """
     Provides a callback that records (args, kwargs) into callback_data.
     """
+
     def _callback(*args, **kwargs):
         callback_data.append((args, kwargs))
+
     return _callback
 
 
@@ -68,21 +77,23 @@ def mock_instr():
     return instr
 
 
-def test_dependency_update_invoked_on_change(store, callback_flag, callback, mock_instr) -> None:
+def test_dependency_update_invoked_on_change(
+    store, callback_flag, callback, mock_instr
+) -> None:
     mock_instr.some_param = cast(
-        InterdependentParameter,
+        "InterdependentParameter",
         mock_instr.add_parameter(
             name="some_param",
             parameter_class=InterdependentParameter,
             set_cmd=lambda x: store.update({"some": x}),
             get_cmd=lambda: store.get("some"),
-            docstring="Parameter some_param represents a primary parameter."
-        )
+            docstring="Parameter some_param represents a primary parameter.",
+        ),
     )
     """Parameter some_param represents a primary parameter."""
 
     mock_instr.managed_param = cast(
-        InterdependentParameter,
+        "InterdependentParameter",
         mock_instr.add_parameter(
             name="managed_param",
             parameter_class=InterdependentParameter,
@@ -90,8 +101,8 @@ def test_dependency_update_invoked_on_change(store, callback_flag, callback, moc
             dependency_update_method=callback,
             set_cmd=lambda x: store.update({"managed": x}),
             get_cmd=lambda: store.get("managed"),
-            docstring="Parameter managed_param depends on some_param."
-        )
+            docstring="Parameter managed_param depends on some_param.",
+        ),
     )
     """Parameter managed_param depends on some_param."""
 
@@ -99,21 +110,23 @@ def test_dependency_update_invoked_on_change(store, callback_flag, callback, moc
     assert callback_flag["called"], "dependency_update_method was not called."
 
 
-def test_adding_dependent_parameter_later(store, callback_flag, callback, mock_instr) -> None:
+def test_adding_dependent_parameter_later(
+    store, callback_flag, callback, mock_instr
+) -> None:
     mock_instr.some_param = cast(
-        InterdependentParameter,
+        "InterdependentParameter",
         mock_instr.add_parameter(
             name="some_param",
             parameter_class=InterdependentParameter,
             set_cmd=lambda x: store.update({"some": x}),
             get_cmd=lambda: store.get("some"),
-            docstring="Parameter some_param represents a primary parameter."
-        )
+            docstring="Parameter some_param represents a primary parameter.",
+        ),
     )
     """Parameter some_param represents a primary parameter."""
 
     mock_instr.managed_param = cast(
-        InterdependentParameter,
+        "InterdependentParameter",
         mock_instr.add_parameter(
             name="managed_param",
             parameter_class=InterdependentParameter,
@@ -121,8 +134,8 @@ def test_adding_dependent_parameter_later(store, callback_flag, callback, mock_i
             dependency_update_method=callback,
             set_cmd=lambda x: store.update({"managed": x}),
             get_cmd=lambda: store.get("managed"),
-            docstring="Parameter managed_param depends on some_param."
-        )
+            docstring="Parameter managed_param depends on some_param.",
+        ),
     )
     """Parameter managed_param depends on some_param."""
 
@@ -133,29 +146,33 @@ def test_adding_dependent_parameter_later(store, callback_flag, callback, mock_i
 
 def test_error_on_non_interdependent_dependency(store, mock_instr) -> None:
     mock_instr.not_interdependent_param = cast(
-        InterdependentParameter,
+        "InterdependentParameter",
         mock_instr.add_parameter(
             name="not_interdependent_param",
             set_cmd=lambda x: store.update({"not_interdep": x}),
             get_cmd=lambda: store.get("not_interdep"),
-            docstring="A non-interdependent parameter."
-        )
+            docstring="A non-interdependent parameter.",
+        ),
     )
     """A non-interdependent parameter."""
 
     with pytest.warns(QCoDeSDeprecationWarning, match="does not correctly pass kwargs"):
-        with pytest.raises(KeyError, match="Duplicate parameter name managed_param on instrument"):
-            with pytest.raises(TypeError, match="must be an instance of InterdependentParameterMixin"):
+        with pytest.raises(
+            KeyError, match="Duplicate parameter name managed_param on instrument"
+        ):
+            with pytest.raises(
+                TypeError, match="must be an instance of InterdependentParameterMixin"
+            ):
                 mock_instr.managed_param = cast(
-                    InterdependentParameter,
-                    mock_instr.add_parameter(                
+                    "InterdependentParameter",
+                    mock_instr.add_parameter(
                         name="managed_param",
                         parameter_class=InterdependentParameter,
                         dependent_on=["not_interdependent_param"],
                         set_cmd=lambda x: store.update({"managed": x}),
                         get_cmd=lambda: store.get("managed"),
-                        docstring="Parameter managed_param depends on a non-interdependent param."
-                    )
+                        docstring="Parameter managed_param depends on a non-interdependent param.",
+                    ),
                 )
                 """Parameter managed_param depends on a non-interdependent param."""
 
@@ -165,7 +182,7 @@ def test_parsers_and_dependency_propagation(store, mock_instr) -> None:
         mock_instr.managed_param.set(999)
 
     mock_instr.some_param = cast(
-        InterdependentParameter,
+        "InterdependentParameter",
         mock_instr.add_parameter(
             name="some_param",
             parameter_class=InterdependentParameter,
@@ -173,13 +190,13 @@ def test_parsers_and_dependency_propagation(store, mock_instr) -> None:
             get_cmd=lambda: store.get("some"),
             set_parser=lambda v: v * 2,
             get_parser=lambda v: v + 1 if v is not None else None,
-            docstring="Parameter some_param with parsers."
-        )
+            docstring="Parameter some_param with parsers.",
+        ),
     )
     """Parameter some_param with parsers."""
 
     mock_instr.managed_param = cast(
-        InterdependentParameter,
+        "InterdependentParameter",
         mock_instr.add_parameter(
             name="managed_param",
             parameter_class=InterdependentParameter,
@@ -187,8 +204,8 @@ def test_parsers_and_dependency_propagation(store, mock_instr) -> None:
             dependency_update_method=dependency_update,
             set_cmd=lambda x: store.update({"managed": x}),
             get_cmd=lambda: store.get("managed"),
-            docstring="Parameter managed_param depends on some_param."
-        )
+            docstring="Parameter managed_param depends on some_param.",
+        ),
     )
     """Parameter managed_param depends on some_param."""
 

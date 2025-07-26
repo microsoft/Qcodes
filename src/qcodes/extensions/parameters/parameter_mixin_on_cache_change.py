@@ -1,11 +1,15 @@
 import logging
-from datetime import datetime
 from functools import wraps
-from typing import Any, Callable, Optional, cast
-from qcodes.parameters import ParameterBase, Parameter
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, Protocol, cast
+
+from qcodes.parameters import Parameter, ParameterBase
+
 from .parameter_mixin import ParameterMixin
 
 log = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 
 class OnCacheChangeCallback(Protocol):
@@ -16,12 +20,7 @@ class OnCacheChangeCallback(Protocol):
     """
 
     def __call__(
-        self,
-        *,
-        value_old: Any,
-        value_new: Any,
-        raw_value_old: Any,
-        raw_value_new: Any
+        self, *, value_old: Any, value_new: Any, raw_value_old: Any, raw_value_new: Any
     ) -> None:
         pass
 
@@ -32,20 +31,21 @@ class OnCacheChangeParameterMixin(ParameterMixin):
 
     Attributes:
         on_cache_change: Optional callback invoked when the cached value changes.
+
     """
 
-    _COMPATIBLE_BASES: List[Type[ParameterBase]] = [
+    _COMPATIBLE_BASES: ClassVar[list[type[ParameterBase]]] = [
         Parameter,
     ]
-    _INCOMPATIBLE_BASES: List[Type[ParameterBase]] = []
+    _INCOMPATIBLE_BASES: ClassVar[list[type[ParameterBase]]] = []
 
     def __init__(
         self,
         *args: Any,
         on_cache_change: Optional[OnCacheChangeCallback] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
-        self.on_cache_change = kwargs.pop('on_cache_change', on_cache_change)
+        self.on_cache_change = kwargs.pop("on_cache_change", on_cache_change)
         super().__init__(*args, **kwargs)
         self._wrap_cache_update_method()
 
@@ -56,6 +56,7 @@ class OnCacheChangeParameterMixin(ParameterMixin):
 
         Returns:
             The currently set callback or None.
+
         """
         return self._on_cache_change_callback
 
@@ -69,6 +70,7 @@ class OnCacheChangeParameterMixin(ParameterMixin):
 
         Raises:
             TypeError: If callback is not callable or None.
+
         """
         if callback is not None and not callable(callback):
             raise TypeError("on_cache_change must be a callable or None")
@@ -78,21 +80,17 @@ class OnCacheChangeParameterMixin(ParameterMixin):
         """
         Wrap the parameter's cache update method to include callback logic.
         """
-        parameter = cast(ParameterBase, self)
+        parameter = cast("ParameterBase", self)
         original_update_cache = parameter.cache._update_with
 
         @wraps(original_update_cache)
         def wrapped_cache_update(
-            *,
-            value: Any,
-            raw_value: Any,
-            timestamp: Optional[datetime] = None
+            *, value: Any, raw_value: Any, timestamp: Optional["datetime"] = None
         ) -> None:
             raw_value_old = parameter.cache.raw_value
             value_old = parameter.cache.get(get_if_invalid=False)
 
-            original_update_cache(value=value, raw_value=raw_value,
-                                  timestamp=timestamp)
+            original_update_cache(value=value, raw_value=raw_value, timestamp=timestamp)
 
             raw_value_new = parameter.cache.raw_value
             value_new = parameter.cache.get(get_if_invalid=False)
@@ -105,15 +103,10 @@ class OnCacheChangeParameterMixin(ParameterMixin):
                     raw_value_new=raw_value_new,
                 )
 
-        parameter.cache._update_with = wrapped_cache_update # type: ignore[method-assign]
+        parameter.cache._update_with = wrapped_cache_update  # type: ignore[method-assign]
 
     def _handle_on_cache_change(
-        self,
-        *,
-        value_old: Any,
-        value_new: Any,
-        raw_value_old: Any,
-        raw_value_new: Any
+        self, *, value_old: Any, value_new: Any, raw_value_old: Any, raw_value_new: Any
     ) -> None:
         """
         Handle cache changes by invoking the on_cache_change callback.
@@ -123,6 +116,7 @@ class OnCacheChangeParameterMixin(ParameterMixin):
             value_new: New value.
             raw_value_old: Previous raw value.
             raw_value_new: New raw value.
+
         """
         if self.on_cache_change:
             self.on_cache_change(
@@ -131,4 +125,3 @@ class OnCacheChangeParameterMixin(ParameterMixin):
                 raw_value_old=raw_value_old,
                 raw_value_new=raw_value_new,
             )
-

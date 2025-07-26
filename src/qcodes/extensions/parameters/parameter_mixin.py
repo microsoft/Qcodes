@@ -1,22 +1,23 @@
 import logging
 import warnings
-from typing import Any, List, Optional, Type
-from qcodes.parameters import ParameterBase, Parameter
+from typing import Any, ClassVar, Optional
+
+from qcodes.parameters import ParameterBase
 
 log = logging.getLogger(__name__)
 
 
-class ParameterMixin():
+class ParameterMixin:
     """
     A mixin for extending QCoDeS Parameters with additional functionalities.
-    
+
     This mixin enforces naming conventions and verifies compatibility with
     `ParameterBase` subclasses. The class name must end with "ParameterMixin".
     If multiple mixins are combined, declare `_PARAMETER_MIXIN_CLASSES_COMPATIBLE`
     as True. Each mixin should define a `_COMPATIBLE_BASES` to specify which
     `ParameterBase` subclasses it can extend. If no explicit compatibility
     is declared, warnings are issued. Explicit incompatibilities raise errors.
-    
+
     Attributes:
         _COMPATIBLE_BASES (List[Type[ParameterBase]]):
             List of supported `ParameterBase` subclasses.
@@ -24,7 +25,7 @@ class ParameterMixin():
             List of explicitly incompatible `ParameterBase` subclasses.
         _PARAMETER_MIXIN_CLASSES_COMPATIBLE (bool):
             Indicates if multiple ParameterMixin classes can safely combine.
-    
+
     Examples:
         ```python
         class NewFeatureParameterMixin(ParameterMixin):
@@ -33,7 +34,7 @@ class ParameterMixin():
             \"""
             _COMPATIBLE_BASES: List[Type[ParameterBase]] = [Parameter]
             _INCOMPATIBLE_BASES: List[Type[ParameterBase]] = []
-    
+
         class ABParameterMixin(AParameterMixin, BParameterMixin):
             \"""
             Combine A and B ParameterMixin.
@@ -42,10 +43,11 @@ class ParameterMixin():
             _COMPATIBLE_BASES: List[Type[ParameterBase]] = [Parameter]
             _INCOMPATIBLE_BASES: List[Type[ParameterBase]] = []
         ```
+
     """
 
-    _COMPATIBLE_BASES: List[Type[ParameterBase]] = []
-    _INCOMPATIBLE_BASES: List[Type[ParameterBase]] = []
+    _COMPATIBLE_BASES: ClassVar[list[type["ParameterBase"]]] = []
+    _INCOMPATIBLE_BASES: ClassVar[list[type["ParameterBase"]]] = []
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
@@ -56,31 +58,31 @@ class ParameterMixin():
                 f"ParameterMixin."
             )
 
-        if '_COMPATIBLE_BASES' in cls.__dict__:
+        if "_COMPATIBLE_BASES" in cls.__dict__:
             cls._COMPATIBLE_BASES = list(cls._COMPATIBLE_BASES)
         else:
             cls._COMPATIBLE_BASES = []
 
-        if '_INCOMPATIBLE_BASES' in cls.__dict__:
+        if "_INCOMPATIBLE_BASES" in cls.__dict__:
             cls._INCOMPATIBLE_BASES = list(cls._INCOMPATIBLE_BASES)
         else:
             cls._INCOMPATIBLE_BASES = []
 
         applied_mixin_leaf_list = cls._get_leaf_classes(
-                                        base_type=ParameterMixin,
-                                        exclude_base_type=ParameterBase)
+            base_type=ParameterMixin, exclude_base_type=ParameterBase
+        )
 
         all_applied_mixins = cls._get_mixin_classes(
-                                base_type=ParameterMixin,
-                                exclude_base_type=ParameterBase)
+            base_type=ParameterMixin, exclude_base_type=ParameterBase
+        )
 
         apply_to_parameter_base = False
-        parameter_base_leaf: Optional[Type[ParameterBase]] = None
+        parameter_base_leaf: Optional[type[ParameterBase]] = None
         if issubclass(cls, ParameterBase):
             apply_to_parameter_base = True
             parameter_base_leaves = cls._get_leaf_classes(
-                                        base_type=ParameterBase,
-                                        exclude_base_type=ParameterMixin)
+                base_type=ParameterBase, exclude_base_type=ParameterMixin
+            )
 
             if len(parameter_base_leaves) != 1:
                 raise TypeError(
@@ -89,29 +91,35 @@ class ParameterMixin():
                 )
             parameter_base_leaf = parameter_base_leaves[0]
             cls._check_compatibility(
-                all_mixins=all_applied_mixins, 
+                all_mixins=all_applied_mixins,
                 mixin_leaves=applied_mixin_leaf_list,
                 parameter_base_leaf=parameter_base_leaf,
             )
 
         elif issubclass(cls, ParameterMixin):
-            if not cls.__name__.endswith('ParameterMixin'):
+            if not cls.__name__.endswith("ParameterMixin"):
                 raise ValueError(
                     f"Class name '{cls.__name__}' must end with 'ParameterMixin'."
                 )
 
-            if hasattr(cls, '_COMPATIBLE_BASES') and not isinstance(cls._COMPATIBLE_BASES, list):
+            if hasattr(cls, "_COMPATIBLE_BASES") and not isinstance(
+                cls._COMPATIBLE_BASES, list
+            ):
                 raise TypeError(
                     f"{cls.__name__} must define _COMPATIBLE_BASES as a list."
                 )
 
-            if hasattr(cls, '_INCOMPATIBLE_BASES') and not isinstance(cls._INCOMPATIBLE_BASES, list):
+            if hasattr(cls, "_INCOMPATIBLE_BASES") and not isinstance(
+                cls._INCOMPATIBLE_BASES, list
+            ):
                 raise TypeError(
                     f"{cls.__name__} must define _INCOMPATIBLE_BASES as a list."
                 )
 
         multiple_mixin_leaves = len(applied_mixin_leaf_list) > 1
-        parameter_mixin_classes_compatible = getattr(cls, '_PARAMETER_MIXIN_CLASSES_COMPATIBLE', False)
+        parameter_mixin_classes_compatible = getattr(
+            cls, "_PARAMETER_MIXIN_CLASSES_COMPATIBLE", False
+        )
         if multiple_mixin_leaves:
             if apply_to_parameter_base:
                 raise TypeError(
@@ -122,19 +130,21 @@ class ParameterMixin():
                 )
             else:
                 if not parameter_mixin_classes_compatible:
-                    message = (
-                        "Multiple ParameterMixin are combined without a being declared compatible."
-                    )
+                    message = "Multiple ParameterMixin are combined without a being declared compatible."
                     log.warning(message)
                     warnings.warn(message, UserWarning)
 
                 if cls._COMPATIBLE_BASES == []:
                     all_compatible_bases_sets = [
-                        set(aml._COMPATIBLE_BASES) for aml in applied_mixin_leaf_list if hasattr(aml, '_COMPATIBLE_BASES')
+                        set(aml._COMPATIBLE_BASES)
+                        for aml in applied_mixin_leaf_list
+                        if hasattr(aml, "_COMPATIBLE_BASES")
                     ]
 
                     if all_compatible_bases_sets:
-                        common_compatible_bases = list(set.intersection(*all_compatible_bases_sets))
+                        common_compatible_bases = list(
+                            set.intersection(*all_compatible_bases_sets)
+                        )
                     else:
                         common_compatible_bases = []
 
@@ -146,28 +156,25 @@ class ParameterMixin():
                     else:
                         cls._COMPATIBLE_BASES = list(common_compatible_bases)
 
-
         if issubclass(cls, ParameterBase):
             cls._update_docstring(all_applied_mixins, parameter_base_leaf)
-
 
     @classmethod
     def _check_compatibility(
         cls,
-        all_mixins: List[Type["ParameterMixin"]],
-        mixin_leaves: List[Type["ParameterMixin"]],
-        parameter_base_leaf: Type[ParameterBase],
-        
+        all_mixins: list[type["ParameterMixin"]],
+        mixin_leaves: list[type["ParameterMixin"]],
+        parameter_base_leaf: type[ParameterBase],
     ) -> None:
         """
         Check compatibility between applied ParameterMixin classes and the ParameterBase subclass.
-        
+
         Only ParameterMixin-to-ParameterBase compatibility is considered:
         - Raise TypeError if any applied mixin or the parameter base class is explicitly incompatible with the other.
         - Issue warnings if no explicit compatibility declaration exists between a mixin leaf and the ParameterBase leaf.
         """
         for mixin in all_mixins:
-            mixin_incompatible = set(getattr(mixin, '_INCOMPATIBLE_BASES', []))
+            mixin_incompatible = set(getattr(mixin, "_INCOMPATIBLE_BASES", []))
             if parameter_base_leaf in mixin_incompatible:
                 message = (
                     f"{mixin.__name__} is incompatible with "
@@ -176,7 +183,7 @@ class ParameterMixin():
                 raise TypeError(message)
 
         for mixin_leaf in mixin_leaves:
-            mixin_leaf_compatible = set(getattr(mixin_leaf, '_COMPATIBLE_BASES', []))
+            mixin_leaf_compatible = set(getattr(mixin_leaf, "_COMPATIBLE_BASES", []))
             if parameter_base_leaf not in mixin_leaf_compatible:
                 message = (
                     f"{mixin_leaf.__name__} is not explicitly compatible with "
@@ -185,12 +192,11 @@ class ParameterMixin():
                 log.warning(message)
                 warnings.warn(message, UserWarning)
 
-
     @classmethod
     def _update_docstring(
         cls,
-        all_applied_mixins: List[Type["ParameterMixin"]],
-        parameter_base_leaf: Optional[Type[ParameterBase]],
+        all_applied_mixins: list[type["ParameterMixin"]],
+        parameter_base_leaf: Optional[type[ParameterBase]],
     ) -> None:
         """
         Update the class docstring with information about applied mixins
@@ -199,12 +205,17 @@ class ParameterMixin():
         Args:
             all_applied_mixins: List of applied ParameterMixin classes.
             parameter_base_leaf: The ParameterBase subclass.
+
         """
         mixin_names = [m.__name__ for m in all_applied_mixins]
         mixin_docs = [m.__doc__ or "" for m in all_applied_mixins]
-        base_doc = parameter_base_leaf.__doc__ if parameter_base_leaf else "No documentation available."
+        base_doc = (
+            parameter_base_leaf.__doc__
+            if parameter_base_leaf
+            else "No documentation available."
+        )
 
-        mixin_docs_text = '\n\n'.join(mixin_docs) if mixin_docs else 'None'
+        mixin_docs_text = "\n\n".join(mixin_docs) if mixin_docs else "None"
 
         additional_doc = (
             f"This Parameter has been extended by the following ParameterMixins: \n    "
@@ -220,7 +231,9 @@ class ParameterMixin():
         cls.__doc__ = (original_doc.strip() + "\n\n" + additional_doc).strip()
 
     @classmethod
-    def _get_leaf_classes(cls, base_type: Type, exclude_base_type: Optional[Type] = None) -> List[Type]:
+    def _get_leaf_classes(
+        cls, base_type: type, exclude_base_type: Optional[type] = None
+    ) -> list[type]:
         """
         Retrieve all leaf classes in the MRO of cls that are subclasses of base_type,
         excluding first MRO entry and any classes that are subclasses of exclude_base_type.
@@ -235,17 +248,20 @@ class ParameterMixin():
         Returns:
             A list of leaf classes that are subclasses of base_type,
             excluding those that are subclasses of exclude_base_type.
+
         """
         mro = cls.__mro__[1:]
 
         mixin_classes = [
-            base for base in mro
+            base
+            for base in mro
             if issubclass(base, base_type) and base is not base_type
         ]
 
         if exclude_base_type:
             mixin_classes = [
-                base for base in mixin_classes
+                base
+                for base in mixin_classes
                 if not issubclass(base, exclude_base_type)
             ]
 
@@ -259,7 +275,9 @@ class ParameterMixin():
         return leaf_classes
 
     @classmethod
-    def _get_mixin_classes(cls, base_type: Type, exclude_base_type: Optional[Type] = None) -> List[Type]:
+    def _get_mixin_classes(
+        cls, base_type: type, exclude_base_type: Optional[type] = None
+    ) -> list[type]:
         """
         Retrieve all classes in the MRO of cls that are subclasses of base_type,
         excluding any classes that are subclasses of exclude_base_type and the first MRO entry.
@@ -271,19 +289,21 @@ class ParameterMixin():
         Returns:
             A list of classes that are subclasses of base_type,
             excluding those that are subclasses of exclude_base_type.
+
         """
         mro = cls.__mro__[1:]
 
         mixin_classes = [
-            base for base in mro
+            base
+            for base in mro
             if issubclass(base, base_type) and base is not base_type
         ]
 
         if exclude_base_type:
             mixin_classes = [
-                base for base in mixin_classes
+                base
+                for base in mixin_classes
                 if not issubclass(base, exclude_base_type)
             ]
 
         return mixin_classes
-

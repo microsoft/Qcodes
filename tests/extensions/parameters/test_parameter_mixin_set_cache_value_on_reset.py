@@ -1,16 +1,20 @@
+from typing import Any
+
 import pytest
-from typing import Any, List, Tuple, Dict
+
 from qcodes.instrument import Instrument
 from qcodes.parameters import Parameter, SetCacheValueOnResetParameterMixin
 from qcodes.utils import QCoDeSDeprecationWarning
+
 
 class MockResetInstrument(Instrument):
     """
     A mock instrument that records calls to perform_reset.
     """
+
     def __init__(self, name: str):
         super().__init__(name)
-        self.reset_call_args: List[Tuple[Tuple[Any, ...], Dict[str, Any]]] = []
+        self.reset_call_args: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
 
     def perform_reset(self, *args: Any, **kwargs: Any):
         self.reset_call_args.append((args, kwargs))
@@ -21,7 +25,9 @@ class ResetTestParameter(SetCacheValueOnResetParameterMixin, Parameter):
     """
     A parameter resetting its cache value on instrument reset.
     """
+
     pass
+
 
 @pytest.fixture
 def store():
@@ -52,7 +58,7 @@ def test_cache_resets_to_value(store, reset_instr) -> None:
         reset_group_names=["reset_group_general"],
         cache_value_after_reset=42,
         set_cmd=lambda x: store.update({"reset_param": x}),
-        docstring="A parameter that resets its cache to 42."
+        docstring="A parameter that resets its cache to 42.",
     )
 
     test_param.set(10)
@@ -62,13 +68,16 @@ def test_cache_resets_to_value(store, reset_instr) -> None:
 
 
 def test_warning_if_cache_value_unset(store, reset_instr) -> None:
-    with pytest.warns(UserWarning, match="cache_value_after_reset for parameter 'test_param' is not set"):
+    with pytest.warns(
+        UserWarning,
+        match="cache_value_after_reset for parameter 'test_param' is not set",
+    ):
         reset_instr.add_parameter(
             name="test_param",
             parameter_class=ResetTestParameter,
             reset_group_names=["reset_group_general"],
             set_cmd=lambda x: store.update({"reset_param_unset": x}),
-            docstring="A parameter with no reset value set."
+            docstring="A parameter with no reset value set.",
         )
 
 
@@ -79,7 +88,7 @@ def test_cache_resets_to_none(store, reset_instr) -> None:
         reset_group_names=["reset_group_general"],
         cache_value_after_reset=None,
         set_cmd=lambda x: store.update({"reset_param_none": x}),
-        docstring="A parameter resetting its cache to None."
+        docstring="A parameter resetting its cache to None.",
     )
 
     test_param.set(25)
@@ -96,15 +105,15 @@ def test_set_parser_with_default_get_parser(store, reset_instr) -> None:
         cache_value_after_reset=10,
         set_cmd=lambda x: store.update({"reset_param_parsers": x}),
         set_parser=lambda v: v * 3,
-        docstring="A parameter with set_parser and default get_parser."
+        docstring="A parameter with set_parser and default get_parser.",
     )
 
     test_param.set(5)
     assert test_param.get() == 5
-    assert test_param.get_raw() == 15    
+    assert test_param.get_raw() == 15
     reset_instr.perform_reset()
     assert test_param.get() == 10
-    assert test_param.get_raw() == 30 
+    assert test_param.get_raw() == 30
 
 
 def test_direct_cache_update_and_reset(store, reset_instr) -> None:
@@ -114,7 +123,7 @@ def test_direct_cache_update_and_reset(store, reset_instr) -> None:
         reset_group_names=["reset_group_general"],
         cache_value_after_reset=50,
         set_cmd=lambda x: store.update({"reset_param_direct": x}),
-        docstring="A parameter testing direct cache update and reset."
+        docstring="A parameter testing direct cache update and reset.",
     )
 
     test_param.set(30)
@@ -127,35 +136,37 @@ def test_direct_cache_update_and_reset(store, reset_instr) -> None:
 def test_error_if_get_cmd_supplied(reset_instr) -> None:
     with pytest.warns(QCoDeSDeprecationWarning, match="does not correctly pass kwargs"):
         # with pytest.raises(KeyError, match="Duplicate parameter name managed_param on instrument"):
-            with pytest.raises(TypeError, match="without 'get_cmd'"):
-                reset_instr.add_parameter(
-                    name="test_param_error",
-                    parameter_class=ResetTestParameter,
-                    reset_group_names=["reset_group_general"],
-                    cache_value_after_reset=42,
-                    set_cmd=lambda x: None,
-                    get_cmd=lambda: 100,
-                    docstring="A parameter incorrectly supplying get_cmd."
-                )
+        with pytest.raises(TypeError, match="without 'get_cmd'"):
+            reset_instr.add_parameter(
+                name="test_param_error",
+                parameter_class=ResetTestParameter,
+                reset_group_names=["reset_group_general"],
+                cache_value_after_reset=42,
+                set_cmd=lambda x: None,
+                get_cmd=lambda: 100,
+                docstring="A parameter incorrectly supplying get_cmd.",
+            )
 
 
 def test_error_if_get_parser_supplied(reset_instr) -> None:
     with pytest.warns(QCoDeSDeprecationWarning, match="does not correctly pass kwargs"):
         # with pytest.raises(KeyError, match="Duplicate parameter name managed_param on instrument"):
-            with pytest.raises(TypeError, match="Supplying 'get_parser' is not allowed"):
-                reset_instr.add_parameter(
-                    name="test_param_get_parser_error",
-                    parameter_class=ResetTestParameter,
-                    reset_group_names=["reset_group_general"],
-                    cache_value_after_reset=42,
-                    set_cmd=lambda x: None,
-                    get_parser=lambda x: x + 1,
-                    docstring="A parameter incorrectly supplying get_parser."
-                )
+        with pytest.raises(TypeError, match="Supplying 'get_parser' is not allowed"):
+            reset_instr.add_parameter(
+                name="test_param_get_parser_error",
+                parameter_class=ResetTestParameter,
+                reset_group_names=["reset_group_general"],
+                cache_value_after_reset=42,
+                set_cmd=lambda x: None,
+                get_parser=lambda x: x + 1,
+                docstring="A parameter incorrectly supplying get_parser.",
+            )
 
 
 def test_warning_no_callbacks_for_group() -> None:
-    with pytest.warns(UserWarning, match="No callbacks registered for reset group 'empty_group'"):
+    with pytest.warns(
+        UserWarning, match="No callbacks registered for reset group 'empty_group'"
+    ):
         SetCacheValueOnResetParameterMixin.reset_group("empty_group")
 
 
@@ -170,8 +181,12 @@ def test_multiple_callbacks_in_group(store, reset_instr) -> None:
         call_order.append("callback_two")
         store.update({"callback_two": True})
 
-    SetCacheValueOnResetParameterMixin.register_reset_callback("multi_callback_group", callback_one)
-    SetCacheValueOnResetParameterMixin.register_reset_callback("multi_callback_group", callback_two)
+    SetCacheValueOnResetParameterMixin.register_reset_callback(
+        "multi_callback_group", callback_one
+    )
+    SetCacheValueOnResetParameterMixin.register_reset_callback(
+        "multi_callback_group", callback_two
+    )
 
     SetCacheValueOnResetParameterMixin.reset_group("multi_callback_group")
     assert call_order == ["callback_one", "callback_two"]
@@ -186,7 +201,7 @@ def test_parameter_in_multiple_reset_groups(store, reset_instr) -> None:
         reset_group_names=["reset_group_general", "group_b"],
         cache_value_after_reset=100,
         set_cmd=lambda x: store.update({"multi_group_param": x}),
-        docstring="A parameter in multiple reset groups."
+        docstring="A parameter in multiple reset groups.",
     )
 
     test_param.set(50)
@@ -207,8 +222,12 @@ def test_callback_execution_order(reset_instr) -> None:
     def second_callback():
         execution_sequence.append("second")
 
-    SetCacheValueOnResetParameterMixin.register_reset_callback("order_group", first_callback)
-    SetCacheValueOnResetParameterMixin.register_reset_callback("order_group", second_callback)
+    SetCacheValueOnResetParameterMixin.register_reset_callback(
+        "order_group", first_callback
+    )
+    SetCacheValueOnResetParameterMixin.register_reset_callback(
+        "order_group", second_callback
+    )
 
     SetCacheValueOnResetParameterMixin.reset_group("order_group")
     assert execution_sequence == ["first", "second"]
@@ -224,7 +243,7 @@ def test_get_raw_with_val_mapping(reset_instr) -> None:
         reset_group_names=["reset_group_general"],
         cache_value_after_reset="ASCII",
         val_mapping={"ASCII": "1", "Binary": "2"},
-        set_cmd=lambda x: None
+        set_cmd=lambda x: None,
     )
 
     p.set("Binary")
