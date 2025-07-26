@@ -29,16 +29,16 @@ class ParameterMixin:
     Examples:
         ```python
         class NewFeatureParameterMixin(ParameterMixin):
-            \"""
+            \"\"\"
             Adds NewFeature-related functionality to Parameters.
-            \"""
+            \"\"\"
             _COMPATIBLE_BASES: List[Type[ParameterBase]] = [Parameter]
             _INCOMPATIBLE_BASES: List[Type[ParameterBase]] = []
 
         class ABParameterMixin(AParameterMixin, BParameterMixin):
-            \"""
+            \"\"\"
             Combine A and B ParameterMixin.
-            \"""
+            \"\"\"
             _PARAMETER_MIXIN_CLASSES_COMPATIBLE: Final[bool] = True
             _COMPATIBLE_BASES: List[Type[ParameterBase]] = [Parameter]
             _INCOMPATIBLE_BASES: List[Type[ParameterBase]] = []
