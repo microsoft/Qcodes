@@ -214,3 +214,33 @@ def test_parsers_and_dependency_propagation(store, mock_instr) -> None:
     mock_instr.some_param.set(10)
     assert mock_instr.some_param.get() == 21, "Parser not applied correctly."
     assert mock_instr.managed_param.get() == 999, "Dependency not updated."
+
+
+def test_typeerror_if_dependency_update_method_invalid(mock_instr):
+    param = mock_instr.add_parameter(
+        name="some_param",
+        parameter_class=InterdependentParameter,
+        set_cmd=lambda x: None,
+        get_cmd=lambda: None,
+    )
+    # Assign an invalid value (not callable, not None)
+    with pytest.raises(
+        TypeError, match="dependency_update_method must be callable or None."
+    ):
+        param.dependency_update_method = 123
+
+
+def test_typeerror_if_dependent_on_invalid(mock_instr):
+    param = mock_instr.add_parameter(
+        name="some_param",
+        parameter_class=InterdependentParameter,
+        set_cmd=lambda x: None,
+        get_cmd=lambda: None,
+    )
+    # Assign a non-list
+    with pytest.raises(TypeError, match="dependent_on must be a list of strings."):
+        param.dependent_on = "not_a_list"
+
+    # Assign a list with non-string
+    with pytest.raises(TypeError, match="dependent_on must be a list of strings."):
+        param.dependent_on = [123, None]

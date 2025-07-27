@@ -79,11 +79,24 @@ def test_incorrect_parameter_mixin_naming() -> None:
             ]
 
 
+def test_typeerror_if_multiple_parameterbase_leaves():
+    class FakeParam1(ParameterBase):
+        pass
+
+    class FakeParam2(ParameterBase):
+        pass
+
+    with pytest.raises(TypeError):
+
+        class BadParam(ParameterMixin, FakeParam1, FakeParam2):
+            pass
+
+
 def test_compatible_bases_must_be_list() -> None:
     with pytest.raises(TypeError):
 
         class IncorrectParameterMixin(ParameterMixin):
-            _COMPATIBLE_BASES = CompatibleParameter  # type: ignore[assignment]
+            _COMPATIBLE_BASES = "notalist"  # type: ignore[assignment]
 
 
 def test_incompatible_bases_must_be_list() -> None:
@@ -180,6 +193,57 @@ def test_multiple_parameter_mixins_without_compatibility() -> None:
             ]
 
 
+def test_sets_common_compatible_bases():
+    class BaseA(ParameterBase):
+        pass
+
+    class BaseB(ParameterBase):
+        pass
+
+    class MixinAParameterMixin(ParameterMixin):
+        _COMPATIBLE_BASES: ClassVar[list[type[ParameterBase]]] = [BaseA, BaseB]
+
+    class MixinBParameterMixin(ParameterMixin):
+        _COMPATIBLE_BASES: ClassVar[list[type[ParameterBase]]] = [BaseB]
+
+    class ComboParameterMixin(MixinAParameterMixin, MixinBParameterMixin):
+        _PARAMETER_MIXIN_CLASSES_COMPATIBLE: Final[bool] = True
+
+    assert ComboParameterMixin._COMPATIBLE_BASES == [BaseB]
+
+
+def test_multiple_mixins_no_compatible():
+    class DummyBase(ParameterBase):
+        pass
+
+    class EmptyAParameterMixin(ParameterMixin):
+        _COMPATIBLE_BASES: ClassVar[list[type[ParameterBase]]] = []
+
+    class EmptyBParameterMixin(ParameterMixin):
+        _COMPATIBLE_BASES: ClassVar[list[type[ParameterBase]]] = []
+
+    # No compatible bases for either mixin
+    with pytest.raises(TypeError):
+
+        class ComboParameterMixin(EmptyAParameterMixin, EmptyBParameterMixin):
+            _COMPATIBLE_BASES: ClassVar[list[type[ParameterBase]]] = []
+            _PARAMETER_MIXIN_CLASSES_COMPATIBLE: Final[bool] = True
+
+
+def test_raises_if_incompatible():
+    class BadBase(ParameterBase):
+        pass
+
+    class AParameterMixin(ParameterMixin):
+        _COMPATIBLE_BASES: ClassVar[list[type[ParameterBase]]] = []
+        _INCOMPATIBLE_BASES: ClassVar[list[type[ParameterBase]]] = [BadBase]
+
+    with pytest.raises(TypeError, match="is incompatible with"):
+
+        class Combo(AParameterMixin, BadBase):
+            pass
+
+
 def test_multiple_parameter_mixins_with_compatibility() -> None:
     class ComplexParameterMixin(ParameterMixin):
         _COMPATIBLE_BASES: ClassVar[list[type[ParameterBase]]] = [
@@ -252,6 +316,22 @@ def test_mixing_complex_and_intermediate() -> None:
         pass
 
 
+def test_typeerror_multiple_parameter_mixin_with_parameterbase():
+    class MyBase(ParameterBase):
+        pass
+
+    class MyMixinAParameterMixin(ParameterMixin):
+        _COMPATIBLE_BASES: ClassVar[list[type[ParameterBase]]] = [MyBase]
+
+    class MyMixinBParameterMixin(ParameterMixin):
+        _COMPATIBLE_BASES: ClassVar[list[type[ParameterBase]]] = [MyBase]
+
+    with pytest.raises(TypeError):
+
+        class Combo(MyMixinAParameterMixin, MyMixinBParameterMixin, MyBase):
+            pass
+
+
 #####################################################
 # Tests for _get_leaf_classes and _get_mixin_classes
 #####################################################
@@ -320,3 +400,21 @@ def test_get_mixin_classes() -> None:
 
     assert ParameterBase not in all_mixins
     assert ParameterMixin not in all_mixins
+
+
+def test_leaf_class_detection():
+    class MyBase(ParameterBase):
+        pass
+
+    class MyMixinAParameterMixin(ParameterMixin):
+        _COMPATIBLE_BASES: ClassVar[list[type[ParameterBase]]] = []
+
+    class MyMixinBParameterMixin(MyMixinAParameterMixin):
+        _COMPATIBLE_BASES: ClassVar[list[type[ParameterBase]]] = [MyBase]
+
+    class MyParam(MyMixinBParameterMixin, MyBase):
+        pass
+
+    leafs = MyParam._get_leaf_classes(ParameterMixin, ParameterBase)
+    assert MyMixinBParameterMixin in leafs
+    assert MyMixinAParameterMixin not in leafs

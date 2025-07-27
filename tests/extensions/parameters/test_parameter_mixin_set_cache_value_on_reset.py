@@ -253,3 +253,38 @@ def test_get_raw_with_val_mapping(reset_instr) -> None:
     reset_instr.perform_reset()
     assert p.get() == "ASCII"
     assert p.get_raw() == "1"
+
+
+def test_warning_if_reset_group_names_is_none(store, reset_instr):
+    with pytest.warns(UserWarning, match="No reset_group_name"):
+        reset_instr.add_parameter(
+            name="test_param",
+            parameter_class=ResetTestParameter,
+            cache_value_after_reset=42,
+            reset_group_names=None,
+            set_cmd=lambda x: store.update({"reset_param": x}),
+        )
+
+
+def test_warning_if_reset_group_names_missing(store, reset_instr):
+    with pytest.warns(UserWarning, match="No reset_group_name"):
+        reset_instr.add_parameter(
+            name="test_param",
+            parameter_class=ResetTestParameter,
+            cache_value_after_reset=42,
+            set_cmd=lambda x: store.update({"reset_param": x}),
+        )
+
+
+def test_typeerror_if_reset_group_names_invalid(store, reset_instr):
+    with pytest.warns(QCoDeSDeprecationWarning):
+        with pytest.raises(
+            TypeError, match="reset_group_names must be a list of strings or None"
+        ):
+            reset_instr.add_parameter(
+                name="test_param",
+                parameter_class=ResetTestParameter,
+                cache_value_after_reset=42,
+                reset_group_names=123,
+                set_cmd=lambda x: store.update({"reset_param": x}),
+            )
