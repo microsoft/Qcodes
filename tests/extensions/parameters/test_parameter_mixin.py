@@ -1,8 +1,9 @@
-from typing import ClassVar, Final, type
+from typing import ClassVar, Final
 
 import pytest
 
-from qcodes.parameters import Parameter, ParameterBase, ParameterMixin
+from qcodes.extensions.parameters import ParameterMixin
+from qcodes.parameters import Parameter, ParameterBase
 
 #############################
 # Common Classes for Testing

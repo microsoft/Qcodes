@@ -2,8 +2,9 @@ from typing import Any, cast
 
 import pytest
 
+from qcodes.extensions.parameters import OnCacheChangeParameterMixin
 from qcodes.instrument import Instrument
-from qcodes.parameters import OnCacheChangeParameterMixin, Parameter
+from qcodes.parameters import Parameter
 
 
 class MockInstrument(Instrument):

@@ -2,8 +2,9 @@ from typing import Any, cast
 
 import pytest
 
+from qcodes.extensions.parameters import InterdependentParameterMixin
 from qcodes.instrument import Instrument
-from qcodes.parameters import InterdependentParameterMixin, Parameter
+from qcodes.parameters import Parameter
 from qcodes.utils import QCoDeSDeprecationWarning
 
 

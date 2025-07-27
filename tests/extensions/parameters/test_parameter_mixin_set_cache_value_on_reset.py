@@ -2,8 +2,9 @@ from typing import Any
 
 import pytest
 
+from qcodes.extensions.parameters import SetCacheValueOnResetParameterMixin
 from qcodes.instrument import Instrument
-from qcodes.parameters import Parameter, SetCacheValueOnResetParameterMixin
+from qcodes.parameters import Parameter
 from qcodes.utils import QCoDeSDeprecationWarning
 
 
