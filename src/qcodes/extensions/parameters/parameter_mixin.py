@@ -52,20 +52,10 @@ class ParameterMixin:
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
 
-        if not (issubclass(cls, ParameterBase) or issubclass(cls, ParameterMixin)):
-            raise TypeError(
-                f"Class {cls.__name__} must inherit from ParameterBase or "
-                f"ParameterMixin."
-            )
-
-        if "_COMPATIBLE_BASES" in cls.__dict__:
-            cls._COMPATIBLE_BASES = list(cls._COMPATIBLE_BASES)
-        else:
+        if "_COMPATIBLE_BASES" not in cls.__dict__:
             cls._COMPATIBLE_BASES = []
 
-        if "_INCOMPATIBLE_BASES" in cls.__dict__:
-            cls._INCOMPATIBLE_BASES = list(cls._INCOMPATIBLE_BASES)
-        else:
+        if "_INCOMPATIBLE_BASES" not in cls.__dict__:
             cls._INCOMPATIBLE_BASES = []
 
         applied_mixin_leaf_list = cls._get_leaf_classes(
@@ -141,12 +131,9 @@ class ParameterMixin:
                         if hasattr(aml, "_COMPATIBLE_BASES")
                     ]
 
-                    if all_compatible_bases_sets:
-                        common_compatible_bases = list(
-                            set.intersection(*all_compatible_bases_sets)
-                        )
-                    else:
-                        common_compatible_bases = []
+                    common_compatible_bases = list(
+                        set.intersection(*all_compatible_bases_sets)
+                    )
 
                     if not common_compatible_bases:
                         raise TypeError(
