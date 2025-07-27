@@ -19,7 +19,7 @@ class MockResetInstrument(Instrument):
 
     def perform_reset(self, *args: Any, **kwargs: Any):
         self.reset_call_args.append((args, kwargs))
-        SetCacheValueOnResetParameterMixin.reset_group("reset_group_general")
+        SetCacheValueOnResetParameterMixin.trigger_group("reset_group_general")
 
 
 class ResetTestParameter(SetCacheValueOnResetParameterMixin, Parameter):
@@ -49,14 +49,14 @@ def reset_instr():
 
 @pytest.fixture(autouse=True)
 def clear_reset_registry():
-    SetCacheValueOnResetParameterMixin._reset_group_registry.clear()
+    SetCacheValueOnResetParameterMixin._group_registry.clear()
 
 
 def test_cache_resets_to_value(store, reset_instr) -> None:
     test_param: ResetTestParameter = reset_instr.add_parameter(
         name="test_param",
         parameter_class=ResetTestParameter,
-        reset_group_names=["reset_group_general"],
+        group_names=["reset_group_general"],
         cache_value_after_reset=42,
         set_cmd=lambda x: store.update({"reset_param": x}),
         docstring="A parameter that resets its cache to 42.",
@@ -76,7 +76,7 @@ def test_warning_if_cache_value_unset(store, reset_instr) -> None:
         reset_instr.add_parameter(
             name="test_param",
             parameter_class=ResetTestParameter,
-            reset_group_names=["reset_group_general"],
+            group_names=["reset_group_general"],
             set_cmd=lambda x: store.update({"reset_param_unset": x}),
             docstring="A parameter with no reset value set.",
         )
@@ -86,7 +86,7 @@ def test_cache_resets_to_none(store, reset_instr) -> None:
     test_param: ResetTestParameter = reset_instr.add_parameter(
         name="test_param_none",
         parameter_class=ResetTestParameter,
-        reset_group_names=["reset_group_general"],
+        group_names=["reset_group_general"],
         cache_value_after_reset=None,
         set_cmd=lambda x: store.update({"reset_param_none": x}),
         docstring="A parameter resetting its cache to None.",
@@ -102,7 +102,7 @@ def test_set_parser_with_default_get_parser(store, reset_instr) -> None:
     test_param: ResetTestParameter = reset_instr.add_parameter(
         name="test_param",
         parameter_class=ResetTestParameter,
-        reset_group_names=["reset_group_general"],
+        group_names=["reset_group_general"],
         cache_value_after_reset=10,
         set_cmd=lambda x: store.update({"reset_param_parsers": x}),
         set_parser=lambda v: v * 3,
@@ -121,7 +121,7 @@ def test_direct_cache_update_and_reset(store, reset_instr) -> None:
     test_param: ResetTestParameter = reset_instr.add_parameter(
         name="test_param",
         parameter_class=ResetTestParameter,
-        reset_group_names=["reset_group_general"],
+        group_names=["reset_group_general"],
         cache_value_after_reset=50,
         set_cmd=lambda x: store.update({"reset_param_direct": x}),
         docstring="A parameter testing direct cache update and reset.",
@@ -141,7 +141,7 @@ def test_error_if_get_cmd_supplied(reset_instr) -> None:
             reset_instr.add_parameter(
                 name="test_param_error",
                 parameter_class=ResetTestParameter,
-                reset_group_names=["reset_group_general"],
+                group_names=["reset_group_general"],
                 cache_value_after_reset=42,
                 set_cmd=lambda x: None,
                 get_cmd=lambda: 100,
@@ -156,7 +156,7 @@ def test_error_if_get_parser_supplied(reset_instr) -> None:
             reset_instr.add_parameter(
                 name="test_param_get_parser_error",
                 parameter_class=ResetTestParameter,
-                reset_group_names=["reset_group_general"],
+                group_names=["reset_group_general"],
                 cache_value_after_reset=42,
                 set_cmd=lambda x: None,
                 get_parser=lambda x: x + 1,
@@ -164,42 +164,11 @@ def test_error_if_get_parser_supplied(reset_instr) -> None:
             )
 
 
-def test_warning_no_callbacks_for_group() -> None:
-    with pytest.warns(
-        UserWarning, match="No callbacks registered for reset group 'empty_group'"
-    ):
-        SetCacheValueOnResetParameterMixin.reset_group("empty_group")
-
-
-def test_multiple_callbacks_in_group(store, reset_instr) -> None:
-    call_order = []
-
-    def callback_one():
-        call_order.append("callback_one")
-        store.update({"callback_one": True})
-
-    def callback_two():
-        call_order.append("callback_two")
-        store.update({"callback_two": True})
-
-    SetCacheValueOnResetParameterMixin.register_reset_callback(
-        "multi_callback_group", callback_one
-    )
-    SetCacheValueOnResetParameterMixin.register_reset_callback(
-        "multi_callback_group", callback_two
-    )
-
-    SetCacheValueOnResetParameterMixin.reset_group("multi_callback_group")
-    assert call_order == ["callback_one", "callback_two"]
-    assert store["callback_one"] is True
-    assert store["callback_two"] is True
-
-
 def test_parameter_in_multiple_reset_groups(store, reset_instr) -> None:
     test_param: ResetTestParameter = reset_instr.add_parameter(
         name="test_param",
         parameter_class=ResetTestParameter,
-        reset_group_names=["reset_group_general", "group_b"],
+        group_names=["reset_group_general", "group_b"],
         cache_value_after_reset=100,
         set_cmd=lambda x: store.update({"multi_group_param": x}),
         docstring="A parameter in multiple reset groups.",
@@ -210,28 +179,8 @@ def test_parameter_in_multiple_reset_groups(store, reset_instr) -> None:
     assert test_param.get() == 100
 
     test_param.set(75)
-    SetCacheValueOnResetParameterMixin.reset_group("group_b")
+    SetCacheValueOnResetParameterMixin.trigger_group("group_b")
     assert test_param.get() == 100
-
-
-def test_callback_execution_order(reset_instr) -> None:
-    execution_sequence = []
-
-    def first_callback():
-        execution_sequence.append("first")
-
-    def second_callback():
-        execution_sequence.append("second")
-
-    SetCacheValueOnResetParameterMixin.register_reset_callback(
-        "order_group", first_callback
-    )
-    SetCacheValueOnResetParameterMixin.register_reset_callback(
-        "order_group", second_callback
-    )
-
-    SetCacheValueOnResetParameterMixin.reset_group("order_group")
-    assert execution_sequence == ["first", "second"]
 
 
 def test_get_raw_with_val_mapping(reset_instr) -> None:
@@ -241,7 +190,7 @@ def test_get_raw_with_val_mapping(reset_instr) -> None:
     p = reset_instr.add_parameter(
         name="valmap_param",
         parameter_class=MyParam,
-        reset_group_names=["reset_group_general"],
+        group_names=["reset_group_general"],
         cache_value_after_reset="ASCII",
         val_mapping={"ASCII": "1", "Binary": "2"},
         set_cmd=lambda x: None,
@@ -255,19 +204,19 @@ def test_get_raw_with_val_mapping(reset_instr) -> None:
     assert p.get_raw() == "1"
 
 
-def test_warning_if_reset_group_names_is_none(store, reset_instr):
-    with pytest.warns(UserWarning, match="No reset_group_name"):
+def test_warning_if_group_names_is_none(store, reset_instr):
+    with pytest.warns(UserWarning, match="No group_name"):
         reset_instr.add_parameter(
             name="test_param",
             parameter_class=ResetTestParameter,
             cache_value_after_reset=42,
-            reset_group_names=None,
+            group_names=None,
             set_cmd=lambda x: store.update({"reset_param": x}),
         )
 
 
-def test_warning_if_reset_group_names_missing(store, reset_instr):
-    with pytest.warns(UserWarning, match="No reset_group_name"):
+def test_warning_if_group_names_missing(store, reset_instr):
+    with pytest.warns(UserWarning, match="No group_name"):
         reset_instr.add_parameter(
             name="test_param",
             parameter_class=ResetTestParameter,
@@ -276,15 +225,15 @@ def test_warning_if_reset_group_names_missing(store, reset_instr):
         )
 
 
-def test_typeerror_if_reset_group_names_invalid(store, reset_instr):
+def test_typeerror_if_group_names_invalid(store, reset_instr):
     with pytest.warns(QCoDeSDeprecationWarning):
         with pytest.raises(
-            TypeError, match="reset_group_names must be a list of strings or None"
+            TypeError, match="group_names must be a list of strings or None"
         ):
             reset_instr.add_parameter(
                 name="test_param",
                 parameter_class=ResetTestParameter,
                 cache_value_after_reset=42,
-                reset_group_names=123,
+                group_names=123,
                 set_cmd=lambda x: store.update({"reset_param": x}),
             )
