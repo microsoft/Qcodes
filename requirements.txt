@@ -46,7 +46,7 @@ colorama==0.4.6
     #   pytest
     #   sphinx
     #   tqdm
-comm==0.2.2
+comm==0.2.3
     # via
     #   ipykernel
     #   ipywidgets
