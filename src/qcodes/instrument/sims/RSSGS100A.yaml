@@ -201,6 +201,14 @@ devices:
         setter:
           q: "SOUR:IQ:IMP:QUAD {:.2f}"
 
+      operation_mode:
+        default: "NORMal"
+        getter:
+          q: ":SOUR:OPMode?"
+          r: "{}"
+        setter:
+          q: ":SOUR:OPMode {}"
+
 resources:
   GPIB::1::INSTR:
     device: SGS100A
