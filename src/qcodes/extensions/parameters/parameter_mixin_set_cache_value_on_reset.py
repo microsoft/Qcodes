@@ -14,7 +14,7 @@ accordingly.
 
 import logging
 import warnings
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, cast
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from qcodes.parameters import Parameter, ParameterBase
 
@@ -43,33 +43,33 @@ class SetCacheValueOnResetParameterMixin(GroupRegistryParameterMixin):
     - If a `set_parser` is provided, a synthetic `get_parser` is automatically created
       to return the current cached value. This ensures that `get()` still returns the expected value.
 
-    Parameters
-    ----------
+    Parameters:
+    -----------
     cache_value_after_reset : Any, optional
         Value that the parameter's cache will be reset to when the group is triggered.
 
     Attributes:
-    ----------
+    -----------
     cache_value_after_reset : Optional[Any]
         Value used to update the cache after reset.
     group_names : list[str]
         Names of the reset groups this parameter participates in.
 
     Raises:
-    ------
+    -------
     TypeError
         If `get_cmd` is provided.
         If `get_parser` is supplied.
 
     Notes:
-    -----
+    ------
     - Relies on `GroupRegistryParameterMixin` to register `reset_cache_value` with one or more groups.
     - Triggering a group will invoke **all** registered callbacks; choose group names carefully.
     - A warning is issued if `cache_value_after_reset` is not provided.
     - If no `group_names` are specified, the callback is still registered but may not be triggered.
 
     See Also:
-    --------
+    ---------
     GroupRegistryParameterMixin
         Provides group registration and event triggering infrastructure.
 
@@ -85,10 +85,10 @@ class SetCacheValueOnResetParameterMixin(GroupRegistryParameterMixin):
     def __init__(
         self,
         *args: Any,
-        cache_value_after_reset: Optional[Any] = _UNSET,
+        cache_value_after_reset: Any | None = _UNSET,
         **kwargs: Any,
     ) -> None:
-        self.cache_value_after_reset: Optional[Any] = kwargs.pop(
+        self.cache_value_after_reset: Any | None = kwargs.pop(
             "cache_value_after_reset", cache_value_after_reset
         )
 

@@ -60,13 +60,13 @@ class OnCacheChangeParameterMixin(ParameterMixin):
     propagate changes to dependent systems.
 
     Attributes:
-    ----------
+    -----------
     on_cache_change : Optional[OnCacheChangeCallback]
         A callable that is invoked when the cached value changes.
         It receives old and new values (raw and transformed) as keyword arguments.
 
     Notes:
-    -----
+    ------
     - The callback is triggered only if either the raw or transformed value changes.
     - This mixin modifies the internal `_update_with` method of the parameter's cache.
 
@@ -80,7 +80,7 @@ class OnCacheChangeParameterMixin(ParameterMixin):
     def __init__(
         self,
         *args: Any,
-        on_cache_change: Optional[OnCacheChangeCallback] = None,
+        on_cache_change: OnCacheChangeCallback | None = None,
         **kwargs: Any,
     ) -> None:
         self.on_cache_change = kwargs.pop("on_cache_change", on_cache_change)
@@ -88,7 +88,7 @@ class OnCacheChangeParameterMixin(ParameterMixin):
         self._wrap_cache_update_method()
 
     @property
-    def on_cache_change(self) -> Optional[OnCacheChangeCallback]:
+    def on_cache_change(self) -> OnCacheChangeCallback | None:
         """
         Get the on_cache_change callback.
 
@@ -99,7 +99,7 @@ class OnCacheChangeParameterMixin(ParameterMixin):
         return self._on_cache_change_callback
 
     @on_cache_change.setter
-    def on_cache_change(self, callback: Optional[OnCacheChangeCallback]) -> None:
+    def on_cache_change(self, callback: OnCacheChangeCallback | None) -> None:
         """
         Set the on_cache_change callback.
 

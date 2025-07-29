@@ -39,7 +39,7 @@ class InterdependentParameterMixin(OnCacheChangeParameterMixin):
     parameter reacts—whether adjusting metadata or triggering re-evaluation.
 
     Attributes:
-    ----------
+    -----------
     dependency_update_method : Optional[Callable[..., Any]]
         User-provided function called when a dependency changes. Used to
         update metadata or internal state. Optional.
@@ -48,7 +48,7 @@ class InterdependentParameterMixin(OnCacheChangeParameterMixin):
         Names of other parameters this one depends on. They must use this mixin.
 
     Notes:
-    -----
+    ------
     - ``get()`` is called automatically on dependents after updates.
     - Parameters listed in ``dependent_on`` must already be added to the instrument.
 
@@ -63,7 +63,7 @@ class InterdependentParameterMixin(OnCacheChangeParameterMixin):
         self,
         *args: Any,
         dependency_update_method: Optional["Callable[..., Any]"] = None,
-        dependent_on: Optional[list[str]] = [],
+        dependent_on: list[str] | None = [],
         **kwargs: Any,
     ) -> None:
         self.dependency_update_method = kwargs.pop(
@@ -116,7 +116,7 @@ class InterdependentParameterMixin(OnCacheChangeParameterMixin):
         return self._dependent_on
 
     @dependent_on.setter
-    def dependent_on(self, dependencies: Optional[list[str]]) -> None:
+    def dependent_on(self, dependencies: list[str] | None) -> None:
         """
         Set the list of dependent parameter names.
 
