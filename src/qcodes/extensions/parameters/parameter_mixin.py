@@ -1,3 +1,25 @@
+"""
+Provides the `ParameterMixin` base class, which allows modular extensions for
+QCoDeS parameter classes in a structured way.
+
+Key Features:
+-------------
+- Ensures naming consistency via enforced naming conventions (e.g., class names must end with "ParameterMixin").
+- Provides a framework for checking compatibility between mixins and parameter base classes.
+- Supports multiple mixin composition when explicitly marked as compatible.
+- Logs warnings or raises errors for invalid mixin combinations or unsupported base classes.
+
+Intended Usage:
+---------------
+This module is intended to be subclassed to create mixins that encapsulate
+additional behavior for QCoDeS parameters.
+
+See Also:
+---------
+- Other mixins in the `qcodes.extensions.parameters` module
+
+"""
+
 import logging
 import warnings
 from typing import Any, ClassVar, Optional
@@ -12,37 +34,38 @@ class ParameterMixin:
     A mixin for extending QCoDeS Parameters with additional functionalities.
 
     This mixin enforces naming conventions and verifies compatibility with
-    `ParameterBase` subclasses. The class name must end with "ParameterMixin".
-    If multiple mixins are combined, declare `_PARAMETER_MIXIN_CLASSES_COMPATIBLE`
-    as True. Each mixin should define a `_COMPATIBLE_BASES` to specify which
-    `ParameterBase` subclasses it can extend. If no explicit compatibility
-    is declared, warnings are issued. Explicit incompatibilities raise errors.
+    subclasses of `ParameterBase`. The class name must end with ``ParameterMixin``.
+
+    If multiple mixins are combined, set the class attribute
+    ``_PARAMETER_MIXIN_CLASSES_COMPATIBLE = True`` to indicate compatibility.
+
+    Each mixin should define:
+
+    - ``_COMPATIBLE_BASES``: A list of `ParameterBase` subclasses it supports.
+    - ``_INCOMPATIBLE_BASES``: A list of `ParameterBase` subclasses it should not be used with.
+
+    If compatibility is not explicitly defined, warnings are issued.
+    If an incompatibility is declared, an error is raised.
 
     Attributes:
-        _COMPATIBLE_BASES (List[Type[ParameterBase]]):
-            List of supported `ParameterBase` subclasses.
-        _INCOMPATIBLE_BASES (List[Type[ParameterBase]]):
-            List of explicitly incompatible `ParameterBase` subclasses.
-        _PARAMETER_MIXIN_CLASSES_COMPATIBLE (bool):
-            Indicates if multiple ParameterMixin classes can safely combine.
+        _COMPATIBLE_BASES (List[type[ParameterBase]]): List of compatible ParameterBase subclasses.
+        _INCOMPATIBLE_BASES (List[type[ParameterBase]]): List of explicitly incompatible base classes.
+        _PARAMETER_MIXIN_CLASSES_COMPATIBLE (bool): Set to True if this mixin can be combined with others.
 
     Examples:
-        ```python
+
+    .. code-block:: python
+
         class NewFeatureParameterMixin(ParameterMixin):
-            \"\"\"
-            Adds NewFeature-related functionality to Parameters.
-            \"\"\"
-            _COMPATIBLE_BASES: List[Type[ParameterBase]] = [Parameter]
-            _INCOMPATIBLE_BASES: List[Type[ParameterBase]] = []
+            # Adds NewFeature-related functionality to Parameters.
+            _COMPATIBLE_BASES = [Parameter]
+            _INCOMPATIBLE_BASES = []
 
         class ABParameterMixin(AParameterMixin, BParameterMixin):
-            \"\"\"
-            Combine A and B ParameterMixin.
-            \"\"\"
-            _PARAMETER_MIXIN_CLASSES_COMPATIBLE: Final[bool] = True
-            _COMPATIBLE_BASES: List[Type[ParameterBase]] = [Parameter]
-            _INCOMPATIBLE_BASES: List[Type[ParameterBase]] = []
-        ```
+            # Combines A and B ParameterMixins.
+            _PARAMETER_MIXIN_CLASSES_COMPATIBLE = True
+            _COMPATIBLE_BASES = [Parameter]
+            _INCOMPATIBLE_BASES = []
 
     """
 

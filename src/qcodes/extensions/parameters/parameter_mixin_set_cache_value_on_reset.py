@@ -1,3 +1,17 @@
+"""
+Provides `SetCacheValueOnResetParameterMixin`, a mixin that ensures QCoDeS parameters
+maintain a correct cache value after a group-triggered event such as an instrument reset.
+
+This is useful for write-only parameters whose values change as a side effect of a reset
+operation and cannot be queried via `get_cmd`. Instead of polling, the value is
+resynchronized based on a predefined fallback and coordinated group events.
+
+Internally, this mixin uses `GroupRegistryParameterMixin` to register callbacks
+for one or more group names. When a group is triggered, it updates the cache value
+accordingly.
+
+"""
+
 import logging
 import warnings
 from typing import TYPE_CHECKING, Any, ClassVar, Optional, cast
@@ -14,52 +28,50 @@ if TYPE_CHECKING:
 
 class SetCacheValueOnResetParameterMixin(GroupRegistryParameterMixin):
     """
-    A mixin that synchronizes a parameter's cache value with the instrument state
-    after a reset operation, by utilizing GroupRegistryParameterMixin.
+    Mixin to update a parameter's cache after a coordinated group-triggered event (e.g., instrument reset).
 
-    Intended for parameters that are only settable (no get_cmd) and whose values
-    change after instrument resets or other operations, this mixin keeps the
-    software cache in sync with the hardware state by updating the parameter cache
-    when a group "reset" is triggered.
+    Intended for write-only parameters (i.e., those without a `get_cmd`), this mixin registers
+    a callback that resets the parameter's cache to a known fallback value when a group is triggered.
 
-    How it works:
-    - Registers the parameter's `reset_cache_value` method to one or more named groups,
-        using `SetCacheValueOnResetParameterMixin.register_group_callback(group_name, ...)`.
-    - To trigger a reset (or any coordinated action), call
-        `SetCacheValueOnResetParameterMixin.trigger_group(group_name)` (or
-        `GroupRegistryParameterMixin.trigger_group(...)`) to invoke **all callbacks registered
-        for that group**.
-    - This enables coordinated resetting of cache values for many parameters at once,
-        **but may also trigger any other actions registered to the same group**.
+    This is especially useful for maintaining software consistency in cases where an instrument
+    may reset its internal state, and the parameter cannot be re-read from hardware.
 
-    Usage pattern:
-    1. Instantiate your parameter with `group_names` and `cache_value_after_reset`.
-    2. When you want to trigger a "reset", call:
-            SetCacheValueOnResetParameterMixin.trigger_group("my_group")
-        or
-            GroupRegistryParameterMixin.trigger_group("my_group")
+    Parser Handling
+    ---------------
+    - `get_cmd` must be omitted or set to False.
+    - Supplying `get_parser` is not allowed and will raise a `TypeError`.
+    - If a `set_parser` is provided, a synthetic `get_parser` is automatically created
+      to return the current cached value. This ensures that `get()` still returns the expected value.
 
-    Rules:
-    - Supplying a `get_parser` is not allowed and will raise a TypeError.
-    - If a `set_parser` is supplied, a default `get_parser` is created to return
-        the cached value, so that the parameter value always reflects the cache state.
-    - If `cache_value_after_reset` was never set, a warning is issued.
-    - If `group_names` is not provided, a warning is issued.
+    Parameters
+    ----------
+    cache_value_after_reset : Any, optional
+        Value that the parameter's cache will be reset to when the group is triggered.
 
     Attributes:
-    cache_value_after_reset: The value to assign to the cache after a group reset.
-    group_names: List of group names in which this parameter participates.
+    ----------
+    cache_value_after_reset : Optional[Any]
+        Value used to update the cache after reset.
+    group_names : list[str]
+        Names of the reset groups this parameter participates in.
 
     Raises:
-    TypeError: If `get_cmd` or `get_parser` is supplied.
-
-    See Also:
-    GroupRegistryParameterMixin: Provides the underlying group/callback registration mechanism.
+    ------
+    TypeError
+        If `get_cmd` is provided.
+        If `get_parser` is supplied.
 
     Notes:
-    - **Triggering a group will execute all callbacks registered for that group,**
-        not just those for resetting cache values. Use unique or well-documented group
-        names to avoid accidental cross-triggering of unrelated logic.
+    -----
+    - Relies on `GroupRegistryParameterMixin` to register `reset_cache_value` with one or more groups.
+    - Triggering a group will invoke **all** registered callbacks; choose group names carefully.
+    - A warning is issued if `cache_value_after_reset` is not provided.
+    - If no `group_names` are specified, the callback is still registered but may not be triggered.
+
+    See Also:
+    --------
+    GroupRegistryParameterMixin
+        Provides group registration and event triggering infrastructure.
 
     """
 
@@ -106,6 +118,10 @@ class SetCacheValueOnResetParameterMixin(GroupRegistryParameterMixin):
 
     def reset_cache_value(self) -> None:
         """
-        The reset method is registered to group(s) and will be called whenever that group is triggered.
+        Update the parameter's cache to `cache_value_after_reset`.
+
+        This method is registered to group(s) during initialization.
+        It is automatically called when the corresponding group is triggered
+        via `trigger_group(...)`.
         """
         cast("ParameterBase", self).cache.set(self.cache_value_after_reset)

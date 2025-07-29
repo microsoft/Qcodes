@@ -1,3 +1,13 @@
+"""
+Provides a mixin that allows QCoDeS parameters to register and respond
+to group-based callbacks. This is useful for coordinated behavior across
+parameters, such as resetting or recalibrating them together.
+
+Classes:
+    - GroupRegistryParameterMixin: Enables registration of parameter callbacks
+      to named groups for coordinated triggering.
+"""
+
 import logging
 import warnings
 from typing import TYPE_CHECKING, Any, ClassVar, Optional
@@ -14,30 +24,32 @@ if TYPE_CHECKING:
 
 class GroupRegistryParameterMixin(ParameterMixin):
     """
-    A mixin that enables parameters to register callbacks to named groups (registries)
-    for coordinated actions across multiple parameters.
+    A mixin that enables parameters to register callbacks to named groups
+    (registries) for coordinated actions across multiple parameters.
 
     This is useful for triggering parameter-related logic, such as cache resets
-    or recalibration, in a batch when a group event occurs (e.g., instrument reset).
+    or recalibration, in a batch when a group event occurs (e.g., an instrument reset).
 
     Parameters can register their methods to one or more named groups.
     When a group is triggered, all registered callbacks for that group are executed.
 
-    Usage:
-        - Register a callback to a group:
-            GroupRegistryParameterMixin.register_group_callback(group_name, callback)
-        - Trigger a group:
-            GroupRegistryParameterMixin.trigger_group(group_name)
+    Usage Examples:
+        Register a callback to a group:
+            GroupRegistryParameterMixin.register_group_callback("my_group", callback)
+
+        Trigger all callbacks for a group:
+            GroupRegistryParameterMixin.trigger_group("my_group")
 
     Attributes:
-        _group_registry: Class-level registry mapping group names to callback lists.
+        _group_registry (dict[str, list[Callable]]): Class-level registry mapping
+            group names to lists of callback functions.
 
     Raises:
         TypeError: If group names are not a list of strings.
 
     Note:
         This mixin is intended as a reusable mechanism for grouping parameter actions,
-        and can be subclassed to provide specific group-based logic.
+        and can be subclassed to implement group-based logic in specific use cases.
 
     """
 

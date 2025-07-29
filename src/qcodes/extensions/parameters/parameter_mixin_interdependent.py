@@ -1,3 +1,15 @@
+"""
+Provides `InterdependentParameterMixin`, a QCoDeS mixin that enables one parameter
+to react to changes in other parameters it depends on.
+
+This is useful when parameter metadata (e.g., unit, label, validator) must be kept
+in sync with the state of other parameters. The dependency mechanism is triggered
+via the cache change system provided by `OnCacheChangeParameterMixin`.
+
+Typical usage involves defining dependencies by name and providing a callable
+to update internal state when those dependencies change.
+"""
+
 import logging
 from typing import TYPE_CHECKING, Any, ClassVar, Optional, cast
 
@@ -13,20 +25,32 @@ if TYPE_CHECKING:
 
 class InterdependentParameterMixin(OnCacheChangeParameterMixin):
     """
-    Mixin for handling interdependent parameters in instruments.
+    Mixin to define dependencies between QCoDeS parameters.
 
-    Instruments often have parameters that depend on others, such as
-    when a parameter's unit or valid values change based on another
-    parameter's value. This mixin manages these dependencies, ensuring
-    that the software model stays synchronized with the instrument by
-    automatically updating dependent parameters when necessary.
-    Dependent referenced in dependent_on must also use this mixin.
+    Allows a parameter to respond dynamically when other parameters change,
+    e.g., updating its label, unit, or validator when dependent values change.
+
+    Dependencies are declared via ``dependent_on`` (a list of parameter names).
+    These referenced parameters must also use this mixin. On cache changes,
+    they notify dependents via `OnCacheChangeParameterMixin`.
+
+    A user-defined ``dependency_update_method`` is called to apply custom logic
+    when dependencies change. This callable gives full control over how the
+    parameter reacts—whether adjusting metadata or triggering re-evaluation.
 
     Attributes:
-        dependency_update_method (Optional[Callable[..., Any]]):
-            Callable to update parameter attributes based on dependencies.
-        dependent_on (List[str]):
-            Names of parameters this parameter depends on.
+    ----------
+    dependency_update_method : Optional[Callable[..., Any]]
+        User-provided function called when a dependency changes. Used to
+        update metadata or internal state. Optional.
+
+    dependent_on : list[str]
+        Names of other parameters this one depends on. They must use this mixin.
+
+    Notes:
+    -----
+    - ``get()`` is called automatically on dependents after updates.
+    - Parameters listed in ``dependent_on`` must already be added to the instrument.
 
     """
 

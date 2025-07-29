@@ -1,3 +1,14 @@
+"""
+Provides `OnCacheChangeParameterMixin`, a mixin that adds support for reacting
+to parameter cache updates in QCoDeS.
+
+When the cached value of a parameter changes, a user-defined callback
+(`on_cache_change`) can be triggered to execute custom logic..
+
+This mechanism is implemented by wrapping the parameter's internal cache
+update logic and detecting changes.
+"""
+
 import logging
 from functools import wraps
 from typing import TYPE_CHECKING, Any, ClassVar, Optional, Protocol, cast
@@ -14,9 +25,21 @@ if TYPE_CHECKING:
 
 class OnCacheChangeCallback(Protocol):
     """
-    Protocol defining the callback signature for cache changes.
+    Protocol defining the signature for `on_cache_change` callbacks.
 
-    The callback is invoked when the parameter's cache value changes.
+    The callback receives both raw and transformed old/new values.
+    This interface allows users to react to changes in cached state.
+
+    Parameters
+    ----------
+    value_old : Any
+        Previous transformed value.
+    value_new : Any
+        New transformed value.
+    raw_value_old : Any
+        Previous raw value.
+    raw_value_new : Any
+        New raw value.
     """
 
     def __call__(
@@ -27,10 +50,25 @@ class OnCacheChangeCallback(Protocol):
 
 class OnCacheChangeParameterMixin(ParameterMixin):
     """
-    A mixin that adds on_cache_change functionality to QCoDeS Parameters.
+    ParameterMixin to react to parameter cache changes via a user-defined callback.
+
+    This mixin monitors updates to the cached value of a parameter.
+    If a change is detected (in the transformed or raw value), a user-defined
+    `on_cache_change` callback is invoked.
+
+    This is useful when parameters need to trigger external actions or
+    propagate changes to dependent systems.
 
     Attributes:
-        on_cache_change: Optional callback invoked when the cached value changes.
+    ----------
+    on_cache_change : Optional[OnCacheChangeCallback]
+        A callable that is invoked when the cached value changes.
+        It receives old and new values (raw and transformed) as keyword arguments.
+
+    Notes:
+    -----
+    - The callback is triggered only if either the raw or transformed value changes.
+    - This mixin modifies the internal `_update_with` method of the parameter's cache.
 
     """
 
