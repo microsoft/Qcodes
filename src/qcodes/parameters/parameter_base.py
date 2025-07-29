@@ -235,7 +235,11 @@ class ParameterBase(MetadatableWithName):
         self._snapshot_value = snapshot_value
         self.snapshot_exclude = snapshot_exclude
         self.on_set_callback = on_set_callback
-        self._component_of: tuple[ParameterBase, ...] = ()
+
+        self._depends_on: set[ParameterBase] = set()
+        self._has_control_of: set[ParameterBase] = set()
+        self._is_controlled_by: set[ParameterBase] = set()
+
         if not isinstance(vals, (Validator, type(None))):
             raise TypeError("vals must be None or a Validator")
         elif val_mapping is not None:
@@ -1165,21 +1169,18 @@ class ParameterBase(MetadatableWithName):
         )
 
     @property
-    def depends_on(self) -> tuple[ParameterBase, ...]:
-        return ()
+    def depends_on(self) -> set[ParameterBase]:
+        return self._depends_on
+
+    # TODO: Decide if this should return a frozenset to make it somewhat harder to mutate accidentally
+    @property
+    def has_control_of(self) -> set[ParameterBase]:
+        return self._has_control_of
 
     @property
-    def inferred_from(self) -> tuple[ParameterBase, ...]:
-        return ()
-
-    @property
-    def component_of(self) -> tuple[ParameterBase, ...]:
-        return self._component_of
-
-    def add_component_of(self, parameter: ParameterBase) -> None:
-        mutable_components_of = set(self._component_of)
-        mutable_components_of.add(parameter)
-        self._component_of = tuple(mutable_components_of)
+    def is_controlled_by(self) -> set[ParameterBase]:
+        # This is equivalent to the "inferred_from" relationship
+        return self.is_controlled_by
 
 
 class GetLatest(DelegateAttributes):

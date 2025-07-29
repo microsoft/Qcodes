@@ -946,7 +946,7 @@ class Measurement:
         )
 
         inference_parameters = list(
-            chain.from_iterable((parameters_from_basis, parameter.inferred_from))
+            chain.from_iterable((parameters_from_basis, parameter.is_controlled_by))
         )
 
         # Combine str-based paramspecs and Parameter paramspecs
@@ -981,10 +981,10 @@ class Measurement:
         log.info(f"Registered {parameter.register_name} in the Measurement.")
 
         # And now recursively register all interdependent parameters of this parameter as well
-        # This step includes "component_of" which is the reverse-direction of inferrred_from
+        # This step includes "has_control_of" which is the reverse-direction of "is_controlled_by"/"inferred_from"
         for interdependent_parameter in list(
             chain.from_iterable(
-                (dependent_parameters, inference_parameters, parameter.component_of)
+                (dependent_parameters, inference_parameters, parameter.has_control_of)
             )
         ):
             if interdependent_parameter not in self._registered_parameters:
