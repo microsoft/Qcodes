@@ -128,7 +128,7 @@ class DataSaver:
         for link in self._dataset.parent_dataset_links:
             self.parent_datasets.append(load_by_guid(link.tail))
 
-    def add_result(self, *res_tuple: ResType) -> None:
+    def add_result(self, *result_tuples: ResType) -> None:
         """
         Add a result to the measurement results. Represents a measurement
         point in the space of measurement parameters, e.g. in an experiment
@@ -144,10 +144,10 @@ class DataSaver:
         of this class.
 
         Args:
-            res_tuple: A tuple with the first element being the parameter name
-                and the second element is the corresponding value(s) at this
-                measurement point. The function takes as many tuples as there
-                are results.
+            result_tuples: One or more result tuples with the first element
+                being the parameter name and the second element is the
+                corresponding value(s) at this measurement point. The function
+                takes as many tuples as there are results.
 
         Raises:
             ValueError: If a parameter name is not registered in the parent
@@ -169,10 +169,10 @@ class DataSaver:
         results_dict: dict[ParamSpecBase, npt.NDArray] = {}
 
         parameter_names = tuple(
-            partial_result[0].register_name
-            if isinstance(partial_result[0], ParameterBase)
-            else partial_result[0]
-            for partial_result in res_tuple
+            result_tuple[0].register_name
+            if isinstance(result_tuple[0], ParameterBase)
+            else result_tuple[0]
+            for result_tuple in result_tuples
         )
         if len(set(parameter_names)) != len(parameter_names):
             non_unique = [
@@ -185,9 +185,9 @@ class DataSaver:
                 f"Got multiple values for {non_unique}"
             )
 
-        for partial_result in res_tuple:
-            parameter = partial_result[0]
-            data = partial_result[1]
+        for result_tuple in result_tuples:
+            parameter = result_tuple[0]
+            data = result_tuple[1]
 
             if isinstance(parameter, ParameterBase) and isinstance(
                 parameter.vals, vals.Arrays
@@ -208,17 +208,17 @@ class DataSaver:
                     )
 
             if isinstance(parameter, ArrayParameter):
-                results_dict.update(self._unpack_arrayparameter(partial_result))
+                results_dict.update(self._unpack_arrayparameter(result_tuple))
             elif isinstance(parameter, MultiParameter):
-                results_dict.update(self._unpack_multiparameter(partial_result))
+                results_dict.update(self._unpack_multiparameter(result_tuple))
             elif isinstance(parameter, ParameterWithSetpoints):
                 results_dict.update(
                     self._conditionally_expand_parameter_with_setpoints(
-                        data, parameter, parameter_names, partial_result
+                        data, parameter, parameter_names, result_tuple
                     )
                 )
             else:
-                results_dict.update(self._unpack_partial_result(partial_result))
+                results_dict.update(self._unpack_partial_result(result_tuple))
 
         self._validate_result_deps(results_dict)
         self._validate_result_shapes(results_dict)
