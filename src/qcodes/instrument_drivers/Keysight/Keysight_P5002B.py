@@ -9,6 +9,11 @@ if TYPE_CHECKING:
 
 
 class KeysightP5002B(N52xx.KeysightPNAxBase):
+    """
+    Driver for the Keysight P5004B Network Analyzer. See: https://www.keysight.com/us/en/assets/3121-1235/data-sheets/Streamline-Series-Vector-Network-Analyzer-B-models.pdf for datasheet.
+    Power range is -100 dBm to +20 dBm (see "Table 22. Power Resolution, Maximum/minimum Settable Power" on page 23 of the datasheet).
+    Frequency range is 9 kHz to 9 GHz (see https://www.keysight.com/us/en/product/P5002B/streamline-vector-network-analyzer-9-khz-to-9-ghz-2-port.html )
+    """
     def __init__(
         self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
     ):
