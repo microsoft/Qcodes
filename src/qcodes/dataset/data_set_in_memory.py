@@ -279,6 +279,16 @@ class DataSetInMem(BaseDataSet):
                     data = data[0]
                 metadata[str(key)] = data
 
+            completed_timestamp_raw = getattr(
+                loaded_data, "completed_timestamp_raw", None
+            )
+            if completed_timestamp_raw is not None:
+                completed_timestamp_raw = float(completed_timestamp_raw)
+
+            run_timestamp_raw = getattr(loaded_data, "run_timestamp_raw", None)
+            if run_timestamp_raw is not None:
+                run_timestamp_raw = float(run_timestamp_raw)
+
             ds = cls(
                 run_id=run_id,
                 captured_run_id=int(loaded_data.captured_run_id),
@@ -290,8 +300,8 @@ class DataSetInMem(BaseDataSet):
                 sample_name=loaded_data.sample_name,
                 guid=loaded_data.guid,
                 path_to_db=path_to_db,
-                run_timestamp_raw=float(loaded_data.run_timestamp_raw),
-                completed_timestamp_raw=float(loaded_data.completed_timestamp_raw),
+                run_timestamp_raw=run_timestamp_raw,
+                completed_timestamp_raw=completed_timestamp_raw,
                 metadata=metadata,
                 rundescriber=serial.from_json_to_current(loaded_data.run_description),
                 parent_dataset_links=parent_dataset_links,
@@ -658,12 +668,24 @@ class DataSetInMem(BaseDataSet):
         self._raise_if_not_writable()
         interdeps = self._rundescriber.interdeps
 
-        toplevel_params = set(interdeps.dependencies).intersection(set(result_dict))
+        result_parameters = set(result_dict.keys())
+        toplevel_params = set(interdeps.top_level_parameters).intersection(
+            result_parameters
+        )
         new_results: dict[str, dict[str, npt.NDArray]] = {}
+
+        unused_results = result_parameters.copy()
+
         for toplevel_param in toplevel_params:
-            inff_params = set(interdeps.inferences.get(toplevel_param, ()))
-            deps_params = set(interdeps.dependencies.get(toplevel_param, ()))
-            all_params = inff_params.union(deps_params).union({toplevel_param})
+            # Transitively collect all parameters that are related to any parameter
+            # in the current tree, including parameters that dependencies are inferred from
+            all_params = interdeps.find_all_parameters_in_tree(toplevel_param)
+            # Only include parameters that are present in result_dict
+            # we keep track of results unused in any tree and raise a warning at the end
+            # if there are any
+            all_params = all_params.intersection(result_dict.keys())
+
+            unused_results = unused_results.difference(all_params)
 
             new_results[toplevel_param.name] = {}
             new_results[toplevel_param.name][toplevel_param.name] = (
@@ -677,15 +699,12 @@ class DataSetInMem(BaseDataSet):
                         self._reshape_array_for_cache(param, result_dict[param])
                     )
 
-        # Finally, handle standalone parameters
-
-        standalones = set(interdeps.standalones).intersection(set(result_dict))
-
-        if standalones:
-            for st in standalones:
-                new_results[st.name] = {
-                    st.name: self._reshape_array_for_cache(st, result_dict[st])
-                }
+        if len(unused_results) > 0:
+            log.warning(
+                f"Results for parameters {unused_results} were not added to the "
+                "DataSet because they are not part of the interdependencies. "
+                "This will be an error in a future version of QCoDeS. "
+            )
 
         self.cache.add_data(new_results)
 

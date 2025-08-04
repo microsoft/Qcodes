@@ -331,13 +331,13 @@ def test_get_parameter_data(scalar_dataset) -> None:
 
 
 def test_get_parameter_data_independent_parameters(
-    standalone_parameters_dataset,
+    standalone_parameters_dataset: DataSet,
 ) -> None:
     ds = standalone_parameters_dataset
 
-    paramspecs = ds.description.interdeps.non_dependencies
-    params = [ps.name for ps in paramspecs]
-    expected_toplevel_params = ["param_1", "param_2", "param_3"]
+    paramspecs = ds.description.interdeps.top_level_parameters
+    params = {ps.name for ps in paramspecs}
+    expected_toplevel_params = {"param_1", "param_2", "param_3"}
     assert params == expected_toplevel_params
 
     data = mut_queries.get_parameter_data(ds.conn, ds.table_name)

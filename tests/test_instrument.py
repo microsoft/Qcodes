@@ -30,7 +30,6 @@ from qcodes.instrument_drivers.mock_instruments import (
 )
 from qcodes.metadatable import Metadatable
 from qcodes.parameters import Function, Parameter
-from qcodes.utils import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -274,7 +273,7 @@ def test_add_remove_f_p(testdummy) -> None:
 
     # test custom __get_attr__ for functions
     with pytest.warns(
-        QCoDeSDeprecationWarning,
+        PendingDeprecationWarning,
         match="Use attributes directly on the instrument object instead",
     ):
         fcn = testdummy["function"]
@@ -282,7 +281,7 @@ def test_add_remove_f_p(testdummy) -> None:
     # by design, one gets the parameter if a function exists
     # and has same name
     with pytest.warns(
-        QCoDeSDeprecationWarning,
+        PendingDeprecationWarning,
         match="Use attributes directly on the instrument object instead",
     ):
         dac1 = testdummy["dac1"]

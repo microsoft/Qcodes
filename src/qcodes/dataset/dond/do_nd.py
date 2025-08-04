@@ -815,11 +815,10 @@ def dond(
                         for act in set_event.actions:
                             act()
                         time.sleep(set_event.delay)
+                        if set_event.get_after_set:
+                            set_event.new_value = set_event.parameter()
 
-                    if set_event.get_after_set:
-                        results[set_event.parameter] = set_event.parameter()
-                    else:
-                        results[set_event.parameter] = set_event.new_value
+                    results[set_event.parameter] = set_event.new_value
 
                 meas_value_pair = call_params_meas()
                 for meas_param, value in meas_value_pair:

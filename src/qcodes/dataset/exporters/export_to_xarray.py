@@ -79,7 +79,9 @@ def _load_to_xarray_dataarray_dict_no_metadata(
     data_xrdarray_dict: dict[str, xr.DataArray] = {}
 
     for name, subdict in datadict.items():
-        index = _generate_pandas_index(subdict)
+        index = _generate_pandas_index(
+            subdict, dataset.description.interdeps, top_level_param_name=name
+        )
 
         if index is None:
             xrdarray: xr.DataArray = (

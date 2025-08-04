@@ -52,17 +52,17 @@ comm==0.2.2
     #   ipywidgets
 contourpy==1.3.2
     # via matplotlib
-coverage==7.9.2
+coverage==7.10.0
     # via
     #   qcodes (pyproject.toml)
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2025.5.1
+dask==2025.7.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-debugpy==1.8.14
+debugpy==1.8.15
     # via ipykernel
 decorator==5.2.1
     # via ipython
@@ -81,11 +81,11 @@ executing==2.2.0
     # via stack-data
 fastjsonschema==2.21.1
     # via nbformat
-fonttools==4.58.5
+fonttools==4.59.0
     # via matplotlib
-fsspec==2025.5.1
+fsspec==2025.7.0
     # via dask
-furo==2024.8.6
+furo==2025.7.19
     # via qcodes (pyproject.toml)
 h5netcdf==1.6.3
     # via
@@ -100,7 +100,7 @@ h5py==3.14.0
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.135.29
+hypothesis==6.136.4
     # via qcodes (pyproject.toml)
 idna==3.10
     # via requests
@@ -110,7 +110,7 @@ importlib-metadata==8.7.0
     # via opentelemetry-api
 iniconfig==2.1.0
     # via pytest
-ipykernel==6.29.5
+ipykernel==6.30.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -140,7 +140,7 @@ jsonpointer==3.0.0
     # via sphinx-jsonschema
 jsonref==1.1.0
     # via zhinst-toolkit
-jsonschema==4.24.0
+jsonschema==4.25.0
     # via
     #   qcodes (pyproject.toml)
     #   nbformat
@@ -191,7 +191,7 @@ matplotlib-inline==0.1.7
     #   ipython
 mistune==3.1.3
     # via nbconvert
-mypy==1.16.1
+mypy==1.17.0
     # via qcodes (pyproject.toml)
 mypy-extensions==1.1.0
     # via mypy
@@ -208,7 +208,7 @@ nbsphinx==0.9.6
     # via qcodes (pyproject.toml)
 nest-asyncio==1.6.0
     # via ipykernel
-numpy==2.3.1
+numpy==2.3.2
     # via
     #   qcodes (pyproject.toml)
     #   broadbean
@@ -281,7 +281,7 @@ psutil==7.0.0
     # via ipykernel
 pure-eval==0.2.3
     # via stack-data
-pyarrow==20.0.0
+pyarrow==21.0.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -305,7 +305,7 @@ pytest==8.4.1
     #   pytest-mock
     #   pytest-rerunfailures
     #   pytest-xdist
-pytest-asyncio==1.0.0
+pytest-asyncio==1.1.0
     # via qcodes (pyproject.toml)
 pytest-cov==6.2.1
     # via qcodes (pyproject.toml)
@@ -329,7 +329,7 @@ pyvisa==1.15.0
     #   qcodes
 pyvisa-sim==0.7.0
     # via qcodes (pyproject.toml)
-pywin32==310; sys_platform == 'win32'
+pywin32==311; sys_platform == 'win32'
     # via jupyter-core
 pyyaml==6.0.2
     # via
@@ -451,11 +451,11 @@ traitlets==5.14.3
     #   nbconvert
     #   nbformat
     #   nbsphinx
-types-jsonschema==4.24.0.20250708
+types-jsonschema==4.25.0.20250720
     # via qcodes (pyproject.toml)
 types-pytz==2025.2.0.20250516
     # via pandas-stubs
-types-pywin32==310.0.0.20250516
+types-pywin32==311.0.0.20250723
     # via qcodes (pyproject.toml)
 types-requests==2.32.4.20250611
     # via
