@@ -83,7 +83,7 @@ class ParamSpecBase:
             f"'{self.unit}')"
         )
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, ParamSpecBase):
             return False
         attrs = ["name", "type", "label", "unit"]
@@ -216,7 +216,7 @@ class ParamSpec(ParamSpecBase):
             f"depends_on={self._depends_on})"
         )
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, ParamSpec):
             return False
         string_attrs = ["name", "type", "label", "unit"]

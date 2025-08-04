@@ -146,9 +146,9 @@ class KeysightB1500(VisaInstrument):
     # FMT1,0: ASCII (12 digits data with header) <CR/LF^EOI>
 
     def _find_modules(self) -> None:
-        from .constants import UNT
-
-        r = self.ask(MessageBuilder().unt_query(mode=UNT.Mode.MODULE_INFO_ONLY).message)
+        r = self.ask(
+            MessageBuilder().unt_query(mode=constants.UNT.Mode.MODULE_INFO_ONLY).message
+        )
 
         slot_population = parse_module_query_response(r)
 
@@ -552,7 +552,7 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
         channels = measurement_mode["channels"]
 
         if names is None:
-            names = [f"param{n+1}" for n in range(len(channels))]
+            names = [f"param{n + 1}" for n in range(len(channels))]
             if labels is None:
                 labels = [f"Param{n + 1} Current" for n in range(len(channels))]
 
@@ -582,7 +582,7 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
         self.units = tuple(units)
 
         for n in range(len(channels)):
-            setattr(self, f"param{n+1}", _FMTResponse(None, None, None, None))
+            setattr(self, f"param{n + 1}", _FMTResponse(None, None, None, None))
 
         self.shapes = ((1,),) * len(self.names)
 
@@ -696,7 +696,7 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
 
             # Store the results to `.param#` attributes for convenient access
             # to all the data, e.g. status of each value in the arrays
-            setattr(self, f"param{channel_index+1}", single_channel_data)
+            setattr(self, f"param{channel_index + 1}", single_channel_data)
 
         channel_values_to_return = tuple(
             getattr(self, f"param{n + 1}").value for n in range(n_channels)

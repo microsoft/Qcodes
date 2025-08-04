@@ -380,7 +380,9 @@ def array_in_str_dataset(experiment, request: FixtureRequest):
 
 
 @pytest.fixture
-def some_paramspecbases():
+def some_paramspecbases() -> tuple[
+    ParamSpecBase, ParamSpecBase, ParamSpecBase, ParamSpecBase
+]:
     psb1 = ParamSpecBase("psb1", paramtype="text", label="blah", unit="")
     psb2 = ParamSpecBase("psb2", paramtype="array", label="", unit="V")
     psb3 = ParamSpecBase("psb3", paramtype="array", label="", unit="V")
@@ -729,6 +731,7 @@ class ArrayshapedParam(Parameter):
 
     def get_raw(self):
         assert isinstance(self.vals, Arrays)
+        assert self.vals.shape is not None
         shape = self.vals.shape
 
         return np.random.rand(*shape)

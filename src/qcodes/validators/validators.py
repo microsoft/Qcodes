@@ -9,9 +9,10 @@ import math
 import typing
 from collections import abc
 from collections.abc import Hashable
-from typing import Any, Generic, Literal, TypeVar, cast
+from typing import Any, Generic, Literal, TypeVar, cast, get_args
 
 import numpy as np
+import numpy.typing as npt
 
 BIGSTRING = 1000000000
 BIGINT = int(1e18)
@@ -474,7 +475,7 @@ class Enum(Validator[Hashable]):
     """
 
     def __init__(self, *values: Hashable | None) -> None:
-        if not len(values):
+        if not len(values) > 0:
             raise TypeError("Enum needs at least one value")
 
         self._values = set(values)
@@ -500,6 +501,56 @@ class Enum(Validator[Hashable]):
         return self._values.copy()
 
 
+class LiteralValidator(Validator[T]):
+    """
+
+    A validator that allows users to check that values supplied are in set of members
+    of some typing.Literal.
+
+
+    .. code-block:: python
+
+        from typing import Literal
+
+        A123 = Literal[1,2,3]
+        A123Val = LiteralValidator[A123]
+        a123 = A123()
+
+        a123().validate(1)  # pass
+
+        a123().validate(5)  # fails
+        a123().validate("some_str") # fails
+
+    """
+
+    def __init__(self) -> None:
+        self._orig_class = getattr(self, "__orig_class__", None)
+
+    @property
+    def valid_values(self) -> tuple[Any, ...]:
+        # self__orig_class__ is available when init is executed so
+        # looking up the concrete type of T has to be postponed to here
+        orig_class = getattr(self, "__orig_class__", None)
+
+        if orig_class is None:
+            raise TypeError(
+                "Cannot find valid literal members for Validator."
+                " Did you remember to instantiate as `LiteralValidator[SomeLiteralType]()"
+            )
+
+        valid_args = get_args(get_args(orig_class)[0])
+        return valid_args
+
+    def validate(self, value: T, context: str = "") -> None:
+        if value not in self.valid_values:
+            raise ValueError(
+                f"{value} is not a member of {self.valid_values}; {context}"
+            )
+
+    def __repr__(self) -> str:
+        return f"<Literal{list(self.valid_values)}>"
+
+
 class OnOff(Validator[str]):
     """
     Requires either the string 'on' or 'off'.
@@ -507,7 +558,7 @@ class OnOff(Validator[str]):
 
     def __init__(self) -> None:
         self._validator = Enum("on", "off")
-        self._valid_values = cast(tuple[str, ...], self._validator._valid_values)
+        self._valid_values = cast("tuple[str, ...]", self._validator._valid_values)
 
     def validate(self, value: str, context: str = "") -> None:
         self._validator.validate(value, context)
@@ -792,7 +843,7 @@ class MultiTypeAnd(MultiType):
         return "<MultiTypeAnd: {}>".format(", ".join(parts))
 
 
-class Arrays(Validator[np.ndarray]):
+class Arrays(Validator[npt.NDArray]):
     """
     Validator for numerical numpy arrays of numeric types (int, float, complex).
     By default it validates int and float arrays.
@@ -915,7 +966,7 @@ class Arrays(Validator[np.ndarray]):
             self._shape = tuple(shape)
 
     @property
-    def valid_values(self) -> tuple[np.ndarray]:
+    def valid_values(self) -> tuple[npt.NDArray]:
         valid_type = self.valid_types[0]
         if valid_type == np.integer:
             valid_type = np.int32
@@ -927,7 +978,7 @@ class Arrays(Validator[np.ndarray]):
         if self.shape is None:
             return (np.array([self._min_value], dtype=valid_type),)
         else:
-            val_arr: np.ndarray = np.empty(self.shape, dtype=valid_type)
+            val_arr: npt.NDArray = np.empty(self.shape, dtype=valid_type)
             val_arr.fill(self._min_value)
             return (val_arr,)
 
@@ -948,7 +999,7 @@ class Arrays(Validator[np.ndarray]):
         shape = tuple(shape_array)
         return shape
 
-    def validate(self, value: np.ndarray, context: str = "") -> None:
+    def validate(self, value: npt.NDArray, context: str = "") -> None:
         if not isinstance(value, np.ndarray):
             raise TypeError(f"{value!r} is not a numpy array; {context}")
 

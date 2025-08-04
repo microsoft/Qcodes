@@ -7,7 +7,7 @@ from qcodes.validators import Anything, Enum, Ints, MultiType, Numbers
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    import numpy as np
+    import numpy.typing as npt
     from typing_extensions import Unpack
 
     from qcodes.parameters import Parameter
@@ -745,7 +745,7 @@ class RigolDG4000(VisaInstrument):
 
         self.connect_message()
 
-    def _upload_data(self, data: "Sequence[float] | np.ndarray") -> None:
+    def _upload_data(self, data: "Sequence[float] | npt.NDArray") -> None:
         """
         Upload data to the AWG memory.
 

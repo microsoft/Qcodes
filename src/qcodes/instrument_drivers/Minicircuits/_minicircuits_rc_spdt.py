@@ -46,7 +46,7 @@ class MiniCircuitsRCSPDTChannel(InstrumentChannel):
         """Parameter switch"""
 
     def _set_switch(self, switch: int) -> None:
-        self.write(f"SET{self.channel_letter}={switch-1}")
+        self.write(f"SET{self.channel_letter}={switch - 1}")
 
     def _get_switch(self) -> int:
         val = int(self.ask("SWPORT?"))

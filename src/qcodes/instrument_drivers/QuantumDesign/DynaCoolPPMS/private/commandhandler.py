@@ -1,7 +1,6 @@
 import logging
-from collections import namedtuple
 from itertools import chain
-from typing import Any, ClassVar
+from typing import Any, ClassVar, NamedTuple
 
 log = logging.getLogger(__name__)
 
@@ -19,7 +18,10 @@ except ImportError as e:
     raise ImportError(message) from e
 
 
-CmdArgs = namedtuple("CmdArgs", "cmd args")
+class CmdArgs(NamedTuple):
+    cmd: Any
+    args: list[Any]
+
 
 # The length of a command header, aka a command keyword
 # Every command sent from the driver via the server must have a

@@ -5,6 +5,7 @@ from numbers import Integral
 from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 
 from qcodes.parameters import (
     ArrayParameter,
@@ -53,9 +54,9 @@ def detect_shape_of_measurement(
         if isinstance(param, MultiParameter):
             array_shapes.update(_get_shapes_of_multi_parameter(param=param))
         elif _param_is_array_like(param):
-            array_shapes[param.full_name] = _get_shape_of_arrayparam(param)
+            array_shapes[param.register_name] = _get_shape_of_arrayparam(param)
         else:
-            array_shapes[param.full_name] = ()
+            array_shapes[param.register_name] = ()
 
     shapes: dict[str, tuple[int, ...]] = {}
 
@@ -68,7 +69,7 @@ def detect_shape_of_measurement(
     return shapes
 
 
-def _get_shape_of_step(step: int | np.integer[Any] | Sized | np.ndarray) -> int:
+def _get_shape_of_step(step: int | np.integer[Any] | Sized | npt.NDArray) -> int:
     if isinstance(step, Integral):
         return int(step)
     elif isinstance(step, np.ndarray):

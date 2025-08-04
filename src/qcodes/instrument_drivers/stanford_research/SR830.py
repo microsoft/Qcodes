@@ -791,8 +791,7 @@ class SR830(VisaInstrument):
         """
         if not 2 <= len(parameters) <= 6:
             raise KeyError(
-                "It is only possible to request values of 2 to 6 parameters"
-                " at a time."
+                "It is only possible to request values of 2 to 6 parameters at a time."
             )
 
         for name in parameters:
@@ -804,7 +803,7 @@ class SR830(VisaInstrument):
                 )
 
         p_ids = [self.SNAP_PARAMETERS[name.lower()] for name in parameters]
-        output = self.ask(f'SNAP? {",".join(p_ids)}')
+        output = self.ask(f"SNAP? {','.join(p_ids)}")
 
         return tuple(float(val) for val in output.split(","))
 

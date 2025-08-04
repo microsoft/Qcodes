@@ -7,6 +7,7 @@ import sys
 import threading
 from typing import TYPE_CHECKING
 
+import matplotlib
 import pytest
 from hypothesis import settings
 
@@ -41,6 +42,16 @@ def pytest_runtest_setup(item: pytest.Item) -> None:
     supported_platforms = ALL.intersection(mark.name for mark in item.iter_markers())
     if supported_platforms and sys.platform not in supported_platforms:
         pytest.skip(f"cannot run on platform {sys.platform}")
+
+
+@pytest.fixture(scope="session", autouse=True)
+def matplotlib_set_backend() -> None:
+    """
+    Set the matplotlib backend to 'agg' for the test session.
+    This is to avoid issues with GUI backends in headless environments.
+    """
+
+    matplotlib.use("agg")
 
 
 @pytest.fixture(scope="session", autouse=True)

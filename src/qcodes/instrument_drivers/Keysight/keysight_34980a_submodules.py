@@ -1,36 +1,9 @@
 from typing import TYPE_CHECKING
 
-from typing_extensions import deprecated
-
 from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel, VisaInstrument
-from qcodes.utils import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
-
-
-@deprecated("Unused module", category=QCoDeSDeprecationWarning, stacklevel=2)
-class KeysightSubModule(InstrumentChannel):
-    """
-    A base class for submodules for the 34980A systems.
-
-    Args:
-        parent: the system which the module is installed on
-        name: user defined name for the module
-        slot: the slot the module is installed
-
-    """
-
-    def __init__(
-        self,
-        parent: VisaInstrument | InstrumentChannel,
-        name: str,
-        slot: int,
-        **kwargs: "Unpack[InstrumentBaseKWArgs]",
-    ) -> None:
-        super().__init__(parent, name, **kwargs)
-
-        self.slot = slot
 
 
 class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
@@ -57,7 +30,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
 
     def validate_value(self, row: int, column: int) -> None:
         """
-        to check if the row and column number is within the range of the module
+        To check if the row and column number is within the range of the module
         layout.
 
         Args:
@@ -71,7 +44,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
         self, paths: list[tuple[int, int]], wiring_config: str | None = None
     ) -> str:
         """
-        convert the (row, column) pair to a 4-digit channel number 'sxxx', where
+        Convert the (row, column) pair to a 4-digit channel number 'sxxx', where
         s is the slot number, xxx is generated from the numbering function.
         This may be different for different modules.
 
@@ -90,7 +63,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
 
     def is_open(self, row: int, column: int) -> bool:
         """
-        to check if a channel is open/disconnected
+        To check if a channel is open/disconnected
 
         Args:
             row: row number
@@ -108,7 +81,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
 
     def is_closed(self, row: int, column: int) -> bool:
         """
-        to check if a channel is closed/connected
+        To check if a channel is closed/connected
 
         Args:
             row: row number
@@ -126,7 +99,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
 
     def connect(self, row: int, column: int) -> None:
         """
-        to connect/close the specified channels
+        To connect/close the specified channels
 
         Args:
             row: row number
@@ -139,7 +112,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
 
     def disconnect(self, row: int, column: int) -> None:
         """
-        to disconnect/open the specified channels
+        To disconnect/open the specified channels
 
         Args:
             row: row number
@@ -152,7 +125,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
 
     def connect_paths(self, paths: list[tuple[int, int]]) -> None:
         """
-        to connect/close the specified channels.
+        To connect/close the specified channels.
 
         Args:
             paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3)]
@@ -165,7 +138,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
 
     def disconnect_paths(self, paths: list[tuple[int, int]]) -> None:
         """
-        to disconnect/open the specified channels.
+        To disconnect/open the specified channels.
 
         Args:
             paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3)]
@@ -178,7 +151,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
 
     def are_closed(self, paths: list[tuple[int, int]]) -> list[bool]:
         """
-        to check if a list of channels is closed/connected
+        To check if a list of channels is closed/connected
 
         Args:
             paths: list of channels [(r1, c1), (r2, c2), (r3, c3)]
@@ -197,7 +170,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
 
     def are_open(self, paths: list[tuple[int, int]]) -> list[bool]:
         """
-        to check if a list of channels is open/disconnected
+        To check if a list of channels is open/disconnected
 
         Args:
             paths: list of channels [(r1, c1), (r2, c2), (r3, c3)]
@@ -213,12 +186,3 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
         channel_list_str = self.to_channel_list(paths)
         messages = self.ask(f"ROUTe:OPEN? {channel_list_str}")
         return [bool(int(message)) for message in messages.split(",")]
-
-
-@deprecated(
-    "Use Keysight34980ASwitchMatrixSubModule",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class KeysightSwitchMatrixSubModule(Keysight34980ASwitchMatrixSubModule):
-    pass

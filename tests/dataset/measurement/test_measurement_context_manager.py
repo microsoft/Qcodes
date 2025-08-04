@@ -5,11 +5,13 @@ import os
 import random
 import re
 import traceback
+from functools import reduce
 from time import sleep
 from typing import Any
 
 import hypothesis.strategies as hst
 import numpy as np
+import numpy.typing as npt
 import pytest
 import xarray as xr
 from hypothesis import HealthCheck, given, settings
@@ -24,8 +26,14 @@ from qcodes.dataset.experiment_container import new_experiment
 from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.connection import atomic_transaction
-from qcodes.parameters import ManualParameter, Parameter, expand_setpoints_helper
+from qcodes.parameters import (
+    DelegateParameter,
+    ManualParameter,
+    Parameter,
+    expand_setpoints_helper,
+)
 from qcodes.station import Station
+from qcodes.validators import ComplexNumbers
 from tests.common import retry_until_does_not_throw
 
 
@@ -201,6 +209,65 @@ def test_register_custom_parameter(DAC) -> None:
         )
 
 
+def test_register_delegate_parameters() -> None:
+    x_param = Parameter("x", set_cmd=None, get_cmd=None)
+
+    complex_param = Parameter(
+        "complex_param", get_cmd=None, set_cmd=None, vals=ComplexNumbers()
+    )
+    delegate_param = DelegateParameter("delegate", source=complex_param)
+
+    meas = Measurement()
+
+    meas.register_parameter(x_param)
+    meas.register_parameter(delegate_param, setpoints=(x_param,))
+    assert len(meas.parameters) == 2
+    assert meas.parameters["delegate"].type == "complex"
+    assert meas.parameters["x"].type == "numeric"
+
+
+def test_register_delegate_parameters_with_late_source() -> None:
+    x_param = Parameter("x", set_cmd=None, get_cmd=None)
+
+    complex_param = Parameter(
+        "complex_param", get_cmd=None, set_cmd=None, vals=ComplexNumbers()
+    )
+    delegate_param = DelegateParameter("delegate", source=None)
+
+    meas = Measurement()
+
+    meas.register_parameter(x_param)
+
+    delegate_param.source = complex_param
+
+    meas.register_parameter(delegate_param, setpoints=(x_param,))
+    assert len(meas.parameters) == 2
+    assert meas.parameters["delegate"].type == "complex"
+    assert meas.parameters["x"].type == "numeric"
+
+
+def test_register_delegate_parameters_with_late_source_chain():
+    x_param = Parameter("x", set_cmd=None, get_cmd=None)
+
+    complex_param = Parameter(
+        "complex_param", get_cmd=None, set_cmd=None, vals=ComplexNumbers()
+    )
+    delegate_inner = DelegateParameter("delegate_inner", source=None)
+    delegate_outer = DelegateParameter("delegate_outer", source=None)
+
+    meas = Measurement()
+
+    meas.register_parameter(x_param)
+
+    delegate_outer.source = delegate_inner
+    delegate_inner.source = complex_param
+
+    meas.register_parameter(delegate_outer, setpoints=(x_param,))
+    assert len(meas.parameters) == 2
+    assert meas.parameters["delegate_outer"].type == "complex"
+    assert meas.parameters["x"].type == "numeric"
+
+
 def test_unregister_parameter(DAC, DMM) -> None:
     """
     Test the unregistering of parameters.
@@ -233,7 +300,7 @@ def test_unregister_parameter(DAC, DMM) -> None:
     not_parameters = [DAC, DMM, 0.0, 1]
     for notparam in not_parameters:
         with pytest.raises(ValueError):
-            meas.unregister_parameter(notparam)
+            meas.unregister_parameter(notparam)  # pyright: ignore[reportArgumentType]
 
     # unregistering something not registered should silently "succeed"
     meas.unregister_parameter("totes_not_registered")
@@ -783,8 +850,8 @@ def test_datasaver_arrays_lists_tuples(bg_writing, N) -> None:
 
     # save lists
     with meas.run(write_in_background=bg_writing) as datasaver:
-        freqax2 = list(np.linspace(1e6, 2e6, N))
-        signal2 = list(np.random.randn(N))
+        freqax2 = np.linspace(1e6, 2e6, N).flatten().tolist()
+        signal2 = np.random.randn(N).flatten().tolist()
 
         datasaver.add_result(
             ("freqax", freqax2), ("signal", signal2), ("gate_voltage", 0)
@@ -794,8 +861,8 @@ def test_datasaver_arrays_lists_tuples(bg_writing, N) -> None:
 
     # save tuples
     with meas.run(write_in_background=bg_writing) as datasaver:
-        freqax3 = tuple(np.linspace(1e6, 2e6, N))
-        signal3 = tuple(np.random.randn(N))
+        freqax3 = tuple(np.linspace(1e6, 2e6, N).flatten().tolist())
+        signal3 = tuple(np.random.randn(N).flatten().tolist())
 
         datasaver.add_result(
             ("freqax", freqax3), ("signal", signal3), ("gate_voltage", 0)
@@ -965,7 +1032,7 @@ def test_datasaver_arrayparams(
     SpectrumAnalyzer, DAC, N, M, param_type, storage_type, seed, bg_writing
 ) -> None:
     """
-    test that data is stored correctly for array parameters that
+    Test that data is stored correctly for array parameters that
     return numpy arrays, lists and tuples. Stored both as arrays and
     numeric
     """
@@ -2034,7 +2101,6 @@ def test_datasaver_2d_multi_parameters_array(
     sp_name_2 = "dummy_channel_inst_ChanA_multi_2d_setpoint_param_that_setpoint"
     p_name_1 = "dummy_channel_inst_ChanA_this"
     p_name_2 = "dummy_channel_inst_ChanA_that"
-    from functools import reduce
 
     meas = Measurement()
     param = channel_array_instrument.A.dummy_2d_multi_parameter
@@ -2058,10 +2124,10 @@ def test_datasaver_2d_multi_parameters_array(
     ds = load_by_id(datasaver.run_id)
 
     # 30 points in each setpoint value list
-    this_sp_val: np.ndarray = np.array(
+    this_sp_val: npt.NDArray = np.array(
         reduce(list.__add__, [[n] * 3 for n in range(5, 10)], [])  # type: ignore[arg-type]
     )
-    that_sp_val: np.ndarray = np.array(
+    that_sp_val: npt.NDArray = np.array(
         reduce(list.__add__, [[n] for n in range(9, 12)], []) * 5  # type: ignore[arg-type]
     )
 

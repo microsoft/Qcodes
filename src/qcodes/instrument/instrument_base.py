@@ -18,8 +18,7 @@ from qcodes.utils import DelegateAttributes, full_class
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
-
-    from typing_extensions import NotRequired
+    from typing import NotRequired
 
     from qcodes.instrument.channel import ChannelTuple, InstrumentModule
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
@@ -28,7 +27,10 @@ from qcodes.utils import QCoDeSDeprecationWarning
 
 log = logging.getLogger(__name__)
 
-TParameter = TypeVar("TParameter", bound=ParameterBase, default=Parameter)
+TParameter = TypeVar("TParameter", bound="ParameterBase", default="Parameter")
+TSubmodule = TypeVar(
+    "TSubmodule", bound="InstrumentModule | ChannelTuple", default="InstrumentModule"
+)
 
 
 class InstrumentBaseKWArgs(TypedDict):
@@ -159,12 +161,25 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
                 unit of the new parameter is inconsistent with the existing
                 one.
 
+        Returns:
+            The created Parameter.
+
         """
         if parameter_class is None:
-            parameter_class = cast(type[TParameter], Parameter)
+            parameter_class = cast("type[TParameter]", Parameter)
 
         if "bind_to_instrument" not in kwargs.keys():
             kwargs["bind_to_instrument"] = True
+
+        bind_to_instrument = kwargs["bind_to_instrument"]
+
+        if bind_to_instrument is False:
+            warnings.warn(
+                f"Parameter {name} passed to `add_parameter` "
+                "on instrument {self.full_name} with `bind_to_instrument=False`. "
+                "This is not recommended as it results in inconsistent behavior. "
+                "To disable snapshotting of the parameter set `snapshot_exclude=True`."
+            )
 
         try:
             param = parameter_class(name=name, instrument=self, **kwargs)
@@ -180,7 +195,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
             param = parameter_class(name=name, instrument=self, **kwargs)
 
         existing_parameter = self.parameters.get(name, None)
-        if not existing_parameter:
+        if not existing_parameter and bind_to_instrument:
             warnings.warn(
                 f"Parameter {name} did not correctly register itself on instrument"
                 f" {self.name}. Please check that `instrument` argument is passed "
@@ -253,9 +268,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         func = Function(name=name, instrument=self, **kwargs)
         self.functions[name] = func
 
-    def add_submodule(
-        self, name: str, submodule: InstrumentModule | ChannelTuple
-    ) -> None:
+    def add_submodule(self, name: str, submodule: TSubmodule) -> TSubmodule:
         """
         Bind one submodule to this instrument.
 
@@ -281,6 +294,9 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
             TypeError: If the submodule that we are trying to add is
                 not an instance of an ``Metadatable`` object.
 
+        Returns:
+            The submodule.
+
         """
         if name in self.submodules:
             raise KeyError(f"Duplicate submodule name {name}")
@@ -292,9 +308,12 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
             # this is channel_list like:
             # We cannot check against ChannelsList itself since that
             # would introduce a circular dependency.
-            self._channel_lists[name] = submodule
+            # ignore since mypy's type narrowing is not smart enough to understand
+            # that a TSubmodule that is s Sequence must be a ChannelTuple
+            self._channel_lists[name] = submodule  # type: ignore[assignment]
         else:
             self.instrument_modules[name] = submodule
+        return submodule
 
     def get_component(self, full_name: str) -> MetadatableWithName:
         """
@@ -597,18 +616,6 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         return self.full_name
 
     @property
-    @deprecated(
-        "The private attribute `_name` is deprecated and will be removed. Use `full_name` instead.",
-        category=QCoDeSDeprecationWarning,
-    )
-    def _name(self) -> str:
-        """
-        Private alias kept here for backwards compatibility
-        see https://github.com/zhinst/zhinst-qcodes/issues/27
-        """
-        return self.full_name
-
-    @property
     def short_name(self) -> str:
         """
         Short name of the instrument.
@@ -670,8 +677,10 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
     delegate_attr_dicts: ClassVar[list[str]] = ["parameters", "functions", "submodules"]
 
     @deprecated(
-        "Use attributes directly on the instrument object instead.",
-        category=QCoDeSDeprecationWarning,
+        "Use of `__getitem__` is not recommended for new code. "
+        "Use attributes directly on the instrument object instead. "
+        "There is no plan to remove this functionality, but it is not recommended.",
+        category=PendingDeprecationWarning,
     )
     def __getitem__(self, key: str) -> Callable[..., Any] | Parameter:
         """
@@ -688,8 +697,10 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
             return self.functions[key]
 
     @deprecated(
-        "Call set directly on the parameter.",
-        category=QCoDeSDeprecationWarning,
+        "Use of `set` is not recommended for new code. "
+        "Call set directly on the parameter instead. "
+        "There is no plan to remove this functionality, but it is not recommended for new code.",
+        category=PendingDeprecationWarning,
     )
     def set(self, param_name: str, value: Any) -> None:
         """
@@ -707,8 +718,10 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         self.parameters[param_name].set(value)
 
     @deprecated(
-        "Call get directly on the parameter.",
-        category=QCoDeSDeprecationWarning,
+        "Use of `get` is not recommended for new code. "
+        "Call get directly on the parameter."
+        "There is no plan to remove this functionality, but it is not recommended for new code.",
+        category=PendingDeprecationWarning,
     )
     def get(self, param_name: str) -> Any:
         """
@@ -727,8 +740,10 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         return self.parameters[param_name].get()
 
     @deprecated(
-        "Call the function directly.",
-        category=QCoDeSDeprecationWarning,
+        "Use of `call` is not recommended for new code. "
+        "Call the function directly instead. "
+        "There is no plan to remove this functionality, but it is not recommended for new code.",
+        category=PendingDeprecationWarning,
     )
     def call(self, func_name: str, *args: Any) -> Any:
         """

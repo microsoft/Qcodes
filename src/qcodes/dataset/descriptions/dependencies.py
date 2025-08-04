@@ -6,50 +6,45 @@ which parameters depend on each other is handled here.
 
 from __future__ import annotations
 
+import logging
+from collections import defaultdict
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any
+from itertools import chain, product
+from typing import TYPE_CHECKING, Any, Literal, cast
 
-import numpy as np
+import networkx as nx
+from typing_extensions import deprecated
 
-from .param_spec import ParamSpec, ParamSpecBase
+from qcodes.utils import QCoDeSDeprecationWarning
+
+from .param_spec import ParamSpecBase
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Sequence
 
     from .versioning.rundescribertypes import InterDependencies_Dict
-
+_LOGGER = logging.getLogger(__name__)
 ParamSpecTree = dict[ParamSpecBase, tuple[ParamSpecBase, ...]]
-ParamNameTree = dict[str, tuple[str, ...]]
+ParamNameTree = dict[str, list[str]]
 ErrorTuple = tuple[type[Exception], str]
+_InterDepType = Literal["depends_on", "inferred_from"]
 
 
-class DependencyError(Exception):
-    def __init__(self, param_name: str, missing_params: set[str], *args: Any):
+class IncompleteSubsetError(Exception):
+    def __init__(self, subset_params: set[str], missing_params: set[str], *args: Any):
         super().__init__(*args)
-        self._param_name = param_name
+        self._subset_params = subset_params
         self._missing_params = missing_params
 
     def __str__(self) -> str:
         return (
-            f"{self._param_name} has the following dependencies that are "
+            f"{self._subset_params} is not a complete subset. The following interdependencies are "
             f"missing: {self._missing_params}"
         )
 
 
-class InferenceError(Exception):
-    def __init__(self, param_name: str, missing_params: set[str], *args: Any):
-        super().__init__(*args)
-        self._param_name = param_name
-        self._missing_params = missing_params
-
-    def __str__(self) -> str:
-        return (
-            f"{self._param_name} has the following inferences that are "
-            f"missing: {self._missing_params}"
-        )
-
-
-class InterDependencies_:
+class InterDependencies_:  # noqa: PLW1641
+    # todo: not clear if this should implement __hash__.
     """
     Object containing a group of ParamSpecs and the information about their
     internal relations to each other
@@ -61,166 +56,160 @@ class InterDependencies_:
         inferences: ParamSpecTree | None = None,
         standalones: tuple[ParamSpecBase, ...] = (),
     ):
-        dependencies = dependencies or {}
-        inferences = inferences or {}
+        self._graph: nx.DiGraph[str] = nx.DiGraph()
+        self.add_dependencies(dependencies)
+        self.add_inferences(inferences)
+        self.add_standalones(standalones)
 
-        deps_error = self.validate_paramspectree(dependencies)
-        if deps_error is not None:
-            try:
-                raise deps_error[0](deps_error[1])
-            except Exception as old_error:
-                raise ValueError("Invalid dependencies") from old_error
+    def add_paramspecs(self, paramspecs: Sequence[ParamSpecBase]) -> None:
+        for paramspec in paramspecs:
+            if (
+                paramspec.name in self.graph.nodes
+                and self.graph.nodes[paramspec.name]["value"] != paramspec
+            ):
+                raise ValueError(
+                    f"A ParamSpecBase with name {paramspec.name} already exists in the graph and\n"
+                    f"{paramspec} != {self.graph.nodes[paramspec.name]['value']} "
+                )
+            self._graph.add_node(paramspec.name, value=paramspec)
 
-        inffs_error = self.validate_paramspectree(inferences)
-        if inffs_error is not None:
-            try:
-                raise inffs_error[0](inffs_error[1])
-            except Exception as old_error:
-                raise ValueError("Invalid inferences") from old_error
+    def _add_interdeps_by_type(
+        self,
+        links: Sequence[tuple[ParamSpecBase, ParamSpecBase]],
+        interdep_type: _InterDepType,
+    ) -> None:
+        for link in links:
+            paramspec_from, paramspec_to = link
+            if self._graph.has_edge(paramspec_to.name, paramspec_from.name) or (
+                self._graph.has_edge(paramspec_from.name, paramspec_to.name)
+                and self.graph[paramspec_from.name][paramspec_to.name]["interdep_type"]
+                != interdep_type
+            ):
+                raise ValueError(
+                    f"An edge between {paramspec_from.name} and {paramspec_to.name} already exists. \n"
+                    "The relationship between them is not well-defined"
+                )
+            self._graph.add_edge(
+                paramspec_from.name, paramspec_to.name, interdep_type=interdep_type
+            )
 
-        link_error = self._validate_double_links(dependencies, inferences)
-        if link_error is not None:
-            error, mssg = link_error
-            raise error(mssg)
+    def add_dependencies(self, dependencies: ParamSpecTree | None) -> None:
+        if dependencies is None or dependencies == {}:
+            return
+        self.validate_paramspectree(dependencies, interdep_type="dependencies")
+        self._add_interdeps(dependencies, interdep_type="depends_on")
 
+    def add_inferences(self, inferences: ParamSpecTree | None) -> None:
+        if inferences is None or inferences == {}:
+            return
+        self.validate_paramspectree(inferences, interdep_type="inferences")
+        self._add_interdeps(inferences, interdep_type="inferred_from")
+
+    def add_standalones(self, standalones: tuple[ParamSpecBase, ...]) -> None:
         for ps in standalones:
             if not isinstance(ps, ParamSpecBase):
-                try:
-                    raise TypeError("Standalones must be a sequence of ParamSpecs")
-                except TypeError as base_error:
-                    raise ValueError("Invalid standalones") from base_error
+                raise ValueError("Invalid standalones") from TypeError(
+                    "Standalones must be a sequence of ParamSpecs"
+                )
+        self.add_paramspecs(list(standalones))
 
-        self._remove_duplicates(dependencies)
-        self._remove_duplicates(inferences)
+    def _add_interdeps(
+        self, interdeps: ParamSpecTree, interdep_type: _InterDepType
+    ) -> None:
+        for spec_dep, spec_indeps in interdeps.items():
+            flat_specs = list(chain.from_iterable([(spec_dep,), spec_indeps]))
+            flat_deps = list(product((spec_dep,), spec_indeps))
+            self.add_paramspecs(flat_specs)
+            self._add_interdeps_by_type(flat_deps, interdep_type=interdep_type)
+        self._validate_interdependencies(interdeps)
 
-        self.dependencies: ParamSpecTree = dependencies
-        self.inferences: ParamSpecTree = inferences
-        self.standalones: frozenset[ParamSpecBase] = frozenset(standalones)
+    def _validate_interdependencies(self, interdeps: ParamSpecTree) -> None:
+        self._validate_acyclic(interdeps)
+        self._validate_no_chained_dependencies(interdeps)
 
-        # The object is now complete, but for convenience, we form some more
-        # private attributes for easy look-up
+    def _validate_acyclic(self, interdeps: ParamSpecTree) -> None:
+        if not nx.is_directed_acyclic_graph(self.graph):
+            raise ValueError(
+                f"Adding these interdependencies {interdeps} caused the graph to become cyclic"
+            )
 
-        self._id_to_paramspec: dict[str, ParamSpecBase] = {}
-        for tree in (self.dependencies, self.inferences):
-            for ps, ps_tup in tree.items():
-                self._id_to_paramspec.update({ps.name: ps})
-                self._id_to_paramspec.update({pst.name: pst for pst in ps_tup})
-        for ps in self.standalones:
-            self._id_to_paramspec.update({ps.name: ps})
-        self._paramspec_to_id = {v: k for k, v in self._id_to_paramspec.items()}
+    def _validate_no_chained_dependencies(self, interdeps: ParamSpecTree) -> None:
+        for node, in_degree in self._dependency_subgraph.in_degree:
+            out_degree = self._dependency_subgraph.out_degree(node)
+            assert isinstance(out_degree, int), (
+                "The out_degree method with arguments should have returned an int"
+            )
+            if in_degree > 0 and out_degree > 0:
+                depends_on_nodes = list(self._dependency_subgraph.successors(node))
+                depended_on_nodes = list(self._dependency_subgraph.predecessors(node))
+                raise ValueError(
+                    f"Paramspec {node} both depends on {depends_on_nodes} and is depended upon by {depended_on_nodes} \n"
+                    f"This was caused while adding these interdependencies {interdeps}"
+                )
 
-        self._dependencies_inv: ParamSpecTree = self._invert_tree(self.dependencies)
-        self._inferences_inv: ParamSpecTree = self._invert_tree(self.inferences)
+    @property
+    def _dependency_subgraph(self) -> nx.DiGraph[str]:
+        depends_on_edges = [
+            edge
+            for edge in self.graph.edges
+            if self.graph.edges[edge]["interdep_type"] == "depends_on"
+        ]
+        return cast("nx.DiGraph[str]", self.graph.edge_subgraph(depends_on_edges))
 
-        # Set operations are ~2x (or more) faster on strings than on hashable
-        # ParamSpecBase objects, hence the need for use of the following
-        # representation
-        self._deps_names: ParamNameTree = self._tree_of_names(self.dependencies)
-        self._infs_names: ParamNameTree = self._tree_of_names(self.inferences)
+    @property
+    def _inference_subgraph(self) -> nx.DiGraph[str]:
+        inferred_from_edges = [
+            edge
+            for edge in self.graph.edges
+            if self.graph.edges[edge]["interdep_type"] == "inferred_from"
+        ]
+        return cast("nx.DiGraph[str]", self.graph.edge_subgraph(inferred_from_edges))
 
-    @staticmethod
-    def _tree_of_names(tree: ParamSpecTree) -> ParamNameTree:
+    def extend(
+        self,
+        dependencies: ParamSpecTree | None = None,
+        inferences: ParamSpecTree | None = None,
+        standalones: tuple[ParamSpecBase, ...] = (),
+    ) -> InterDependencies_:
         """
-        Helper function to convert a ParamSpecTree-kind of tree where all
-        ParamSpecBases are substituted with their ``.name`` s.
-        Will turn {A: (B, C)} into {A.name: (B.name, C.name)}
+        Create a new :class:`InterDependencies_` object
+        that is an extension of this instance with the provided input
         """
-        name_tree: ParamNameTree = {}
-        for ps, ps_tuple in tree.items():
-            name_tree[ps.name] = tuple(p.name for p in ps_tuple)
-        return name_tree
+        new_interdependencies = InterDependencies_._from_graph(deepcopy(self.graph))
 
-    @staticmethod
-    def _invert_tree(tree: ParamSpecTree) -> ParamSpecTree:
-        """
-        Helper function to invert a ParamSpecTree. Will turn {A: (B, C)} into
-        {B: (A,), C: (A,)}
-        """
-        indeps: set[ParamSpecBase] = set()
-        for indep_tup in tree.values():
-            indeps.update(indep_tup)
+        new_interdependencies.add_dependencies(dependencies)
+        new_interdependencies.add_inferences(inferences)
+        new_interdependencies.add_standalones(standalones)
+        return new_interdependencies
 
-        inverted: ParamSpecTree = {}
-        for indep in indeps:
-            deps = tuple(ps for ps in tree if indep in tree[ps])
-            inverted[indep] = deps
+    def _paramspec_tree_by_type(self, interdep_type: _InterDepType) -> ParamSpecTree:
+        paramspec_tree_list: dict[ParamSpecBase, list[ParamSpecBase]] = defaultdict(
+            list
+        )
+        for node_from, node_to, edge_data in self.graph.out_edges(data=True):
+            if edge_data["interdep_type"] == interdep_type:
+                paramspec_tree_list[self._node_to_paramspec(node_from)].append(
+                    self._node_to_paramspec(node_to)
+                )
+        return {key: tuple(val) for key, val in paramspec_tree_list.items()}
 
-        return inverted
+    def _node_to_paramspec(self, node_id: str) -> ParamSpecBase:
+        return cast("ParamSpecBase", self.graph.nodes[node_id]["value"])
 
-    @staticmethod
-    def _remove_duplicates(tree: ParamSpecTree) -> None:
-        """
-        Helper function to remove duplicate entries from a ParamSpecTree while
-        preserving order. Will turn {A: (B, B, C)} into {A: (B, C)}
-        """
-        for ps, tup in tree.items():
-            specs: list[ParamSpecBase] = []
-            for p in tup:
-                if p not in specs:
-                    specs.append(p)
-            tree[ps] = tuple(specs)
+    def _paramspec_predecessors_by_type(
+        self, paramspec: ParamSpecBase, interdep_type: _InterDepType
+    ) -> tuple[ParamSpecBase, ...]:
+        return tuple(
+            self._node_to_paramspec(node_from)
+            for node_from, _, edge_data in self.graph.in_edges(
+                paramspec.name, data=True
+            )
+            if edge_data["interdep_type"] == interdep_type
+        )
 
-    @staticmethod
-    def validate_paramspectree(paramspectree: ParamSpecTree) -> ErrorTuple | None:
-        """
-        Validate a ParamSpecTree. Apart from adhering to the type, a
-        ParamSpecTree must not have any cycles.
-
-        Returns:
-            A tuple with an exception type and an error message or None, if
-            the paramtree is valid
-
-        """
-
-        # Validate the type
-
-        if not isinstance(paramspectree, dict):
-            return (TypeError, "ParamSpecTree must be a dict")
-
-        for key, values in paramspectree.items():
-            if not isinstance(key, ParamSpecBase):
-                return (TypeError, "ParamSpecTree must have ParamSpecs as keys")
-            if not isinstance(values, tuple):
-                return (TypeError, "ParamSpecTree must have tuple values")
-            for value in values:
-                if not isinstance(value, ParamSpecBase):
-                    return (
-                        TypeError,
-                        (
-                            "ParamSpecTree can only have tuples of "
-                            "ParamSpecs as values"
-                        ),
-                    )
-
-        # check for cycles
-
-        roots = set(paramspectree.keys())
-        leafs = {ps for tup in paramspectree.values() for ps in tup}
-
-        if roots.intersection(leafs) != set():
-            return (ValueError, "ParamSpecTree can not have cycles")
-
-        return None
-
-    @staticmethod
-    def _validate_double_links(
-        tree1: ParamSpecTree, tree2: ParamSpecTree
-    ) -> ErrorTuple | None:
-        """
-        Validate that two trees do not contain double links. A double link
-        is a link between two nodes that exists in both trees. E.g. if the
-        first tree has {A: (B, C)}, the second may not have {B: (A,)} etc.
-        """
-        for ps, tup in tree1.items():
-            for val in tup:
-                if ps in tree2.get(val, ()):
-                    mssg = (
-                        f"Invalid dependencies/inferences. {ps} and "
-                        f"{val} have an ill-defined relationship."
-                    )
-                    return (ValueError, mssg)
-
-        return None
+    @property
+    def dependencies(self) -> ParamSpecTree:
+        return self._paramspec_tree_by_type("depends_on")
 
     def what_depends_on(self, ps: ParamSpecBase) -> tuple[ParamSpecBase, ...]:
         """
@@ -231,16 +220,14 @@ class InterDependencies_:
             ps: the parameter to look up
 
         Raises:
-            ValueError if the parameter is not part of this object
+            ValueError: If the parameter is not part of this object
 
         """
-        if ps not in self:
-            raise ValueError(f"Unknown parameter: {ps}")
-        return self._dependencies_inv.get(ps, ())
+        return self._paramspec_predecessors_by_type(ps, interdep_type="depends_on")
 
     def what_is_inferred_from(self, ps: ParamSpecBase) -> tuple[ParamSpecBase, ...]:
         """
-        Return a tuple of the parameters thatare inferred from the given
+        Return a tuple of the parameters that are inferred from the given
         parameter. Returns an empty tuple if nothing is inferred from the given
         parameter
 
@@ -248,67 +235,49 @@ class InterDependencies_:
             ps: the parameter to look up
 
         Raises:
-            ValueError if the parameter is not part of this object
+            ValueError: If the parameter is not part of this object
 
         """
-        if ps not in self:
-            raise ValueError(f"Unknown parameter: {ps}")
-        return self._inferences_inv.get(ps, ())
+        return self._paramspec_predecessors_by_type(ps, interdep_type="inferred_from")
 
-    def _to_dict(self) -> InterDependencies_Dict:
-        """
-        Write out this object as a dictionary
-        """
-        parameters = {
-            key: value._to_dict() for key, value in self._id_to_paramspec.items()
-        }
-        dependencies = self._construct_subdict("dependencies")
-        inferences = self._construct_subdict("inferences")
-        standalones = [self._paramspec_to_id[ps] for ps in self.standalones]
-        output: InterDependencies_Dict = {
-            "parameters": parameters,
-            "dependencies": dependencies,
-            "inferences": inferences,
-            "standalones": standalones,
-        }
-        return output
+    @property
+    def inferences(self) -> ParamSpecTree:
+        return self._paramspec_tree_by_type("inferred_from")
 
-    def _empty_data_dict(self) -> dict[str, dict[str, np.ndarray]]:
-        """
-        Create an dictionary with empty numpy arrays as values
-        matching the expected output of ``DataSet``'s ``get_parameter_data`` /
-        ``cache.data`` so that the order of keys in the returned dictionary
-        is the same as the order of parameters in the interdependencies
-        in this class.
-        """
+    @property
+    def standalones(self) -> frozenset[ParamSpecBase]:
+        degree_iterator = self.graph.degree
+        return frozenset(
+            [
+                self._node_to_paramspec(node_id)
+                for node_id, degree in degree_iterator
+                if degree == 0
+            ]
+        )
 
-        output: dict[str, dict[str, np.ndarray]] = {}
-        for dependent, independents in self.dependencies.items():
-            dependent_name = dependent.name
-            output[dependent_name] = {dependent_name: np.array([])}
-            for independent in independents:
-                output[dependent_name][independent.name] = np.array([])
-        for standalone in (ps.name for ps in self.standalones):
-            output[standalone] = {}
-            output[standalone][standalone] = np.array([])
-        return output
-
-    def _construct_subdict(self, treename: str) -> dict[str, Any]:
-        output = {}
-        for key, value in getattr(self, treename).items():
-            ps_id = self._paramspec_to_id[key]
-            ps_ids = [self._paramspec_to_id[ps] for ps in value]
-            output.update({ps_id: ps_ids})
-        return output
+    @property
+    def names(self) -> tuple[str, ...]:
+        """
+        Return all the names of the parameters of this instance
+        """
+        return tuple(self.graph)
 
     @property
     def paramspecs(self) -> tuple[ParamSpecBase, ...]:
         """
         Return the ParamSpecBase objects of this instance
         """
-        return tuple(self._paramspec_to_id.keys())
+        return tuple(
+            cast("ParamSpecBase", paramspec)
+            # The type check for this does not correctly allow the `data` arg to be a string
+            for _, paramspec in self.graph.nodes(data="value")  # pyright: ignore[reportArgumentType]
+        )
 
     @property
+    @deprecated(
+        "non_dependencies returns incorrect results and is deprecated. Use top_level_parameters as an alternative.",
+        category=QCoDeSDeprecationWarning,
+    )
     def non_dependencies(self) -> tuple[ParamSpecBase, ...]:
         """
         Return all parameters that are not dependencies of other parameters,
@@ -322,157 +291,152 @@ class InterDependencies_:
         return non_dependencies_sorted_by_name
 
     @property
-    def names(self) -> tuple[str, ...]:
+    def top_level_parameters(self) -> tuple[ParamSpecBase, ...]:
         """
-        Return all the names of the parameters of this instance
+        Return all parameters that are not dependencies or inferred from other parameters,
+        i.e. return the top level parameters.
+
+        Returns:
+            A tuple of top level parameters sorted by their names.
+
         """
-        return tuple(self._id_to_paramspec.keys())
 
-    def _extend_with_paramspec(self, ps: ParamSpec) -> InterDependencies_:
-        """
-        Create a new InterDependencies_ object extended with the provided
-        ParamSpec. A helper function for DataSet's add_parameter function.
-        Note that this function will only work as expected if the ParamSpecs
-        are extended into the InterDependencies_ in the "logical order", i.e.
-        independent ParamSpecs before dependent ones.
-        """
-        base_ps = ps.base_version()
+        # is is not sufficient to find all parameters with in_degree == 0
+        # since some of the inferred parameters might be included in the dependency tree
+        # of another parameter since we include inferred parameters both ways.
+        # see test_dependency_on_middle_parameter for a test that illustrates this.
+        inference_top_level = {
+            self._node_to_paramspec(node_id)
+            for node_id, in_degree in self._inference_subgraph.in_degree
+            if in_degree == 0
+        }
+        dependency_top_level = {
+            self._node_to_paramspec(node_id)
+            for node_id, in_degree in self._dependency_subgraph.in_degree
+            if in_degree == 0
+        }
+        standalone_top_level = {
+            self._node_to_paramspec(node_id)
+            for node_id, degree in self._graph.degree
+            if degree == 0
+        }
 
-        old_standalones = set(self.standalones.copy())
-        new_standalones: tuple[ParamSpecBase, ...]
-
-        if len(ps.depends_on_) > 0:
-            deps_list = [self._id_to_paramspec[name] for name in ps.depends_on_]
-            new_deps = {base_ps: tuple(deps_list)}
-            old_standalones = old_standalones.difference(set(deps_list))
-        else:
-            new_deps = {}
-
-        if len(ps.inferred_from_) > 0:
-            inffs_list = [self._id_to_paramspec[name] for name in ps.inferred_from_]
-            new_inffs = {base_ps: tuple(inffs_list)}
-            old_standalones = old_standalones.difference(set(inffs_list))
-        else:
-            new_inffs = {}
-
-        if new_deps == new_inffs == {}:
-            new_standalones = (base_ps,)
-        else:
-            old_standalones = old_standalones.difference({base_ps})
-            new_standalones = ()
-
-        new_deps.update(self.dependencies.copy())
-        new_inffs.update(self.inferences.copy())
-        new_standalones = tuple(list(new_standalones) + list(old_standalones))
-
-        new_idps = InterDependencies_(
-            dependencies=new_deps, inferences=new_inffs, standalones=new_standalones
+        all_paramspecs_in_dependency_tree = set(
+            chain.from_iterable(
+                [self.find_all_parameters_in_tree(ps) for ps in dependency_top_level]
+            )
         )
 
-        return new_idps
-
-    def extend(
-        self,
-        dependencies: ParamSpecTree | None = None,
-        inferences: ParamSpecTree | None = None,
-        standalones: tuple[ParamSpecBase, ...] = (),
-    ) -> InterDependencies_:
-        """
-        Create a new :class:`InterDependencies_` object
-        that is an extension of this instance with the provided input
-        """
-
-        dependencies = {} if dependencies is None else dependencies
-        inferences = {} if inferences is None else inferences
-
-        # first step: remove parameters from standalones if they no longer
-        # stand alone
-
-        depended_on = (ps for tup in dependencies.values() for ps in tup)
-        inferred_from = (ps for tup in inferences.values() for ps in tup)
-
-        standalones_mut = set(deepcopy(self.standalones))
-        standalones_mut = (
-            standalones_mut.difference(set(dependencies))
-            .difference(set(inferences))
-            .difference(set(depended_on))
-            .difference(set(inferred_from))
+        inference_top_level_not_in_dependency_tree = inference_top_level.difference(
+            all_paramspecs_in_dependency_tree
         )
 
-        # then update deps and inffs
-        new_deps = deepcopy(self.dependencies)
-        for ps in set(dependencies).intersection(set(new_deps)):
-            new_deps[ps] = tuple(set(list(new_deps[ps]) + list(dependencies[ps])))
-        for ps in set(dependencies).difference(set(new_deps)):
-            new_deps.update({deepcopy(ps): dependencies[ps]})
-
-        new_inffs = deepcopy(self.inferences.copy())
-        for ps in set(inferences).intersection(set(new_inffs)):
-            new_inffs[ps] = tuple(set(list(new_inffs[ps]) + list(inferences[ps])))
-        for ps in set(inferences).difference(set(new_inffs)):
-            new_inffs.update({deepcopy(ps): inferences[ps]})
-
-        # add new standalones
-        new_standalones = tuple(standalones_mut.union(set(standalones)))
-
-        new_idps = InterDependencies_(
-            dependencies=new_deps, inferences=new_inffs, standalones=new_standalones
+        all_params = (
+            dependency_top_level
+            | inference_top_level_not_in_dependency_tree
+            | standalone_top_level
         )
 
-        return new_idps
+        return tuple(sorted(all_params, key=lambda ps: ps.name))
 
-    def remove(self, parameter: ParamSpecBase) -> InterDependencies_:
+    def remove(self, paramspec: ParamSpecBase) -> InterDependencies_:
         """
         Create a new :class:`InterDependencies_` object that is similar
         to this instance, but has the given parameter removed.
         """
-        if parameter not in self:
-            raise ValueError(f"Unknown parameter: {parameter}.")
-
-        if parameter in self._dependencies_inv:
-            raise ValueError(
-                f"Cannot remove {parameter.name}, other parameters depend on it."
-            )
-        if parameter in self._inferences_inv:
-            raise ValueError(
-                f"Cannot remove {parameter.name}, other "
-                "parameters are inferred from it."
-            )
-
-        if parameter in self.standalones:
-            new_standalones = tuple(deepcopy(self.standalones).difference({parameter}))
-            new_deps = deepcopy(self.dependencies)
-            new_inffs = deepcopy(self.inferences)
-        elif parameter in self.dependencies or parameter in self.inferences:
-            new_deps = deepcopy(self.dependencies)
-            new_inffs = deepcopy(self.inferences)
-            # figure out whether removing this parameter will make any other
-            # parameters standalone
-            new_standalones_l = []
-            old_standalones = deepcopy(self.standalones)
-            for indep in self.dependencies.get(parameter, []):
-                if not (indep in self._inferences_inv or indep in self.inferences):
-                    new_standalones_l.append(indep)
-            for basis in self.inferences.get(parameter, []):
-                if not (basis in self._dependencies_inv or basis in self.dependencies):
-                    new_standalones_l.append(basis)
-            new_deps.pop(parameter, None)
-            new_inffs.pop(parameter, None)
-            new_standalones = tuple(set(new_standalones_l).union(old_standalones))
-        else:
-            raise ValueError(
-                f"Inconsistent InterDependencies_ object "
-                f"parameter: {parameter} is in list of"
-                f'parameters but is neither a "standalone", '
-                f'"dependency" or "inference"'
-            )
-
-        idps = InterDependencies_(
-            dependencies=new_deps, inferences=new_inffs, standalones=new_standalones
+        paramspec_in_degree = self.graph.in_degree(paramspec.name)
+        assert isinstance(paramspec_in_degree, int), (
+            "The in_degree method with arguments should have returned an int"
         )
-        return idps
+        if paramspec_in_degree > 0:
+            raise ValueError(
+                f"Cannot remove {paramspec.name}, other parameters depend on or are inferred from it"
+            )
+        new_graph = deepcopy(self.graph)
+        new_graph.remove_node(paramspec.name)
+        return InterDependencies_._from_graph(new_graph)
 
-    def validate_subset(self, parameters: Sequence[ParamSpecBase]) -> None:
+    def __repr__(self) -> str:
+        rep = (
+            f"InterDependencies_(dependencies={self.dependencies}, "
+            f"inferences={self.inferences}, "
+            f"standalones={self.standalones})"
+        )
+        return rep
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, InterDependencies_):
+            return False
+        return nx.utils.graphs_equal(self.graph, other.graph)
+
+    def __contains__(self, ps: ParamSpecBase) -> bool:
+        return ps.name in self.graph
+
+    def __getitem__(self, name: str) -> ParamSpecBase:
+        return self._node_to_paramspec(name)
+
+    @property
+    def graph(self) -> nx.DiGraph[str]:
+        return self._graph
+
+    def to_ipycytoscape_json(self) -> dict[str, list[dict[str, Any]]]:
+        graph_json: dict[str, list[dict[str, Any]]] = nx.cytoscape_data(self.graph)[
+            "elements"
+        ]
+        # TODO: Add different node types?
+        for edge_dict in graph_json["edges"]:
+            edge_dict["classes"] = edge_dict["data"]["interdep_type"]
+        return graph_json
+
+    @staticmethod
+    def validate_paramspectree(
+        paramspectree: ParamSpecTree,
+        interdep_type: Literal["dependencies", "inferences", "ParamSpecTree"]
+        | None = None,
+    ) -> None:
+        """
+        Validate a ParamSpecTree. Apart from adhering to the type, a
+        ParamSpecTree must not have any cycles.
+
+        Returns:
+            A tuple with an exception type and an error message or None, if
+            the paramtree is valid
+
+        """
+        interdep_type_internal = interdep_type or "ParamSpecTree"
+        cause: str | None = None
+
+        # Validate the type
+        if not isinstance(paramspectree, dict):
+            cause = "ParamSpecTree must be a dict"
+        if cause is None:
+            for key, values in paramspectree.items():
+                if not isinstance(key, ParamSpecBase):
+                    cause = "ParamSpecTree must have ParamSpecs as keys"
+                    break
+                if not isinstance(values, tuple):
+                    cause = "ParamSpecTree must have tuple values"
+                    break
+                for value in values:
+                    if not isinstance(value, ParamSpecBase):
+                        cause = (
+                            "ParamSpecTree can only have tuples of ParamSpecs as values"
+                        )
+                        break
+
+        if cause is None:
+            # check for cycles
+            roots = set(paramspectree.keys())
+            leafs = {ps for tup in paramspectree.values() for ps in tup}
+
+            if roots.intersection(leafs) != set():
+                raise ValueError(f"Invalid {interdep_type_internal}") from ValueError(
+                    "ParamSpecTree can not have cycles"
+                )
+        else:
+            raise ValueError(f"Invalid {interdep_type_internal}") from TypeError(cause)
+
+    def validate_subset(self, paramspecs: Sequence[ParamSpecBase]) -> None:
         """
         Validate that the given parameters form a valid subset of the
         parameters of this instance, meaning that all the given parameters are
@@ -480,29 +444,121 @@ class InterDependencies_:
         dependencies/inferences.
 
         Args:
-            parameters: The collection of ParamSpecBases to validate
+            paramspecs: The collection of ParamSpecBases to validate
 
         Raises:
-            DependencyError, if a dependency is missing
-            InferenceError, if an inference is missing
+            InterdependencyError: If a dependency or inference is missing
 
         """
-        params = {p.name for p in parameters}
+        subset_nodes = set([paramspec.name for paramspec in paramspecs])
+        for subset_node in subset_nodes:
+            descendant_nodes_per_subset_node = nx.descendants(self.graph, subset_node)
+            if missing_nodes := descendant_nodes_per_subset_node.difference(
+                subset_nodes
+            ):
+                raise IncompleteSubsetError(
+                    subset_params=subset_nodes, missing_params=missing_nodes
+                )
 
-        for param in params:
-            ps = self._id_to_paramspec.get(param, None)
-            if ps is None:
-                raise ValueError(f"Unknown parameter: {param}")
+    @classmethod
+    def _from_graph(cls, graph: nx.DiGraph[str]) -> InterDependencies_:
+        new_interdependencies = cls()
+        new_interdependencies._graph = graph
+        return new_interdependencies
 
-            deps = set(self._deps_names.get(param, ()))
-            missing_deps = deps.difference(params)
-            if missing_deps:
-                raise DependencyError(param, missing_deps)
+    def find_all_parameters_in_tree(
+        self, initial_param: ParamSpecBase
+    ) -> set[ParamSpecBase]:
+        """
+        Collect all parameters that are transitively related to the initial parameter.
 
-            inffs = set(self._infs_names.get(param, ()))
-            missing_inffs = inffs.difference(params)
-            if missing_inffs:
-                raise InferenceError(param, missing_inffs)
+        This includes dependencies of the initial parameter and parameters that are inferred from
+        the initial parameter, as well as parameters that are inferred from its dependencies.
+
+        Args:
+            initial_param: The parameter to start the traversal from.
+
+        Returns:
+            Set of all parameters transitively related to the initial parameter
+
+        Raises:
+            ValueError: If the initial parameter is not part of the graph.
+
+        """
+
+        # Use NetworkX to find all nodes reachable from initial parameters
+        collected_nodes: set[str] = set()
+
+        if initial_param.name not in self.graph:
+            available_params = ", ".join(self.graph.nodes)
+            raise ValueError(
+                f"Parameter '{initial_param.name}' is not part of the graph. "
+                f"Available parameters are: {available_params}. "
+                f"Please check if the parameter name is correct or if the graph has been properly initialized."
+            )
+
+        # Add the parameter itself
+        collected_nodes.add(initial_param.name)
+
+        # find all parameters that this parameter depends on
+        if initial_param.name in self._dependency_subgraph:
+            dep_descendants = nx.descendants(
+                self._dependency_subgraph, initial_param.name
+            )
+            collected_nodes.update(dep_descendants)
+
+        # find all parameters that are inferred from the parameter or its dependencies
+
+        for param_name in collected_nodes.copy():
+            if param_name in self._inference_subgraph:
+                descendants = nx.descendants(self._inference_subgraph, param_name)
+                ancestors = nx.ancestors(self._inference_subgraph, param_name)
+                collected_nodes.update(descendants)
+                collected_nodes.update(ancestors)
+
+        # Convert node names back to ParamSpecBase objects
+        collected_params: set[ParamSpecBase] = set()
+        for node_name in collected_nodes:
+            collected_params.add(self._node_to_paramspec(node_name))
+        return collected_params
+
+    def all_parameters_in_tree_by_group(
+        self, initial_param: ParamSpecBase
+    ) -> tuple[ParamSpecBase, tuple[ParamSpecBase, ...], tuple[ParamSpecBase, ...]]:
+        """
+        Collect all parameters that are transitively related to the initial parameter
+        and organize them into three groups.
+
+        This includes dependencies of the initial parameter and parameters that are inferred from
+        the initial parameter, as well as parameters that are inferred from its dependencies.
+        The parameter must be part of the interdependency graph.
+
+        Args:
+            initial_param: The parameter to start the traversal from.
+
+        Returns:
+            A tuple containing:
+            - The initial parameter
+            - A tuple of direct dependencies of the initial parameter
+            - A tuple of parameters inferred from the initial parameter and its dependencies (sorted by name).
+
+        Raises:
+            ValueError: If the initial parameter is not part of the graph.
+
+        """
+        collected_params = self.find_all_parameters_in_tree(initial_param)
+
+        collected_params.remove(initial_param)
+
+        dependencies = self.dependencies.get(initial_param, ())
+
+        for dep in dependencies:
+            collected_params.remove(dep)
+
+        # Sort the remaining parameters by their names to ensure a consistent order
+        remaining_params_sorted = sorted(collected_params, key=lambda ps: ps.name)
+
+        return initial_param, tuple(dependencies), tuple(remaining_params_sorted)
 
     @classmethod
     def _from_dict(cls, ser: InterDependencies_Dict) -> InterDependencies_:
@@ -541,39 +597,38 @@ class InterDependencies_:
             deps.update({deps_key: deps_vals})
         return deps
 
-    def __repr__(self) -> str:
-        rep = (
-            f"InterDependencies_(dependencies={self.dependencies}, "
-            f"inferences={self.inferences}, "
-            f"standalones={self.standalones})"
-        )
-        return rep
+    def _to_dict(self) -> InterDependencies_Dict:
+        """
+        Write out this object as a dictionary
+        """
+        parameters = {
+            node_id: data["value"]._to_dict()
+            for node_id, data in self.graph.nodes(data=True)
+        }
 
-    def __eq__(self, other: Any) -> bool:
-        def sorter(inp: Iterable[ParamSpecBase]) -> list[ParamSpecBase]:
-            return sorted(inp, key=lambda ps: ps.name)
+        dependencies = paramspec_tree_to_param_name_tree(self.dependencies)
+        inferences = paramspec_tree_to_param_name_tree(self.inferences)
+        standalones = [paramspec.name for paramspec in self.standalones]
+        output: InterDependencies_Dict = {
+            "parameters": parameters,
+            "dependencies": dependencies,
+            "inferences": inferences,
+            "standalones": standalones,
+        }
+        return output
 
-        if not isinstance(other, InterDependencies_):
-            return False
+    @property
+    def _id_to_paramspec(self) -> dict[str, ParamSpecBase]:
+        return {node_id: data["value"] for node_id, data in self.graph.nodes(data=True)}
 
-        for dic in ["dependencies", "inferences"]:
-            our_keys = sorter(getattr(self, dic).keys())
-            their_keys = sorter(getattr(other, dic).keys())
-            if our_keys != their_keys:
-                return False
-            for key in our_keys:
-                our_values = sorter(getattr(self, dic)[key])
-                their_values = sorter(getattr(other, dic)[key])
-                if our_values != their_values:
-                    return False
+    @property
+    def _paramspec_to_id(self) -> dict[ParamSpecBase, str]:
+        return {data["value"]: node_id for node_id, data in self.graph.nodes(data=True)}
 
-        if not self.standalones == other.standalones:
-            return False
 
-        return True
-
-    def __contains__(self, ps: ParamSpecBase) -> bool:
-        return ps in self._paramspec_to_id
-
-    def __getitem__(self, name: str) -> ParamSpecBase:
-        return self._id_to_paramspec[name]
+def paramspec_tree_to_param_name_tree(
+    paramspec_tree: ParamSpecTree,
+) -> ParamNameTree:
+    return {
+        key.name: [item.name for item in items] for key, items in paramspec_tree.items()
+    }

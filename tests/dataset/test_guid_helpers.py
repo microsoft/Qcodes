@@ -17,7 +17,7 @@ from qcodes.parameters import Parameter
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from qcodes.dataset.sqlite.connection import ConnectionPlus
+    from qcodes.dataset.sqlite.connection import AtomicConnection
 
 
 def test_guids_from_dir(tmp_path: "Path") -> None:
@@ -37,7 +37,7 @@ def test_guids_from_dir(tmp_path: "Path") -> None:
                 for v in np.linspace(0, 2, 250):
                     p1(v)
                     datasaver.add_result(
-                        (p1, cast(float, p1())), (p2, cast(float, p2()))
+                        (p1, cast("float", p1())), (p2, cast("float", p2()))
                     )
             guid = datasaver.dataset.guid
             datasaver.flush_data_to_database(block=True)
@@ -91,8 +91,29 @@ def test_many_guids_from_list_str() -> None:
     assert guids_from_list_str(str(guids)) == tuple(guids)
 
 
+def test_many_guids_from_list_str_with_int() -> None:
+    # none str members are dropped from the list
+    guids = [
+        "aaaaaaaa-0d00-000d-0000-017662aded3d",
+        "aaaaaaaa-0d00-000d-0000-017662ae5fec",
+        "aaaaaaaa-0d00-000d-0000-017662b01bb7",
+        "aaaaaaaa-0d00-000d-0000-017662b18452",
+        "aaaaaaaa-0d00-000d-0000-017662b298c2",
+        "aaaaaaaa-0d00-000d-0000-017662b2a878",
+        "aaaaaaaa-0d00-000d-0000-01766827cfaf",
+        121345,
+    ]
+    assert guids_from_list_str(str(guids)) == tuple(guids[:-1])
+
+
+def test_guid_from_not_str() -> None:
+    # none str members are dropped from the list
+    guid = 123456
+    assert guids_from_list_str(str(guid)) == ()
+
+
 def test_get_guids_from_multiple_run_ids(tmp_path: "Path") -> None:
-    def generate_local_exp(dbpath: "Path") -> tuple[list[str], "ConnectionPlus"]:
+    def generate_local_exp(dbpath: "Path") -> tuple[list[str], "AtomicConnection"]:
         with initialised_database_at(str(dbpath)):
             guids = []
             exp = load_or_create_experiment(experiment_name="test_guid")
@@ -110,7 +131,7 @@ def test_get_guids_from_multiple_run_ids(tmp_path: "Path") -> None:
                     for v in np.linspace(0 * run, 2 * run, 50):
                         p1(v)
                         datasaver.add_result(
-                            (p1, cast(float, p1())), (p2, cast(float, p2()))
+                            (p1, cast("float", p1())), (p2, cast("float", p2()))
                         )
                 guid = datasaver.dataset.guid
                 guids.append(guid)

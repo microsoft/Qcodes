@@ -161,7 +161,9 @@ class MockAMI430:
 
             handler = self.handlers[key][gs]
             if callable(handler):
-                rval = handler(args)
+                # some of the callables in the dict does not take arguments.
+                # ignore that warning for now since this is mock code only
+                rval = handler(args)  # pyright: ignore[reportCallIssue]
             else:
                 rval = handler
 

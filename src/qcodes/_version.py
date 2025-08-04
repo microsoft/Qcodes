@@ -1,13 +1,12 @@
 def _get_version() -> str:
-    from importlib.resources import files
-    from pathlib import Path
+    # we use lazy imports to avoid importing modules that are not
+    # used when the use of this function is patched out at build time
+    from importlib.resources import files  # noqa: PLC0415
+    from pathlib import Path  # noqa: PLC0415
 
-    import versioningit
+    import versioningit  # noqa: PLC0415
 
-    # https://github.com/python/mypy/issues/4182
-    root_module = __loader__.name.split(".")[0]  # type: ignore[name-defined]
-
-    module_path = files(root_module)
+    module_path = files("qcodes")
     if isinstance(module_path, Path):
         return versioningit.get_version(project_dir=Path(module_path).parent.parent)
     else:

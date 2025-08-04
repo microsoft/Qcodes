@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 def test_get_from_cache_does_not_trigger_real_get_if_get_if_invalid_false() -> None:
     """
-    assert that calling get on the cache with get_if_invalid=False does
+    Assert that calling get on the cache with get_if_invalid=False does
     not trigger a get of the parameter when parameter
     has expired due to max_val_age
     """

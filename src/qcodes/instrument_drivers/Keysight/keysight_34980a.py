@@ -160,7 +160,7 @@ class Keysight34980A(VisaInstrument):
 
     def _system_slots_info(self) -> dict[int, dict[str, str]]:
         """
-        the command SYST:CTYP? returns the following:
+        The command SYST:CTYP? returns the following:
         Agilent Technologies,<Model Number>,<Serial Number>,<Firmware Rev>
         where <Model Number> is '0' if there is no module connected to the
         given slot
@@ -180,7 +180,7 @@ class Keysight34980A(VisaInstrument):
 
     def disconnect_all(self, slot: int | None = None) -> None:
         """
-        to open/disconnect all connections on select module
+        To open/disconnect all connections on select module
 
         Args:
             slot: slot number, between 1 and 8 (self._total_slot),

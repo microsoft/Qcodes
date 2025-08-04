@@ -7,7 +7,8 @@ if TYPE_CHECKING:
     from .parameter_base import ParamDataType, ParameterBase, ParamRawDataType
 
 
-class _CacheProtocol(Protocol):
+# The protocol is private to qcodes but used elsewhere in the codebase
+class _CacheProtocol(Protocol):  # noqa: PYI046
     """
     This protocol defines the interface that a Parameter Cache implementation
     must implement. This is currently used for 2 implementations, one in
@@ -232,9 +233,7 @@ class _Cache:
             #  of setting max_val_age unfortunately this
             #  happens in init before get wrapping is performed.
             error_msg = (
-                "`max_val_age` is not supported "
-                "for a parameter without get "
-                "command."
+                "`max_val_age` is not supported for a parameter without get command."
             )
         else:
             # max_val_age is None and TS is not None but cache is

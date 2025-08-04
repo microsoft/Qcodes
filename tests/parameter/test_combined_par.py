@@ -94,13 +94,15 @@ def test_aggregator(
     y_set = np.linspace(y_start_stop[0], y_start_stop[1], npoints).reshape(npoints, 1)
     z_set = np.linspace(z_start_stop[0], z_start_stop[1], npoints).reshape(npoints, 1)
     setpoints = np.hstack((x_set, y_set, z_set))
-    expected_results = [linear(*set) for set in setpoints]
+    # setpoints is a 2D array with shape (npoints, 3)
+    # so set is a (3,) numpy array and not a float64 below
+    expected_results = [linear(*set) for set in setpoints]  # pyright: ignore[reportGeneralTypeIssues]
     sweep_values = combine(*parameters, name="combined", aggregator=linear).sweep(
         setpoints
     )
 
     results = []
-    for i, value in enumerate(sweep_values):
+    for value in sweep_values:
         res = sweep_values.set(value)
         results.append(sweep_values._aggregate(*res))
 

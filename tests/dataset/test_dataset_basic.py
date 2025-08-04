@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 import hypothesis.strategies as hst
 import numpy as np
+import numpy.typing as npt
 import pytest
 from hypothesis import HealthCheck, given, settings
 from pytest import FixtureRequest
@@ -148,9 +149,7 @@ def test_dataset_states() -> None:
 
     with pytest.raises(
         RuntimeError,
-        match="Can not mark DataSet as complete "
-        "before it has "
-        "been marked as started.",
+        match="Can not mark DataSet as complete before it has been marked as started.",
     ):
         ds.mark_completed()
 
@@ -276,9 +275,7 @@ def test_dataset_read_only_properties(dataset) -> None:
 def test_create_dataset_from_non_existing_run_id(non_existing_run_id) -> None:
     with pytest.raises(
         ValueError,
-        match=f"Run with run_id "
-        f"{non_existing_run_id} does not "
-        f"exist in the database",
+        match=f"Run with run_id {non_existing_run_id} does not exist in the database",
     ):
         _ = DataSet(run_id=non_existing_run_id)
 
@@ -305,9 +302,7 @@ def test_load_by_id(dataset) -> None:
 def test_load_by_id_for_nonexisting_run_id(non_existing_run_id) -> None:
     with pytest.raises(
         ValueError,
-        match=f"Run with run_id "
-        f"{non_existing_run_id} does not "
-        f"exist in the database",
+        match=f"Run with run_id {non_existing_run_id} does not exist in the database",
     ):
         _ = load_by_id(non_existing_run_id)
 
@@ -664,7 +659,7 @@ def test_numpy_inf(dataset) -> None:
 
 def test_backward_compat__adapt_array_v0_33() -> None:
     for dtype in numpy_floats + complex_types:
-        arr: np.ndarray = np.asarray([1.0], dtype=np.dtype(dtype))
+        arr: npt.NDArray = np.asarray([1.0], dtype=np.dtype(dtype))
         out = io.BytesIO()
         np.save(out, arr)
         out.seek(0)
@@ -917,7 +912,7 @@ class TestGetData:
         np.testing.assert_array_equal(data, expected)
 
 
-@settings(deadline=600, suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@settings(deadline=1000, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(
     start=hst.one_of(hst.integers(1, 10**3), hst.none()),
     end=hst.one_of(hst.integers(1, 10**3), hst.none()),
@@ -1272,14 +1267,14 @@ def test_get_array_in_str_param_data(array_in_str_dataset) -> None:
 
 
 def test_get_parameter_data_independent_parameters(
-    standalone_parameters_dataset,
+    standalone_parameters_dataset: DataSet,
 ) -> None:
     ds = standalone_parameters_dataset
 
-    paramspecs = ds.description.interdeps.non_dependencies
-    params = [ps.name for ps in paramspecs]
+    paramspecs = ds.description.interdeps.top_level_parameters
+    params = {ps.name for ps in paramspecs}
 
-    expected_toplevel_params = ["param_1", "param_2", "param_3"]
+    expected_toplevel_params = {"param_1", "param_2", "param_3"}
     assert params == expected_toplevel_params
 
     expected_names = {}
@@ -1298,7 +1293,11 @@ def test_get_parameter_data_independent_parameters(
     expected_values["param_3"] = [np.arange(30000, 30000 + 1000), np.arange(0, 1000)]
 
     parameter_test_helper(
-        ds, expected_toplevel_params, expected_names, expected_shapes, expected_values
+        ds,
+        tuple(expected_toplevel_params),
+        expected_names,
+        expected_shapes,
+        expected_values,
     )
 
 

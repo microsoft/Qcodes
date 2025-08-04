@@ -1344,39 +1344,45 @@ def test_multi_index_wrong_option(mock_dataset_non_grid) -> None:
 
 
 def test_geneate_pandas_index():
-    indexes = {
+    x = ParamSpecBase("x", "numeric")
+    y = ParamSpecBase("y", "numeric")
+    z = ParamSpecBase("z", "numeric")
+
+    interdeps = InterDependencies_(dependencies={z: (x, y)})
+
+    data = {
         "z": np.array([[7, 8, 9], [10, 11, 12]]),
         "x": np.array([[1, 2, 3], [1, 2, 3]]),
         "y": np.array([[5, 5, 5], [6, 6, 6]]),
     }
-    pdi = _generate_pandas_index(indexes)
+    pdi = _generate_pandas_index(data, interdeps, "z")
     assert isinstance(pdi, pd.MultiIndex)
     assert len(pdi) == 6
 
-    indexes = {
+    data = {
         "z": np.array([[7, 8, 9], [10, 11, 12]]),
         "x": np.array([["a", "b", "c"], ["a", "b", "c"]]),
         "y": np.array([[5, 5, 5], [6, 6, 6]]),
     }
-    pdi = _generate_pandas_index(indexes)
+    pdi = _generate_pandas_index(data, interdeps, "z")
     assert isinstance(pdi, pd.MultiIndex)
     assert len(pdi) == 6
 
-    indexes = {
+    data = {
         "z": np.array([[7, 8, 9], [10, 11, 12]]),
         "x": np.array([["a", "b", "c"], ["a", "b", "c"]], dtype=np.object_),
         "y": np.array([[5, 5, 5], [6, 6, 6]]),
     }
-    pdi = _generate_pandas_index(indexes)
+    pdi = _generate_pandas_index(data, interdeps, "z")
     assert isinstance(pdi, pd.MultiIndex)
     assert len(pdi) == 6
 
-    indexes = {
+    data = {
         "z": np.array([[7], [8, 9]], dtype=np.object_),
         "x": np.array([["a"], ["a", "b"]], dtype=np.object_),
         "y": np.array([[5], [6, 6]], dtype=np.object_),
     }
-    pdi = _generate_pandas_index(indexes)
+    pdi = _generate_pandas_index(data, interdeps, "z")
     assert isinstance(pdi, pd.MultiIndex)
     assert len(pdi) == 3
 

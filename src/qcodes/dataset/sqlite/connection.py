@@ -1,5 +1,5 @@
 """
-This module provides a wrapper class :class:`ConnectionPlus` around
+This module provides a subclass class :class:`AtomicConnection` of
 :class:`sqlite3.Connection` together with functions around it which allow
 performing nested atomic transactions on an SQLite database.
 """
@@ -7,30 +7,24 @@ performing nested atomic transactions on an SQLite database.
 from __future__ import annotations
 
 import logging
+import sqlite3
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any
-
-import wrapt  # type: ignore[import-untyped]
 
 from qcodes.utils import DelayedKeyboardInterrupt
 
 if TYPE_CHECKING:
-    import sqlite3
     from collections.abc import Iterator
 
 log = logging.getLogger(__name__)
 
 
-class ConnectionPlus(wrapt.ObjectProxy):
+class AtomicConnection(sqlite3.Connection):
     """
-    A class to extend the sqlite3.Connection object. Since sqlite3.Connection
-    has no __dict__, we can not directly add attributes to its instance
-    directly.
+    A class to extend the sqlite3.Connection object. This extends
+    Connection to allow addition operations to be performed atomically.
 
-    It is not allowed to instantiate a new `ConnectionPlus` object from a
-    `ConnectionPlus` object.
-
-    It is recommended to create a ConnectionPlus using the function :func:`connect`
+    It is recommended to create an AtomicConnection using the function :func:`connect`
 
     """
 
@@ -45,43 +39,14 @@ class ConnectionPlus(wrapt.ObjectProxy):
     Path to the database file of the connection.
     """
 
-    def __init__(self, sqlite3_connection: sqlite3.Connection):
-        super().__init__(sqlite3_connection)
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
 
-        if isinstance(sqlite3_connection, ConnectionPlus):
-            raise ValueError(
-                "Attempted to create `ConnectionPlus` from a "
-                "`ConnectionPlus` object which is not allowed."
-            )
-
-        self.path_to_dbfile = path_to_dbfile(sqlite3_connection)
-
-
-def make_connection_plus_from(
-    conn: sqlite3.Connection | ConnectionPlus,
-) -> ConnectionPlus:
-    """
-    Makes a ConnectionPlus connection object out of a given argument.
-
-    If the given connection is already a ConnectionPlus, then it is returned
-    without any changes.
-
-    Args:
-        conn: an sqlite database connection object
-
-    Returns:
-        the "same" connection but as ConnectionPlus object
-
-    """
-    if not isinstance(conn, ConnectionPlus):
-        conn_plus = ConnectionPlus(conn)
-    else:
-        conn_plus = conn
-    return conn_plus
+        self.path_to_dbfile = path_to_dbfile(self)
 
 
 @contextmanager
-def atomic(conn: ConnectionPlus) -> Iterator[ConnectionPlus]:
+def atomic(conn: AtomicConnection) -> Iterator[AtomicConnection]:
     """
     Guard a series of transactions as atomic.
 
@@ -97,10 +62,10 @@ def atomic(conn: ConnectionPlus) -> Iterator[ConnectionPlus]:
 
     """
     with DelayedKeyboardInterrupt(context={"reason": "sqlite atomic operation"}):
-        if not isinstance(conn, ConnectionPlus):
+        if not isinstance(conn, AtomicConnection):
             raise ValueError(
                 "atomic context manager only accepts "
-                "ConnectionPlus database connection objects."
+                "AtomicConnection database connection objects."
             )
 
         is_outmost = not (conn.atomic_in_progress)
@@ -135,7 +100,7 @@ def atomic(conn: ConnectionPlus) -> Iterator[ConnectionPlus]:
             conn.atomic_in_progress = old_atomic_in_progress
 
 
-def transaction(conn: ConnectionPlus, sql: str, *args: Any) -> sqlite3.Cursor:
+def transaction(conn: AtomicConnection, sql: str, *args: Any) -> sqlite3.Cursor:
     """Perform a transaction.
     The transaction needs to be committed or rolled back.
 
@@ -157,7 +122,7 @@ def transaction(conn: ConnectionPlus, sql: str, *args: Any) -> sqlite3.Cursor:
     return c
 
 
-def atomic_transaction(conn: ConnectionPlus, sql: str, *args: Any) -> sqlite3.Cursor:
+def atomic_transaction(conn: AtomicConnection, sql: str, *args: Any) -> sqlite3.Cursor:
     """Perform an **atomic** transaction.
     The transaction is committed if there are no exceptions else the
     transaction is rolled back.
@@ -179,7 +144,7 @@ def atomic_transaction(conn: ConnectionPlus, sql: str, *args: Any) -> sqlite3.Cu
     return c
 
 
-def path_to_dbfile(conn: ConnectionPlus | sqlite3.Connection) -> str:
+def path_to_dbfile(conn: AtomicConnection | sqlite3.Connection) -> str:
     """
     Return the path of the database file that the conn object is connected to
     """

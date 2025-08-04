@@ -4,7 +4,7 @@ import re
 import time
 import warnings
 from contextlib import ExitStack
-from typing import Any, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 
 import numpy as np
 import pytest
@@ -18,25 +18,23 @@ from qcodes.instrument_drivers.american_magnetics import (
     AMIModel430,
     AMIModel4303D,
 )
-from qcodes.instrument_drivers.american_magnetics.AMI430_visa import (
-    AMI430,  # pyright: ignore[reportDeprecated]
-    AMI430_3D,  # pyright: ignore[reportDeprecated]
-)
 from qcodes.math_utils import FieldVector
-from qcodes.utils import QCoDeSDeprecationWarning
 from qcodes.utils.types import (
     numpy_concrete_floats,
     numpy_concrete_ints,
     numpy_non_concrete_ints_instantiable,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
 _time_resolution = time.get_clock_info("time").resolution
 
 # If any of the field limit functions are satisfied we are in the safe zone.
 # We can have higher field along the z-axis if x and y are zero.
-field_limit = [
+field_limit: list["Callable[[float, float, float], bool]"] = [
     lambda x, y, z: x == 0 and y == 0 and z < 3,
-    lambda x, y, z: np.linalg.norm([x, y, z]) < 2,
+    lambda x, y, z: bool(np.linalg.norm([x, y, z]) < 2),
 ]
 
 LOG_NAME = "qcodes.instrument.instrument_base"
@@ -136,41 +134,6 @@ def test_instantiation_from_names(
     request.addfinalizer(Instrument.close_all)
 
     driver = AMIModel4303D("AMI430_3D", mag_x.name, mag_y.name, mag_z.name, field_limit)
-
-    assert driver._instrument_x is mag_x
-    assert driver._instrument_y is mag_y
-    assert driver._instrument_z is mag_z
-
-
-def test_instantiation_compat_classes(request: FixtureRequest) -> None:
-    """
-    Test that we can instantiate drivers using the old names
-    """
-    request.addfinalizer(Instrument.close_all)
-
-    with pytest.warns(QCoDeSDeprecationWarning):
-        mag_x = AMI430(  # pyright: ignore[reportDeprecated]
-            "x",
-            address="GPIB::1::INSTR",
-            pyvisa_sim_file="AMI430.yaml",
-            terminator="\n",
-        )
-        mag_y = AMI430(  # pyright: ignore[reportDeprecated]
-            "y",
-            address="GPIB::2::INSTR",
-            pyvisa_sim_file="AMI430.yaml",
-            terminator="\n",
-        )
-        mag_z = AMI430(  # pyright: ignore[reportDeprecated]
-            "z",
-            address="GPIB::3::INSTR",
-            pyvisa_sim_file="AMI430.yaml",
-            terminator="\n",
-        )
-
-        driver = AMI430_3D(  # pyright: ignore[reportDeprecated]
-            "AMI430_3D", mag_x.name, mag_y.name, mag_z.name, field_limit
-        )
 
     assert driver._instrument_x is mag_x
     assert driver._instrument_y is mag_y
@@ -281,7 +244,7 @@ def test_instantiation_from_name_of_nonexistent_ami_instrument(
 def test_instantiation_from_name_of_existing_non_ami_instrument(
     magnet_axes_instances, request: FixtureRequest
 ) -> None:
-    mag_x, mag_y, mag_z = magnet_axes_instances
+    mag_x, _mag_y, mag_z = magnet_axes_instances
     request.addfinalizer(Instrument.close_all)
 
     non_ami_existing_instrument = Instrument("foo")
@@ -306,7 +269,7 @@ def test_instantiation_from_name_of_existing_non_ami_instrument(
 def test_instantiation_from_badly_typed_argument(
     magnet_axes_instances, request: FixtureRequest
 ) -> None:
-    mag_x, mag_y, mag_z = magnet_axes_instances
+    mag_x, mag_y, _mag_z = magnet_axes_instances
     request.addfinalizer(Instrument.close_all)
 
     badly_typed_instrument_z_argument = 123
@@ -710,17 +673,17 @@ def test_simultaneous_ramp_mode_does_not_reset_individual_axis_ramp_rates_if_non
     messages_with_expected_fragment = tuple(
         message for message in messages if expected_log_fragment in message
     )
-    assert (
-        len(messages_with_expected_fragment) == 1
-    ), f"found: {messages_with_expected_fragment}"
+    assert len(messages_with_expected_fragment) == 1, (
+        f"found: {messages_with_expected_fragment}"
+    )
 
     unexpected_log_fragment = "Restoring individual axes ramp rates"
     messages_with_unexpected_fragment = tuple(
         message for message in messages if unexpected_log_fragment in message
     )
-    assert (
-        len(messages_with_unexpected_fragment) == 0
-    ), f"found: {messages_with_unexpected_fragment}"
+    assert len(messages_with_unexpected_fragment) == 0, (
+        f"found: {messages_with_unexpected_fragment}"
+    )
 
     # However, calling ``wait_while_all_axes_ramping`` DOES restore the
     # individual ramp rates
@@ -734,9 +697,9 @@ def test_simultaneous_ramp_mode_does_not_reset_individual_axis_ramp_rates_if_non
     messages_with_expected_fragment_2 = tuple(
         message for message in messages_2 if expected_log_fragment_2 in message
     )
-    assert (
-        len(messages_with_expected_fragment_2) == 1
-    ), f"found: {messages_with_expected_fragment_2}"
+    assert len(messages_with_expected_fragment_2) == 1, (
+        f"found: {messages_with_expected_fragment_2}"
+    )
 
     # Assert calling ``wait_while_all_axes_ramping`` is possible
 
@@ -792,25 +755,25 @@ def test_simultaneous_ramp_mode_resets_individual_axis_ramp_rates_if_blocking_ra
     messages_with_expected_fragment = tuple(
         message for message in messages if expected_log_fragment in message
     )
-    assert (
-        len(messages_with_expected_fragment) == 1
-    ), f"found: {messages_with_expected_fragment}"
+    assert len(messages_with_expected_fragment) == 1, (
+        f"found: {messages_with_expected_fragment}"
+    )
 
     expected_log_fragment_2 = "Simultaneous ramp: blocking until ramp is finished"
     messages_with_expected_fragment_2 = tuple(
         message for message in messages if expected_log_fragment_2 in message
     )
-    assert (
-        len(messages_with_expected_fragment_2) == 1
-    ), f"found: {messages_with_expected_fragment_2}"
+    assert len(messages_with_expected_fragment_2) == 1, (
+        f"found: {messages_with_expected_fragment_2}"
+    )
 
     unexpected_log_fragment = "Simultaneous ramp: not blocking until ramp is finished"
     messages_with_unexpected_fragment = tuple(
         message for message in messages if unexpected_log_fragment in message
     )
-    assert (
-        len(messages_with_unexpected_fragment) == 0
-    ), f"found: {messages_with_unexpected_fragment}"
+    assert len(messages_with_unexpected_fragment) == 0, (
+        f"found: {messages_with_unexpected_fragment}"
+    )
 
 
 def test_reducing_field_ramp_limit_reduces_a_higher_ramp_rate(ami430) -> None:

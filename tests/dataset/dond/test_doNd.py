@@ -4,6 +4,8 @@ These are the basic black box tests for the doNd functions.
 
 import logging
 import re
+from functools import partial
+from typing import assert_type
 
 import hypothesis.strategies as hst
 import matplotlib
@@ -14,7 +16,6 @@ import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
 from pytest import FixtureRequest, LogCaptureFixture
-from typing_extensions import assert_type
 
 import qcodes as qc
 from qcodes import config, validators
@@ -35,8 +36,13 @@ from qcodes.instrument_drivers.mock_instruments import (
     Multi2DSetPointParam2Sizes,
     MultiSetPointParam,
 )
-from qcodes.parameters import ManualParameter, Parameter, ParameterBase
-from qcodes.validators import Ints
+from qcodes.parameters import (
+    ManualParameter,
+    Parameter,
+    ParameterBase,
+    ParameterWithSetpoints,
+)
+from qcodes.validators import Arrays, Ints
 from tests.dataset.conftest import ArrayshapedParam
 
 
@@ -355,6 +361,34 @@ def test_dond_0d_verify_shape(
     for name, data_inner in data.items():
         for param_data in data_inner.values():
             assert param_data.shape == expected_shapes[name]
+
+
+@pytest.mark.usefixtures("experiment")
+def test_dond_0d_pws_with_register_name_has_correct_shape() -> None:
+    numpoints = 101
+    setpoints = Parameter(
+        "setpoints",
+        get_cmd=partial(np.linspace, 0, 1, numpoints),
+        vals=Arrays(shape=(numpoints,)),
+    )
+
+    def complex_get_cmd() -> np.ndarray:
+        reals: np.ndarray = np.linspace(0, 10, numpoints)
+        imags: np.ndarray = np.linspace(0, 10, numpoints)
+        return reals + 1.0j * imags
+
+    pws_with_register_name = ParameterWithSetpoints(
+        name="pws",
+        setpoints=[setpoints],
+        get_cmd=complex_get_cmd,
+        vals=Arrays(shape=(numpoints,), valid_types=[np.complexfloating]),
+        register_name="register_pws",
+    )
+    ds, _, _ = dond(pws_with_register_name, measurement_name="With register_name")
+
+    expected_shape = {"register_pws": (numpoints,)}
+    assert isinstance(ds, DataSetProtocol)
+    assert ds.description.shapes == expected_shape
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
@@ -1198,7 +1232,7 @@ def test_dond_together_sweep_sweeper_mixed_splitting() -> None:
         sweepB = LinSweep(b, 5, 7, 10)
         sweepC = LinSweep(c, 8, 12, 10)
 
-        datasets, _, _ = dond(
+        _datasets, _, _ = dond(
             TogetherSweep(sweepA, sweepB),
             sweepC,
             [d],
@@ -1267,7 +1301,7 @@ def test_dond_together_sweep_sweeper_combined_explict_names_inconsistent() -> No
             "('ds1', 'ds2', 'ds4') but dataset_dependencies contains ('ds1', 'ds2', 'ds3')."
         ),
     ):
-        datasets, _, _ = dond(
+        _datasets, _, _ = dond(
             TogetherSweep(sweepA, sweepB),
             sweepC,
             d,
@@ -1301,7 +1335,7 @@ def test_dond_together_sweep_sweeper_combined_explict_names_and_single_name() ->
             "Creating multiple datasets but only one measurement name given."
         ),
     ):
-        datasets, _, _ = dond(
+        _datasets, _, _ = dond(
             TogetherSweep(sweepA, sweepB),
             sweepC,
             d,
@@ -1414,7 +1448,7 @@ def test_dond_together_sweep_sweeper_combined_missing_in_dataset_dependencies() 
         ValueError,
         match="Parameter f is measured but not added to any dataset",
     ):
-        datasets, _, _ = dond(
+        _datasets, _, _ = dond(
             TogetherSweep(sweepA, sweepB),
             sweepC,
             d,
@@ -1441,7 +1475,7 @@ def test_dond_together_sweep_sweeper_wrong_sp_in_dataset_dependencies() -> None:
     sweepC = LinSweep(c, 8, 12, 10)
 
     with pytest.raises(ValueError, match="not among the expected groups of setpoints"):
-        datasets, _, _ = dond(
+        _datasets, _, _ = dond(
             TogetherSweep(sweepA, sweepB),
             sweepC,
             d,
@@ -1469,7 +1503,7 @@ def test_dond_together_sweep_sweeper_wrong_mp_in_dataset_dependencies() -> None:
         ValueError,
         match="which is not among the expected groups of setpoints",
     ):
-        datasets, _, _ = dond(
+        _datasets, _, _ = dond(
             TogetherSweep(sweepA, sweepB),
             sweepC,
             d,
@@ -1757,44 +1791,31 @@ def test_dond_get_after_set(_param_set, _param_set_2, _param) -> None:
 
     a = TrackingParameter("a", initial_value=0)
     b = TrackingParameter("b", initial_value=0)
+    c = TrackingParameter("c", initial_value=0)
 
     a.reset_count()
     b.reset_count()
+    c.reset_count()
 
     assert a.get_count == 0
     assert a.set_count == 0
     assert b.get_count == 0
     assert b.set_count == 0
+    assert c.get_count == 0
+    assert c.set_count == 0
 
-    dond(LinSweep(a, 0, 10, n_points, get_after_set=True), b)
+    dond(
+        LinSweep(a, 0, 10, n_points, get_after_set=True),
+        LinSweep(b, 0, 10, n_points, get_after_set=False),
+        c,
+    )
 
     assert a.get_count == n_points
     assert a.set_count == n_points
-    assert b.get_count == n_points
-    assert b.set_count == 0
-
-
-@pytest.mark.usefixtures("plot_close", "experiment")
-def test_dond_no_get_after_set(_param_set, _param_set_2, _param) -> None:
-    n_points = 10
-
-    a = TrackingParameter("a", initial_value=0)
-    b = TrackingParameter("b", initial_value=0)
-
-    a.reset_count()
-    b.reset_count()
-
-    assert a.get_count == 0
-    assert a.set_count == 0
     assert b.get_count == 0
-    assert b.set_count == 0
-
-    dond(LinSweep(a, 0, 10, n_points, get_after_set=False), b)
-
-    assert a.get_count == 0
-    assert a.set_count == n_points
-    assert b.get_count == n_points
-    assert b.set_count == 0
+    assert b.set_count == n_points**2
+    assert c.get_count == n_points**2
+    assert c.set_count == 0
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")

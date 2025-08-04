@@ -20,6 +20,7 @@ from time import perf_counter
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 import numpy as np
+import numpy.typing as npt
 from opentelemetry import trace
 
 import qcodes as qc
@@ -29,13 +30,12 @@ from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.data_set_protocol import (
     DataSetProtocol,
     DataSetType,
-    res_type,
-    setpoints_type,
-    values_type,
+    ResType,
+    SetpointsType,
+    ValuesType,
 )
 from qcodes.dataset.descriptions.dependencies import (
-    DependencyError,
-    InferenceError,
+    IncompleteSubsetError,
     InterDependencies_,
 )
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
@@ -54,10 +54,11 @@ from qcodes.utils import DelayedKeyboardInterrupt
 
 if TYPE_CHECKING:
     from types import TracebackType
+    from typing import Self
 
     from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
     from qcodes.dataset.experiment_container import Experiment
-    from qcodes.dataset.sqlite.connection import ConnectionPlus
+    from qcodes.dataset.sqlite.connection import AtomicConnection
     from qcodes.dataset.sqlite.query_helpers import VALUE
 
 log = logging.getLogger(__name__)
@@ -125,7 +126,7 @@ class DataSaver:
         for link in self._dataset.parent_dataset_links:
             self.parent_datasets.append(load_by_guid(link.tail))
 
-    def add_result(self, *res_tuple: res_type) -> None:
+    def add_result(self, *res_tuple: ResType) -> None:
         """
         Add a result to the measurement results. Represents a measurement
         point in the space of measurement parameters, e.g. in an experiment
@@ -163,7 +164,7 @@ class DataSaver:
         # of all parameters. This also allows users to call
         # add_result with the arguments in any particular order, i.e. NOT
         # enforcing that setpoints come before dependent variables.
-        results_dict: dict[ParamSpecBase, np.ndarray] = {}
+        results_dict: dict[ParamSpecBase, npt.NDArray] = {}
 
         parameter_names = tuple(
             partial_result[0].register_name
@@ -229,11 +230,11 @@ class DataSaver:
 
     def _conditionally_expand_parameter_with_setpoints(
         self,
-        data: values_type,
+        data: ValuesType,
         parameter: ParameterWithSetpoints,
         parameter_names: Sequence[str],
-        partial_result: res_type,
-    ) -> dict[ParamSpecBase, np.ndarray]:
+        partial_result: ResType,
+    ) -> dict[ParamSpecBase, npt.NDArray]:
         local_results = {}
         setpoint_names = tuple(
             setpoint.register_name for setpoint in parameter.setpoints
@@ -256,8 +257,8 @@ class DataSaver:
         return local_results
 
     def _unpack_partial_result(
-        self, partial_result: res_type
-    ) -> dict[ParamSpecBase, np.ndarray]:
+        self, partial_result: ResType
+    ) -> dict[ParamSpecBase, npt.NDArray]:
         """
         Unpack a partial result (not containing :class:`ArrayParameters` or
         class:`MultiParameters`) into a standard results dict form and return
@@ -284,14 +285,14 @@ class DataSaver:
         return {parameter: np.array(values)}
 
     def _unpack_arrayparameter(
-        self, partial_result: res_type
-    ) -> dict[ParamSpecBase, np.ndarray]:
+        self, partial_result: ResType
+    ) -> dict[ParamSpecBase, npt.NDArray]:
         """
         Unpack a partial result containing an :class:`Arrayparameter` into a
         standard results dict form and return that dict
         """
         array_param, values_array = partial_result
-        array_param = cast(ArrayParameter, array_param)
+        array_param = cast("ArrayParameter", array_param)
 
         if array_param.setpoints is None:
             raise RuntimeError(
@@ -322,8 +323,8 @@ class DataSaver:
         return res_dict
 
     def _unpack_multiparameter(
-        self, partial_result: res_type
-    ) -> dict[ParamSpecBase, np.ndarray]:
+        self, partial_result: ResType
+    ) -> dict[ParamSpecBase, npt.NDArray]:
         """
         Unpack the `subarrays` and `setpoints` from a :class:`MultiParameter`
         and into a standard results dict form and return that dict
@@ -331,7 +332,7 @@ class DataSaver:
         """
 
         parameter, data = partial_result
-        parameter = cast(MultiParameter, parameter)
+        parameter = cast("MultiParameter", parameter)
 
         result_dict = {}
 
@@ -343,7 +344,7 @@ class DataSaver:
             )
         for i in range(len(parameter.shapes)):
             # if this loop runs, then 'data' is a Sequence
-            data = cast(Sequence[str | int | float | Any], data)
+            data = cast("Sequence[str | int | float | Any]", data)
 
             shape = parameter.shapes[i]
 
@@ -386,7 +387,7 @@ class DataSaver:
         setpoints: Sequence[Any],
         sp_names: Sequence[str] | None,
         fallback_sp_name: str,
-    ) -> dict[ParamSpecBase, np.ndarray]:
+    ) -> dict[ParamSpecBase, npt.NDArray]:
         """
         Unpack the `setpoints` and their values from a
         :class:`ArrayParameter` or :class:`MultiParameter`
@@ -426,7 +427,7 @@ class DataSaver:
         return result_dict
 
     def _validate_result_deps(
-        self, results_dict: Mapping[ParamSpecBase, values_type]
+        self, results_dict: Mapping[ParamSpecBase, ValuesType]
     ) -> None:
         """
         Validate that the dependencies of the ``results_dict`` are met,
@@ -435,13 +436,13 @@ class DataSaver:
         """
         try:
             self._interdeps.validate_subset(list(results_dict.keys()))
-        except (DependencyError, InferenceError) as err:
+        except IncompleteSubsetError as err:
             raise ValueError(
                 "Can not add result, some required parameters are missing."
             ) from err
 
     def _validate_result_shapes(
-        self, results_dict: Mapping[ParamSpecBase, values_type]
+        self, results_dict: Mapping[ParamSpecBase, ValuesType]
     ) -> None:
         """
         Validate that all sizes of the ``results_dict`` are consistent.
@@ -468,7 +469,7 @@ class DataSaver:
 
     @staticmethod
     def _validate_result_types(
-        results_dict: Mapping[ParamSpecBase, np.ndarray],
+        results_dict: Mapping[ParamSpecBase, npt.NDArray],
     ) -> None:
         """
         Validate the type of the results
@@ -553,7 +554,7 @@ class Runner:
     ) -> None:
         if in_memory_cache is None:
             in_memory_cache = qc.config.dataset.in_memory_cache
-            in_memory_cache = cast(bool, in_memory_cache)
+            in_memory_cache = cast("bool", in_memory_cache)
 
         self._dataset_class = dataset_class
         self.write_period = self._calculate_write_period(
@@ -596,7 +597,7 @@ class Runner:
         if write_in_background:
             return 0.0
         if write_period is None:
-            write_period = cast(float, qc.config.dataset.write_period)
+            write_period = cast("float", qc.config.dataset.write_period)
         return float(write_period)
 
     def __enter__(self) -> DataSaver:
@@ -629,7 +630,7 @@ class Runner:
         if self.experiment is not None:
             exp_id: int | None = self.experiment.exp_id
             path_to_db: str | None = self.experiment.path_to_db
-            conn: ConnectionPlus | None = self.experiment.conn
+            conn: AtomicConnection | None = self.experiment.conn
         else:
             exp_id = None
             path_to_db = None
@@ -671,6 +672,12 @@ class Runner:
                 param.short_name: param.snapshot()
                 for param in self._registered_parameters
             }
+            parameter_snapshot.update(
+                {
+                    param.register_name: param.snapshot()
+                    for param in self._registered_parameters
+                }
+            )
             snapshot["parameters"] = parameter_snapshot
 
         self.ds.prepare(
@@ -862,8 +869,7 @@ class Measurement:
                     depends_on.append(sp_psb)
                 except KeyError:
                     raise ValueError(
-                        f"Unknown setpoint: {sp}."
-                        " Please register that parameter first."
+                        f"Unknown setpoint: {sp}. Please register that parameter first."
                     )
 
         # now handle inferred parameters
@@ -882,8 +888,8 @@ class Measurement:
         return tuple(depends_on), tuple(inf_from)
 
     def register_parent(
-        self: T, parent: DataSetProtocol, link_type: str, description: str = ""
-    ) -> T:
+        self: Self, parent: DataSetProtocol, link_type: str, description: str = ""
+    ) -> Self:
         """
         Register a parent for the outcome of this measurement
 
@@ -907,12 +913,12 @@ class Measurement:
         return self
 
     def register_parameter(
-        self: T,
+        self: Self,
         parameter: ParameterBase,
-        setpoints: setpoints_type | None = None,
-        basis: setpoints_type | None = None,
+        setpoints: SetpointsType | None = None,
+        basis: SetpointsType | None = None,
         paramtype: str | None = None,
-    ) -> T:
+    ) -> Self:
         """
         Add QCoDeS Parameter to the dataset produced by running this
         measurement.
@@ -994,15 +1000,14 @@ class Measurement:
         return self
 
     @staticmethod
-    def _check_setpoints_type(arg: setpoints_type, name: str) -> None:
+    def _check_setpoints_type(arg: SetpointsType, name: str) -> None:
         if (
             not isinstance(arg, Sequence)
             or isinstance(arg, str)
             or any(not isinstance(a, (str, ParameterBase)) for a in arg)
         ):
             raise TypeError(
-                f"{name} should be a sequence of str or ParameterBase, not "
-                f"{type(arg)}"
+                f"{name} should be a sequence of str or ParameterBase, not {type(arg)}"
             )
 
     @staticmethod
@@ -1036,15 +1041,15 @@ class Measurement:
         return paramtype
 
     def _register_parameter(
-        self: T,
+        self: Self,
         name: str,
         label: str | None,
         unit: str | None,
-        setpoints: setpoints_type | None,
-        basis: setpoints_type | None,
+        setpoints: SetpointsType | None,
+        basis: SetpointsType | None,
         paramtype: str,
         metadata: dict[str, Any] | None = None,
-    ) -> T:
+    ) -> Self:
         """
         Update the interdependencies object with a new group
         """
@@ -1099,8 +1104,8 @@ class Measurement:
     def _register_arrayparameter(
         self,
         parameter: ArrayParameter,
-        setpoints: setpoints_type | None,
-        basis: setpoints_type | None,
+        setpoints: SetpointsType | None,
+        basis: SetpointsType | None,
         paramtype: str,
     ) -> None:
         """
@@ -1148,8 +1153,8 @@ class Measurement:
     def _register_parameter_with_setpoints(
         self,
         parameter: ParameterWithSetpoints,
-        setpoints: setpoints_type | None,
-        basis: setpoints_type | None,
+        setpoints: SetpointsType | None,
+        basis: SetpointsType | None,
         paramtype: str,
     ) -> None:
         """
@@ -1160,9 +1165,7 @@ class Measurement:
         for sp in parameter.setpoints:
             if not isinstance(sp, Parameter):
                 raise RuntimeError(
-                    "The setpoints of a "
-                    "ParameterWithSetpoints "
-                    "must be a Parameter"
+                    "The setpoints of a ParameterWithSetpoints must be a Parameter"
                 )
             spname = sp.register_name
             splabel = sp.label
@@ -1191,8 +1194,8 @@ class Measurement:
     def _register_multiparameter(
         self,
         multiparameter: MultiParameter,
-        setpoints: setpoints_type | None,
-        basis: setpoints_type | None,
+        setpoints: SetpointsType | None,
+        basis: SetpointsType | None,
         paramtype: str,
     ) -> None:
         """
@@ -1254,14 +1257,14 @@ class Measurement:
             )
 
     def register_custom_parameter(
-        self: T,
+        self: Self,
         name: str,
         label: str | None = None,
         unit: str | None = None,
-        basis: setpoints_type | None = None,
-        setpoints: setpoints_type | None = None,
+        basis: SetpointsType | None = None,
+        setpoints: SetpointsType | None = None,
         paramtype: str = "numeric",
-    ) -> T:
+    ) -> Self:
         """
         Register a custom parameter with this measurement
 
@@ -1282,7 +1285,7 @@ class Measurement:
         """
         return self._register_parameter(name, label, unit, setpoints, basis, paramtype)
 
-    def unregister_parameter(self, parameter: setpoints_type) -> None:
+    def unregister_parameter(self, parameter: SetpointsType) -> None:
         """
         Remove a custom/QCoDeS parameter from the dataset produced by
         running this measurement
@@ -1320,7 +1323,9 @@ class Measurement:
 
         log.info(f"Removed {param_name} from Measurement.")
 
-    def add_before_run(self: T, func: Callable[..., Any], args: Sequence[Any]) -> T:
+    def add_before_run(
+        self: Self, func: Callable[..., Any], args: Sequence[Any]
+    ) -> Self:
         """
         Add an action to be performed before the measurement.
 
@@ -1333,15 +1338,16 @@ class Measurement:
         nargs = len(signature(func).parameters)
         if len(args) != nargs:
             raise ValueError(
-                "Mismatch between function call signature and "
-                "the provided arguments."
+                "Mismatch between function call signature and the provided arguments."
             )
 
         self.enteractions.append((func, args))
 
         return self
 
-    def add_after_run(self: T, func: Callable[..., Any], args: Sequence[Any]) -> T:
+    def add_after_run(
+        self: Self, func: Callable[..., Any], args: Sequence[Any]
+    ) -> Self:
         """
         Add an action to be performed after the measurement.
 
@@ -1354,8 +1360,7 @@ class Measurement:
         nargs = len(signature(func).parameters)
         if len(args) != nargs:
             raise ValueError(
-                "Mismatch between function call signature and "
-                "the provided arguments."
+                "Mismatch between function call signature and the provided arguments."
             )
 
         self.exitactions.append((func, args))
@@ -1363,10 +1368,10 @@ class Measurement:
         return self
 
     def add_subscriber(
-        self: T,
+        self: Self,
         func: Callable[..., Any],
         state: MutableSequence[Any] | MutableMapping[Any, Any],
-    ) -> T:
+    ) -> Self:
         """
         Add a subscriber to the dataset of the measurement.
 
@@ -1419,7 +1424,7 @@ class Measurement:
 
         """
         if write_in_background is None:
-            write_in_background = cast(bool, qc.config.dataset.write_in_background)
+            write_in_background = cast("bool", qc.config.dataset.write_in_background)
         return Runner(
             self.enteractions,
             self.exitactions,

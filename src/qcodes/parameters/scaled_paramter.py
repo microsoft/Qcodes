@@ -93,15 +93,10 @@ class ScaledParameter(Parameter):
 
         if division is not None:
             self.role = ScaledParameter.Role.DIVISION
-            # Unfortunately mypy does not support
-            # properties where the setter has different types than
-            # the actual property. We use that here to cast different inputs
-            # to the same type.
-            # https://github.com/python/mypy/issues/3004
-            self._multiplier = division  # type: ignore[assignment]
+            self._multiplier = division
         elif gain is not None:
             self.role = ScaledParameter.Role.GAIN
-            self._multiplier = gain  # type: ignore[assignment]
+            self._multiplier = gain
 
         # extend metadata
         self._meta_attrs.extend(["division"])
@@ -137,7 +132,7 @@ class ScaledParameter(Parameter):
     # Division of the scaler
     @property
     def division(self) -> float:
-        value = cast(float, self._multiplier())
+        value = cast("float", self._multiplier())
         if self.role == ScaledParameter.Role.DIVISION:
             return value
         elif self.role == ScaledParameter.Role.GAIN:
@@ -148,12 +143,12 @@ class ScaledParameter(Parameter):
     @division.setter
     def division(self, division: float | Parameter) -> None:
         self.role = ScaledParameter.Role.DIVISION
-        self._multiplier = division  # type: ignore[assignment]
+        self._multiplier = division
 
     # Gain of the scaler
     @property
     def gain(self) -> float:
-        value = cast(float, self._multiplier())
+        value = cast("float", self._multiplier())
         if self.role == ScaledParameter.Role.GAIN:
             return value
         elif self.role == ScaledParameter.Role.DIVISION:
@@ -164,7 +159,7 @@ class ScaledParameter(Parameter):
     @gain.setter
     def gain(self, gain: float | Parameter) -> None:
         self.role = ScaledParameter.Role.GAIN
-        self._multiplier = gain  # type: ignore[assignment]
+        self._multiplier = gain
 
     # Getter and setter for the real value
     def get_raw(self) -> float:
@@ -173,8 +168,8 @@ class ScaledParameter(Parameter):
             value at which was set at the sample
 
         """
-        wrapped_value = cast(float, self._wrapped_parameter())
-        multiplier = cast(float, self._multiplier())
+        wrapped_value = cast("float", self._wrapped_parameter())
+        multiplier = cast("float", self._multiplier())
 
         if self.role == ScaledParameter.Role.GAIN:
             value = wrapped_value * multiplier
@@ -208,7 +203,7 @@ class ScaledParameter(Parameter):
         """
         Set the value on the wrapped parameter, accounting for the scaling
         """
-        multiplier_value = cast(float, self._multiplier())
+        multiplier_value = cast("float", self._multiplier())
         if self.role == ScaledParameter.Role.GAIN:
             instrument_value = value / multiplier_value
         elif self.role == ScaledParameter.Role.DIVISION:

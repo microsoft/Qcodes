@@ -20,6 +20,8 @@ from qcodes.validators import Validator
 from .instrument_base import InstrumentBase
 
 if TYPE_CHECKING:
+    from typing import Self
+
     from typing_extensions import Unpack
 
     from .instrument import Instrument
@@ -153,10 +155,10 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
         self._parent = parent
         self._name = name
         if not isinstance(chan_type, type) or not issubclass(
-            chan_type, InstrumentChannel
+            chan_type, InstrumentModule
         ):
             raise ValueError(
-                "ChannelTuple can only hold instances of type InstrumentChannel"
+                "ChannelTuple can only hold instances of type InstrumentModule"
             )
         if not isinstance(multichan_paramclass, type) or not issubclass(
             multichan_paramclass, MultiChannelInstrumentParameter
@@ -166,7 +168,7 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
                 "MultiChannelInstrumentParameter"
             )
 
-        self._chan_type = chan_type
+        self._chan_type: type[InstrumentModuleType] = chan_type
         self._snapshotable = snapshotable
         self._paramclass = multichan_paramclass
 
@@ -192,11 +194,11 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
     def __getitem__(self, i: int) -> InstrumentModuleType: ...
 
     @overload
-    def __getitem__(self: T, i: slice | tuple[int, ...]) -> T: ...
+    def __getitem__(self: Self, i: slice | tuple[int, ...]) -> Self: ...
 
     def __getitem__(
-        self: T, i: int | slice | tuple[int, ...]
-    ) -> InstrumentModuleType | T:
+        self: Self, i: int | slice | tuple[int, ...]
+    ) -> InstrumentModuleType | Self:
         """
         Return either a single channel, or a new :class:`ChannelTuple`
         containing only the specified channels
@@ -244,7 +246,7 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
             f"{self._chan_type.__name__}, {self._channels!r})"
         )
 
-    def __add__(self: T, other: ChannelTuple) -> T:
+    def __add__(self: Self, other: ChannelTuple) -> Self:
         """
         Return a new ChannelTuple containing the channels from both
         :class:`ChannelTuple` self and r.
@@ -336,7 +338,7 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
         """
         return self._channels.count(obj)
 
-    def get_channel_by_name(self: T, *names: str) -> InstrumentModuleType | T:
+    def get_channel_by_name(self: Self, *names: str) -> InstrumentModuleType | Self:
         """
         Get a channel by name, or a ChannelTuple if multiple names are given.
 
@@ -470,14 +472,14 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
                 "Slicing is currently not supported for MultiParameters"
             )
         parameters = cast(
-            list[Parameter | ArrayParameter],
+            "list[Parameter | ArrayParameter]",
             [chan.parameters[name] for chan in self._channels],
         )
         names = tuple(f"{chan.name}_{name}" for chan in self._channels)
         labels = tuple(parameter.label for parameter in parameters)
         units = tuple(parameter.unit for parameter in parameters)
         if isinstance(parameters[0], ArrayParameter):
-            arrayparameters = cast(list[ArrayParameter], parameters)
+            arrayparameters = cast("list[ArrayParameter]", parameters)
             shapes = tuple(parameter.shape for parameter in arrayparameters)
             if arrayparameters[0].setpoints:
                 setpoints = tuple(parameter.setpoints for parameter in arrayparameters)
@@ -535,10 +537,9 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
             chan.invalidate_cache()
 
 
-# we ignore a mypy error here since the __getitem__ signature above
-# taking a tuple is not compatible with MutableSequence
-# for some reason this does not happen with Sequence
-class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  # type: ignore[misc]
+# in index method the parameter obj should be called value but that would
+# be an incompatible change
+class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  #  pyright: ignore[reportIncompatibleMethodOverride]
     """
     Mutable Container for channelized parameters that allows for sweeps over
     all channels, as well as addressing of individual channels.
@@ -760,7 +761,7 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  # type:
             return
         self._locked = True
 
-    def to_channel_tuple(self) -> ChannelTuple:
+    def to_channel_tuple(self) -> ChannelTuple[InstrumentModuleType]:
         """
         Returns a ChannelTuple build from this ChannelList containing the
         same channels but without the ability to be modified.
@@ -1067,7 +1068,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
         return self._exists_on_instrument
 
 
-class AutoLoadableChannelList(ChannelList):
+class AutoLoadableChannelList(ChannelList[AutoLoadableInstrumentChannel]):
     """
     Extends the QCoDeS :class:`ChannelList` class to add the following features:
     - Automatically create channel objects on initialization
@@ -1113,7 +1114,7 @@ class AutoLoadableChannelList(ChannelList):
         self,
         parent: Instrument,
         name: str,
-        chan_type: type,
+        chan_type: type[AutoLoadableInstrumentChannel],
         chan_list: Sequence[AutoLoadableInstrumentChannel] | None = None,
         snapshotable: bool = True,
         multichan_paramclass: type = MultiChannelInstrumentParameter,
@@ -1122,7 +1123,7 @@ class AutoLoadableChannelList(ChannelList):
         super().__init__(
             parent, name, chan_type, chan_list, snapshotable, multichan_paramclass
         )
-        new_channels = self._chan_type.load_from_instrument(  # type: ignore[attr-defined]
+        new_channels = self._chan_type.load_from_instrument(
             self._parent, channel_list=self, **kwargs
         )
 
@@ -1140,7 +1141,7 @@ class AutoLoadableChannelList(ChannelList):
             Newly created instance of the channel class
 
         """
-        new_channel = self._chan_type.new_instance(  # type: ignore[attr-defined]
+        new_channel = self._chan_type.new_instance(
             self._parent, create_on_instrument=True, channel_list=self, **kwargs
         )
 

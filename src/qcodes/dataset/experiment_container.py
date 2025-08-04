@@ -7,7 +7,7 @@ from warnings import warn
 
 from qcodes.dataset.data_set import DataSet, load_by_id, new_data_set
 from qcodes.dataset.experiment_settings import _set_default_experiment_id
-from qcodes.dataset.sqlite.connection import ConnectionPlus, path_to_dbfile
+from qcodes.dataset.sqlite.connection import AtomicConnection, path_to_dbfile
 from qcodes.dataset.sqlite.database import (
     conn_from_dbpath_or_conn,
     connect,
@@ -42,7 +42,7 @@ class Experiment(Sized):
         name: str | None = None,
         sample_name: str | None = None,
         format_string: str = "{}-{}-{}",
-        conn: ConnectionPlus | None = None,
+        conn: AtomicConnection | None = None,
     ) -> None:
         """
         Create or load an experiment. If exp_id is None, a new experiment is
@@ -83,13 +83,12 @@ class Experiment(Sized):
                 format_string.format("name", 1, 1)
             except Exception as e:
                 raise ValueError(
-                    "Invalid format string. Can not format "
-                    "(name, exp_id, run_counter)"
+                    "Invalid format string. Can not format (name, exp_id, run_counter)"
                 ) from e
 
             log.info(f"creating new experiment in {self.path_to_db}")
             max_id = max(experiments_list, default=0)
-            name = name or f"experiment_{max_id+1}"
+            name = name or f"experiment_{max_id + 1}"
             sample_name = sample_name or "some_sample"
             self._exp_id = ne(self.conn, name, sample_name, format_string)
 
@@ -183,7 +182,7 @@ class Experiment(Sized):
         run_id = get_last_run(self.conn, self.exp_id)
         if run_id is None:
             raise ValueError("There are no runs in this experiment")
-        return load_by_id(run_id)
+        return load_by_id(run_id, conn=self.conn)
 
     def finish(self) -> None:
         """
@@ -208,7 +207,7 @@ class Experiment(Sized):
 # public api
 
 
-def experiments(conn: ConnectionPlus | None = None) -> list[Experiment]:
+def experiments(conn: AtomicConnection | None = None) -> list[Experiment]:
     """
     List all the experiments in the container (database file from config)
 
@@ -229,7 +228,7 @@ def new_experiment(
     name: str,
     sample_name: str | None,
     format_string: str = "{}-{}-{}",
-    conn: ConnectionPlus | None = None,
+    conn: AtomicConnection | None = None,
 ) -> Experiment:
     """
     Create a new experiment (in the database file from config)
@@ -260,7 +259,7 @@ def new_experiment(
     return experiment
 
 
-def load_experiment(exp_id: int, conn: ConnectionPlus | None = None) -> Experiment:
+def load_experiment(exp_id: int, conn: AtomicConnection | None = None) -> Experiment:
     """
     Load experiment with the specified id (from database file from config)
 
@@ -305,7 +304,7 @@ def load_last_experiment() -> Experiment:
 def load_experiment_by_name(
     name: str,
     sample: str | None = None,
-    conn: ConnectionPlus | None = None,
+    conn: AtomicConnection | None = None,
     load_last_duplicate: bool = False,
 ) -> Experiment:
     """
@@ -366,7 +365,7 @@ def load_experiment_by_name(
 def load_or_create_experiment(
     experiment_name: str,
     sample_name: str | None = None,
-    conn: ConnectionPlus | None = None,
+    conn: AtomicConnection | None = None,
     load_last_duplicate: bool = False,
 ) -> Experiment:
     """
@@ -406,7 +405,7 @@ def load_or_create_experiment(
 
 
 def _create_exp_if_needed(
-    target_conn: ConnectionPlus,
+    target_conn: AtomicConnection,
     exp_name: str,
     sample_name: str,
     fmt_str: str,

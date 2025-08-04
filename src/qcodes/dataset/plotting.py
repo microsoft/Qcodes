@@ -14,6 +14,7 @@ from textwrap import wrap
 from typing import TYPE_CHECKING, Any, Literal, Optional, cast
 
 import numpy as np
+import numpy.typing as npt
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -101,10 +102,11 @@ def plot_dataset(
     cutoff_percentile: tuple[float, float] | float | None = None,
     complex_plot_type: Literal["real_and_imag", "mag_and_phase"] = "real_and_imag",
     complex_plot_phase: Literal["radians", "degrees"] = "radians",
+    parameters: Sequence[str] | str | None = None,
     **kwargs: Any,
 ) -> AxesTupleList:
     """
-    Construct all plots for a given dataset
+    Construct plots for a given dataset
 
     Implemented so far:
 
@@ -150,6 +152,8 @@ def plot_dataset(
         complex_plot_phase: Format of phase for plotting complex-valued data,
             either ``"radians"`` or ``"degrees"``. Applicable only for the
             cases where the dataset contains complex numbers
+        parameters: Names of dependent parameters to plot if the plotting of
+            all is not desired
         **kwargs: Keyword arguments passed to the plotting function.
 
     Returns:
@@ -198,8 +202,7 @@ def plot_dataset(
     experiment_name = dataset.exp_name
     sample_name = dataset.sample_name
     title = (
-        f"Run #{dataset.captured_run_id}, "
-        f"Experiment {experiment_name} ({sample_name})"
+        f"Run #{dataset.captured_run_id}, Experiment {experiment_name} ({sample_name})"
     )
 
     alldata: NamedData = _get_data_from_ds(dataset)
@@ -207,19 +210,22 @@ def plot_dataset(
         alldata, conversion=complex_plot_type, degrees=degrees
     )
 
-    nplots = len(alldata)
+    if isinstance(parameters, str):
+        parameters = [parameters]
+
+    nplots = len(alldata) if parameters is None else len(parameters)
 
     if isinstance(axes, matplotlib.axes.Axes):
         axeslist = [axes]
     else:
-        axeslist = cast(list[matplotlib.axes.Axes], axes)
+        axeslist = cast("list[matplotlib.axes.Axes]", axes)
     if isinstance(colorbars, matplotlib.colorbar.Colorbar):
         colorbars = [colorbars]
 
     if axeslist is None:
         axeslist = []
-        for i in range(nplots):
-            fig, ax = plt.subplots(1, 1, **subplots_kwargs)
+        for _ in range(nplots):
+            __, ax = plt.subplots(1, 1, **subplots_kwargs)
             axeslist.append(ax)
     else:
         if len(subplots_kwargs) != 0:
@@ -230,14 +236,45 @@ def plot_dataset(
                 f"Provided arguments: {subplots_kwargs}"
             )
         if len(axeslist) != nplots:
-            raise RuntimeError(
-                f"Trying to make {nplots} plots, but"
-                f"received {len(axeslist)} axes objects."
-            )
+            if parameters is not None:
+                raise RuntimeError(
+                    f"Trying to plot {len(parameters)} parameters "
+                    f"but received {len(axeslist)} axes objects. "
+                )
+            else:
+                raise RuntimeError(
+                    f"Trying to make {nplots} plots, but"
+                    f"received {len(axeslist)} axes objects."
+                )
 
     if colorbars is None:
         colorbars = len(axeslist) * [None]
     new_colorbars: list[Colorbar | None] = []
+
+    if parameters is None:
+        log.debug("No data specified - plotting all.")
+
+    else:
+        # validate parameters
+        dependents = []
+        for i in range(len(dataset.dependent_parameters)):
+            dependents.append(dataset.dependent_parameters[i].name)
+        for param in parameters:
+            if param not in dependents:
+                raise ValueError(
+                    f"Invalid parameter(s) given. Received {parameters} "
+                    f"but can only accept elements from {dependents}. "
+                )
+
+        log.debug(f"Plotting data for {parameters}.")
+
+        for i, data in enumerate(alldata):
+            if len(data) == 2:  # 1D PLOTTING
+                if data[1]["name"] not in parameters:
+                    alldata.pop(i)
+            elif len(data) == 3:  # 2D PLOTTING
+                if data[2]["name"] not in parameters:
+                    alldata.pop(i)
 
     for data, ax, colorbar in zip(alldata, axeslist, colorbars):
         if len(data) == 2:  # 1D PLOTTING
@@ -281,7 +318,7 @@ def plot_dataset(
             if data[2]["shape"] is None:
                 xpoints = data[0]["data"].flatten()
                 ypoints = data[1]["data"].flatten()
-                zpoints = data[2]["data"].flatten()
+                zpoints: npt.NDArray = data[2]["data"].flatten()
                 plottype = get_2D_plottype(xpoints, ypoints, zpoints)
                 log.debug(f"Determined plottype: {plottype}")
             else:
@@ -317,8 +354,8 @@ def plot_dataset(
         else:
             log.warning(
                 "Multi-dimensional data encountered. "
-                f'parameter {data[-1]["name"]} depends on '
-                f"{len(data)-1} parameters, cannot plot "
+                f"parameter {data[-1]['name']} depends on "
+                f"{len(data) - 1} parameters, cannot plot "
                 f"that."
             )
             new_colorbars.append(None)
@@ -350,7 +387,7 @@ def plot_and_save_image(
     """
     from matplotlib.figure import Figure
 
-    from qcodes import config
+    from qcodes import config  # noqa: PLC0415
 
     dataid = data.captured_run_id
     axes, cbs = plot_dataset(data)
@@ -384,6 +421,7 @@ def plot_by_id(
     cutoff_percentile: tuple[float, float] | float | None = None,
     complex_plot_type: Literal["real_and_imag", "mag_and_phase"] = "real_and_imag",
     complex_plot_phase: Literal["radians", "degrees"] = "radians",
+    parameters: Sequence[str] | str | None = None,
     **kwargs: Any,
 ) -> AxesTupleList:
     """
@@ -404,6 +442,7 @@ def plot_by_id(
         cutoff_percentile,
         complex_plot_type,
         complex_plot_phase,
+        parameters,
         **kwargs,
     )
 
@@ -525,7 +564,8 @@ def _convert_complex_to_real(
         "name": new_names[1],
         "label": new_labels[1],
         "unit": new_units[1],
-        "data": new_data[1],
+        "data": new_data[1],  # pyright: ignore[reportAssignmentType]
+        # the type of the converter cannot be infered due to the nested dict converters
         "shape": parameter["shape"],
     }
 
@@ -562,9 +602,9 @@ def _set_data_axes_labels(
 
 
 def plot_2d_scatterplot(
-    x: np.ndarray,
-    y: np.ndarray,
-    z: np.ndarray,
+    x: npt.NDArray,
+    y: npt.NDArray,
+    z: npt.NDArray,
     ax: Axes,
     colorbar: Colorbar | None = None,
     **kwargs: Any,
@@ -627,9 +667,9 @@ def plot_2d_scatterplot(
 
 
 def plot_on_a_plain_grid(
-    x: np.ndarray,
-    y: np.ndarray,
-    z: np.ndarray,
+    x: npt.NDArray,
+    y: npt.NDArray,
+    z: npt.NDArray,
     ax: Axes,
     colorbar: Colorbar | None = None,
     **kwargs: Any,
@@ -670,13 +710,13 @@ def plot_on_a_plain_grid(
         x_strings = np.unique(x)
         x = _strings_as_ints(x)
     else:
-        x_strings = []
+        x_strings = np.array([])
 
     if y_is_stringy:
         y_strings = np.unique(y)
         y = _strings_as_ints(y)
     else:
-        y_strings = []
+        y_strings = np.array([])
 
     if z_is_stringy:
         z_strings = [str(elem) for elem in np.unique(z)]
@@ -741,11 +781,13 @@ def plot_on_a_plain_grid(
 
 
 def _clip_nan_from_shaped_data(
-    x: np.ndarray, y: np.ndarray, z: np.ndarray
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    def _on_rectilinear_grid_except_nan(x_data: np.ndarray, y_data: np.ndarray) -> bool:
+    x: npt.NDArray, y: npt.NDArray, z: npt.NDArray
+) -> tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
+    def _on_rectilinear_grid_except_nan(
+        x_data: npt.NDArray, y_data: npt.NDArray
+    ) -> bool:
         """
-        check that data is on a rectilinear grid. e.g. all points are the same as the  first
+        Check that data is on a rectilinear grid. e.g. all points are the same as the first
         row and column with the exception of nans. Those represent points not yet measured.
         """
         x_row = x_data[:, 0:1]
@@ -788,7 +830,7 @@ def _scale_formatter(tick_value: float, pos: int, factor: float) -> str:
     Function for matplotlib.ticker.FuncFormatter that scales the tick values
     according to the given `scale` value.
     """
-    return f"{tick_value*factor:g}"
+    return f"{tick_value * factor:g}"
 
 
 def _make_rescaled_ticks_and_units(
@@ -869,7 +911,7 @@ def _rescale_ticks_and_units(
             cax.update_ticks()
 
 
-def _is_string_valued_array(values: np.ndarray) -> bool:
+def _is_string_valued_array(values: npt.NDArray) -> bool:
     """
     Check if the given 1D numpy array contains categorical data, or, in other
     words, if it is string-valued.

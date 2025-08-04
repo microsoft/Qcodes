@@ -3,10 +3,10 @@ import re
 from copy import deepcopy
 
 import pytest
+from networkx import NetworkXError
 
 from qcodes.dataset.descriptions.dependencies import (
-    DependencyError,
-    InferenceError,
+    IncompleteSubsetError,
     InterDependencies_,
 )
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
@@ -39,19 +39,19 @@ def test_init(some_paramspecbases) -> None:
     assert idps1 == idps2
     assert idps1.what_depends_on(ps2) == (ps1,)
     assert idps1.what_is_inferred_from(ps2) == ()
-    assert idps1.non_dependencies == (ps1,)
+    assert idps1.top_level_parameters == (ps1,)
 
     idps1 = InterDependencies_(dependencies={ps1: (ps2, ps3)})
     idps2 = InterDependencies_(dependencies={ps1: (ps3, ps2)})
 
     assert idps1.what_depends_on(ps2) == (ps1,)
     assert idps1.what_depends_on(ps3) == (ps1,)
-    assert idps1.non_dependencies == (ps1,)
-    assert idps2.non_dependencies == (ps1,)
+    assert idps1.top_level_parameters == (ps1,)
+    assert idps2.top_level_parameters == (ps1,)
 
     idps = InterDependencies_(dependencies={ps1: (ps3, ps2), ps4: (ps3,)})
     assert set(idps.what_depends_on(ps3)) == {ps1, ps4}
-    assert idps.non_dependencies == (ps1, ps4)
+    assert idps.top_level_parameters == (ps1, ps4)
 
 
 def test_init_validation_raises(some_paramspecbases) -> None:
@@ -93,11 +93,11 @@ def test_init_validation_raises(some_paramspecbases) -> None:
 
     # Now test trees that are invalid together
 
-    invalid_trees_2 = [{"deps": {ps1: (ps2, ps3)}, "inffs": {ps2: (ps4, ps1)}}]
+    invalid_trees_2 = [
+        {"deps": {ps1: (ps2, ps3)}, "inffs": {ps2: (ps4, ps1)}},
+    ]
     for inv in invalid_trees_2:
-        with pytest.raises(
-            ValueError, match=re.escape("Invalid dependencies/inferences")
-        ):
+        with pytest.raises(ValueError, match="already exists"):
             InterDependencies_(
                 dependencies=inv["deps"],  # type: ignore[arg-type]
                 inferences=inv["inffs"],  # type: ignore[arg-type]
@@ -233,48 +233,6 @@ def test_new_to_old(some_paramspecbases) -> None:
     assert new_to_old(idps_new) == idps_old_expected
 
 
-def test_extend_with_paramspec(some_paramspecs) -> None:
-    ps1 = some_paramspecs[1]["ps1"]
-    ps2 = some_paramspecs[1]["ps2"]
-    ps3 = some_paramspecs[1]["ps3"]
-    ps4 = some_paramspecs[1]["ps4"]
-    ps5 = some_paramspecs[1]["ps5"]
-    ps6 = some_paramspecs[1]["ps6"]
-
-    ps1_base = ps1.base_version()
-    ps2_base = ps2.base_version()
-    ps3_base = ps3.base_version()
-    ps4_base = ps4.base_version()
-    ps5_base = ps5.base_version()
-    ps6_base = ps6.base_version()
-
-    idps_bare = InterDependencies_(standalones=(ps1_base,))
-    idps_extended = InterDependencies_(inferences={ps3_base: (ps1_base,)})
-
-    assert idps_bare._extend_with_paramspec(ps3) == idps_extended
-
-    idps_bare = InterDependencies_(
-        standalones=(ps2_base,), inferences={ps3_base: (ps1_base,)}
-    )
-    idps_extended = InterDependencies_(
-        inferences={ps3_base: (ps1_base,), ps4_base: (ps2_base,)}
-    )
-
-    assert idps_bare._extend_with_paramspec(ps4) == idps_extended
-
-    idps_bare = InterDependencies_(standalones=(ps1_base, ps2_base))
-    idps_extended = InterDependencies_(
-        inferences={ps3_base: (ps1_base,), ps4_base: (ps2_base,)},
-        dependencies={ps5_base: (ps3_base, ps4_base), ps6_base: (ps3_base, ps4_base)},
-    )
-    assert (
-        idps_bare._extend_with_paramspec(ps3)
-        ._extend_with_paramspec(ps4)
-        ._extend_with_paramspec(ps5)
-        ._extend_with_paramspec(ps6)
-    ) == idps_extended
-
-
 def test_validate_subset(some_paramspecbases) -> None:
     ps1, ps2, ps3, ps4 = some_paramspecbases
 
@@ -288,30 +246,30 @@ def test_validate_subset(some_paramspecbases) -> None:
     idps.validate_subset(())
     idps.validate_subset([])
 
-    with pytest.raises(DependencyError) as exc_info1:
+    with pytest.raises(IncompleteSubsetError) as exc_info1:
         idps.validate_subset((ps1,))
-    assert exc_info1.value._param_name == "psb1"
-    assert exc_info1.value._missing_params == {"psb2", "psb3"}
+    assert exc_info1.value._subset_params == {"psb1"}
+    assert exc_info1.value._missing_params == {"psb2", "psb3", "psb4"}
 
-    with pytest.raises(DependencyError) as exc_info2:
+    with pytest.raises(IncompleteSubsetError) as exc_info2:
         idps.validate_subset((ps1, ps2, ps4))
-    assert exc_info2.value._param_name == "psb1"
+    assert exc_info2.value._subset_params == {"psb1", "psb2", "psb4"}
     assert exc_info2.value._missing_params == {"psb3"}
 
-    with pytest.raises(InferenceError) as exc_info3:
+    with pytest.raises(IncompleteSubsetError) as exc_info3:
         idps.validate_subset((ps3,))
-    assert exc_info3.value._param_name == "psb3"
+    assert exc_info3.value._subset_params == {"psb3"}
     assert exc_info3.value._missing_params == {"psb4"}
 
-    with pytest.raises(InferenceError) as exc_info4:
+    with pytest.raises(IncompleteSubsetError) as exc_info4:
         idps2 = InterDependencies_(
             dependencies={ps1: (ps2, ps3)}, inferences={ps3: (ps4,)}
         )
         idps2.validate_subset((ps1, ps2, ps3))
-    assert exc_info4.value._param_name == "psb3"
+    assert exc_info4.value._subset_params == {"psb1", "psb2", "psb3"}
     assert exc_info4.value._missing_params == {"psb4"}
 
-    with pytest.raises(ValueError, match="ps42"):
+    with pytest.raises(NetworkXError, match="ps42"):
         ps42 = ParamSpecBase("ps42", paramtype="text", label="", unit="it")
         idps.validate_subset((ps2, ps42, ps4))
 
@@ -325,14 +283,8 @@ def test_extend(some_paramspecbases) -> None:
     idps_expected = InterDependencies_(standalones=(ps2,), dependencies={ps1: (ps3,)})
     assert idps_ext == idps_expected
 
-    # lazily check that we get brand new objects
-    idps._id_to_paramspec[ps1.name].label = "Something new and awful"
-    idps._id_to_paramspec[ps2.name].unit = "Ghastly unit"
-    assert idps_ext._id_to_paramspec[ps1.name].label == "blah"
-    assert idps_ext._id_to_paramspec[ps2.name].unit == "V"
-    # reset the objects that are never supposed to be mutated
-    idps._id_to_paramspec[ps1.name].label = "blah"
-    idps._id_to_paramspec[ps2.name].unit = "V"
+    assert idps_ext is not idps
+    assert idps_ext.graph is not idps.graph
 
     idps = InterDependencies_(standalones=(ps2,))
     idps_ext = idps.extend(dependencies={ps1: (ps2,)})
@@ -352,13 +304,16 @@ def test_extend(some_paramspecbases) -> None:
     ps_nu = deepcopy(ps1)
     ps_nu.unit += "/s"
     idps = InterDependencies_(standalones=(ps1,))
+    with pytest.raises(ValueError, match="already exists"):
+        idps_ext = idps.extend(standalones=(ps_nu,))
+    ps_nu.name = "psbnu"
     idps_ext = idps.extend(standalones=(ps_nu,))
+
     idps_expected = InterDependencies_(standalones=(ps_nu, ps1))
     assert idps_ext == idps_expected
 
     idps = InterDependencies_(dependencies={ps1: (ps2,)})
-    match = re.escape("Invalid dependencies/inferences")
-    with pytest.raises(ValueError, match=match):
+    with pytest.raises(ValueError, match="already exists"):
         idps_ext = idps.extend(inferences={ps2: (ps1,)})
 
 
@@ -420,12 +375,104 @@ def test_non_dependents() -> None:
         inferences={ps4: (ps2,), ps3: (ps1,)},
     )
 
-    assert idps1.non_dependencies == (ps5, ps6)
+    assert idps1.top_level_parameters == (ps5, ps6)
 
     idps2 = InterDependencies_(dependencies={ps2: (ps1,)})
 
-    assert idps2.non_dependencies == (ps2,)
+    assert idps2.top_level_parameters == (ps2,)
 
     idps3 = InterDependencies_(dependencies={ps6: (ps1,)}, standalones=(ps2,))
 
-    assert idps3.non_dependencies == (ps2, ps6)
+    assert idps3.top_level_parameters == (ps2, ps6)
+
+
+def test_collect_related(
+    some_paramspecbases: tuple[
+        ParamSpecBase, ParamSpecBase, ParamSpecBase, ParamSpecBase
+    ],
+) -> None:
+    """
+    Test that find_all_parameters_in_tree collects all parameters
+    """
+
+    (ps1, ps2, ps3, ps4) = some_paramspecbases
+
+    idps1 = InterDependencies_(dependencies={ps1: (ps2,)})
+
+    collected_params = idps1.find_all_parameters_in_tree(ps1)
+
+    assert collected_params == {ps1, ps2}
+
+    idps2 = InterDependencies_(dependencies={ps1: (ps2,)}, inferences={ps2: (ps3,)})
+    collected_params = idps2.find_all_parameters_in_tree(ps1)
+    assert collected_params == {ps1, ps2, ps3}
+
+    idps3 = InterDependencies_(
+        dependencies={ps1: (ps2,)}, inferences={ps2: (ps3,), ps4: (ps1,)}
+    )
+    collected_params = idps3.find_all_parameters_in_tree(ps1)
+    assert collected_params == {ps1, ps2, ps4, ps3}
+
+    idps4 = InterDependencies_(dependencies={ps1: (ps2,)}, standalones=(ps3, ps4))
+    assert idps4.find_all_parameters_in_tree(ps1) == {ps1, ps2}
+    assert idps4.find_all_parameters_in_tree(ps3) == {ps3}
+    assert idps4.find_all_parameters_in_tree(ps4) == {ps4}
+    assert idps4.top_level_parameters == (ps1, ps3, ps4)
+
+    idps5 = InterDependencies_(dependencies={ps1: (ps2,)}, inferences={ps3: (ps4,)})
+    assert idps5.find_all_parameters_in_tree(ps1) == {ps1, ps2}
+    assert idps5.find_all_parameters_in_tree(ps3) == {ps3, ps4}
+    assert idps5.find_all_parameters_in_tree(ps4) == {ps3, ps4}
+    assert idps5.top_level_parameters == (ps1, ps3)
+
+
+def test_collect_related__complex(
+    some_paramspecbases: tuple[
+        ParamSpecBase, ParamSpecBase, ParamSpecBase, ParamSpecBase
+    ],
+) -> None:
+    (ps1, ps2, ps3, ps4) = some_paramspecbases
+    idps1 = InterDependencies_(dependencies={ps1: (ps2,)}, inferences={ps2: (ps3, ps4)})
+    assert idps1.top_level_parameters == (ps1,)
+    assert idps1.find_all_parameters_in_tree(ps1) == {ps1, ps2, ps3, ps4}
+
+    idps2 = InterDependencies_(dependencies={ps1: (ps2,)}, inferences={ps3: (ps2,)})
+    assert idps2.top_level_parameters == (ps1,)
+    assert idps2.find_all_parameters_in_tree(ps1) == {ps1, ps2, ps3}
+
+
+def test_all_parameters_in_tree_by_group_raises_on_non_top_level(some_paramspecbases):
+    (ps1, ps2, ps3, ps4) = some_paramspecbases
+
+    idps = InterDependencies_(dependencies={ps1: (ps2,)}, inferences={ps2: (ps3,)})
+
+    with pytest.raises(
+        ValueError, match=f"Parameter '{ps4.name}' is not part of the graph."
+    ):
+        idps.all_parameters_in_tree_by_group(ps4)
+
+    with pytest.raises(
+        ValueError, match=f"Parameter '{ps4.name}' is not part of the graph."
+    ):
+        idps.find_all_parameters_in_tree(ps4)
+
+
+def test_dependency_on_middle_parameter(
+    some_paramspecbases: tuple[
+        ParamSpecBase, ParamSpecBase, ParamSpecBase, ParamSpecBase
+    ],
+) -> None:
+    """
+    Test that a dependency on a middle parameter is correctly handled.
+    """
+    (ps1, ps2, ps3, ps4) = some_paramspecbases
+
+    idps = InterDependencies_(dependencies={ps1: (ps2,)}, inferences={ps2: (ps3,)})
+
+    idps.add_inferences({ps4: (ps2,)})
+
+    # navively one might expect that ps4 is a top level parameter
+    # since it has no in edges. However, since we include inferred parameters
+    # in both directions, ps4 is actually a member of the tree for ps1
+    assert idps.top_level_parameters == (ps1,)
+    assert idps.find_all_parameters_in_tree(ps1) == {ps1, ps2, ps3, ps4}

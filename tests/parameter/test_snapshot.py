@@ -72,7 +72,7 @@ def create_parameter(
 def test_snapshot_contains_parameter_attributes(
     snapshot_get: bool | Literal["NOT_PASSED"],
     snapshot_value: bool | Literal["NOT_PASSED"],
-    get_cmd: None | Literal[False] | Literal["NOT_PASSED"],
+    get_cmd: None | Literal[False, "NOT_PASSED"],
     cache_is_valid: bool,
     update: bool | Literal["NOT_PASSED"] | None,
 ) -> None:

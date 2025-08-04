@@ -4,6 +4,7 @@ from functools import partial
 from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 from pyvisa.errors import VisaIOError
 from typing_extensions import TypedDict, Unpack
 
@@ -64,7 +65,7 @@ class ScopeArray(ArrayParameter):
         )
         self.channel = channel
 
-    def calc_set_points(self) -> tuple[np.ndarray, int]:
+    def calc_set_points(self) -> tuple[npt.NDArray, int]:
         assert isinstance(self.instrument, TektronixTPS2012Channel)
         message = self.instrument.ask("WFMPre?")
         preamble = self._preambleparser(message)
@@ -96,8 +97,7 @@ class ScopeArray(ArrayParameter):
         assert isinstance(self.root_instrument, TektronixTPS2012)
         if not self.root_instrument.trace_ready:
             raise TraceNotReady(
-                "Please run prepare_curvedata to prepare "
-                "the scope for giving a trace."
+                "Please run prepare_curvedata to prepare the scope for giving a trace."
             )
         message = self._curveasker(self.channel)
         _, ydata, _ = self._curveparameterparser(message)
@@ -117,7 +117,7 @@ class ScopeArray(ArrayParameter):
         return message
 
     @staticmethod
-    def _binaryparser(curve: str) -> np.ndarray:
+    def _binaryparser(curve: str) -> npt.NDArray:
         """
         Helper function for parsing the curve data
 
@@ -182,7 +182,7 @@ class ScopeArray(ArrayParameter):
 
     def _curveparameterparser(
         self, waveform: str
-    ) -> tuple[np.ndarray, np.ndarray, int]:
+    ) -> tuple[npt.NDArray, npt.NDArray, int]:
         """
         The parser for the curve parameter. Note that WAVFrm? is equivalent
         to WFMPre?; CURVe?

@@ -372,7 +372,7 @@ def test_expand_setpoints_1c(parameters) -> None:
     Test that the setpoints expander helper function works correctly
     """
 
-    n_points_1, n_points_2, n_points_3, setpoints_1, setpoints_2, setpoints_3 = (
+    n_points_1, _n_points_2, _n_points_3, setpoints_1, _setpoints_2, _setpoints_3 = (
         parameters
     )
 
@@ -390,7 +390,7 @@ def test_expand_setpoints_1c(parameters) -> None:
 
 
 def test_expand_setpoints_2d(parameters) -> None:
-    n_points_1, n_points_2, n_points_3, setpoints_1, setpoints_2, setpoints_3 = (
+    n_points_1, n_points_2, _n_points_3, setpoints_1, setpoints_2, _setpoints_3 = (
         parameters
     )
 

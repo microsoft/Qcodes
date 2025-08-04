@@ -155,8 +155,7 @@ def test_repr(name) -> None:
         if name.isidentifier():
             ps = ParamSpec(name, okt)
             expected_repr = (
-                f"ParamSpec('{name}', '{okt}', '', '', "
-                "inferred_from=[], depends_on=[])"
+                f"ParamSpec('{name}', '{okt}', '', '', inferred_from=[], depends_on=[])"
             )
             assert ps.__repr__() == expected_repr
         else:
@@ -355,7 +354,7 @@ def test_base_version(paramspecs) -> None:
 
 def test_not_eq_for_list_attr() -> None:
     """
-    test that two paramspecs that differ only
+    Test that two paramspecs that differ only
     in list attrs are different
     """
 
@@ -366,7 +365,7 @@ def test_not_eq_for_list_attr() -> None:
 
 def test_not_eq_for_str_attr() -> None:
     """
-    test that two paramspecs that differ only
+    Test that two paramspecs that differ only
     in str attrs are different
     """
 
@@ -381,7 +380,7 @@ def test_not_eq_for_str_attr() -> None:
 
 def test_not_eq_non_paramspec() -> None:
     """
-    test that two paramspecs that differ only
+    Test that two paramspecs that differ only
     in str attrs are different
     """
 

@@ -17,15 +17,12 @@ from copy import copy
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from typing_extensions import deprecated
-
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
     from types import TracebackType
 
 import qcodes as qc
 from qcodes.utils import (
-    QCoDeSDeprecationWarning,
     get_all_installed_package_versions,
     get_qcodes_user_path,
     is_qcodes_installed_editably,
@@ -74,22 +71,6 @@ _urllib3_connection_filter = logging.Filter(name="urllib3.connection")
 _azure_monitor_opentelemetry_exporter_filter = logging.Filter(
     name="azure.monitor.opentelemetry.exporter"
 )
-
-
-@deprecated(
-    "filter_out_telemetry_log_records is deprecated and will be removed",
-    category=QCoDeSDeprecationWarning,
-)
-def filter_out_telemetry_log_records(record: logging.LogRecord) -> bool:
-    """
-    here we filter any message that is likely to be thrown from
-    opencensus/opentelemetry so it is not shown in the user console
-    """
-    return (
-        not _opencensus_filter.filter(record)
-        and not _urllib3_connection_filter.filter(record)
-        and not _azure_monitor_opentelemetry_exporter_filter
-    )
 
 
 def get_formatter() -> logging.Formatter:
@@ -165,18 +146,7 @@ def get_level_code(level: str | int) -> int:
     if isinstance(level, int):
         return level
     elif isinstance(level, str):
-        if sys.version_info >= (3, 11):
-            return logging.getLevelNamesMapping()[level]
-        else:
-            # The `getLevelNamesMapping` function was introduced in Python 3.11.
-            # It is possible to get the level code from the
-            # `getLevelName` call due to backwards compatibility to an earlier
-            # bug:
-            # >>> import logging
-            # >>> print(logging.getLevelName('DEBUG'))
-            # but this is now deprecated
-            # remove this else block when we drop support for Python 3.10
-            return logging.getLevelName(level)  # pyright: ignore[reportDeprecated]
+        return logging.getLevelNamesMapping()[level]
     else:
         raise RuntimeError(
             "get_level_code: "
@@ -287,9 +257,7 @@ def start_command_history_logger(log_dir: str | None = None) -> None:
             to ``~/.qcodes/logs/command_history.log``
 
     """
-    # get_ipython is part of the public api but IPython does
-    # not use __all__ to mark this
-    from IPython import get_ipython  # type: ignore[attr-defined]
+    from IPython.core.getipython import get_ipython
 
     ipython = get_ipython()
     if ipython is None:
@@ -300,8 +268,8 @@ def start_command_history_logger(log_dir: str | None = None) -> None:
     filename = os.path.join(log_dir, HISTORY_LOG_NAME)
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
-    ipython.magic("%logstop")
-    ipython.magic("%logstart -t -o {} {}".format(filename, "append"))
+    ipython.run_line_magic("logstop", "")
+    ipython.run_line_magic("logstart", f"-t -o {filename} append")
     log.info("Started logging IPython history")
 
 
@@ -368,8 +336,6 @@ def conditionally_start_all_logging() -> None:
             raise RuntimeError("Error in qcodesrc validation.")
 
     def running_in_test_or_tool() -> bool:
-        import sys
-
         tools = (
             "pytest.py",
             "pytest",

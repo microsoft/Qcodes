@@ -77,7 +77,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
 
     def compliance(self) -> list[int]:
         """
-        check for the status other than "N" (normal) and output the
+        Check for the status other than "N" (normal) and output the
         number of data values which were not measured under "N" (normal)
         status.
 

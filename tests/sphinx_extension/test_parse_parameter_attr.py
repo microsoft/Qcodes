@@ -1,12 +1,12 @@
 import pytest
 from sphinx.util.inspect import safe_getattr
+from typing_extensions import deprecated
 
 from qcodes.instrument import InstrumentBase, VisaInstrument
 from qcodes.sphinx_extensions.parse_parameter_attr import (
     ParameterProxy,
     qcodes_parameter_attr_getter,
 )
-from qcodes.utils import deprecate
 
 
 class DummyTestClass(InstrumentBase):
@@ -40,7 +40,7 @@ class DummyDecoratedInitTestClass(InstrumentBase):
     A class attribute
     """
 
-    @deprecate("Deprecate to test that decorated init is handled correctly")
+    @deprecated("Deprecate to test that decorated init is handled correctly")
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -50,7 +50,7 @@ class DummyDecoratedInitTestClass(InstrumentBase):
         """
 
 
-@deprecate("Deprecate to test that decorated class is handled correctly")
+@deprecated("Deprecate to test that decorated class is handled correctly")
 class DummyDecoratedClassTestClass(InstrumentBase):
     myattr: str = "ClassAttribute"
     """
@@ -102,7 +102,7 @@ def test_decorated_init_func() -> None:
 
 
 def test_decorated_class() -> None:
-    attr = qcodes_parameter_attr_getter(DummyDecoratedClassTestClass, "other_attr")
+    attr = qcodes_parameter_attr_getter(DummyDecoratedClassTestClass, "other_attr")  # pyright: ignore[reportDeprecated]
     assert isinstance(attr, ParameterProxy)
     assert repr(attr) == '"InstanceAttribute"'
 

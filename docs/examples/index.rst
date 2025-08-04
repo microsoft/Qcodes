@@ -14,12 +14,3 @@ examples you can download them directly from the git repository.
     driver_examples/index
     writing_drivers/index
     logging/index
-
-
-Logging
---------
-
-.. toctree::
-    :glob:
-
-    logging/*

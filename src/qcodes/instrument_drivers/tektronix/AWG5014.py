@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 import array as arr
 import logging
 import re
 import struct
 from collections import abc
-from collections.abc import Sequence
 from io import BytesIO
 from time import localtime, sleep
 from typing import (
@@ -16,12 +17,15 @@ from typing import (
 )
 
 import numpy as np
+import numpy.typing as npt
 from pyvisa.errors import VisaIOError
 
 from qcodes import validators as vals
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from typing_extensions import Unpack
 
     from qcodes.parameters import Parameter
@@ -155,7 +159,7 @@ class TektronixAWG5014(VisaInstrument):
         address: str,
         *,
         num_channels: int = 4,
-        **kwargs: "Unpack[VisaInstrumentKWArgs]",
+        **kwargs: Unpack[VisaInstrumentKWArgs],
     ):
         """
         Initializes the AWG5014.
@@ -172,7 +176,7 @@ class TektronixAWG5014(VisaInstrument):
         self._address = address
         self.num_channels = num_channels
 
-        self._values: dict[str, dict[str, dict[str, np.ndarray | float | None]]] = {}
+        self._values: dict[str, dict[str, dict[str, npt.NDArray | float | None]]] = {}
         self._values["files"] = {}
 
         self.add_function("reset", call_cmd="*RST")
@@ -271,7 +275,7 @@ class TektronixAWG5014(VisaInstrument):
             get_cmd="AWGControl:SEQuencer:POSition?",
             set_cmd="SEQuence:JUMP:IMMediate {}",
             vals=vals.PermissiveInts(1),
-            set_parser=lambda x: int(round(x)),
+            set_parser=lambda x: round(x),
         )
         """Parameter sequence_pos"""
 
@@ -909,10 +913,10 @@ class TektronixAWG5014(VisaInstrument):
     ######################
 
     def _pack_record(
-        self, name: str, value: float | str | Sequence[Any] | np.ndarray, dtype: str
+        self, name: str, value: float | str | Sequence[Any] | npt.NDArray, dtype: str
     ) -> bytes:
         """
-        packs awg_file record into a struct in the folowing way:
+        Packs awg_file record into a struct in the folowing way:
             struct.pack(fmtstring, namesize, datasize, name, data)
         where fmtstring = '<IIs"dtype"'
 
@@ -964,7 +968,7 @@ class TektronixAWG5014(VisaInstrument):
         """
         log.info("Generating sequence_cfg")
 
-        AWG_sequence_cfg = {
+        AWG_sequence_cfg: dict[str, float] = {
             "SAMPLING_RATE": self.clock_freq.get(),
             "CLOCK_SOURCE": (
                 1 if self.clock_source().startswith("INT") else 2
@@ -1151,7 +1155,7 @@ class TektronixAWG5014(VisaInstrument):
     @staticmethod
     def parse_marker_channel_name(name: str) -> _MarkerDescriptor:
         """
-        returns from the channel index and marker index from a marker
+        Returns from the channel index and marker index from a marker
         descriptor string e.g. '1M1'->(1,1)
         """
         res = re.match(r"^(?P<channel>\d+)M(?P<marker>\d+)$", name)
@@ -1163,8 +1167,8 @@ class TektronixAWG5014(VisaInstrument):
 
     def _generate_awg_file(
         self,
-        packed_waveforms: dict[str, np.ndarray],
-        wfname_l: np.ndarray,
+        packed_waveforms: dict[str, npt.NDArray],
+        wfname_l: npt.NDArray,
         nrep: Sequence[int],
         trig_wait: Sequence[int],
         goto_state: Sequence[int],
@@ -1361,9 +1365,9 @@ class TektronixAWG5014(VisaInstrument):
 
     def make_awg_file(
         self,
-        waveforms: Sequence[Sequence[np.ndarray]] | Sequence[np.ndarray],
-        m1s: Sequence[Sequence[np.ndarray]] | Sequence[np.ndarray],
-        m2s: Sequence[Sequence[np.ndarray]] | Sequence[np.ndarray],
+        waveforms: Sequence[Sequence[npt.NDArray]] | Sequence[npt.NDArray],
+        m1s: Sequence[Sequence[npt.NDArray]] | Sequence[npt.NDArray],
+        m2s: Sequence[Sequence[npt.NDArray]] | Sequence[npt.NDArray],
         nreps: Sequence[int],
         trig_waits: Sequence[int],
         goto_states: Sequence[int],
@@ -1419,15 +1423,19 @@ class TektronixAWG5014(VisaInstrument):
         packed_wfs = {}
         waveform_names = []
         if not isinstance(waveforms[0], abc.Sequence):
-            waveforms_int: Sequence[Sequence[np.ndarray]] = [
-                cast(Sequence[np.ndarray], waveforms)
+            waveforms_int: Sequence[Sequence[npt.NDArray]] = [
+                cast("Sequence[npt.NDArray]", waveforms)
             ]
-            m1s_int: Sequence[Sequence[np.ndarray]] = [cast(Sequence[np.ndarray], m1s)]
-            m2s_int: Sequence[Sequence[np.ndarray]] = [cast(Sequence[np.ndarray], m2s)]
+            m1s_int: Sequence[Sequence[npt.NDArray]] = [
+                cast("Sequence[npt.NDArray]", m1s)
+            ]
+            m2s_int: Sequence[Sequence[npt.NDArray]] = [
+                cast("Sequence[npt.NDArray]", m2s)
+            ]
         else:
-            waveforms_int = cast(Sequence[Sequence[np.ndarray]], waveforms)
-            m1s_int = cast(Sequence[Sequence[np.ndarray]], m1s)
-            m2s_int = cast(Sequence[Sequence[np.ndarray]], m2s)
+            waveforms_int = cast("Sequence[Sequence[npt.NDArray]]", waveforms)
+            m1s_int = cast("Sequence[Sequence[npt.NDArray]]", m1s)
+            m2s_int = cast("Sequence[Sequence[npt.NDArray]]", m2s)
 
         for ii in range(len(waveforms_int)):
             namelist = []
@@ -1462,9 +1470,9 @@ class TektronixAWG5014(VisaInstrument):
 
     def make_send_and_load_awg_file(
         self,
-        waveforms: Sequence[Sequence[np.ndarray]],
-        m1s: Sequence[Sequence[np.ndarray]],
-        m2s: Sequence[Sequence[np.ndarray]],
+        waveforms: Sequence[Sequence[npt.NDArray]],
+        m1s: Sequence[Sequence[npt.NDArray]],
+        m2s: Sequence[Sequence[npt.NDArray]],
         nreps: Sequence[int],
         trig_waits: Sequence[int],
         goto_states: Sequence[int],
@@ -1550,9 +1558,9 @@ class TektronixAWG5014(VisaInstrument):
 
     def make_and_save_awg_file(
         self,
-        waveforms: Sequence[Sequence[np.ndarray]],
-        m1s: Sequence[Sequence[np.ndarray]],
-        m2s: Sequence[Sequence[np.ndarray]],
+        waveforms: Sequence[Sequence[npt.NDArray]],
+        m1s: Sequence[Sequence[npt.NDArray]],
+        m2s: Sequence[Sequence[npt.NDArray]],
         nreps: Sequence[int],
         trig_waits: Sequence[int],
         goto_states: Sequence[int],
@@ -1638,8 +1646,8 @@ class TektronixAWG5014(VisaInstrument):
         return self.ask("SYSTEM:ERRor:NEXT?")
 
     def _pack_waveform(
-        self, wf: np.ndarray, m1: np.ndarray, m2: np.ndarray
-    ) -> np.ndarray:
+        self, wf: npt.NDArray, m1: npt.NDArray, m2: npt.NDArray
+    ) -> npt.NDArray:
         """
         Converts/packs a waveform and two markers into a 16-bit format
         according to the AWG Integer format specification.
@@ -1696,8 +1704,8 @@ class TektronixAWG5014(VisaInstrument):
     ###########################
 
     def _file_dict(
-        self, wf: np.ndarray, m1: np.ndarray, m2: np.ndarray, clock: float | None
-    ) -> dict[str, np.ndarray | float | None]:
+        self, wf: npt.NDArray, m1: npt.NDArray, m2: npt.NDArray, clock: float | None
+    ) -> dict[str, npt.NDArray | float | None]:
         """
         Make a file dictionary as used by self.send_waveform_to_list
 
@@ -1782,7 +1790,7 @@ class TektronixAWG5014(VisaInstrument):
         return True
 
     def send_waveform_to_list(
-        self, w: np.ndarray, m1: np.ndarray, m2: np.ndarray, wfmname: str
+        self, w: npt.NDArray, m1: npt.NDArray, m2: npt.NDArray, wfmname: str
     ) -> None:
         """
         Send a single complete waveform directly to the "User defined"

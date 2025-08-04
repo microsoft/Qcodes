@@ -9,10 +9,9 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
 
 import numpy as np
-from typing_extensions import deprecated
+import numpy.typing as npt
 
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs
-from qcodes.utils import QCoDeSDeprecationWarning
 
 from .ats_api import AlazarATSAPI
 from .constants import NUMBER_OF_CHANNELS_FROM_BYTE_REPR, max_buffer_size
@@ -329,7 +328,7 @@ class AlazarTechATS(Instrument):
         acquisition_controller: AcquisitionController[OutputType] | None = None,
     ) -> OutputType:
         """
-        perform a single acquisition with the Alazar board, and set certain
+        Perform a single acquisition with the Alazar board, and set certain
         parameters to the appropriate values
         for the parameters, see the ATS-SDK programmer's guide
 
@@ -390,9 +389,9 @@ class AlazarTechATS(Instrument):
 
         # -----set final configurations-----
 
-        buffers_per_acquisition = cast(int, self.buffers_per_acquisition())
-        samples_per_record = cast(int, self.samples_per_record())
-        records_per_buffer = cast(int, self.records_per_buffer())
+        buffers_per_acquisition = cast("int", self.buffers_per_acquisition())
+        samples_per_record = cast("int", self.samples_per_record())
+        records_per_buffer = cast("int", self.records_per_buffer())
 
         # bits per sample
         _, bits_per_sample = self.api.get_channel_info_(self._handle)
@@ -417,7 +416,7 @@ class AlazarTechATS(Instrument):
             transfer_record_size * records_per_buffer * number_of_channels
         )
 
-        sample_type: type[ctypes.c_uint16] | type[ctypes.c_uint8] = (
+        sample_type: type[ctypes.c_uint16 | ctypes.c_uint8] = (
             ctypes.c_uint16 if whole_bytes_per_sample > 1 else ctypes.c_uint8
         )
         internal_buffer_size_requested = (
@@ -431,9 +430,9 @@ class AlazarTechATS(Instrument):
         if internal_buffer_size_requested > max_buffer_size:
             raise RuntimeError(
                 f"Requested a buffer of size: "
-                f"{internal_buffer_size_requested / 1024 ** 2}"
+                f"{internal_buffer_size_requested / 1024**2}"
                 f" MB. The maximum supported size is "
-                f"{max_buffer_size / 1024 ** 2} MB "
+                f"{max_buffer_size / 1024**2} MB "
                 f"(recommended is <8MB)."
             )
 
@@ -480,7 +479,7 @@ class AlazarTechATS(Instrument):
                     "records_per_buffer should be 1 in TS mode, defauling to 1"
                 )
                 self.records_per_buffer.set(1)
-            records_per_buffer = cast(int, self.records_per_buffer())
+            records_per_buffer = cast("int", self.records_per_buffer())
 
             self.api.before_async_read(
                 self._handle,
@@ -495,8 +494,8 @@ class AlazarTechATS(Instrument):
         self.clear_buffers()
 
         # make sure that allocated_buffers <= buffers_per_acquisition
-        allocated_buffers = cast(int, self.allocated_buffers())
-        buffers_per_acquisition = cast(int, self.buffers_per_acquisition())
+        allocated_buffers = cast("int", self.allocated_buffers())
+        buffers_per_acquisition = cast("int", self.buffers_per_acquisition())
 
         if allocated_buffers > buffers_per_acquisition:
             self.log.warning(
@@ -507,7 +506,7 @@ class AlazarTechATS(Instrument):
             )
             self.allocated_buffers.set(buffers_per_acquisition)
 
-        allocated_buffers = cast(int, self.allocated_buffers())
+        allocated_buffers = cast("int", self.allocated_buffers())
         buffer_recycling = buffers_per_acquisition > allocated_buffers
 
         # post buffers to Alazar
@@ -526,7 +525,7 @@ class AlazarTechATS(Instrument):
             # buffer handling from acquisition
             buffers_completed = 0
             bytes_transferred = 0
-            buffer_timeout = cast(int, self.buffer_timeout())
+            buffer_timeout = cast("int", self.buffer_timeout())
 
             done_setup = time.perf_counter()
 
@@ -653,7 +652,7 @@ class AlazarTechATS(Instrument):
 
     def signal_to_volt(self, channel: int, signal: float) -> float:
         """
-        convert a value from a buffer to an actual value in volts based on the
+        Convert a value from a buffer to an actual value in volts based on the
         ranges of the channel
 
         Args:
@@ -775,7 +774,7 @@ class Buffer:
 
     def __init__(self, c_sample_type: CtypesTypes, size_bytes: int):
         self.size_bytes = size_bytes
-        self.buffer: np.ndarray
+        self.buffer: npt.NDArray
 
         bytes_per_sample = {
             ctypes.c_uint8: 1,
@@ -805,7 +804,7 @@ class Buffer:
 
     def free_mem(self) -> None:
         """
-        uncommit memory allocated with this buffer object
+        Uncommit memory allocated with this buffer object
         """
         self._allocated = False
         if sys.platform == "win32":
@@ -864,7 +863,7 @@ class AcquisitionInterface(Generic[OutputType]):
         pass
 
     def handle_buffer(
-        self, buffer: np.ndarray, buffer_number: int | None = None
+        self, buffer: npt.NDArray, buffer_number: int | None = None
     ) -> None:
         """
         This method should store or process the information that is contained
@@ -905,15 +904,6 @@ class AcquisitionInterface(Generic[OutputType]):
         pass
 
 
-@deprecated(
-    "AlazarTech_ATS is deprecated, use AlazarTechATS instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class AlazarTech_ATS(AlazarTechATS):
-    pass
-
-
 class AcquisitionController(Instrument, AcquisitionInterface[Any], Generic[OutputType]):
     """
     Compatibility class. The methods of :class:`AcquisitionController`
@@ -938,7 +928,7 @@ class AcquisitionController(Instrument, AcquisitionInterface[Any], Generic[Outpu
 
     def _get_alazar(self) -> AlazarTechATS:
         """
-        returns a reference to the alazar instrument. A call to self._alazar is
+        Returns a reference to the alazar instrument. A call to self._alazar is
         quicker, so use that if in need for speed
         :return: reference to the Alazar instrument
         """

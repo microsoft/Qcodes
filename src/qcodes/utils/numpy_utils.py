@@ -4,6 +4,7 @@ import warnings
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
+import numpy.typing as npt
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -18,7 +19,7 @@ except ImportError:
 def list_of_data_to_maybe_ragged_nd_array(
     column_data: Sequence[Any],
     dtype: type | None = None,
-) -> np.ndarray:
+) -> npt.NDArray:
     """
     Convert a (nested) Sequence of data to numpy arrays. Handle that
     the elements of the sequence may not have the same length in which

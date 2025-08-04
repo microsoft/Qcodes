@@ -427,8 +427,7 @@ class AlazarTechATS9360(AlazarTechATS):
         model = self.get_idn()["model"]
         if model != "ATS9360":
             raise Exception(
-                f"The Alazar board kind is not 'ATS9360',"
-                f" found '{model!s}' instead."
+                f"The Alazar board kind is not 'ATS9360', found '{model!s}' instead."
             )
 
     def _get_trigger_holdoff(self) -> bool:

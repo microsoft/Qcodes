@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from ..param_spec import ParamSpec
 
@@ -8,7 +8,8 @@ if TYPE_CHECKING:
     from .rundescribertypes import InterDependenciesDict
 
 
-class InterDependencies:
+class InterDependencies:  # noqa: PLW1641
+    # TODO not clear if this should implement __hash__
     """
     Object containing the ParamSpecs of a given run
     """
@@ -27,10 +28,10 @@ class InterDependencies:
     def __repr__(self) -> str:
         output = self.__class__.__name__
         tojoin = (str(paramspec) for paramspec in self.paramspecs)
-        output += f'({", ".join(tojoin)})'
+        output += f"({', '.join(tojoin)})"
         return output
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, InterDependencies):
             return False
         ours = sorted(self.paramspecs, key=lambda ps: ps.name)

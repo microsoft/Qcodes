@@ -15,10 +15,11 @@ from os.path import expanduser, normpath
 from typing import TYPE_CHECKING, Literal
 
 import numpy as np
+import numpy.typing as npt
 
 import qcodes
 from qcodes.dataset.experiment_settings import reset_default_experiment_id
-from qcodes.dataset.sqlite.connection import ConnectionPlus
+from qcodes.dataset.sqlite.connection import AtomicConnection
 from qcodes.dataset.sqlite.db_upgrades import (
     _latest_available_version,
     perform_db_upgrade,
@@ -35,7 +36,7 @@ JournalMode = Literal["DELETE", "TRUNCATE", "PERSIST", "MEMORY", "WAL", "OFF"]
 
 
 # utility function to allow sqlite/numpy type
-def _adapt_array(arr: np.ndarray) -> sqlite3.Binary:
+def _adapt_array(arr: npt.NDArray) -> sqlite3.Binary:
     """
     See this:
     https://stackoverflow.com/questions/3425320/sqlite3-programmingerror-you-must-not-use-8-bit-bytestrings-unless-you-use-a-te
@@ -50,7 +51,7 @@ def _adapt_array(arr: np.ndarray) -> sqlite3.Binary:
     return sqlite3.Binary(out.read())
 
 
-def _convert_array(text: bytes) -> np.ndarray:
+def _convert_array(text: bytes) -> npt.NDArray:
     # Using np.lib.format.read_array (counterpart of np.lib.format.write_array)
     # npy format version 3.0 is 3 times faster than previous verions (no clean up step
     # for python 2 backward compatibility)
@@ -119,7 +120,9 @@ def _adapt_complex(value: complex | np.complexfloating) -> sqlite3.Binary:
     return sqlite3.Binary(out.read())
 
 
-def connect(name: str | Path, debug: bool = False, version: int = -1) -> ConnectionPlus:
+def connect(
+    name: str | Path, debug: bool = False, version: int = -1
+) -> AtomicConnection:
     """
     Connect or create  database. If debug the queries will be echoed back.
     This function takes care of registering the numpy/sqlite type
@@ -133,7 +136,7 @@ def connect(name: str | Path, debug: bool = False, version: int = -1) -> Connect
 
     Returns:
         connection object to the database (note, it is
-        :class:`ConnectionPlus`, not :class:`sqlite3.Connection`)
+        :class:`AtomicConnection`, which is a subclass of :class:`sqlite3.Connection`)
 
     """
     # register numpy->binary(TEXT) adapter
@@ -141,10 +144,12 @@ def connect(name: str | Path, debug: bool = False, version: int = -1) -> Connect
     # register binary(TEXT) -> numpy converter
     sqlite3.register_converter("array", _convert_array)
 
-    sqlite3_conn = sqlite3.connect(
-        name, detect_types=sqlite3.PARSE_DECLTYPES, check_same_thread=True
+    conn = sqlite3.connect(
+        name,
+        detect_types=sqlite3.PARSE_DECLTYPES,
+        check_same_thread=True,
+        factory=AtomicConnection,
     )
-    conn = ConnectionPlus(sqlite3_conn)
 
     latest_supported_version = _latest_available_version()
     db_version = get_user_version(conn)
@@ -232,7 +237,7 @@ def initialise_database(journal_mode: JournalMode | None = "WAL") -> None:
     del conn
 
 
-def set_journal_mode(conn: ConnectionPlus, journal_mode: JournalMode) -> None:
+def set_journal_mode(conn: AtomicConnection, journal_mode: JournalMode) -> None:
     """
     Set the ``atomic commit and rollback mode`` of the sqlite database.
     See https://www.sqlite.org/pragma.html#pragma_journal_mode for details.
@@ -246,8 +251,7 @@ def set_journal_mode(conn: ConnectionPlus, journal_mode: JournalMode) -> None:
     valid_journal_modes = ["DELETE", "TRUNCATE", "PERSIST", "MEMORY", "WAL", "OFF"]
     if journal_mode not in valid_journal_modes:
         raise RuntimeError(
-            f"Invalid journal_mode {journal_mode} "
-            f"Valid modes are {valid_journal_modes}"
+            f"Invalid journal_mode {journal_mode} Valid modes are {valid_journal_modes}"
         )
     query = f"PRAGMA journal_mode={journal_mode};"
     cursor = conn.cursor()
@@ -292,27 +296,26 @@ def initialised_database_at(db_file_with_abs_path: str | Path) -> Iterator[None]
 
 
 def conn_from_dbpath_or_conn(
-    conn: ConnectionPlus | None, path_to_db: str | Path | None
-) -> ConnectionPlus:
+    conn: AtomicConnection | None, path_to_db: str | Path | None
+) -> AtomicConnection:
     """
     A small helper function to abstract the logic needed for functions
-    that take either a `ConnectionPlus` or the path to a db file.
+    that take either an `AtomicConnection` or the path to a db file.
     If neither is given this will fall back to the default db location.
     It is an error to supply both.
 
     Args:
-        conn: A ConnectionPlus object pointing to a sqlite database
+        conn: A AtomicConnection object pointing to a sqlite database
         path_to_db: The path to a db file.
 
     Returns:
-        A `ConnectionPlus` object
+        A `AtomicConnection` object
 
     """
 
     if path_to_db is not None and conn is not None:
         raise ValueError(
-            "Received BOTH conn and path_to_db. Please "
-            "provide only one or the other."
+            "Received BOTH conn and path_to_db. Please provide only one or the other."
         )
     if conn is None and path_to_db is None:
         path_to_db = get_DB_location()

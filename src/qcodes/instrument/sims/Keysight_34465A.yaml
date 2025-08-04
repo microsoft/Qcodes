@@ -108,17 +108,7 @@ devices:
           r: "{}"
         setter:
           q: "SAMPle:TIMer {}"
-      dc_autorange:
-        default: 0
-        getter:
-          q: "SENSe:VOLTage:DC:RANGe:AUTO?"
-          r: "{}"
-        setter:
-          q: "SENSe:VOLTage:DC:RANGe:AUTO {}"
-        specs:
-          valid: [0, 1]
-          type: int
-      dc_range:
+      voltage_dc_range:
         default: 1
         getter:
           q: "SENSe:VOLTage:DC:RANGe?"
@@ -131,44 +121,260 @@ devices:
                   10000, 100000, 1000000,
                   10000000, 100000000, 1000000000]
           type: float
-      NPLC:
-        default: 10.0
-        getter:
-          q: "SENSe:VOLTage:DC:NPLC?"
-          r: "{}"
-        setter:
-          q: "SENSe:VOLTage:DC:NPLC {}"
-        specs:
-          valid: [0.001, 0.002, 0.006, 0.02, 0.06, .2, 1, 10, 100]
-          type: float
-      resolution:
+      voltage_dc_resolution:
         default: +3.00000000E-05
         getter:
           q: "SENSe:VOLTage:DC:RESolution?"
           r: "{}"
         setter:
           q: "SENSe:VOLTage:DC:RESolution {}"
-      apterture_enabled:
+      current_ac_autorange:
         default: 0
         getter:
-          q: "SENSe:VOLTage:DC:APERture:ENABled?"
+          q: "SENSe:CURR:AC:RANGe:AUTO?"
           r: "{}"
         setter:
-          q: "SENSe:VOLTage:DC:APERture:ENABled {}"
-      apterture_time:
+          q: "SENSe:CURR:AC:RANGe:AUTO {}"
+        specs:
+          valid: [0, 1]
+          type: int
+      current_dc_autorange:
         default: 0
         getter:
-          q: "SENSe:VOLTage:DC:APERture?"
+          q: "SENSe:CURR:RANGe:AUTO?"
           r: "{}"
         setter:
-          q: "SENSe:VOLTage:DC:APERture {}"
-      autozero:
+          q: "SENSe:CURR:RANGe:AUTO {}"
+        specs:
+          valid: [0, 1]
+          type: int
+      fresistance_autorange:
         default: 0
         getter:
-          q: "SENSe:VOLTage:DC:ZERO:AUTO?"
+          q: "SENSe:FRES:RANGe:AUTO?"
           r: "{}"
         setter:
-          q: "SENSe:VOLTage:DC:ZERO:AUTO {}"
+          q: "SENSe:FRES:RANGe:AUTO {}"
+        specs:
+          valid: [0, 1]
+          type: int
+      resistance_autorange:
+        default: 0
+        getter:
+          q: "SENSe:RES:RANGe:AUTO?"
+          r: "{}"
+        setter:
+          q: "SENSe:RES:RANGe:AUTO {}"
+        specs:
+          valid: [0, 1]
+          type: int
+      voltage_ac_autorange:
+        default: 0
+        getter:
+          q: "SENSe:VOLT:AC:RANGe:AUTO?"
+          r: "{}"
+        setter:
+          q: "SENSe:VOLT:AC:RANGe:AUTO {}"
+        specs:
+          valid: [0, 1]
+          type: int
+      voltage_dc_autorange:
+        default: 0
+        getter:
+          q: "SENSe:VOLT:RANGe:AUTO?"
+          r: "{}"
+        setter:
+          q: "SENSe:VOLT:RANGe:AUTO {}"
+        specs:
+          valid: [0, 1]
+          type: int
+      current_ac_autozero:
+        default: 0
+        getter:
+          q: "SENSe:CURR:AC:ZERO:AUTO?"
+          r: "{}"
+        setter:
+          q: "SENSe:CURR:AC:ZERO:AUTO {}"
+      current_dc_autozero:
+        default: 0
+        getter:
+          q: "SENSe:CURR:ZERO:AUTO?"
+          r: "{}"
+        setter:
+          q: "SENSe:CURR:ZERO:AUTO {}"
+      fresistance_autozero:
+        default: 0
+        getter:
+          q: "SENSe:FRES:ZERO:AUTO?"
+          r: "{}"
+        setter:
+          q: "SENSe:FRES:ZERO:AUTO {}"
+      resistance_autozero:
+        default: 0
+        getter:
+          q: "SENSe:RES:ZERO:AUTO?"
+          r: "{}"
+        setter:
+          q: "SENSe:RES:ZERO:AUTO {}"
+      voltage_ac_autozero:
+        default: 0
+        getter:
+          q: "SENSe:VOLT:AC:ZERO:AUTO?"
+          r: "{}"
+        setter:
+          q: "SENSe:VOLT:AC:ZERO:AUTO {}"
+      voltage_dc_autozero:
+        default: 0
+        getter:
+          q: "SENSe:VOLT:ZERO:AUTO?"
+          r: "{}"
+        setter:
+          q: "SENSe:VOLT:ZERO:AUTO {}"
+      current_ac_NPLC:
+        default: 10.0
+        getter:
+          q: "SENSe:CURR:AC:NPLC?"
+          r: "{}"
+        setter:
+          q: "SENSe:CURR:AC:NPLC {}"
+        specs:
+          valid: [0.001, 0.002, 0.006, 0.02, 0.06, 0.2, 1, 10, 100]
+          type: float
+      current_dc_NPLC:
+        default: 10.0
+        getter:
+          q: "SENSe:CURR:NPLC?"
+          r: "{}"
+        setter:
+          q: "SENSe:CURR:NPLC {}"
+        specs:
+          valid: [0.001, 0.002, 0.006, 0.02, 0.06, 0.2, 1, 10, 100]
+          type: float
+      fresistance_NPLC:
+        default: 10.0
+        getter:
+          q: "SENSe:FRES:NPLC?"
+          r: "{}"
+        setter:
+          q: "SENSe:FRES:NPLC {}"
+        specs:
+          valid: [0.001, 0.002, 0.006, 0.02, 0.06, 0.2, 1, 10, 100]
+          type: float
+      resistance_NPLC:
+        default: 10.0
+        getter:
+          q: "SENSe:RES:NPLC?"
+          r: "{}"
+        setter:
+          q: "SENSe:RES:NPLC {}"
+        specs:
+          valid: [0.001, 0.002, 0.006, 0.02, 0.06, 0.2, 1, 10, 100]
+          type: float
+      voltage_ac_NPLC:
+        default: 10.0
+        getter:
+          q: "SENSe:VOLT:AC:NPLC?"
+          r: "{}"
+        setter:
+          q: "SENSe:VOLT:AC:NPLC {}"
+        specs:
+          valid: [0.001, 0.002, 0.006, 0.02, 0.06, 0.2, 1, 10, 100]
+          type: float
+      voltage_dc_NPLC:
+        default: 10.0
+        getter:
+          q: "SENSe:VOLT:NPLC?"
+          r: "{}"
+        setter:
+          q: "SENSe:VOLT:NPLC {}"
+        specs:
+          valid: [0.001, 0.002, 0.006, 0.02, 0.06, 0.2, 1, 10, 100]
+          type: float
+      current_ac_aperture_enabled:
+        default: 0
+        getter:
+          q: "SENSe:CURR:AC:APERture:ENABled?"
+          r: "{}"
+        setter:
+          q: "SENSe:CURR:AC:APERture:ENABled {}"
+      current_dc_aperture_enabled:
+        default: 0
+        getter:
+          q: "SENSe:CURR:APERture:ENABled?"
+          r: "{}"
+        setter:
+          q: "SENSe:CURR:APERture:ENABled {}"
+      fresistance_aperture_enabled:
+        default: 0
+        getter:
+          q: "SENSe:FRES:APERture:ENABled?"
+          r: "{}"
+        setter:
+          q: "SENSe:FRES:APERture:ENABled {}"
+      resistance_aperture_enabled:
+        default: 0
+        getter:
+          q: "SENSe:RES:APERture:ENABled?"
+          r: "{}"
+        setter:
+          q: "SENSe:RES:APERture:ENABled {}"
+      voltage_ac_aperture_enabled:
+        default: 0
+        getter:
+          q: "SENSe:VOLT:AC:APERture:ENABled?"
+          r: "{}"
+        setter:
+          q: "SENSe:VOLT:AC:APERture:ENABled {}"
+      voltage_dc_aperture_enabled:
+        default: 0
+        getter:
+          q: "SENSe:VOLT:APERture:ENABled?"
+          r: "{}"
+        setter:
+          q: "SENSe:VOLT:APERture:ENABled {}"
+
+      current_ac_aperture_time:
+        default: 0
+        getter:
+          q: "SENSe:CURR:AC:APERture?"
+          r: "{}"
+        setter:
+          q: "SENSe:CURR:AC:APERture {}"
+      current_dc_aperture_time:
+        default: 0
+        getter:
+          q: "SENSe:CURR:APERture?"
+          r: "{}"
+        setter:
+          q: "SENSe:CURR:APERture {}"
+      fresistance_aperture_time:
+        default: 0
+        getter:
+          q: "SENSe:FRES:APERture?"
+          r: "{}"
+        setter:
+          q: "SENSe:FRES:APERture {}"
+      resistance_aperture_time:
+        default: 0
+        getter:
+          q: "SENSe:RES:APERture?"
+          r: "{}"
+        setter:
+          q: "SENSe:RES:APERture {}"
+      voltage_ac_aperture_time:
+        default: 0
+        getter:
+          q: "SENSe:VOLT:AC:APERture?"
+          r: "{}"
+        setter:
+          q: "SENSe:VOLT:AC:APERture {}"
+      voltage_dc_aperture_time:
+        default: 0
+        getter:
+          q: "SENSe:VOLT:APERture?"
+          r: "{}"
+        setter:
+          q: "SENSe:VOLT:APERture {}"
       licenses:
         default: "DIG"
         getter:

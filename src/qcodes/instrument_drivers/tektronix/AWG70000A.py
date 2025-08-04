@@ -11,8 +11,8 @@ from functools import partial
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
+import numpy.typing as npt
 from broadbean.sequence import InvalidForgedSequenceError, fs_schema
-from typing_extensions import deprecated
 
 from qcodes import validators as vals
 from qcodes.instrument import (
@@ -24,7 +24,6 @@ from qcodes.instrument import (
     VisaInstrumentKWArgs,
 )
 from qcodes.parameters import create_on_off_val_mapping
-from qcodes.utils import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -725,7 +724,7 @@ class TektronixAWG70000Base(VisaInstrument):
         self.write("WLISt:WAVeform:DELete ALL")
 
     @staticmethod
-    def makeWFMXFile(data: np.ndarray, amplitude: float) -> bytes:
+    def makeWFMXFile(data: npt.NDArray, amplitude: float) -> bytes:
         """
         Compose a WFMX file
 
@@ -978,7 +977,7 @@ class TektronixAWG70000Base(VisaInstrument):
         return xmlstr
 
     @staticmethod
-    def _makeWFMXFileBinaryData(data: np.ndarray, amplitude: float) -> bytes:
+    def _makeWFMXFileBinaryData(data: npt.NDArray, amplitude: float) -> bytes:
         """
         For the binary part.
 
@@ -1094,7 +1093,7 @@ class TektronixAWG70000Base(VisaInstrument):
         if set(channel_mapping.values()) != set(range(1, 1 + len(chan_list))):
             raise ValueError(
                 "Invalid channel_mapping. Must map onto "
-                f"{list(range(1, 1+len(chan_list)))}"
+                f"{list(range(1, 1 + len(chan_list)))}"
             )
 
         ##########
@@ -1247,7 +1246,7 @@ class TektronixAWG70000Base(VisaInstrument):
         event_jumps: Sequence[int],
         event_jump_to: Sequence[int],
         go_to: Sequence[int],
-        wfms: Sequence[Sequence[np.ndarray]],
+        wfms: Sequence[Sequence[npt.NDArray]],
         amplitudes: Sequence[float],
         seqname: str,
         flags: Sequence[Sequence[Sequence[int]]] | None = None,
@@ -1453,8 +1452,7 @@ class TektronixAWG70000Base(VisaInstrument):
 
         if lstlens[0] != len(elem_names):
             raise ValueError(
-                "Mismatch between number of waveforms and"
-                " number of sequencing steps."
+                "Mismatch between number of waveforms and number of sequencing steps."
             )
 
         N = lstlens[0]
@@ -1524,7 +1522,7 @@ class TektronixAWG70000Base(VisaInstrument):
                 repcount.text = "1"
             else:
                 rep.text = "RepeatCount"
-                repcount.text = f"{nreps[n-1]:d}"
+                repcount.text = f"{nreps[n - 1]:d}"
             # trigger wait
             temp_elem = ET.SubElement(step, "WaitInput")
             temp_elem.text = waitinputs[trig_waits[n - 1]]
@@ -1538,7 +1536,7 @@ class TektronixAWG70000Base(VisaInstrument):
                 jumpstep.text = "1"
             else:
                 jumpto.text = "StepIndex"
-                jumpstep.text = f"{event_jump_to[n-1]:d}"
+                jumpstep.text = f"{event_jump_to[n - 1]:d}"
             # Go to
             goto = ET.SubElement(step, "GoTo")
             gotostep = ET.SubElement(step, "GoToStep")
@@ -1547,7 +1545,7 @@ class TektronixAWG70000Base(VisaInstrument):
                 gotostep.text = "1"
             else:
                 goto.text = "StepIndex"
-                gotostep.text = f"{go_to[n-1]:d}"
+                gotostep.text = f"{go_to[n - 1]:d}"
 
             assets = ET.SubElement(step, "Assets")
             for assetname in elem_names[n - 1]:
@@ -1592,12 +1590,3 @@ class TektronixAWG70000Base(VisaInstrument):
         )
 
         return xmlstr
-
-
-@deprecated(
-    "Base class renamed TektronixAWG70000Base",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class AWG70000A(TektronixAWG70000Base):
-    pass

@@ -6,6 +6,7 @@ from functools import partial
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
+import numpy.typing as npt
 
 from qcodes.instrument import (
     ChannelList,
@@ -667,8 +668,8 @@ class Multi2DSetPointParam(MultiParameter):
         names = ("this", "that")
         labels = ("this label", "that label")
         units = ("this unit", "that unit")
-        sp_base_1 = tuple(np.linspace(5, 9, 5))
-        sp_base_2 = tuple(np.linspace(9, 11, 3))
+        sp_base_1 = tuple(np.linspace(5, 9, 5).flatten().tolist())
+        sp_base_2 = tuple(np.linspace(9, 11, 3).flatten().tolist())
         array_setpoints = setpoint_generator(sp_base_1, sp_base_2)
         setpoints = (array_setpoints, array_setpoints)
         setpoint_names = (
@@ -724,11 +725,11 @@ class Multi2DSetPointParam2Sizes(MultiParameter):
         names = ("this_5_3", "this_2_7")
         labels = ("this label", "that label")
         units = ("this unit", "that unit")
-        sp_base_1_1 = tuple(np.linspace(5, 9, 5))
-        sp_base_2_1 = tuple(np.linspace(9, 11, 3))
+        sp_base_1_1 = tuple(np.linspace(5, 9, 5).flatten().tolist())
+        sp_base_2_1 = tuple(np.linspace(9, 11, 3).flatten().tolist())
         array_setpoints_1 = setpoint_generator(sp_base_1_1, sp_base_2_1)
-        sp_base_1_2 = tuple(np.linspace(5, 9, 2))
-        sp_base_2_2 = tuple(np.linspace(9, 11, 7))
+        sp_base_1_2 = tuple(np.linspace(5, 9, 2).flatten().tolist())
+        sp_base_2_2 = tuple(np.linspace(9, 11, 7).flatten().tolist())
         array_setpoints_2 = setpoint_generator(sp_base_1_2, sp_base_2_2)
         setpoints = (array_setpoints_1, array_setpoints_2)
         setpoint_names = (
@@ -939,8 +940,8 @@ class DummyParameterWithSetpointsComplex(ParameterWithSetpoints):
 
 
 def setpoint_generator(
-    *sp_bases: Sequence[float | np.floating] | np.ndarray,
-) -> tuple[np.ndarray, ...]:
+    *sp_bases: Sequence[float | np.floating] | npt.NDArray,
+) -> tuple[npt.NDArray, ...]:
     """
     Helper function to generate setpoints in the format that ArrayParameter
     (and MultiParameter) expects
@@ -952,7 +953,7 @@ def setpoint_generator(
         tuple of setpoints in the expected format.
 
     """
-    setpoints: list[np.ndarray] = []
+    setpoints: list[npt.NDArray] = []
     for i, sp_base in enumerate(sp_bases):
         if i == 0:
             setpoints.append(np.array(sp_base))

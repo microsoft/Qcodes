@@ -28,7 +28,7 @@ def _make_inst_and_monitor():
     param = Parameter("DummyParam", unit="V", get_cmd=None, set_cmd=None)
     param(1)
     monitor_parameters = cast(
-        tuple[Parameter, ...], tuple(instr.parameters.values())[1:]
+        "tuple[Parameter, ...]", tuple(instr.parameters.values())[1:]
     )
     my_monitor = monitor.Monitor(*monitor_parameters, param, interval=0.1)
     try:
@@ -121,7 +121,7 @@ async def test_instrument_update(inst_and_monitor) -> None:
     """
     Test instrument updates
     """
-    instr, my_monitor, monitor_parameters, param = inst_and_monitor
+    instr, _my_monitor, monitor_parameters, param = inst_and_monitor
     async with websockets.connect(
         f"ws://localhost:{monitor.WEBSOCKET_PORT}"
     ) as websocket:

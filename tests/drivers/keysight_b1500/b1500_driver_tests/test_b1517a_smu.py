@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, call
 
 import pytest
 
+from qcodes.instrument import InstrumentBase
 from qcodes.instrument_drivers.Keysight.keysightb1500 import constants
 from qcodes.instrument_drivers.Keysight.keysightb1500.constants import (
     MM,
@@ -26,8 +27,6 @@ def _make_smu(mainframe):
 
 
 def test_snapshot() -> None:
-    from qcodes.instrument.base import InstrumentBase
-
     # We need to use `InstrumentBase` (not a bare mock) in order for
     # `snapshot` methods call resolution to work out
     mainframe = InstrumentBase(name="mainframe")

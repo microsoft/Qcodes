@@ -49,8 +49,7 @@ class ParameterWithSetpoints(Parameter):
             )
         if vals.shape_unevaluated is None:
             raise RuntimeError(
-                "A ParameterWithSetpoints must have a shape "
-                "defined for its validator."
+                "A ParameterWithSetpoints must have a shape defined for its validator."
             )
 
         super().__init__(

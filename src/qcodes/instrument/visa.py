@@ -22,8 +22,9 @@ from .instrument_base import InstrumentBase, InstrumentBaseKWArgs
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
+    from typing import NotRequired
 
-    from typing_extensions import NotRequired, Unpack
+    from typing_extensions import Unpack
 
 VISA_LOGGER = ".".join((InstrumentBase.__module__, "com", "visa"))
 
@@ -137,7 +138,8 @@ class VisaInstrument(Instrument):
         name: str,
         address: str,
         timeout: float | None | Literal["Unset"] = "Unset",
-        terminator: str | None | Literal["Unset"] = "Unset",
+        terminator: str | Literal["Unset"] | None = "Unset",  # noqa: PYI051
+        # while unset is redundant here we add it to communicate to the user that unset has special meaning
         device_clear: bool = True,
         visalib: str | None = None,
         pyvisa_sim_file: str | None = None,

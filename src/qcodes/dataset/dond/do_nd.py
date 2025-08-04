@@ -6,7 +6,7 @@ import time
 from collections.abc import Callable, Mapping, Sequence
 from contextlib import ExitStack
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, NotRequired, cast, overload
 
 import numpy as np
 from opentelemetry import trace
@@ -33,8 +33,6 @@ from qcodes.parameters import ParameterBase
 
 from .sweeps import AbstractSweep, TogetherSweep
 
-LOG = logging.getLogger(__name__)
-
 if TYPE_CHECKING:
     from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
     from qcodes.dataset.dond.do_nd_utils import (
@@ -46,6 +44,7 @@ if TYPE_CHECKING:
     )
     from qcodes.dataset.experiment_container import Experiment
 
+LOG = logging.getLogger(__name__)
 SweepVarType = Any
 
 TRACER = trace.get_tracer(__name__)
@@ -88,7 +87,7 @@ class _Sweeper:
     ) -> tuple[tuple[tuple[SweepVarType, ...] | SweepVarType, ...], ...]:
         sweeps = tuple(sweep.get_setpoints() for sweep in self._sweeps)
         return cast(
-            tuple[tuple[tuple[SweepVarType, ...] | SweepVarType, ...], ...],
+            "tuple[tuple[tuple[SweepVarType, ...] | SweepVarType, ...], ...]",
             tuple(itertools.product(*sweeps)),
         )
 
@@ -533,7 +532,7 @@ class _Measurements:
                 param for param in dataset_parameters if param in self.measured_all
             )
             setpoint_parameters = cast(
-                Sequence[ParameterBase],
+                "Sequence[ParameterBase]",
                 tuple(
                     param
                     for param in dataset_parameters
@@ -565,6 +564,22 @@ class _SweepMeasGroup:
     @property
     def parameters(self) -> tuple[ParameterBase, ...]:
         return self._parameters
+
+
+class DondKWargs(TypedDict):
+    write_period: NotRequired[float | None]
+    measurement_name: NotRequired[str | Sequence[str]]
+    exp: NotRequired[Experiment | Sequence[Experiment] | None]
+    enter_actions: NotRequired[ActionsT]
+    exit_actions: NotRequired[ActionsT]
+    do_plot: NotRequired[bool | None]
+    show_progress: NotRequired[bool | None]
+    use_threads: NotRequired[bool | None]
+    additional_setpoints: NotRequired[Sequence[ParameterBase]]
+    log_info: NotRequired[str | None]
+    break_condition: NotRequired[BreakConditionT | None]
+    dataset_dependencies: NotRequired[Mapping[str, Sequence[ParamMeasT]]]
+    in_memory_cache: NotRequired[bool | None]
 
 
 @overload
@@ -732,7 +747,7 @@ def dond(
 
     """
     if do_plot is None:
-        do_plot = cast(bool, config.dataset.dond_plot)
+        do_plot = cast("bool", config.dataset.dond_plot)
     if show_progress is None:
         show_progress = config.dataset.dond_show_progress
 
@@ -800,11 +815,10 @@ def dond(
                         for act in set_event.actions:
                             act()
                         time.sleep(set_event.delay)
+                        if set_event.get_after_set:
+                            set_event.new_value = set_event.parameter()
 
-                    if set_event.get_after_set:
-                        results[set_event.parameter] = set_event.parameter()
-                    else:
-                        results[set_event.parameter] = set_event.new_value
+                    results[set_event.parameter] = set_event.new_value
 
                 meas_value_pair = call_params_meas()
                 for meas_param, value in meas_value_pair:

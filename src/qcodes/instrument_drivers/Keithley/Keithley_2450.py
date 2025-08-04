@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import numpy as np
+import numpy.typing as npt
 from typing_extensions import TypedDict, Unpack
 
 from qcodes.instrument import InstrumentChannel, VisaInstrument, VisaInstrumentKWArgs
@@ -338,12 +339,12 @@ class Keithley2450Sense(InstrumentChannel):
         buffer_name = self.parent.buffer_name()
         return float(self.ask(f":MEASure? '{buffer_name}'"))
 
-    def _measure_sweep(self) -> np.ndarray:
-        source = cast(Keithley2450Source, self.parent.source)
+    def _measure_sweep(self) -> npt.NDArray:
+        source = cast("Keithley2450Source", self.parent.source)
         source.sweep_start()
         buffer_name = self.parent.buffer_name()
         buffer = cast(
-            Keithley2450Buffer, self.parent.submodules[f"_buffer_{buffer_name}"]
+            "Keithley2450Buffer", self.parent.submodules[f"_buffer_{buffer_name}"]
         )
         end_idx = self.parent.npts()
         raw_data = buffer.get_data(1, end_idx, readings_only=True)
@@ -518,7 +519,7 @@ class Keithley2450Source(InstrumentChannel):
         if self.block_during_ramp():
             self.ask("*OPC?")
 
-    def get_sweep_axis(self) -> np.ndarray:
+    def get_sweep_axis(self) -> npt.NDArray:
         if self._sweep_arguments is None:
             raise ValueError(
                 "Please setup the sweep before getting values of this parameter"
@@ -582,8 +583,7 @@ class Keithley2450Source(InstrumentChannel):
 
     def _set_user_delay(self, value: float) -> None:
         set_cmd = (
-            f":SOURce:{self._proper_function}:DELay:USER"
-            f"{self.user_number()} {value}"
+            f":SOURce:{self._proper_function}:DELay:USER{self.user_number()} {value}"
         )
         self.write(set_cmd)
 
@@ -704,8 +704,7 @@ class Keithley2450(VisaInstrument):
         sense = self.submodules[f"_sense_{sense_function}"]
         if not isinstance(sense, Keithley2450Sense):
             raise RuntimeError(
-                f"Expect Sense Module to be of type "
-                f"Keithley2450Sense got {type(sense)}"
+                f"Expect Sense Module to be of type Keithley2450Sense got {type(sense)}"
             )
         sense.sweep.setpoints = (self.source.sweep_axis,)
 
@@ -732,7 +731,9 @@ class Keithley2450(VisaInstrument):
         self.write(f":SOUR:FUNC {value}")
         assert self.source_function.inverse_val_mapping is not None
         source_function = self.source_function.inverse_val_mapping[value]
-        source = cast(Keithley2450Source, self.submodules[f"_source_{source_function}"])
+        source = cast(
+            "Keithley2450Source", self.submodules[f"_source_{source_function}"]
+        )
         self.sense.sweep.setpoints = (source.sweep_axis,)
         if not isinstance(source, Keithley2450Source):
             raise RuntimeError(
@@ -753,7 +754,7 @@ class Keithley2450(VisaInstrument):
         """
         source_function = self.source_function.get_latest() or self.source_function()
         submodule = self.submodules[f"_source_{source_function}"]
-        return cast(Keithley2450Source, submodule)
+        return cast("Keithley2450Source", submodule)
 
     @property
     def sense(self) -> Keithley2450Sense:
@@ -765,14 +766,14 @@ class Keithley2450(VisaInstrument):
         """
         sense_function = self.sense_function.get_latest() or self.sense_function()
         submodule = self.submodules[f"_sense_{sense_function}"]
-        return cast(Keithley2450Sense, submodule)
+        return cast("Keithley2450Sense", submodule)
 
     def buffer(
         self, name: str, size: int | None = None, style: str = ""
     ) -> Keithley2450Buffer:
         self.buffer_name(name)
         if f"_buffer_{name}" in self.submodules:
-            return cast(Keithley2450Buffer, self.submodules[f"_buffer_{name}"])
+            return cast("Keithley2450Buffer", self.submodules[f"_buffer_{name}"])
         new_buffer = Keithley2450Buffer(parent=self, name=name, size=size, style=style)
         self.add_submodule(f"_buffer_{name}", new_buffer)
         return new_buffer

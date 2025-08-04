@@ -276,7 +276,7 @@ class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):
         )
 
 
-class LakeshoreModel336(LakeshoreBase):
+class LakeshoreModel336(LakeshoreBase[LakeshoreModel336Channel]):
     """
     QCoDeS driver for Lakeshore Model 336 Temperature Controller.
     """
@@ -294,7 +294,31 @@ class LakeshoreModel336(LakeshoreBase):
     ) -> None:
         super().__init__(name, address, **kwargs)
 
-        self.output_1 = LakeshoreModel336CurrentSource(self, "output_1", 1)
-        self.output_2 = LakeshoreModel336CurrentSource(self, "output_2", 2)
-        self.output_3 = LakeshoreModel336VoltageSource(self, "output_3", 3)
-        self.output_4 = LakeshoreModel336VoltageSource(self, "output_4", 4)
+        self.output_1: LakeshoreModel336CurrentSource = self.add_submodule(
+            name="output_1",
+            submodule=LakeshoreModel336CurrentSource(self, "output_1", 1),
+        )
+        """
+        Control output 1 of Lakeshore Model 336.
+        """
+        self.output_2: LakeshoreModel336CurrentSource = self.add_submodule(
+            name="output_2",
+            submodule=LakeshoreModel336CurrentSource(self, "output_2", 2),
+        )
+        """
+        Control output 2 of Lakeshore Model 336.
+        """
+        self.output_3: LakeshoreModel336VoltageSource = self.add_submodule(
+            name="output_3",
+            submodule=LakeshoreModel336VoltageSource(self, "output_3", 3),
+        )
+        """
+        Control output 3 of Lakeshore Model 336.
+        """
+        self.output_4: LakeshoreModel336VoltageSource = self.add_submodule(
+            name="output_4",
+            submodule=LakeshoreModel336VoltageSource(self, "output_4", 4),
+        )
+        """
+        Control output 4 of Lakeshore Model 336.
+        """

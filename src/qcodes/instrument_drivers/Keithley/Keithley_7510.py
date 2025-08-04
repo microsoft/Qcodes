@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Any, ClassVar, TypedDict, cast
 
 import numpy as np
+import numpy.typing as npt
 
 from qcodes.instrument import (
     InstrumentBaseKWArgs,
@@ -72,7 +73,7 @@ class GeneratedSetPoints(Parameter):
         self._stop = stop
         self._n_points = n_points
 
-    def get_raw(self) -> np.ndarray:
+    def get_raw(self) -> npt.NDArray:
         start = self._start()
         assert start is not None
         stop = self._stop()
@@ -555,8 +556,7 @@ class Keithley7510Sense(InstrumentChannel):
             set_cmd=self._set_user_delay,
             vals=Numbers(0, 1e4),
             unit="second",
-            docstring="Set a user-defined delay that you can use in the "
-            "trigger model.",
+            docstring="Set a user-defined delay that you can use in the trigger model.",
         )
         """Set a user-defined delay that you can use in the trigger model."""
 
@@ -851,7 +851,7 @@ class Keithley7510(VisaInstrument):
         """
         sense_function = self.sense_function.get_latest() or self.sense_function()
         submodule = self.submodules[f"_sense_{sense_function}"]
-        return cast(Keithley7510Sense, submodule)
+        return cast("Keithley7510Sense", submodule)
 
     @property
     def digi_sense(self) -> Keithley7510DigitizeSense:
@@ -862,21 +862,20 @@ class Keithley7510(VisaInstrument):
         """
         if self.digi_sense_function() == "None":
             raise AttributeError(
-                "Please use 'digi_sense_function()' to select"
-                " a digitize function first"
+                "Please use 'digi_sense_function()' to select a digitize function first"
             )
         sense_function = (
             self.digi_sense_function.get_latest() or self.digi_sense_function()
         )
         submodule = self.submodules[f"_digi_sense_{sense_function}"]
-        return cast(Keithley7510DigitizeSense, submodule)
+        return cast("Keithley7510DigitizeSense", submodule)
 
     def buffer(
         self, name: str, size: int | None = None, style: str = ""
     ) -> Keithley7510Buffer:
         self.buffer_name(name)
         if f"_buffer_{name}" in self.submodules:
-            return cast(Keithley7510Buffer, self.submodules[f"_buffer_{name}"])
+            return cast("Keithley7510Buffer", self.submodules[f"_buffer_{name}"])
         new_buffer = Keithley7510Buffer(parent=self, name=name, size=size, style=style)
         self.add_submodule(f"_buffer_{name}", new_buffer)
         return new_buffer

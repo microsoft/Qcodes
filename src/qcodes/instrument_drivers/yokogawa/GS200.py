@@ -4,7 +4,7 @@ Will be deprecated and eventually removed.
 """
 
 from functools import partial
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, cast
 
 from qcodes.instrument import (
     InstrumentBaseKWArgs,
@@ -187,7 +187,9 @@ class GS200_Monitor(InstrumentChannel):
         # If enabled and output is on, then we can perform a measurement.
         return float(self.ask(":MEAS?"))
 
-    def update_measurement_enabled(self, unit: ModeType, output_range: float) -> None:
+    def update_measurement_enabled(
+        self, unit: ModeType, output_range: float | None
+    ) -> None:
         """
         Args:
             unit: Unit to update either VOLT or CURR.
@@ -479,13 +481,18 @@ class GS200(VisaInstrument):
 
         # Check if monitor is present, and if so enable measurement
         monitor_present = "/MON" in self.ask("*OPT?")
-        measure = GS200_Monitor(self, "measure", monitor_present)
-        self.add_submodule("measure", measure)
+        self.measure: GS200_Monitor = self.add_submodule(
+            "measure", GS200_Monitor(self, "measure", monitor_present)
+        )
+        """Instrument module measure"""
 
         # Reset function
         self.add_function("reset", call_cmd="*RST")
 
-        self.add_submodule("program", GS200Program(self, "program"))
+        self.program: GS200Program = self.add_submodule(
+            "program", GS200Program(self, "program")
+        )
+        """Instrument module program"""
 
         self.BNC_out: Parameter = self.add_parameter(
             "BNC_out",
@@ -665,7 +672,7 @@ class GS200(VisaInstrument):
             return
 
         if source_mode is None:
-            source_mode = self.source_mode.get_latest()
+            source_mode = cast("ModeType", self.source_mode.get_latest())
         # Get source range if auto-range is off
         if source_range is None and not self.auto_range():
             source_range = self.range()

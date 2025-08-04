@@ -14,6 +14,8 @@ from .instrument_base import InstrumentBase, InstrumentBaseKWArgs
 from .instrument_meta import InstrumentMeta
 
 if TYPE_CHECKING:
+    from typing import Self
+
     from typing_extensions import Unpack
 
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
@@ -233,7 +235,7 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         cls._instances.add(instance)
 
     @classmethod
-    def instances(cls: type[T]) -> list[T]:
+    def instances(cls: type[Self]) -> list[Self]:
         """
         Get all currently defined instances of this instrument class.
 

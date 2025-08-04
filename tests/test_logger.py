@@ -17,10 +17,10 @@ from qcodes.instrument import Instrument
 from qcodes.instrument_drivers.american_magnetics import AMIModel430, AMIModel4303D
 from qcodes.instrument_drivers.tektronix import TektronixAWG5208
 from qcodes.logger.log_analysis import capture_dataframe
-from tests.drivers.test_lakeshore import Model_372_Mock
+from tests.drivers.test_lakeshore_372 import LakeshoreModel372Mock
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
+    from collections.abc import Callable, Generator
 
 TEST_LOG_MESSAGE = "test log message"
 
@@ -58,8 +58,8 @@ def awg5208(caplog: LogCaptureFixture) -> "Generator[TektronixAWG5208, None, Non
 
 
 @pytest.fixture
-def model372() -> "Generator[Model_372_Mock, None, None]":
-    inst = Model_372_Mock(
+def model372() -> "Generator[LakeshoreModel372Mock, None, None]":
+    inst = LakeshoreModel372Mock(
         "lakeshore_372",
         "GPIB::3::INSTR",
         pyvisa_sim_file="lakeshore_model372.yaml",
@@ -95,9 +95,9 @@ def AMI430_3D() -> (
         pyvisa_sim_file="AMI430.yaml",
         terminator="\n",
     )
-    field_limit = [
+    field_limit: list[Callable[[float, float, float], bool]] = [
         lambda x, y, z: x == 0 and y == 0 and z < 3,
-        lambda x, y, z: np.linalg.norm([x, y, z]) < 2,
+        lambda x, y, z: bool(np.linalg.norm([x, y, z]) < 2),
     ]
     driver = AMIModel4303D("AMI430_3D", mag_x, mag_y, mag_z, field_limit)
     try:
@@ -171,7 +171,7 @@ def test_handler_level() -> None:
 def test_filter_instrument(
     AMI430_3D: tuple[AMIModel4303D, AMIModel430, AMIModel430, AMIModel430],
 ) -> None:
-    driver, mag_x, mag_y, mag_z = AMI430_3D
+    driver, mag_x, mag_y, _mag_z = AMI430_3D
 
     logger.start_logger()
 
@@ -210,7 +210,7 @@ def test_filter_instrument(
 def test_filter_without_started_logger_raises(
     AMI430_3D: tuple[AMIModel4303D, AMIModel430, AMIModel430, AMIModel430],
 ) -> None:
-    driver, mag_x, mag_y, mag_z = AMI430_3D
+    driver, mag_x, _mag_y, _mag_z = AMI430_3D
 
     # filter one instrument
     driver.cartesian((0, 0, 0))
@@ -231,7 +231,7 @@ def test_capture_dataframe() -> None:
     assert df.message[0] == TEST_LOG_MESSAGE
 
 
-def test_channels(model372: Model_372_Mock) -> None:
+def test_channels(model372: LakeshoreModel372Mock) -> None:
     """
     Test that messages logged in a channel are propagated to the
     main instrument.
@@ -265,7 +265,7 @@ def test_channels(model372: Model_372_Mock) -> None:
         assert f == u
 
 
-def test_channels_nomessages(model372: Model_372_Mock) -> None:
+def test_channels_nomessages(model372: LakeshoreModel372Mock) -> None:
     """
     Test that messages logged in a channel are not propagated to
     any instrument.
@@ -299,6 +299,26 @@ def test_instrument_connect_message(caplog: LogCaptureFixture) -> None:
     expected_con_mssg = f"[awg_sim(TektronixAWG5208)] Connected to instrument: {idn}"
 
     assert any(rec.msg == expected_con_mssg for rec in setup_records)
+
+
+def test_instrument_logger_extra_info(awg5208, caplog: LogCaptureFixture) -> None:
+    """
+    Test that the connect_message method logs as expected
+
+    This test kind of belongs both here and in the tests for the instrument
+    code, but it is more conveniently written here
+    """
+    extra_key = "some_extra"
+    extra_val = "extra_value"
+
+    with caplog.at_level(logging.INFO):
+        awg5208.visa_log.info("test message")
+    assert not hasattr(caplog.records[0], extra_key)
+    caplog.clear()
+
+    with caplog.at_level(logging.INFO):
+        awg5208.visa_log.info("test message", extra={extra_key: extra_val})
+    assert getattr(caplog.records[0], extra_key) == "extra_value"
 
 
 def test_installation_info_logging() -> None:

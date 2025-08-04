@@ -37,9 +37,7 @@ def dataframe_to_csv(
         df_length = len(dfs_to_save[0])
         if any(len(df) != df_length for df in dfs_to_save):
             raise DataLengthException(
-                "You cannot concatenate data "
-                "with different length to a "
-                "single file."
+                "You cannot concatenate data with different length to a single file."
             )
         if single_file_name is None:
             raise DataPathException(

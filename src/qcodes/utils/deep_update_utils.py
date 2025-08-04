@@ -17,7 +17,7 @@ def deep_update(
     If the original value is a dictionary and the new value is not, or vice versa,
     we also replace the value completely.
     """
-    dest_int = cast(MutableMapping[K | L, Any], dest)
+    dest_int = cast("MutableMapping[K | L, Any]", dest)
     for k, v_update in update.items():
         v_dest = dest_int.get(k)
         if isinstance(v_update, abc.Mapping) and isinstance(v_dest, abc.MutableMapping):

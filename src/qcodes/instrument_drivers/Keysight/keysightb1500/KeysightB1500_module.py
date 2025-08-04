@@ -1,22 +1,31 @@
 import re
-from collections import namedtuple
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, cast
 
 import numpy as np
-from typing_extensions import TypedDict, Unpack, deprecated
+import numpy.typing as npt
+from typing_extensions import TypedDict, Unpack
 
 from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel
-from qcodes.utils import QCoDeSDeprecationWarning
 
 from . import constants
 from .constants import ChannelName, ChNr, MeasurementStatus, ModuleKind, SlotNr
 from .message_builder import MessageBuilder
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     import qcodes.instrument_drivers.Keysight.keysightb1500
 
 
-_FMTResponse = namedtuple("_FMTResponse", "value status channel type")
+# the use of _FMTResponse in the code is inconsistent
+# so adding the expected types results in a large number
+# of type checking issues. The expected types are left
+# here as a comment in case anyone fixes this in the future
+class _FMTResponse(NamedTuple):
+    value: Any  # the type probably should be list[float] | None
+    status: Any  # the type probably should be list[str] | None
+    channel: Any  # the type probably should be list[str] | None
+    type: Any  # the type probably should be list[str] | None
 
 
 class MeasurementNotTaken(Exception):
@@ -37,10 +46,10 @@ def fmt_response_base_parser(raw_data_val: str) -> _FMTResponse:
     """
 
     values_separator = ","
-    data_val = []
-    data_status = []
-    data_channel = []
-    data_datatype = []
+    data_val: list[float] = []
+    data_status: list[str] = []
+    data_channel: list[str] = []
+    data_datatype: list[str] = []
 
     for str_value in raw_data_val.split(values_separator):
         status = str_value[0]
@@ -76,7 +85,7 @@ def parse_module_query_response(response: str) -> dict[SlotNr, str]:
 
     return {
         SlotNr(slot_nr): model
-        for slot_nr, (model, rev) in enumerate(moduleinfo, start=1)
+        for slot_nr, (model, _) in enumerate(moduleinfo, start=1)
         if model != "0"
     }
 
@@ -104,7 +113,7 @@ def parse_dcv_measurement_response(response: str) -> dict[str, str | float]:
         raise ValueError(f"{response!r} didn't match {_pattern_lrn!r} pattern")
 
     dd = match.groupdict()
-    d = cast(dict[str, str | float], dd)
+    d = cast("dict[str, str | float]", dd)
     return d
 
 
@@ -151,7 +160,10 @@ def parse_spot_measurement_response(response: str) -> SpotResponse:
     return d
 
 
-_DCORRResponse = namedtuple("_DCORRResponse", "mode primary secondary")
+class _DCORRResponse(NamedTuple):
+    mode: constants.DCORR.Mode
+    primary: float
+    secondary: float
 
 
 def parse_dcorr_query_response(response: str) -> _DCORRResponse:
@@ -235,7 +247,7 @@ def get_name_label_unit_of_impedance_model(
 #   it might make more sense to generate one for each **channel**
 
 
-def get_measurement_summary(status_array: np.ndarray) -> str:
+def get_measurement_summary(status_array: "npt.NDArray | Sequence[str]") -> str:
     unique_error_statuses = np.unique(status_array[status_array != "N"])
     if len(unique_error_statuses) > 0:
         summary = " ".join(
@@ -259,7 +271,7 @@ def convert_dummy_val_to_nan(param: _FMTResponse) -> None:
         param: This must be of type named tuple _FMTResponse.
 
     """
-    for index, value in enumerate(param.value):
+    for index, _ in enumerate(param.value):
         param.value[index] = _convert_to_nan_if_dummy_value(param.value[index])
 
 
@@ -362,11 +374,6 @@ class KeysightB1500Module(InstrumentChannel):
         self.root_instrument.clear_timer_count(chnum=self.channels)
 
 
-@deprecated("Use KeysightB1500Module", category=QCoDeSDeprecationWarning, stacklevel=2)
-class B1500Module(KeysightB1500Module):
-    pass
-
-
 class StatusMixin:
     def __init__(self) -> None:
         self.names = tuple(["param1", "param2"])
@@ -375,7 +382,7 @@ class StatusMixin:
         return_dict: dict[str, str] = {}
 
         for name_index, name in enumerate(self.names):
-            param_data: _FMTResponse = getattr(self, f"param{name_index+1}")
+            param_data: _FMTResponse = getattr(self, f"param{name_index + 1}")
 
             status_array = param_data.status
             if status_array is None:

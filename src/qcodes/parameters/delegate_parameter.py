@@ -8,6 +8,8 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from datetime import datetime
 
+    from qcodes.validators.validators import Validator
+
     from .parameter_base import ParamDataType, ParamRawDataType
 
 
@@ -100,8 +102,7 @@ class DelegateParameter(Parameter):
         def get(self, get_if_invalid: bool = True) -> ParamDataType:
             if self._parameter.source is None:
                 raise TypeError(
-                    "Cannot get the cache of a "
-                    "DelegateParameter that delegates to None"
+                    "Cannot get the cache of a DelegateParameter that delegates to None"
                 )
             return self._parameter._from_raw_value_to_value(
                 self._parameter.source.cache.get(get_if_invalid=get_if_invalid)
@@ -110,8 +111,7 @@ class DelegateParameter(Parameter):
         def set(self, value: ParamDataType) -> None:
             if self._parameter.source is None:
                 raise TypeError(
-                    "Cannot set the cache of a DelegateParameter "
-                    "that delegates to None"
+                    "Cannot set the cache of a DelegateParameter that delegates to None"
                 )
             self._parameter.validate(value)
             self._parameter.source.cache.set(
@@ -121,8 +121,7 @@ class DelegateParameter(Parameter):
         def _set_from_raw_value(self, raw_value: ParamRawDataType) -> None:
             if self._parameter.source is None:
                 raise TypeError(
-                    "Cannot set the cache of a DelegateParameter "
-                    "that delegates to None"
+                    "Cannot set the cache of a DelegateParameter that delegates to None"
                 )
             self._parameter.source.cache.set(raw_value)
 
@@ -317,3 +316,18 @@ class DelegateParameter(Parameter):
         super().validate(value)
         if self.source is not None:
             self.source.validate(self._from_value_to_raw_value(value))
+
+    @property
+    def validators(self) -> tuple[Validator, ...]:
+        """
+        Tuple of all validators associated with the parameter. Note that this
+        includes validators of the source parameter if source parameter is set
+        and has any validators.
+
+        :getter: All validators associated with the parameter.
+        """
+        source_validators: tuple[Validator, ...] = (
+            self.source.validators if self.source is not None else ()
+        )
+
+        return tuple(self._vals) + source_validators

@@ -1,22 +1,25 @@
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import TYPE_CHECKING, cast
 
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 
 from .versioning.converters import new_to_old, old_to_new
-from .versioning.rundescribertypes import (
-    RunDescriberDicts,
-    RunDescriberV0Dict,
-    RunDescriberV1Dict,
-    RunDescriberV2Dict,
-    RunDescriberV3Dict,
-    Shapes,
-)
 from .versioning.v0 import InterDependencies
 
+if TYPE_CHECKING:
+    from .versioning.rundescribertypes import (
+        RunDescriberDicts,
+        RunDescriberV0Dict,
+        RunDescriberV1Dict,
+        RunDescriberV2Dict,
+        RunDescriberV3Dict,
+        Shapes,
+    )
 
-class RunDescriber:
+
+class RunDescriber:  # noqa: PLW1641
+    # TODO not clear if this should implement __hash__
     """
     The object that holds the description of each run in the database. This
     object serialises itself to a string and is found under the run_description
@@ -77,18 +80,18 @@ class RunDescriber:
         intended to be used only by the deserialization routines.
         """
         if ser["version"] == 0:
-            ser = cast(RunDescriberV0Dict, ser)
+            ser = cast("RunDescriberV0Dict", ser)
             rundesc = cls(
                 old_to_new(InterDependencies._from_dict(ser["interdependencies"]))
             )
         elif ser["version"] == 1:
-            ser = cast(RunDescriberV1Dict, ser)
+            ser = cast("RunDescriberV1Dict", ser)
             rundesc = cls(InterDependencies_._from_dict(ser["interdependencies"]))
         elif ser["version"] == 2:
-            ser = cast(RunDescriberV2Dict, ser)
+            ser = cast("RunDescriberV2Dict", ser)
             rundesc = cls(InterDependencies_._from_dict(ser["interdependencies_"]))
         elif ser["version"] >= 3:
-            ser = cast(RunDescriberV3Dict, ser)
+            ser = cast("RunDescriberV3Dict", ser)
             rundesc = cls(
                 InterDependencies_._from_dict(ser["interdependencies_"]),
                 shapes=ser["shapes"],
@@ -100,7 +103,7 @@ class RunDescriber:
 
         return rundesc
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, RunDescriber):
             return False
         if self.interdeps != other.interdeps:
