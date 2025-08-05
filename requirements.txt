@@ -110,7 +110,7 @@ importlib-metadata==8.7.0
     # via opentelemetry-api
 iniconfig==2.1.0
     # via pytest
-ipykernel==6.30.0
+ipykernel==6.30.1
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
