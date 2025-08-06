@@ -1183,7 +1183,7 @@ class ParameterBase(MetadatableWithName):
     @property
     def is_controlled_by(self) -> set[ParameterBase]:
         # This is equivalent to the "inferred_from" relationship
-        return self.is_controlled_by
+        return self._is_controlled_by
 
     def unpack_self(self, value: ValuesType) -> list[tuple[ParameterBase, ValuesType]]:
         if isinstance(self.vals, Arrays):
