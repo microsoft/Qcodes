@@ -45,6 +45,7 @@ from qcodes.dataset.export_config import get_data_export_automatic
 from qcodes.parameters import (
     ArrayParameter,
     GroupedParameter,
+    ManualParameter,
     MultiParameter,
     Parameter,
     ParameterBase,
@@ -1415,6 +1416,8 @@ class Measurement:
             paramtype: Type of the parameter, i.e. the SQL storage class
 
         """
+        custom_parameter = ManualParameter(name=name, label=label, unit=unit)
+        self._registered_parameters.add(custom_parameter)
         return self._register_parameter(name, label, unit, setpoints, basis, paramtype)
 
     def unregister_parameter(self, parameter: SetpointsType) -> None:
