@@ -9,6 +9,8 @@ from datetime import datetime
 from functools import cached_property, wraps
 from typing import TYPE_CHECKING, Any, ClassVar, overload
 
+import numpy as np
+
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.metadatable import Metadatable, MetadatableWithName
 from qcodes.utils import DelegateAttributes, full_class, qcodes_abstractmethod
@@ -27,6 +29,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Iterable, Mapping, Sequence, Sized
     from types import TracebackType
 
+    from qcodes.dataset.data_set_protocol import ValuesType
     from qcodes.instrument import InstrumentBase
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 
@@ -1181,6 +1184,21 @@ class ParameterBase(MetadatableWithName):
     def is_controlled_by(self) -> set[ParameterBase]:
         # This is equivalent to the "inferred_from" relationship
         return self.is_controlled_by
+
+    def unpack_self(self, value: ValuesType) -> list[tuple[ParameterBase, ValuesType]]:
+        if isinstance(self.vals, Arrays):
+            if not isinstance(value, np.ndarray):
+                raise TypeError(
+                    f"Expected data for Parameter with Array validator "
+                    f"to be a numpy array but got: {type(value)}"
+                )
+
+            if self.vals.shape is not None and value.shape != self.vals.shape:
+                raise TypeError(
+                    f"Expected data with shape {self.vals.shape}, "
+                    f"but got {value.shape} for parameter: {self.full_name}"
+                )
+        return [(self, value)]
 
 
 class GetLatest(DelegateAttributes):

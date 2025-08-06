@@ -2,19 +2,18 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING, Any
-from warnings import warn
 
 import numpy as np
 
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
-from qcodes.validators import Arrays, Validator, Strings, ComplexNumbers
-
-from .parameter import Parameter
+from qcodes.parameters.parameter import Parameter
+from qcodes.parameters.parameter_base import ParameterBase
+from qcodes.validators import Arrays, Validator
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
-    from .parameter_base import ParamDataType, ParameterBase
+    from qcodes.dataset.data_set_protocol import ValuesType
+    from qcodes.parameters.parameter_base import ParamDataType, ParameterBase
 
 LOG = logging.getLogger(__name__)
 
@@ -160,6 +159,20 @@ class ParameterWithSetpoints(Parameter):
     def register_before(self) -> tuple[ParameterBase, ...]:
         return tuple(self.setpoints)
 
+    def unpack_self(self, value: ValuesType) -> list[tuple[ParameterBase, ValuesType]]:
+        unpacked_results = super().unpack_self(value)
+        setpoint_params = []
+        setpoint_data = []
+        for setpointparam in self.setpoints:
+            these_setpoints = setpointparam.get()
+            setpoint_params.append(setpointparam)
+            setpoint_data.append(these_setpoints)
+        output_grids = np.meshgrid(*setpoint_data, indexing="ij")
+        for param, grid in zip(setpoint_params, output_grids):
+            unpacked_results.append((param, grid))
+
+        return unpacked_results
+
 
 def expand_setpoints_helper(
     parameter: ParameterWithSetpoints, results: ParamDataType | None = None
@@ -180,24 +193,27 @@ def expand_setpoints_helper(
         and its setpoints.
 
     """
-    if not isinstance(parameter, ParameterWithSetpoints):
-        raise TypeError(
-            f"Expanding setpoints only works for ParameterWithSetpoints. "
-            f"Supplied a {type(parameter)}"
-        )
-    res = []
-    setpoint_params = []
-    setpoint_data = []
-    for setpointparam in parameter.setpoints:
-        these_setpoints = setpointparam.get()
-        setpoint_params.append(setpointparam)
-        setpoint_data.append(these_setpoints)
-    output_grids = np.meshgrid(*setpoint_data, indexing="ij")
-    for param, grid in zip(setpoint_params, output_grids):
-        res.append((param, grid))
-    if results is None:
-        data = parameter.get()
+    # if not isinstance(parameter, ParameterWithSetpoints):
+    #     raise TypeError(
+    #         f"Expanding setpoints only works for ParameterWithSetpoints. "
+    #         f"Supplied a {type(parameter)}"
+    #     )
+    # res = []
+    # setpoint_params = []
+    # setpoint_data = []
+    # for setpointparam in parameter.setpoints:
+    #     these_setpoints = setpointparam.get()
+    #     setpoint_params.append(setpointparam)
+    #     setpoint_data.append(these_setpoints)
+    # output_grids = np.meshgrid(*setpoint_data, indexing="ij")
+    # for param, grid in zip(setpoint_params, output_grids):
+    #     res.append((param, grid))
+    # if results is None:
+    #     data = parameter.get()
+    # else:
+    #     data = results
+    # res.append((parameter, data))
+    if results is not None:
+        return parameter.unpack_self(results)
     else:
-        data = results
-    res.append((parameter, data))
-    return res
+        return parameter.unpack_self(parameter.get())
