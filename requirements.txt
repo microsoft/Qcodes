@@ -70,7 +70,7 @@ deepdiff==8.5.0
     # via qcodes (pyproject.toml)
 defusedxml==0.7.1
     # via nbconvert
-docutils==0.21.2
+docutils==0.22
     # via
     #   nbsphinx
     #   sphinx
