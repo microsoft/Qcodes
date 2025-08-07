@@ -332,7 +332,7 @@ class CryomagneticsModel4G(VisaInstrument):
         current_value = self.ask("IMAG?")
         # Define a regular expression to match the floating point number and the unit
         match = re.match(
-            r"^([-+]?[0-9]*\.?[0-9]+)\s*([a-zA-Z]+)$", current_value.strip()
+            r"^([-+]?[0-9]*\.?[0-9]+)\s*([a-zA-Z]+)", current_value.strip()
         )
 
         if not match:
