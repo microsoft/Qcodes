@@ -211,6 +211,19 @@ class DataSaver:
             for result_tuple in result_tuples
         ]
 
+        non_unique = [
+            item.register_name
+            for item, count in collections.Counter(
+                [parameter_result[0] for parameter_result in parameter_results]
+            ).items()
+            if count > 1
+        ]
+        if len(non_unique) > 0:
+            raise ValueError(
+                f"Not all parameter names are unique. "
+                f"Got multiple values for {non_unique}"
+            )
+
         legacy_results_dict: DatasetResultDict = {}
         self_unpacked_parameter_results: list[ParameterResultType] = []
 
@@ -232,9 +245,9 @@ class DataSaver:
             collections.defaultdict(list)
         )
         for parameter_result in self_unpacked_parameter_results:
-            all_results_dict[parameter_result[0].param_spec].append(
-                np.array(parameter_result[1])
-            )
+            all_results_dict[
+                self._interdeps._id_to_paramspec[parameter_result[0].register_name]
+            ].append(np.array(parameter_result[1]))
 
         # Add any unpacked results from legacy Parameter types
         for key, value in legacy_results_dict.items():
@@ -1095,6 +1108,8 @@ class Measurement:
 
         match parameter:
             case Parameter() | ParameterWithSetpoints():
+                if paramtype is not None:
+                    parameter.paramtype = paramtype
                 self._self_register_parameter(parameter, setpoints, basis)
             case ArrayParameter():
                 paramtype = self._infer_paramtype(parameter, paramtype)
@@ -1645,7 +1660,7 @@ def _numeric_values_are_equal(
     # either real or imaginary part to be equal. That is, np.nan + 1.0j is equal to 1.0 + np.nan*1.0j.
     # Since we want a more granular equality, we split arrays with complex values
     # into real and imaginary parts to evaluate equality
-    if np.issubdtype(ref_array, np.complexfloating):
+    if np.issubdtype(ref_array.dtype, np.complexfloating):
         return _numeric_values_are_equal(
             np.real(ref_array), np.real(values_arrays)
         ) and _numeric_values_are_equal(np.imag(ref_array), np.imag(values_arrays))
