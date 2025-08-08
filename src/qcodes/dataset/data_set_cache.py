@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     import pandas as pd
     import xarray as xr
 
+    from qcodes.dataset.descriptions.dependencies import InterDependencies_
     from qcodes.dataset.descriptions.rundescriber import RunDescriber
     from qcodes.dataset.sqlite.connection import AtomicConnection
 
@@ -91,6 +92,30 @@ class DataSetCache(Generic[DatasetType_co]):
 
         return self._data
 
+    @staticmethod
+    def _empty_data_dict(
+        interdeps: InterDependencies_,
+    ) -> dict[str, dict[str, npt.NDArray]]:
+        """
+        Create an dictionary with empty numpy arrays as values
+        matching the expected output of ``DataSet``'s ``get_parameter_data`` /
+        ``cache.data`` so that the order of keys in the returned dictionary
+        is the same as the order of parameters in the interdependencies
+        in this class.
+        """
+
+        output: dict[str, dict[str, npt.NDArray]] = {}
+        for toplevel_param in interdeps.top_level_parameters:
+            toplevel_param, deps, infs = interdeps.all_parameters_in_tree_by_group(
+                toplevel_param
+            )
+
+            output[toplevel_param.name] = {}
+            params = [toplevel_param, *deps, *infs]
+            for param in params:
+                output[toplevel_param.name][param.name] = np.array([])
+        return output
+
     def prepare(self) -> None:
         """
         Set up the internal datastructure of the cache.
@@ -99,7 +124,7 @@ class DataSetCache(Generic[DatasetType_co]):
         """
 
         if self._data == {}:
-            self._data = self.rundescriber.interdeps._empty_data_dict()
+            self._data = self._empty_data_dict(self.rundescriber.interdeps)
         else:
             raise RuntimeError("Cannot prepare a cache that is not empty")
 
@@ -145,7 +170,7 @@ class DataSetCache(Generic[DatasetType_co]):
 
         """
         data = self.data()
-        return load_to_dataframe_dict(data)
+        return load_to_dataframe_dict(data, self.rundescriber.interdeps)
 
     def to_pandas_dataframe(self) -> pd.DataFrame:
         """
@@ -158,7 +183,7 @@ class DataSetCache(Generic[DatasetType_co]):
 
         """
         data = self.data()
-        return load_to_concatenated_dataframe(data)
+        return load_to_concatenated_dataframe(data, self.rundescriber.interdeps)
 
     def to_xarray_dataarray_dict(
         self, *, use_multi_index: Literal["auto", "always", "never"] = "auto"
@@ -266,7 +291,7 @@ def append_shaped_parameter_data_to_existing_arrays(
         Updated write and read status, and the updated ``data``
 
     """
-    parameters = tuple(ps.name for ps in rundescriber.interdeps.non_dependencies)
+    parameters = tuple(ps.name for ps in rundescriber.interdeps.top_level_parameters)
     merged_data = {}
 
     updated_write_status = dict(write_status)

@@ -25,7 +25,7 @@ broadbean==0.14.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-certifi==2025.7.9
+certifi==2025.8.3
     # via requests
 cf-xarray==0.10.6
     # via
@@ -46,23 +46,23 @@ colorama==0.4.6
     #   pytest
     #   sphinx
     #   tqdm
-comm==0.2.2
+comm==0.2.3
     # via
     #   ipykernel
     #   ipywidgets
-contourpy==1.3.2
+contourpy==1.3.3
     # via matplotlib
-coverage==7.9.2
+coverage==7.10.2
     # via
     #   qcodes (pyproject.toml)
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2025.5.1
+dask==2025.7.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-debugpy==1.8.14
+debugpy==1.8.15
     # via ipykernel
 decorator==5.2.1
     # via ipython
@@ -81,11 +81,11 @@ executing==2.2.0
     # via stack-data
 fastjsonschema==2.21.1
     # via nbformat
-fonttools==4.58.5
+fonttools==4.59.0
     # via matplotlib
-fsspec==2025.5.1
+fsspec==2025.7.0
     # via dask
-furo==2024.8.6
+furo==2025.7.19
     # via qcodes (pyproject.toml)
 h5netcdf==1.6.3
     # via
@@ -100,7 +100,7 @@ h5py==3.14.0
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.135.26
+hypothesis==6.137.0
     # via qcodes (pyproject.toml)
 idna==3.10
     # via requests
@@ -110,7 +110,7 @@ importlib-metadata==8.7.0
     # via opentelemetry-api
 iniconfig==2.1.0
     # via pytest
-ipykernel==6.29.5
+ipykernel==6.30.1
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -140,7 +140,7 @@ jsonpointer==3.0.0
     # via sphinx-jsonschema
 jsonref==1.1.0
     # via zhinst-toolkit
-jsonschema==4.24.0
+jsonschema==4.25.0
     # via
     #   qcodes (pyproject.toml)
     #   nbformat
@@ -179,7 +179,7 @@ markupsafe==3.0.2
     # via
     #   jinja2
     #   nbconvert
-matplotlib==3.10.3
+matplotlib==3.10.5
     # via
     #   qcodes (pyproject.toml)
     #   broadbean
@@ -191,7 +191,7 @@ matplotlib-inline==0.1.7
     #   ipython
 mistune==3.1.3
     # via nbconvert
-mypy==1.16.1
+mypy==1.17.1
     # via qcodes (pyproject.toml)
 mypy-extensions==1.1.0
     # via mypy
@@ -208,7 +208,7 @@ nbsphinx==0.9.6
     # via qcodes (pyproject.toml)
 nest-asyncio==1.6.0
     # via ipykernel
-numpy==2.3.1
+numpy==2.3.2
     # via
     #   qcodes (pyproject.toml)
     #   broadbean
@@ -227,11 +227,11 @@ numpy==2.3.1
     #   zhinst-timing-models
     #   zhinst-toolkit
     #   zhinst-utils
-opentelemetry-api==1.34.1
+opentelemetry-api==1.36.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-orderly-set==5.4.1
+orderly-set==5.5.0
     # via deepdiff
 packaging==25.0
     # via
@@ -281,7 +281,7 @@ psutil==7.0.0
     # via ipykernel
 pure-eval==0.2.3
     # via stack-data
-pyarrow==20.0.0
+pyarrow==21.0.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -305,7 +305,7 @@ pytest==8.4.1
     #   pytest-mock
     #   pytest-rerunfailures
     #   pytest-xdist
-pytest-asyncio==1.0.0
+pytest-asyncio==1.1.0
     # via qcodes (pyproject.toml)
 pytest-cov==6.2.1
     # via qcodes (pyproject.toml)
@@ -329,7 +329,7 @@ pyvisa==1.15.0
     #   qcodes
 pyvisa-sim==0.7.0
     # via qcodes (pyproject.toml)
-pywin32==310; sys_platform == 'win32'
+pywin32==311; sys_platform == 'win32'
     # via jupyter-core
 pyyaml==6.0.2
     # via
@@ -339,7 +339,7 @@ pyyaml==6.0.2
     #   zhinst-timing-models
 pyyaml-ft==8.0.0
     # via libcst
-pyzmq==27.0.0
+pyzmq==27.0.1
     # via
     #   ipykernel
     #   jupyter-client
@@ -368,7 +368,7 @@ ruamel-yaml-clib==0.2.12
     # via ruamel-yaml
 schema==0.7.7
     # via broadbean
-scipy==1.16.0
+scipy==1.16.1
     # via qcodes (pyproject.toml)
 six==1.17.0
     # via python-dateutil
@@ -451,11 +451,11 @@ traitlets==5.14.3
     #   nbconvert
     #   nbformat
     #   nbsphinx
-types-jsonschema==4.24.0.20250708
+types-jsonschema==4.25.0.20250720
     # via qcodes (pyproject.toml)
 types-pytz==2025.2.0.20250516
     # via pandas-stubs
-types-pywin32==310.0.0.20250516
+types-pywin32==311.0.0.20250801
     # via qcodes (pyproject.toml)
 types-requests==2.32.4.20250611
     # via
@@ -508,21 +508,21 @@ widgetsnbextension==4.0.14
     # via ipywidgets
 wrapt==1.17.2
     # via qcodes
-xarray==2025.7.0
+xarray==2025.7.1
     # via
     #   qcodes (pyproject.toml)
     #   cf-xarray
     #   qcodes
     #   qcodes-loop
-zhinst-core==25.4.1.17
+zhinst-core==25.7.0.507
     # via
     #   zhinst-toolkit
     #   zhinst-utils
 zhinst-qcodes==0.6.0
     # via qcodes (pyproject.toml)
-zhinst-timing-models==25.4.0
+zhinst-timing-models==25.7.0
     # via zhinst-utils
-zhinst-toolkit==1.0.1
+zhinst-toolkit==1.1.0
     # via zhinst-qcodes
 zhinst-utils==0.7.0
     # via zhinst-toolkit

@@ -1267,14 +1267,14 @@ def test_get_array_in_str_param_data(array_in_str_dataset) -> None:
 
 
 def test_get_parameter_data_independent_parameters(
-    standalone_parameters_dataset,
+    standalone_parameters_dataset: DataSet,
 ) -> None:
     ds = standalone_parameters_dataset
 
-    paramspecs = ds.description.interdeps.non_dependencies
-    params = [ps.name for ps in paramspecs]
+    paramspecs = ds.description.interdeps.top_level_parameters
+    params = {ps.name for ps in paramspecs}
 
-    expected_toplevel_params = ["param_1", "param_2", "param_3"]
+    expected_toplevel_params = {"param_1", "param_2", "param_3"}
     assert params == expected_toplevel_params
 
     expected_names = {}
@@ -1293,7 +1293,11 @@ def test_get_parameter_data_independent_parameters(
     expected_values["param_3"] = [np.arange(30000, 30000 + 1000), np.arange(0, 1000)]
 
     parameter_test_helper(
-        ds, expected_toplevel_params, expected_names, expected_shapes, expected_values
+        ds,
+        tuple(expected_toplevel_params),
+        expected_names,
+        expected_shapes,
+        expected_values,
     )
 
 

@@ -1791,44 +1791,31 @@ def test_dond_get_after_set(_param_set, _param_set_2, _param) -> None:
 
     a = TrackingParameter("a", initial_value=0)
     b = TrackingParameter("b", initial_value=0)
+    c = TrackingParameter("c", initial_value=0)
 
     a.reset_count()
     b.reset_count()
+    c.reset_count()
 
     assert a.get_count == 0
     assert a.set_count == 0
     assert b.get_count == 0
     assert b.set_count == 0
+    assert c.get_count == 0
+    assert c.set_count == 0
 
-    dond(LinSweep(a, 0, 10, n_points, get_after_set=True), b)
+    dond(
+        LinSweep(a, 0, 10, n_points, get_after_set=True),
+        LinSweep(b, 0, 10, n_points, get_after_set=False),
+        c,
+    )
 
     assert a.get_count == n_points
     assert a.set_count == n_points
-    assert b.get_count == n_points
-    assert b.set_count == 0
-
-
-@pytest.mark.usefixtures("plot_close", "experiment")
-def test_dond_no_get_after_set(_param_set, _param_set_2, _param) -> None:
-    n_points = 10
-
-    a = TrackingParameter("a", initial_value=0)
-    b = TrackingParameter("b", initial_value=0)
-
-    a.reset_count()
-    b.reset_count()
-
-    assert a.get_count == 0
-    assert a.set_count == 0
     assert b.get_count == 0
-    assert b.set_count == 0
-
-    dond(LinSweep(a, 0, 10, n_points, get_after_set=False), b)
-
-    assert a.get_count == 0
-    assert a.set_count == n_points
-    assert b.get_count == n_points
-    assert b.set_count == 0
+    assert b.set_count == n_points**2
+    assert c.get_count == n_points**2
+    assert c.set_count == 0
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")

@@ -12,17 +12,24 @@ if TYPE_CHECKING:
     import pandas as pd
 
     from qcodes.dataset.data_set_protocol import ParameterData
+    from qcodes.dataset.descriptions.dependencies import InterDependencies_
 
 
-def load_to_dataframe_dict(datadict: ParameterData) -> dict[str, pd.DataFrame]:
+def load_to_dataframe_dict(
+    datadict: ParameterData, interdeps: InterDependencies_
+) -> dict[str, pd.DataFrame]:
     dfs = {}
     for name, subdict in datadict.items():
-        index = _generate_pandas_index(subdict)
+        index = _generate_pandas_index(
+            subdict, interdeps=interdeps, top_level_param_name=name
+        )
         dfs[name] = _data_to_dataframe(subdict, index)
     return dfs
 
 
-def load_to_concatenated_dataframe(datadict: ParameterData) -> pd.DataFrame:
+def load_to_concatenated_dataframe(
+    datadict: ParameterData, interdeps: InterDependencies_
+) -> pd.DataFrame:
     import pandas as pd
 
     if not _same_setpoints(datadict):
@@ -33,7 +40,7 @@ def load_to_concatenated_dataframe(datadict: ParameterData) -> pd.DataFrame:
             "independent parameter to its own dataframe."
         )
 
-    dfs_dict = load_to_dataframe_dict(datadict)
+    dfs_dict = load_to_dataframe_dict(datadict, interdeps=interdeps)
     df = pd.concat(list(dfs_dict.values()), axis=1)
 
     return df
@@ -62,19 +69,30 @@ def _data_to_dataframe(
 
 def _generate_pandas_index(
     data: Mapping[str, npt.NDArray],
+    interdeps: InterDependencies_,
+    top_level_param_name: str,
 ) -> pd.Index | pd.MultiIndex | None:
     # the first element in the dict given by parameter_tree is always the dependent
     # parameter and the index is therefore formed from the rest
     import pandas as pd
 
+    if len(data) == 0:
+        return None
+
+    _, deps, _ = interdeps.all_parameters_in_tree_by_group(
+        interdeps._node_to_paramspec(top_level_param_name)
+    )
+
+    deps_data = {dep.name: data[dep.name] for dep in deps if dep.name in data}
+
     keys = list(data.keys())
-    if len(data) <= 1:
+    if len(deps_data) == 0:
         index = None
-    elif len(data) == 2:
-        index = pd.Index(data[keys[1]].ravel(), name=keys[1])
+    elif len(deps_data) == 1:
+        index = pd.Index(next(iter(deps_data.values())).ravel(), name=keys[1])
     else:
         index_data = []
-        for key in keys[1:]:
+        for key in deps_data:
             if data[key].dtype == np.dtype("O"):
                 # if we have a numpy array of dtype object,
                 # it could either be a variable length array
