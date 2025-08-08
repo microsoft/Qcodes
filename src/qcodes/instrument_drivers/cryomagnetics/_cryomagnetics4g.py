@@ -76,6 +76,8 @@ class CryomagneticsModel4G(VisaInstrument):
 
         self.coil_constant = coil_constant
         self.max_current_limits = max_current_limits
+        self._RETRY_WRITE_ASK: bool = True
+        self._RETRY_TIME: float = 1.0
 
         # Initialize  rate manager based on hypothetical hardware specific limits
         # Initialize rate manager based on hypothetical hardware specific limits
