@@ -156,8 +156,8 @@ class ParameterWithSetpoints(Parameter):
         super().validate(value)
 
     @property
-    def register_before(self) -> tuple[ParameterBase, ...]:
-        return tuple(self.setpoints)
+    def depends_on(self) -> set[ParameterBase]:
+        return set(self.setpoints)
 
     def unpack_self(self, value: ValuesType) -> list[tuple[ParameterBase, ValuesType]]:
         unpacked_results = super().unpack_self(value)
