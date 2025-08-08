@@ -15,9 +15,10 @@ from collections.abc import Callable, Mapping, MutableMapping, MutableSequence, 
 from contextlib import ExitStack
 from copy import deepcopy
 from inspect import signature
+from itertools import chain
 from numbers import Number
 from time import perf_counter
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeAlias, TypeVar, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -37,17 +38,18 @@ from qcodes.dataset.data_set_protocol import (
 from qcodes.dataset.descriptions.dependencies import (
     IncompleteSubsetError,
     InterDependencies_,
+    ParamSpecTree,
 )
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.export_config import get_data_export_automatic
 from qcodes.parameters import (
     ArrayParameter,
     GroupedParameter,
+    ManualParameter,
     MultiParameter,
     Parameter,
     ParameterBase,
     ParameterWithSetpoints,
-    expand_setpoints_helper,
 )
 from qcodes.station import Station
 from qcodes.utils import DelayedKeyboardInterrupt
@@ -69,6 +71,9 @@ SubscriberType = tuple[
     Callable[..., Any], MutableSequence[Any] | MutableMapping[Any, Any]
 ]
 
+ParameterResultType: TypeAlias = tuple[ParameterBase, ValuesType]
+DatasetResultDict: TypeAlias = dict[ParamSpecBase, npt.NDArray]
+
 
 class ParameterTypeError(Exception):
     pass
@@ -87,6 +92,7 @@ class DataSaver:
         dataset: DataSetProtocol,
         write_period: float,
         interdeps: InterDependencies_,
+        registered_parameters: Sequence[ParameterBase],
         span: trace.Span | None = None,
     ) -> None:
         self._span = span
@@ -122,11 +128,52 @@ class DataSaver:
         self._last_save_time = perf_counter()
         self._known_dependencies: dict[str, list[str]] = {}
         self.parent_datasets: list[DataSetProtocol] = []
+        self._registered_parameters = registered_parameters
 
         for link in self._dataset.parent_dataset_links:
             self.parent_datasets.append(load_by_guid(link.tail))
 
-    def add_result(self, *res_tuple: ResType) -> None:
+    def _validate_result_tuples_no_duplicates(self, *result_tuples: ResType) -> None:
+        """Validate that the result tuples do not contain duplicates"""
+
+        parameter_names = tuple(
+            result_tuple[0].register_name
+            if isinstance(result_tuple[0], ParameterBase)
+            else result_tuple[0]
+            for result_tuple in result_tuples
+        )
+        if len(set(parameter_names)) != len(parameter_names):
+            non_unique = [
+                item
+                for item, count in collections.Counter(parameter_names).items()
+                if count > 1
+            ]
+            raise ValueError(
+                f"Not all parameter names are unique. "
+                f"Got multiple values for {non_unique}"
+            )
+
+    def _coerce_result_tuple_to_parameter_result_type(
+        self, result_tuple: ResType
+    ) -> ParameterResultType:
+        param_or_str = result_tuple[0]
+        if isinstance(param_or_str, ParameterBase):
+            return (param_or_str, result_tuple[1])
+        else:  # param_or_str is a str
+            candidate_params = [
+                param
+                for param in self._registered_parameters
+                if param.register_name == result_tuple[0]
+            ]
+            if len(candidate_params) > 1:
+                raise ValueError(
+                    "More than one parameter matched this name"
+                )  # TODO: Expand this
+            elif len(candidate_params) < 1:
+                raise ValueError("No matching parameters")
+            return (candidate_params[0], result_tuple[1])
+
+    def add_result(self, *result_tuples: ResType) -> None:
         """
         Add a result to the measurement results. Represents a measurement
         point in the space of measurement parameters, e.g. in an experiment
@@ -142,10 +189,10 @@ class DataSaver:
         of this class.
 
         Args:
-            res_tuple: A tuple with the first element being the parameter name
-                and the second element is the corresponding value(s) at this
-                measurement point. The function takes as many tuples as there
-                are results.
+            result_tuples: One or more result tuples with the first element
+                being the parameter name and the second element is the
+                corresponding value(s) at this measurement point. The function
+                takes as many tuples as there are results.
 
         Raises:
             ValueError: If a parameter name is not registered in the parent
@@ -159,130 +206,163 @@ class DataSaver:
 
         """
 
-        # we iterate through the input twice. First we find any array and
-        # multiparameters that need to be unbundled and collect the names
-        # of all parameters. This also allows users to call
-        # add_result with the arguments in any particular order, i.e. NOT
-        # enforcing that setpoints come before dependent variables.
-        results_dict: dict[ParamSpecBase, npt.NDArray] = {}
+        parameter_results: list[ParameterResultType] = [
+            self._coerce_result_tuple_to_parameter_result_type(result_tuple)
+            for result_tuple in result_tuples
+        ]
 
-        parameter_names = tuple(
-            partial_result[0].register_name
-            if isinstance(partial_result[0], ParameterBase)
-            else partial_result[0]
-            for partial_result in res_tuple
-        )
-        if len(set(parameter_names)) != len(parameter_names):
-            non_unique = [
-                item
-                for item, count in collections.Counter(parameter_names).items()
-                if count > 1
-            ]
+        non_unique = [
+            item.register_name
+            for item, count in collections.Counter(
+                [parameter_result[0] for parameter_result in parameter_results]
+            ).items()
+            if count > 1
+        ]
+        if len(non_unique) > 0:
             raise ValueError(
                 f"Not all parameter names are unique. "
                 f"Got multiple values for {non_unique}"
             )
 
-        for partial_result in res_tuple:
-            parameter = partial_result[0]
-            data = partial_result[1]
+        legacy_results_dict: DatasetResultDict = {}
+        self_unpacked_parameter_results: list[ParameterResultType] = []
 
-            if isinstance(parameter, ParameterBase) and isinstance(
-                parameter.vals, vals.Arrays
-            ):
-                if not isinstance(data, np.ndarray):
-                    raise TypeError(
-                        f"Expected data for Parameter with Array validator "
-                        f"to be a numpy array but got: {type(data)}"
-                    )
-
-                if (
-                    parameter.vals.shape is not None
-                    and data.shape != parameter.vals.shape
-                ):
-                    raise TypeError(
-                        f"Expected data with shape {parameter.vals.shape}, "
-                        f"but got {data.shape} for parameter: {parameter.full_name}"
-                    )
-
-            if isinstance(parameter, ArrayParameter):
-                results_dict.update(self._unpack_arrayparameter(partial_result))
-            elif isinstance(parameter, MultiParameter):
-                results_dict.update(self._unpack_multiparameter(partial_result))
-            elif isinstance(parameter, ParameterWithSetpoints):
-                results_dict.update(
-                    self._conditionally_expand_parameter_with_setpoints(
-                        data, parameter, parameter_names, partial_result
-                    )
+        for parameter_result in parameter_results:
+            if isinstance(parameter_result[0], ArrayParameter):
+                legacy_results_dict.update(
+                    self._unpack_arrayparameter(parameter_result)
+                )
+            elif isinstance(parameter_result[0], MultiParameter):
+                legacy_results_dict.update(
+                    self._unpack_multiparameter(parameter_result)
                 )
             else:
-                results_dict.update(self._unpack_partial_result(partial_result))
+                self_unpacked_parameter_results.extend(
+                    parameter_result[0].unpack_self(parameter_result[1])
+                )
 
-        self._validate_result_deps(results_dict)
-        self._validate_result_shapes(results_dict)
-        self._validate_result_types(results_dict)
+        all_results_dict: dict[ParamSpecBase, list[npt.NDArray]] = (
+            collections.defaultdict(list)
+        )
+        for parameter_result in self_unpacked_parameter_results:
+            all_results_dict[
+                self._interdeps._id_to_paramspec[parameter_result[0].register_name]
+            ].append(np.array(parameter_result[1]))
 
-        self.dataset._enqueue_results(results_dict)
+        # Add any unpacked results from legacy Parameter types
+        for key, value in legacy_results_dict.items():
+            all_results_dict[key].append(value)
+
+        datasaver_results_dict: DatasetResultDict = _deduplicate_results(
+            all_results_dict
+        )
+
+        # results_dict: dict[ParamSpecBase, npt.NDArray] = {}
+        # self._validate_result_tuples_no_duplicates(*result_tuples)
+        # result_tuples = self._coerce_result_tuples_to_parameterbase(*result_tuples)
+
+        # for result_tuple in result_tuples:
+        #     parameter = result_tuple[0]
+        #     data = result_tuple[1]
+
+        #     if isinstance(parameter, ParameterBase) and isinstance(
+        #         parameter.vals, vals.Arrays
+        #     ):
+        #         if not isinstance(data, np.ndarray):
+        #             raise TypeError(
+        #                 f"Expected data for Parameter with Array validator "
+        #                 f"to be a numpy array but got: {type(data)}"
+        #             )
+
+        #         if (
+        #             parameter.vals.shape is not None
+        #             and data.shape != parameter.vals.shape
+        #         ):
+        #             raise TypeError(
+        #                 f"Expected data with shape {parameter.vals.shape}, "
+        #                 f"but got {data.shape} for parameter: {parameter.full_name}"
+        #             )
+
+        #     if isinstance(parameter, ArrayParameter):
+        #         results_dict.update(self._unpack_arrayparameter(result_tuple))
+        #     elif isinstance(parameter, MultiParameter):
+        #         results_dict.update(self._unpack_multiparameter(result_tuple))
+        #     elif isinstance(parameter, ParameterWithSetpoints):
+        #         results_dict.update(
+        #             self._conditionally_expand_parameter_with_setpoints(
+        #                 data, parameter, parameter_names, result_tuple
+        #             )
+        #         )
+        #     else:
+        #         results_dict.update(self._unpack_partial_result(result_tuple))
+
+        self._validate_result_deps(datasaver_results_dict)
+        self._validate_result_shapes(datasaver_results_dict)
+        self._validate_result_types(datasaver_results_dict)
+
+        self.dataset._enqueue_results(datasaver_results_dict)
 
         if perf_counter() - self._last_save_time > self.write_period:
             self.flush_data_to_database()
             self._last_save_time = perf_counter()
 
-    def _conditionally_expand_parameter_with_setpoints(
-        self,
-        data: ValuesType,
-        parameter: ParameterWithSetpoints,
-        parameter_names: Sequence[str],
-        partial_result: ResType,
-    ) -> dict[ParamSpecBase, npt.NDArray]:
-        local_results = {}
-        setpoint_names = tuple(
-            setpoint.register_name for setpoint in parameter.setpoints
-        )
-        expanded = tuple(
-            setpoint_name in parameter_names for setpoint_name in setpoint_names
-        )
-        if all(expanded):
-            local_results.update(self._unpack_partial_result(partial_result))
-        elif any(expanded):
-            raise ValueError(
-                f"Some of the setpoints of {parameter.full_name} "
-                "were explicitly given but others were not. "
-                "Either supply all of them or none of them."
-            )
-        else:
-            expanded_partial_result = expand_setpoints_helper(parameter, data)
-            for res in expanded_partial_result:
-                local_results.update(self._unpack_partial_result(res))
-        return local_results
+    # def _conditionally_expand_parameter_with_setpoints(
+    #     self,
+    #     data: ValuesType,
+    #     parameter: ParameterWithSetpoints,
+    #     parameter_names: Sequence[str],
+    #     partial_result: ResType,
+    # ) -> dict[ParamSpecBase, npt.NDArray]:
+    #     """This method only expands the PWS if the result is not already in the result_tuple"""
 
-    def _unpack_partial_result(
-        self, partial_result: ResType
-    ) -> dict[ParamSpecBase, npt.NDArray]:
-        """
-        Unpack a partial result (not containing :class:`ArrayParameters` or
-        class:`MultiParameters`) into a standard results dict form and return
-        that dict
-        """
-        param, values = partial_result
-        try:
-            parameter = self._interdeps._id_to_paramspec[str_or_register_name(param)]
-        except KeyError:
-            if str_or_register_name(param) == str(param):
-                err_msg = (
-                    "Can not add result for parameter "
-                    f"{param}, no such parameter registered "
-                    "with this measurement."
-                )
-            else:
-                err_msg = (
-                    "Can not add result for parameter "
-                    f"{param!s} or {str_or_register_name(param)},"
-                    "no such parameter registered "
-                    "with this measurement."
-                )
-            raise ValueError(err_msg)
-        return {parameter: np.array(values)}
+    #     local_results = {}
+    #     setpoint_names = tuple(
+    #         setpoint.register_name for setpoint in parameter.setpoints
+    #     )
+    #     expanded = tuple(
+    #         setpoint_name in parameter_names for setpoint_name in setpoint_names
+    #     )
+    #     if all(expanded):
+    #         local_results.update(self._unpack_partial_result(partial_result))
+    #     elif any(expanded):
+    #         raise ValueError(
+    #             f"Some of the setpoints of {parameter.full_name} "
+    #             "were explicitly given but others were not. "
+    #             "Either supply all of them or none of them."
+    #         )
+    #     else:
+    #         expanded_partial_result = expand_setpoints_helper(parameter, data)
+    #         for res in expanded_partial_result:
+    #             local_results.update(self._unpack_partial_result(res))
+    #     return local_results
+
+    # def _unpack_partial_result(
+    #     self, partial_result: ResType
+    # ) -> dict[ParamSpecBase, npt.NDArray]:
+    #     """
+    #     Unpack a partial result (not containing :class:`ArrayParameters` or
+    #     class:`MultiParameters`) into a standard results dict form and return
+    #     that dict
+    #     """
+    #     param, values = partial_result
+    #     try:
+    #         parameter = self._interdeps._id_to_paramspec[str_or_register_name(param)]
+    #     except KeyError:
+    #         if str_or_register_name(param) == str(param):
+    #             err_msg = (
+    #                 "Can not add result for parameter "
+    #                 f"{param}, no such parameter registered "
+    #                 "with this measurement."
+    #             )
+    #         else:
+    #             err_msg = (
+    #                 "Can not add result for parameter "
+    #                 f"{param!s} or {str_or_register_name(param)},"
+    #                 "no such parameter registered "
+    #                 "with this measurement."
+    #             )
+    #         raise ValueError(err_msg)
+    #     return {parameter: np.array(values)}
 
     def _unpack_arrayparameter(
         self, partial_result: ResType
@@ -550,7 +630,7 @@ class Runner:
         in_memory_cache: bool | None = None,
         dataset_class: DataSetType = DataSetType.DataSet,
         parent_span: trace.Span | None = None,
-        registered_parameters: Sequence[ParameterBase] | None = None,
+        registered_parameters: Sequence[ParameterBase] = (),
     ) -> None:
         if in_memory_cache is None:
             in_memory_cache = qc.config.dataset.in_memory_cache
@@ -725,6 +805,7 @@ class Runner:
             dataset=self.ds,
             write_period=self.write_period,
             interdeps=self._interdependencies,
+            registered_parameters=self._registered_parameters,
             span=self._span,
         )
 
@@ -818,7 +899,7 @@ class Measurement:
         self._shapes: Shapes | None = None
         self._parent_datasets: list[dict[str, str]] = []
         self._extra_log_info: str = ""
-        self._registered_parameters: list[ParameterBase] = []
+        self._registered_parameters: set[ParameterBase] = set()
 
     @property
     def parameters(self) -> dict[str, ParamSpecBase]:
@@ -839,7 +920,6 @@ class Measurement:
 
     def _paramspecbase_from_strings(
         self,
-        name: str,
         setpoints: Sequence[str] | None = None,
         basis: Sequence[str] | None = None,
     ) -> tuple[tuple[ParamSpecBase, ...], tuple[ParamSpecBase, ...]]:
@@ -848,10 +928,9 @@ class Measurement:
         error message if the user tries to register a parameter with reference
         (setpoints, basis) to a parameter not registered with this measurement
 
-        Called by _register_parameter only.
+        Called by _register_parameter and _self_register_parameter only.
 
         Args:
-            name: Name of the parameter to register
             setpoints: name(s) of the setpoint parameter(s)
             basis: name(s) of the parameter(s) that this parameter is
                 inferred from
@@ -912,6 +991,86 @@ class Measurement:
 
         return self
 
+    def _self_register_parameter(
+        self: Self,
+        parameter: ParameterBase,
+        setpoints: SetpointsType | None = None,
+        basis: SetpointsType | None = None,
+    ) -> Self:
+        # Handle setpoints and basis arguments
+
+        if setpoints is not None:
+            parameters_from_setpoints, str_setpoints = (
+                split_str_and_parameterbase_setpoints(setpoints)
+            )
+        else:
+            parameters_from_setpoints = ()
+            str_setpoints = None
+
+        if basis is not None:
+            parameters_from_basis, str_basis = split_str_and_parameterbase_setpoints(
+                basis
+            )
+        else:
+            parameters_from_basis = ()
+            str_basis = None
+
+        dependency_paramspecs_from_str, inference_paramspecs_from_str = (
+            self._paramspecbase_from_strings(setpoints=str_setpoints, basis=str_basis)
+        )
+
+        # Collect dependent and inference parameters
+        dependent_parameters = list(
+            chain.from_iterable((parameters_from_setpoints, parameter.depends_on))
+        )
+
+        inference_parameters = list(
+            chain.from_iterable((parameters_from_basis, parameter.is_controlled_by))
+        )
+
+        # Combine str-based paramspecs and Parameter paramspecs
+        dependency_paramspecs = set(
+            [param.param_spec for param in dependent_parameters]
+            + list(dependency_paramspecs_from_str)
+        )
+        inference_paramspecs = set(
+            [param.param_spec for param in inference_parameters]
+            + list(inference_paramspecs_from_str)
+        )
+
+        # Make ParamSpecTrees and extend InterDeps
+        dependencies_tree: ParamSpecTree | None = None
+        if len(dependency_paramspecs) > 0:
+            dependencies_tree = {parameter.param_spec: tuple(dependency_paramspecs)}
+
+        inferences_tree: ParamSpecTree | None = None
+        if len(inference_paramspecs) > 0:
+            inferences_tree = {parameter.param_spec: tuple(inference_paramspecs)}
+
+        standalones = ()
+        if dependencies_tree is None and inferences_tree is None:
+            standalones = (parameter.param_spec,)
+
+        self._interdeps = self._interdeps.extend(
+            dependencies=dependencies_tree,
+            inferences=inferences_tree,
+            standalones=standalones,
+        )
+        self._registered_parameters.add(parameter)
+        log.info(f"Registered {parameter.register_name} in the Measurement.")
+
+        # And now recursively register all interdependent parameters of this parameter as well
+        # This step includes "has_control_of" which is the reverse-direction of "is_controlled_by"/"inferred_from"
+        for interdependent_parameter in list(
+            chain.from_iterable(
+                (dependent_parameters, inference_parameters, parameter.has_control_of)
+            )
+        ):
+            if interdependent_parameter not in self._registered_parameters:
+                self._self_register_parameter(interdependent_parameter)
+
+        return self
+
     def register_parameter(
         self: Self,
         parameter: ParameterBase,
@@ -941,61 +1100,43 @@ class Measurement:
                 f"Can not register object of type {type(parameter)}. Can only "
                 "register a QCoDeS Parameter."
             )
-        paramtype = self._infer_paramtype(parameter, paramtype)
-        # default to numeric
-        if paramtype is None:
-            paramtype = "numeric"
-
-        # now the parameter type must be valid
-        if paramtype not in ParamSpec.allowed_types:
-            raise RuntimeError(
-                "Trying to register a parameter with type "
-                f"{paramtype}. However, only "
-                f"{ParamSpec.allowed_types} are supported."
-            )
-
         if setpoints is not None:
             self._check_setpoints_type(setpoints, "setpoints")
 
         if basis is not None:
             self._check_setpoints_type(basis, "basis")
 
-        if isinstance(parameter, ArrayParameter):
-            self._register_arrayparameter(parameter, setpoints, basis, paramtype)
-        elif isinstance(parameter, ParameterWithSetpoints):
-            self._register_parameter_with_setpoints(
-                parameter, setpoints, basis, paramtype
-            )
-        elif isinstance(parameter, MultiParameter):
-            self._register_multiparameter(
-                parameter,
-                setpoints,
-                basis,
-                paramtype,
-            )
-        elif isinstance(parameter, Parameter):
-            self._register_parameter(
-                parameter.register_name,
-                parameter.label,
-                parameter.unit,
-                setpoints,
-                basis,
-                paramtype,
-            )
-        elif isinstance(parameter, GroupedParameter):
-            self._register_parameter(
-                parameter.register_name,
-                parameter.label,
-                parameter.unit,
-                setpoints,
-                basis,
-                paramtype,
-            )
-        else:
-            raise RuntimeError(
-                f"Does not know how to register a parameter of type {type(parameter)}"
-            )
-        self._registered_parameters.append(parameter)
+        match parameter:
+            case Parameter() | ParameterWithSetpoints():
+                if paramtype is not None:
+                    parameter.paramtype = paramtype
+                self._self_register_parameter(parameter, setpoints, basis)
+            case ArrayParameter():
+                paramtype = self._infer_paramtype(parameter, paramtype)
+                self._register_arrayparameter(parameter, setpoints, basis, paramtype)
+            case MultiParameter():
+                paramtype = self._infer_paramtype(parameter, paramtype)
+                self._register_multiparameter(
+                    parameter,
+                    setpoints,
+                    basis,
+                    paramtype,
+                )
+            case GroupedParameter():
+                paramtype = self._infer_paramtype(parameter, paramtype)
+                self._register_parameter(
+                    parameter.register_name,
+                    parameter.label,
+                    parameter.unit,
+                    setpoints,
+                    basis,
+                    paramtype,
+                )
+            case _:
+                raise RuntimeError(
+                    f"Does not know how to register a parameter of type {type(parameter)}"
+                )
+        self._registered_parameters.add(parameter)
 
         return self
 
@@ -1011,7 +1152,7 @@ class Measurement:
             )
 
     @staticmethod
-    def _infer_paramtype(parameter: ParameterBase, paramtype: str | None) -> str | None:
+    def _infer_paramtype(parameter: ParameterBase, paramtype: str | None) -> str:
         """
         Infer the best parameter type to store the parameter supplied.
 
@@ -1025,20 +1166,29 @@ class Measurement:
             Returns None if a parameter type could not be inferred
 
         """
-        if paramtype is not None:
-            return paramtype
-
-        if isinstance(parameter.vals, vals.Arrays):
-            paramtype = "array"
+        return_paramtype: str
+        if paramtype is not None:  # override with argument
+            return_paramtype = paramtype
+        elif isinstance(parameter.vals, vals.Arrays):
+            return_paramtype = "array"
         elif isinstance(parameter, ArrayParameter):
-            paramtype = "array"
+            return_paramtype = "array"
         elif isinstance(parameter.vals, vals.Strings):
-            paramtype = "text"
+            return_paramtype = "text"
         elif isinstance(parameter.vals, vals.ComplexNumbers):
-            paramtype = "complex"
+            return_paramtype = "complex"
+        else:  # Default to this if nothing else matches
+            return_paramtype = "numeric"
+
+        if return_paramtype not in ParamSpec.allowed_types:
+            raise RuntimeError(
+                "Trying to register a parameter with type "
+                f"{return_paramtype}. However, only "
+                f"{ParamSpec.allowed_types} are supported."
+            )
         # TODO should we try to figure out if parts of a multiparameter are
         # arrays or something else?
-        return paramtype
+        return return_paramtype
 
     def _register_parameter(
         self: Self,
@@ -1084,9 +1234,7 @@ class Measurement:
             bs_strings = []
 
         # get the ParamSpecBases
-        depends_on, inf_from = self._paramspecbase_from_strings(
-            name, sp_strings, bs_strings
-        )
+        depends_on, inf_from = self._paramspecbase_from_strings(sp_strings, bs_strings)
 
         if depends_on:
             self._interdeps = self._interdeps.extend(
@@ -1283,6 +1431,8 @@ class Measurement:
             paramtype: Type of the parameter, i.e. the SQL storage class
 
         """
+        custom_parameter = ManualParameter(name=name, label=label, unit=unit)
+        self._registered_parameters.add(custom_parameter)
         return self._register_parameter(name, label, unit, setpoints, basis, paramtype)
 
     def unregister_parameter(self, parameter: SetpointsType) -> None:
@@ -1319,7 +1469,7 @@ class Measurement:
                 for param in self._registered_parameters
                 if parameter not in (param.name, param.register_name)
             ]
-            self._registered_parameters = with_parameters_removed
+            self._registered_parameters = set(with_parameters_removed)
 
         log.info(f"Removed {param_name} from Measurement.")
 
@@ -1441,7 +1591,7 @@ class Measurement:
             in_memory_cache=in_memory_cache,
             dataset_class=dataset_class,
             parent_span=parent_span,
-            registered_parameters=self._registered_parameters,
+            registered_parameters=tuple(self._registered_parameters),
         )
 
 
@@ -1451,3 +1601,77 @@ def str_or_register_name(sp: str | ParameterBase) -> str:
         return sp
     else:
         return sp.register_name
+
+
+def split_str_and_parameterbase_setpoints(
+    setpoints: SetpointsType,
+) -> tuple[tuple[ParameterBase], tuple[str]]:
+    str_setpoints = []
+    param_setpoints = []
+    for setpoint in setpoints:
+        if isinstance(setpoint, str):
+            str_setpoints.append(setpoint)
+        elif isinstance(setpoint, ParameterBase):
+            param_setpoints.append(setpoint)
+        else:
+            raise ValueError(
+                f"Expected Setpoint {setpoint} to be a str or ParameterBase, but got something else"
+            )
+    return tuple(param_setpoints), tuple(str_setpoints)
+
+
+# TODO: These deduplication methods need testing against arrays with all ValuesType types
+def _deduplicate_results(
+    results_dict: dict[ParamSpecBase, list[npt.NDArray]],
+) -> DatasetResultDict:
+    deduplicated_results: dict[ParamSpecBase, npt.NDArray] = {}
+    for param_spec, list_of_ndarrays_of_values in results_dict.items():
+        if len(list_of_ndarrays_of_values) == 1 or _values_are_equal(
+            list_of_ndarrays_of_values[0], *list_of_ndarrays_of_values[1:]
+        ):
+            deduplicated_results[param_spec] = list_of_ndarrays_of_values[0]
+        else:
+            raise ValueError(
+                f"Multiple distinct values found for {param_spec.name}"
+            )  # TODO: Expand this error message
+    return deduplicated_results
+
+
+def _values_are_equal(ref_array: npt.NDArray, *values_arrays: npt.NDArray) -> bool:
+    if np.issubdtype(ref_array.dtype, np.number):
+        return _numeric_values_are_equal(ref_array, *values_arrays)
+    return _non_numeric_values_are_equal(ref_array, *values_arrays)
+
+
+def _non_numeric_values_are_equal(
+    ref_array: npt.NDArray, *values_arrays: npt.NDArray
+) -> bool:
+    # For non-numeric values, we can use direct equality
+    for value_array in values_arrays[1:]:
+        if not np.array_equal(value_array, ref_array, equal_nan=True):
+            return False
+    return True
+
+
+def _numeric_values_are_equal(
+    ref_array: npt.NDArray, *values_arrays: npt.NDArray
+) -> bool:
+    # The equal_nan arg in np.allclose considers complex values with np.nan in
+    # either real or imaginary part to be equal. That is, np.nan + 1.0j is equal to 1.0 + np.nan*1.0j.
+    # Since we want a more granular equality, we split arrays with complex values
+    # into real and imaginary parts to evaluate equality
+    if np.issubdtype(ref_array.dtype, np.complexfloating):
+        return _numeric_values_are_equal(
+            np.real(ref_array), np.real(values_arrays)
+        ) and _numeric_values_are_equal(np.imag(ref_array), np.imag(values_arrays))
+
+    for value_array in values_arrays[1:]:
+        if not np.allclose(
+            value_array,
+            ref_array,
+            atol=0,
+            rtol=1e-8,  # TODO: allow flexible rtol
+            equal_nan=True,
+        ):
+            return False
+    return True

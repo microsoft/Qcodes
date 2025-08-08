@@ -7,11 +7,22 @@ import warnings
 from contextlib import contextmanager
 from datetime import datetime
 from functools import cached_property, wraps
-from typing import TYPE_CHECKING, Any, ClassVar, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, overload
 
+import numpy as np
+
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.metadatable import Metadatable, MetadatableWithName
 from qcodes.utils import DelegateAttributes, full_class, qcodes_abstractmethod
-from qcodes.validators import Enum, Ints, Validator
+from qcodes.validators import (
+    Arrays,
+    ComplexNumbers,
+    Enum,
+    Ints,
+    Numbers,
+    Strings,
+    Validator,
+)
 
 from ..utils.types import NumberType
 from .cache import _Cache, _CacheProtocol
@@ -26,6 +37,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Iterable, Mapping, Sequence, Sized
     from types import TracebackType
 
+    from qcodes.dataset.data_set_protocol import ValuesType
     from qcodes.instrument import InstrumentBase
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 
@@ -234,6 +246,10 @@ class ParameterBase(MetadatableWithName):
         self._snapshot_value = snapshot_value
         self.snapshot_exclude = snapshot_exclude
         self.on_set_callback = on_set_callback
+
+        self._depends_on: set[ParameterBase] = set()
+        self._has_control_of: set[ParameterBase] = set()
+        self._is_controlled_by: set[ParameterBase] = set()
 
         if not isinstance(vals, (Validator, type(None))):
             raise TypeError("vals must be None or a Validator")
@@ -1143,6 +1159,82 @@ class ParameterBase(MetadatableWithName):
     @property
     def abstract(self) -> bool | None:
         return self._abstract
+
+    @property
+    def param_spec(self) -> ParamSpecBase:
+        match self.vals:
+            case Arrays():
+                paramtype = "array"
+            case Strings():
+                paramtype = "text"
+            case ComplexNumbers():
+                paramtype = "complex"
+            case _:
+                paramtype = "numeric"
+
+        return ParamSpecBase(
+            name=self.register_name,
+            paramtype=paramtype,
+            label=None,
+            unit=None,
+        )
+
+    @property
+    def paramtype(self) -> str:
+        return self.param_spec.type
+
+    @paramtype.setter
+    def paramtype(self, paramtype: str) -> None:
+        if paramtype not in ["array", "text", "complex", "numeric"]:
+            raise ValueError(f"{paramtype} is not a valid paramtype")
+        if self.paramtype == paramtype:
+            return
+        match paramtype:
+            case "array":
+                new_vals = Arrays()
+            case "text":
+                new_vals = Strings()
+            case "complex":
+                new_vals = ComplexNumbers()
+            case "numeric":
+                new_vals = Numbers()
+            case _:
+                raise
+        if self.vals is None:
+            self.vals = new_vals
+        elif type(self.vals) is not type(new_vals):
+            raise TypeError(
+                f"Tried to set a new paramtype {paramtype}, but this parameter already has paramtype {self.paramtype} which does not match"
+            )
+
+    @property
+    def depends_on(self) -> set[ParameterBase]:
+        return self._depends_on
+
+    # TODO: Decide if this should return a frozenset to make it somewhat harder to mutate accidentally
+    @property
+    def has_control_of(self) -> set[ParameterBase]:
+        return self._has_control_of
+
+    @property
+    def is_controlled_by(self) -> set[ParameterBase]:
+        # This is equivalent to the "inferred_from" relationship
+        return self._is_controlled_by
+
+    def unpack_self(self, value: ValuesType) -> list[tuple[ParameterBase, ValuesType]]:
+        if isinstance(self.vals, Arrays):
+            if not isinstance(value, np.ndarray):
+                raise TypeError(
+                    f"Expected data for Parameter with Array validator "
+                    f"to be a numpy array but got: {type(value)}"
+                )
+
+            if self.vals.shape is not None and value.shape != self.vals.shape:
+                raise TypeError(
+                    f"Expected data with shape {self.vals.shape}, "
+                    f"but got {value.shape} for parameter: {self.full_name}"
+                )
+        return [(self, value)]
 
 
 class GetLatest(DelegateAttributes):

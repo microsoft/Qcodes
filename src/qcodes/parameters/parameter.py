@@ -8,6 +8,9 @@ import os
 from types import MethodType
 from typing import TYPE_CHECKING, Any, Literal
 
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+from qcodes.validators import Arrays, ComplexNumbers, Strings
+
 from .command import Command
 from .parameter_base import ParamDataType, ParameterBase, ParamRawDataType
 from .sweep_values import SweepFixedValues
@@ -436,6 +439,13 @@ class Parameter(ParameterBase):
 
         """
         return SweepFixedValues(self, start=start, stop=stop, step=step, num=num)
+
+    @property
+    def param_spec(self) -> ParamSpecBase:
+        paramspecbase = super().param_spec  # Sets the name and paramtype
+        paramspecbase.label = self.label
+        paramspecbase.unit = self.unit
+        return paramspecbase
 
 
 class ManualParameter(Parameter):
