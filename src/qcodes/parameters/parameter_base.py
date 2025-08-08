@@ -7,14 +7,22 @@ import warnings
 from contextlib import contextmanager
 from datetime import datetime
 from functools import cached_property, wraps
-from typing import TYPE_CHECKING, Any, ClassVar, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, overload
 
 import numpy as np
 
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.metadatable import Metadatable, MetadatableWithName
 from qcodes.utils import DelegateAttributes, full_class, qcodes_abstractmethod
-from qcodes.validators import Arrays, ComplexNumbers, Enum, Ints, Strings, Validator
+from qcodes.validators import (
+    Arrays,
+    ComplexNumbers,
+    Enum,
+    Ints,
+    Numbers,
+    Strings,
+    Validator,
+)
 
 from ..utils.types import NumberType
 from .cache import _Cache, _CacheProtocol
@@ -1170,6 +1178,34 @@ class ParameterBase(MetadatableWithName):
             label=None,
             unit=None,
         )
+
+    @property
+    def paramtype(self) -> str:
+        return self.param_spec.type
+
+    @paramtype.setter
+    def paramtype(self, paramtype: str) -> None:
+        if paramtype not in ["array", "text", "complex", "numeric"]:
+            raise ValueError(f"{paramtype} is not a valid paramtype")
+        if self.paramtype == paramtype:
+            return
+        match paramtype:
+            case "array":
+                new_vals = Arrays()
+            case "text":
+                new_vals = Strings()
+            case "complex":
+                new_vals = ComplexNumbers()
+            case "numeric":
+                new_vals = Numbers()
+            case _:
+                raise
+        if self.vals is None:
+            self.vals = new_vals
+        elif type(self.vals) is not type(new_vals):
+            raise TypeError(
+                f"Tried to set a new paramtype {paramtype}, but this parameter already has paramtype {self.paramtype} which does not match"
+            )
 
     @property
     def depends_on(self) -> set[ParameterBase]:
