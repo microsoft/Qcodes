@@ -33,7 +33,7 @@ cf-xarray==0.10.6
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-charset-normalizer==3.4.2
+charset-normalizer==3.4.3
     # via requests
 click==8.2.1
     # via
