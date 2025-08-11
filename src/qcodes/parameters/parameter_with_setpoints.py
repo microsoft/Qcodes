@@ -160,7 +160,7 @@ class ParameterWithSetpoints(Parameter):
         return set(self.setpoints)
 
     def unpack_self(self, value: ValuesType) -> list[tuple[ParameterBase, ValuesType]]:
-        unpacked_results = super().unpack_self(value)
+        unpacked_results = []
         setpoint_params = []
         setpoint_data = []
         for setpointparam in self.setpoints:
@@ -170,7 +170,9 @@ class ParameterWithSetpoints(Parameter):
         output_grids = np.meshgrid(*setpoint_data, indexing="ij")
         for param, grid in zip(setpoint_params, output_grids):
             unpacked_results.append((param, grid))
-
+        unpacked_results.extend(
+            super().unpack_self(value)
+        )  # Must come last to preserve original ordering
         return unpacked_results
 
 
