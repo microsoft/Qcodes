@@ -459,7 +459,7 @@ types-networkx==3.5.0.20250809
     # via qcodes (pyproject.toml)
 types-pytz==2025.2.0.20250809
     # via pandas-stubs
-types-pywin32==311.0.0.20250801
+types-pywin32==311.0.0.20250809
     # via qcodes (pyproject.toml)
 types-requests==2.32.4.20250809
     # via
