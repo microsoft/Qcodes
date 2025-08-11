@@ -22,6 +22,8 @@ from .param_spec import ParamSpecBase
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from networkx.classes.reportviews import DegreeView
+
     from .versioning.rundescribertypes import InterDependencies_Dict
 _LOGGER = logging.getLogger(__name__)
 ParamSpecTree = dict[ParamSpecBase, tuple[ParamSpecBase, ...]]
@@ -246,7 +248,9 @@ class InterDependencies_:  # noqa: PLW1641
 
     @property
     def standalones(self) -> frozenset[ParamSpecBase]:
-        degree_iterator = self.graph.degree
+        # since we are not requesting the degree of a specific node, we will get a DegreeView
+        # the type stubs does not yet reflect this so we cast away the int type here
+        degree_iterator = cast("DegreeView[str]", self.graph.degree)
         return frozenset(
             [
                 self._node_to_paramspec(node_id)
@@ -317,7 +321,9 @@ class InterDependencies_:  # noqa: PLW1641
         }
         standalone_top_level = {
             self._node_to_paramspec(node_id)
-            for node_id, degree in self._graph.degree
+            # since we are not requesting the degree of a specific node, we will get a DegreeView
+            # the type stubs does not yet reflect this so we cast away the int type here
+            for node_id, degree in cast("DegreeView[str]", self._graph.degree)
             if degree == 0
         }
 

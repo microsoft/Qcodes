@@ -2,6 +2,8 @@
 #    uv pip compile pyproject.toml --extra test --extra docs --output-file .\requirements.txt
 #    manually removed qcodes it self from the requirements and added version and platform specific env markers
 #    for pywin32
+accessible-pygments==0.0.5
+    # via furo
 alabaster==1.0.0
     # via sphinx
 asttokens==3.0.0
@@ -25,7 +27,7 @@ broadbean==0.14.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-certifi==2025.7.14
+certifi==2025.8.3
     # via requests
 cf-xarray==0.10.6
     # via
@@ -46,13 +48,13 @@ colorama==0.4.6
     #   pytest
     #   sphinx
     #   tqdm
-comm==0.2.2
+comm==0.2.3
     # via
     #   ipykernel
     #   ipywidgets
-contourpy==1.3.2
+contourpy==1.3.3
     # via matplotlib
-coverage==7.10.0
+coverage==7.10.2
     # via
     #   qcodes (pyproject.toml)
     #   pytest-cov
@@ -100,7 +102,7 @@ h5py==3.14.0
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.136.4
+hypothesis==6.137.0
     # via qcodes (pyproject.toml)
 idna==3.10
     # via requests
@@ -110,13 +112,12 @@ importlib-metadata==8.7.0
     # via opentelemetry-api
 iniconfig==2.1.0
     # via pytest
-ipykernel==6.30.0
+ipykernel==6.30.1
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
 ipython==9.4.0
     # via
-    #   qcodes (pyproject.toml)
     #   ipykernel
     #   ipywidgets
     #   qcodes
@@ -131,7 +132,6 @@ jedi==0.19.2
     # via ipython
 jinja2==3.1.6
     # via
-    #   qcodes (pyproject.toml)
     #   nbconvert
     #   nbsphinx
     #   sphinx
@@ -179,7 +179,7 @@ markupsafe==3.0.2
     # via
     #   jinja2
     #   nbconvert
-matplotlib==3.10.3
+matplotlib==3.10.5
     # via
     #   qcodes (pyproject.toml)
     #   broadbean
@@ -191,7 +191,7 @@ matplotlib-inline==0.1.7
     #   ipython
 mistune==3.1.3
     # via nbconvert
-mypy==1.17.0
+mypy==1.17.1
     # via qcodes (pyproject.toml)
 mypy-extensions==1.1.0
     # via mypy
@@ -208,6 +208,8 @@ nbsphinx==0.9.6
     # via qcodes (pyproject.toml)
 nest-asyncio==1.6.0
     # via ipykernel
+networkx==3.5
+    # via qcodes (pyproject.toml)
 numpy==2.3.2
     # via
     #   qcodes (pyproject.toml)
@@ -221,13 +223,14 @@ numpy==2.3.2
     #   qcodes
     #   qcodes-loop
     #   scipy
+    #   types-networkx
     #   xarray
     #   zhinst-core
     #   zhinst-qcodes
     #   zhinst-timing-models
     #   zhinst-toolkit
     #   zhinst-utils
-opentelemetry-api==1.35.0
+opentelemetry-api==1.36.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -289,6 +292,7 @@ pyelftools==0.32
     # via zhinst-toolkit
 pygments==2.19.2
     # via
+    #   accessible-pygments
     #   furo
     #   ipython
     #   ipython-pygments-lexers
@@ -339,7 +343,7 @@ pyyaml==6.0.2
     #   zhinst-timing-models
 pyyaml-ft==8.0.0
     # via libcst
-pyzmq==27.0.0
+pyzmq==27.0.1
     # via
     #   ipykernel
     #   jupyter-client
@@ -368,7 +372,7 @@ ruamel-yaml-clib==0.2.12
     # via ruamel-yaml
 schema==0.7.7
     # via broadbean
-scipy==1.16.0
+scipy==1.16.1
     # via qcodes (pyproject.toml)
 six==1.17.0
     # via python-dateutil
@@ -426,7 +430,6 @@ toolz==1.0.0
     #   partd
 tornado==6.5.1
     # via
-    #   qcodes (pyproject.toml)
     #   ipykernel
     #   jupyter-client
     #   qcodes
@@ -440,7 +443,6 @@ tqdm==4.67.1
     #   qcodes
 traitlets==5.14.3
     # via
-    #   comm
     #   ipykernel
     #   ipython
     #   ipywidgets
@@ -453,9 +455,11 @@ traitlets==5.14.3
     #   nbsphinx
 types-jsonschema==4.25.0.20250720
     # via qcodes (pyproject.toml)
+types-networkx==3.5.0.20250809
+    # via qcodes (pyproject.toml)
 types-pytz==2025.2.0.20250516
     # via pandas-stubs
-types-pywin32==311.0.0.20250723
+types-pywin32==311.0.0.20250801
     # via qcodes (pyproject.toml)
 types-requests==2.32.4.20250611
     # via
@@ -514,15 +518,15 @@ xarray==2025.7.1
     #   cf-xarray
     #   qcodes
     #   qcodes-loop
-zhinst-core==25.4.1.17
+zhinst-core==25.7.0.507
     # via
     #   zhinst-toolkit
     #   zhinst-utils
 zhinst-qcodes==0.6.0
     # via qcodes (pyproject.toml)
-zhinst-timing-models==25.4.0
+zhinst-timing-models==25.7.0
     # via zhinst-utils
-zhinst-toolkit==1.0.1
+zhinst-toolkit==1.1.0
     # via zhinst-qcodes
 zhinst-utils==0.7.0
     # via zhinst-toolkit
