@@ -1029,14 +1029,10 @@ class Measurement:
         )
 
         # Combine str-based paramspecs and Parameter paramspecs
-        dependency_paramspecs = set(
-            [param.param_spec for param in dependent_parameters]
-            + list(dependency_paramspecs_from_str)
-        )
-        inference_paramspecs = set(
-            [param.param_spec for param in inference_parameters]
-            + list(inference_paramspecs_from_str)
-        )
+        dependency_paramspecs = [param.param_spec for param in dependent_parameters]
+        dependency_paramspecs.extend(dependency_paramspecs_from_str)
+        inference_paramspecs = [param.param_spec for param in inference_parameters]
+        inference_paramspecs.extend(inference_paramspecs_from_str)
 
         # Make ParamSpecTrees and extend InterDeps
         dependencies_tree: ParamSpecTree | None = None
