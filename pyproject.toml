@@ -62,7 +62,7 @@ Changelog = "https://microsoft.github.io/Qcodes/changes/index.html"
 zurichinstruments = ["zhinst-qcodes>=0.3"]
 loop = ["qcodes_loop>=0.1.2"]
 test = [
-    "coverage[toml]>=6.3.0",
+    "coverage[toml]>=7.6.9",
     "deepdiff>=5.0.2",
     "hypothesis>=6.130.0",
     "lxml>=4.9.4",
