@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
     from types import FrameType, TracebackType
 
-    from opentelemetry.util.types import (  # pyright: ignore[reportMissingTypeStubs]
+    from opentelemetry.util.types import (
         AttributeValue,
     )
 log = logging.getLogger(__name__)
