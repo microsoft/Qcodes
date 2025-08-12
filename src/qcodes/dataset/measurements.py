@@ -991,50 +991,60 @@ class Measurement:
 
         return self
 
+    def _paramspecs_and_parameters_from_setpoints(
+        self, setpoints: SetpointsType | None
+    ) -> tuple[list[ParamSpecBase], list[ParameterBase]]:
+        paramspecs = []
+        parameters = []
+        if setpoints is not None:
+            for setpoint in setpoints:
+                if isinstance(setpoint, ParameterBase):
+                    paramspecs.append(setpoint.param_spec)
+                    parameters.append(setpoint)
+                elif (
+                    isinstance(setpoint, str)
+                    and (
+                        setpoint_paramspec := self._interdeps._id_to_paramspec.get(
+                            setpoint, None
+                        )
+                    )
+                    is not None
+                ):
+                    paramspecs.append(setpoint_paramspec)
+                else:
+                    raise ValueError(
+                        f"Unknown interdependency: {setpoint}. Please register that parameter first."
+                    )
+        return paramspecs, parameters
+
     def _self_register_parameter(
         self: Self,
         parameter: ParameterBase,
         setpoints: SetpointsType | None = None,
         basis: SetpointsType | None = None,
     ) -> Self:
-        # Handle setpoints and basis arguments
+        # It is important to preserve the order of the setpoints (and basis) arguments
+        # when building the dependency trees, as this order is implicitly used to assign
+        # the axis-order for multidimensional data variables where shape alone is
+        # insufficient (eg, if the shape is square)
 
-        if setpoints is not None:
-            parameters_from_setpoints, str_setpoints = (
-                split_str_and_parameterbase_setpoints(setpoints)
-            )
-        else:
-            parameters_from_setpoints = ()
-            str_setpoints = None
-
-        if basis is not None:
-            parameters_from_basis, str_basis = split_str_and_parameterbase_setpoints(
-                basis
-            )
-        else:
-            parameters_from_basis = ()
-            str_basis = None
-
-        dependency_paramspecs_from_str, inference_paramspecs_from_str = (
-            self._paramspecbase_from_strings(setpoints=str_setpoints, basis=str_basis)
+        # Convert setpoints and basis arguments to ParamSpecBases
+        dependency_paramspecs, dependency_parameters = (
+            self._paramspecs_and_parameters_from_setpoints(setpoints)
+        )
+        inference_paramspecs, inference_parameters = (
+            self._paramspecs_and_parameters_from_setpoints(basis)
         )
 
-        # Collect dependent and inference parameters
-        dependent_parameters = list(
-            chain.from_iterable((parameters_from_setpoints, parameter.depends_on))
+        # Append internal dependencies/inferences
+        dependency_paramspecs.extend(
+            [param.param_spec for param in parameter.depends_on]
+        )
+        inference_paramspecs.extend(
+            [param.param_spec for param in parameter.is_controlled_by]
         )
 
-        inference_parameters = list(
-            chain.from_iterable((parameters_from_basis, parameter.is_controlled_by))
-        )
-
-        # Combine str-based paramspecs and Parameter paramspecs
-        dependency_paramspecs = [param.param_spec for param in dependent_parameters]
-        dependency_paramspecs.extend(dependency_paramspecs_from_str)
-        inference_paramspecs = [param.param_spec for param in inference_parameters]
-        inference_paramspecs.extend(inference_paramspecs_from_str)
-
-        # Make ParamSpecTrees and extend InterDeps
+        # Make ParamSpecTrees and extend interdeps
         dependencies_tree: ParamSpecTree | None = None
         if len(dependency_paramspecs) > 0:
             dependencies_tree = {parameter.param_spec: tuple(dependency_paramspecs)}
@@ -1055,13 +1065,19 @@ class Measurement:
         self._registered_parameters.add(parameter)
         log.info(f"Registered {parameter.register_name} in the Measurement.")
 
-        # And now recursively register all interdependent parameters of this parameter as well
-        # This step includes "has_control_of" which is the reverse-direction of "is_controlled_by"/"inferred_from"
-        for interdependent_parameter in list(
+        # Recursively register all other interdependent parameters related to this parameter
+        interdependent_parameters = list(
             chain.from_iterable(
-                (dependent_parameters, inference_parameters, parameter.has_control_of)
+                [
+                    dependency_parameters,
+                    inference_parameters,
+                    parameter.depends_on,
+                    parameter.is_controlled_by,
+                    parameter.has_control_of,
+                ]
             )
-        ):
+        )
+        for interdependent_parameter in interdependent_parameters:
             if interdependent_parameter not in self._registered_parameters:
                 self._self_register_parameter(interdependent_parameter)
 
