@@ -28,7 +28,7 @@ class CryomagneticsModelTM620(VisaInstrument):
         self.shield: Parameter = self.add_parameter(
             name="shield",
             unit="K",
-            get_cmd=self.get_A,
+            get_cmd=self._get_A,
             get_parser=float,
             docstring="55K Shield Temp",
         )
@@ -37,7 +37,7 @@ class CryomagneticsModelTM620(VisaInstrument):
         self.magnet: Parameter = self.add_parameter(
             name="magnet",
             unit="K",
-            get_cmd=self.get_B,
+            get_cmd=self._get_B,
             get_parser=float,
             docstring="4K Magnet Temp",
         )
@@ -47,7 +47,7 @@ class CryomagneticsModelTM620(VisaInstrument):
         self.remote()
         self.connect_message()
 
-    def get_A(self) -> float:
+    def _get_A(self) -> float:
         """Get 55k shield temperature
 
         Returns:
@@ -60,7 +60,7 @@ class CryomagneticsModelTM620(VisaInstrument):
 
         return numeric_output
 
-    def get_B(self) -> float:
+    def _get_B(self) -> float:
         """Get 4k magnet temp
 
         Returns:
