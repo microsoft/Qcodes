@@ -257,7 +257,7 @@ class _ParameterWithStatus(Parameter):
             for i in bin(int(float(meas_status))).replace("0b", "").zfill(16)[::-1]
         ]
 
-        status = _from_bits_tuple_to_status[(status_bits[0], status_bits[1])]  # pyright: ignore[reportArgumentType]
+        status = _from_bits_tuple_to_status[(status_bits[0], status_bits[1])]
 
         return float(value), status
 
