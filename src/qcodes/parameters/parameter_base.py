@@ -247,9 +247,9 @@ class ParameterBase(MetadatableWithName):
         self.snapshot_exclude = snapshot_exclude
         self.on_set_callback = on_set_callback
 
-        self._depends_on: set[ParameterBase] = set()
-        self._has_control_of: set[ParameterBase] = set()
-        self._is_controlled_by: set[ParameterBase] = set()
+        self._depends_on: ParameterSet = ParameterSet()
+        self._has_control_of: ParameterSet = ParameterSet()
+        self._is_controlled_by: ParameterSet = ParameterSet()
 
         if not isinstance(vals, (Validator, type(None))):
             raise TypeError("vals must be None or a Validator")
@@ -1208,16 +1208,16 @@ class ParameterBase(MetadatableWithName):
             )
 
     @property
-    def depends_on(self) -> set[ParameterBase]:
+    def depends_on(self) -> ParameterSet:
         return self._depends_on
 
     # TODO: Decide if this should return a frozenset to make it somewhat harder to mutate accidentally
     @property
-    def has_control_of(self) -> set[ParameterBase]:
+    def has_control_of(self) -> ParameterSet:
         return self._has_control_of
 
     @property
-    def is_controlled_by(self) -> set[ParameterBase]:
+    def is_controlled_by(self) -> ParameterSet:
         # This is equivalent to the "inferred_from" relationship
         return self._is_controlled_by
 
@@ -1303,3 +1303,103 @@ class GetLatest(DelegateAttributes):
         It is recommended to use ``parameter.cache()`` instead.
         """
         return self.cache()
+
+
+class ParameterSet:
+    """A set-like container that preserves the insertion order of its parameters.
+
+    This class implements the common set interface methods while maintaining
+    the order in which parameters were first added.
+    """
+
+    def __init__(self, parameters=None):
+        self._dict: dict[ParameterBase, None] = {}
+        if parameters is not None:
+            for item in parameters:
+                self.add(item)
+
+    def add(self, item):
+        self._dict[item] = None
+
+    def remove(self, item):
+        self._dict.pop(item)
+
+    def discard(self, item):
+        if item in self._dict:
+            self._dict.pop(item)
+
+    def clear(self):
+        self._dict.clear()
+
+    def pop(self):
+        if not self._dict:
+            raise KeyError("pop from an empty ParameterSet")
+        item = next(iter(self._dict))
+        self._dict.pop(item)
+        return item
+
+    def union(self, other):
+        result = ParameterSet(self)
+        for item in other:
+            result.add(item)
+        return result
+
+    def intersection(self, other):
+        result = ParameterSet()
+        for item in self:
+            if item in other:
+                result.add(item)
+        return result
+
+    def difference(self, other):
+        result = ParameterSet()
+        for item in self:
+            if item not in other:
+                result.add(item)
+        return result
+
+    def issubset(self, other):
+        return all(item in other for item in self)
+
+    def issuperset(self, other):
+        return all(item in self for item in other)
+
+    def update(self, other):
+        for item in other:
+            self.add(item)
+
+    def __iter__(self):
+        return iter(self._dict)
+
+    def __contains__(self, item):
+        return item in self._dict
+
+    def __len__(self):
+        return len(self._dict)
+
+    def __eq__(self, other):
+        if isinstance(other, ParameterSet):
+            return set(self._dict) == set(other._dict)
+        elif isinstance(other, set):
+            return set(self._dict) == other
+        return NotImplemented
+
+    def __repr__(self):
+        if not self:
+            return f"{self.__class__.__name__}()"
+        return f"{self.__class__.__name__}({list(self._dict.keys())})"
+
+    def __or__(self, other):
+        return self.union(other)
+
+    def __and__(self, other):
+        return self.intersection(other)
+
+    def __sub__(self, other):
+        return self.difference(other)
+
+    def __le__(self, other):
+        return self.issubset(other)
+
+    def __ge__(self, other):
+        return self.issuperset(other)

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 from qcodes.parameters.parameter import Parameter
-from qcodes.parameters.parameter_base import ParameterBase
+from qcodes.parameters.parameter_base import ParameterBase, ParameterSet
 from qcodes.validators import Arrays, Validator
 
 if TYPE_CHECKING:
@@ -156,8 +156,8 @@ class ParameterWithSetpoints(Parameter):
         super().validate(value)
 
     @property
-    def depends_on(self) -> set[ParameterBase]:
-        return set(self.setpoints)
+    def depends_on(self) -> ParameterSet:
+        return ParameterSet(self.setpoints)
 
     def unpack_self(self, value: ValuesType) -> list[tuple[ParameterBase, ValuesType]]:
         unpacked_results = []
