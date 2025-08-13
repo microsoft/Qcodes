@@ -8,9 +8,6 @@ import os
 from types import MethodType
 from typing import TYPE_CHECKING, Any, Literal
 
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
-from qcodes.validators import Arrays, ComplexNumbers, Strings
-
 from .command import Command
 from .parameter_base import ParamDataType, ParameterBase, ParamRawDataType
 from .sweep_values import SweepFixedValues
@@ -18,6 +15,7 @@ from .sweep_values import SweepFixedValues
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from qcodes.dataset.descriptions.param_spec import ParamSpecBase
     from qcodes.instrument import InstrumentBase
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
     from qcodes.validators import Validator

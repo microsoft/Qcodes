@@ -7,7 +7,7 @@ import warnings
 from contextlib import contextmanager
 from datetime import datetime
 from functools import cached_property, wraps
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, overload
+from typing import TYPE_CHECKING, Any, ClassVar, overload
 
 import numpy as np
 
@@ -1199,7 +1199,7 @@ class ParameterBase(MetadatableWithName):
             case "numeric":
                 new_vals = Numbers()
             case _:
-                raise
+                raise NotImplementedError("This should not be possible")
         if self.vals is None:
             self.vals = new_vals
         elif type(self.vals) is not type(new_vals):
@@ -1305,7 +1305,8 @@ class GetLatest(DelegateAttributes):
         return self.cache()
 
 
-class ParameterSet:
+# Does not implement __hash__, not clear it needs to
+class ParameterSet:  # noqa: PLW1641
     """A set-like container that preserves the insertion order of its parameters.
 
     This class implements the common set interface methods while maintaining
