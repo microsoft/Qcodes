@@ -370,7 +370,7 @@ class CryomagneticsModel4G(VisaInstrument):
         # Get the rate from the instrument in Amps per second
         rate_amps_per_sec = float(self.ask("RATE?"))
         # Convert to Tesla per minute
-        rate_tesla_per_min = rate_amps_per_sec * 60 / self.coil_constant
+        rate_tesla_per_min = rate_amps_per_sec * 60 * self.coil_constant
         return rate_tesla_per_min
 
     def _set_rate(self, rate_tesla_per_min: float) -> None:
@@ -378,7 +378,7 @@ class CryomagneticsModel4G(VisaInstrument):
         Set the ramp rate in Tesla per minute.
         """
         # Convert from Tesla per minute to Amps per second
-        rate_amps_per_sec = rate_tesla_per_min * self.coil_constant / 60
+        rate_amps_per_sec = rate_tesla_per_min / self.coil_constant / 60
         # Find the appropriate range and set the rate
         current_field = self._get_field()  # Get current field in Tesla
         current_in_amps = current_field * self.coil_constant  # Convert to Amps
