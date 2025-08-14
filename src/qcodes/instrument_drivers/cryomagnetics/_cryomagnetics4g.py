@@ -389,6 +389,17 @@ class CryomagneticsModel4G(VisaInstrument):
 
         self.write(f"RATE {range_index} {rate_amps_per_sec}")
 
+        self._sleep(0.01)
+
+        # Validate rate was set correctly
+        set_rate = float(self.ask(f"RATE? {range_index}"))
+        if set_rate != rate_amps_per_sec:
+            raise Cryomagnetics4GException(
+                f"Failed to set rate {range_index} to {rate_amps_per_sec}."
+            )
+
+        self.log.info(f"Successfully set rate {range_index} to {rate_amps_per_sec}.")
+
     def _initialize_max_current_limits(self) -> None:
         """
         Initialize the instrument with the provided current limits and rates.
