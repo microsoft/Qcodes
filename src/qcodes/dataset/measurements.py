@@ -1119,10 +1119,6 @@ class Measurement:
             self._check_setpoints_type(basis, "basis")
 
         match parameter:
-            case Parameter() | ParameterWithSetpoints():
-                if paramtype is not None:
-                    parameter.paramtype = paramtype
-                self._self_register_parameter(parameter, setpoints, basis)
             case ArrayParameter():
                 paramtype = self._infer_paramtype(parameter, paramtype)
                 self._register_arrayparameter(parameter, setpoints, basis, paramtype)
@@ -1144,10 +1140,10 @@ class Measurement:
                     basis,
                     paramtype,
                 )
-            case _:
-                raise RuntimeError(
-                    f"Does not know how to register a parameter of type {type(parameter)}"
-                )
+            case ParameterBase() | ParameterWithSetpoints():
+                if paramtype is not None:
+                    parameter.paramtype = paramtype
+                self._self_register_parameter(parameter, setpoints, basis)
         self._registered_parameters.add(parameter)
 
         return self
