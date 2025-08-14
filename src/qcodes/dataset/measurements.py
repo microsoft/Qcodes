@@ -1107,11 +1107,6 @@ class Measurement:
                 and the validator of the supplied parameter.
 
         """
-        if not isinstance(parameter, ParameterBase):
-            raise ValueError(
-                f"Can not register object of type {type(parameter)}. Can only "
-                "register a QCoDeS Parameter."
-            )
         if setpoints is not None:
             self._check_setpoints_type(setpoints, "setpoints")
 
@@ -1144,6 +1139,11 @@ class Measurement:
                 if paramtype is not None:
                     parameter.paramtype = paramtype
                 self._self_register_parameter(parameter, setpoints, basis)
+            case _:
+                raise ValueError(
+                    f"Can not register object of type {type(parameter)}. Can only "
+                    "register a QCoDeS Parameter."
+                )
         self._registered_parameters.add(parameter)
 
         return self
