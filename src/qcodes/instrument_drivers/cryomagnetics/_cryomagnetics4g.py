@@ -396,6 +396,19 @@ class CryomagneticsModel4G(VisaInstrument):
             self.write(f"RANGE {range_index} {upper_limit}")
             self.write(f"RATE {range_index} {max_rate}")
 
+            self._sleep(0.01)
+
+            # Validate that ranges were set appropriately
+            set_range = float(self.ask(f"RANGE? {range_index}"))
+            set_rate = float(self.ask(f"RATE? {range_index}"))
+
+            if set_range != upper_limit or set_rate != max_rate:
+                raise Cryomagnetics4GException(
+                    "Failed to initialize current limits and rates."
+                )
+
+            self.log.info("Successfully initialized current limits and rates.")
+
     def write_raw(self, cmd: str) -> None:
         try:
             super().write_raw(cmd)
