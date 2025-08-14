@@ -371,7 +371,8 @@ class CryomagneticsModel4G(VisaInstrument):
         for range_index, (upper_limit, _) in self.max_current_limits.items():
             rate_amps_per_sec = float(self.ask(f"RATE? {range_index}"))
             rate_tesla_per_min = rate_amps_per_sec * 60 * self.coil_constant
-            rates[range_index] = (upper_limit, rate_tesla_per_min)
+            upper_limit_tesla = upper_limit * self.coil_constant
+            rates[range_index] = (upper_limit_tesla, rate_tesla_per_min)
 
         return rates
 
