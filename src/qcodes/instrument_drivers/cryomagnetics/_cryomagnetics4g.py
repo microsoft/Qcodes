@@ -89,7 +89,7 @@ class CryomagneticsModel4G(VisaInstrument):
             name="units",
             set_cmd="UNITS {}",
             get_cmd="UNITS?",
-            get_parser=str,
+            get_parser=lambda x: str(x).strip(),
             vals=Enum("A", "kG", "T"),
             docstring="Field Units",
         )
@@ -358,7 +358,7 @@ class CryomagneticsModel4G(VisaInstrument):
             )
 
         # Return value in Tesla, only converting if necessary
-        if self.units().strip() == "T":
+        if self.units() == "T":
             return numeric_value * self.KG_TO_TESLA
         else:
             return numeric_value
