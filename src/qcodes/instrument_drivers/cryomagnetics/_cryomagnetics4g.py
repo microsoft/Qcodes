@@ -375,26 +375,18 @@ class CryomagneticsModel4G(VisaInstrument):
 
         return rates
 
-    def _set_rate(self, rate_tesla_per_min: float) -> None:
+    def _set_rate(self, range_index: int, rate_tesla_per_min: float) -> None:
         """
         Set the ramp rate in Tesla per minute.
         """
-        # Convert from Tesla per minute to Amps per second
+        # Instrument expects Amps per second
         rate_amps_per_sec = rate_tesla_per_min / self.coil_constant / 60
-        # Find the appropriate range and set the rate
-        current_field = self._get_field()  # Get current field in Tesla
-        current_in_amps = current_field * self.coil_constant  # Convert to Amps
+        max_rate = self.max_current_limits[range_index][1]
 
-        # (Implement a  more efficient lookup method here if needed)
-        for range_index, (upper_limit, max_rate) in self.max_current_limits.items():
-            if current_in_amps <= upper_limit:
-                actual_rate = min(
-                    rate_amps_per_sec, max_rate
-                )  # Ensure rate doesn't exceed maximum
-                self.write(f"RATE {range_index} {actual_rate}")
-                return
+        if rate_amps_per_sec > max_rate:
+            raise ValueError("Rate exceeds maximum allowed rate for this range.")
 
-        raise ValueError("Current field is outside of defined rate ranges")
+        self.write(f"RATE {range_index} {rate_amps_per_sec}")
 
     def _initialize_max_current_limits(self) -> None:
         """
