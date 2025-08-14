@@ -306,12 +306,12 @@ class CryomagneticsModel4G(VisaInstrument):
                 raise Cryomagnetics4GException(msg.format(field_setpoint, exit_state))
 
     def wait_while_ramping(
-        self, value: float, threshold: float = 1e-5
+        self, value: float, threshold: float = 1e-4
     ) -> CryomagneticsOperatingState:
-        """Waits while the magnet is ramping, checking the status byte instead of field value."""
+        """Waits while the magnet is ramping, checking the field value."""
         while True:
             current_field = self._get_field()
-            if abs(value - current_field) < 1e-4:
+            if abs(value - current_field) < threshold:
                 break
             self._sleep(self.ramping_state_check_interval())
         self.write("SWEEP PAUSE")
