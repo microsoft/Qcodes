@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Generic, Literal, TypeVar
 
 import numpy as np
+import numpy.typing as npt
 
 from qcodes.dataset.exporters.export_info import ExportInfo
 from qcodes.dataset.sqlite.queries import completed, load_new_data_for_rundescriber
@@ -24,6 +25,7 @@ if TYPE_CHECKING:
     import pandas as pd
     import xarray as xr
 
+    from qcodes.dataset.descriptions.dependencies import InterDependencies_
     from qcodes.dataset.descriptions.rundescriber import RunDescriber
     from qcodes.dataset.sqlite.connection import AtomicConnection
 
@@ -90,6 +92,30 @@ class DataSetCache(Generic[DatasetType_co]):
 
         return self._data
 
+    @staticmethod
+    def _empty_data_dict(
+        interdeps: InterDependencies_,
+    ) -> dict[str, dict[str, npt.NDArray]]:
+        """
+        Create an dictionary with empty numpy arrays as values
+        matching the expected output of ``DataSet``'s ``get_parameter_data`` /
+        ``cache.data`` so that the order of keys in the returned dictionary
+        is the same as the order of parameters in the interdependencies
+        in this class.
+        """
+
+        output: dict[str, dict[str, npt.NDArray]] = {}
+        for toplevel_param in interdeps.top_level_parameters:
+            toplevel_param, deps, infs = interdeps.all_parameters_in_tree_by_group(
+                toplevel_param
+            )
+
+            output[toplevel_param.name] = {}
+            params = [toplevel_param, *deps, *infs]
+            for param in params:
+                output[toplevel_param.name][param.name] = np.array([])
+        return output
+
     def prepare(self) -> None:
         """
         Set up the internal datastructure of the cache.
@@ -98,7 +124,7 @@ class DataSetCache(Generic[DatasetType_co]):
         """
 
         if self._data == {}:
-            self._data = self.rundescriber.interdeps._empty_data_dict()
+            self._data = self._empty_data_dict(self.rundescriber.interdeps)
         else:
             raise RuntimeError("Cannot prepare a cache that is not empty")
 
@@ -110,7 +136,7 @@ class DataSetCache(Generic[DatasetType_co]):
         from disk
         """
 
-    def add_data(self, new_data: Mapping[str, Mapping[str, np.ndarray]]) -> None:
+    def add_data(self, new_data: Mapping[str, Mapping[str, npt.NDArray]]) -> None:
         if self.live is False:
             raise RuntimeError(
                 "Cannot append live data to a dataset that has "
@@ -144,7 +170,7 @@ class DataSetCache(Generic[DatasetType_co]):
 
         """
         data = self.data()
-        return load_to_dataframe_dict(data)
+        return load_to_dataframe_dict(data, self.rundescriber.interdeps)
 
     def to_pandas_dataframe(self) -> pd.DataFrame:
         """
@@ -157,7 +183,7 @@ class DataSetCache(Generic[DatasetType_co]):
 
         """
         data = self.data()
-        return load_to_concatenated_dataframe(data)
+        return load_to_concatenated_dataframe(data, self.rundescriber.interdeps)
 
     def to_xarray_dataarray_dict(
         self, *, use_multi_index: Literal["auto", "always", "never"] = "auto"
@@ -206,8 +232,8 @@ def load_new_data_from_db_and_append(
     rundescriber: RunDescriber,
     write_status: Mapping[str, int | None],
     read_status: Mapping[str, int],
-    existing_data: Mapping[str, Mapping[str, np.ndarray]],
-) -> tuple[dict[str, int | None], dict[str, int], dict[str, dict[str, np.ndarray]]]:
+    existing_data: Mapping[str, Mapping[str, npt.NDArray]],
+) -> tuple[dict[str, int | None], dict[str, int], dict[str, dict[str, npt.NDArray]]]:
     """
     Append any new data in the db to an already existing datadict and return the merged
     data.
@@ -244,9 +270,9 @@ def load_new_data_from_db_and_append(
 def append_shaped_parameter_data_to_existing_arrays(
     rundescriber: RunDescriber,
     write_status: Mapping[str, int | None],
-    existing_data: Mapping[str, Mapping[str, np.ndarray]],
-    new_data: Mapping[str, Mapping[str, np.ndarray]],
-) -> tuple[dict[str, int | None], dict[str, dict[str, np.ndarray]]]:
+    existing_data: Mapping[str, Mapping[str, npt.NDArray]],
+    new_data: Mapping[str, Mapping[str, npt.NDArray]],
+) -> tuple[dict[str, int | None], dict[str, dict[str, npt.NDArray]]]:
     """
     Append datadict to an already existing datadict and return the merged
     data.
@@ -265,7 +291,7 @@ def append_shaped_parameter_data_to_existing_arrays(
         Updated write and read status, and the updated ``data``
 
     """
-    parameters = tuple(ps.name for ps in rundescriber.interdeps.non_dependencies)
+    parameters = tuple(ps.name for ps in rundescriber.interdeps.top_level_parameters)
     merged_data = {}
 
     updated_write_status = dict(write_status)
@@ -294,12 +320,12 @@ def append_shaped_parameter_data_to_existing_arrays(
 
 
 def _merge_data(
-    existing_data: Mapping[str, np.ndarray],
-    new_data: Mapping[str, np.ndarray],
+    existing_data: Mapping[str, npt.NDArray],
+    new_data: Mapping[str, npt.NDArray],
     shape: tuple[int, ...] | None,
     single_tree_write_status: int | None,
     meas_parameter: str,
-) -> tuple[dict[str, np.ndarray], int | None]:
+) -> tuple[dict[str, npt.NDArray], int | None]:
     subtree_merged_data = {}
     subtree_parameters = existing_data.keys()
 
@@ -335,12 +361,12 @@ def _merge_data(
 
 
 def _merge_data_single_param(
-    existing_values: np.ndarray | None,
-    new_values: np.ndarray | None,
+    existing_values: npt.NDArray | None,
+    new_values: npt.NDArray | None,
     shape: tuple[int, ...] | None,
     single_tree_write_status: int | None,
-) -> tuple[np.ndarray | None, int | None]:
-    merged_data: np.ndarray | None
+) -> tuple[npt.NDArray | None, int | None]:
+    merged_data: npt.NDArray | None
     if (
         existing_values is not None and existing_values.size != 0
     ) and new_values is not None:
@@ -359,8 +385,8 @@ def _merge_data_single_param(
 
 
 def _create_new_data_dict(
-    new_values: np.ndarray, shape: tuple[int, ...] | None
-) -> tuple[np.ndarray, int]:
+    new_values: npt.NDArray, shape: tuple[int, ...] | None
+) -> tuple[npt.NDArray, int]:
     if shape is None:
         return new_values, new_values.size
     elif new_values.size > 0:
@@ -379,11 +405,11 @@ def _create_new_data_dict(
 
 
 def _insert_into_data_dict(
-    existing_values: np.ndarray,
-    new_values: np.ndarray,
+    existing_values: npt.NDArray,
+    new_values: npt.NDArray,
     write_status: int | None,
     shape: tuple[int, ...] | None,
-) -> tuple[np.ndarray, int | None]:
+) -> tuple[npt.NDArray, int | None]:
     if new_values.size == 0:
         return existing_values, write_status
 
@@ -427,8 +453,8 @@ def _insert_into_data_dict(
 
 
 def _expand_single_param_dict(
-    single_param_dict: Mapping[str, np.ndarray],
-) -> dict[str, np.ndarray]:
+    single_param_dict: Mapping[str, npt.NDArray],
+) -> dict[str, npt.NDArray]:
     sizes = {name: array.size for name, array in single_param_dict.items()}
     maxsize = max(sizes.values())
     max_names = tuple(name for name, size in sizes.items() if size == maxsize)

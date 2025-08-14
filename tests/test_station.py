@@ -280,7 +280,7 @@ def _make_example_station_config():
     test_config = f"""
 instruments:
   lakeshore:
-    type: qcodes.instrument_drivers.Lakeshore.Model_336.Model_336
+    type: qcodes.instrument_drivers.Lakeshore.LakeshoreModel336
     enable_forced_reconnect: true
     address: GPIB::2::INSTR
     init:
@@ -540,7 +540,7 @@ instruments:
         f"""
 instruments:
   lakeshore:
-    type: qcodes.instrument_drivers.Lakeshore.Model_336.Model_336
+    type: qcodes.instrument_drivers.Lakeshore.LakeshoreModel336
     enable_forced_reconnect: true
     address: GPIB::2::INSTR
     init:

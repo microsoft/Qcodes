@@ -5,8 +5,8 @@ from functools import partial
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
+import numpy.typing as npt
 from packaging import version
-from typing_extensions import deprecated
 
 import qcodes.validators as vals
 from qcodes.instrument import (
@@ -21,7 +21,6 @@ from qcodes.instrument_drivers.Keysight.private.error_handling import (
 )
 from qcodes.parameters import Parameter, ParameterWithSetpoints
 from qcodes.utils import (
-    QCoDeSDeprecationWarning,
     convert_legacy_version_to_supported_version,
 )
 
@@ -548,7 +547,7 @@ class TimeTrace(ParameterWithSetpoints):
         conf = self.instrument.sense_function()
         self.unit, self.label = units_and_labels[conf]
 
-    def _acquire_time_trace(self) -> np.ndarray:
+    def _acquire_time_trace(self) -> npt.NDArray:
         """
         The function that prepares the measurement and fetches the data
         """
@@ -583,7 +582,7 @@ class TimeTrace(ParameterWithSetpoints):
 
         return data  # pyright: ignore[reportPossiblyUnboundVariable]
 
-    def get_raw(self) -> np.ndarray:
+    def get_raw(self) -> npt.NDArray:
         self._validate_dt()
         self._set_units_and_labels()
         data = self._acquire_time_trace()
@@ -597,7 +596,7 @@ class TimeAxis(Parameter):
     measurement start) at which the points of the time trace were acquired.
     """
 
-    def get_raw(self) -> np.ndarray:
+    def get_raw(self) -> npt.NDArray:
         """
         Construct a time axis by querying the number of points and step size
         from the instrument.
@@ -982,9 +981,18 @@ mode."""
         ####################################
         # Submodules
 
-        self.add_submodule("display", Keysight344xxADisplay(self, "display"))
-        self.add_submodule("trigger", Keysight344xxATrigger(self, "trigger"))
-        self.add_submodule("sample", Keysight344xxASample(self, "sample"))
+        self.display: Keysight344xxADisplay = self.add_submodule(
+            "display", Keysight344xxADisplay(self, "display")
+        )
+        """Instrument module display"""
+        self.trigger: Keysight344xxATrigger = self.add_submodule(
+            "trigger", Keysight344xxATrigger(self, "trigger")
+        )
+        """Instrument module trigger"""
+        self.sample: Keysight344xxASample = self.add_submodule(
+            "sample", Keysight344xxASample(self, "sample")
+        )
+        """Instrument module sample"""
 
         ####################################
         # Measurement Parameters
@@ -1180,7 +1188,7 @@ mode."""
 
         return float(response)
 
-    def fetch(self) -> np.ndarray:
+    def fetch(self) -> npt.NDArray:
         """
         Waits for measurements to complete and copies all available
         measurements to the instrument's output buffer. The readings remain
@@ -1197,7 +1205,7 @@ mode."""
         raw_vals: str = self.ask("FETCH?")
         return _raw_vals_to_array(raw_vals)
 
-    def read(self) -> np.ndarray:
+    def read(self) -> npt.NDArray:
         """
         Starts a new set of measurements, waits for all measurements to
         complete, and transfers all available measurements.
@@ -1347,43 +1355,7 @@ mode."""
             self.range(self.ranges[0])
 
 
-@deprecated(
-    "Base class for Keysight 344xxA renamed Keysight344xxA",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class _Keysight_344xxA(Keysight344xxA):
-    pass
-
-
-@deprecated(
-    "Trigger class for Keysight 344xxA renamed Keysight344xxATrigger",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class Trigger(Keysight344xxATrigger):
-    pass
-
-
-@deprecated(
-    "Sample class for Keysight 344xxA renamed Keysight344xxASample",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class Sample(Keysight344xxASample):
-    pass
-
-
-@deprecated(
-    "Display class for Keysight 344xxA renamed Keysight344xxADisplay",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class Display(Keysight344xxADisplay):
-    pass
-
-
-def _raw_vals_to_array(raw_vals: str) -> np.ndarray:
+def _raw_vals_to_array(raw_vals: str) -> npt.NDArray:
     """
     Helper function that converts comma-delimited string of floating-point
     values to a numpy 1D array of them. Most data retrieval command of these

@@ -2,10 +2,10 @@ import re
 from typing import TYPE_CHECKING, Any, NamedTuple, cast
 
 import numpy as np
-from typing_extensions import TypedDict, Unpack, deprecated
+import numpy.typing as npt
+from typing_extensions import TypedDict, Unpack
 
 from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel
-from qcodes.utils import QCoDeSDeprecationWarning
 
 from . import constants
 from .constants import ChannelName, ChNr, MeasurementStatus, ModuleKind, SlotNr
@@ -247,7 +247,7 @@ def get_name_label_unit_of_impedance_model(
 #   it might make more sense to generate one for each **channel**
 
 
-def get_measurement_summary(status_array: "np.ndarray | Sequence[str]") -> str:
+def get_measurement_summary(status_array: "npt.NDArray | Sequence[str]") -> str:
     unique_error_statuses = np.unique(status_array[status_array != "N"])
     if len(unique_error_statuses) > 0:
         summary = " ".join(
@@ -372,11 +372,6 @@ class KeysightB1500Module(InstrumentChannel):
         (FMT3 and FMT4).
         """
         self.root_instrument.clear_timer_count(chnum=self.channels)
-
-
-@deprecated("Use KeysightB1500Module", category=QCoDeSDeprecationWarning, stacklevel=2)
-class B1500Module(KeysightB1500Module):
-    pass
 
 
 class StatusMixin:

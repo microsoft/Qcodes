@@ -7,6 +7,7 @@ from copy import copy
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
+import numpy.typing as npt
 
 from qcodes.metadatable import Metadatable
 from qcodes.utils import full_class
@@ -128,7 +129,7 @@ class CombinedParameter(Metadatable):
             setFunction(value)
         return values
 
-    def sweep(self, *array: np.ndarray) -> CombinedParameter:
+    def sweep(self, *array: npt.NDArray) -> CombinedParameter:
         """
         Creates a new combined parameter to be iterated over.
         One can sweep over either:

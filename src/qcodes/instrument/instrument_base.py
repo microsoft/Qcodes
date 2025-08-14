@@ -616,18 +616,6 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         return self.full_name
 
     @property
-    @deprecated(
-        "The private attribute `_name` is deprecated and will be removed. Use `full_name` instead.",
-        category=QCoDeSDeprecationWarning,
-    )
-    def _name(self) -> str:
-        """
-        Private alias kept here for backwards compatibility
-        see https://github.com/zhinst/zhinst-qcodes/issues/27
-        """
-        return self.full_name
-
-    @property
     def short_name(self) -> str:
         """
         Short name of the instrument.
@@ -689,8 +677,10 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
     delegate_attr_dicts: ClassVar[list[str]] = ["parameters", "functions", "submodules"]
 
     @deprecated(
-        "Use attributes directly on the instrument object instead.",
-        category=QCoDeSDeprecationWarning,
+        "Use of `__getitem__` is not recommended for new code. "
+        "Use attributes directly on the instrument object instead. "
+        "There is no plan to remove this functionality, but it is not recommended.",
+        category=PendingDeprecationWarning,
     )
     def __getitem__(self, key: str) -> Callable[..., Any] | Parameter:
         """
@@ -707,8 +697,10 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
             return self.functions[key]
 
     @deprecated(
-        "Call set directly on the parameter.",
-        category=QCoDeSDeprecationWarning,
+        "Use of `set` is not recommended for new code. "
+        "Call set directly on the parameter instead. "
+        "There is no plan to remove this functionality, but it is not recommended for new code.",
+        category=PendingDeprecationWarning,
     )
     def set(self, param_name: str, value: Any) -> None:
         """
@@ -726,8 +718,10 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         self.parameters[param_name].set(value)
 
     @deprecated(
-        "Call get directly on the parameter.",
-        category=QCoDeSDeprecationWarning,
+        "Use of `get` is not recommended for new code. "
+        "Call get directly on the parameter."
+        "There is no plan to remove this functionality, but it is not recommended for new code.",
+        category=PendingDeprecationWarning,
     )
     def get(self, param_name: str) -> Any:
         """
@@ -746,8 +740,10 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         return self.parameters[param_name].get()
 
     @deprecated(
-        "Call the function directly.",
-        category=QCoDeSDeprecationWarning,
+        "Use of `call` is not recommended for new code. "
+        "Call the function directly instead. "
+        "There is no plan to remove this functionality, but it is not recommended for new code.",
+        category=PendingDeprecationWarning,
     )
     def call(self, func_name: str, *args: Any) -> Any:
         """

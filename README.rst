@@ -11,7 +11,7 @@ by computer.
 To learn more about QCoDeS, browse our `homepage <http://microsoft.github.io/Qcodes>`_ .
 
 To get a feeling of QCoDeS read
-`15 minutes to QCoDeS <http://microsoft.github.io/Qcodes/examples/15_minutes_to_QCoDeS.html>`__,
+`15 minutes to QCoDeS <https://microsoft.github.io/Qcodes/examples/basic_examples/15_minutes_to_QCoDeS.html>`__,
 and/or browse the Jupyter notebooks in `docs/examples
 <https://github.com/QCoDeS/Qcodes/tree/main/docs/examples>`__ .
 

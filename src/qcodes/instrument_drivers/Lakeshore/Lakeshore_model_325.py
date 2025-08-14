@@ -26,6 +26,8 @@ if TYPE_CHECKING:
 
     from typing_extensions import Buffer, Unpack
 
+    from qcodes.instrument.channel import ChannelTuple
+
 
 def _read_curve_file(curve_file: TextIO) -> dict[Any, Any]:
     """
@@ -583,23 +585,42 @@ class LakeshoreModel325(VisaInstrument):
             self, "sensor", LakeshoreModel325Sensor, snapshotable=False
         )
 
-        for inp in ["A", "B"]:
-            sensor = LakeshoreModel325Sensor(self, f"sensor_{inp}", inp)
-            sensors.append(sensor)
-            self.add_submodule(f"sensor_{inp}", sensor)
+        self.sensor_A: LakeshoreModel325Sensor = self.add_submodule(
+            "sensor_A", LakeshoreModel325Sensor(self, "sensor_A", "A")
+        )
+        """Sensor A"""
+        sensors.append(self.sensor_A)
+        self.sensor_B: LakeshoreModel325Sensor = self.add_submodule(
+            "sensor_B", LakeshoreModel325Sensor(self, "sensor_B", "B")
+        )
+        """Sensor B"""
+        sensors.append(self.sensor_B)
 
-        self.add_submodule("sensor", sensors.to_channel_tuple())
+        self.sensor: ChannelTuple[LakeshoreModel325Sensor] = self.add_submodule(
+            "sensor", sensors.to_channel_tuple()
+        )
+        """ChannelTuple of sensors"""
 
         heaters = ChannelList(
             self, "heater", LakeshoreModel325Heater, snapshotable=False
         )
 
-        for loop in [1, 2]:
-            heater = LakeshoreModel325Heater(self, f"heater_{loop}", loop)
-            heaters.append(heater)
-            self.add_submodule(f"heater_{loop}", heater)
+        self.heater_1: LakeshoreModel325Heater = self.add_submodule(
+            "heater_1", LakeshoreModel325Heater(self, "heater_1", 1)
+        )
+        """Heater 1"""
+        heaters.append(self.heater_1)
 
-        self.add_submodule("heater", heaters.to_channel_tuple())
+        self.heater_2: LakeshoreModel325Heater = self.add_submodule(
+            "heater_2", LakeshoreModel325Heater(self, "heater_2", 2)
+        )
+        """Heater 2"""
+        heaters.append(self.heater_2)
+
+        self.heater: ChannelTuple[LakeshoreModel325Heater] = self.add_submodule(
+            "heater", heaters.to_channel_tuple()
+        )
+        """ChannelTuple of heaters"""
 
         curves = ChannelList(self, "curve", LakeshoreModel325Curve, snapshotable=False)
 
@@ -607,7 +628,10 @@ class LakeshoreModel325(VisaInstrument):
             curve = LakeshoreModel325Curve(self, curve_index)
             curves.append(curve)
 
-        self.add_submodule("curve", curves)
+        self.curve: ChannelList[LakeshoreModel325Curve] = self.add_submodule(
+            "curve", curves
+        )
+        """ChannelList of curves"""
 
         self.connect_message()
 

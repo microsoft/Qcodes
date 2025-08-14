@@ -18,7 +18,7 @@ EMPTY_USER_SCHEMA = "User schema at {} not found. User settings won't be validat
 MISS_DESC = """ Passing a description without a type does not make sense.
 Description is ignored """
 
-BASE_SCHEMA = {
+BASE_SCHEMA: dict[str, Any] = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "type": "object",
     "description": "schema for a user qcodes config file",
@@ -492,5 +492,5 @@ def update(d: dict[Any, Any], u: Mapping[Any, Any]) -> dict[Any, Any]:
             r = update(d.get(k, {}), v)
             d[k] = r
         else:
-            d[k] = u[k]
+            d[k] = v
     return d

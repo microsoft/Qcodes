@@ -272,9 +272,7 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
         if self._parent != other._parent:
             raise ValueError("Can only add channels from the same parent together.")
 
-        # mypy does not understand that type[self] is type[self]
-        # it infers that type(self) == ChannelTuple[Any] e.g. not generic
-        return type(self)(  # type: ignore[return-value]
+        return type(self)(
             self._parent,
             self._name,
             self._chan_type,
@@ -763,7 +761,7 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  #  pyri
             return
         self._locked = True
 
-    def to_channel_tuple(self) -> ChannelTuple:
+    def to_channel_tuple(self) -> ChannelTuple[InstrumentModuleType]:
         """
         Returns a ChannelTuple build from this ChannelList containing the
         same channels but without the ability to be modified.

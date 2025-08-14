@@ -1,36 +1,9 @@
 from typing import TYPE_CHECKING
 
-from typing_extensions import deprecated
-
 from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel, VisaInstrument
-from qcodes.utils import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
-
-
-@deprecated("Unused module", category=QCoDeSDeprecationWarning, stacklevel=2)
-class KeysightSubModule(InstrumentChannel):
-    """
-    A base class for submodules for the 34980A systems.
-
-    Args:
-        parent: the system which the module is installed on
-        name: user defined name for the module
-        slot: the slot the module is installed
-
-    """
-
-    def __init__(
-        self,
-        parent: VisaInstrument | InstrumentChannel,
-        name: str,
-        slot: int,
-        **kwargs: "Unpack[InstrumentBaseKWArgs]",
-    ) -> None:
-        super().__init__(parent, name, **kwargs)
-
-        self.slot = slot
 
 
 class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
@@ -213,12 +186,3 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
         channel_list_str = self.to_channel_list(paths)
         messages = self.ask(f"ROUTe:OPEN? {channel_list_str}")
         return [bool(int(message)) for message in messages.split(",")]
-
-
-@deprecated(
-    "Use Keysight34980ASwitchMatrixSubModule",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class KeysightSwitchMatrixSubModule(Keysight34980ASwitchMatrixSubModule):
-    pass

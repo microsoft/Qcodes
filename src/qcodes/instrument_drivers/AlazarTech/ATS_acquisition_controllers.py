@@ -2,6 +2,7 @@ import math
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
+import numpy.typing as npt
 
 from .ATS import AcquisitionController
 
@@ -39,9 +40,9 @@ class DemodulationAcquisitionController(AcquisitionController[float]):
         self.records_per_buffer = 0
         self.buffers_per_acquisition = 0
         self.number_of_channels = 2
-        self.cos_list: np.ndarray | None = None
-        self.sin_list: np.ndarray | None = None
-        self.buffer: np.ndarray | None = None
+        self.cos_list: npt.NDArray | None = None
+        self.sin_list: npt.NDArray | None = None
+        self.buffer: npt.NDArray | None = None
         # make a call to the parent class and by extension, create the parameter
         # structure of this class
         super().__init__(name, alazar_name, **kwargs)
@@ -101,7 +102,7 @@ class DemodulationAcquisitionController(AcquisitionController[float]):
         pass
 
     def handle_buffer(
-        self, buffer: np.ndarray, buffer_number: int | None = None
+        self, buffer: npt.NDArray, buffer_number: int | None = None
     ) -> None:
         """
         See AcquisitionController
@@ -145,7 +146,7 @@ class DemodulationAcquisitionController(AcquisitionController[float]):
         else:
             raise Exception("Could not find CHANNEL_B during data extraction")
 
-    def fit(self, buf: np.ndarray) -> tuple[float, float]:
+    def fit(self, buf: npt.NDArray) -> tuple[float, float]:
         """
         The DFT is implemented in this method
         :param buf: buffer to perform the transform on

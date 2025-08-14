@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from qcodes.instrument.base import InstrumentProtocol
+from qcodes.instrument.instrument import InstrumentProtocol
 
 
 class KeysightErrorProtocol(InstrumentProtocol, Protocol):

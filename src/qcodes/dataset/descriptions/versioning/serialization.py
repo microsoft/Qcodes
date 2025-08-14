@@ -173,7 +173,7 @@ def to_yaml_for_storage(desc: current.RunDescriber) -> str:
     Serialize the given RunDescriber to YAML as a RunDescriber of the
     version for storage
     """
-    import ruamel.yaml  # lazy import
+    import ruamel.yaml
 
     yaml = ruamel.yaml.YAML()
     with io.StringIO() as stream:
@@ -187,7 +187,7 @@ def from_yaml_to_current(yaml_str: str) -> current.RunDescriber:
     """
     Deserialize a YAML string into a RunDescriber of the current version
     """
-    import ruamel.yaml  # lazy import
+    import ruamel.yaml
 
     yaml = ruamel.yaml.YAML()
     # yaml.load returns an OrderedDict, but we need a dict

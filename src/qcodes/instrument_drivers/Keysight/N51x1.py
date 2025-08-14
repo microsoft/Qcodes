@@ -1,10 +1,7 @@
 from typing import TYPE_CHECKING
 
-from typing_extensions import deprecated
-
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import Parameter, create_on_off_val_mapping
-from qcodes.utils import QCoDeSDeprecationWarning
 from qcodes.validators import Numbers
 
 if TYPE_CHECKING:
@@ -127,12 +124,3 @@ class KeysightN51x1(VisaInstrument):
             "firmware": firmware,
         }
         return IDN
-
-
-@deprecated(
-    "Base class is renamed KeysightN51x1",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class N51x1(KeysightN51x1):
-    pass

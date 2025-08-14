@@ -11,8 +11,8 @@ from functools import partial
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
+import numpy.typing as npt
 from broadbean.sequence import InvalidForgedSequenceError, fs_schema
-from typing_extensions import deprecated
 
 from qcodes import validators as vals
 from qcodes.instrument import (
@@ -24,7 +24,6 @@ from qcodes.instrument import (
     VisaInstrumentKWArgs,
 )
 from qcodes.parameters import create_on_off_val_mapping
-from qcodes.utils import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -725,7 +724,7 @@ class TektronixAWG70000Base(VisaInstrument):
         self.write("WLISt:WAVeform:DELete ALL")
 
     @staticmethod
-    def makeWFMXFile(data: np.ndarray, amplitude: float) -> bytes:
+    def makeWFMXFile(data: npt.NDArray, amplitude: float) -> bytes:
         """
         Compose a WFMX file
 
@@ -978,7 +977,7 @@ class TektronixAWG70000Base(VisaInstrument):
         return xmlstr
 
     @staticmethod
-    def _makeWFMXFileBinaryData(data: np.ndarray, amplitude: float) -> bytes:
+    def _makeWFMXFileBinaryData(data: npt.NDArray, amplitude: float) -> bytes:
         """
         For the binary part.
 
@@ -1247,7 +1246,7 @@ class TektronixAWG70000Base(VisaInstrument):
         event_jumps: Sequence[int],
         event_jump_to: Sequence[int],
         go_to: Sequence[int],
-        wfms: Sequence[Sequence[np.ndarray]],
+        wfms: Sequence[Sequence[npt.NDArray]],
         amplitudes: Sequence[float],
         seqname: str,
         flags: Sequence[Sequence[Sequence[int]]] | None = None,
@@ -1591,12 +1590,3 @@ class TektronixAWG70000Base(VisaInstrument):
         )
 
         return xmlstr
-
-
-@deprecated(
-    "Base class renamed TektronixAWG70000Base",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=2,
-)
-class AWG70000A(TektronixAWG70000Base):
-    pass

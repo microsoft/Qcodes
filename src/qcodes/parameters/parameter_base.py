@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Iterable, Mapping, Sequence, Sized
     from types import TracebackType
 
-    from qcodes.instrument.base import InstrumentBase
+    from qcodes.instrument import InstrumentBase
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 
 LOG = logging.getLogger(__name__)

@@ -8,6 +8,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar
 
 import numpy as np
+import numpy.typing as npt
 
 from qcodes.utils.types import NumberType
 
@@ -406,11 +407,11 @@ class FieldVector:
 
     # Homogeneous Coordinates #
 
-    def as_homogeneous(self) -> np.ndarray:
+    def as_homogeneous(self) -> npt.NDArray:
         return np.array([self.x, self.y, self.z, 1])
 
     @classmethod
-    def from_homogeneous(cls: type[Self], hvec: np.ndarray) -> Self:
+    def from_homogeneous(cls: type[Self], hvec: npt.NDArray) -> Self:
         # Homogeneous coordinates define an equivalence relation
         #     [x / s, y / s, z / s, 1] == [x, y, z, s].
         # More generally,

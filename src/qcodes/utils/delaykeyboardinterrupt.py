@@ -6,10 +6,6 @@ import threading
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, cast
 
-from typing_extensions import deprecated
-
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
-
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
     from types import FrameType, TracebackType
@@ -88,23 +84,6 @@ class DelayedKeyboardInterrupt:
 
         signal.signal(signal.SIGINT, forceful_handler)
         log.info("SIGINT received. Delaying KeyboardInterrupt.", extra=self._context)
-
-    @deprecated(
-        "forceful_handler is no longer part of the public api of DelayedKeyboardInterrupt",
-        category=QCoDeSDeprecationWarning,
-    )
-    @staticmethod
-    def forceful_handler(sig: int, frame: FrameType | None) -> None:
-        print("Second SIGINT received. Triggering KeyboardInterrupt immediately.")
-        log.info(
-            "Second SIGINT received. Triggering KeyboardInterrupt immediately.",
-        )
-        # The typing of signals seems to be inconsistent
-        # since handlers must be types to take an optional frame
-        # but default_int_handler does not take None.
-        # see https://github.com/python/typeshed/pull/6599
-        frame = cast("FrameType", frame)
-        signal.default_int_handler(sig, frame)
 
     def __exit__(
         self,
