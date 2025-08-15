@@ -381,9 +381,18 @@ class CryomagneticsModel4G(VisaInstrument):
         else:
             return numeric_value
 
-    def _get_rate(self) -> dict[int, tuple[float, float]]:
+    def _get_rate(self) -> float:
         """
-        Get the current ramp rates in Tesla per minute for each.
+        Get the current ramp rate in Tesla per minute.
+        """
+        rate_amps_per_sec = float(self.ask("RATE?"))
+        rate_tesla_per_min = rate_amps_per_sec * 60 * self.coil_constant
+
+        return rate_tesla_per_min
+
+    def get_rates(self) -> dict[int, tuple[float, float]]:
+        """
+        Get the current ramp rates in Tesla per minute for each range.
         """
         rates = {}
         for range_index, (upper_limit, _) in self.max_current_limits.items():
