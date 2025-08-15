@@ -308,10 +308,29 @@ class CryomagneticsModel4G(VisaInstrument):
         self, value: float, threshold: float = 1e-4
     ) -> CryomagneticsOperatingState:
         """Waits while the magnet is ramping, checking the field value."""
+        last_check_time = time.time()
+        stability_check_interval = 20
+        last_stable_field = self._get_field()
+
         while True:
             current_field = self._get_field()
-            if abs(value - current_field) < threshold:
+            setpoint_reached = abs(value - current_field) < threshold
+            if setpoint_reached:
                 break
+
+            elapsed_time = time.time() - last_check_time
+            time_for_stability_check = elapsed_time > stability_check_interval
+            field_is_stable = abs(last_stable_field - current_field) < threshold
+
+            if time_for_stability_check and field_is_stable:
+                self.write("SWEEP PAUSE")
+                raise Cryomagnetics4GException(
+                    "TIMEOUT ERROR: Field stabilized before reaching setpoint. Sweep has been paused."
+                )
+            elif time_for_stability_check and not field_is_stable:
+                last_stable_field = current_field
+                last_check_time = time.time()
+
             self._sleep(self.ramping_state_check_interval())
         self.write("SWEEP PAUSE")
         self._sleep(1.0)
