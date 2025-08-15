@@ -397,7 +397,9 @@ class CryomagneticsModel4G(VisaInstrument):
         """
         for range_index, (upper_limit, max_rate) in self.max_current_limits.items():
             self.write(f"RANGE {range_index} {upper_limit}")
+            self._sleep(0.1)
             self.write(f"RATE {range_index} {max_rate}")
+            self._sleep(0.1)
 
     def write_raw(self, cmd: str) -> None:
         try:
