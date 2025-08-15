@@ -257,45 +257,6 @@ class DataSaver:
             all_results_dict
         )
 
-        # results_dict: dict[ParamSpecBase, npt.NDArray] = {}
-        # self._validate_result_tuples_no_duplicates(*result_tuples)
-        # result_tuples = self._coerce_result_tuples_to_parameterbase(*result_tuples)
-
-        # for result_tuple in result_tuples:
-        #     parameter = result_tuple[0]
-        #     data = result_tuple[1]
-
-        #     if isinstance(parameter, ParameterBase) and isinstance(
-        #         parameter.vals, vals.Arrays
-        #     ):
-        #         if not isinstance(data, np.ndarray):
-        #             raise TypeError(
-        #                 f"Expected data for Parameter with Array validator "
-        #                 f"to be a numpy array but got: {type(data)}"
-        #             )
-
-        #         if (
-        #             parameter.vals.shape is not None
-        #             and data.shape != parameter.vals.shape
-        #         ):
-        #             raise TypeError(
-        #                 f"Expected data with shape {parameter.vals.shape}, "
-        #                 f"but got {data.shape} for parameter: {parameter.full_name}"
-        #             )
-
-        #     if isinstance(parameter, ArrayParameter):
-        #         results_dict.update(self._unpack_arrayparameter(result_tuple))
-        #     elif isinstance(parameter, MultiParameter):
-        #         results_dict.update(self._unpack_multiparameter(result_tuple))
-        #     elif isinstance(parameter, ParameterWithSetpoints):
-        #         results_dict.update(
-        #             self._conditionally_expand_parameter_with_setpoints(
-        #                 data, parameter, parameter_names, result_tuple
-        #             )
-        #         )
-        #     else:
-        #         results_dict.update(self._unpack_partial_result(result_tuple))
-
         self._validate_result_deps(datasaver_results_dict)
         self._validate_result_shapes(datasaver_results_dict)
         self._validate_result_types(datasaver_results_dict)
@@ -305,64 +266,6 @@ class DataSaver:
         if perf_counter() - self._last_save_time > self.write_period:
             self.flush_data_to_database()
             self._last_save_time = perf_counter()
-
-    # def _conditionally_expand_parameter_with_setpoints(
-    #     self,
-    #     data: ValuesType,
-    #     parameter: ParameterWithSetpoints,
-    #     parameter_names: Sequence[str],
-    #     partial_result: ResType,
-    # ) -> dict[ParamSpecBase, npt.NDArray]:
-    #     """This method only expands the PWS if the result is not already in the result_tuple"""
-
-    #     local_results = {}
-    #     setpoint_names = tuple(
-    #         setpoint.register_name for setpoint in parameter.setpoints
-    #     )
-    #     expanded = tuple(
-    #         setpoint_name in parameter_names for setpoint_name in setpoint_names
-    #     )
-    #     if all(expanded):
-    #         local_results.update(self._unpack_partial_result(partial_result))
-    #     elif any(expanded):
-    #         raise ValueError(
-    #             f"Some of the setpoints of {parameter.full_name} "
-    #             "were explicitly given but others were not. "
-    #             "Either supply all of them or none of them."
-    #         )
-    #     else:
-    #         expanded_partial_result = expand_setpoints_helper(parameter, data)
-    #         for res in expanded_partial_result:
-    #             local_results.update(self._unpack_partial_result(res))
-    #     return local_results
-
-    # def _unpack_partial_result(
-    #     self, partial_result: ResType
-    # ) -> dict[ParamSpecBase, npt.NDArray]:
-    #     """
-    #     Unpack a partial result (not containing :class:`ArrayParameters` or
-    #     class:`MultiParameters`) into a standard results dict form and return
-    #     that dict
-    #     """
-    #     param, values = partial_result
-    #     try:
-    #         parameter = self._interdeps._id_to_paramspec[str_or_register_name(param)]
-    #     except KeyError:
-    #         if str_or_register_name(param) == str(param):
-    #             err_msg = (
-    #                 "Can not add result for parameter "
-    #                 f"{param}, no such parameter registered "
-    #                 "with this measurement."
-    #             )
-    #         else:
-    #             err_msg = (
-    #                 "Can not add result for parameter "
-    #                 f"{param!s} or {str_or_register_name(param)},"
-    #                 "no such parameter registered "
-    #                 "with this measurement."
-    #             )
-    #         raise ValueError(err_msg)
-    #     return {parameter: np.array(values)}
 
     def _unpack_arrayparameter(
         self, partial_result: ResType
@@ -1611,23 +1514,6 @@ def str_or_register_name(sp: str | ParameterBase) -> str:
         return sp.register_name
 
 
-def split_str_and_parameterbase_setpoints(
-    setpoints: SetpointsType,
-) -> tuple[tuple[ParameterBase], tuple[str]]:
-    str_setpoints = []
-    param_setpoints = []
-    for setpoint in setpoints:
-        if isinstance(setpoint, str):
-            str_setpoints.append(setpoint)
-        elif isinstance(setpoint, ParameterBase):
-            param_setpoints.append(setpoint)
-        else:
-            raise ValueError(
-                f"Expected Setpoint {setpoint} to be a str or ParameterBase, but got something else"
-            )
-    return tuple(param_setpoints), tuple(str_setpoints)
-
-
 # TODO: These deduplication methods need testing against arrays with all ValuesType types
 def _deduplicate_results(
     results_dict: dict[ParamSpecBase, list[npt.NDArray]],
@@ -1655,8 +1541,8 @@ def _non_numeric_values_are_equal(
     ref_array: npt.NDArray, *values_arrays: npt.NDArray
 ) -> bool:
     # For non-numeric values, we can use direct equality
-    for value_array in values_arrays[1:]:
-        if not np.array_equal(value_array, ref_array, equal_nan=True):
+    for value_array in values_arrays:
+        if not np.array_equal(value_array, ref_array):
             return False
     return True
 
@@ -1673,7 +1559,7 @@ def _numeric_values_are_equal(
             np.real(ref_array), np.real(values_arrays)
         ) and _numeric_values_are_equal(np.imag(ref_array), np.imag(values_arrays))
 
-    for value_array in values_arrays[1:]:
+    for value_array in values_arrays:
         if not np.allclose(
             value_array,
             ref_array,
