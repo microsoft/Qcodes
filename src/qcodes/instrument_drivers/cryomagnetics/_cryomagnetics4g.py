@@ -89,7 +89,7 @@ class CryomagneticsModel4G(VisaInstrument):
             name="units",
             set_cmd="UNITS {}",
             get_cmd="UNITS?",
-            get_parser=str,
+            get_parser=lambda x: str(x).strip(),
             vals=Enum("A", "kG", "T"),
             docstring="Field Units",
         )
@@ -120,7 +120,6 @@ class CryomagneticsModel4G(VisaInstrument):
             unit="T/min",
             get_cmd=self._get_rate,
             set_cmd=self._set_rate,
-            get_parser=float,
             docstring="Rate for magnetic field T/min",
         )
         """Rate for magnetic field T/min"""
@@ -129,7 +128,7 @@ class CryomagneticsModel4G(VisaInstrument):
             name="Vmag",
             unit="V",
             get_cmd="VMAG?",
-            get_parser=float,
+            get_parser=lambda x: float(x.replace("V", "")),
             vals=Numbers(-10, 10),
             docstring="Magnet sense voltage",
         )
@@ -139,7 +138,7 @@ class CryomagneticsModel4G(VisaInstrument):
             name="Vout",
             unit="V",
             get_cmd="VOUT?",
-            get_parser=float,
+            get_parser=lambda x: float(x.replace("V", "")),
             vals=Numbers(-12.8, 12.8),
             docstring="Magnet output voltage",
         )
@@ -149,7 +148,7 @@ class CryomagneticsModel4G(VisaInstrument):
             name="Iout",
             unit="A",
             get_cmd="IOUT?",
-            get_parser=float,
+            get_parser=lambda x: float(x.replace("kG", "")),
             docstring="Magnet output field/current",
         )
         """Magnet output field/current"""
@@ -306,13 +305,32 @@ class CryomagneticsModel4G(VisaInstrument):
                 raise Cryomagnetics4GException(msg.format(field_setpoint, exit_state))
 
     def wait_while_ramping(
-        self, value: float, threshold: float = 1e-5
+        self, value: float, threshold: float = 1e-4
     ) -> CryomagneticsOperatingState:
-        """Waits while the magnet is ramping, checking the status byte instead of field value."""
+        """Waits while the magnet is ramping, checking the field value."""
+        last_check_time = time.time()
+        stability_check_interval = 20
+        last_stable_field = self._get_field()
+
         while True:
             current_field = self._get_field()
-            if abs(value - current_field) < 1e-4:
+            setpoint_reached = abs(value - current_field) < threshold
+            if setpoint_reached:
                 break
+
+            elapsed_time = time.time() - last_check_time
+            time_for_stability_check = elapsed_time > stability_check_interval
+            field_is_stable = abs(last_stable_field - current_field) < threshold
+
+            if time_for_stability_check and field_is_stable:
+                self.write("SWEEP PAUSE")
+                raise Cryomagnetics4GException(
+                    "TIMEOUT ERROR: Field stabilized before reaching setpoint. Sweep has been paused."
+                )
+            elif time_for_stability_check and not field_is_stable:
+                last_stable_field = current_field
+                last_check_time = time.time()
+
             self._sleep(self.ramping_state_check_interval())
         self.write("SWEEP PAUSE")
         self._sleep(1.0)
@@ -363,36 +381,33 @@ class CryomagneticsModel4G(VisaInstrument):
         else:
             return numeric_value
 
-    def _get_rate(self) -> float:
+    def _get_rate(self) -> dict[int, tuple[float, float]]:
         """
-        Get the current ramp rate in Tesla per minute.
+        Get the current ramp rates in Tesla per minute for each.
         """
-        # Get the rate from the instrument in Amps per second
-        rate_amps_per_sec = float(self.ask("RATE?"))
-        # Convert to Tesla per minute
-        rate_tesla_per_min = rate_amps_per_sec * 60 / self.coil_constant
-        return rate_tesla_per_min
+        rates = {}
+        for range_index, (upper_limit, _) in self.max_current_limits.items():
+            rate_amps_per_sec = float(self.ask(f"RATE? {range_index}"))
+            rate_tesla_per_min = rate_amps_per_sec * 60 * self.coil_constant
+            upper_limit_tesla = upper_limit * self.coil_constant
+            rates[range_index] = (upper_limit_tesla, rate_tesla_per_min)
+
+        return rates
 
     def _set_rate(self, rate_tesla_per_min: float) -> None:
         """
-        Set the ramp rate in Tesla per minute.
+        Set the ramp rate in Tesla per minute for all ranges.
         """
         # Convert from Tesla per minute to Amps per second
-        rate_amps_per_sec = rate_tesla_per_min * self.coil_constant / 60
-        # Find the appropriate range and set the rate
-        current_field = self._get_field()  # Get current field in Tesla
-        current_in_amps = current_field * self.coil_constant  # Convert to Amps
+        rate_amps_per_sec = rate_tesla_per_min / self.coil_constant / 60
 
         # (Implement a  more efficient lookup method here if needed)
-        for range_index, (upper_limit, max_rate) in self.max_current_limits.items():
-            if current_in_amps <= upper_limit:
-                actual_rate = min(
-                    rate_amps_per_sec, max_rate
-                )  # Ensure rate doesn't exceed maximum
-                self.write(f"RATE {range_index} {actual_rate}")
-                return
-
-        raise ValueError("Current field is outside of defined rate ranges")
+        for range_index, (_, max_rate) in self.max_current_limits.items():
+            actual_rate = min(
+                rate_amps_per_sec, max_rate
+            )  # Ensure rate doesn't exceed maximum
+            self.write(f"RATE {range_index} {actual_rate}")
+            self._sleep(0.1)
 
     def _initialize_max_current_limits(self) -> None:
         """
@@ -400,7 +415,9 @@ class CryomagneticsModel4G(VisaInstrument):
         """
         for range_index, (upper_limit, max_rate) in self.max_current_limits.items():
             self.write(f"RANGE {range_index} {upper_limit}")
+            self._sleep(0.1)
             self.write(f"RATE {range_index} {max_rate}")
+            self._sleep(0.1)
 
     def write_raw(self, cmd: str) -> None:
         try:
