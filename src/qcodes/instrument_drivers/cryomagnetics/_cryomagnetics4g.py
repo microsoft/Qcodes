@@ -120,7 +120,6 @@ class CryomagneticsModel4G(VisaInstrument):
             unit="T/min",
             get_cmd=self._get_rate,
             set_cmd=self._set_rate,
-            get_parser=float,
             docstring="Rate for magnetic field T/min",
         )
         """Rate for magnetic field T/min"""
