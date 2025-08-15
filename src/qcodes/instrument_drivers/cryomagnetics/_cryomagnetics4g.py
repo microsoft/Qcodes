@@ -376,29 +376,20 @@ class CryomagneticsModel4G(VisaInstrument):
 
         return rates
 
-    def _set_rate(self, range_index: int, rate_tesla_per_min: float) -> None:
+    def _set_rate(self, rate_tesla_per_min: float) -> None:
         """
-        Set the ramp rate in Tesla per minute.
+        Set the ramp rate in Tesla per minute for all ranges.
         """
-        # Instrument expects Amps per second
+        # Convert from Tesla per minute to Amps per second
         rate_amps_per_sec = rate_tesla_per_min / self.coil_constant / 60
-        max_rate = self.max_current_limits[range_index][1]
 
-        if rate_amps_per_sec > max_rate:
-            raise ValueError("Rate exceeds maximum allowed rate for this range.")
-
-        self.write(f"RATE {range_index} {rate_amps_per_sec}")
-
-        self._sleep(0.01)
-
-        # Validate rate was set correctly
-        set_rate = float(self.ask(f"RATE? {range_index}"))
-        if set_rate != rate_amps_per_sec:
-            raise Cryomagnetics4GException(
-                f"Failed to set rate {range_index} to {rate_amps_per_sec}."
-            )
-
-        self.log.info(f"Successfully set rate {range_index} to {rate_amps_per_sec}.")
+        # (Implement a  more efficient lookup method here if needed)
+        for range_index, (_, max_rate) in self.max_current_limits.items():
+            actual_rate = min(
+                rate_amps_per_sec, max_rate
+            )  # Ensure rate doesn't exceed maximum
+            self.write(f"RATE {range_index} {actual_rate}")
+            self._sleep(0.1)
 
     def _initialize_max_current_limits(self) -> None:
         """
@@ -407,19 +398,6 @@ class CryomagneticsModel4G(VisaInstrument):
         for range_index, (upper_limit, max_rate) in self.max_current_limits.items():
             self.write(f"RANGE {range_index} {upper_limit}")
             self.write(f"RATE {range_index} {max_rate}")
-
-            self._sleep(0.01)
-
-            # Validate that ranges were set appropriately
-            set_range = float(self.ask(f"RANGE? {range_index}"))
-            set_rate = float(self.ask(f"RATE? {range_index}"))
-
-            if set_range != upper_limit or set_rate != max_rate:
-                raise Cryomagnetics4GException(
-                    "Failed to initialize current limits and rates."
-                )
-
-            self.log.info("Successfully initialized current limits and rates.")
 
     def write_raw(self, cmd: str) -> None:
         try:
