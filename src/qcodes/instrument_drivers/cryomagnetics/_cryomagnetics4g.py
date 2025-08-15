@@ -128,7 +128,7 @@ class CryomagneticsModel4G(VisaInstrument):
             name="Vmag",
             unit="V",
             get_cmd="VMAG?",
-            get_parser=float,
+            get_parser=lambda x: float(x.replace("V", "")),
             vals=Numbers(-10, 10),
             docstring="Magnet sense voltage",
         )
@@ -138,7 +138,7 @@ class CryomagneticsModel4G(VisaInstrument):
             name="Vout",
             unit="V",
             get_cmd="VOUT?",
-            get_parser=float,
+            get_parser=lambda x: float(x.replace("V", "")),
             vals=Numbers(-12.8, 12.8),
             docstring="Magnet output voltage",
         )
@@ -148,7 +148,7 @@ class CryomagneticsModel4G(VisaInstrument):
             name="Iout",
             unit="A",
             get_cmd="IOUT?",
-            get_parser=float,
+            get_parser=lambda x: float(x.replace("kG", "")),
             docstring="Magnet output field/current",
         )
         """Magnet output field/current"""
