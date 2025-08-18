@@ -1,9 +1,11 @@
 import re
 from typing import TYPE_CHECKING
 
-from qcodes import VisaInstrument
+from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 
 if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
     from qcodes.parameters import Parameter
 
 
@@ -21,9 +23,12 @@ class CryomagneticsModelTM620(VisaInstrument):
     """
 
     def __init__(
-        self, name: str, address: str, terminator: str = "\r\n", **kwargs
+        self,
+        name: str,
+        address: str,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ) -> None:
-        super().__init__(name, address, terminator=terminator, **kwargs)
+        super().__init__(name, address, **kwargs)
 
         self.shield: Parameter = self.add_parameter(
             name="shield",
