@@ -78,7 +78,8 @@ def mock_instr():
     Provides a mock instrument to host parameters.
     """
     instr = MockInstrument("mock_instr")
-    return instr
+    yield instr
+    instr.close()
 
 
 @pytest.mark.parametrize("invalid_callback", ["not_a_callable", 123, [], {}])

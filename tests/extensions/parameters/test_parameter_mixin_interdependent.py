@@ -75,7 +75,8 @@ def mock_instr():
     Provides a mock instrument for interdependent parameter tests.
     """
     instr = MockInstrument("mock_instr")
-    return instr
+    yield instr
+    instr.close()
 
 
 def test_dependency_update_invoked_on_change(
