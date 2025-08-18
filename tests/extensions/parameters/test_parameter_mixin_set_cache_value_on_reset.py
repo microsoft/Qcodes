@@ -44,7 +44,8 @@ def reset_instr():
     Provides a mock instrument with reset capability.
     """
     instr = MockResetInstrument("mock_reset_instr")
-    return instr
+    yield instr
+    instr.close()
 
 
 @pytest.fixture(autouse=True)
