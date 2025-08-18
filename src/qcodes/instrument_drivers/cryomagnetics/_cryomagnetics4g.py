@@ -244,13 +244,19 @@ class CryomagneticsModel4G(VisaInstrument):
 
         return operating_state
 
-    def set_field(self, field_setpoint: float, block: bool = True) -> None:
+    def set_field(
+        self,
+        field_setpoint: float,
+        block: bool = True,
+        setpoint_threshold: float = 2e-3,
+    ) -> None:
         """
         Sets the magnetic field strength in Tesla using ULIM, LLIM, and SWEEP commands.
 
         Args:
             field_setpoint: The desired magnetic field strength in Tesla.
             block: If True, the method will block until the field reaches the setpoint.
+            setpoint_threshold: The threshold for determining if the setpoint has been reached.
 
         Raises:
             Cryo4GException: If the power supply is not in a state where it can start ramping.
@@ -296,7 +302,9 @@ class CryomagneticsModel4G(VisaInstrument):
             self.log.debug(
                 f"Starting blocking ramp of {self.name} to {field_setpoint} T"
             )
-            exit_state = self.wait_while_ramping(field_setpoint)
+            exit_state = self.wait_while_ramping(
+                field_setpoint, threshold=setpoint_threshold
+            )
             self.log.debug("Finished blocking ramp")
             # If we are now holding, it was successful
 
@@ -305,7 +313,7 @@ class CryomagneticsModel4G(VisaInstrument):
                 raise Cryomagnetics4GException(msg.format(field_setpoint, exit_state))
 
     def wait_while_ramping(
-        self, value: float, threshold: float = 1e-4
+        self, value: float, threshold: float = 2e-3
     ) -> CryomagneticsOperatingState:
         """Waits while the magnet is ramping, checking the field value."""
         last_check_time = time.time()
