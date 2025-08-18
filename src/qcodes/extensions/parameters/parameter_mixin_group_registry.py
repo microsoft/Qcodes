@@ -8,9 +8,11 @@ Classes:
       to named groups for coordinated triggering.
 """
 
+from __future__ import annotations
+
 import logging
 import warnings
-from typing import TYPE_CHECKING, Any, ClassVar, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from qcodes.parameters import Parameter, ParameterBase
 
@@ -58,13 +60,13 @@ class GroupRegistryParameterMixin(ParameterMixin):
     ]
     _INCOMPATIBLE_BASES: ClassVar[list[type[ParameterBase]]] = []
 
-    _group_registry: ClassVar[dict[str, list["Callable"]]] = {}
+    _group_registry: ClassVar[dict[str, list[Callable[[], None]]]] = {}
 
     def __init__(
         self,
         *args: Any,
-        group_names: Optional[list[str]] = None,
-        callback: Optional["Callable"] = None,
+        group_names: list[str] | None = None,
+        callback: Callable[[], None] | None = None,
         **kwargs: Any,
     ) -> None:
         self.group_names = kwargs.pop("group_names", group_names)
@@ -73,8 +75,7 @@ class GroupRegistryParameterMixin(ParameterMixin):
         super().__init__(*args, **kwargs)
 
         if self.group_names is None:
-            message = f"No group_name(s) provided for parameter '{getattr(self, 'name', repr(self))}'."
-            # message = f"No group_name(s) provided for parameter '{cast('ParameterBase', self).name}'."
+            message = f"No group_name(s) provided for parameter '{cast('ParameterBase', self).name}'."
             log.warning(message)
             warnings.warn(message, UserWarning)
 
@@ -82,11 +83,11 @@ class GroupRegistryParameterMixin(ParameterMixin):
             self._register_callback_to_groups(self.group_names, callback)
 
     @property
-    def group_names(self) -> Optional[list[str]]:
+    def group_names(self) -> list[str] | None:
         return self._group_names
 
     @group_names.setter
-    def group_names(self, value: Optional[list[str]]) -> None:
+    def group_names(self, value: list[str] | None) -> None:
         if value is not None:
             if not isinstance(value, list) or not all(
                 isinstance(v, str) for v in value
@@ -95,10 +96,10 @@ class GroupRegistryParameterMixin(ParameterMixin):
         self._group_names = value
 
     @classmethod
-    def register_group_callback(cls, group_name: str, callback: "Callable") -> None:
-        if group_name not in cls._group_registry:
-            cls._group_registry[group_name] = []
-        cls._group_registry[group_name].append(callback)
+    def register_group_callback(
+        cls, group_name: str, callback: Callable[[], None]
+    ) -> None:
+        cls._group_registry.setdefault(group_name, []).append(callback)
 
     @classmethod
     def trigger_group(cls, group_name: str) -> None:
@@ -112,7 +113,7 @@ class GroupRegistryParameterMixin(ParameterMixin):
             callback()
 
     def _register_callback_to_groups(
-        self, group_names: list[str], callback: "Callable"
+        self, group_names: list[str], callback: Callable[[], None]
     ) -> None:
         for group_name in group_names:
             self.register_group_callback(group_name, callback)

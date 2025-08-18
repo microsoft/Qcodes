@@ -10,8 +10,10 @@ Typical usage involves defining dependencies by name and providing a callable
 to update internal state when those dependencies change.
 """
 
+from __future__ import annotations
+
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, cast
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from qcodes.parameters import Parameter, ParameterBase
 
@@ -62,23 +64,26 @@ class InterdependentParameterMixin(OnCacheChangeParameterMixin):
     def __init__(
         self,
         *args: Any,
-        dependency_update_method: Optional["Callable[..., Any]"] = None,
-        dependent_on: list[str] | None = [],
+        dependency_update_method: Callable[[], None] | None = None,
+        dependent_on: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
-        self.dependency_update_method = kwargs.pop(
+        dependency_update_method = kwargs.pop(
             "dependency_update_method", dependency_update_method
         )
-        self.dependent_on = kwargs.pop("dependent_on", dependent_on)
+        dependent_on = kwargs.pop("dependent_on", dependent_on)
 
         super().__init__(*args, **kwargs)
+
+        self.dependency_update_method = dependency_update_method
+        self.dependent_on = [] if dependent_on is None else list(dependent_on)
 
         self._dependent_params: list[InterdependentParameterMixin] = []
 
         self._register_dependencies()
 
     @property
-    def dependency_update_method(self) -> Optional["Callable[..., Any]"]:
+    def dependency_update_method(self) -> Callable[[], None]:
         """
         Get the method used to update parameter attributes based on dependencies.
 
@@ -89,7 +94,7 @@ class InterdependentParameterMixin(OnCacheChangeParameterMixin):
         return self._update_method
 
     @dependency_update_method.setter
-    def dependency_update_method(self, method: Optional["Callable[..., Any]"]) -> None:
+    def dependency_update_method(self, method: Callable[[], None]) -> None:
         """
         Set the dependency update method.
 
@@ -147,9 +152,7 @@ class InterdependentParameterMixin(OnCacheChangeParameterMixin):
                 )
             dep_param.add_dependent_parameter(self)
 
-    def add_dependent_parameter(
-        self, parameter: "InterdependentParameterMixin"
-    ) -> None:
+    def add_dependent_parameter(self, parameter: InterdependentParameterMixin) -> None:
         """
         Add a dependent parameter to this parameter's list.
 

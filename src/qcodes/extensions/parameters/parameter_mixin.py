@@ -20,9 +20,11 @@ See Also:
 
 """
 
+from __future__ import annotations
+
 import logging
 import warnings
-from typing import Any, ClassVar, Optional
+from typing import Any, ClassVar
 
 from qcodes.parameters import ParameterBase
 
@@ -69,8 +71,8 @@ class ParameterMixin:
 
     """
 
-    _COMPATIBLE_BASES: ClassVar[list[type["ParameterBase"]]] = []
-    _INCOMPATIBLE_BASES: ClassVar[list[type["ParameterBase"]]] = []
+    _COMPATIBLE_BASES: ClassVar[list[type[ParameterBase]]] = []
+    _INCOMPATIBLE_BASES: ClassVar[list[type[ParameterBase]]] = []
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
@@ -90,7 +92,7 @@ class ParameterMixin:
         )
 
         apply_to_parameter_base = False
-        parameter_base_leaf: Optional[type[ParameterBase]] = None
+        parameter_base_leaf: type[ParameterBase] | None = None
         if issubclass(cls, ParameterBase):
             apply_to_parameter_base = True
             parameter_base_leaves = cls._get_leaf_classes(
@@ -172,8 +174,8 @@ class ParameterMixin:
     @classmethod
     def _check_compatibility(
         cls,
-        all_mixins: list[type["ParameterMixin"]],
-        mixin_leaves: list[type["ParameterMixin"]],
+        all_mixins: list[type[ParameterMixin]],
+        mixin_leaves: list[type[ParameterMixin]],
         parameter_base_leaf: type[ParameterBase],
     ) -> None:
         """
@@ -205,8 +207,8 @@ class ParameterMixin:
     @classmethod
     def _update_docstring(
         cls,
-        all_applied_mixins: list[type["ParameterMixin"]],
-        parameter_base_leaf: Optional[type[ParameterBase]],
+        all_applied_mixins: list[type[ParameterMixin]],
+        parameter_base_leaf: type[ParameterBase] | None,
     ) -> None:
         """
         Update the class docstring with information about applied mixins
@@ -242,7 +244,7 @@ class ParameterMixin:
 
     @classmethod
     def _get_leaf_classes(
-        cls, base_type: type, exclude_base_type: Optional[type] = None
+        cls, base_type: type, exclude_base_type: type | None = None
     ) -> list[type]:
         """
         Retrieve all leaf classes in the MRO of cls that are subclasses of base_type,
@@ -286,7 +288,7 @@ class ParameterMixin:
 
     @classmethod
     def _get_mixin_classes(
-        cls, base_type: type, exclude_base_type: Optional[type] = None
+        cls, base_type: type, exclude_base_type: type | None = None
     ) -> list[type]:
         """
         Retrieve all classes in the MRO of cls that are subclasses of base_type,
