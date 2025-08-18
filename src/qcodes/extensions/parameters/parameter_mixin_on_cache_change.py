@@ -9,9 +9,11 @@ This mechanism is implemented by wrapping the parameter's internal cache
 update logic and detecting changes.
 """
 
+from __future__ import annotations
+
 import logging
 from functools import wraps
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, Protocol, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, cast
 
 from qcodes.parameters import Parameter, ParameterBase
 
@@ -123,7 +125,7 @@ class OnCacheChangeParameterMixin(ParameterMixin):
 
         @wraps(original_update_cache)
         def wrapped_cache_update(
-            *, value: Any, raw_value: Any, timestamp: Optional["datetime"] = None
+            *, value: Any, raw_value: Any, timestamp: datetime | None = None
         ) -> None:
             raw_value_old = parameter.cache.raw_value
             value_old = parameter.cache.get(get_if_invalid=False)

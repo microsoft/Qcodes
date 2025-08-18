@@ -9,8 +9,9 @@ resynchronized based on a predefined fallback and coordinated group events.
 Internally, this mixin uses `GroupRegistryParameterMixin` to register callbacks
 for one or more group names. When a group is triggered, it updates the cache value
 accordingly.
-
 """
+
+from __future__ import annotations
 
 import logging
 import warnings
@@ -112,7 +113,7 @@ class SetCacheValueOnResetParameterMixin(GroupRegistryParameterMixin):
             warnings.warn(message, UserWarning)
 
         if set_parser is not None:
-            self.get_parser: Callable[..., Any] | None = lambda x: cast(
+            self.get_parser: Callable[..., Any] | None = lambda _ignored_value: cast(
                 "ParameterBase", self
             ).cache.get(get_if_invalid=False)
 
