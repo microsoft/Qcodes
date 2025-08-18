@@ -1,27 +1,30 @@
 spec: "1.0"
 devices:
-  cryomagnetics_tm620:
+  cryomag_tm620:
     eom:
       GPIB INSTR:
-        q: "\n"
-        r: "\n"
-        error: ERROR
+        q: "\r\n"
+        r: "\r\n"
+    error: ERROR
     dialogues:
       - q: "*IDN?"
-        r: "Cryomagnetics,TM-620,2002,2.00"
-      - q: "UNITS?"
-        r: "KELVIN"
-      - q: "UNITS KELVIN"
-        r: ""
-      - q: "UNITS CELSIUS"
-        r: ""
-      - q: "UNITS FAHRENHEIT"
-        r: ""
+        r: "Cryomagnetics,TM-620_simulation,2002,2.00"
       - q: "MEAS? A"
-        r: "54.989"
+        r: "{RANDOM(54, 56, 1):.2f}K\r\n"
       - q: "MEAS? B"
-        r: "4.05"
+        r: "{RANDOM(3, 5, 1):.2f}K\r\n"
+
+    properties:
+      shield:
+        getter:
+          q: "MEAS? A"
+          r: "{RANDOM(54, 56, 1):.2f}K\r\n"
+      magnet:
+        getter:
+          q: "MEAS? B"
+          r: "{RANDOM(3, 5, 1):.2f}K\r\n"
+
 
 resources:
   GPIB::1::INSTR:
-    device: cryomagnetics_tm620
+    device: cryomag_tm620
