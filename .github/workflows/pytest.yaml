@@ -96,7 +96,7 @@ jobs:
     # even if the previous steps fail. This allows users to get feedback
     # from both typechecking and tests even if one of them fails.
     - name: Run Pyright
-      uses: jakebailey/pyright-action@b5d50e5cde6547546a5c4ac92e416a8c2c1a1dfe # v2.3.2
+      uses: jakebailey/pyright-action@6cabc0f01c4994be48fd45cd9dbacdd6e1ee6e5e # v2.3.3
       with:
         version: ${{ steps.pyright-version.outputs.version }}
       if: ${{ !matrix.min-version && always() }}
