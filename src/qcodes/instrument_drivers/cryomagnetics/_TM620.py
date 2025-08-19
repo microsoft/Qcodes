@@ -22,6 +22,8 @@ class CryomagneticsModelTM620(VisaInstrument):
 
     """
 
+    float_pattern = re.compile(r"[0-9]+\.[0-9]+")
+
     def __init__(
         self,
         name: str,
@@ -100,8 +102,8 @@ class CryomagneticsModelTM620(VisaInstrument):
             parsed string containing extracted floating point number.
 
         """
-        pattern = r"[0-9]+\.[0-9]+"
-        match = re.search(pattern, output)
+
+        match = self.float_pattern.search(output)
 
         if match:
             return match.group(0)
