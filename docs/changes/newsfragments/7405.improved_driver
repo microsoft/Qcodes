@@ -9,3 +9,4 @@
 9. Modified `_set_rate` to update all ranges (0-4) on the instrument (picks min value between set rate and maximum current limit for each range)
 10. Add small sleep (0.1 seconds) between write calls during `max_current_limit` initialization.
 11. Fixed/added unit tests to accurately reflect code changes.
+12. Modified `set_field()` to allow users to control the strictness of `wait_while_ramping()` timeout condition (1e-4 was too precise and was triggering false timeouts).
