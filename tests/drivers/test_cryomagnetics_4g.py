@@ -1,5 +1,5 @@
 import logging
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import ANY, MagicMock, call, patch
 
 import pytest
 
@@ -126,7 +126,7 @@ def test_set_field_blocking(cryo_instrument):
         assert any("SWEEP UP" in str(call) for call in calls)
 
         # Ensure wait_while_ramping was called with the correct setpoint
-        mock_wait.assert_called_once_with(0.5)
+        mock_wait.assert_called_once_with(0.5, threshold=ANY)
 
 
 def test_wait_while_ramping_timeout(cryo_instrument):
