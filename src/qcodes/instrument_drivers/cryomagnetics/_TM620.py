@@ -48,9 +48,21 @@ class CryomagneticsModelTM620(VisaInstrument):
         )
         """4K magnet temperature"""
 
-        self.add_function("remote", call_cmd="REMOTE")
-        self.remote()
+        self.operating_mode()
         self.connect_message()
+
+    def operating_mode(self, remote: bool = True) -> None:
+        """
+        Sets the device's operating mode to either remote or local.
+
+        Args:
+            remote: If True, sets to remote mode, otherwise sets to local mode.
+
+        """
+        if remote:
+            self.write("REMOTE")
+        else:
+            self.write("LOCAL")
 
     def _get_A(self) -> float:
         """Get 55k shield temperature
