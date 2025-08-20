@@ -118,14 +118,10 @@ def _load_to_xarray_dataarray_dict_no_metadata(
                 if export_with_multi_index:
                     assert isinstance(df.index, pd.MultiIndex)
 
-                    if hasattr(xr, "Coordinates"):
-                        coords = xr.Coordinates.from_pandas_multiindex(
-                            df.index, "multi_index"
-                        )
-                        xrdarray = xr.DataArray(df[name], coords=coords)
-                    else:
-                        # support xarray < 2023.8.0, can be removed when we drop support for that
-                        xrdarray = xr.DataArray(df[name], [("multi_index", df.index)])
+                    coords = xr.Coordinates.from_pandas_multiindex(
+                        df.index, "multi_index"
+                    )
+                    xrdarray = xr.DataArray(df[name], coords=coords)
                 else:
                     xrdarray = df.to_xarray().get(name, xr.DataArray())
 
