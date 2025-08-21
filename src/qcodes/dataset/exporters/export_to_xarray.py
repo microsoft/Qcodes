@@ -79,53 +79,82 @@ def _load_to_xarray_dataarray_dict_no_metadata(
     data_xrdarray_dict: dict[str, xr.DataArray] = {}
 
     for name, subdict in datadict.items():
-        index = _generate_pandas_index(
-            subdict, dataset.description.interdeps, top_level_param_name=name
-        )
-
-        if index is None:
-            xrdarray: xr.DataArray = (
-                _data_to_dataframe(subdict, index=index)
-                .to_xarray()
-                .get(name, xr.DataArray())
+        if (
+            (
+                dataset.description.shapes is not None
+                and name in dataset.description.shapes
             )
-            data_xrdarray_dict[name] = xrdarray
-        else:
-            index_unique = len(index.unique()) == len(index)
+            and use_multi_index != "always"
+            and subdict[name].shape == dataset.description.shapes[name]
+        ):
+            meas_paramspec = dataset.description.interdeps.graph.nodes[name]["value"]
 
-            df = _data_to_dataframe(subdict, index)
-
-            if not index_unique:
-                # index is not unique so we fallback to using a counter as index
-                # and store the index as a variable
-                xrdata_temp = df.reset_index().to_xarray()
-                for _name in subdict:
-                    data_xrdarray_dict[_name] = xrdata_temp[_name]
-            else:
-                calc_index = _calculate_index_shape(index)
-                index_prod = prod(calc_index.values())
-                # if the product of the len of individual index dims == len(total_index)
-                # we are on a grid
-
-                on_grid = index_prod == len(index)
-
-                export_with_multi_index = (
-                    not on_grid
-                    and dataset.description.shapes is None
-                    and use_multi_index == "auto"
-                ) or use_multi_index == "always"
-
-                if export_with_multi_index:
-                    assert isinstance(df.index, pd.MultiIndex)
-
-                    coords = xr.Coordinates.from_pandas_multiindex(
-                        df.index, "multi_index"
+            _, deps, _ = dataset.description.interdeps.all_parameters_in_tree_by_group(
+                meas_paramspec
+            )
+            dep_axis = {}
+            for axis, dep in enumerate(deps):
+                dep_array = subdict[dep.name]
+                dep_axis[dep.name] = dep_array[
+                    tuple(
+                        slice(None) if i == axis else 0 for i in range(dep_array.ndim)
                     )
-                    xrdarray = xr.DataArray(df[name], coords=coords)
-                else:
-                    xrdarray = df.to_xarray().get(name, xr.DataArray())
+                ]
 
+            data_xrdarray_dict[name] = xr.Dataset(
+                {name: (tuple(dep_axis.keys()), subdict[name])},
+                coords=dep_axis,
+            )[name]
+
+        else:
+            index = _generate_pandas_index(
+                subdict, dataset.description.interdeps, top_level_param_name=name
+            )
+            # xr.Dataset({"meas_parameter": (["del_param_1", "del_param_2"], subdict["meas_parameter"])}, coords={"del_param_1": subdict["del_param_1"][:,0], "del_param_2": subdict["del_param_2"][0,:]} )
+
+            if index is None:
+                xrdarray: xr.DataArray = (
+                    _data_to_dataframe(subdict, index=index)
+                    .to_xarray()
+                    .get(name, xr.DataArray())
+                )
                 data_xrdarray_dict[name] = xrdarray
+            else:
+                index_unique = len(index.unique()) == len(index)
+
+                df = _data_to_dataframe(subdict, index)
+
+                if not index_unique:
+                    # index is not unique so we fallback to using a counter as index
+                    # and store the index as a variable
+                    xrdata_temp = df.reset_index().to_xarray()
+                    for _name in subdict:
+                        data_xrdarray_dict[_name] = xrdata_temp[_name]
+                else:
+                    calc_index = _calculate_index_shape(index)
+                    index_prod = prod(calc_index.values())
+                    # if the product of the len of individual index dims == len(total_index)
+                    # we are on a grid
+
+                    on_grid = index_prod == len(index)
+
+                    export_with_multi_index = (
+                        not on_grid
+                        and dataset.description.shapes is None
+                        and use_multi_index == "auto"
+                    ) or use_multi_index == "always"
+
+                    if export_with_multi_index:
+                        assert isinstance(df.index, pd.MultiIndex)
+
+                        coords = xr.Coordinates.from_pandas_multiindex(
+                            df.index, "multi_index"
+                        )
+                        xrdarray = xr.DataArray(df[name], coords=coords)
+                    else:
+                        xrdarray = df.to_xarray().get(name, xr.DataArray())
+
+                    data_xrdarray_dict[name] = xrdarray
 
     return data_xrdarray_dict
 

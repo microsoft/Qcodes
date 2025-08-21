@@ -10,6 +10,7 @@ from itertools import chain
 import numpy as np
 
 from qcodes.dataset import Measurement
+from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.parameters import DelegateParameter, ManualParameter, Parameter
 
 
@@ -242,6 +243,9 @@ def test_inferred_parameters_in_actual_measurement_2d(experiment, DAC):
 
     # Register measurement parameter with 2D setpoints
     meas.register_parameter(meas_parameter, setpoints=(del_param_1, del_param_2))
+    meas.set_shapes(
+        detect_shape_of_measurement([meas_parameter], (num_points_x, num_points_y))
+    )
 
     with meas.run() as datasaver:
         for x in np.linspace(0, 1, num_points_x):
@@ -276,7 +280,9 @@ def test_inferred_parameters_in_actual_measurement_2d(experiment, DAC):
 
     total_points = num_points_x * num_points_y
     for k in expected_keys:
-        assert len(tree[k]) == total_points, f"{k} should have {total_points} entries"
+        assert len(tree[k].ravel()) == total_points, (
+            f"{k} should have {total_points} entries"
+        )
 
     # xarray export
     xarr = dataset.to_xarray_dataset()
