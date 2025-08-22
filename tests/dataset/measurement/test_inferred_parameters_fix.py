@@ -6,12 +6,19 @@ to a dataset, even when they are transitively related through dependencies.
 """
 
 from itertools import chain
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from qcodes.dataset import Measurement
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.parameters import DelegateParameter, ManualParameter, Parameter
+
+if TYPE_CHECKING:
+    from pytest import LogCaptureFixture
+
+    from qcodes.dataset.experiment_container import Experiment
+    from qcodes.instrument_drivers.mock_instruments import DummyInstrument
 
 
 def test_inferred_parameters_transitively_collected(experiment, DAC):
@@ -216,7 +223,9 @@ def test_inferred_parameters_in_actual_measurement_1d(experiment, DAC):
     assert len(df) == num_points
 
 
-def test_inferred_parameters_in_actual_measurement_2d(experiment, DAC):
+def test_inferred_parameters_in_actual_measurement_2d(
+    experiment: "Experiment", DAC: "DummyInstrument", caplog: "LogCaptureFixture"
+) -> None:
     """
     2D version: both axes are DelegateParameters inferred from DAC channels.
     Ensures inferred parameters on both axes are saved and exported correctly.
@@ -285,7 +294,16 @@ def test_inferred_parameters_in_actual_measurement_2d(experiment, DAC):
         )
 
     # xarray export
-    xarr = dataset.to_xarray_dataset()
+    caplog.clear()
+    with caplog.at_level("INFO"):
+        xarr = dataset.to_xarray_dataset()
+
+    assert len(caplog.records) == 1
+    assert (
+        caplog.records[0].message
+        == "Exporting meas_parameter to xarray using direct method"
+    )
+
     assert "meas_parameter" in xarr.data_vars
     assert "del_param_1" in xarr.coords
     assert "del_param_2" in xarr.coords
