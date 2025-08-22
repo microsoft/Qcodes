@@ -872,8 +872,10 @@ def test_export_dataset_delayed_numeric(
         in caplog.records[0].msg
     )
     assert "Writing individual files to temp dir" in caplog.records[1].msg
-    assert "Combining temp files into one file" in caplog.records[2].msg
-    assert "Writing netcdf file using Dask delayed writer" in caplog.records[3].msg
+    for i in range(2, 52):
+        assert "Exporting z to xarray via pandas index" in caplog.records[i].message
+    assert "Combining temp files into one file" in caplog.records[52].msg
+    assert "Writing netcdf file using Dask delayed writer" in caplog.records[53].msg
 
     loaded_ds = xr.load_dataset(mock_dataset_grid.export_info.export_paths["nc"])
     assert loaded_ds.x.shape == (10,)
@@ -901,13 +903,16 @@ def test_export_dataset_delayed(
     with caplog.at_level(logging.INFO):
         mock_dataset_numpy.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
 
+    assert len(caplog.records) == 16
     assert (
         "Dataset is expected to be larger that threshold. Using distributed export."
         in caplog.records[0].msg
     )
     assert "Writing individual files to temp dir" in caplog.records[1].msg
-    assert "Combining temp files into one file" in caplog.records[2].msg
-    assert "Writing netcdf file using Dask delayed writer" in caplog.records[3].msg
+    for i in range(2, 12):
+        assert "Exporting z to xarray via pandas index" in caplog.records[i].message
+    assert "Combining temp files into one file" in caplog.records[12].msg
+    assert "Writing netcdf file using Dask delayed writer" in caplog.records[13].msg
 
     loaded_ds = xr.load_dataset(mock_dataset_numpy.export_info.export_paths["nc"])
     assert loaded_ds.x.shape == (10,)
@@ -942,8 +947,10 @@ def test_export_dataset_delayed_complex(
         in caplog.records[0].msg
     )
     assert "Writing individual files to temp dir" in caplog.records[1].msg
-    assert "Combining temp files into one file" in caplog.records[2].msg
-    assert "Writing netcdf file using Dask delayed writer" in caplog.records[3].msg
+    for i in range(2, 12):
+        assert "Exporting z to xarray via pandas index" in caplog.records[i].message
+    assert "Combining temp files into one file" in caplog.records[12].msg
+    assert "Writing netcdf file using Dask delayed writer" in caplog.records[13].msg
 
     loaded_ds = xr.load_dataset(
         mock_dataset_numpy_complex.export_info.export_paths["nc"]
