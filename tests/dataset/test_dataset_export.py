@@ -26,6 +26,7 @@ from qcodes.dataset import (
     load_from_netcdf,
     new_data_set,
 )
+from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.versioning import serialization as serial
@@ -660,7 +661,9 @@ def test_export_from_config_set_name_elements(
     ]
 
 
-def test_same_setpoint_warning_for_df_and_xarray(different_setpoint_dataset) -> None:
+def test_same_setpoint_warning_for_df_and_xarray(
+    different_setpoint_dataset: DataSetProtocol,
+) -> None:
     warning_message = (
         "Independent parameter setpoints are not equal. "
         "Check concatenated output carefully."
@@ -1293,7 +1296,7 @@ def test_multi_index_options_incomplete_grid(mock_dataset_grid_incomplete) -> No
 
 
 def test_multi_index_options_incomplete_grid_with_shapes(
-    mock_dataset_grid_incomplete_with_shapes,
+    mock_dataset_grid_incomplete_with_shapes: DataSet,
 ) -> None:
     assert mock_dataset_grid_incomplete_with_shapes.description.shapes == {"z": (10, 5)}
 
@@ -1316,7 +1319,7 @@ def test_multi_index_options_incomplete_grid_with_shapes(
     assert xds_always.sizes == {"multi_index": 39}
 
 
-def test_multi_index_options_non_grid(mock_dataset_non_grid) -> None:
+def test_multi_index_options_non_grid(mock_dataset_non_grid: DataSet) -> None:
     assert mock_dataset_non_grid.description.shapes is None
 
     xds = mock_dataset_non_grid.to_xarray_dataset()
@@ -1332,18 +1335,18 @@ def test_multi_index_options_non_grid(mock_dataset_non_grid) -> None:
     assert xds_always.sizes == {"multi_index": 50}
 
 
-def test_multi_index_wrong_option(mock_dataset_non_grid) -> None:
+def test_multi_index_wrong_option(mock_dataset_non_grid: DataSet) -> None:
     with pytest.raises(ValueError, match="Invalid value for use_multi_index"):
-        mock_dataset_non_grid.to_xarray_dataset(use_multi_index=True)
-
-    with pytest.raises(ValueError, match="Invalid value for use_multi_index"):
-        mock_dataset_non_grid.to_xarray_dataset(use_multi_index=False)
+        mock_dataset_non_grid.to_xarray_dataset(use_multi_index=True)  # pyright: ignore[reportArgumentType]
 
     with pytest.raises(ValueError, match="Invalid value for use_multi_index"):
-        mock_dataset_non_grid.to_xarray_dataset(use_multi_index="perhaps")
+        mock_dataset_non_grid.to_xarray_dataset(use_multi_index=False)  # pyright: ignore[reportArgumentType]
+
+    with pytest.raises(ValueError, match="Invalid value for use_multi_index"):
+        mock_dataset_non_grid.to_xarray_dataset(use_multi_index="perhaps")  # pyright: ignore[reportArgumentType]
 
 
-def test_geneate_pandas_index():
+def test_geneate_pandas_index() -> None:
     x = ParamSpecBase("x", "numeric")
     y = ParamSpecBase("y", "numeric")
     z = ParamSpecBase("z", "numeric")
