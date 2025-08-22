@@ -87,6 +87,7 @@ def _load_to_xarray_dataarray_dict_no_metadata(
             and use_multi_index != "always"
             and subdict[name].shape == dataset.description.shapes[name]
         ):
+            _LOG.info("Exporting %s to xarray using direct method", name)
             meas_paramspec = dataset.description.interdeps.graph.nodes[name]["value"]
 
             _, deps, _ = dataset.description.interdeps.all_parameters_in_tree_by_group(
@@ -107,10 +108,10 @@ def _load_to_xarray_dataarray_dict_no_metadata(
             )[name]
 
         else:
+            _LOG.info("Exporting %s to xarray via pandas index", name)
             index = _generate_pandas_index(
                 subdict, dataset.description.interdeps, top_level_param_name=name
             )
-            # xr.Dataset({"meas_parameter": (["del_param_1", "del_param_2"], subdict["meas_parameter"])}, coords={"del_param_1": subdict["del_param_1"][:,0], "del_param_2": subdict["del_param_2"][0,:]} )
 
             if index is None:
                 xrdarray: xr.DataArray = (
@@ -125,8 +126,11 @@ def _load_to_xarray_dataarray_dict_no_metadata(
                 df = _data_to_dataframe(subdict, index)
 
                 if not index_unique:
-                    # index is not unique so we fallback to using a counter as index
-                    # and store the index as a variable
+                    _LOG.info(
+                        "Exporting %s to xarray, could not determine unique index falling back to "
+                        "using counter as an index. Setpoints are stored as data variables.",
+                        name,
+                    )
                     xrdata_temp = df.reset_index().to_xarray()
                     for _name in subdict:
                         data_xrdarray_dict[_name] = xrdata_temp[_name]
@@ -146,6 +150,13 @@ def _load_to_xarray_dataarray_dict_no_metadata(
 
                     if export_with_multi_index:
                         assert isinstance(df.index, pd.MultiIndex)
+                        _LOG.info(
+                            "Exporting %s to xarray using a MultiIndex since on_grid=%s, shape=%s, use_multi_index=%s",
+                            name,
+                            on_grid,
+                            dataset.description.shapes,
+                            use_multi_index,
+                        )
 
                         coords = xr.Coordinates.from_pandas_multiindex(
                             df.index, "multi_index"
