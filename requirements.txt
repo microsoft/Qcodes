@@ -261,7 +261,7 @@ pandas-stubs==2.3.0.250703
     # via qcodes (pyproject.toml)
 pandocfilters==1.5.1
     # via nbconvert
-parso==0.8.4
+parso==0.8.5
     # via jedi
 partd==1.4.2
     # via dask
