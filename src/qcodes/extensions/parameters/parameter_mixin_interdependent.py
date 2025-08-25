@@ -83,7 +83,7 @@ class InterdependentParameterMixin(OnCacheChangeParameterMixin):
         self._register_dependencies()
 
     @property
-    def dependency_update_method(self) -> Callable[[], None]:
+    def dependency_update_method(self) -> Callable[[], None] | None:
         """
         Get the method used to update parameter attributes based on dependencies.
 
@@ -94,7 +94,7 @@ class InterdependentParameterMixin(OnCacheChangeParameterMixin):
         return self._update_method
 
     @dependency_update_method.setter
-    def dependency_update_method(self, method: Callable[[], None]) -> None:
+    def dependency_update_method(self, method: Callable[[], None] | None) -> None:
         """
         Set the dependency update method.
 
@@ -107,7 +107,7 @@ class InterdependentParameterMixin(OnCacheChangeParameterMixin):
         """
         if method is not None and not callable(method):
             raise TypeError("dependency_update_method must be callable or None.")
-        self._update_method = method
+        self._update_method = method  # type: Callable[[], None] | None
 
     @property
     def dependent_on(self) -> list[str]:
@@ -187,9 +187,9 @@ class InterdependentParameterMixin(OnCacheChangeParameterMixin):
         )
 
         for dep_param in self._dependent_params:
-            if dep_param.dependency_update_method:
+            if dep_param.dependency_update_method is not None:
                 dep_param.dependency_update_method()
                 cast("ParameterBase", dep_param).get()
 
-        if self.dependency_update_method:
+        if self.dependency_update_method is not None:
             self.dependency_update_method()
