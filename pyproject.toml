@@ -368,7 +368,11 @@ name = "Improved Drivers:"
 name = "Under the hood:"
 
 [tool.versioningit]
-default-version = "0.0"
+# we hard code the default version to match a development version
+# due to
+# https://github.com/orgs/community/discussions/163397#discussioncomment-13888710
+default-version = "0.54.0dev+Unknown"
+
 
 [tool.versioningit.format]
 distance = "{next_version}.dev{distance}+{branch}.{vcs}{rev}"
