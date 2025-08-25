@@ -19,7 +19,9 @@ import qcodes
 from qcodes.dataset import (
     DataSetProtocol,
     DataSetType,
+    LinSweep,
     Measurement,
+    dond,
     get_data_export_path,
     load_by_guid,
     load_by_id,
@@ -34,9 +36,11 @@ from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.exporters.export_to_pandas import _generate_pandas_index
 from qcodes.dataset.exporters.export_to_xarray import _calculate_index_shape
 from qcodes.dataset.linked_datasets.links import links_to_str
+from qcodes.parameters import ManualParameter, Parameter
 
 if TYPE_CHECKING:
     from qcodes.dataset.data_set import DataSet
+    from qcodes.dataset.experiment_container import Experiment
 
 
 @pytest.fixture(name="mock_empty_dataset")
@@ -1505,3 +1509,93 @@ def test_export_lazy_load_in_mem_dataset(
     getattr(dataset_loaded_by_guid, function_name)()
 
     assert dataset_loaded_by_guid.cache._data != {}
+
+
+@given(data=hst.data())
+@settings(
+    max_examples=10,
+    suppress_health_check=(HealthCheck.function_scoped_fixture,),
+    deadline=None,
+)
+def test_dond_hypothesis_nd_grid(
+    data: hst.DataObject, experiment: Experiment, caplog: LogCaptureFixture
+) -> None:
+    """
+    Randomized ND sweep using dond:
+    - Draw N in [1, 4]
+    - For each dimension i, draw number of points n_i in [1, 5]
+    - Sweep each ManualParameter over a linspace of length n_i
+    - Measure a deterministic function of the setpoints
+    - Assert xarray dims, coords, and data match expectation
+    """
+    n_dims = data.draw(hst.integers(min_value=1, max_value=4), label="n_dims")
+    points_per_dim = [
+        data.draw(hst.integers(min_value=1, max_value=5), label=f"n_points_dim_{i}")
+        for i in range(n_dims)
+    ]
+
+    # Create sweep parameters and corresponding value arrays
+    sweeps: list[LinSweep] = []
+    sweep_params: list[Parameter] = []
+    sweep_values: list[np.ndarray] = []
+    for i, npts in enumerate(points_per_dim):
+        p = ManualParameter(name=f"x{i}")
+        sweeps.append(LinSweep(p, 0.0, float(npts - 1), npts))
+        vals = np.linspace(0.0, float(npts - 1), npts)
+        sweep_params.append(p)
+        sweep_values.append(vals)
+
+    # Deterministic measurement as weighted sum of current setpoints
+    weights = [(i + 1) for i in range(n_dims)]
+
+    meas_param = Parameter(
+        name="signal",
+        get_cmd=lambda: float(
+            sum(weights[i] * float(sweep_params[i].get()) for i in range(n_dims))
+        ),
+        set_cmd=None,
+    )
+
+    # Build dond and run
+    result = dond(
+        *sweeps,
+        meas_param,
+        do_plot=False,
+        show_progress=False,
+        exp=experiment,
+        squeeze=False,
+    )
+
+    ds = result[0][0]
+
+    caplog.clear()
+    with caplog.at_level(logging.INFO):
+        xr_ds = ds.to_xarray_dataset()
+
+    any(
+        "Exporting signal to xarray using direct method" in record.message
+        for record in caplog.records
+    )
+    # Expected sizes per coordinate
+    expected_sizes = {
+        sp.name: len(vals) for sp, vals in zip(sweep_params, sweep_values)
+    }
+    assert xr_ds.sizes == expected_sizes
+
+    # Check coords contents and order
+    for sp, vals in zip(sweep_params, sweep_values):
+        assert sp.name in xr_ds.coords
+        np.testing.assert_allclose(xr_ds.coords[sp.name].values, vals)
+
+    # Check measured data dims and values
+    assert "signal" in xr_ds.data_vars
+    expected_dims = tuple(sp.name for sp in sweep_params)
+    assert xr_ds["signal"].dims == expected_dims
+
+    # Build expected grid via meshgrid and compare
+    grids = np.meshgrid(*sweep_values, indexing="ij")
+    expected_signal = np.zeros(tuple(points_per_dim), dtype=float)
+    for i, grid in enumerate(grids):
+        expected_signal += weights[i] * grid.astype(float)
+
+    np.testing.assert_allclose(xr_ds["signal"].values, expected_signal)
