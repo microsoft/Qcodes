@@ -217,8 +217,14 @@ def _add_metadata_to_xarray(
         }
     )
     # Use -1 as sentinel value for None timestamps since NetCDF doesn't support None
-    xrdataset.attrs["run_timestamp_raw"] = dataset.run_timestamp_raw if dataset.run_timestamp_raw is not None else -1
-    xrdataset.attrs["completed_timestamp_raw"] = dataset.completed_timestamp_raw if dataset.completed_timestamp_raw is not None else -1
+    xrdataset.attrs["run_timestamp_raw"] = (
+        dataset.run_timestamp_raw if dataset.run_timestamp_raw is not None else -1
+    )
+    xrdataset.attrs["completed_timestamp_raw"] = (
+        dataset.completed_timestamp_raw
+        if dataset.completed_timestamp_raw is not None
+        else -1
+    )
     if len(dataset.metadata) > 0:
         for metadata_tag, metadata in dataset.metadata.items():
             xrdataset.attrs[metadata_tag] = metadata
