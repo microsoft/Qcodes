@@ -19,10 +19,10 @@ from qcodes.parameters import Parameter, ParameterBase
 
 from .parameter_mixin_on_cache_change import OnCacheChangeParameterMixin
 
-log = logging.getLogger(__name__)
-
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+log = logging.getLogger(__name__)
 
 
 class InterdependentParameterMixin(OnCacheChangeParameterMixin):
@@ -42,9 +42,9 @@ class InterdependentParameterMixin(OnCacheChangeParameterMixin):
 
     Attributes:
     -----------
-    dependency_update_method : Optional[Callable[..., Any]]
+    dependency_update_method : Callable[[], None] | None
         User-provided function called when a dependency changes. Used to
-        update metadata or internal state. Optional.
+        update metadata or internal state.
 
     dependent_on : list[str]
         Names of other parameters this one depends on. They must use this mixin.
@@ -60,6 +60,8 @@ class InterdependentParameterMixin(OnCacheChangeParameterMixin):
         Parameter,
     ]
     _INCOMPATIBLE_BASES: ClassVar[list[type[ParameterBase]]] = []
+
+    _update_method: Callable[[], None] | None
 
     def __init__(
         self,
@@ -107,7 +109,7 @@ class InterdependentParameterMixin(OnCacheChangeParameterMixin):
         """
         if method is not None and not callable(method):
             raise TypeError("dependency_update_method must be callable or None.")
-        self._update_method = method  # type: Callable[[], None] | None
+        self._update_method = method
 
     @property
     def dependent_on(self) -> list[str]:
@@ -121,7 +123,7 @@ class InterdependentParameterMixin(OnCacheChangeParameterMixin):
         return self._dependent_on
 
     @dependent_on.setter
-    def dependent_on(self, dependencies: list[str] | None) -> None:
+    def dependent_on(self, dependencies: list[str]) -> None:
         """
         Set the list of dependent parameter names.
 
