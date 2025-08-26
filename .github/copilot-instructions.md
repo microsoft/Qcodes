@@ -10,7 +10,8 @@ The documentation includes Contributor's guide, so please follow that closely.
 
 Before committing anything, run pre-commit hooks with ```pre-commit run --all```
 and make sure they pass, and fix anything that is failing. The pre-commit hooks will ensure
-correct formatting of the code and linting as well.
+correct formatting of the code and linting as well. The pre-commit hooks are automatically installed
+so there is no need to manually install them.
 
 QCoDeS is a typed package, hence all new code should include clear and correct type annotations.
 
