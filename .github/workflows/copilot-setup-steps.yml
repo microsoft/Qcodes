@@ -71,7 +71,7 @@ jobs:
 
       - name: install pre-commit hooks
         run: |
-          pre-commit install
+          pre-commit install --install-hooks
 
       - name: Get Pyright Version
         id: pyright-version
