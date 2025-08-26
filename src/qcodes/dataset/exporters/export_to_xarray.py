@@ -161,21 +161,52 @@ def _xarray_data_array_direct(
     import xarray as xr
 
     meas_paramspec = dataset.description.interdeps.graph.nodes[name]["value"]
-    _, deps, _ = dataset.description.interdeps.all_parameters_in_tree_by_group(
+    _, deps, inferred = dataset.description.interdeps.all_parameters_in_tree_by_group(
         meas_paramspec
     )
-    dep_axis = {}
+    # Build coordinate axes from direct dependencies preserving their order
+    dep_axis: dict[str, npt.NDArray] = {}
     for axis, dep in enumerate(deps):
         dep_array = subdict[dep.name]
         dep_axis[dep.name] = dep_array[
             tuple(slice(None) if i == axis else 0 for i in range(dep_array.ndim))
         ]
 
-    da = xr.Dataset(
+    extra_coords: dict[str, tuple[tuple[str, ...], npt.NDArray]] = {}
+    for inf in inferred:
+        # skip parameters already used as primary coordinate axes
+        if inf.name in dep_axis:
+            continue
+        # add only if data for this parameter is available
+        if inf.name not in subdict:
+            continue
+
+        inf_related = dataset.description.interdeps.find_all_parameters_in_tree(inf)
+
+        related_deps = inf_related.intersection(set(deps))
+        related_top_level = inf_related.intersection({meas_paramspec})
+
+        if len(related_top_level) > 0:
+            raise NotImplementedError(
+                "Adding inferred coords related to top level param is not yet supported"
+            )
+
+        inf_data = subdict[inf.name][
+            tuple(slice(None) if dep in related_deps else 0 for dep in deps)
+        ]
+        inf_coords = [dep.name for dep in deps if dep in related_deps]
+
+        extra_coords[inf.name] = (tuple(inf_coords), inf_data)
+
+    # Compose coordinates dict including dependency axes and extra inferred coords
+    coords: dict[str, tuple[tuple[str, ...], npt.NDArray] | npt.NDArray]
+    coords = {**dep_axis, **extra_coords}
+
+    ds = xr.Dataset(
         {name: (tuple(dep_axis.keys()), subdict[name])},
-        coords=dep_axis,
-    )[name]
-    return da
+        coords=coords,
+    )
+    return ds[name]
 
 
 def load_to_xarray_dataarray_dict(

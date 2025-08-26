@@ -305,14 +305,25 @@ def test_inferred_parameters_in_actual_measurement_2d(
     )
 
     assert "meas_parameter" in xarr.data_vars
-    assert "del_param_1" in xarr.coords
-    assert "del_param_2" in xarr.coords
-    # inferred (basis) parameters not exported
-    assert "dummy_dac_ch1" not in xarr.coords
-    assert "dummy_dac_ch2" not in xarr.coords
 
-    assert xarr.meas_parameter.dims == ("del_param_1", "del_param_2")
-    assert xarr.meas_parameter.shape == (num_points_x, num_points_y)
+    assert "del_param_1" in xarr.coords
+    assert xarr.coords["del_param_1"].shape == (num_points_x,)
+    assert xarr.coords["del_param_1"].dims == ("del_param_1",)
+
+    assert "del_param_2" in xarr.coords
+    assert xarr.coords["del_param_2"].shape == (num_points_y,)
+    assert xarr.coords["del_param_2"].dims == ("del_param_2",)
+
+    assert "dummy_dac_ch1" in xarr.coords
+    assert xarr.coords["dummy_dac_ch1"].shape == (num_points_x,)
+    assert xarr.coords["dummy_dac_ch1"].dims == ("del_param_1",)
+
+    assert "dummy_dac_ch2" in xarr.coords
+    assert xarr.coords["dummy_dac_ch2"].shape == (num_points_y,)
+    assert xarr.coords["dummy_dac_ch2"].dims == ("del_param_2",)
+
+    assert xarr["meas_parameter"].dims == ("del_param_1", "del_param_2")
+    assert xarr["meas_parameter"].shape == (num_points_x, num_points_y)
 
     # pandas export
     df = dataset.to_pandas_dataframe()
