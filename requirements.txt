@@ -272,7 +272,7 @@ pillow==11.3.0
     #   qcodes (pyproject.toml)
     #   matplotlib
     #   qcodes
-platformdirs==4.3.8
+platformdirs==4.4.0
     # via jupyter-core
 pluggy==1.6.0
     # via
