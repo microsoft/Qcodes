@@ -665,7 +665,7 @@ def test_export_from_config_set_name_elements(
     ]
 
 
-def test_same_setpoint_warning_for_df_and_xarray(
+def test_same_setpoint_warning_for_df(
     different_setpoint_dataset: DataSetProtocol,
 ) -> None:
     warning_message = (
@@ -677,13 +677,58 @@ def test_same_setpoint_warning_for_df_and_xarray(
         different_setpoint_dataset.to_pandas_dataframe()
 
     with pytest.warns(UserWarning, match=warning_message):
-        different_setpoint_dataset.to_xarray_dataset()
-
-    with pytest.warns(UserWarning, match=warning_message):
         different_setpoint_dataset.cache.to_pandas_dataframe()
 
-    with pytest.warns(UserWarning, match=warning_message):
-        different_setpoint_dataset.cache.to_xarray_dataset()
+
+def test_partally_overlapping_setpoint_xarray_export(
+    different_setpoint_dataset: DataSetProtocol,
+) -> None:
+    xrds = different_setpoint_dataset.to_xarray_dataset()
+
+    # Expect two data variables from Multi2DSetPointParam2Sizes
+    assert "this_5_3" in xrds.data_vars
+    assert "this_2_7" in xrds.data_vars
+
+    # Names of setpoint coords as registered by the MultiParameter
+    sp_11 = "multi_2d_setpoint_param_this_setpoint_1"
+    sp_12 = "multi_2d_setpoint_param_that_setpoint_1"
+    sp_21 = "multi_2d_setpoint_param_this_setpoint_2"
+    sp_22 = "multi_2d_setpoint_param_that_setpoint_2"
+
+    # Coordinate vectors expected from the mock parameter definition
+    exp_sp_11 = np.linspace(5, 9, 5)
+    exp_sp_12 = np.linspace(9, 11, 3)
+    exp_sp_21 = np.linspace(5, 9, 2)
+    exp_sp_22 = np.linspace(9, 11, 7)
+
+    # Check coordinates exist and match expected values
+    for name, exp_vals in (
+        (sp_11, exp_sp_11),
+        (sp_12, exp_sp_12),
+        (sp_21, exp_sp_21),
+        (sp_22, exp_sp_22),
+    ):
+        assert name in xrds.coords
+        np.testing.assert_allclose(xrds.coords[name].values, exp_vals)
+
+    # this_5_3 should be on grid (sp_11, sp_12) with shape (5, 3)
+    assert xrds["this_5_3"].dims == (sp_11, sp_12)
+    assert xrds["this_5_3"].shape == (5, 3)
+
+    # this_2_7 should be on grid (sp_21, sp_22) with shape (2, 7)
+    assert xrds["this_2_7"].dims == (sp_21, sp_22)
+    assert xrds["this_2_7"].shape == (2, 7)
+
+    # Also verify cache path produces consistent coords
+    xrds_cache = different_setpoint_dataset.cache.to_xarray_dataset()
+    for name, exp_vals in (
+        (sp_11, exp_sp_11),
+        (sp_12, exp_sp_12),
+        (sp_21, exp_sp_21),
+        (sp_22, exp_sp_22),
+    ):
+        assert name in xrds_cache.coords
+        np.testing.assert_allclose(xrds_cache.coords[name].values, exp_vals)
 
 
 def test_export_to_xarray_dataset_empty_ds(mock_empty_dataset) -> None:
