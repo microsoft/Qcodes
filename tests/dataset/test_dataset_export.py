@@ -2064,3 +2064,59 @@ def test_measurement_2d_with_inferred_setpoint(
         inf_idx = xr_ds.coords[name].indexes
         assert set(inf_idx.keys()) == {"y"}
         assert inf_idx["y"].equals(xr_ds.indexes["y"])
+
+
+def test_measurement_2d_top_level_inferred_is_data_var(
+    experiment: Experiment, caplog: LogCaptureFixture
+) -> None:
+    """
+    If an inferred parameter is related to the top-level measured parameter,
+    it must be exported as a data variable (not a coordinate) with the full
+    dependency dimensions.
+    """
+    nx, ny = 2, 3
+    x_vals = np.linspace(0.0, 1.0, nx)
+    y_vals = np.linspace(10.0, 12.0, ny)
+
+    # Define a measured signal and an inferred param both defined on (x, y)
+    # The inferred param is related to the measured top-level param in the graph
+    meas = Measurement(exp=experiment, name="2d_top_level_inferred")
+    meas.register_custom_parameter("x", paramtype="numeric")
+    meas.register_custom_parameter("y", paramtype="numeric")
+    # Register measured top-level
+    meas.register_custom_parameter("signal", setpoints=("x", "y"), paramtype="numeric")
+    # Register inferred related to top-level (basis includes the measured top-level)
+    meas.register_custom_parameter("derived", basis=("signal",), paramtype="numeric")
+    meas.set_shapes({"signal": (nx, ny)})
+
+    with meas.run() as datasaver:
+        for ix in range(nx):
+            for iy in range(ny):
+                x = float(x_vals[ix])
+                y = float(y_vals[iy])
+                signal = x + y
+                derived = 2.0 * signal  # inferred from top-level
+                datasaver.add_result(
+                    ("x", x), ("y", y), ("signal", signal), ("derived", derived)
+                )
+
+    ds = datasaver.dataset
+    caplog.clear()
+    with caplog.at_level(logging.INFO):
+        xr_ds = ds.to_xarray_dataset()
+
+    # Direct path log should be present
+    assert any(
+        "Exporting signal to xarray using direct method" in record.message
+        for record in caplog.records
+    )
+
+    # The derived param should be a data variable with dims (x, y), not a coord
+    assert "derived" in xr_ds.data_vars
+    assert "derived" not in xr_ds.coords
+    assert xr_ds["derived"].dims == ("x", "y")
+
+    expected_signal = x_vals[:, None] + y_vals[None, :]
+    expected_derived = 2.0 * expected_signal
+    np.testing.assert_allclose(xr_ds["signal"].values, expected_signal)
+    np.testing.assert_allclose(xr_ds["derived"].values, expected_derived)
