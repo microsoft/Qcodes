@@ -162,20 +162,63 @@ def _xarray_data_array_direct(
     import xarray as xr
 
     meas_paramspec = dataset.description.interdeps.graph.nodes[name]["value"]
-    _, deps, _ = dataset.description.interdeps.all_parameters_in_tree_by_group(
+    _, deps, inferred = dataset.description.interdeps.all_parameters_in_tree_by_group(
         meas_paramspec
     )
-    dep_axis = {}
+    # Build coordinate axes from direct dependencies preserving their order
+    dep_axis: dict[str, npt.NDArray] = {}
     for axis, dep in enumerate(deps):
         dep_array = subdict[dep.name]
         dep_axis[dep.name] = dep_array[
             tuple(slice(None) if i == axis else 0 for i in range(dep_array.ndim))
         ]
 
-    da = xr.Dataset(
-        {name: (tuple(dep_axis.keys()), subdict[name])},
-        coords=dep_axis,
-    )[name]
+    extra_coords: dict[str, tuple[tuple[str, ...], npt.NDArray]] = {}
+    extra_data_vars: dict[str, tuple[tuple[str, ...], npt.NDArray]] = {}
+    for inf in inferred:
+        # skip parameters already used as primary coordinate axes
+        if inf.name in dep_axis:
+            continue
+        # add only if data for this parameter is available
+        if inf.name not in subdict:
+            continue
+
+        inf_related = dataset.description.interdeps.find_all_parameters_in_tree(inf)
+
+        related_deps = inf_related.intersection(set(deps))
+        related_top_level = inf_related.intersection({meas_paramspec})
+
+        if len(related_top_level) > 0:
+            # If inferred param is related to the top-level measurement parameter,
+            # add it as a data variable with the full dependency dimensions
+            inf_data_full = subdict[inf.name]
+            inf_dims_full = tuple(dep_axis.keys())
+            extra_data_vars[inf.name] = (inf_dims_full, inf_data_full)
+        else:
+            # Otherwise, add as a coordinate along the related dependency axes only
+            inf_data = subdict[inf.name][
+                tuple(slice(None) if dep in related_deps else 0 for dep in deps)
+            ]
+            inf_coords = [dep.name for dep in deps if dep in related_deps]
+
+            extra_coords[inf.name] = (tuple(inf_coords), inf_data)
+
+    # Compose coordinates dict including dependency axes and extra inferred coords
+    coords: dict[str, tuple[tuple[str, ...], npt.NDArray] | npt.NDArray]
+    coords = {**dep_axis, **extra_coords}
+
+    # Compose data variables dict including measured var and any inferred data vars
+    data_vars: dict[str, tuple[tuple[str, ...], npt.NDArray]] = {
+        name: (tuple(dep_axis.keys()), subdict[name])
+    }
+    data_vars.update(extra_data_vars)
+
+    ds = xr.Dataset(data_vars, coords=coords)
+    da = ds[name]
+    if len(extra_data_vars) > 0:
+        # stash extra data vars to be added at dataset assembly time
+        # mapping: var_name -> (dims_tuple, numpy array)
+        da.attrs["_qcodes_extra_data_vars"] = extra_data_vars
     return da
 
 
@@ -249,6 +292,13 @@ def load_to_xarray_dataset(
     # Casting Hashable for the key type until python/mypy#1114
     # and python/typing#445 are resolved.
     xrdataset = xr.Dataset(cast("dict[Hashable, xr.DataArray]", data_xrdarray_dict))
+
+    # add any stashed extra data variables created during direct export
+    for _, dataarray in data_xrdarray_dict.items():
+        extras = dataarray.attrs.pop("_qcodes_extra_data_vars", None)
+        if isinstance(extras, dict):
+            for var_name, (dims, values) in extras.items():
+                xrdataset[var_name] = (dims, values)
 
     _add_param_spec_to_xarray_coords(dataset, xrdataset)
     _add_param_spec_to_xarray_data_vars(dataset, xrdataset)

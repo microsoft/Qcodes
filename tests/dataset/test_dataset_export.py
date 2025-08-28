@@ -1599,3 +1599,275 @@ def test_dond_hypothesis_nd_grid(
         expected_signal += weights[i] * grid.astype(float)
 
     np.testing.assert_allclose(xr_ds["signal"].values, expected_signal)
+
+
+@given(data=hst.data())
+@settings(
+    max_examples=10,
+    suppress_health_check=(HealthCheck.function_scoped_fixture,),
+    deadline=None,
+)
+def test_measurement_hypothesis_nd_grid_with_inferred_param(
+    data: hst.DataObject, experiment: Experiment, caplog: LogCaptureFixture
+) -> None:
+    """
+    Randomized ND sweep using Measurement context manager with an inferred parameter:
+    - Draw N in [2, 4]
+    - For each dimension i, draw number of points n_i in [1, 5]
+    - Sweep each ManualParameter over a linspace of length n_i
+    - Choose m in [1, N-1] and a subset of m swept parameters for an inferred coord
+    - Register an inferred parameter depending on that subset and add its values
+    - Measure a deterministic function of the setpoints
+    - Assert xarray dims, coords (including inferred), and data match expectation
+    """
+    # number of dimensions and points per dimension
+    n_dims = data.draw(hst.integers(min_value=2, max_value=4), label="n_dims")
+    points_per_dim = [
+        data.draw(hst.integers(min_value=1, max_value=5), label=f"n_points_dim_{i}")
+        for i in range(n_dims)
+    ]
+
+    # build setpoint arrays and names
+    sp_names = [f"x{i}" for i in range(n_dims)]
+    sp_values: list[np.ndarray] = [
+        np.linspace(0.0, float(npts - 1), npts) for npts in points_per_dim
+    ]
+
+    # choose subset for inferred parameter (strict subset)
+    m = data.draw(hst.integers(min_value=1, max_value=n_dims - 1), label="m")
+    inf_indices = sorted(
+        data.draw(
+            hst.lists(
+                hst.integers(min_value=0, max_value=n_dims - 1),
+                min_size=m,
+                max_size=m,
+                unique=True,
+            ),
+            label="inf_indices",
+        )
+    )
+    inf_sp_names = [sp_names[i] for i in inf_indices]
+
+    # weights for measured signal
+    weights = [(i + 1) for i in range(n_dims)]
+
+    # Setup measurement with shapes so xarray direct path is used
+    meas = Measurement(exp=experiment, name="nd_grid_with_inferred")
+    # register setpoints
+    for name in sp_names:
+        meas.register_custom_parameter(name, paramtype="numeric")
+    # register inferred parameter (from subset of setpoints)
+    meas.register_custom_parameter(
+        "inf", basis=tuple(inf_sp_names), paramtype="numeric"
+    )
+    # register measured parameter depending on all setpoints
+    meas.register_custom_parameter(
+        "signal", setpoints=tuple(sp_names), paramtype="numeric"
+    )
+    meas.set_shapes({"signal": tuple(points_per_dim)})
+
+    # run measurement over full grid
+    with meas.run() as datasaver:
+        # iterate over grid indices
+        for idx in np.ndindex(*points_per_dim):
+            # collect setpoint values for this point
+            sp_items: list[tuple[str, float]] = [
+                (sp_names[k], float(sp_values[k][idx[k]])) for k in range(n_dims)
+            ]
+            # measured signal: weighted sum of all setpoints
+            signal_val = float(
+                sum(weights[k] * float(sp_values[k][idx[k]]) for k in range(n_dims))
+            )
+            # inferred value: sum over selected subset of setpoints
+            inf_val = float(sum(float(sp_values[k][idx[k]]) for k in inf_indices))
+            results: list[tuple[str, float]] = [
+                *sp_items,
+                ("inf", inf_val),
+                ("signal", signal_val),
+            ]
+            datasaver.add_result(*results)
+
+    ds = datasaver.dataset
+
+    # export to xarray and ensure direct path used
+    caplog.clear()
+    with caplog.at_level(logging.INFO):
+        xr_ds = ds.to_xarray_dataset()
+
+    assert any(
+        "Exporting signal to xarray using direct method" in record.message
+        for record in caplog.records
+    )
+
+    # Expected sizes per coordinate (all setpoints)
+    expected_sizes = {name: len(vals) for name, vals in zip(sp_names, sp_values)}
+    assert xr_ds.sizes == expected_sizes
+
+    # Check setpoint coords contents and order
+    for name, vals in zip(sp_names, sp_values):
+        assert name in xr_ds.coords
+        np.testing.assert_allclose(xr_ds.coords[name].values, vals)
+
+    # Measured data dims and values
+    assert "signal" in xr_ds.data_vars
+    assert xr_ds["signal"].dims == tuple(sp_names)
+
+    grids_all = np.meshgrid(*sp_values, indexing="ij")
+    expected_signal = np.zeros(tuple(points_per_dim), dtype=float)
+    for i, grid in enumerate(grids_all):
+        expected_signal += weights[i] * grid.astype(float)
+    np.testing.assert_allclose(xr_ds["signal"].values, expected_signal)
+
+    # Inferred coord should be present with dims equal to the subset order
+    assert "inf" in xr_ds.coords
+    expected_inf_dims = tuple(inf_sp_names)
+    assert xr_ds.coords["inf"].dims == expected_inf_dims
+
+    # Build expected inferred grid based only on the subset dims
+    subset_values = [sp_values[i] for i in inf_indices]
+    grids_subset = np.meshgrid(*subset_values, indexing="ij") if subset_values else []
+    expected_inf = np.zeros(tuple(points_per_dim[i] for i in inf_indices), dtype=float)
+    for grid in grids_subset:
+        expected_inf += grid.astype(float)
+    np.testing.assert_allclose(xr_ds.coords["inf"].values, expected_inf)
+
+    # The indexes of the inferred coord must correspond to the axes it depends on
+    # i.e., keys should match the inferred-from setpoint names, and each index equal
+    # to the dataset's index for that dimension
+    inf_indexes = xr_ds.coords["inf"].indexes
+    assert set(inf_indexes.keys()) == set(inf_sp_names)
+    for dim in inf_sp_names:
+        assert inf_indexes[dim].equals(xr_ds.indexes[dim])
+
+
+def test_measurement_2d_with_inferred_setpoint(
+    experiment: Experiment, caplog: LogCaptureFixture
+) -> None:
+    """
+    Sweep two parameters (x, y) where y is inferred from one or more basis parameters.
+    Verify that xarray export uses direct method, signal dims match, and basis
+    parameters appear as inferred coordinates with indexes corresponding to y.
+    """
+    # Grid sizes
+    nx, ny = 3, 4
+    x_vals = np.linspace(0.0, 2.0, nx)
+    # Define basis parameters for y and compute y from these
+    y_b0_vals = np.linspace(10.0, 13.0, ny)
+    y_b1_vals = np.linspace(-1.0, 2.0, ny)
+    # y is inferred from (y_b0, y_b1)
+    y_vals = y_b0_vals + 2.0 * y_b1_vals
+
+    meas = Measurement(exp=experiment, name="2d_with_inferred_setpoint")
+    # Register setpoint x
+    meas.register_custom_parameter("x", paramtype="numeric")
+    # Register basis params for y
+    meas.register_custom_parameter("y_b0", paramtype="numeric")
+    meas.register_custom_parameter("y_b1", paramtype="numeric")
+    # Register y as setpoint inferred from basis
+    meas.register_custom_parameter("y", basis=("y_b0", "y_b1"), paramtype="numeric")
+    # Register measured parameter depending on (x, y)
+    meas.register_custom_parameter("signal", setpoints=("x", "y"), paramtype="numeric")
+    meas.set_shapes({"signal": (nx, ny)})
+
+    with meas.run() as datasaver:
+        for ix in range(nx):
+            for iy in range(ny):
+                x = float(x_vals[ix])
+                y_b0 = float(y_b0_vals[iy])
+                y_b1 = float(y_b1_vals[iy])
+                y = float(y_vals[iy])
+                signal = x + 3.0 * y  # deterministic function
+                datasaver.add_result(
+                    ("x", x),
+                    ("y_b0", y_b0),
+                    ("y_b1", y_b1),
+                    ("y", y),
+                    ("signal", signal),
+                )
+
+    ds = datasaver.dataset
+
+    caplog.clear()
+    with caplog.at_level(logging.INFO):
+        xr_ds = ds.to_xarray_dataset()
+
+    assert any(
+        "Exporting signal to xarray using direct method" in record.message
+        for record in caplog.records
+    )
+
+    # Sizes and coords
+    assert xr_ds.sizes == {"x": nx, "y": ny}
+    np.testing.assert_allclose(xr_ds.coords["x"].values, x_vals)
+    np.testing.assert_allclose(xr_ds.coords["y"].values, y_vals)
+
+    # Signal dims and values
+    assert xr_ds["signal"].dims == ("x", "y")
+    expected_signal = x_vals[:, None] + 3.0 * y_vals[None, :]
+    np.testing.assert_allclose(xr_ds["signal"].values, expected_signal)
+
+    # Inferred coords for y_b0 and y_b1 exist with dims only along y
+    for name, vals in ("y_b0", y_b0_vals), ("y_b1", y_b1_vals):
+        assert name in xr_ds.coords
+        assert xr_ds.coords[name].dims == ("y",)
+        np.testing.assert_allclose(xr_ds.coords[name].values, vals)
+        # Indexes of inferred coords should correspond to the y axis index
+        inf_idx = xr_ds.coords[name].indexes
+        assert set(inf_idx.keys()) == {"y"}
+        assert inf_idx["y"].equals(xr_ds.indexes["y"])
+
+
+def test_measurement_2d_top_level_inferred_is_data_var(
+    experiment: Experiment, caplog: LogCaptureFixture
+) -> None:
+    """
+    If an inferred parameter is related to the top-level measured parameter,
+    it must be exported as a data variable (not a coordinate) with the full
+    dependency dimensions.
+    """
+    nx, ny = 2, 3
+    x_vals = np.linspace(0.0, 1.0, nx)
+    y_vals = np.linspace(10.0, 12.0, ny)
+
+    # Define a measured signal and an inferred param both defined on (x, y)
+    # The inferred param is related to the measured top-level param in the graph
+    meas = Measurement(exp=experiment, name="2d_top_level_inferred")
+    meas.register_custom_parameter("x", paramtype="numeric")
+    meas.register_custom_parameter("y", paramtype="numeric")
+    # Register measured top-level
+    meas.register_custom_parameter("signal", setpoints=("x", "y"), paramtype="numeric")
+    # Register inferred related to top-level (basis includes the measured top-level)
+    meas.register_custom_parameter("derived", basis=("signal",), paramtype="numeric")
+    meas.set_shapes({"signal": (nx, ny)})
+
+    with meas.run() as datasaver:
+        for ix in range(nx):
+            for iy in range(ny):
+                x = float(x_vals[ix])
+                y = float(y_vals[iy])
+                signal = x + y
+                derived = 2.0 * signal  # inferred from top-level
+                datasaver.add_result(
+                    ("x", x), ("y", y), ("signal", signal), ("derived", derived)
+                )
+
+    ds = datasaver.dataset
+    caplog.clear()
+    with caplog.at_level(logging.INFO):
+        xr_ds = ds.to_xarray_dataset()
+
+    # Direct path log should be present
+    assert any(
+        "Exporting signal to xarray using direct method" in record.message
+        for record in caplog.records
+    )
+
+    # The derived param should be a data variable with dims (x, y), not a coord
+    assert "derived" in xr_ds.data_vars
+    assert "derived" not in xr_ds.coords
+    assert xr_ds["derived"].dims == ("x", "y")
+
+    expected_signal = x_vals[:, None] + y_vals[None, :]
+    expected_derived = 2.0 * expected_signal
+    np.testing.assert_allclose(xr_ds["signal"].values, expected_signal)
+    np.testing.assert_allclose(xr_ds["derived"].values, expected_derived)
