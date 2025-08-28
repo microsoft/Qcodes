@@ -1987,3 +1987,80 @@ def test_measurement_hypothesis_nd_grid_with_inferred_param(
     assert set(inf_indexes.keys()) == set(inf_sp_names)
     for dim in inf_sp_names:
         assert inf_indexes[dim].equals(xr_ds.indexes[dim])
+
+
+def test_measurement_2d_with_inferred_setpoint(
+    experiment: Experiment, caplog: LogCaptureFixture
+) -> None:
+    """
+    Sweep two parameters (x, y) where y is inferred from one or more basis parameters.
+    Verify that xarray export uses direct method, signal dims match, and basis
+    parameters appear as inferred coordinates with indexes corresponding to y.
+    """
+    # Grid sizes
+    nx, ny = 3, 4
+    x_vals = np.linspace(0.0, 2.0, nx)
+    # Define basis parameters for y and compute y from these
+    y_b0_vals = np.linspace(10.0, 13.0, ny)
+    y_b1_vals = np.linspace(-1.0, 2.0, ny)
+    # y is inferred from (y_b0, y_b1)
+    y_vals = y_b0_vals + 2.0 * y_b1_vals
+
+    meas = Measurement(exp=experiment, name="2d_with_inferred_setpoint")
+    # Register setpoint x
+    meas.register_custom_parameter("x", paramtype="numeric")
+    # Register basis params for y
+    meas.register_custom_parameter("y_b0", paramtype="numeric")
+    meas.register_custom_parameter("y_b1", paramtype="numeric")
+    # Register y as setpoint inferred from basis
+    meas.register_custom_parameter("y", basis=("y_b0", "y_b1"), paramtype="numeric")
+    # Register measured parameter depending on (x, y)
+    meas.register_custom_parameter("signal", setpoints=("x", "y"), paramtype="numeric")
+    meas.set_shapes({"signal": (nx, ny)})
+
+    with meas.run() as datasaver:
+        for ix in range(nx):
+            for iy in range(ny):
+                x = float(x_vals[ix])
+                y_b0 = float(y_b0_vals[iy])
+                y_b1 = float(y_b1_vals[iy])
+                y = float(y_vals[iy])
+                signal = x + 3.0 * y  # deterministic function
+                datasaver.add_result(
+                    ("x", x),
+                    ("y_b0", y_b0),
+                    ("y_b1", y_b1),
+                    ("y", y),
+                    ("signal", signal),
+                )
+
+    ds = datasaver.dataset
+
+    caplog.clear()
+    with caplog.at_level(logging.INFO):
+        xr_ds = ds.to_xarray_dataset()
+
+    assert any(
+        "Exporting signal to xarray using direct method" in record.message
+        for record in caplog.records
+    )
+
+    # Sizes and coords
+    assert xr_ds.sizes == {"x": nx, "y": ny}
+    np.testing.assert_allclose(xr_ds.coords["x"].values, x_vals)
+    np.testing.assert_allclose(xr_ds.coords["y"].values, y_vals)
+
+    # Signal dims and values
+    assert xr_ds["signal"].dims == ("x", "y")
+    expected_signal = x_vals[:, None] + 3.0 * y_vals[None, :]
+    np.testing.assert_allclose(xr_ds["signal"].values, expected_signal)
+
+    # Inferred coords for y_b0 and y_b1 exist with dims only along y
+    for name, vals in ("y_b0", y_b0_vals), ("y_b1", y_b1_vals):
+        assert name in xr_ds.coords
+        assert xr_ds.coords[name].dims == ("y",)
+        np.testing.assert_allclose(xr_ds.coords[name].values, vals)
+        # Indexes of inferred coords should correspond to the y axis index
+        inf_idx = xr_ds.coords[name].indexes
+        assert set(inf_idx.keys()) == {"y"}
+        assert inf_idx["y"].equals(xr_ds.indexes["y"])
