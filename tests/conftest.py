@@ -15,10 +15,10 @@ import qcodes as qc
 from qcodes.configuration import Config
 from qcodes.dataset import initialise_database, new_data_set
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.experiment_container import Experiment, new_experiment
 from qcodes.instrument import Instrument
 from qcodes.monitor.monitor import Monitor
+from qcodes.parameters import ParamSpecBase
 from qcodes.station import Station
 
 settings.register_profile("ci", deadline=1000)

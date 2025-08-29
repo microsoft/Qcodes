@@ -15,9 +15,9 @@ from .sweep_values import SweepFixedValues
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from qcodes.dataset.descriptions.param_spec import ParamSpecBase
     from qcodes.instrument import InstrumentBase
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
+    from qcodes.parameters import ParamSpecBase
     from qcodes.validators import Validator
 
 

@@ -8,9 +8,8 @@ from hypothesis import HealthCheck, given, settings
 
 from qcodes.dataset import load_by_id, new_data_set
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.measurements import DataSaver, Measurement
-from qcodes.parameters import ManualParameter, Parameter
+from qcodes.parameters import ManualParameter, Parameter, ParamSpecBase
 from qcodes.validators import Strings
 
 

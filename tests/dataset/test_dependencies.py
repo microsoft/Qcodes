@@ -9,9 +9,10 @@ from qcodes.dataset.descriptions.dependencies import (
     IncompleteSubsetError,
     InterDependencies_,
 )
-from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
+from qcodes.dataset.descriptions.param_spec import ParamSpec
 from qcodes.dataset.descriptions.versioning.converters import new_to_old, old_to_new
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
+from qcodes.parameters import ParamSpecBase
 from tests.common import error_caused_by
 
 

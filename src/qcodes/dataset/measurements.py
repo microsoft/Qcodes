@@ -40,7 +40,7 @@ from qcodes.dataset.descriptions.dependencies import (
     InterDependencies_,
     ParamSpecTree,
 )
-from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
+from qcodes.dataset.descriptions.param_spec import ParamSpec
 from qcodes.dataset.export_config import get_data_export_automatic
 from qcodes.parameters import (
     ArrayParameter,
@@ -50,6 +50,7 @@ from qcodes.parameters import (
     Parameter,
     ParameterBase,
     ParameterWithSetpoints,
+    ParamSpecBase,
 )
 from qcodes.station import Station
 from qcodes.utils import DelayedKeyboardInterrupt

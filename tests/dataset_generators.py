@@ -1,7 +1,7 @@
 import numpy as np
 
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+from qcodes.parameters import ParamSpecBase
 
 
 def dataset_with_outliers_generator(

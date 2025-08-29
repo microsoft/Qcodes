@@ -17,7 +17,6 @@ from pytest import LogCaptureFixture
 import qcodes.dataset.descriptions.versioning.serialization as serial
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.experiment_container import load_or_create_experiment
 from qcodes.dataset.guids import generate_guid
@@ -29,6 +28,7 @@ from qcodes.dataset.sqlite import queries as mut_queries
 from qcodes.dataset.sqlite import query_helpers as mut_help
 from qcodes.dataset.sqlite.connection import atomic_transaction, path_to_dbfile
 from qcodes.dataset.sqlite.database import get_DB_location
+from qcodes.parameters import ParamSpecBase
 from tests.common import error_caused_by
 
 from .helper_functions import verify_data_dict

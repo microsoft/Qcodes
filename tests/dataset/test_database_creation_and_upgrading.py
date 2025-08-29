@@ -23,7 +23,6 @@ from qcodes.dataset import (
 )
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.guids import parse_guid
 from qcodes.dataset.measurements import Measurement
@@ -49,7 +48,7 @@ from qcodes.dataset.sqlite.query_helpers import (
     is_column_in_table,
     one,
 )
-from qcodes.parameters import Parameter
+from qcodes.parameters import Parameter, ParamSpecBase
 from tests.common import error_caused_by, skip_if_no_fixtures
 from tests.dataset.conftest import temporarily_copied_DB
 

@@ -11,8 +11,8 @@ from typing import TYPE_CHECKING, Any, ClassVar, overload
 
 import numpy as np
 
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.metadatable import Metadatable, MetadatableWithName
+from qcodes.parameters import ParamSpecBase
 from qcodes.utils import DelegateAttributes, full_class, qcodes_abstractmethod
 from qcodes.validators import (
     Arrays,

@@ -6,9 +6,8 @@ import pytest
 
 from qcodes.dataset import new_data_set
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.measurements import DataSaver
-from qcodes.parameters import ManualParameter
+from qcodes.parameters import ManualParameter, ParamSpecBase
 from qcodes.validators import Strings
 
 if TYPE_CHECKING:
