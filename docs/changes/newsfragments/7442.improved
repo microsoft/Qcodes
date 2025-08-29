@@ -1,0 +1,2 @@
+Exporting datasets to XArray no longer warns if two or more variables have setpoints of the same name but with different values.
+XArray automatically takes care of creating coordinates with names postfixed by `_n` to disambiguate these.
