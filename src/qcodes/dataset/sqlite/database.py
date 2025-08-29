@@ -303,7 +303,9 @@ def initialised_database_at(db_file_with_abs_path: str | Path) -> Iterator[None]
 
 
 def conn_from_dbpath_or_conn(
-    conn: AtomicConnection | None, path_to_db: str | Path | None
+    conn: AtomicConnection | None,
+    path_to_db: str | Path | None,
+    read_only: bool = False,
 ) -> AtomicConnection:
     """
     A small helper function to abstract the logic needed for functions
@@ -314,6 +316,8 @@ def conn_from_dbpath_or_conn(
     Args:
         conn: A AtomicConnection object pointing to a sqlite database
         path_to_db: The path to a db file.
+        read_only: whether to open the connection in read-only mode.
+            Only takes effect if `conn` is not given.
 
     Returns:
         A `AtomicConnection` object
@@ -328,7 +332,7 @@ def conn_from_dbpath_or_conn(
         path_to_db = get_DB_location()
 
     if conn is None and path_to_db is not None:
-        conn = connect(path_to_db, get_DB_debug())
+        conn = connect(path_to_db, get_DB_debug(), read_only=read_only)
     elif conn is not None:
         pass
     else:
