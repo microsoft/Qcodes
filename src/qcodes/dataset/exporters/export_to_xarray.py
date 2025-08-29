@@ -14,7 +14,6 @@ from ..descriptions.versioning import serialization as serial
 from .export_to_pandas import (
     _data_to_dataframe,
     _generate_pandas_index,
-    _same_setpoints,
 )
 
 if TYPE_CHECKING:
@@ -233,14 +232,6 @@ def load_to_xarray_dataset(
     use_multi_index: Literal["auto", "always", "never"] = "auto",
 ) -> xr.Dataset:
     import xarray as xr
-
-    if not _same_setpoints(data):
-        warnings.warn(
-            "Independent parameter setpoints are not equal. "
-            "Check concatenated output carefully. Please "
-            "consider using `to_xarray_dataarray_dict` to export each "
-            "independent parameter to its own datarray."
-        )
 
     data_xrdarray_dict = _load_to_xarray_dataarray_dict_no_metadata(
         dataset, data, use_multi_index=use_multi_index
