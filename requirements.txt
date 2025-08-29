@@ -455,7 +455,7 @@ traitlets==5.14.3
     #   nbsphinx
 types-jsonschema==4.25.1.20250822
     # via qcodes (pyproject.toml)
-types-networkx==3.5.0.20250812
+types-networkx==3.5.0.20250829
     # via qcodes (pyproject.toml)
 types-pytz==2025.2.0.20250809
     # via pandas-stubs
