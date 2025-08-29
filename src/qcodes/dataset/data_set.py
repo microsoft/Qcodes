@@ -260,7 +260,7 @@ class DataSet(BaseDataSet):
             # raise valueerror here because if no run id, a new dataset will be created
             # and it will be written to the database
             raise ValueError(
-                "Cannot open database in read-only mode without a run_id provided"
+                "Cannot instantiate a dataset in read-only mode without a run_id provided"
                 " since a new dataset will be created."
             )
         self.conn = conn_from_dbpath_or_conn(conn, path_to_db, read_only=read_only)
@@ -272,6 +272,7 @@ class DataSet(BaseDataSet):
         self._cache: DataSetCacheWithDBBackend = DataSetCacheWithDBBackend(self)
         self._results: list[dict[str, VALUE]] = []
         self._in_memory_cache = in_memory_cache
+        self._read_only = read_only
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -593,9 +594,10 @@ class DataSet(BaseDataSet):
             metadata: actual metadata
 
         """
+        if self._read_only:
+            raise RuntimeError("Cannot add metadata to a read-only dataset")
 
         self._metadata[tag] = metadata
-
         # `add_data_to_dynamic_columns` is not atomic by itself, hence using `atomic`
         with atomic(self.conn) as conn:
             add_data_to_dynamic_columns(conn, self.run_id, {tag: metadata})
@@ -611,6 +613,8 @@ class DataSet(BaseDataSet):
             overwrite: force overwrite an existing snapshot
 
         """
+        if self._read_only:
+            raise RuntimeError("Cannot add snapshot to a read-only dataset")
         if self.snapshot is None or overwrite:
             with atomic(self.conn) as conn:
                 add_data_to_dynamic_columns(conn, self.run_id, {"snapshot": snapshot})
