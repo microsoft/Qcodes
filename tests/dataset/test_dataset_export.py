@@ -674,7 +674,53 @@ def test_same_setpoint_warning_for_df(
     )
 
     with pytest.warns(UserWarning, match=warning_message):
-        different_setpoint_dataset.to_pandas_dataframe()
+        df = different_setpoint_dataset.to_pandas_dataframe()
+    this_2_7_df = df.loc[df["this_2_7"].notna()]["this_2_7"]
+    # Verify that the index for the filtered Series has the expected 2x7 shape
+    assert isinstance(this_2_7_df.index, pd.MultiIndex)
+
+    # Names of setpoint coords as registered by the MultiParameter
+    # because this dataframe has indexes from two different set of
+    # qcodes setpoints the names are just level_0, level_1
+    sp_21 = "level_0"
+    sp_22 = "level_1"
+
+    # Expected coordinate vectors
+    exp_sp_21 = np.linspace(5, 9, 2)
+    exp_sp_22 = np.linspace(9, 11, 7)
+
+    # Expected shape for the MultiIndex
+    dims = _calculate_index_shape(this_2_7_df.index)
+    assert dims == {sp_21: 2, sp_22: 7}
+
+    # Basic sanity checks on index names and size
+    assert list(this_2_7_df.index.names) == [None, None]
+    assert len(this_2_7_df) == 2 * 7
+
+    # Check that each index level matches expected coordinate values
+    mi_clean_2_7 = this_2_7_df.index.remove_unused_levels()
+    np.testing.assert_allclose(mi_clean_2_7.levels[0].values, exp_sp_21)
+    np.testing.assert_allclose(mi_clean_2_7.levels[1].values, exp_sp_22)
+
+    # Repeat for the other parameter (this_5_3)
+    this_5_3_df = df.loc[df["this_5_3"].notna()]["this_5_3"]
+    assert isinstance(this_5_3_df.index, pd.MultiIndex)
+
+    sp_11 = "level_0"
+    sp_12 = "level_1"
+
+    exp_sp_11 = np.linspace(5, 9, 5)
+    exp_sp_12 = np.linspace(9, 11, 3)
+
+    dims = _calculate_index_shape(this_5_3_df.index)
+    assert dims == {sp_11: 5, sp_12: 3}
+
+    assert list(this_5_3_df.index.names) == [None, None]
+    assert len(this_5_3_df) == 5 * 3
+
+    mi_clean_5_3 = this_5_3_df.index.remove_unused_levels()
+    np.testing.assert_allclose(mi_clean_5_3.levels[0].values, exp_sp_11)
+    np.testing.assert_allclose(mi_clean_5_3.levels[1].values, exp_sp_12)
 
     with pytest.warns(UserWarning, match=warning_message):
         different_setpoint_dataset.cache.to_pandas_dataframe()
