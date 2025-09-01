@@ -4,6 +4,7 @@ import gc
 import os
 import shutil
 import tempfile
+from collections.abc import Generator
 from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
@@ -30,6 +31,9 @@ from qcodes.validators import Arrays, ComplexNumbers, Numbers
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Iterator
+
+    from qcodes.dataset.data_set_protocol import DataSetProtocol
+    from qcodes.dataset.experiment_container import Experiment
 
 
 @pytest.fixture(scope="function", name="non_created_db")
@@ -281,6 +285,39 @@ def different_setpoint_dataset(experiment, request: FixtureRequest):
                 param.get(),
             )
         )
+    try:
+        yield datasaver.dataset
+    finally:
+        assert isinstance(datasaver.dataset, DataSet)
+        datasaver.dataset.conn.close()
+
+
+@pytest.fixture(scope="function")
+def two_params_partial_2d_dataset(
+    experiment: Experiment,
+) -> Generator[DataSetProtocol, None, None]:
+    """
+    Dataset where two numeric parameters are measured as a function of the same
+    two numeric setpoints. The second measured parameter is only measured for
+    every second point in raster order, leaving nulls elsewhere.
+    """
+    meas = Measurement()
+    meas.register_custom_parameter("x", paramtype="numeric")
+    meas.register_custom_parameter("y", paramtype="numeric")
+    meas.register_custom_parameter("m1", paramtype="numeric", setpoints=("x", "y"))
+    meas.register_custom_parameter("m2", paramtype="numeric", setpoints=("x", "y"))
+
+    with meas.run() as datasaver:
+        xs = np.linspace(0.0, 1.0, 5)
+        ys = np.linspace(0.0, 1.0, 4)
+        ny = len(ys)
+        for ix, x in enumerate(xs):
+            for iy, y in enumerate(ys):
+                result = [("x", float(x)), ("y", float(y)), ("m1", float(x + y))]
+                # Measure m2 only on every second point in raster order
+                if (ix * ny + iy) % 2 == 0:
+                    result.append(("m2", float(x - y)))
+                datasaver.add_result(*result)
     try:
         yield datasaver.dataset
     finally:

@@ -729,6 +729,10 @@ def test_same_setpoint_warning_for_df(
 def test_partally_overlapping_setpoint_xarray_export(
     different_setpoint_dataset: DataSetProtocol,
 ) -> None:
+    """
+    Test that a dataset with two MultiParameters with different
+    setpoints can be exported to xarray.Dataset with the correct
+    coordinates and shapes."""
     xrds = different_setpoint_dataset.to_xarray_dataset()
 
     # Expect two data variables from Multi2DSetPointParam2Sizes
@@ -775,6 +779,35 @@ def test_partally_overlapping_setpoint_xarray_export(
     ):
         assert name in xrds_cache.coords
         np.testing.assert_allclose(xrds_cache.coords[name].values, exp_vals)
+
+
+def test_partally_overlapping_setpoint_xarray_export_two_params_partial(
+    two_params_partial_2d_dataset: DataSetProtocol,
+) -> None:
+    """
+    Similar to test_partally_overlapping_setpoint_xarray_export but using the
+    two_params_partial_2d_dataset fixture. Verify that both data variables are
+    present, their dims/coords are consistent. This means that for one parameter
+    missing values are filled with NaNs.
+    """
+    xrds = two_params_partial_2d_dataset.to_xarray_dataset()
+
+    # Expect exactly two data variables
+    assert len(xrds.data_vars) == 2
+
+    expected_size = (5, 4)
+
+    # Each variable should be 2D and have matching coords
+    for _, da in xrds.data_vars.items():
+        assert len(da.dims) == 2
+        for dim, size in zip(da.dims, expected_size):
+            assert dim in xrds.coords
+            assert len(xrds.coords[dim]) == da.sizes[dim]
+            assert da.sizes[dim] == size
+
+    filtered_data = xrds["m2"].dropna(dim="y", how="all").dropna(dim="x", how="all")
+
+    assert filtered_data.shape == (5, 2)
 
 
 def test_export_to_xarray_dataset_empty_ds(mock_empty_dataset) -> None:
