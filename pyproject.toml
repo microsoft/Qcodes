@@ -97,7 +97,7 @@ docs = [
     "sphinx-jsonschema>=1.19.1",
     "furo>=2024.8.6",
     "sphinxcontrib-towncrier>=0.5.0a0",
-    "towncrier>=24.8.0,<25.0.0", #  sphinxcontrib-towncrier is likely to break with new versions
+    "towncrier>=24.8.0,<26.0.0", #  sphinxcontrib-towncrier is likely to break with new versions
     "scipy>=1.10.0", # examples using scipy
     "qcodes_loop>=0.1.1", # legacy dataset import examples
 ]
