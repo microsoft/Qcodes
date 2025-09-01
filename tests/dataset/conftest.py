@@ -271,12 +271,15 @@ def multi_dataset(experiment, request: FixtureRequest):
         datasaver.dataset.conn.close()
 
 
-@pytest.fixture(scope="function", params=["array"])
+@pytest.fixture(scope="function", params=[True, False])
 def different_setpoint_dataset(experiment, request: FixtureRequest):
     meas = Measurement()
     param = Multi2DSetPointParam2Sizes()
 
-    meas.register_parameter(param, paramtype=request.param)
+    meas.register_parameter(param, paramtype="array")
+
+    if request.param is True:
+        meas.set_shapes({"this_5_3": (5, 3), "this_2_7": (2, 7)})
 
     with meas.run() as datasaver:
         datasaver.add_result(
@@ -292,8 +295,9 @@ def different_setpoint_dataset(experiment, request: FixtureRequest):
         datasaver.dataset.conn.close()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="function", params=[True, False])
 def two_params_partial_2d_dataset(
+    request: FixtureRequest,
     experiment: Experiment,
 ) -> Generator[DataSetProtocol, None, None]:
     """
@@ -306,6 +310,9 @@ def two_params_partial_2d_dataset(
     meas.register_custom_parameter("y", paramtype="numeric")
     meas.register_custom_parameter("m1", paramtype="numeric", setpoints=("x", "y"))
     meas.register_custom_parameter("m2", paramtype="numeric", setpoints=("x", "y"))
+
+    if request.param is True:
+        meas.set_shapes({"m1": (5, 4), "m2": (5, 2)})
 
     with meas.run() as datasaver:
         xs = np.linspace(0.0, 1.0, 5)
