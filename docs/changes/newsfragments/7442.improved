@@ -1,2 +1,4 @@
-Exporting datasets to XArray no longer warns if two or more variables have setpoints of the same name but with different values.
-XArray automatically takes care of creating coordinates with names postfixed by `_n` to disambiguate these.
+Exporting datasets to XArray no longer warns if two or more variables are exported with different setpoints.
+No functionality of the export has changed
+If the setpoints have the same name missing values will be replaced by NaN and if different setpoints
+are used the exporter will automatically handle merging coordinates so each data variable is assigned its own coordinates.
