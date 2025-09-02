@@ -665,7 +665,7 @@ def test_export_from_config_set_name_elements(
     ]
 
 
-def test_same_setpoint_warning_for_df(
+def test_same_setpoint_warning_for_df_two_params_with_different_setpoints(
     different_setpoint_dataset: DataSetProtocol,
 ) -> None:
     warning_message = (
@@ -674,15 +674,97 @@ def test_same_setpoint_warning_for_df(
     )
 
     with pytest.warns(UserWarning, match=warning_message):
-        different_setpoint_dataset.to_pandas_dataframe()
+        df = different_setpoint_dataset.to_pandas_dataframe()
+    this_2_7_df = df.loc[df["this_2_7"].notna()]["this_2_7"]
+    # Verify that the index for the filtered Series has the expected 2x7 shape
+    assert isinstance(this_2_7_df.index, pd.MultiIndex)
 
+    # Names of setpoint coords as registered by the MultiParameter
+    # because this dataframe has indexes from two different set of
+    # qcodes setpoints the names are just level_0, level_1
+    sp_21 = "level_0"
+    sp_22 = "level_1"
+
+    # Expected coordinate vectors
+    exp_sp_21 = np.linspace(5, 9, 2)
+    exp_sp_22 = np.linspace(9, 11, 7)
+
+    # Expected shape for the MultiIndex
+    dims = _calculate_index_shape(this_2_7_df.index)
+    assert dims == {sp_21: 2, sp_22: 7}
+
+    # Basic sanity checks on index names and size
+    assert list(this_2_7_df.index.names) == [None, None]
+    assert len(this_2_7_df) == 2 * 7
+
+    # Check that each index level matches expected coordinate values
+    mi_clean_2_7 = this_2_7_df.index.remove_unused_levels()
+    np.testing.assert_allclose(mi_clean_2_7.levels[0].values, exp_sp_21)
+    np.testing.assert_allclose(mi_clean_2_7.levels[1].values, exp_sp_22)
+
+    # Repeat for the other parameter (this_5_3)
+    this_5_3_df = df.loc[df["this_5_3"].notna()]["this_5_3"]
+    assert isinstance(this_5_3_df.index, pd.MultiIndex)
+
+    sp_11 = "level_0"
+    sp_12 = "level_1"
+
+    exp_sp_11 = np.linspace(5, 9, 5)
+    exp_sp_12 = np.linspace(9, 11, 3)
+
+    dims = _calculate_index_shape(this_5_3_df.index)
+    assert dims == {sp_11: 5, sp_12: 3}
+
+    assert list(this_5_3_df.index.names) == [None, None]
+    assert len(this_5_3_df) == 5 * 3
+
+    mi_clean_5_3 = this_5_3_df.index.remove_unused_levels()
+    np.testing.assert_allclose(mi_clean_5_3.levels[0].values, exp_sp_11)
+    np.testing.assert_allclose(mi_clean_5_3.levels[1].values, exp_sp_12)
+
+
+def test_same_setpoint_warning_for_df_two_params_partial_overlapping_setpoints(
+    two_params_partial_2d_dataset: DataSetProtocol,
+) -> None:
+    warning_message = (
+        "Independent parameter setpoints are not equal. "
+        "Check concatenated output carefully."
+    )
+
+    # Expect a warning since independent parameter setpoints differ
     with pytest.warns(UserWarning, match=warning_message):
-        different_setpoint_dataset.cache.to_pandas_dataframe()
+        df = two_params_partial_2d_dataset.to_pandas_dataframe()
+
+    # Expect two measured columns (m1 and m2)
+    assert "m1" in df.columns
+    assert "m2" in df.columns
+
+    # Dataframe should use a MultiIndex named by the two setpoints
+    assert isinstance(df.index, pd.MultiIndex)
+    assert list(df.index.names) == ["x", "y"]
+
+    # m1 should cover full 5x4 grid
+    m1_series = df.loc[df["m1"].notna(), "m1"]
+    assert isinstance(m1_series.index, pd.MultiIndex)
+    dims_m1 = _calculate_index_shape(m1_series.index)
+    assert dims_m1 == {"x": 5, "y": 4}
+    assert len(m1_series) == 5 * 4
+
+    # m2 should be partial (5x2 points not NaN)
+    m2_series = df.loc[df["m2"].notna(), "m2"]
+    assert isinstance(m2_series.index, pd.MultiIndex)
+    dims_m2 = _calculate_index_shape(m2_series.index)
+    assert dims_m2 == {"x": 5, "y": 2}
+    assert len(m2_series) == 5 * 2
 
 
 def test_partally_overlapping_setpoint_xarray_export(
     different_setpoint_dataset: DataSetProtocol,
 ) -> None:
+    """
+    Test that a dataset with two MultiParameters with different
+    setpoints can be exported to xarray.Dataset with the correct
+    coordinates and shapes."""
     xrds = different_setpoint_dataset.to_xarray_dataset()
 
     # Expect two data variables from Multi2DSetPointParam2Sizes
@@ -729,6 +811,35 @@ def test_partally_overlapping_setpoint_xarray_export(
     ):
         assert name in xrds_cache.coords
         np.testing.assert_allclose(xrds_cache.coords[name].values, exp_vals)
+
+
+def test_partally_overlapping_setpoint_xarray_export_two_params_partial(
+    two_params_partial_2d_dataset: DataSetProtocol,
+) -> None:
+    """
+    Similar to test_partally_overlapping_setpoint_xarray_export but using the
+    two_params_partial_2d_dataset fixture. Verify that both data variables are
+    present, their dims/coords are consistent. This means that for one parameter
+    missing values are filled with NaNs.
+    """
+    xrds = two_params_partial_2d_dataset.to_xarray_dataset()
+
+    # Expect exactly two data variables
+    assert len(xrds.data_vars) == 2
+
+    expected_size = (5, 4)
+
+    # Each variable should be 2D and have matching coords
+    for _, da in xrds.data_vars.items():
+        assert len(da.dims) == 2
+        for dim, size in zip(da.dims, expected_size):
+            assert dim in xrds.coords
+            assert len(xrds.coords[dim]) == da.sizes[dim]
+            assert da.sizes[dim] == size
+
+    filtered_data = xrds["m2"].dropna(dim="y", how="all").dropna(dim="x", how="all")
+
+    assert filtered_data.shape == (5, 2)
 
 
 def test_export_to_xarray_dataset_empty_ds(mock_empty_dataset) -> None:
