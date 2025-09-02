@@ -665,7 +665,7 @@ def test_export_from_config_set_name_elements(
     ]
 
 
-def test_same_setpoint_warning_for_df(
+def test_same_setpoint_warning_for_df_two_params_with_different_setpoints(
     different_setpoint_dataset: DataSetProtocol,
 ) -> None:
     warning_message = (
@@ -723,7 +723,7 @@ def test_same_setpoint_warning_for_df(
     np.testing.assert_allclose(mi_clean_5_3.levels[1].values, exp_sp_12)
 
 
-def test_same_setpoint_no_warning_for_df_two_params_partial(
+def test_same_setpoint_warning_for_df_two_params_partial_overlapping_setpoints(
     two_params_partial_2d_dataset: DataSetProtocol,
 ) -> None:
     warning_message = (
