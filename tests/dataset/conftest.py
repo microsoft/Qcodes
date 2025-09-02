@@ -6,6 +6,7 @@ import shutil
 import tempfile
 from collections.abc import Generator
 from contextlib import contextmanager
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -271,14 +272,22 @@ def multi_dataset(experiment, request: FixtureRequest):
         datasaver.dataset.conn.close()
 
 
-@pytest.fixture(scope="function", params=[True, False])
+class MeasurementOptions(StrEnum):
+    SHAPE_KNOWN = "shape_known"
+    SHAPE_UNKNOWN = "shape_known"
+
+
+@pytest.fixture(
+    scope="function",
+    params=[MeasurementOptions.SHAPE_KNOWN, MeasurementOptions.SHAPE_UNKNOWN],
+)
 def different_setpoint_dataset(experiment, request: FixtureRequest):
     meas = Measurement()
     param = Multi2DSetPointParam2Sizes()
 
     meas.register_parameter(param, paramtype="array")
 
-    if request.param is True:
+    if request.param == MeasurementOptions.SHAPE_KNOWN:
         meas.set_shapes({"this_5_3": (5, 3), "this_2_7": (2, 7)})
 
     with meas.run() as datasaver:
@@ -295,7 +304,10 @@ def different_setpoint_dataset(experiment, request: FixtureRequest):
         datasaver.dataset.conn.close()
 
 
-@pytest.fixture(scope="function", params=[True, False])
+@pytest.fixture(
+    scope="function",
+    params=[MeasurementOptions.SHAPE_KNOWN, MeasurementOptions.SHAPE_UNKNOWN],
+)
 def two_params_partial_2d_dataset(
     request: FixtureRequest,
     experiment: Experiment,
@@ -311,7 +323,7 @@ def two_params_partial_2d_dataset(
     meas.register_custom_parameter("m1", paramtype="numeric", setpoints=("x", "y"))
     meas.register_custom_parameter("m2", paramtype="numeric", setpoints=("x", "y"))
 
-    if request.param is True:
+    if request.param == MeasurementOptions.SHAPE_KNOWN:
         meas.set_shapes({"m1": (5, 4), "m2": (5, 2)})
 
     with meas.run() as datasaver:
