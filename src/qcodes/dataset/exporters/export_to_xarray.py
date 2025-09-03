@@ -6,7 +6,7 @@ from importlib.metadata import version
 from math import prod
 from typing import TYPE_CHECKING, Literal
 
-from packaging import version as pversion
+from packaging import version as p_version
 
 from qcodes.dataset.linked_datasets.links import links_to_str
 
@@ -72,42 +72,42 @@ def _load_to_xarray_dataset_dict_no_metadata(
             f"Invalid value for use_multi_index. Expected one of 'auto', 'always', 'never' but got {use_multi_index}"
         )
 
-    data_xrdarray_dict: dict[str, xr.Dataset] = {}
+    xr_dataset_dict: dict[str, xr.Dataset] = {}
 
-    for name, subdict in datadict.items():
+    for name, sub_dict in datadict.items():
         shape_is_consistent = (
             dataset.description.shapes is not None
             and name in dataset.description.shapes
-            and subdict[name].shape == dataset.description.shapes[name]
+            and sub_dict[name].shape == dataset.description.shapes[name]
         )
 
         if shape_is_consistent and use_multi_index != "always":
             _LOG.info("Exporting %s to xarray using direct method", name)
-            data_xrdarray_dict[name] = _xarray_data_array_direct(dataset, name, subdict)
+            xr_dataset_dict[name] = _xarray_data_array_direct(dataset, name, sub_dict)
         else:
             _LOG.info("Exporting %s to xarray via pandas index", name)
             index = _generate_pandas_index(
-                subdict, dataset.description.interdeps, top_level_param_name=name
+                sub_dict, dataset.description.interdeps, top_level_param_name=name
             )
             index_is_unique = (
                 len(index.unique()) == len(index) if index is not None else False
             )
 
             if index is None:
-                xrdarray: xr.Dataset = _data_to_dataframe(
-                    subdict, index=index
+                xr_dataset: xr.Dataset = _data_to_dataframe(
+                    data=sub_dict, index=index
                 ).to_xarray()
-                data_xrdarray_dict[name] = xrdarray
+                xr_dataset_dict[name] = xr_dataset
             elif index_is_unique:
-                df = _data_to_dataframe(subdict, index)
-                data_xrdarray_dict[name] = _xarray_data_array_from_pandas_multi_index(
+                df = _data_to_dataframe(sub_dict, index)
+                xr_dataset_dict[name] = _xarray_data_array_from_pandas_multi_index(
                     dataset, use_multi_index, name, df, index
                 )
             else:
-                df = _data_to_dataframe(subdict, index)
-                data_xrdarray_dict[name] = df.reset_index().to_xarray()
+                df = _data_to_dataframe(sub_dict, index)
+                xr_dataset_dict[name] = df.reset_index().to_xarray()
 
-    return data_xrdarray_dict
+    return xr_dataset_dict
 
 
 def _xarray_data_array_from_pandas_multi_index(
@@ -142,15 +142,15 @@ def _xarray_data_array_from_pandas_multi_index(
         )
 
         coords = xr.Coordinates.from_pandas_multiindex(df.index, "multi_index")
-        xrdarray = xr.DataArray(df[name], coords=coords).to_dataset(name=name)
+        xr_dataset = xr.DataArray(df[name], coords=coords).to_dataset(name=name)
     else:
-        xrdarray = df.to_xarray()
+        xr_dataset = df.to_xarray()
 
-    return xrdarray
+    return xr_dataset
 
 
 def _xarray_data_array_direct(
-    dataset: DataSetProtocol, name: str, subdict: Mapping[str, npt.NDArray]
+    dataset: DataSetProtocol, name: str, sub_dict: Mapping[str, npt.NDArray]
 ) -> xr.Dataset:
     import xarray as xr
 
@@ -161,7 +161,7 @@ def _xarray_data_array_direct(
     # Build coordinate axes from direct dependencies preserving their order
     dep_axis: dict[str, npt.NDArray] = {}
     for axis, dep in enumerate(deps):
-        dep_array = subdict[dep.name]
+        dep_array = sub_dict[dep.name]
         dep_axis[dep.name] = dep_array[
             tuple(slice(None) if i == axis else 0 for i in range(dep_array.ndim))
         ]
@@ -173,7 +173,7 @@ def _xarray_data_array_direct(
         if inf.name in dep_axis:
             continue
         # add only if data for this parameter is available
-        if inf.name not in subdict:
+        if inf.name not in sub_dict:
             continue
 
         inf_related = dataset.description.interdeps.find_all_parameters_in_tree(inf)
@@ -184,12 +184,12 @@ def _xarray_data_array_direct(
         if len(related_top_level) > 0:
             # If inferred param is related to the top-level measurement parameter,
             # add it as a data variable with the full dependency dimensions
-            inf_data_full = subdict[inf.name]
+            inf_data_full = sub_dict[inf.name]
             inf_dims_full = tuple(dep_axis.keys())
             extra_data_vars[inf.name] = (inf_dims_full, inf_data_full)
         else:
             # Otherwise, add as a coordinate along the related dependency axes only
-            inf_data = subdict[inf.name][
+            inf_data = sub_dict[inf.name][
                 tuple(slice(None) if dep in related_deps else 0 for dep in deps)
             ]
             inf_coords = [dep.name for dep in deps if dep in related_deps]
@@ -202,7 +202,7 @@ def _xarray_data_array_direct(
 
     # Compose data variables dict including measured var and any inferred data vars
     data_vars: dict[str, tuple[tuple[str, ...], npt.NDArray]] = {
-        name: (tuple(dep_axis.keys()), subdict[name])
+        name: (tuple(dep_axis.keys()), sub_dict[name])
     }
     data_vars.update(extra_data_vars)
 
@@ -233,9 +233,9 @@ def load_to_xarray_dataarray_dict(
 
 
 def _add_metadata_to_xarray(
-    dataset: DataSetProtocol, xrdataset: xr.Dataset | xr.DataArray
+    dataset: DataSetProtocol, xr_dataset: xr.Dataset | xr.DataArray
 ) -> None:
-    xrdataset.attrs.update(
+    xr_dataset.attrs.update(
         {
             "ds_name": dataset.name,
             "sample_name": dataset.sample_name,
@@ -252,17 +252,17 @@ def _add_metadata_to_xarray(
         }
     )
     # Use -1 as sentinel value for None timestamps since NetCDF doesn't support None
-    xrdataset.attrs["run_timestamp_raw"] = (
+    xr_dataset.attrs["run_timestamp_raw"] = (
         dataset.run_timestamp_raw if dataset.run_timestamp_raw is not None else -1
     )
-    xrdataset.attrs["completed_timestamp_raw"] = (
+    xr_dataset.attrs["completed_timestamp_raw"] = (
         dataset.completed_timestamp_raw
         if dataset.completed_timestamp_raw is not None
         else -1
     )
     if len(dataset.metadata) > 0:
         for metadata_tag, metadata in dataset.metadata.items():
-            xrdataset.attrs[metadata_tag] = metadata
+            xr_dataset.attrs[metadata_tag] = metadata
 
 
 def load_to_xarray_dataset(
@@ -287,20 +287,20 @@ def load_to_xarray_dataset(
 
 
 def _add_param_spec_to_xarray_coords(
-    dataset: DataSetProtocol, xrdataset: xr.Dataset | xr.DataArray
+    dataset: DataSetProtocol, xr_dataset: xr.Dataset | xr.DataArray
 ) -> None:
-    for coord in xrdataset.coords:
+    for coord in xr_dataset.coords:
         if coord not in ("index", "multi_index"):
             paramspec_dict = _paramspec_dict_with_extras(dataset, str(coord))
-            xrdataset.coords[str(coord)].attrs.update(paramspec_dict.items())
+            xr_dataset.coords[str(coord)].attrs.update(paramspec_dict.items())
 
 
 def _add_param_spec_to_xarray_data_vars(
-    dataset: DataSetProtocol, xrdataset: xr.Dataset
+    dataset: DataSetProtocol, xr_dataset: xr.Dataset
 ) -> None:
-    for data_var in xrdataset.data_vars:
+    for data_var in xr_dataset.data_vars:
         paramspec_dict = _paramspec_dict_with_extras(dataset, str(data_var))
-        xrdataset.data_vars[str(data_var)].attrs.update(paramspec_dict.items())
+        xr_dataset.data_vars[str(data_var)].attrs.update(paramspec_dict.items())
 
 
 def _paramspec_dict_with_extras(
@@ -318,7 +318,7 @@ def _paramspec_dict_with_extras(
 def xarray_to_h5netcdf_with_complex_numbers(
     xarray_dataset: xr.Dataset, file_path: str | Path, compute: bool = True
 ) -> None:
-    import cf_xarray as cfxr
+    import cf_xarray as cf_xr
     from pandas import MultiIndex
 
     has_multi_index = any(
@@ -329,7 +329,7 @@ def xarray_to_h5netcdf_with_complex_numbers(
     if has_multi_index:
         # as of xarray 2023.8.0 there is no native support
         # for multi index so use cf_xarray for that
-        internal_ds = cfxr.coding.encode_multi_index_as_compress(
+        internal_ds = cf_xr.coding.encode_multi_index_as_compress(
             xarray_dataset,
         )
     else:
@@ -343,11 +343,15 @@ def xarray_to_h5netcdf_with_complex_numbers(
     # these are the versions of xarray / h5netcdf respectively required to support complex
     # values without fallback to invalid features. Once these are the min versions supported
     # we can drop the fallback code here including the warning suppression.
-    xarry_too_old = pversion.Version(version("xarray")) < pversion.Version("2024.10.0")
-    h5netcdf_too_old = pversion.Version(version("h5netcdf")) < pversion.Version("1.4.0")
+    xarray_too_old = p_version.Version(version("xarray")) < p_version.Version(
+        "2024.10.0"
+    )
+    h5netcdf_too_old = p_version.Version(version("h5netcdf")) < p_version.Version(
+        "1.4.0"
+    )
 
     allow_invalid_netcdf = dataset_has_complex_vals and (
-        xarry_too_old or h5netcdf_too_old
+        xarray_too_old or h5netcdf_too_old
     )
 
     with warnings.catch_warnings():
