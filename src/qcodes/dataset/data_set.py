@@ -272,7 +272,6 @@ class DataSet(BaseDataSet):
         self._cache: DataSetCacheWithDBBackend = DataSetCacheWithDBBackend(self)
         self._results: list[dict[str, VALUE]] = []
         self._in_memory_cache = in_memory_cache
-        self._read_only = read_only
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -594,8 +593,6 @@ class DataSet(BaseDataSet):
             metadata: actual metadata
 
         """
-        if self._read_only:
-            raise RuntimeError("Cannot add metadata to a read-only dataset")
 
         self._metadata[tag] = metadata
         # `add_data_to_dynamic_columns` is not atomic by itself, hence using `atomic`
@@ -613,8 +610,6 @@ class DataSet(BaseDataSet):
             overwrite: force overwrite an existing snapshot
 
         """
-        if self._read_only:
-            raise RuntimeError("Cannot add snapshot to a read-only dataset")
         if self.snapshot is None or overwrite:
             with atomic(self.conn) as conn:
                 add_data_to_dynamic_columns(conn, self.run_id, {"snapshot": snapshot})
