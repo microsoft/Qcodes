@@ -4,7 +4,7 @@ import logging
 import warnings
 from importlib.metadata import version
 from math import prod
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Literal
 
 from packaging import version as pversion
 
@@ -61,20 +61,18 @@ def _calculate_index_shape(idx: pd.Index | pd.MultiIndex) -> dict[Hashable, int]
     return expanded_shape
 
 
-def _load_to_xarray_dataarray_dict_no_metadata(
+def _load_to_xarray_dataset_dict_no_metadata(
     dataset: DataSetProtocol,
     datadict: Mapping[str, Mapping[str, npt.NDArray]],
     *,
     use_multi_index: Literal["auto", "always", "never"] = "auto",
-) -> dict[str, xr.DataArray]:
-    import xarray as xr
-
+) -> dict[str, xr.Dataset]:
     if use_multi_index not in ("auto", "always", "never"):
         raise ValueError(
             f"Invalid value for use_multi_index. Expected one of 'auto', 'always', 'never' but got {use_multi_index}"
         )
 
-    data_xrdarray_dict: dict[str, xr.DataArray] = {}
+    data_xrdarray_dict: dict[str, xr.Dataset] = {}
 
     for name, subdict in datadict.items():
         shape_is_consistent = (
@@ -96,11 +94,9 @@ def _load_to_xarray_dataarray_dict_no_metadata(
             )
 
             if index is None:
-                xrdarray: xr.DataArray = (
-                    _data_to_dataframe(subdict, index=index)
-                    .to_xarray()
-                    .get(name, xr.DataArray())
-                )
+                xrdarray: xr.Dataset = _data_to_dataframe(
+                    subdict, index=index
+                ).to_xarray()
                 data_xrdarray_dict[name] = xrdarray
             elif index_is_unique:
                 df = _data_to_dataframe(subdict, index)
@@ -109,9 +105,7 @@ def _load_to_xarray_dataarray_dict_no_metadata(
                 )
             else:
                 df = _data_to_dataframe(subdict, index)
-                xrdata_temp = df.reset_index().to_xarray()
-                for _name in subdict:
-                    data_xrdarray_dict[_name] = xrdata_temp[_name]
+                data_xrdarray_dict[name] = df.reset_index().to_xarray()
 
     return data_xrdarray_dict
 
@@ -122,7 +116,7 @@ def _xarray_data_array_from_pandas_multi_index(
     name: str,
     df: pd.DataFrame,
     index: pd.Index | pd.MultiIndex,
-) -> xr.DataArray:
+) -> xr.Dataset:
     import pandas as pd
     import xarray as xr
 
@@ -148,16 +142,16 @@ def _xarray_data_array_from_pandas_multi_index(
         )
 
         coords = xr.Coordinates.from_pandas_multiindex(df.index, "multi_index")
-        xrdarray = xr.DataArray(df[name], coords=coords)
+        xrdarray = xr.DataArray(df[name], coords=coords).to_dataset(name=name)
     else:
-        xrdarray = df.to_xarray().get(name, xr.DataArray())
+        xrdarray = df.to_xarray()
 
     return xrdarray
 
 
 def _xarray_data_array_direct(
     dataset: DataSetProtocol, name: str, subdict: Mapping[str, npt.NDArray]
-) -> xr.DataArray:
+) -> xr.Dataset:
     import xarray as xr
 
     meas_paramspec = dataset.description.interdeps.graph.nodes[name]["value"]
@@ -213,12 +207,7 @@ def _xarray_data_array_direct(
     data_vars.update(extra_data_vars)
 
     ds = xr.Dataset(data_vars, coords=coords)
-    da = ds[name]
-    if len(extra_data_vars) > 0:
-        # stash extra data vars to be added at dataset assembly time
-        # mapping: var_name -> (dims_tuple, numpy array)
-        da.attrs["_qcodes_extra_data_vars"] = extra_data_vars
-    return da
+    return ds
 
 
 def load_to_xarray_dataarray_dict(
@@ -227,17 +216,20 @@ def load_to_xarray_dataarray_dict(
     *,
     use_multi_index: Literal["auto", "always", "never"] = "auto",
 ) -> dict[str, xr.DataArray]:
-    dataarrays = _load_to_xarray_dataarray_dict_no_metadata(
+    xr_datasets = _load_to_xarray_dataset_dict_no_metadata(
         dataset, datadict, use_multi_index=use_multi_index
     )
+    data_arrays: dict[str, xr.DataArray] = {}
 
-    for dataname, dataarray in dataarrays.items():
-        _add_param_spec_to_xarray_coords(dataset, dataarray)
+    for dataname, xr_dataset in xr_datasets.items():
+        data_array = xr_dataset[dataname]
+        _add_param_spec_to_xarray_coords(dataset, data_array)
         paramspec_dict = _paramspec_dict_with_extras(dataset, str(dataname))
-        dataarray.attrs.update(paramspec_dict.items())
-        _add_metadata_to_xarray(dataset, dataarray)
+        data_array.attrs.update(paramspec_dict.items())
+        _add_metadata_to_xarray(dataset, data_array)
+        data_arrays[dataname] = data_array
 
-    return dataarrays
+    return data_arrays
 
 
 def _add_metadata_to_xarray(
@@ -281,26 +273,17 @@ def load_to_xarray_dataset(
 ) -> xr.Dataset:
     import xarray as xr
 
-    data_xrdarray_dict = _load_to_xarray_dataarray_dict_no_metadata(
+    xr_dataset_dict = _load_to_xarray_dataset_dict_no_metadata(
         dataset, data, use_multi_index=use_multi_index
     )
 
-    # Casting Hashable for the key type until python/mypy#1114
-    # and python/typing#445 are resolved.
-    xrdataset = xr.Dataset(cast("dict[Hashable, xr.DataArray]", data_xrdarray_dict))
+    xr_dataset = xr.merge(xr_dataset_dict.values(), compat="equals", join="outer")
 
-    # add any stashed extra data variables created during direct export
-    for _, dataarray in data_xrdarray_dict.items():
-        extras = dataarray.attrs.pop("_qcodes_extra_data_vars", None)
-        if isinstance(extras, dict):
-            for var_name, (dims, values) in extras.items():
-                xrdataset[var_name] = (dims, values)
+    _add_param_spec_to_xarray_coords(dataset, xr_dataset)
+    _add_param_spec_to_xarray_data_vars(dataset, xr_dataset)
+    _add_metadata_to_xarray(dataset, xr_dataset)
 
-    _add_param_spec_to_xarray_coords(dataset, xrdataset)
-    _add_param_spec_to_xarray_data_vars(dataset, xrdataset)
-    _add_metadata_to_xarray(dataset, xrdataset)
-
-    return xrdataset
+    return xr_dataset
 
 
 def _add_param_spec_to_xarray_coords(

@@ -79,7 +79,7 @@ class DataSetCache(Generic[DatasetType_co]):
         Loads data from the database on disk if needed and returns
         the cached data. The cached data is in almost the same format as
         :py:class:`.DataSet.get_parameter_data`. However if a shape is provided
-        as part of the dataset metadata and fewer datapoints than expected are
+        as part of the dataset metadata and fewer data points than expected are
         returned the missing values will be replaced by `NaN` or zeroes
         depending on the datatype.
 
@@ -118,7 +118,7 @@ class DataSetCache(Generic[DatasetType_co]):
 
     def prepare(self) -> None:
         """
-        Set up the internal datastructure of the cache.
+        Set up the internal data structure of the cache.
         Must be called after the dataset has been setup with
         interdependencies but before data is added to the dataset.
         """
@@ -200,9 +200,10 @@ class DataSetCache(Generic[DatasetType_co]):
 
         """
         data = self.data()
-        return load_to_xarray_dataarray_dict(
+        data_dict = load_to_xarray_dataarray_dict(
             self._dataset, data, use_multi_index=use_multi_index
         )
+        return data_dict
 
     def to_xarray_dataset(
         self, *, use_multi_index: Literal["auto", "always", "never"] = "auto"
@@ -503,11 +504,11 @@ class DataSetCacheDeferred(DataSetCacheInMem):
             )
 
     def _load_xr_dataset(self) -> xr.Dataset:
-        import cf_xarray as cfxr
+        import cf_xarray as cf_xr
         import xarray as xr
 
         loaded_data = xr.load_dataset(self._xr_dataset_path, engine="h5netcdf")
-        loaded_data = cfxr.coding.decode_compress_to_multi_index(loaded_data)
+        loaded_data = cf_xr.coding.decode_compress_to_multi_index(loaded_data)
         export_info = ExportInfo.from_str(loaded_data.attrs.get("export_info", ""))
         export_info.export_paths["nc"] = str(self._xr_dataset_path)
         loaded_data.attrs["export_info"] = export_info.to_str()
