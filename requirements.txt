@@ -315,7 +315,7 @@ pytest-cov==6.2.1
     # via qcodes (pyproject.toml)
 pytest-mock==3.14.1
     # via qcodes (pyproject.toml)
-pytest-rerunfailures==15.1
+pytest-rerunfailures==16.0.1
     # via qcodes (pyproject.toml)
 pytest-xdist==3.8.0
     # via qcodes (pyproject.toml)
