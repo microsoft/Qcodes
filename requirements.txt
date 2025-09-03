@@ -85,7 +85,7 @@ fastjsonschema==2.21.2
     # via nbformat
 fonttools==4.59.2
     # via matplotlib
-fsspec==2025.7.0
+fsspec==2025.9.0
     # via dask
 furo==2025.7.19
     # via qcodes (pyproject.toml)
