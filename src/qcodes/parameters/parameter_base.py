@@ -4,6 +4,7 @@ import collections.abc
 import logging
 import time
 import warnings
+from collections.abc import Iterator, MutableSet
 from contextlib import contextmanager
 from datetime import datetime
 from functools import cached_property, wraps
@@ -250,7 +251,7 @@ class ParameterBase(MetadatableWithName):
         self._depends_on: ParameterSet = ParameterSet()
         self._has_control_of: ParameterSet = ParameterSet()
         self._is_controlled_by: ParameterSet = ParameterSet()
-
+        self._param_spec: ParamSpecBase | None = None
         if not isinstance(vals, (Validator, type(None))):
             raise TypeError("vals must be None or a Validator")
         elif val_mapping is not None:
@@ -1162,22 +1163,24 @@ class ParameterBase(MetadatableWithName):
 
     @property
     def param_spec(self) -> ParamSpecBase:
-        match self.vals:
-            case Arrays():
-                paramtype = "array"
-            case Strings():
-                paramtype = "text"
-            case ComplexNumbers():
-                paramtype = "complex"
-            case _:
-                paramtype = "numeric"
+        if self._param_spec is None:
+            match self.vals:
+                case Arrays():
+                    paramtype = "array"
+                case Strings():
+                    paramtype = "text"
+                case ComplexNumbers():
+                    paramtype = "complex"
+                case _:
+                    paramtype = "numeric"
 
-        return ParamSpecBase(
-            name=self.register_name,
-            paramtype=paramtype,
-            label=None,
-            unit=None,
-        )
+            self._param_spec = ParamSpecBase(
+                name=self.register_name,
+                paramtype=paramtype,
+                label=None,
+                unit=None,
+            )
+        return self._param_spec
 
     @property
     def paramtype(self) -> str:
@@ -1185,6 +1188,7 @@ class ParameterBase(MetadatableWithName):
 
     @paramtype.setter
     def paramtype(self, paramtype: str) -> None:
+        paramtype = paramtype.lower()
         if paramtype not in ["array", "text", "complex", "numeric"]:
             raise ValueError(f"{paramtype} is not a valid paramtype")
         if self.paramtype == paramtype:
@@ -1203,9 +1207,10 @@ class ParameterBase(MetadatableWithName):
         if self.vals is None:
             self.vals = new_vals
         elif type(self.vals) is not type(new_vals):
-            raise TypeError(
+            logging.warning(
                 f"Tried to set a new paramtype {paramtype}, but this parameter already has paramtype {self.paramtype} which does not match"
             )
+            self.param_spec.type = paramtype
 
     @property
     def depends_on(self) -> ParameterSet:
@@ -1306,101 +1311,119 @@ class GetLatest(DelegateAttributes):
 
 
 # Does not implement __hash__, not clear it needs to
-class ParameterSet:  # noqa: PLW1641
+class ParameterSet(MutableSet):  # noqa: PLW1641
     """A set-like container that preserves the insertion order of its parameters.
 
     This class implements the common set interface methods while maintaining
     the order in which parameters were first added.
     """
 
-    def __init__(self, parameters=None):
+    def __init__(self, parameters=None) -> None:
         self._dict: dict[ParameterBase, None] = {}
         if parameters is not None:
             for item in parameters:
                 self.add(item)
 
-    def add(self, item):
-        self._dict[item] = None
+    def add(self, value: ParameterBase) -> None:
+        self._dict[value] = None
 
-    def remove(self, item):
-        self._dict.pop(item)
+    def remove(self, value: ParameterBase) -> None:
+        self._dict.pop(value)
 
-    def discard(self, item):
-        if item in self._dict:
-            self._dict.pop(item)
+    def discard(self, value: ParameterBase) -> None:
+        if value in self._dict:
+            self._dict.pop(value)
 
-    def clear(self):
+    def clear(self) -> None:
         self._dict.clear()
 
-    def pop(self):
+    def pop(self) -> ParameterBase:
         if not self._dict:
             raise KeyError("pop from an empty ParameterSet")
         item = next(iter(self._dict))
         self._dict.pop(item)
         return item
 
-    def union(self, other):
+    def union(self, other: ParameterSet) -> ParameterSet:
         result = ParameterSet(self)
         for item in other:
             result.add(item)
         return result
 
-    def intersection(self, other):
+    def intersection(self, other: ParameterSet) -> ParameterSet:
         result = ParameterSet()
         for item in self:
             if item in other:
                 result.add(item)
         return result
 
-    def difference(self, other):
+    def difference(self, other: ParameterSet) -> ParameterSet:
         result = ParameterSet()
         for item in self:
             if item not in other:
                 result.add(item)
         return result
 
-    def issubset(self, other):
+    def issubset(self, other: ParameterSet | set) -> bool:
         return all(item in other for item in self)
 
-    def issuperset(self, other):
+    def issuperset(self, other: ParameterSet | set) -> bool:
         return all(item in self for item in other)
 
-    def update(self, other):
+    def update(self, other: ParameterSet) -> None:
         for item in other:
             self.add(item)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[ParameterBase]:
         return iter(self._dict)
 
-    def __contains__(self, item):
+    def __contains__(self, item: object) -> bool:
         return item in self._dict
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._dict)
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, ParameterSet):
             return set(self._dict) == set(other._dict)
-        elif isinstance(other, set):
-            return set(self._dict) == other
-        return NotImplemented
+        return False
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if not self:
             return f"{self.__class__.__name__}()"
         return f"{self.__class__.__name__}({list(self._dict.keys())})"
 
-    def __or__(self, other):
-        return self.union(other)
+    def __or__(self, other: object) -> ParameterSet:
+        if isinstance(other, ParameterSet):
+            return self.union(other)
+        raise NotImplementedError(
+            f"OR operation is not defined between ParameterSet and {type(other)}"
+        )
 
-    def __and__(self, other):
-        return self.intersection(other)
+    def __and__(self, other: object) -> ParameterSet:
+        if isinstance(other, ParameterSet):
+            return self.intersection(other)
+        raise NotImplementedError(
+            f"AND operation is not defined between ParameterSet and {type(other)}"
+        )
 
-    def __sub__(self, other):
-        return self.difference(other)
+    def __sub__(self, other: object) -> ParameterSet:
+        if isinstance(other, ParameterSet):
+            return self.difference(other)
+        raise NotImplementedError(
+            f"Difference operation is not defined between ParameterSet and {type(other)}"
+        )
 
-    def __le__(self, other):
-        return self.issubset(other)
+    def __le__(self, other: object) -> bool:
+        if isinstance(other, ParameterSet):
+            return self.issubset(other)
+        raise NotImplementedError(
+            f"<= operation is not defined between ParameterSet and {type(other)}"
+        )
 
-    def __ge__(self, other):
-        return self.issuperset(other)
+    def __ge__(self, other: object):
+        if isinstance(other, ParameterSet):
+            return self.issuperset(other)
+        raise NotImplementedError(
+            f">+ operation is not defined between ParameterSet and {type(other)}"
+        )
