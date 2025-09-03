@@ -581,7 +581,7 @@ def test_subscriptions(experiment, DAC, DMM) -> None:
             @retry_until_does_not_throw(
                 exception_class_to_expect=AssertionError, delay=0.5, tries=20
             )
-            def assert_states_updated_from_callbacks():
+            def assert_states_updated_from_callbacks() -> None:
                 assert values_larger_than_7 == values_larger_than_7__expected
                 assert list(all_results_dict.keys()) == [
                     result_index for result_index in range(1, num + 1 + 1)
