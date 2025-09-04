@@ -1188,6 +1188,9 @@ class ParameterBase(MetadatableWithName):
 
     @paramtype.setter
     def paramtype(self, paramtype: str) -> None:
+        self._set_paramtype(paramtype)  # Indirected here, so subclasses can override
+
+    def _set_paramtype(self, paramtype: str) -> None:
         paramtype = paramtype.lower()
         if paramtype not in ["array", "text", "complex", "numeric"]:
             raise ValueError(f"{paramtype} is not a valid paramtype")
@@ -1210,7 +1213,7 @@ class ParameterBase(MetadatableWithName):
             logging.warning(
                 f"Tried to set a new paramtype {paramtype}, but this parameter already has paramtype {self.paramtype} which does not match"
             )
-            self.param_spec.type = paramtype
+        self.param_spec.type = paramtype
 
     @property
     def depends_on(self) -> ParameterSet:

@@ -175,6 +175,11 @@ class ParameterWithSetpoints(Parameter):
         )  # Must come last to preserve original ordering
         return unpacked_results
 
+    def _set_paramtype(self, paramtype: str) -> None:
+        super()._set_paramtype(paramtype)
+        for setpoint in self.setpoints:
+            setpoint.paramtype = paramtype
+
 
 def expand_setpoints_helper(
     parameter: ParameterWithSetpoints, results: ParamDataType | None = None

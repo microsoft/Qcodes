@@ -245,9 +245,18 @@ class DataSaver:
             collections.defaultdict(list)
         )
         for parameter_result in self_unpacked_parameter_results:
-            all_results_dict[
-                self._interdeps._id_to_paramspec[parameter_result[0].register_name]
-            ].append(np.array(parameter_result[1]))
+            try:
+                result_paramspec = self._interdeps._id_to_paramspec[
+                    parameter_result[0].register_name
+                ]
+            except KeyError:
+                raise ValueError(
+                    "Can not add result for parameter "
+                    f"{parameter_result[0].register_name}, "
+                    "no such parameter registered "
+                    "with this measurement."
+                )
+            all_results_dict[result_paramspec].append(np.array(parameter_result[1]))
 
         # Add any unpacked results from legacy Parameter types
         for key, value in legacy_results_dict.items():
@@ -1542,7 +1551,9 @@ def _non_numeric_values_are_equal(
 ) -> bool:
     # For non-numeric values, we can use direct equality
     for value_array in values_arrays:
-        if not np.array_equal(value_array, ref_array):
+        if (ref_array.shape != value_array.shape) or not np.array_equal(
+            value_array, ref_array
+        ):
             return False
     return True
 
@@ -1560,7 +1571,7 @@ def _numeric_values_are_equal(
         ) and _numeric_values_are_equal(np.imag(ref_array), np.imag(values_arrays))
 
     for value_array in values_arrays:
-        if not np.allclose(
+        if (ref_array.shape != value_array.shape) or not np.allclose(
             value_array,
             ref_array,
             atol=0,
