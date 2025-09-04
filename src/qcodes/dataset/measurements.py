@@ -1567,8 +1567,10 @@ def _numeric_values_are_equal(
     # into real and imaginary parts to evaluate equality
     if np.issubdtype(ref_array.dtype, np.complexfloating):
         return _numeric_values_are_equal(
-            np.real(ref_array), np.real(values_arrays)
-        ) and _numeric_values_are_equal(np.imag(ref_array), np.imag(values_arrays))
+            np.real(ref_array), *[np.real(value_array) for value_array in values_arrays]
+        ) and _numeric_values_are_equal(
+            np.imag(ref_array), *[np.imag(value_array) for value_array in values_arrays]
+        )
 
     for value_array in values_arrays:
         if (ref_array.shape != value_array.shape) or not np.allclose(
