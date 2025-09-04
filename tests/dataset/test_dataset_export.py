@@ -2066,6 +2066,63 @@ def test_measurement_2d_with_inferred_setpoint(
         assert inf_idx["y"].equals(xr_ds.indexes["y"])
 
 
+def test_measurement_2d_with_inferred_setpoint_from_setpoint(
+    experiment: Experiment, caplog: LogCaptureFixture
+) -> None:
+    """
+    This is not a good idea but a user can do this
+    """
+    # Grid sizes
+    nx, ny = 3, 4
+    x_vals = np.linspace(0.0, 2.0, nx)
+    y_vals = np.linspace(10.0, 13.0, ny)
+
+    meas = Measurement(exp=experiment, name="2d_with_inferred_setpoint")
+    # Register setpoint x
+    meas.register_custom_parameter("x", paramtype="numeric")
+
+    # Register y as setpoint inferred from basis
+    meas.register_custom_parameter("y", basis=("x"), paramtype="numeric")
+    # Register measured parameter depending on (x, y)
+    meas.register_custom_parameter("signal", setpoints=("x", "y"), paramtype="numeric")
+    meas.set_shapes({"signal": (nx, ny)})
+
+    with meas.run() as datasaver:
+        for ix in range(nx):
+            for iy in range(ny):
+                x = float(x_vals[ix])
+                y = float(y_vals[iy])
+                signal = x + 3.0 * y  # deterministic function
+                datasaver.add_result(
+                    ("x", x),
+                    ("y", y),
+                    ("signal", signal),
+                )
+
+    ds = datasaver.dataset
+
+    caplog.clear()
+    with caplog.at_level(logging.INFO):
+        xr_ds = ds.to_xarray_dataset()
+
+    assert any(
+        "Exporting signal to xarray using direct method" in record.message
+        for record in caplog.records
+    )
+
+    # Sizes and coords
+    assert xr_ds.sizes == {"x": nx, "y": ny}
+    np.testing.assert_allclose(xr_ds.coords["x"].values, x_vals)
+    np.testing.assert_allclose(xr_ds.coords["y"].values, y_vals)
+
+    assert len(xr_ds.coords) == 2
+
+    # Signal dims and values
+    assert xr_ds["signal"].dims == ("x", "y")
+    expected_signal = x_vals[:, None] + 3.0 * y_vals[None, :]
+    np.testing.assert_allclose(xr_ds["signal"].values, expected_signal)
+
+
 def test_measurement_2d_top_level_inferred_is_data_var(
     experiment: Experiment, caplog: LogCaptureFixture
 ) -> None:
