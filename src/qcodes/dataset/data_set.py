@@ -256,7 +256,7 @@ class DataSet(BaseDataSet):
                 Only takes effect if `conn` is not given.
 
         """
-        if run_id is None and read_only:
+        if run_id is None and conn is None and read_only:
             # raise valueerror here because if no run id, a new dataset will be created
             # and it will be written to the database
             raise ValueError(
