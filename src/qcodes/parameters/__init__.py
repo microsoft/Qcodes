@@ -80,6 +80,7 @@ from .parameter import ManualParameter, Parameter
 from .parameter_base import (
     ParamDataType,
     ParameterBase,
+    ParameterSet,
     ParamRawDataType,
     invert_val_mapping,
 )
@@ -108,6 +109,7 @@ __all__ = [
     "ParamRawDataType",
     "Parameter",
     "ParameterBase",
+    "ParameterSet",
     "ParameterWithSetpoints",
     "ScaledParameter",
     "SweepFixedValues",
