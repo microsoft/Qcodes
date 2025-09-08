@@ -5,7 +5,6 @@ import os
 import random
 import re
 import traceback
-from copy import deepcopy
 from functools import reduce
 from time import sleep
 from typing import Any
@@ -90,7 +89,6 @@ def test_register_parameter_numbers(DAC, DMM) -> None:
     Test the registration of scalar QCoDeS parameters
     """
 
-    parameters = [DAC.ch1, DAC.ch2, DMM.v1, DMM.v2]
     not_parameters = ("", "Parameter", 0, 1.1, Measurement)
 
     meas = Measurement()
