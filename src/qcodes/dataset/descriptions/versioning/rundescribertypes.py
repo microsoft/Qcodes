@@ -21,7 +21,9 @@ from typing import TYPE_CHECKING
 from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
-    from ..param_spec import ParamSpecBaseDict, ParamSpecDict
+    from qcodes.parameters import ParamSpecBaseDict
+
+    from ..param_spec import ParamSpecDict
 
 
 class InterDependenciesDict(TypedDict):

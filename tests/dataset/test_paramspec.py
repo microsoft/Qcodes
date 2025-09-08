@@ -6,7 +6,8 @@ import pytest
 from hypothesis import assume, given
 from numpy import ndarray
 
-from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
+from qcodes.dataset.descriptions.param_spec import ParamSpec
+from qcodes.parameters import ParamSpecBase
 
 
 def valid_identifier(**kwargs):

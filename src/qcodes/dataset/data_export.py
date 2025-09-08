@@ -11,7 +11,7 @@ from qcodes.utils import list_of_data_to_maybe_ragged_nd_array
 
 if TYPE_CHECKING:
     from qcodes.dataset.data_set_protocol import DataSetProtocol
-    from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+    from qcodes.parameters import ParamSpecBase
 
 log = logging.getLogger(__name__)
 

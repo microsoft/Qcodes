@@ -20,7 +20,7 @@ from typing_extensions import TypedDict
 import qcodes as qc
 from qcodes import config
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
+from qcodes.dataset.descriptions.param_spec import ParamSpec
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning import serialization as serial
 from qcodes.dataset.descriptions.versioning import v0
@@ -47,6 +47,7 @@ from qcodes.dataset.sqlite.query_helpers import (
     sql_placeholder_string,
     update_where,
 )
+from qcodes.parameters import ParamSpecBase
 from qcodes.utils import list_of_data_to_maybe_ragged_nd_array
 
 if TYPE_CHECKING:

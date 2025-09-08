@@ -21,7 +21,6 @@ from pytest import LogCaptureFixture
 import qcodes as qc
 import qcodes.validators as vals
 from qcodes.dataset.data_set import DataSet, load_by_id
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.experiment_container import new_experiment
 from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.measurements import Measurement
@@ -30,6 +29,7 @@ from qcodes.parameters import (
     DelegateParameter,
     ManualParameter,
     Parameter,
+    ParamSpecBase,
     expand_setpoints_helper,
 )
 from qcodes.station import Station
