@@ -42,7 +42,7 @@ dependencies = [
     "uncertainties>=3.2.0",
     "versioningit>=2.2.1",
     "websockets>=11.0",
-    "xarray>=2022.06.0",
+    "xarray>=2023.08.0",
     "cf_xarray>=0.8.4",
     "opentelemetry-api>=1.17.0",
     "pillow>=9.2.0",
@@ -97,7 +97,7 @@ docs = [
     "sphinx-jsonschema>=1.19.1",
     "furo>=2024.8.6",
     "sphinxcontrib-towncrier>=0.5.0a0",
-    "towncrier>=24.8.0,<25.0.0", #  sphinxcontrib-towncrier is likely to break with new versions
+    "towncrier>=24.8.0,<26.0.0", #  sphinxcontrib-towncrier is likely to break with new versions
     "scipy>=1.10.0", # examples using scipy
     "qcodes_loop>=0.1.1", # legacy dataset import examples
 ]
@@ -368,7 +368,11 @@ name = "Improved Drivers:"
 name = "Under the hood:"
 
 [tool.versioningit]
-default-version = "0.0"
+# we hard code the default version to match a development version
+# due to
+# https://github.com/orgs/community/discussions/163397#discussioncomment-13888710
+default-version = "0.54.0dev+Unknown"
+
 
 [tool.versioningit.format]
 distance = "{next_version}.dev{distance}+{branch}.{vcs}{rev}"

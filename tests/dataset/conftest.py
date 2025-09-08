@@ -4,7 +4,9 @@ import gc
 import os
 import shutil
 import tempfile
+from collections.abc import Generator
 from contextlib import contextmanager
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -35,6 +37,9 @@ from qcodes.validators import Arrays, ComplexNumbers, Numbers
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Iterator
+
+    from qcodes.dataset.data_set_protocol import DataSetProtocol
+    from qcodes.dataset.experiment_container import Experiment
 
 
 @pytest.fixture(scope="function", name="non_created_db")
@@ -272,12 +277,23 @@ def multi_dataset(experiment, request: FixtureRequest):
         datasaver.dataset.conn.close()
 
 
-@pytest.fixture(scope="function", params=["array"])
+class MeasurementOptions(StrEnum):
+    SHAPE_KNOWN = "shape_known"
+    SHAPE_UNKNOWN = "shape_known"
+
+
+@pytest.fixture(
+    scope="function",
+    params=[MeasurementOptions.SHAPE_KNOWN, MeasurementOptions.SHAPE_UNKNOWN],
+)
 def different_setpoint_dataset(experiment, request: FixtureRequest):
     meas = Measurement()
     param = Multi2DSetPointParam2Sizes()
 
-    meas.register_parameter(param, paramtype=request.param)
+    meas.register_parameter(param, paramtype="array")
+
+    if request.param == MeasurementOptions.SHAPE_KNOWN:
+        meas.set_shapes({"this_5_3": (5, 3), "this_2_7": (2, 7)})
 
     with meas.run() as datasaver:
         datasaver.add_result(
@@ -286,6 +302,46 @@ def different_setpoint_dataset(experiment, request: FixtureRequest):
                 param.get(),
             )
         )
+    try:
+        yield datasaver.dataset
+    finally:
+        assert isinstance(datasaver.dataset, DataSet)
+        datasaver.dataset.conn.close()
+
+
+@pytest.fixture(
+    scope="function",
+    params=[MeasurementOptions.SHAPE_KNOWN, MeasurementOptions.SHAPE_UNKNOWN],
+)
+def two_params_partial_2d_dataset(
+    request: FixtureRequest,
+    experiment: Experiment,
+) -> Generator[DataSetProtocol, None, None]:
+    """
+    Dataset where two numeric parameters are measured as a function of the same
+    two numeric setpoints. The second measured parameter is only measured for
+    every second point in raster order, leaving nulls elsewhere.
+    """
+    meas = Measurement()
+    meas.register_custom_parameter("x", paramtype="numeric")
+    meas.register_custom_parameter("y", paramtype="numeric")
+    meas.register_custom_parameter("m1", paramtype="numeric", setpoints=("x", "y"))
+    meas.register_custom_parameter("m2", paramtype="numeric", setpoints=("x", "y"))
+
+    if request.param == MeasurementOptions.SHAPE_KNOWN:
+        meas.set_shapes({"m1": (5, 4), "m2": (5, 2)})
+
+    with meas.run() as datasaver:
+        xs = np.linspace(0.0, 1.0, 5)
+        ys = np.linspace(0.0, 1.0, 4)
+        ny = len(ys)
+        for ix, x in enumerate(xs):
+            for iy, y in enumerate(ys):
+                result = [("x", float(x)), ("y", float(y)), ("m1", float(x + y))]
+                # Measure m2 only on every second point in raster order
+                if (ix * ny + iy) % 2 == 0:
+                    result.append(("m2", float(x - y)))
+                datasaver.add_result(*result)
     try:
         yield datasaver.dataset
     finally:

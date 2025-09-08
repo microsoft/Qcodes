@@ -94,9 +94,7 @@ def test_aggregator(
     y_set = np.linspace(y_start_stop[0], y_start_stop[1], npoints).reshape(npoints, 1)
     z_set = np.linspace(z_start_stop[0], z_start_stop[1], npoints).reshape(npoints, 1)
     setpoints = np.hstack((x_set, y_set, z_set))
-    # setpoints is a 2D array with shape (npoints, 3)
-    # so set is a (3,) numpy array and not a float64 below
-    expected_results = [linear(*set) for set in setpoints]  # pyright: ignore[reportGeneralTypeIssues]
+    expected_results = [linear(*set) for set in setpoints]
     sweep_values = combine(*parameters, name="combined", aggregator=linear).sweep(
         setpoints
     )
@@ -125,7 +123,7 @@ def test_meta(parameters: list[ManualParameter]) -> None:
     out["full_name"] = name
     out["aggregator"] = repr(linear)
     for param in sweep_values.parameters:
-        out[param.full_name] = param.snapshot()  # type: ignore[assignment]
+        out[param.full_name] = param.snapshot()
     assert out == snap
 
 

@@ -54,7 +54,7 @@ jobs:
       with:
         egress-policy: audit
 
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       with:
         submodules: true
         # we need full history with tags for the version number
@@ -96,7 +96,7 @@ jobs:
     # even if the previous steps fail. This allows users to get feedback
     # from both typechecking and tests even if one of them fails.
     - name: Run Pyright
-      uses: jakebailey/pyright-action@b5d50e5cde6547546a5c4ac92e416a8c2c1a1dfe # v2.3.2
+      uses: jakebailey/pyright-action@6cabc0f01c4994be48fd45cd9dbacdd6e1ee6e5e # v2.3.3
       with:
         version: ${{ steps.pyright-version.outputs.version }}
       if: ${{ !matrix.min-version && always() }}
@@ -117,7 +117,7 @@ jobs:
         pytest -m "serial" -n 0 --dist no --cov --cov-report xml --cov-append --hypothesis-profile ci $PYTEST_OPT tests
       id: serial_tests
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
+      uses: codecov/codecov-action@fdcc8476540edceab3de004e990f80d881c6cc00 # v5.5.0
       with:
         files: ./coverage.xml
         env_vars: OS,PYTHON

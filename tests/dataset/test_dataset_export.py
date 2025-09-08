@@ -19,23 +19,27 @@ import qcodes
 from qcodes.dataset import (
     DataSetProtocol,
     DataSetType,
+    LinSweep,
     Measurement,
+    dond,
     get_data_export_path,
     load_by_guid,
     load_by_id,
     load_from_netcdf,
     new_data_set,
 )
+from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.versioning import serialization as serial
 from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.exporters.export_to_pandas import _generate_pandas_index
 from qcodes.dataset.exporters.export_to_xarray import _calculate_index_shape
 from qcodes.dataset.linked_datasets.links import links_to_str
-from qcodes.parameters import ParamSpecBase
+from qcodes.parameters import ManualParameter, Parameter, ParamSpecBase
 
 if TYPE_CHECKING:
     from qcodes.dataset.data_set import DataSet
+    from qcodes.dataset.experiment_container import Experiment
 
 
 @pytest.fixture(name="mock_empty_dataset")
@@ -660,23 +664,181 @@ def test_export_from_config_set_name_elements(
     ]
 
 
-def test_same_setpoint_warning_for_df_and_xarray(different_setpoint_dataset) -> None:
+def test_same_setpoint_warning_for_df_two_params_with_different_setpoints(
+    different_setpoint_dataset: DataSetProtocol,
+) -> None:
     warning_message = (
         "Independent parameter setpoints are not equal. "
         "Check concatenated output carefully."
     )
 
     with pytest.warns(UserWarning, match=warning_message):
-        different_setpoint_dataset.to_pandas_dataframe()
+        df = different_setpoint_dataset.to_pandas_dataframe()
+    this_2_7_df = df.loc[df["this_2_7"].notna()]["this_2_7"]
+    # Verify that the index for the filtered Series has the expected 2x7 shape
+    assert isinstance(this_2_7_df.index, pd.MultiIndex)
 
-    with pytest.warns(UserWarning, match=warning_message):
-        different_setpoint_dataset.to_xarray_dataset()
+    # Names of setpoint coords as registered by the MultiParameter
+    # because this dataframe has indexes from two different set of
+    # qcodes setpoints the names are just level_0, level_1
+    sp_21 = "level_0"
+    sp_22 = "level_1"
 
-    with pytest.warns(UserWarning, match=warning_message):
-        different_setpoint_dataset.cache.to_pandas_dataframe()
+    # Expected coordinate vectors
+    exp_sp_21 = np.linspace(5, 9, 2)
+    exp_sp_22 = np.linspace(9, 11, 7)
 
+    # Expected shape for the MultiIndex
+    dims = _calculate_index_shape(this_2_7_df.index)
+    assert dims == {sp_21: 2, sp_22: 7}
+
+    # Basic sanity checks on index names and size
+    assert list(this_2_7_df.index.names) == [None, None]
+    assert len(this_2_7_df) == 2 * 7
+
+    # Check that each index level matches expected coordinate values
+    mi_clean_2_7 = this_2_7_df.index.remove_unused_levels()
+    np.testing.assert_allclose(mi_clean_2_7.levels[0].values, exp_sp_21)
+    np.testing.assert_allclose(mi_clean_2_7.levels[1].values, exp_sp_22)
+
+    # Repeat for the other parameter (this_5_3)
+    this_5_3_df = df.loc[df["this_5_3"].notna()]["this_5_3"]
+    assert isinstance(this_5_3_df.index, pd.MultiIndex)
+
+    sp_11 = "level_0"
+    sp_12 = "level_1"
+
+    exp_sp_11 = np.linspace(5, 9, 5)
+    exp_sp_12 = np.linspace(9, 11, 3)
+
+    dims = _calculate_index_shape(this_5_3_df.index)
+    assert dims == {sp_11: 5, sp_12: 3}
+
+    assert list(this_5_3_df.index.names) == [None, None]
+    assert len(this_5_3_df) == 5 * 3
+
+    mi_clean_5_3 = this_5_3_df.index.remove_unused_levels()
+    np.testing.assert_allclose(mi_clean_5_3.levels[0].values, exp_sp_11)
+    np.testing.assert_allclose(mi_clean_5_3.levels[1].values, exp_sp_12)
+
+
+def test_same_setpoint_warning_for_df_two_params_partial_overlapping_setpoints(
+    two_params_partial_2d_dataset: DataSetProtocol,
+) -> None:
+    warning_message = (
+        "Independent parameter setpoints are not equal. "
+        "Check concatenated output carefully."
+    )
+
+    # Expect a warning since independent parameter setpoints differ
     with pytest.warns(UserWarning, match=warning_message):
-        different_setpoint_dataset.cache.to_xarray_dataset()
+        df = two_params_partial_2d_dataset.to_pandas_dataframe()
+
+    # Expect two measured columns (m1 and m2)
+    assert "m1" in df.columns
+    assert "m2" in df.columns
+
+    # Dataframe should use a MultiIndex named by the two setpoints
+    assert isinstance(df.index, pd.MultiIndex)
+    assert list(df.index.names) == ["x", "y"]
+
+    # m1 should cover full 5x4 grid
+    m1_series = df.loc[df["m1"].notna(), "m1"]
+    assert isinstance(m1_series.index, pd.MultiIndex)
+    dims_m1 = _calculate_index_shape(m1_series.index)
+    assert dims_m1 == {"x": 5, "y": 4}
+    assert len(m1_series) == 5 * 4
+
+    # m2 should be partial (5x2 points not NaN)
+    m2_series = df.loc[df["m2"].notna(), "m2"]
+    assert isinstance(m2_series.index, pd.MultiIndex)
+    dims_m2 = _calculate_index_shape(m2_series.index)
+    assert dims_m2 == {"x": 5, "y": 2}
+    assert len(m2_series) == 5 * 2
+
+
+def test_partally_overlapping_setpoint_xarray_export(
+    different_setpoint_dataset: DataSetProtocol,
+) -> None:
+    """
+    Test that a dataset with two MultiParameters with different
+    setpoints can be exported to xarray.Dataset with the correct
+    coordinates and shapes."""
+    xrds = different_setpoint_dataset.to_xarray_dataset()
+
+    # Expect two data variables from Multi2DSetPointParam2Sizes
+    assert "this_5_3" in xrds.data_vars
+    assert "this_2_7" in xrds.data_vars
+
+    # Names of setpoint coords as registered by the MultiParameter
+    sp_11 = "multi_2d_setpoint_param_this_setpoint_1"
+    sp_12 = "multi_2d_setpoint_param_that_setpoint_1"
+    sp_21 = "multi_2d_setpoint_param_this_setpoint_2"
+    sp_22 = "multi_2d_setpoint_param_that_setpoint_2"
+
+    # Coordinate vectors expected from the mock parameter definition
+    exp_sp_11 = np.linspace(5, 9, 5)
+    exp_sp_12 = np.linspace(9, 11, 3)
+    exp_sp_21 = np.linspace(5, 9, 2)
+    exp_sp_22 = np.linspace(9, 11, 7)
+
+    # Check coordinates exist and match expected values
+    for name, exp_vals in (
+        (sp_11, exp_sp_11),
+        (sp_12, exp_sp_12),
+        (sp_21, exp_sp_21),
+        (sp_22, exp_sp_22),
+    ):
+        assert name in xrds.coords
+        np.testing.assert_allclose(xrds.coords[name].values, exp_vals)
+
+    # this_5_3 should be on grid (sp_11, sp_12) with shape (5, 3)
+    assert xrds["this_5_3"].dims == (sp_11, sp_12)
+    assert xrds["this_5_3"].shape == (5, 3)
+
+    # this_2_7 should be on grid (sp_21, sp_22) with shape (2, 7)
+    assert xrds["this_2_7"].dims == (sp_21, sp_22)
+    assert xrds["this_2_7"].shape == (2, 7)
+
+    # Also verify cache path produces consistent coords
+    xrds_cache = different_setpoint_dataset.cache.to_xarray_dataset()
+    for name, exp_vals in (
+        (sp_11, exp_sp_11),
+        (sp_12, exp_sp_12),
+        (sp_21, exp_sp_21),
+        (sp_22, exp_sp_22),
+    ):
+        assert name in xrds_cache.coords
+        np.testing.assert_allclose(xrds_cache.coords[name].values, exp_vals)
+
+
+def test_partally_overlapping_setpoint_xarray_export_two_params_partial(
+    two_params_partial_2d_dataset: DataSetProtocol,
+) -> None:
+    """
+    Similar to test_partally_overlapping_setpoint_xarray_export but using the
+    two_params_partial_2d_dataset fixture. Verify that both data variables are
+    present, their dims/coords are consistent. This means that for one parameter
+    missing values are filled with NaNs.
+    """
+    xrds = two_params_partial_2d_dataset.to_xarray_dataset()
+
+    # Expect exactly two data variables
+    assert len(xrds.data_vars) == 2
+
+    expected_size = (5, 4)
+
+    # Each variable should be 2D and have matching coords
+    for _, da in xrds.data_vars.items():
+        assert len(da.dims) == 2
+        for dim, size in zip(da.dims, expected_size):
+            assert dim in xrds.coords
+            assert len(xrds.coords[dim]) == da.sizes[dim]
+            assert da.sizes[dim] == size
+
+    filtered_data = xrds["m2"].dropna(dim="y", how="all").dropna(dim="x", how="all")
+
+    assert filtered_data.shape == (5, 2)
 
 
 def test_export_to_xarray_dataset_empty_ds(mock_empty_dataset) -> None:
@@ -869,8 +1031,10 @@ def test_export_dataset_delayed_numeric(
         in caplog.records[0].msg
     )
     assert "Writing individual files to temp dir" in caplog.records[1].msg
-    assert "Combining temp files into one file" in caplog.records[2].msg
-    assert "Writing netcdf file using Dask delayed writer" in caplog.records[3].msg
+    for i in range(2, 52):
+        assert "Exporting z to xarray via pandas index" in caplog.records[i].message
+    assert "Combining temp files into one file" in caplog.records[52].msg
+    assert "Writing netcdf file using Dask delayed writer" in caplog.records[53].msg
 
     loaded_ds = xr.load_dataset(mock_dataset_grid.export_info.export_paths["nc"])
     assert loaded_ds.x.shape == (10,)
@@ -898,13 +1062,16 @@ def test_export_dataset_delayed(
     with caplog.at_level(logging.INFO):
         mock_dataset_numpy.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
 
+    assert len(caplog.records) == 16
     assert (
         "Dataset is expected to be larger that threshold. Using distributed export."
         in caplog.records[0].msg
     )
     assert "Writing individual files to temp dir" in caplog.records[1].msg
-    assert "Combining temp files into one file" in caplog.records[2].msg
-    assert "Writing netcdf file using Dask delayed writer" in caplog.records[3].msg
+    for i in range(2, 12):
+        assert "Exporting z to xarray via pandas index" in caplog.records[i].message
+    assert "Combining temp files into one file" in caplog.records[12].msg
+    assert "Writing netcdf file using Dask delayed writer" in caplog.records[13].msg
 
     loaded_ds = xr.load_dataset(mock_dataset_numpy.export_info.export_paths["nc"])
     assert loaded_ds.x.shape == (10,)
@@ -939,8 +1106,10 @@ def test_export_dataset_delayed_complex(
         in caplog.records[0].msg
     )
     assert "Writing individual files to temp dir" in caplog.records[1].msg
-    assert "Combining temp files into one file" in caplog.records[2].msg
-    assert "Writing netcdf file using Dask delayed writer" in caplog.records[3].msg
+    for i in range(2, 12):
+        assert "Exporting z to xarray via pandas index" in caplog.records[i].message
+    assert "Combining temp files into one file" in caplog.records[12].msg
+    assert "Writing netcdf file using Dask delayed writer" in caplog.records[13].msg
 
     loaded_ds = xr.load_dataset(
         mock_dataset_numpy_complex.export_info.export_paths["nc"]
@@ -1293,7 +1462,7 @@ def test_multi_index_options_incomplete_grid(mock_dataset_grid_incomplete) -> No
 
 
 def test_multi_index_options_incomplete_grid_with_shapes(
-    mock_dataset_grid_incomplete_with_shapes,
+    mock_dataset_grid_incomplete_with_shapes: DataSet,
 ) -> None:
     assert mock_dataset_grid_incomplete_with_shapes.description.shapes == {"z": (10, 5)}
 
@@ -1316,7 +1485,7 @@ def test_multi_index_options_incomplete_grid_with_shapes(
     assert xds_always.sizes == {"multi_index": 39}
 
 
-def test_multi_index_options_non_grid(mock_dataset_non_grid) -> None:
+def test_multi_index_options_non_grid(mock_dataset_non_grid: DataSet) -> None:
     assert mock_dataset_non_grid.description.shapes is None
 
     xds = mock_dataset_non_grid.to_xarray_dataset()
@@ -1332,18 +1501,18 @@ def test_multi_index_options_non_grid(mock_dataset_non_grid) -> None:
     assert xds_always.sizes == {"multi_index": 50}
 
 
-def test_multi_index_wrong_option(mock_dataset_non_grid) -> None:
+def test_multi_index_wrong_option(mock_dataset_non_grid: DataSet) -> None:
     with pytest.raises(ValueError, match="Invalid value for use_multi_index"):
-        mock_dataset_non_grid.to_xarray_dataset(use_multi_index=True)
-
-    with pytest.raises(ValueError, match="Invalid value for use_multi_index"):
-        mock_dataset_non_grid.to_xarray_dataset(use_multi_index=False)
+        mock_dataset_non_grid.to_xarray_dataset(use_multi_index=True)  # pyright: ignore[reportArgumentType]
 
     with pytest.raises(ValueError, match="Invalid value for use_multi_index"):
-        mock_dataset_non_grid.to_xarray_dataset(use_multi_index="perhaps")
+        mock_dataset_non_grid.to_xarray_dataset(use_multi_index=False)  # pyright: ignore[reportArgumentType]
+
+    with pytest.raises(ValueError, match="Invalid value for use_multi_index"):
+        mock_dataset_non_grid.to_xarray_dataset(use_multi_index="perhaps")  # pyright: ignore[reportArgumentType]
 
 
-def test_geneate_pandas_index():
+def test_geneate_pandas_index() -> None:
     x = ParamSpecBase("x", "numeric")
     y = ParamSpecBase("y", "numeric")
     z = ParamSpecBase("z", "numeric")
@@ -1495,3 +1664,93 @@ def test_export_lazy_load_in_mem_dataset(
     getattr(dataset_loaded_by_guid, function_name)()
 
     assert dataset_loaded_by_guid.cache._data != {}
+
+
+@given(data=hst.data())
+@settings(
+    max_examples=10,
+    suppress_health_check=(HealthCheck.function_scoped_fixture,),
+    deadline=None,
+)
+def test_dond_hypothesis_nd_grid(
+    data: hst.DataObject, experiment: Experiment, caplog: LogCaptureFixture
+) -> None:
+    """
+    Randomized ND sweep using dond:
+    - Draw N in [1, 4]
+    - For each dimension i, draw number of points n_i in [1, 5]
+    - Sweep each ManualParameter over a linspace of length n_i
+    - Measure a deterministic function of the setpoints
+    - Assert xarray dims, coords, and data match expectation
+    """
+    n_dims = data.draw(hst.integers(min_value=1, max_value=4), label="n_dims")
+    points_per_dim = [
+        data.draw(hst.integers(min_value=1, max_value=5), label=f"n_points_dim_{i}")
+        for i in range(n_dims)
+    ]
+
+    # Create sweep parameters and corresponding value arrays
+    sweeps: list[LinSweep] = []
+    sweep_params: list[Parameter] = []
+    sweep_values: list[np.ndarray] = []
+    for i, npts in enumerate(points_per_dim):
+        p = ManualParameter(name=f"x{i}")
+        sweeps.append(LinSweep(p, 0.0, float(npts - 1), npts))
+        vals = np.linspace(0.0, float(npts - 1), npts)
+        sweep_params.append(p)
+        sweep_values.append(vals)
+
+    # Deterministic measurement as weighted sum of current setpoints
+    weights = [(i + 1) for i in range(n_dims)]
+
+    meas_param = Parameter(
+        name="signal",
+        get_cmd=lambda: float(
+            sum(weights[i] * float(sweep_params[i].get()) for i in range(n_dims))
+        ),
+        set_cmd=None,
+    )
+
+    # Build dond and run
+    result = dond(
+        *sweeps,
+        meas_param,
+        do_plot=False,
+        show_progress=False,
+        exp=experiment,
+        squeeze=False,
+    )
+
+    ds = result[0][0]
+
+    caplog.clear()
+    with caplog.at_level(logging.INFO):
+        xr_ds = ds.to_xarray_dataset()
+
+    any(
+        "Exporting signal to xarray using direct method" in record.message
+        for record in caplog.records
+    )
+    # Expected sizes per coordinate
+    expected_sizes = {
+        sp.name: len(vals) for sp, vals in zip(sweep_params, sweep_values)
+    }
+    assert xr_ds.sizes == expected_sizes
+
+    # Check coords contents and order
+    for sp, vals in zip(sweep_params, sweep_values):
+        assert sp.name in xr_ds.coords
+        np.testing.assert_allclose(xr_ds.coords[sp.name].values, vals)
+
+    # Check measured data dims and values
+    assert "signal" in xr_ds.data_vars
+    expected_dims = tuple(sp.name for sp in sweep_params)
+    assert xr_ds["signal"].dims == expected_dims
+
+    # Build expected grid via meshgrid and compare
+    grids = np.meshgrid(*sweep_values, indexing="ij")
+    expected_signal = np.zeros(tuple(points_per_dim), dtype=float)
+    for i, grid in enumerate(grids):
+        expected_signal += weights[i] * grid.astype(float)
+
+    np.testing.assert_allclose(xr_ds["signal"].values, expected_signal)
