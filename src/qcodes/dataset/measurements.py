@@ -966,7 +966,7 @@ class Measurement:
         if len(inference_paramspecs) > 0:
             inferences_tree = {parameter.param_spec: tuple(inference_paramspecs)}
 
-        standalones = ()
+        standalones: tuple[ParamSpecBase, ...] = ()
         if dependencies_tree is None and inferences_tree is None:
             standalones = (parameter.param_spec,)
 
