@@ -3,6 +3,7 @@
 # functions here
 import logging
 import re
+import sqlite3
 import time
 import unicodedata
 from contextlib import contextmanager
@@ -549,3 +550,28 @@ def test_mark_run_complete_explicit_time(dataset) -> None:
     assert dataset.completed_timestamp_raw == time_now
 
     mut_queries.mark_run_complete(dataset.conn, dataset.run_id)
+
+
+def test_connect_read_only_mode(tmp_path):
+    """
+    Test that connecting with read_only=True allows reading but not writing.
+    """
+
+    db_path = tmp_path / "test_readonly.db"
+    # Create DB and add data in write mode
+    conn_rw = mut_db.connect(db_path)
+    conn_rw.execute("CREATE TABLE test (id INTEGER PRIMARY KEY, value TEXT)")
+    conn_rw.execute("INSERT INTO test (value) VALUES ('foo')")
+    conn_rw.commit()
+    conn_rw.close()
+
+    # Open DB in read_only mode and read data
+    conn_ro = mut_db.connect(db_path, read_only=True)
+    cursor = conn_ro.execute("SELECT value FROM test WHERE id=1")
+    result = cursor.fetchone()
+    assert result[0] == "foo"
+
+    # Attempt to write in read_only mode and expect an error
+    with pytest.raises(sqlite3.OperationalError):
+        conn_ro.execute("INSERT INTO test (value) VALUES ('bar')")
+    conn_ro.close()

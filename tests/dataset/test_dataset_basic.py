@@ -37,6 +37,8 @@ from tests.dataset.test_links import generate_some_links
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from qcodes.dataset.experiment_container import Experiment
+
 n_experiments = 0
 
 
@@ -1416,3 +1418,13 @@ def test_empty_ds_parameters() -> None:
     assert ds.parameters is None
     ds.mark_completed()
     assert ds.parameters is None
+
+
+def test_create_dataset_with_readonly_throws_error() -> None:
+    with pytest.raises(ValueError):
+        DataSet(read_only=True)
+
+
+@pytest.mark.usefixtures("experiment")
+def test_create_dataset_with_conn_ignores_readonly(experiment: "Experiment") -> None:
+    DataSet(conn=experiment.conn, read_only=True)
