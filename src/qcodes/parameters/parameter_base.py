@@ -1196,6 +1196,7 @@ class ParameterBase(MetadatableWithName):
             raise ValueError(f"{paramtype} is not a valid paramtype")
         if self.paramtype == paramtype:
             return
+        new_vals: Validator
         match paramtype:
             case "array":
                 new_vals = Arrays()
@@ -1321,7 +1322,7 @@ class ParameterSet(MutableSet):  # noqa: PLW1641
     the order in which parameters were first added.
     """
 
-    def __init__(self, parameters=None) -> None:
+    def __init__(self, parameters: Sequence[ParameterBase] | None = None) -> None:
         self._dict: dict[ParameterBase, None] = {}
         if parameters is not None:
             for item in parameters:
@@ -1348,7 +1349,7 @@ class ParameterSet(MutableSet):  # noqa: PLW1641
         return item
 
     def union(self, other: ParameterSet) -> ParameterSet:
-        result = ParameterSet(self)
+        result = ParameterSet(list(self._dict.keys()))
         for item in other:
             result.add(item)
         return result
@@ -1424,7 +1425,7 @@ class ParameterSet(MutableSet):  # noqa: PLW1641
             f"<= operation is not defined between ParameterSet and {type(other)}"
         )
 
-    def __ge__(self, other: object):
+    def __ge__(self, other: object) -> bool:
         if isinstance(other, ParameterSet):
             return self.issuperset(other)
         raise NotImplementedError(
