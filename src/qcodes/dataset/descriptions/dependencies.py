@@ -273,8 +273,7 @@ class InterDependencies_:  # noqa: PLW1641
         """
         return tuple(
             cast("ParamSpecBase", paramspec)
-            # The type check for this does not correctly allow the `data` arg to be a string
-            for _, paramspec in self.graph.nodes(data="value")  # pyright: ignore[reportArgumentType]
+            for _, paramspec in self.graph.nodes(data="value")
         )
 
     @property

@@ -108,7 +108,7 @@ def _generate_pandas_index(
             else:
                 index_data.append(data[key].ravel())
 
-        index = pd.MultiIndex.from_arrays(index_data, names=keys[1:])
+        index = pd.MultiIndex.from_arrays(index_data, names=list(deps_data.keys()))
     return index
 
 

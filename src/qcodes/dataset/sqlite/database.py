@@ -121,7 +121,7 @@ def _adapt_complex(value: complex | np.complexfloating) -> sqlite3.Binary:
 
 
 def connect(
-    name: str | Path, debug: bool = False, version: int = -1
+    name: str | Path, debug: bool = False, version: int = -1, read_only: bool = False
 ) -> AtomicConnection:
     """
     Connect or create  database. If debug the queries will be echoed back.
@@ -133,6 +133,7 @@ def connect(
         debug: should tracing be turned on.
         version: which version to create. We count from 0. -1 means 'latest'.
             Should always be left at -1 except when testing.
+        read_only: Should the database be opened in read only mode.
 
     Returns:
         connection object to the database (note, it is
@@ -144,10 +145,16 @@ def connect(
     # register binary(TEXT) -> numpy converter
     sqlite3.register_converter("array", _convert_array)
 
+    path = f"file:{name!s}"
+
+    if read_only:
+        path = path + "?mode=ro"
+
     conn = sqlite3.connect(
-        name,
+        path,
         detect_types=sqlite3.PARSE_DECLTYPES,
         check_same_thread=True,
+        uri=True,
         factory=AtomicConnection,
     )
 
@@ -296,7 +303,9 @@ def initialised_database_at(db_file_with_abs_path: str | Path) -> Iterator[None]
 
 
 def conn_from_dbpath_or_conn(
-    conn: AtomicConnection | None, path_to_db: str | Path | None
+    conn: AtomicConnection | None,
+    path_to_db: str | Path | None,
+    read_only: bool = False,
 ) -> AtomicConnection:
     """
     A small helper function to abstract the logic needed for functions
@@ -307,6 +316,8 @@ def conn_from_dbpath_or_conn(
     Args:
         conn: A AtomicConnection object pointing to a sqlite database
         path_to_db: The path to a db file.
+        read_only: whether to open the connection in read-only mode.
+            Only takes effect if `conn` is not given.
 
     Returns:
         A `AtomicConnection` object
@@ -321,7 +332,7 @@ def conn_from_dbpath_or_conn(
         path_to_db = get_DB_location()
 
     if conn is None and path_to_db is not None:
-        conn = connect(path_to_db, get_DB_debug())
+        conn = connect(path_to_db, get_DB_debug(), read_only=read_only)
     elif conn is not None:
         pass
     else:
