@@ -1,13 +1,13 @@
 This PR makes significant changes to several core Qcodes structures to enable more flexible subclassing of Parameters that take advantage of InterDependencies_ relationships.
 
-`ParameterBase` now implements new properties and methods:
-- `depends_on`, `is_controlled_by`, and `has_control_of` allow subclasses to define InterDependencies_ relationships directly
-- `unpack_self` allows subclasses to unpack themselves during `DataSaver.add_result`, which removes the requirement for users to add pre-defined InterDependencies_ results explicitly
+``ParameterBase`` now implements new properties and methods:
+- ``depends_on``, ``is_controlled_by``, and ``has_control_of`` allow subclasses to define InterDependencies_ relationships directly
+- ``unpack_self`` allows subclasses to unpack themselves during ``DataSaver.add_result``, which removes the requirement for users to add pre-defined InterDependencies_ results explicitly
 
-`Measurement.register_parameter` has been refactored to follow the relationship links defined in parameter subclasses and automatically register related parameters with the appropriate relationships
+``Measurement.register_parameter`` has been refactored to follow the relationship links defined in parameter subclasses and automatically register related parameters with the appropriate relationships
 
-`DataSaver.add_result` has been refactored to take advantage of the new `unpack_self` method
+``DataSaver.add_result`` has been refactored to take advantage of the new ``unpack_self`` method
 
 Breaking Changes:
-- A dependent parameter registered with an independent parameter as its `setpoints` no longer requires that the independent parameter be registered first, if the independent parameter is ParameterBase subclass and not a str
+- A dependent parameter registered with an independent parameter as its ``setpoints`` no longer requires that the independent parameter be registered first, if the independent parameter is ParameterBase subclass and not a str
 - Previously, a ParameterWithSetpoints whose setpoints values were explicitly added in add_result would use the explicit version. Now, an error is raised if the explicit values are not within some tolerance of the internal values (as with other duplication).
