@@ -33,6 +33,8 @@ class CopperMountainM5xxx(VisaInstrument):
           may have unexpected results.
     """
 
+    default_terminator = "\n"
+
     def __init__(
         self,
         name: str,
@@ -40,7 +42,6 @@ class CopperMountainM5xxx(VisaInstrument):
         min_freq: float,
         max_freq: float,
         timeout: float = 10000,
-        terminator: str | None = "\n",
         **kwargs: "Unpack[VisaInstrumentKWArgs]",  # type: ignore
     ):
         """
