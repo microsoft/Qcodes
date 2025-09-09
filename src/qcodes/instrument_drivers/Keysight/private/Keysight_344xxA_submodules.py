@@ -580,7 +580,7 @@ class TimeTrace(ParameterWithSetpoints):
             self.instrument.trigger.force()
             data = self.instrument.fetch()
 
-        return data  # pyright: ignore[reportPossiblyUnboundVariable]
+        return data
 
     def get_raw(self) -> npt.NDArray:
         self._validate_dt()

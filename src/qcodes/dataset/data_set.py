@@ -219,6 +219,7 @@ class DataSet(BaseDataSet):
         metadata: Mapping[str, Any] | None = None,
         shapes: Shapes | None = None,
         in_memory_cache: bool = True,
+        read_only: bool = False,
     ) -> None:
         """
         Create a new :class:`.DataSet` object. The object can either hold a new run or
@@ -251,9 +252,18 @@ class DataSet(BaseDataSet):
                 Ignored if ``run_id`` is provided.
             in_memory_cache: Should measured data be keep in memory
                 and available as part of the `dataset.cache` object.
+            read_only: whether to open the connection in read-only mode.
+                Only takes effect if `conn` is not given.
 
         """
-        self.conn = conn_from_dbpath_or_conn(conn, path_to_db)
+        if run_id is None and conn is None and read_only:
+            # raise valueerror here because if no run id, a new dataset will be created
+            # and it will be written to the database
+            raise ValueError(
+                "Cannot instantiate a dataset in read-only mode without a run_id provided"
+                " since a new dataset will be created."
+            )
+        self.conn = conn_from_dbpath_or_conn(conn, path_to_db, read_only=read_only)
 
         self._debug = False
         self.subscribers: dict[str, _Subscriber] = {}
@@ -585,7 +595,6 @@ class DataSet(BaseDataSet):
         """
 
         self._metadata[tag] = metadata
-
         # `add_data_to_dynamic_columns` is not atomic by itself, hence using `atomic`
         with atomic(self.conn) as conn:
             add_data_to_dynamic_columns(conn, self.run_id, {tag: metadata})
@@ -1567,6 +1576,7 @@ def load_by_run_spec(
     location: int | None = None,
     work_station: int | None = None,
     conn: AtomicConnection | None = None,
+    read_only: bool = False,
 ) -> DataSetProtocol:
     """
     Load a run from one or more pieces of runs specification. All
@@ -1591,6 +1601,8 @@ def load_by_run_spec(
         work_station: The workstation assigned as part of the GUID.
         conn: An optional connection to the database. If no connection is
           supplied a connection to the default database will be opened.
+        read_only: whether to open the connection in read-only mode.
+            Only takes effect if `conn` is not given.
 
     Raises:
         NameError: if no run or more than one run with the given specification
@@ -1602,7 +1614,7 @@ def load_by_run_spec(
         specification.
 
     """
-    internal_conn = conn or connect(get_DB_location())
+    internal_conn = conn or connect(get_DB_location(), read_only=read_only)
     d: DataSetProtocol | None = None
     try:
         guids = get_guids_by_run_spec(
@@ -1646,6 +1658,7 @@ def get_guids_by_run_spec(
     location: int | None = None,
     work_station: int | None = None,
     conn: AtomicConnection | None = None,
+    read_only: bool = False,
 ) -> list[str]:
     """
     Get a list of matching guids from one or more pieces of runs specification. All
@@ -1663,12 +1676,14 @@ def get_guids_by_run_spec(
         work_station: The workstation assigned as part of the GUID.
         conn: An optional connection to the database. If no connection is
           supplied a connection to the default database will be opened.
+        read_only: whether to open the connection in read-only mode.
+            Only takes effect if `conn` is not given.
 
     Returns:
         List of guids matching the run spec.
 
     """
-    internal_conn = conn or connect(get_DB_location())
+    internal_conn = conn or connect(get_DB_location(), read_only=read_only)
     try:
         guids = _query_guids_from_run_spec(
             internal_conn,
@@ -1687,7 +1702,9 @@ def get_guids_by_run_spec(
     return matched_guids
 
 
-def load_by_id(run_id: int, conn: AtomicConnection | None = None) -> DataSetProtocol:
+def load_by_id(
+    run_id: int, conn: AtomicConnection | None = None, read_only: bool = False
+) -> DataSetProtocol:
     """
     Load a dataset by run id
 
@@ -1707,6 +1724,8 @@ def load_by_id(run_id: int, conn: AtomicConnection | None = None) -> DataSetProt
     Args:
         run_id: run id of the dataset
         conn: connection to the database to load from
+        read_only: whether to open the connection in read-only mode.
+            Only takes effect if `conn` is not given.
 
     Returns:
         :class:`qcodes.dataset.data_set.DataSet` or
@@ -1715,7 +1734,7 @@ def load_by_id(run_id: int, conn: AtomicConnection | None = None) -> DataSetProt
     """
     if run_id is None:
         raise ValueError("run_id has to be a positive integer, not None.")
-    internal_conn = conn or connect(get_DB_location())
+    internal_conn = conn or connect(get_DB_location(), read_only=read_only)
     d: DataSetProtocol | None = None
 
     try:
@@ -1733,7 +1752,9 @@ def load_by_id(run_id: int, conn: AtomicConnection | None = None) -> DataSetProt
     return d
 
 
-def load_by_guid(guid: str, conn: AtomicConnection | None = None) -> DataSetProtocol:
+def load_by_guid(
+    guid: str, conn: AtomicConnection | None = None, read_only: bool = False
+) -> DataSetProtocol:
     """
     Load a dataset by its GUID
 
@@ -1748,6 +1769,8 @@ def load_by_guid(guid: str, conn: AtomicConnection | None = None) -> DataSetProt
     Args:
         guid: guid of the dataset
         conn: connection to the database to load from
+        read_only: whether to open the connection in read-only mode.
+            Only takes effect if `conn` is not given.
 
     Returns:
         :class:`qcodes.dataset.data_set.DataSet` or
@@ -1758,7 +1781,7 @@ def load_by_guid(guid: str, conn: AtomicConnection | None = None) -> DataSetProt
         RuntimeError: if several runs with the given GUID are found
 
     """
-    internal_conn = conn or connect(get_DB_location())
+    internal_conn = conn or connect(get_DB_location(), read_only=read_only)
     d: DataSetProtocol | None = None
 
     # this function raises a RuntimeError if more than one run matches the GUID
@@ -1773,7 +1796,10 @@ def load_by_guid(guid: str, conn: AtomicConnection | None = None) -> DataSetProt
 
 
 def load_by_counter(
-    counter: int, exp_id: int, conn: AtomicConnection | None = None
+    counter: int,
+    exp_id: int,
+    conn: AtomicConnection | None = None,
+    read_only: bool = False,
 ) -> DataSetProtocol:
     """
     Load a dataset given its counter in a given experiment
@@ -1795,6 +1821,8 @@ def load_by_counter(
         exp_id: id of the experiment where to look for the dataset
         conn: connection to the database to load from. If not provided, a
           connection to the DB file specified in the config is made
+        read_only: whether to open the connection in read-only mode.
+            Only takes effect if `conn` is not given.
 
     Returns:
         :class:`DataSet` or
@@ -1802,7 +1830,7 @@ def load_by_counter(
         the given experiment
 
     """
-    internal_conn = conn or connect(get_DB_location())
+    internal_conn = conn or connect(get_DB_location(), read_only=read_only)
     d: DataSetProtocol | None = None
 
     # this function raises a RuntimeError if more than one run matches the GUID
@@ -1906,7 +1934,7 @@ def new_data_set(
 
 
 def generate_dataset_table(
-    guids: Sequence[str], conn: AtomicConnection | None = None
+    guids: Sequence[str], conn: AtomicConnection | None = None, read_only: bool = False
 ) -> str:
     """
     Generate an ASCII art table of information about the runs attached to the
@@ -1915,6 +1943,8 @@ def generate_dataset_table(
     Args:
         guids: Sequence of one or more guids
         conn: An AtomicConnection object with a connection to the database.
+        read_only: whether to open the connection in read-only mode.
+            Only takes effect if `conn` is not given.
 
     Returns: ASCII art table of information about the supplied guids.
 
@@ -1931,7 +1961,7 @@ def generate_dataset_table(
     )
     table = []
     for guid in guids:
-        ds = load_by_guid(guid, conn=conn)
+        ds = load_by_guid(guid, conn=conn, read_only=read_only)
         parsed_guid = parse_guid(guid)
         table.append(
             [

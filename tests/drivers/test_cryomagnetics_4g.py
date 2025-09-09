@@ -1,5 +1,5 @@
 import logging
-from unittest.mock import MagicMock, Mock, call, patch
+from unittest.mock import ANY, MagicMock, call, patch
 
 import pytest
 
@@ -103,16 +103,20 @@ def test_set_field_blocking(cryo_instrument):
     with (
         patch.object(cryo_instrument, "write") as mock_write,
         patch.object(cryo_instrument, "_get_field", return_value=0),
+        patch.object(
+            cryo_instrument,
+            "magnet_operating_state",
+            return_value=CryomagneticsOperatingState(holding=True, ramping=False),
+        ),
+        patch.object(
+            cryo_instrument,
+            "wait_while_ramping",
+            return_value=CryomagneticsOperatingState(holding=True, ramping=False),
+        ) as mock_wait,
     ):
-        # Create a mock for the ask method
-        mock_ask = Mock(side_effect=lambda x: "0" if x == "*STB?" else "")
-        cryo_instrument.ask = mock_ask
-
         cryo_instrument.set_field(0.5, block=True)
 
-        # Check that the ask method was called with the expected arguments
-        mock_ask.assert_any_call("*STB?")
-
+        # Check that the correct commands were sent
         calls = [
             call
             for call in mock_write.call_args_list
@@ -121,24 +125,40 @@ def test_set_field_blocking(cryo_instrument):
         assert any("ULIM 5.0" in str(call) for call in calls)
         assert any("SWEEP UP" in str(call) for call in calls)
 
+        # Ensure wait_while_ramping was called with the correct setpoint
+        mock_wait.assert_called_once_with(0.5, threshold=ANY)
 
-def test_wait_while_ramping(cryo_instrument):
-    # Create a mock for the ask method
-    mock_ask = Mock(side_effect=lambda x: "0" if x == "*STB?" else "")
-    cryo_instrument.ask = mock_ask
 
-    state = cryo_instrument.wait_while_ramping(0.5)
+def test_wait_while_ramping_timeout(cryo_instrument):
+    # Simulate _get_field always returning a value far from the setpoint
+    with (
+        patch.object(cryo_instrument, "_get_field", return_value=0.0),
+        patch.object(cryo_instrument, "_sleep"),
+    ):
+        with pytest.raises(Cryomagnetics4GException, match="Timeout|stabilized"):
+            cryo_instrument.wait_while_ramping(1.0, threshold=1e-4)
 
-    # Check that the ask method was called with the expected arguments
-    mock_ask.assert_any_call("*STB?")
 
-    assert state.holding is True
-    assert state.ramping is False
+def test_wait_while_ramping_success(cryo_instrument):
+    # Simulate _get_field returning values that reach the setpoint
+    field_values = [0.0, 0.2, 0.4, 0.5]  # Last value matches setpoint
+    with (
+        patch.object(cryo_instrument, "_get_field", side_effect=field_values),
+        patch.object(cryo_instrument, "_sleep"),
+        patch.object(
+            cryo_instrument,
+            "magnet_operating_state",
+            return_value=CryomagneticsOperatingState(holding=True, ramping=False),
+        ),
+    ):
+        state = cryo_instrument.wait_while_ramping(0.5, threshold=1e-2)
+        assert state.holding is True
+        assert state.ramping is False
 
 
 def test_get_rate(cryo_instrument):
     with patch.object(cryo_instrument, "ask", return_value="5.0"):
-        assert cryo_instrument._get_rate() == 5.0 * 60 / cryo_instrument.coil_constant
+        assert cryo_instrument._get_rate() == 5.0 * 60 * cryo_instrument.coil_constant
 
 
 def test_set_rate(cryo_instrument):
@@ -146,18 +166,33 @@ def test_set_rate(cryo_instrument):
     cryo_instrument.max_current_limits = {
         0: (10.0, 1.0),  # Range 0: up to 10 A, max rate 1 A/s
         1: (50.0, 2.0),  # Range 1: up to 50 A, max rate 2 A/s
+        2: (70.0, 0.001),  # Range 2: up to 70 A, max rate 0.001 A/s
     }
 
     with (
         patch.object(cryo_instrument, "write") as mock_write,
         patch.object(cryo_instrument, "_get_field", return_value=0.5),
     ):
+        # _set_rate() converts T/min to A/s for all ranges
         cryo_instrument._set_rate(1.0)
-        expected_rate = min(
-            1.0 * cryo_instrument.coil_constant / 60,
+        expected_rate_0 = min(
+            1.0 / cryo_instrument.coil_constant / 60,
             cryo_instrument.max_current_limits[0][1],
         )
-        assert mock_write.call_args_list == [call(f"RATE 0 {expected_rate}")]
+        expected_rate_1 = min(
+            1.0 / cryo_instrument.coil_constant / 60,
+            cryo_instrument.max_current_limits[1][1],
+        )
+        expected_rate_2 = min(
+            1.0 / cryo_instrument.coil_constant / 60,
+            cryo_instrument.max_current_limits[2][1],
+        )
+
+        assert mock_write.call_args_list == [
+            call(f"RATE 0 {expected_rate_0}"),
+            call(f"RATE 1 {expected_rate_1}"),
+            call(f"RATE 2 {expected_rate_2}"),
+        ]
 
 
 def test_initialize_max_current_limits(cryo_instrument):
