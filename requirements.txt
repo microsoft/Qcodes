@@ -102,7 +102,7 @@ h5py==3.14.0
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.138.14
+hypothesis==6.138.15
     # via qcodes (pyproject.toml)
 idna==3.10
     # via requests
@@ -343,7 +343,7 @@ pyyaml==6.0.2
     #   zhinst-timing-models
 pyyaml-ft==8.0.0
     # via libcst
-pyzmq==27.0.2
+pyzmq==27.1.0
     # via
     #   ipykernel
     #   jupyter-client
