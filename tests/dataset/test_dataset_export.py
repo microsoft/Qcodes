@@ -1817,12 +1817,12 @@ def test_netcdf_export_with_mixed_timestamp_raw(
     y_param = ParamSpecBase("y", paramtype="numeric")
 
     interdeps = InterDependencies_(
-        dependencies={y_param: (x_param,)}, inferences={}, standalones=set()
+        dependencies={y_param: (x_param,)}, inferences={}, standalones=()
     )
     ds.prepare(interdeps=interdeps, snapshot={})
 
     # Add a data point
-    ds._enqueue_results({x_param: [1.0], y_param: [2.0]})
+    ds._enqueue_results({x_param: np.array([1.0]), y_param: np.array([2.0])})
 
     # Verify run_timestamp_raw is set but completed_timestamp_raw is None
     # (because we didn't call mark_completed())
