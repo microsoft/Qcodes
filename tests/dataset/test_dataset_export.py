@@ -29,6 +29,7 @@ from qcodes.dataset import (
     new_data_set,
 )
 from qcodes.dataset.data_set import DataSet
+from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.versioning import serialization as serial
@@ -1755,3 +1756,94 @@ def test_dond_hypothesis_nd_grid(
         expected_signal += weights[i] * grid.astype(float)
 
     np.testing.assert_allclose(xr_ds["signal"].values, expected_signal)
+
+
+def test_netcdf_export_with_none_timestamp_raw(
+    tmp_path_factory: TempPathFactory, experiment
+) -> None:
+    """
+    Test that datasets with None timestamp_raw values export correctly to NetCDF
+    using sentinel values and import back with correct None values.
+    """
+    tmp_path = tmp_path_factory.mktemp("netcdf_none_timestamp")
+
+    # Create a dataset that will have None timestamp_raw values
+    # Don't prepare it or add data, just like test_write_metadata_to_explicit_db
+    ds = DataSetInMem._create_new_run(name="test_none_timestamp")
+
+    # Verify initial state - both timestamp_raw should be None since we didn't start or complete
+    assert ds.run_timestamp_raw is None
+    assert ds.completed_timestamp_raw is None
+
+    # Export to NetCDF directly without preparing or adding data
+    file_path = tmp_path / f"test_{ds.captured_run_id}_{ds.guid}.nc"
+    ds.export(export_type="netcdf", path=str(tmp_path), prefix="test_")
+
+    # Verify the file was created
+    assert file_path.exists()
+
+    # Load the raw NetCDF file to check sentinel values are used
+    with xr.open_dataset(file_path, engine="h5netcdf") as loaded_xr:
+        # Check that sentinel values (-1) are present in the NetCDF file
+        assert loaded_xr.attrs["run_timestamp_raw"] == -1
+        assert loaded_xr.attrs["completed_timestamp_raw"] == -1
+
+    # Load back through QCoDeS to verify sentinel conversion
+    loaded_ds = DataSetInMem._load_from_netcdf(file_path)
+
+    # Verify that sentinel values were converted back to None
+    assert loaded_ds.run_timestamp_raw is None
+    assert loaded_ds.completed_timestamp_raw is None
+
+    # Verify other metadata is preserved
+    assert loaded_ds.captured_run_id == ds.captured_run_id
+    assert loaded_ds.guid == ds.guid
+    assert loaded_ds.name == ds.name
+
+
+def test_netcdf_export_with_mixed_timestamp_raw(
+    tmp_path_factory: TempPathFactory, experiment
+) -> None:
+    """
+    Test NetCDF export/import with one timestamp_raw being None and one being set.
+    """
+    tmp_path = tmp_path_factory.mktemp("netcdf_mixed_timestamp")
+
+    # Create a dataset and prepare it (this sets run_timestamp_raw)
+    ds = DataSetInMem._create_new_run(name="test_mixed_timestamp")
+
+    # Add some minimal data
+    x_param = ParamSpecBase("x", paramtype="numeric")
+    y_param = ParamSpecBase("y", paramtype="numeric")
+
+    interdeps = InterDependencies_(
+        dependencies={y_param: (x_param,)}, inferences={}, standalones=()
+    )
+    ds.prepare(interdeps=interdeps, snapshot={})
+
+    # Add a data point
+    ds._enqueue_results({x_param: np.array([1.0]), y_param: np.array([2.0])})
+
+    # Verify run_timestamp_raw is set but completed_timestamp_raw is None
+    # (because we didn't call mark_completed())
+    assert ds.run_timestamp_raw is not None
+    assert ds.completed_timestamp_raw is None
+
+    # Export without completing (so completed_timestamp_raw stays None)
+    file_path = tmp_path / f"test_{ds.captured_run_id}_{ds.guid}.nc"
+    ds.export(export_type="netcdf", path=str(tmp_path), prefix="test_")
+
+    # Check raw NetCDF file
+    with xr.open_dataset(file_path, engine="h5netcdf") as loaded_xr:
+        # run_timestamp_raw should be the actual timestamp (not -1)
+        assert loaded_xr.attrs["run_timestamp_raw"] != -1
+        assert loaded_xr.attrs["run_timestamp_raw"] == ds.run_timestamp_raw
+        # completed_timestamp_raw should be sentinel value (-1)
+        assert loaded_xr.attrs["completed_timestamp_raw"] == -1
+
+    # Load back and verify conversion
+    loaded_ds = DataSetInMem._load_from_netcdf(file_path)
+
+    # Verify timestamp_raw values are correct
+    assert loaded_ds.run_timestamp_raw == ds.run_timestamp_raw
+    assert loaded_ds.completed_timestamp_raw is None
