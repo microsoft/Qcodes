@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+import warnings
 from collections.abc import Callable, Iterable, Iterator, MutableSequence, Sequence
 from typing import TYPE_CHECKING, Any, TypeVar, cast, overload
 
@@ -14,7 +15,7 @@ from qcodes.parameters import (
     Parameter,
 )
 from qcodes.parameters.multi_channel_instrument_parameter import InstrumentModuleType
-from qcodes.utils import full_class
+from qcodes.utils import QCoDeSDeprecationWarning, full_class
 from qcodes.validators import Validator
 
 from .instrument_base import InstrumentBase
@@ -338,6 +339,26 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
         """
         return self._channels.count(obj)
 
+    def get_channels_by_name(self: Self, *names: str) -> Self:
+        """
+        Get a a ChannelTuple that only contains the selected names.
+
+        Args:
+            *names: channel names
+
+        """
+        if len(names) == 0:
+            raise Exception("one or more names must be given")
+        selected_channels = tuple(self._channel_mapping[name] for name in names)
+        return type(self)(
+            self._parent,
+            self._name,
+            self._chan_type,
+            selected_channels,
+            self._snapshotable,
+            self._paramclass,
+        )
+
     def get_channel_by_name(self: Self, *names: str) -> InstrumentModuleType | Self:
         """
         Get a channel by name, or a ChannelTuple if multiple names are given.
@@ -350,6 +371,12 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
             raise Exception("one or more names must be given")
         if len(names) == 1:
             return self._channel_mapping[names[0]]
+
+        warnings.warn(
+            "Supplying more than one name to get_channel_by_name is deprecated, use get_channels_by_name instead",
+            category=QCoDeSDeprecationWarning,
+        )
+
         selected_channels = tuple(self._channel_mapping[name] for name in names)
         return type(self)(
             self._parent,
