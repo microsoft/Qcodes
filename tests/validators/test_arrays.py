@@ -76,22 +76,22 @@ def test_complex_subtypes() -> None:
 
 def test_min_max_real_ints_raises() -> None:
     with pytest.raises(
-        TypeError, match="min_value must be an instance of valid_types."
+        TypeError, match=re.escape("min_value must be an instance of valid_types.")
     ):
         Arrays(valid_types=(np.integer,), min_value=1.0)
     with pytest.raises(
-        TypeError, match="max_value must be an instance of valid_types."
+        TypeError, match=re.escape("max_value must be an instance of valid_types.")
     ):
         Arrays(valid_types=(np.integer,), max_value=6.0)
 
 
 def test_min_max_ints_real_raises() -> None:
     with pytest.raises(
-        TypeError, match="min_value must be an instance of valid_types."
+        TypeError, match=re.escape("min_value must be an instance of valid_types.")
     ):
         Arrays(valid_types=(np.floating,), min_value=1)
     with pytest.raises(
-        TypeError, match="max_value must be an instance of valid_types."
+        TypeError, match=re.escape("max_value must be an instance of valid_types.")
     ):
         Arrays(valid_types=(np.floating,), max_value=6)
 
@@ -130,9 +130,11 @@ def test_text_type_raises() -> None:
     """Text types are not supported"""
     with pytest.raises(
         TypeError,
-        match="Arrays validator only supports "
-        "numeric types: <class "
-        "'numpy.str_'> is not supported.",
+        match=re.escape(
+            "Arrays validator only supports "
+            "numeric types: <class "
+            "'numpy.str_'> is not supported."
+        ),
     ):
         Arrays(valid_types=(np.dtype("<U5").type,))
 

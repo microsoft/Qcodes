@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -624,7 +625,7 @@ def test_export_no_or_nonexistent_type_specified(
     with pytest.raises(ValueError, match="No data export type specified"):
         mock_dataset.export()
 
-    with pytest.raises(ValueError, match="Export type foo is unknown."):
+    with pytest.raises(ValueError, match=re.escape("Export type foo is unknown.")):
         mock_dataset.export(export_type="foo")
 
 
