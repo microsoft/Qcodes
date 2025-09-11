@@ -72,7 +72,7 @@ def test_prepare_twice_raises(experiment) -> None:
 
     ds.prepare(interdeps=idps, snapshot={})
     with pytest.raises(
-        RuntimeError, match=re.escape("Cannot prepare a dataset that is not prisine.")
+        RuntimeError, match=re.escape("Cannot prepare a dataset that is not pristine.")
     ):
         ds.prepare(interdeps=idps, snapshot={})
 
