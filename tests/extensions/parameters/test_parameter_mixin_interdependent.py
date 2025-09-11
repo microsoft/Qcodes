@@ -1,3 +1,4 @@
+import re
 from typing import Any, cast
 
 import pytest
@@ -226,7 +227,7 @@ def test_typeerror_if_dependency_update_method_invalid(mock_instr):
     )
     # Assign an invalid value (not callable, not None)
     with pytest.raises(
-        TypeError, match="dependency_update_method must be callable or None."
+        TypeError, match=re.escape("dependency_update_method must be callable or None.")
     ):
         param.dependency_update_method = 123
 
@@ -239,9 +240,13 @@ def test_typeerror_if_dependent_on_invalid(mock_instr):
         get_cmd=lambda: None,
     )
     # Assign a non-list
-    with pytest.raises(TypeError, match="dependent_on must be a list of strings."):
+    with pytest.raises(
+        TypeError, match=re.escape("dependent_on must be a list of strings.")
+    ):
         param.dependent_on = "not_a_list"
 
     # Assign a list with non-string
-    with pytest.raises(TypeError, match="dependent_on must be a list of strings."):
+    with pytest.raises(
+        TypeError, match=re.escape("dependent_on must be a list of strings.")
+    ):
         param.dependent_on = [123, None]
