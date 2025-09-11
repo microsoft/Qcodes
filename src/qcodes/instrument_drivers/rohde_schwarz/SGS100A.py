@@ -322,6 +322,17 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             vals=vals.Numbers(20e-9, 100),
         )
         """Parameter pulsemod_width"""
+        self.operation_mode: Parameter = self.add_parameter(
+            "operation_mode",
+            label="Operation Mode",
+            get_cmd=":SOUR:OPMode?",
+            set_cmd=":SOUR:OPMode {}",
+            vals=vals.Enum(
+                "NORMal",  # Normal - Normal Mode
+                "BBBYpass",  # Bypass - Bypass Mode
+            ),
+        )
+        """Parameter operation_mode"""
         self.add_function("reset", call_cmd="*RST")
         self.add_function("run_self_tests", call_cmd="*TST?")
 
