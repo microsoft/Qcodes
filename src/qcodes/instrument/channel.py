@@ -338,6 +338,26 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
         """
         return self._channels.count(obj)
 
+    def get_channels_by_name(self: Self, *names: str) -> Self:
+        """
+        Get a a ChannelTuple that only contains the selected names.
+
+        Args:
+            *names: channel names
+
+        """
+        if len(names) == 0:
+            raise Exception("one or more names must be given")
+        selected_channels = tuple(self._channel_mapping[name] for name in names)
+        return type(self)(
+            self._parent,
+            self._name,
+            self._chan_type,
+            selected_channels,
+            self._snapshotable,
+            self._paramclass,
+        )
+
     def get_channel_by_name(self: Self, *names: str) -> InstrumentModuleType | Self:
         """
         Get a channel by name, or a ChannelTuple if multiple names are given.
@@ -350,6 +370,11 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
             raise Exception("one or more names must be given")
         if len(names) == 1:
             return self._channel_mapping[names[0]]
+
+        raise Warning(
+            "Supplying more than one name to get_channel_by_name is deprecated, use get_channels_by_name instead"
+        )
+
         selected_channels = tuple(self._channel_mapping[name] for name in names)
         return type(self)(
             self._parent,
