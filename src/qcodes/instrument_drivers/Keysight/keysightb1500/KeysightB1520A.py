@@ -1260,7 +1260,7 @@ class KeysightB1500Correction(InstrumentChannel):
         super().__init__(parent=parent, name=name, **kwargs)
         self._chnum = parent.channels[0]
 
-        self.add_submodule(
+        self.frequency_list = self.add_submodule(
             "frequency_list",
             KeysightB1500FrequencyList(self, "frequency_list", self._chnum),
         )
