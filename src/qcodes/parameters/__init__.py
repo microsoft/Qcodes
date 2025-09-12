@@ -68,6 +68,7 @@ more specialized ones:
 
 """
 
+from ._paramspec import ParamSpecBase, ParamSpecBaseDict
 from .array_parameter import ArrayParameter
 from .combined_parameter import CombinedParameter, combine
 from .delegate_parameter import DelegateParameter
@@ -80,6 +81,7 @@ from .parameter import ManualParameter, Parameter
 from .parameter_base import (
     ParamDataType,
     ParameterBase,
+    ParameterSet,
     ParamRawDataType,
     invert_val_mapping,
 )
@@ -106,8 +108,11 @@ __all__ = [
     "MultiParameter",
     "ParamDataType",
     "ParamRawDataType",
+    "ParamSpecBase",
+    "ParamSpecBaseDict",
     "Parameter",
     "ParameterBase",
+    "ParameterSet",
     "ParameterWithSetpoints",
     "ScaledParameter",
     "SweepFixedValues",

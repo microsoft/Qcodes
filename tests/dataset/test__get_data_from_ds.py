@@ -6,9 +6,8 @@ from numpy.testing import assert_allclose
 
 from qcodes.dataset.data_export import _get_data_from_ds
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.measurements import Measurement
-from qcodes.parameters import ManualParameter
+from qcodes.parameters import ManualParameter, ParamSpecBase
 
 
 def test_get_data_by_id_order(dataset) -> None:

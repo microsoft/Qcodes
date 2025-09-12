@@ -15,9 +15,8 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 import networkx as nx
 from typing_extensions import deprecated
 
+from qcodes.parameters import ParamSpecBase
 from qcodes.utils import QCoDeSDeprecationWarning
-
-from .param_spec import ParamSpecBase
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

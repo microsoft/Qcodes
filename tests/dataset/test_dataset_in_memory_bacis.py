@@ -7,7 +7,7 @@ import qcodes as qc
 from qcodes.dataset import connect, load_by_guid, load_or_create_experiment
 from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+from qcodes.parameters import ParamSpecBase
 
 
 def test_create_dataset_in_memory_explicit_db(empty_temp_db) -> None:

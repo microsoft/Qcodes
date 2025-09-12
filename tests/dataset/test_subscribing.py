@@ -8,8 +8,8 @@ from numpy import ndarray
 
 import qcodes
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.sqlite.connection import atomic_transaction
+from qcodes.parameters import ParamSpecBase
 from tests.common import retry_until_does_not_throw
 
 log = logging.getLogger(__name__)
