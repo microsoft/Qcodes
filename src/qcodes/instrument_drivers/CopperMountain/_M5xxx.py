@@ -68,10 +68,10 @@ class CopperMountainM5xxx(VisaInstrument):
         self.output: Parameter = self.add_parameter(
             name="output",
             label="Output",
-            get_parser=lambda x: x.rstrip("\n"),
+            get_parser=int,
             get_cmd="OUTP:STAT?",
             set_cmd="OUTP:STAT {}",
-            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
         )
         """Use to check state of RF signal output (ON/OFF) and turns the RF signal output ON/OFF"""
 
