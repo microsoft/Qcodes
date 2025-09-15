@@ -3,22 +3,28 @@ import os
 import re
 import shutil
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
 import xarray as xr
+from deepdiff import DeepDiff  # type: ignore[import-untyped]
 from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_almost_equal
 
 import qcodes
-from qcodes.dataset import load_by_id, load_by_run_spec
+from qcodes.dataset import Measurement, load_by_id, load_by_run_spec
 from qcodes.dataset.data_set_in_memory import DataSetInMem, load_from_file
 from qcodes.dataset.data_set_protocol import DataSetType
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.sqlite.connection import AtomicConnection, atomic_transaction
+from qcodes.parameters import ManualParameter, Parameter
 from qcodes.station import Station
+
+if TYPE_CHECKING:
+    from qcodes.dataset.experiment_container import Experiment
 
 
 def test_dataset_in_memory_reload_from_db(
@@ -676,3 +682,32 @@ def test_load_from_db_dataset_moved(
             not in new_xr_ds.attrs
         )
         assert new_xr_ds.attrs["metadata_added_after_set_new_netcdf_location"] == 6969
+
+
+def test_dataset_in_mem_with_inferred_parameters(experiment: "Experiment") -> None:
+    inferred1 = ManualParameter("inferred1", initial_value=0)
+    inferred2 = ManualParameter("inferred2", initial_value=0)
+    control1 = ManualParameter("control1", initial_value=0)
+    control2 = ManualParameter("control2", initial_value=0)
+    dependent = Parameter("dependent", get_cmd=lambda: control1(), set_cmd=False)
+    meas = Measurement(exp=experiment, name="via Measurement")
+
+    meas.register_parameter(control1)
+    meas.register_parameter(control2)
+    meas.register_parameter(inferred1, basis=(control1, control2))
+    meas.register_parameter(inferred2, basis=(control1, control2))
+    meas.register_parameter(dependent, setpoints=(control1, control2))
+    meas.set_shapes({dependent.register_name: (11, 11)})
+    with meas.run() as datasaver:
+        for i in range(11):
+            for j in range(11):
+                control1(float(i))
+                control2(float(j))
+                datasaver.add_result(
+                    (control1, control1()),
+                    (control2, control2()),
+                    (dependent, dependent()),
+                )
+        ds = datasaver.dataset
+
+    assert DeepDiff(ds.get_parameter_data(), ds.cache.data()) == {}
