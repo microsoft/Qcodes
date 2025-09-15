@@ -29,7 +29,7 @@ broadbean==0.14.0
     #   qcodes
 certifi==2025.8.3
     # via requests
-cf-xarray==0.10.8
+cf-xarray==0.10.9
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -60,7 +60,7 @@ coverage==7.10.6
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2025.7.0
+dask==2025.9.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -102,7 +102,7 @@ h5py==3.14.0
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.138.15
+hypothesis==6.138.16
     # via qcodes (pyproject.toml)
 idna==3.10
     # via requests
@@ -167,7 +167,7 @@ kiwisolver==1.4.9
     # via matplotlib
 lazy-loader==0.4
     # via qcodes-loop
-libcst==1.8.2
+libcst==1.8.4
     # via qcodes (pyproject.toml)
 locket==1.0.0
     # via partd
@@ -191,7 +191,7 @@ matplotlib-inline==0.1.7
     #   ipython
 mistune==3.1.4
     # via nbconvert
-mypy==1.17.1
+mypy==1.18.1
     # via qcodes (pyproject.toml)
 mypy-extensions==1.1.0
     # via mypy
@@ -210,7 +210,7 @@ nest-asyncio==1.6.0
     # via ipykernel
 networkx==3.5
     # via qcodes (pyproject.toml)
-numpy==2.3.2
+numpy==2.3.3
     # via
     #   qcodes (pyproject.toml)
     #   broadbean
@@ -230,7 +230,7 @@ numpy==2.3.2
     #   zhinst-timing-models
     #   zhinst-toolkit
     #   zhinst-utils
-opentelemetry-api==1.36.0
+opentelemetry-api==1.37.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -299,7 +299,7 @@ pygments==2.19.2
     #   nbconvert
     #   pytest
     #   sphinx
-pyparsing==3.2.3
+pyparsing==3.2.4
     # via matplotlib
 pytest==8.4.2
     # via
@@ -309,9 +309,9 @@ pytest==8.4.2
     #   pytest-mock
     #   pytest-rerunfailures
     #   pytest-xdist
-pytest-asyncio==1.1.0
+pytest-asyncio==1.2.0
     # via qcodes (pyproject.toml)
-pytest-cov==6.3.0
+pytest-cov==7.0.0
     # via qcodes (pyproject.toml)
 pytest-mock==3.15.0
     # via qcodes (pyproject.toml)
@@ -372,7 +372,7 @@ ruamel-yaml-clib==0.2.12
     # via ruamel-yaml
 schema==0.7.7
     # via broadbean
-scipy==1.16.1
+scipy==1.16.2
     # via qcodes (pyproject.toml)
 six==1.17.0
     # via python-dateutil
@@ -459,9 +459,9 @@ types-networkx==3.5.0.20250812
     # via qcodes (pyproject.toml)
 types-pytz==2025.2.0.20250809
     # via pandas-stubs
-types-pywin32==311.0.0.20250822
+types-pywin32==311.0.0.20250915
     # via qcodes (pyproject.toml)
-types-requests==2.32.4.20250809
+types-requests==2.32.4.20250913
     # via
     #   qcodes (pyproject.toml)
     #   types-tqdm

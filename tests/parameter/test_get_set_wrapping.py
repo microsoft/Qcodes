@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
@@ -110,7 +111,7 @@ def test_get_on_parameter_marked_as_non_gettable_raises() -> None:
     a = Parameter("param")
     a._gettable = False
     with pytest.raises(
-        TypeError, match="Trying to get a parameter that is not gettable."
+        TypeError, match=re.escape("Trying to get a parameter that is not gettable.")
     ):
         a.get()
 
@@ -121,7 +122,7 @@ def test_set_on_parameter_marked_as_non_settable_raises() -> None:
     assert a.get() == 2
     a._settable = False
     with pytest.raises(
-        TypeError, match="Trying to set a parameter that is not settable."
+        TypeError, match=re.escape("Trying to set a parameter that is not settable.")
     ):
         a.set(1)
     assert a.get() == 2
