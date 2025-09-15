@@ -57,7 +57,7 @@ class DataSetCache(Generic[DatasetType_co]):
         #: number of rows read per parameter tree (by the name of the dependent parameter)
         self._read_status: dict[str, int] = {}
         #: number of rows written per parameter tree (by the name of the dependent parameter)
-        self._write_status: dict[str, int | None] = {}
+        self._write_status: dict[str, dict[str, int | None]] = {}
         self._loaded_from_completed_ds = False
         self._live: bool | None = None
 
@@ -79,7 +79,7 @@ class DataSetCache(Generic[DatasetType_co]):
         Loads data from the database on disk if needed and returns
         the cached data. The cached data is in almost the same format as
         :py:class:`.DataSet.get_parameter_data`. However if a shape is provided
-        as part of the dataset metadata and fewer datapoints than expected are
+        as part of the dataset metadata and fewer data points than expected are
         returned the missing values will be replaced by `NaN` or zeroes
         depending on the datatype.
 
@@ -118,7 +118,7 @@ class DataSetCache(Generic[DatasetType_co]):
 
     def prepare(self) -> None:
         """
-        Set up the internal datastructure of the cache.
+        Set up the internal data structure of the cache.
         Must be called after the dataset has been setup with
         interdependencies but before data is added to the dataset.
         """
@@ -230,10 +230,12 @@ def load_new_data_from_db_and_append(
     conn: AtomicConnection,
     table_name: str,
     rundescriber: RunDescriber,
-    write_status: Mapping[str, int | None],
+    write_status: Mapping[str, Mapping[str, int | None]],
     read_status: Mapping[str, int],
     existing_data: Mapping[str, Mapping[str, npt.NDArray]],
-) -> tuple[dict[str, int | None], dict[str, int], dict[str, dict[str, npt.NDArray]]]:
+) -> tuple[
+    dict[str, dict[str, int | None]], dict[str, int], dict[str, dict[str, npt.NDArray]]
+]:
     """
     Append any new data in the db to an already existing datadict and return the merged
     data.
@@ -269,10 +271,10 @@ def load_new_data_from_db_and_append(
 
 def append_shaped_parameter_data_to_existing_arrays(
     rundescriber: RunDescriber,
-    write_status: Mapping[str, int | None],
+    write_status: Mapping[str, Mapping[str, int | None]],
     existing_data: Mapping[str, Mapping[str, npt.NDArray]],
     new_data: Mapping[str, Mapping[str, npt.NDArray]],
-) -> tuple[dict[str, int | None], dict[str, dict[str, npt.NDArray]]]:
+) -> tuple[dict[str, dict[str, int | None]], dict[str, dict[str, npt.NDArray]]]:
     """
     Append datadict to an already existing datadict and return the merged
     data.
@@ -294,7 +296,9 @@ def append_shaped_parameter_data_to_existing_arrays(
     parameters = tuple(ps.name for ps in rundescriber.interdeps.top_level_parameters)
     merged_data = {}
 
-    updated_write_status = dict(write_status)
+    updated_write_status: dict[str, dict[str, int | None]] = {
+        key: dict(val) for key, val in write_status.items()
+    }
 
     for meas_parameter in parameters:
         existing_data_1_tree = existing_data.get(meas_parameter, {})
@@ -316,6 +320,7 @@ def append_shaped_parameter_data_to_existing_arrays(
                 meas_parameter=meas_parameter,
             )
         )
+
     return updated_write_status, merged_data
 
 
@@ -323,9 +328,9 @@ def _merge_data(
     existing_data: Mapping[str, npt.NDArray],
     new_data: Mapping[str, npt.NDArray],
     shape: tuple[int, ...] | None,
-    single_tree_write_status: int | None,
+    single_tree_write_status: Mapping[str, int | None] | None,
     meas_parameter: str,
-) -> tuple[dict[str, npt.NDArray], int | None]:
+) -> tuple[dict[str, npt.NDArray], dict[str, int | None]]:
     subtree_merged_data = {}
     subtree_parameters = existing_data.keys()
 
@@ -336,13 +341,15 @@ def _merge_data(
             f"{set(new_data.keys() - existing_data.keys())}"
         )
 
-    new_write_status: int | None
+    new_tree_write_status: dict[str, int | None] = {}
     single_param_merged_data, new_write_status = _merge_data_single_param(
         existing_data.get(meas_parameter),
         new_data.get(meas_parameter),
         shape,
-        single_tree_write_status,
+        single_tree_write_status[meas_parameter] if single_tree_write_status else None,
     )
+    new_tree_write_status[meas_parameter] = new_write_status
+
     if single_param_merged_data is not None:
         subtree_merged_data[meas_parameter] = single_param_merged_data
 
@@ -352,12 +359,15 @@ def _merge_data(
                 existing_data.get(subtree_param),
                 new_data.get(subtree_param),
                 shape,
-                single_tree_write_status,
+                single_tree_write_status[subtree_param]
+                if single_tree_write_status
+                else None,
             )
             if single_param_merged_data is not None:
                 subtree_merged_data[subtree_param] = single_param_merged_data
+            new_tree_write_status[subtree_param] = new_write_status
 
-    return subtree_merged_data, new_write_status
+    return subtree_merged_data, new_tree_write_status
 
 
 def _merge_data_single_param(
