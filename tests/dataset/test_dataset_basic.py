@@ -37,6 +37,8 @@ from tests.dataset.test_links import generate_some_links
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from qcodes.dataset.experiment_container import Experiment
+
 n_experiments = 0
 
 
@@ -149,7 +151,9 @@ def test_dataset_states() -> None:
 
     with pytest.raises(
         RuntimeError,
-        match="Can not mark DataSet as complete before it has been marked as started.",
+        match=re.escape(
+            "Can not mark DataSet as complete before it has been marked as started."
+        ),
     ):
         ds.mark_completed()
 
@@ -261,12 +265,8 @@ def test_dataset_read_only_properties(dataset) -> None:
     ]
 
     # It is not expected to be possible to set readonly properties
-    # the error message changed in python 3.11
-    # from 'can't set ...' to 'has no setter ...'
     for prop in read_only_props:
-        with pytest.raises(
-            AttributeError, match="(can't set attribute|object has no setter)"
-        ):
+        with pytest.raises(AttributeError, match="object has no setter"):
             setattr(dataset, prop, True)
 
 
@@ -283,9 +283,9 @@ def test_create_dataset_from_non_existing_run_id(non_existing_run_id) -> None:
 def test_create_dataset_pass_both_connection_and_path_to_db(experiment) -> None:
     with pytest.raises(
         ValueError,
-        match="Received BOTH conn and path_to_db. "
-        "Please provide only one or "
-        "the other.",
+        match=re.escape(
+            "Received BOTH conn and path_to_db. Please provide only one or the other."
+        ),
     ):
         some_valid_connection = experiment.conn
         _ = DataSet(path_to_db="some valid path", conn=some_valid_connection)
@@ -310,7 +310,7 @@ def test_load_by_id_for_nonexisting_run_id(non_existing_run_id) -> None:
 @pytest.mark.usefixtures("experiment")
 def test_load_by_id_for_none() -> None:
     with pytest.raises(
-        ValueError, match="run_id has to be a positive integer, not None."
+        ValueError, match=re.escape("run_id has to be a positive integer, not None.")
     ):
         _ = load_by_id(None)  # type: ignore[arg-type]
 
@@ -1416,3 +1416,13 @@ def test_empty_ds_parameters() -> None:
     assert ds.parameters is None
     ds.mark_completed()
     assert ds.parameters is None
+
+
+def test_create_dataset_with_readonly_throws_error() -> None:
+    with pytest.raises(ValueError):
+        DataSet(read_only=True)
+
+
+@pytest.mark.usefixtures("experiment")
+def test_create_dataset_with_conn_ignores_readonly(experiment: "Experiment") -> None:
+    DataSet(conn=experiment.conn, read_only=True)

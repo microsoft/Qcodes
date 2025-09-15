@@ -37,13 +37,12 @@ dependencies = [
     "pyvisa>=1.11.0, <1.16.0",
     "ruamel.yaml>=0.16.0,!=0.16.6",
     "tabulate>=0.9.0",
-    "types-networkx >= 3.1", # Version should match the networkx requirment
     "typing_extensions>=4.6.0",
     "tqdm>=4.59.0",
     "uncertainties>=3.2.0",
     "versioningit>=2.2.1",
     "websockets>=11.0",
-    "xarray>=2022.06.0",
+    "xarray>=2023.08.0",
     "cf_xarray>=0.8.4",
     "opentelemetry-api>=1.17.0",
     "pillow>=9.2.0",
@@ -63,8 +62,8 @@ Changelog = "https://microsoft.github.io/Qcodes/changes/index.html"
 zurichinstruments = ["zhinst-qcodes>=0.3"]
 loop = ["qcodes_loop>=0.1.2"]
 test = [
-    "coverage[toml]>=6.3.0",
-    "deepdiff>=5.0.2",
+    "coverage[toml]>=7.6.9",
+    "deepdiff>=8.6.1",
     "hypothesis>=6.130.0",
     "lxml>=4.9.4",
     "lxml-stubs>=0.4.0",
@@ -79,6 +78,7 @@ test = [
     "PyVisa-sim>=0.6.0",
     "sphinx>=4.5.0",  # sphinx extension tests
     "types-jsonschema>=4.16.0",
+    "types-networkx >= 3.1", # Version should match the networkx requirment
     "types_requests>=0.1.8",
     "types-tabulate>=0.1.0",
     "types-tqdm>=4.64.6",
@@ -97,7 +97,7 @@ docs = [
     "sphinx-jsonschema>=1.19.1",
     "furo>=2024.8.6",
     "sphinxcontrib-towncrier>=0.5.0a0",
-    "towncrier>=24.8.0,<25.0.0", #  sphinxcontrib-towncrier is likely to break with new versions
+    "towncrier>=24.8.0,<26.0.0", #  sphinxcontrib-towncrier is likely to break with new versions
     "scipy>=1.10.0", # examples using scipy
     "qcodes_loop>=0.1.1", # legacy dataset import examples
 ]
@@ -267,9 +267,8 @@ select = [
 # code.
 # PLxxxx are pylint lints that generate a fair amount of warnings
 # it may be worth fixing some or these in the future
-# UP038 this can result in slower code so we ignore it
 # PYI036 disable until https://github.com/astral-sh/ruff/issues/9794 is fixed
-ignore = ["E501", "G004", "NPY002", "PLR2004", "PLR0913", "PLR0911", "PLR0912", "PLR0915", "PLW0602", "PLW0603", "PLW2901", "UP038", "PYI036"]
+ignore = ["E501", "G004", "NPY002", "PLR2004", "PLR0913", "PLR0911", "PLR0912", "PLR0915", "PLW0602", "PLW0603", "PLW2901", "PYI036"]
 
 # we want to explicitly use the micro symbol
 # not the greek letter
@@ -368,7 +367,11 @@ name = "Improved Drivers:"
 name = "Under the hood:"
 
 [tool.versioningit]
-default-version = "0.0"
+# we hard code the default version to match a development version
+# due to
+# https://github.com/orgs/community/discussions/163397#discussioncomment-13888710
+default-version = "0.54.0dev+Unknown"
+
 
 [tool.versioningit.format]
 distance = "{next_version}.dev{distance}+{branch}.{vcs}{rev}"

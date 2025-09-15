@@ -6,11 +6,19 @@ to a dataset, even when they are transitively related through dependencies.
 """
 
 from itertools import chain
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from qcodes.dataset import Measurement
+from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.parameters import DelegateParameter, ManualParameter, Parameter
+
+if TYPE_CHECKING:
+    from pytest import LogCaptureFixture
+
+    from qcodes.dataset.experiment_container import Experiment
+    from qcodes.instrument_drivers.mock_instruments import DummyInstrument
 
 
 def test_inferred_parameters_transitively_collected(experiment, DAC):
@@ -213,6 +221,106 @@ def test_inferred_parameters_in_actual_measurement_1d(experiment, DAC):
 
     # Check that we have the right number of rows
     assert len(df) == num_points
+
+
+def test_inferred_parameters_in_actual_measurement_2d(
+    experiment: "Experiment", DAC: "DummyInstrument", caplog: "LogCaptureFixture"
+) -> None:
+    """
+    2D version: both axes are DelegateParameters inferred from DAC channels.
+    Ensures inferred parameters on both axes are saved and exported correctly.
+    """
+    num_points_x = 5
+    num_points_y = 7
+
+    # Delegate parameters (axes)
+    del_param_1 = DelegateParameter("del_param_1", label="del param 1", source=DAC.ch1)
+    del_param_2 = DelegateParameter("del_param_2", label="del param 2", source=DAC.ch2)
+
+    # Measurement parameter depending on both delegate parameters
+    meas_parameter = ManualParameter("meas_parameter", initial_value=0.0)
+
+    meas = Measurement(name="test_measurement_2d", exp=experiment)
+
+    # Register underlying basis (standalone) parameters
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(DAC.ch2)
+
+    # Register delegate parameters inferred from their respective DAC channels
+    meas.register_parameter(del_param_1, basis=(DAC.ch1,))
+    meas.register_parameter(del_param_2, basis=(DAC.ch2,))
+
+    # Register measurement parameter with 2D setpoints
+    meas.register_parameter(meas_parameter, setpoints=(del_param_1, del_param_2))
+    meas.set_shapes(
+        detect_shape_of_measurement([meas_parameter], (num_points_x, num_points_y))
+    )
+
+    with meas.run() as datasaver:
+        for x in np.linspace(0, 1, num_points_x):
+            for y in np.linspace(0, 2, num_points_y):
+                del_param_1.set(x)
+                del_param_2.set(y)
+                meas_parameter.set(x + y)  # simple deterministic value
+
+                datasaver.add_result(
+                    (DAC.ch1, DAC.ch1()),
+                    (DAC.ch2, DAC.ch2()),
+                    (del_param_1, del_param_1()),
+                    (del_param_2, del_param_2()),
+                    (meas_parameter, meas_parameter()),
+                )
+
+    dataset = datasaver.dataset
+    param_data = dataset.get_parameter_data()
+
+    assert "meas_parameter" in param_data
+    assert len(param_data) == 1  # only one top-level dependent parameter tree
+
+    tree = param_data["meas_parameter"]
+    expected_keys = {
+        "meas_parameter",
+        "del_param_1",
+        "del_param_2",
+        "dummy_dac_ch1",
+        "dummy_dac_ch2",
+    }
+    assert set(tree.keys()) == expected_keys
+
+    total_points = num_points_x * num_points_y
+    for k in expected_keys:
+        assert len(tree[k].ravel()) == total_points, (
+            f"{k} should have {total_points} entries"
+        )
+
+    # xarray export
+    caplog.clear()
+    with caplog.at_level("INFO"):
+        xarr = dataset.to_xarray_dataset()
+
+    assert len(caplog.records) == 1
+    assert (
+        caplog.records[0].message
+        == "Exporting meas_parameter to xarray using direct method"
+    )
+
+    assert "meas_parameter" in xarr.data_vars
+    assert "del_param_1" in xarr.coords
+    assert "del_param_2" in xarr.coords
+    # inferred (basis) parameters not exported
+    assert "dummy_dac_ch1" not in xarr.coords
+    assert "dummy_dac_ch2" not in xarr.coords
+
+    assert xarr.meas_parameter.dims == ("del_param_1", "del_param_2")
+    assert xarr.meas_parameter.shape == (num_points_x, num_points_y)
+
+    # pandas export
+    df = dataset.to_pandas_dataframe()
+    assert "meas_parameter" in df.columns
+    assert df.index.names == ["del_param_1", "del_param_2"]
+    assert "dummy_dac_ch1" not in df.columns
+    assert "dummy_dac_ch2" not in df.columns
+    assert len(df) == total_points
 
 
 def test_multiple_dependent_parameters_no_cross_contamination(experiment):

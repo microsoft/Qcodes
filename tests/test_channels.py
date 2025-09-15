@@ -1,4 +1,5 @@
 import logging
+import re
 from collections.abc import Generator, Sequence
 
 import hypothesis.strategies as hst
@@ -200,7 +201,8 @@ def test_extend_wrong_type_raises(dci_with_list) -> None:
     names = ("foo", "bar", "foobar")
     channels = tuple(EmptyChannel(dci_with_list, "Chan" + name) for name in names)
     with pytest.raises(
-        TypeError, match="All items in a channel list must be of the same type."
+        TypeError,
+        match=re.escape("All items in a channel list must be of the same type."),
     ):
         dci_with_list.channels.extend(channels)
 

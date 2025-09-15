@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import tempfile
 import warnings
 from contextlib import contextmanager
@@ -802,8 +803,9 @@ def test_load_all_instruments_raises_on_both_only_names_and_only_types_passed(
 ) -> None:
     with pytest.raises(
         ValueError,
-        match="It is an error to supply both ``only_names`` "
-        "and ``only_types`` arguments.",
+        match=re.escape(
+            "It is an error to supply both ``only_names`` and ``only_types`` arguments."
+        ),
     ):
         example_station.load_all_instruments(only_names=(), only_types=())
 
@@ -935,7 +937,8 @@ def test_get_wrong_component_by_name_raises() -> None:
         _ = station.get_component("dummy_ChanA_temperature_parameter")
 
     with pytest.raises(
-        KeyError, match="Found component param but this has no sub-component foo."
+        KeyError,
+        match=re.escape("Found component param but this has no sub-component foo."),
     ):
         _ = station.get_component("param_foo")
 

@@ -14,7 +14,6 @@ from ..descriptions.versioning import serialization as serial
 from .export_to_pandas import (
     _data_to_dataframe,
     _generate_pandas_index,
-    _same_setpoints,
 )
 
 if TYPE_CHECKING:
@@ -68,7 +67,6 @@ def _load_to_xarray_dataarray_dict_no_metadata(
     *,
     use_multi_index: Literal["auto", "always", "never"] = "auto",
 ) -> dict[str, xr.DataArray]:
-    import pandas as pd
     import xarray as xr
 
     if use_multi_index not in ("auto", "always", "never"):
@@ -79,59 +77,105 @@ def _load_to_xarray_dataarray_dict_no_metadata(
     data_xrdarray_dict: dict[str, xr.DataArray] = {}
 
     for name, subdict in datadict.items():
-        index = _generate_pandas_index(
-            subdict, dataset.description.interdeps, top_level_param_name=name
+        shape_is_consistent = (
+            dataset.description.shapes is not None
+            and name in dataset.description.shapes
+            and subdict[name].shape == dataset.description.shapes[name]
         )
 
-        if index is None:
-            xrdarray: xr.DataArray = (
-                _data_to_dataframe(subdict, index=index)
-                .to_xarray()
-                .get(name, xr.DataArray())
-            )
-            data_xrdarray_dict[name] = xrdarray
+        if shape_is_consistent and use_multi_index != "always":
+            _LOG.info("Exporting %s to xarray using direct method", name)
+            data_xrdarray_dict[name] = _xarray_data_array_direct(dataset, name, subdict)
         else:
-            index_unique = len(index.unique()) == len(index)
+            _LOG.info("Exporting %s to xarray via pandas index", name)
+            index = _generate_pandas_index(
+                subdict, dataset.description.interdeps, top_level_param_name=name
+            )
+            index_is_unique = (
+                len(index.unique()) == len(index) if index is not None else False
+            )
 
-            df = _data_to_dataframe(subdict, index)
-
-            if not index_unique:
-                # index is not unique so we fallback to using a counter as index
-                # and store the index as a variable
+            if index is None:
+                xrdarray: xr.DataArray = (
+                    _data_to_dataframe(subdict, index=index)
+                    .to_xarray()
+                    .get(name, xr.DataArray())
+                )
+                data_xrdarray_dict[name] = xrdarray
+            elif index_is_unique:
+                df = _data_to_dataframe(subdict, index)
+                data_xrdarray_dict[name] = _xarray_data_array_from_pandas_multi_index(
+                    dataset, use_multi_index, name, df, index
+                )
+            else:
+                df = _data_to_dataframe(subdict, index)
                 xrdata_temp = df.reset_index().to_xarray()
                 for _name in subdict:
                     data_xrdarray_dict[_name] = xrdata_temp[_name]
-            else:
-                calc_index = _calculate_index_shape(index)
-                index_prod = prod(calc_index.values())
-                # if the product of the len of individual index dims == len(total_index)
-                # we are on a grid
-
-                on_grid = index_prod == len(index)
-
-                export_with_multi_index = (
-                    not on_grid
-                    and dataset.description.shapes is None
-                    and use_multi_index == "auto"
-                ) or use_multi_index == "always"
-
-                if export_with_multi_index:
-                    assert isinstance(df.index, pd.MultiIndex)
-
-                    if hasattr(xr, "Coordinates"):
-                        coords = xr.Coordinates.from_pandas_multiindex(
-                            df.index, "multi_index"
-                        )
-                        xrdarray = xr.DataArray(df[name], coords=coords)
-                    else:
-                        # support xarray < 2023.8.0, can be removed when we drop support for that
-                        xrdarray = xr.DataArray(df[name], [("multi_index", df.index)])
-                else:
-                    xrdarray = df.to_xarray().get(name, xr.DataArray())
-
-                data_xrdarray_dict[name] = xrdarray
 
     return data_xrdarray_dict
+
+
+def _xarray_data_array_from_pandas_multi_index(
+    dataset: DataSetProtocol,
+    use_multi_index: Literal["auto", "always", "never"],
+    name: str,
+    df: pd.DataFrame,
+    index: pd.Index | pd.MultiIndex,
+) -> xr.DataArray:
+    import pandas as pd
+    import xarray as xr
+
+    calc_index = _calculate_index_shape(index)
+    index_prod = prod(calc_index.values())
+    # if the product of the len of individual index dims == len(total_index)
+    # we are on a grid
+
+    on_grid = index_prod == len(index)
+
+    export_with_multi_index = (
+        not on_grid and dataset.description.shapes is None and use_multi_index == "auto"
+    ) or use_multi_index == "always"
+
+    if export_with_multi_index:
+        assert isinstance(df.index, pd.MultiIndex)
+        _LOG.info(
+            "Exporting %s to xarray using a MultiIndex since on_grid=%s, shape=%s, use_multi_index=%s",
+            name,
+            on_grid,
+            dataset.description.shapes,
+            use_multi_index,
+        )
+
+        coords = xr.Coordinates.from_pandas_multiindex(df.index, "multi_index")
+        xrdarray = xr.DataArray(df[name], coords=coords)
+    else:
+        xrdarray = df.to_xarray().get(name, xr.DataArray())
+
+    return xrdarray
+
+
+def _xarray_data_array_direct(
+    dataset: DataSetProtocol, name: str, subdict: Mapping[str, npt.NDArray]
+) -> xr.DataArray:
+    import xarray as xr
+
+    meas_paramspec = dataset.description.interdeps.graph.nodes[name]["value"]
+    _, deps, _ = dataset.description.interdeps.all_parameters_in_tree_by_group(
+        meas_paramspec
+    )
+    dep_axis = {}
+    for axis, dep in enumerate(deps):
+        dep_array = subdict[dep.name]
+        dep_axis[dep.name] = dep_array[
+            tuple(slice(None) if i == axis else 0 for i in range(dep_array.ndim))
+        ]
+
+    da = xr.Dataset(
+        {name: (tuple(dep_axis.keys()), subdict[name])},
+        coords=dep_axis,
+    )[name]
+    return da
 
 
 def load_to_xarray_dataarray_dict(
@@ -172,10 +216,15 @@ def _add_metadata_to_xarray(
             "parent_dataset_links": links_to_str(dataset.parent_dataset_links),
         }
     )
-    if dataset.run_timestamp_raw is not None:
-        xrdataset.attrs["run_timestamp_raw"] = dataset.run_timestamp_raw
-    if dataset.completed_timestamp_raw is not None:
-        xrdataset.attrs["completed_timestamp_raw"] = dataset.completed_timestamp_raw
+    # Use -1 as sentinel value for None timestamps since NetCDF doesn't support None
+    xrdataset.attrs["run_timestamp_raw"] = (
+        dataset.run_timestamp_raw if dataset.run_timestamp_raw is not None else -1
+    )
+    xrdataset.attrs["completed_timestamp_raw"] = (
+        dataset.completed_timestamp_raw
+        if dataset.completed_timestamp_raw is not None
+        else -1
+    )
     if len(dataset.metadata) > 0:
         for metadata_tag, metadata in dataset.metadata.items():
             xrdataset.attrs[metadata_tag] = metadata
@@ -188,14 +237,6 @@ def load_to_xarray_dataset(
     use_multi_index: Literal["auto", "always", "never"] = "auto",
 ) -> xr.Dataset:
     import xarray as xr
-
-    if not _same_setpoints(data):
-        warnings.warn(
-            "Independent parameter setpoints are not equal. "
-            "Check concatenated output carefully. Please "
-            "consider using `to_xarray_dataarray_dict` to export each "
-            "independent parameter to its own datarray."
-        )
 
     data_xrdarray_dict = _load_to_xarray_dataarray_dict_no_metadata(
         dataset, data, use_multi_index=use_multi_index
