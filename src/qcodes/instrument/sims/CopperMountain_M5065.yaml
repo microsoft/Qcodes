@@ -1,19 +1,19 @@
 spec: "1.0"
 
 resources:
-  GPIB::1::INSTR:
+  TCPIP0::localhost::hislip0::INSTR:
     device: M5065
 
 devices:
   M5065:
     eom:
-      GPIB INSTR:
+      TCPIP INSTR:
         q: "\n"
         r: "\n"
     error: ERROR
     dialogues:
       - q: "*IDN?"
-        r: "CMT, M5065, 1337, 0.0.01"
+        r: "CMT, M5065, 23047001, 25.3.1/2"
     properties:
       output:
         default: 0
