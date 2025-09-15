@@ -986,13 +986,18 @@ class Measurement:
                     inference_parameters,
                     parameter.depends_on,
                     parameter.is_controlled_by,
-                    parameter.has_control_of,
                 ]
             )
         )
         for interdependent_parameter in interdependent_parameters:
             if interdependent_parameter not in self._registered_parameters:
                 self._self_register_parameter(interdependent_parameter)
+
+        # We handle the `has_control_of` relationship differently so that the controlled parameter
+        # does not need to implement the reverse-direction `is_controlled_by` to get the
+        # inference relationship
+        for controlled_parameter in parameter.has_control_of:
+            self._self_register_parameter(controlled_parameter, basis=(parameter,))
 
         return self
 
