@@ -98,3 +98,8 @@ def test_IQ_gain_imbalance(sg) -> None:
 
 def test_IQ_angle(sg) -> None:
     verify_property(sg, "IQ_angle", [-8, -4, 0, 4, 8])
+
+
+def test_operation_mode(sg) -> None:
+    print(f"operation mode is set to {sg.operation_mode()}")
+    verify_property(sg, "operation_mode", ["NORMal", "BBBYpass"])

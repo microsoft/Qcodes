@@ -135,7 +135,7 @@ def test_wait_while_ramping_timeout(cryo_instrument):
         patch.object(cryo_instrument, "_get_field", return_value=0.0),
         patch.object(cryo_instrument, "_sleep"),
     ):
-        with pytest.raises(Cryomagnetics4GException, match="Timeout|stabilized"):
+        with pytest.raises(Cryomagnetics4GException, match=r"Timeout|stabilized"):
             cryo_instrument.wait_while_ramping(1.0, threshold=1e-4)
 
 
