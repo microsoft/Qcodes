@@ -41,8 +41,7 @@ class CopperMountainM5xxx(VisaInstrument):
         address: str,
         min_freq: float,
         max_freq: float,
-        timeout: float = 10000,
-        **kwargs: "Unpack[VisaInstrumentKWArgs]",  # type: ignore
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ):
         """
         QCoDeS driver for Copper Mountain M-series VNA (M5xxx).
@@ -53,8 +52,6 @@ class CopperMountainM5xxx(VisaInstrument):
             address: VISA address of the instrument.
             min_freq: Minimum frequency supported by the instrument (in Hz).
             max_freq: Maximum frequency supported by the instrument (in Hz).
-            timeout: VISA communication timeout in milliseconds. Default is 10000.
-            terminator: String terminator for VISA communication. Default is "\\n".
             **kwargs: Additional keyword arguments for VisaInstrument.
 
         """
