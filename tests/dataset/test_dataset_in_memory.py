@@ -684,11 +684,14 @@ def test_load_from_db_dataset_moved(
         assert new_xr_ds.attrs["metadata_added_after_set_new_netcdf_location"] == 6969
 
 
-def test_dataset_in_mem_with_inferred_parameters(experiment: "Experiment") -> None:
-    inferred1 = ManualParameter("inferred1", initial_value=0)
-    inferred2 = ManualParameter("inferred2", initial_value=0)
-    control1 = ManualParameter("control1", initial_value=0)
-    control2 = ManualParameter("control2", initial_value=0)
+@pytest.mark.parametrize("include_inferred_data", [True, False])
+def test_dataset_in_mem_with_inferred_parameters(
+    experiment: "Experiment", include_inferred_data: bool
+) -> None:
+    inferred1 = ManualParameter("inferred1", initial_value=0.0)
+    inferred2 = ManualParameter("inferred2", initial_value=0.0)
+    control1 = ManualParameter("control1", initial_value=0.0)
+    control2 = ManualParameter("control2", initial_value=0.0)
     dependent = Parameter("dependent", get_cmd=lambda: control1(), set_cmd=False)
     meas = Measurement(exp=experiment, name="via Measurement")
 
@@ -703,11 +706,20 @@ def test_dataset_in_mem_with_inferred_parameters(experiment: "Experiment") -> No
             for j in range(11):
                 control1(float(i))
                 control2(float(j))
-                datasaver.add_result(
-                    (control1, control1()),
-                    (control2, control2()),
-                    (dependent, dependent()),
-                )
+                if include_inferred_data:
+                    datasaver.add_result(
+                        (inferred1, inferred1()),
+                        (inferred2, inferred2()),
+                        (control1, control1()),
+                        (control2, control2()),
+                        (dependent, dependent()),
+                    )
+                else:
+                    datasaver.add_result(
+                        (control1, control1()),
+                        (control2, control2()),
+                        (dependent, dependent()),
+                    )
         ds = datasaver.dataset
 
     assert DeepDiff(ds.get_parameter_data(), ds.cache.data()) == {}
