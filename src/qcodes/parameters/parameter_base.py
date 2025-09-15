@@ -8,7 +8,7 @@ from collections.abc import Iterator, MutableSet
 from contextlib import contextmanager
 from datetime import datetime
 from functools import cached_property, wraps
-from typing import TYPE_CHECKING, Any, ClassVar, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, TypeVar, overload
 
 import numpy as np
 
@@ -1314,27 +1314,30 @@ class GetLatest(DelegateAttributes):
         return self.cache()
 
 
+P = TypeVar("P", bound=ParameterBase)
+
+
 # Does not implement __hash__, not clear it needs to
-class ParameterSet(MutableSet):  # noqa: PLW1641
+class ParameterSet(MutableSet, Generic[P]):  # noqa: PLW1641
     """A set-like container that preserves the insertion order of its parameters.
 
     This class implements the common set interface methods while maintaining
     the order in which parameters were first added.
     """
 
-    def __init__(self, parameters: Sequence[ParameterBase] | None = None) -> None:
-        self._dict: dict[ParameterBase, None] = {}
+    def __init__(self, parameters: Sequence[P] | None = None) -> None:
+        self._dict: dict[P, None] = {}
         if parameters is not None:
             for item in parameters:
                 self.add(item)
 
-    def add(self, value: ParameterBase) -> None:
+    def add(self, value: P) -> None:
         self._dict[value] = None
 
-    def remove(self, value: ParameterBase) -> None:
+    def remove(self, value: P) -> None:
         self._dict.pop(value)
 
-    def discard(self, value: ParameterBase) -> None:
+    def discard(self, value: P) -> None:
         if value in self._dict:
             self._dict.pop(value)
 
@@ -1348,37 +1351,37 @@ class ParameterSet(MutableSet):  # noqa: PLW1641
         self._dict.pop(item)
         return item
 
-    def union(self, other: ParameterSet) -> ParameterSet:
+    def union(self, other: ParameterSet[P]) -> ParameterSet[P]:
         result = ParameterSet(list(self._dict.keys()))
         for item in other:
             result.add(item)
         return result
 
-    def intersection(self, other: ParameterSet) -> ParameterSet:
+    def intersection(self, other: ParameterSet[P]) -> ParameterSet[P]:
         result = ParameterSet()
         for item in self:
             if item in other:
                 result.add(item)
         return result
 
-    def difference(self, other: ParameterSet) -> ParameterSet:
+    def difference(self, other: ParameterSet[P]) -> ParameterSet[P]:
         result = ParameterSet()
         for item in self:
             if item not in other:
                 result.add(item)
         return result
 
-    def issubset(self, other: ParameterSet | set) -> bool:
+    def issubset(self, other: ParameterSet[P] | set) -> bool:
         return all(item in other for item in self)
 
-    def issuperset(self, other: ParameterSet | set) -> bool:
+    def issuperset(self, other: ParameterSet[P] | set) -> bool:
         return all(item in self for item in other)
 
-    def update(self, other: ParameterSet) -> None:
+    def update(self, other: ParameterSet[P]) -> None:
         for item in other:
             self.add(item)
 
-    def __iter__(self) -> Iterator[ParameterBase]:
+    def __iter__(self) -> Iterator[P]:
         return iter(self._dict)
 
     def __contains__(self, item: object) -> bool:
@@ -1397,21 +1400,21 @@ class ParameterSet(MutableSet):  # noqa: PLW1641
             return f"{self.__class__.__name__}()"
         return f"{self.__class__.__name__}({list(self._dict.keys())})"
 
-    def __or__(self, other: object) -> ParameterSet:
+    def __or__(self, other: object) -> ParameterSet[P]:
         if isinstance(other, ParameterSet):
             return self.union(other)
         raise NotImplementedError(
             f"OR operation is not defined between ParameterSet and {type(other)}"
         )
 
-    def __and__(self, other: object) -> ParameterSet:
+    def __and__(self, other: object) -> ParameterSet[P]:
         if isinstance(other, ParameterSet):
             return self.intersection(other)
         raise NotImplementedError(
             f"AND operation is not defined between ParameterSet and {type(other)}"
         )
 
-    def __sub__(self, other: object) -> ParameterSet:
+    def __sub__(self, other: object) -> ParameterSet[P]:
         if isinstance(other, ParameterSet):
             return self.difference(other)
         raise NotImplementedError(
