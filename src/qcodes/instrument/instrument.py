@@ -72,7 +72,10 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
 
         super().__init__(name=name, **kwargs)
 
-        self.add_parameter("IDN", get_cmd=self.get_idn, vals=Anything())
+        self.IDN = self.add_parameter("IDN", get_cmd=self.get_idn, vals=Anything())
+        """
+        Standard IDN parameter, which queries the instrument for its ID
+        """
 
     def get_idn(self) -> dict[str, str | None]:
         """
