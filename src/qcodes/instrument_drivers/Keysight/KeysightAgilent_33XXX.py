@@ -416,7 +416,10 @@ class Keysight33xxx(KeysightErrorQueueMixin, VisaInstrument):
             self.add_submodule(f"ch{i}", channel)
 
         sync = Keysight33xxxSyncChannel(self, "sync")
-        self.add_submodule("sync", sync)
+        self.sync = self.add_submodule("sync", sync)
+        """
+        Sync module
+        """
 
         self.add_function("force_trigger", call_cmd="*TRG")
 
