@@ -1377,7 +1377,7 @@ class ParameterSet(MutableSet, Generic[P]):  # noqa: PLW1641
     def issuperset(self, other: ParameterSet[P] | set) -> bool:
         return all(item in self for item in other)
 
-    def update(self, other: ParameterSet[P]) -> None:
+    def update(self, other: Iterable[P]) -> None:
         for item in other:
             self.add(item)
 
