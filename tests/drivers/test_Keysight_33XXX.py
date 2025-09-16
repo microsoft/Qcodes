@@ -1,13 +1,18 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from qcodes.instrument_drivers.Keysight import (
-    Keysight33xxx,
+    Keysight33522B,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 
 @pytest.fixture(scope="function")
-def driver():
-    kw_sim = Keysight33xxx(
+def driver() -> "Generator[Keysight33522B, None, None]":
+    kw_sim = Keysight33522B(
         "kw_sim", address="GPIB::1::INSTR", pyvisa_sim_file="Keysight_33xxx.yaml"
     )
     yield kw_sim
@@ -15,7 +20,7 @@ def driver():
     kw_sim.close()
 
 
-def test_init(driver) -> None:
+def test_init(driver: Keysight33522B) -> None:
     idn_dict = driver.IDN()
 
     assert idn_dict["vendor"] == "QCoDeS"
@@ -24,7 +29,7 @@ def test_init(driver) -> None:
     assert driver.num_channels == 2
 
 
-def test_sync(driver) -> None:
+def test_sync(driver: Keysight33522B) -> None:
     assert driver.sync.output() == "OFF"
     driver.sync.output("ON")
     assert driver.sync.output() == "ON"
@@ -36,14 +41,14 @@ def test_sync(driver) -> None:
     driver.sync.output("OFF")
 
 
-def test_channel(driver) -> None:
+def test_channel(driver: Keysight33522B) -> None:
     assert driver.ch1.function_type() == "SIN"
     driver.ch1.function_type("SQU")
     assert driver.ch1.function_type() == "SQU"
     driver.ch1.function_type("SIN")
 
 
-def test_burst(driver) -> None:
+def test_burst(driver: Keysight33522B) -> None:
     assert driver.ch1.burst_ncycles() == 1
     driver.ch1.burst_ncycles(10)
     assert driver.ch1.burst_ncycles() == 10
