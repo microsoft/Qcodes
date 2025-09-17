@@ -325,7 +325,7 @@ def _merge_data(
     shape: tuple[int, ...] | None,
     single_tree_write_status: int | None,
     meas_parameter: str,
-) -> tuple[dict[str, npt.NDArray], int | None]:
+) -> tuple[dict[str, npt.NDArray], int]:
     subtree_merged_data = {}
     subtree_parameters = existing_data.keys()
 
@@ -335,20 +335,19 @@ def _merge_data(
             "The following keys were unexpected: "
             f"{set(new_data.keys() - existing_data.keys())}"
         )
-
-    new_write_status: int | None
-    single_param_merged_data, new_write_status = _merge_data_single_param(
+    single_param_merged_data, data_written = _merge_data_single_param(
         existing_data.get(meas_parameter),
         new_data.get(meas_parameter),
         shape,
         single_tree_write_status,
     )
+    new_write_status = data_written if data_written is not None else 0
     if single_param_merged_data is not None:
         subtree_merged_data[meas_parameter] = single_param_merged_data
 
     for subtree_param in subtree_parameters:
         if subtree_param != meas_parameter:
-            single_param_merged_data, new_write_status = _merge_data_single_param(
+            single_param_merged_data, data_written = _merge_data_single_param(
                 existing_data.get(subtree_param),
                 new_data.get(subtree_param),
                 shape,
@@ -356,6 +355,9 @@ def _merge_data(
             )
             if single_param_merged_data is not None:
                 subtree_merged_data[subtree_param] = single_param_merged_data
+
+            if data_written is not None and data_written > new_write_status:
+                new_write_status = data_written
 
     return subtree_merged_data, new_write_status
 
@@ -373,9 +375,12 @@ def _merge_data_single_param(
         (merged_data, new_write_status) = _insert_into_data_dict(
             existing_values, new_values, single_tree_write_status, shape=shape
         )
-    elif new_values is not None:
+    elif new_values is not None or shape is not None:
         (merged_data, new_write_status) = _create_new_data_dict(new_values, shape)
     elif existing_values is not None:
+        merged_data = existing_values
+        new_write_status = single_tree_write_status
+    elif shape is None and new_values is None:
         merged_data = existing_values
         new_write_status = single_tree_write_status
     else:
@@ -385,10 +390,19 @@ def _merge_data_single_param(
 
 
 def _create_new_data_dict(
-    new_values: npt.NDArray, shape: tuple[int, ...] | None
-) -> tuple[npt.NDArray, int]:
-    if shape is None:
+    new_values: npt.NDArray | None, shape: tuple[int, ...] | None
+) -> tuple[npt.NDArray, int | None]:
+    if shape is None and new_values is None:
+        raise RuntimeError("Cannot create new data dict without new values")
+    elif shape is None:
+        assert new_values is not None
         return new_values, new_values.size
+    elif new_values is None:
+        # we don't know the datatype so use float which can hold NaN
+        # since that is the most common?
+        data = np.zeros(shape)
+        data[:] = np.nan
+        return data, None
     elif new_values.size > 0:
         n_values = new_values.size
         data = np.zeros(shape, dtype=new_values.dtype)

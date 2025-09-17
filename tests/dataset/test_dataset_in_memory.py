@@ -722,4 +722,10 @@ def test_dataset_in_mem_with_inferred_parameters(
                     )
         ds = datasaver.dataset
 
-    assert DeepDiff(ds.get_parameter_data(), ds.cache.data()) == {}
+    param_data = ds.get_parameter_data()
+    cache_data = ds.cache.data()
+
+    assert set(param_data.keys()) == set(cache_data.keys())
+    assert set(param_data["dependent"].keys()) == set(cache_data["dependent"].keys())
+
+    assert DeepDiff(param_data, cache_data, ignore_nan_inequality=True) == {}
