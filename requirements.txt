@@ -313,7 +313,7 @@ pytest-asyncio==1.2.0
     # via qcodes (pyproject.toml)
 pytest-cov==7.0.0
     # via qcodes (pyproject.toml)
-pytest-mock==3.15.0
+pytest-mock==3.15.1
     # via qcodes (pyproject.toml)
 pytest-rerunfailures==16.0.1
     # via qcodes (pyproject.toml)
