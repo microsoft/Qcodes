@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
 
     from qcodes.dataset.data_set_protocol import DataSetProtocol
-    from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+    from qcodes.parameters import ParamSpecBase
 
 _META_DATA_KEY = "widget_notes"
 
