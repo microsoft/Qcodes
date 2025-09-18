@@ -493,6 +493,21 @@ class CopperMountainM5xxx(VisaInstrument):
         """
         self.write("TRIG:SOUR " + trigger.upper())
 
+    def _set_trace_formats_to_smith(self, traces: list[int]) -> None:
+        """
+        Sets the format of the specified traces to SMITH (real + imaginary).
+
+        Args:
+            traces: A list of trace indices to set the format for.
+
+        Returns:
+            None
+
+        """
+
+        for trace in traces:
+            self.write(f"CALC1:TRAC{trace}:FORM SMITH")
+
     def get_s(
         self, expected_measurement_duration: float = 600
     ) -> tuple[
@@ -527,10 +542,7 @@ class CopperMountainM5xxx(VisaInstrument):
             self.write("CALC1:PAR2:DEF S12")  # Choose S12 for trace 2
             self.write("CALC1:PAR3:DEF S21")  # Choose S21 for trace 3
             self.write("CALC1:PAR4:DEF S22")  # Choose S22 for trace 4
-            self.write("CALC1:TRAC1:FORM SMITH")  # Trace format
-            self.write("CALC1:TRAC2:FORM SMITH")  # Trace format
-            self.write("CALC1:TRAC3:FORM SMITH")  # Trace format
-            self.write("CALC1:TRAC4:FORM SMITH")  # Trace format
+            self._set_trace_formats_to_smith(traces=[1, 2, 3, 4])
             self.write("TRIG:SEQ:SING")  # Trigger a single sweep
             self.ask("*OPC?")  # Wait for measurement to complete
 
@@ -685,7 +697,7 @@ class FrequencySweepMagPhase(MultiParameter):
         self.instrument.ask("*OPC?")  # Wait for measurement to complete
 
         # get data from instrument
-        self.instrument.write("CALC1:TRAC1:FORM SMITH")  # ensure correct format
+        self.instrument._set_trace_formats_to_smith(traces=[1])  # ensure correct format
         sxx_raw = self.instrument.ask("CALC1:TRAC1:DATA:FDAT?")
         self.instrument.write("CALC1:TRAC1:FORM MLOG")
 
@@ -770,7 +782,7 @@ class PointMagPhase(MultiParameter):
         self.instrument.ask("*OPC?")  # Wait for measurement to complete
 
         # get data from instrument
-        self.instrument.write("CALC1:TRAC1:FORM SMITH")  # ensure correct format
+        self.instrument._set_trace_formats_to_smith(traces=[1])  # ensure correct format
         sxx_raw = self.instrument.ask("CALC1:TRAC1:DATA:FDAT?")
 
         # Get data as numpy array
@@ -856,7 +868,7 @@ class PointIQ(MultiParameter):
         self.instrument.ask("*OPC?")  # Wait for measurement to complete
 
         # get data from instrument
-        self.instrument.write("CALC1:TRAC1:FORM SMITH")  # ensure correct format
+        self.instrument._set_trace_formats_to_smith(traces=[1])  # ensure correct format
         sxx_raw = self.instrument.ask("CALC1:TRAC1:DATA:FDAT?")
 
         # Get data as numpy array
