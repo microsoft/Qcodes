@@ -858,6 +858,16 @@ class DataSetInMem(BaseDataSet):
         self._warn_if_set(*params, start=start, end=end)
         return self.cache.to_xarray_dataarray_dict()
 
+    def to_xarray_dataset_dict(
+        self,
+        *params: str | ParamSpec | ParameterBase,
+        start: int | None = None,
+        end: int | None = None,
+        use_multi_index: Literal["auto", "always", "never"] = "auto",
+    ) -> dict[str, xr.Dataset]:
+        self._warn_if_set(*params, start=start, end=end)
+        return self.cache.to_xarray_dataset_dict(use_multi_index=use_multi_index)
+
     def to_xarray_dataset(
         self,
         *params: str | ParamSpec | ParameterBase,

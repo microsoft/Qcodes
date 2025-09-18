@@ -97,6 +97,7 @@ from .exporters.export_to_pandas import (
 from .exporters.export_to_xarray import (
     load_to_xarray_dataarray_dict,
     load_to_xarray_dataset,
+    load_to_xarray_dataset_dict,
     xarray_to_h5netcdf_with_complex_numbers,
 )
 from .subscriber import _Subscriber
@@ -1026,6 +1027,73 @@ class DataSet(BaseDataSet):
         """
         data = self.get_parameter_data(*params, start=start, end=end)
         datadict = load_to_xarray_dataarray_dict(
+            self, data, use_multi_index=use_multi_index
+        )
+
+        return datadict
+
+    def to_xarray_dataset_dict(
+        self,
+        *params: str | ParamSpec | ParameterBase,
+        start: int | None = None,
+        end: int | None = None,
+        use_multi_index: Literal["auto", "always", "never"] = "auto",
+    ) -> dict[str, xr.Dataset]:
+        """
+        Returns the values stored in the :class:`.DataSet` for the specified parameters
+        and their dependencies as a dict of :py:class:`xr.DataSet` s
+        Each element in the dict is indexed by the names of the requested
+        parameters.
+
+        If no parameters are supplied data will be be
+        returned for all parameters in the :class:`.DataSet` that are not them self
+        dependencies of other parameters.
+
+        If provided, the start and end arguments select a range of results
+        by result count (index). If the range is empty - that is, if the end is
+        less than or equal to the start, or if start is after the current end
+        of the :class:`.DataSet` - then a dict of empty :py:class:`xr.Dataset` s is
+        returned.
+
+        The dependent parameters of the Dataset are normally used as coordinates of the
+        XArray dataframe. However if non unique values are found for the dependent parameter
+        values we will fall back to using an index as coordinates.
+
+        Args:
+            *params: string parameter names, QCoDeS Parameter objects, and
+                ParamSpec objects. If no parameters are supplied data for
+                all parameters that are not a dependency of another
+                parameter will be returned.
+            start: start value of selection range (by result count); ignored
+                if None
+            end: end value of selection range (by results count); ignored if
+                None
+            use_multi_index: Should the data be exported using a multi index
+                rather than regular cartesian indexes. With regular cartesian
+                coordinates, the xarray dimensions are calculated from the sets or all
+                values along the setpoint axis of the QCoDeS dataset. Any position
+                in this grid not corresponding to a measured value will be filled
+                with a placeholder (typically NaN) potentially creating a sparse
+                dataset with significant storage overhead.
+                Multi index avoids this and is therefor better
+                suited for data that is known to not be on a grid.
+                If set to "auto" multi index will be used if projecting the data onto
+                a grid requires filling non measured values with NaN  and the shapes
+                of the data has not been set in the run description.
+
+        Returns:
+            Dictionary from requested parameter names to :py:class:`xr.Dataset` s
+            with the requested parameter(s) as a column(s) and coordinates
+            formed by the dependencies.
+
+        Example:
+            Return a dict of xr.Dataset with
+
+                dataset_dict = ds.to_xarray_dataset_dict()
+
+        """
+        data = self.get_parameter_data(*params, start=start, end=end)
+        datadict = load_to_xarray_dataset_dict(
             self, data, use_multi_index=use_multi_index
         )
 

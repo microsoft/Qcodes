@@ -232,6 +232,25 @@ def load_to_xarray_dataarray_dict(
     return data_arrays
 
 
+def load_to_xarray_dataset_dict(
+    dataset: DataSetProtocol,
+    datadict: Mapping[str, Mapping[str, npt.NDArray]],
+    *,
+    use_multi_index: Literal["auto", "always", "never"] = "auto",
+) -> dict[str, xr.Dataset]:
+    xr_datasets = _load_to_xarray_dataset_dict_no_metadata(
+        dataset, datadict, use_multi_index=use_multi_index
+    )
+
+    for dataname, xr_dataset in xr_datasets.items():
+        _add_param_spec_to_xarray_coords(dataset, xr_dataset[dataname])
+        paramspec_dict = _paramspec_dict_with_extras(dataset, str(dataname))
+        xr_dataset[dataname].attrs.update(paramspec_dict.items())
+        _add_metadata_to_xarray(dataset, xr_dataset[dataname])
+
+    return xr_datasets
+
+
 def _add_metadata_to_xarray(
     dataset: DataSetProtocol, xr_dataset: xr.Dataset | xr.DataArray
 ) -> None:
