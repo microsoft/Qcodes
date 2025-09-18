@@ -494,7 +494,7 @@ class CopperMountainM5xxx(VisaInstrument):
         self.write("TRIG:SOUR " + trigger.upper())
 
     def get_s(
-        self,
+        self, expected_measurement_duration: float = 600
     ) -> tuple[
         np.ndarray,
         np.ndarray,
@@ -509,6 +509,9 @@ class CopperMountainM5xxx(VisaInstrument):
         """
         Return all S parameters as magnitude in dB and phase in rad.
 
+        Args:
+            expected_measurement_duration: Expected duration of the measurement in seconds.
+
         Returns:
             Tuple[np.ndarray]: frequency [GHz],
             s11 magnitude [dB], s11 phase [rad],
@@ -518,17 +521,18 @@ class CopperMountainM5xxx(VisaInstrument):
 
         """
 
-        self.write("CALC1:PAR:COUN 4")  # 4 trace
-        self.write("CALC1:PAR1:DEF S11")  # Choose S11 for trace 1
-        self.write("CALC1:PAR2:DEF S12")  # Choose S12 for trace 2
-        self.write("CALC1:PAR3:DEF S21")  # Choose S21 for trace 3
-        self.write("CALC1:PAR4:DEF S22")  # Choose S22 for trace 4
-        self.write("CALC1:TRAC1:FORM SMITH")  # Trace format
-        self.write("CALC1:TRAC2:FORM SMITH")  # Trace format
-        self.write("CALC1:TRAC3:FORM SMITH")  # Trace format
-        self.write("CALC1:TRAC4:FORM SMITH")  # Trace format
-        self.write("TRIG:SEQ:SING")  # Trigger a single sweep
-        self.ask("*OPC?")  # Wait for measurement to complete
+        with self.timeout.set(max(self.timeout(), expected_measurement_duration)):
+            self.write("CALC1:PAR:COUN 4")  # 4 trace
+            self.write("CALC1:PAR1:DEF S11")  # Choose S11 for trace 1
+            self.write("CALC1:PAR2:DEF S12")  # Choose S12 for trace 2
+            self.write("CALC1:PAR3:DEF S21")  # Choose S21 for trace 3
+            self.write("CALC1:PAR4:DEF S22")  # Choose S22 for trace 4
+            self.write("CALC1:TRAC1:FORM SMITH")  # Trace format
+            self.write("CALC1:TRAC2:FORM SMITH")  # Trace format
+            self.write("CALC1:TRAC3:FORM SMITH")  # Trace format
+            self.write("CALC1:TRAC4:FORM SMITH")  # Trace format
+            self.write("TRIG:SEQ:SING")  # Trigger a single sweep
+            self.ask("*OPC?")  # Wait for measurement to complete
 
         # Get data as string
         freq_raw = self.ask("SENS1:FREQ:DATA?")
