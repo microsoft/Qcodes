@@ -153,13 +153,23 @@ class CopperMountainM5xxx(VisaInstrument):
             set_cmd="CALC1:CORR:EDEL:DIST {}",
             get_parser=float,
             set_parser=float,
-            unit="m",
             docstring="Sets or reads out the value of the equivalent "
             "distance in the electrical delay function.",
             vals=Numbers(),
         )
         """Sets or reads out the value of the equivalent
         distance in the electrical delay function."""
+
+        self.electrical_distance_units: Parameter = self.add_parameter(
+            "electrical_distance_units",
+            label="Electrical distance units",
+            get_cmd="CALC1:CORR:EDEL:DIST:UNIT?",
+            set_cmd="CALC1:CORR:EDEL:DIST:UNIT {}",
+            get_parser=str,
+            docstring="Sets or reads out the distance units in the electrical delay function.",
+            vals=Enum("MET", "FEET", "INCH"),
+        )
+        """Sets or reads out the distance units in the electrical delay function."""
 
         self.clock_source: Parameter = self.add_parameter(
             name="clock_source",
@@ -376,8 +386,8 @@ class CopperMountainM5xxx(VisaInstrument):
             "off if one wants to minimize overhead.",
         )
 
-        # set the unit of the electrical distance to meter
-        self.write("CALC1:CORR:EDEL:DIST:UNIT MET")
+        # Electrical distance default units.
+        self.electrical_distance_units("MET")
 
         self.connect_message()
 
