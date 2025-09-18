@@ -248,11 +248,10 @@ def load_to_xarray_dataset_dict(
         dataset, datadict, use_multi_index=use_multi_index
     )
 
-    for dataname, xr_dataset in xr_datasets.items():
-        _add_param_spec_to_xarray_coords(dataset, xr_dataset[dataname])
-        paramspec_dict = _paramspec_dict_with_extras(dataset, str(dataname))
-        xr_dataset[dataname].attrs.update(paramspec_dict.items())
-        _add_metadata_to_xarray(dataset, xr_dataset[dataname])
+    for xr_dataset in xr_datasets.values():
+        _add_param_spec_to_xarray_coords(dataset, xr_dataset)
+        _add_param_spec_to_xarray_data_vars(dataset, xr_dataset)
+        _add_metadata_to_xarray(dataset, xr_dataset)
 
     return xr_datasets
 
