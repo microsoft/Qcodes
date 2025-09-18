@@ -7,8 +7,10 @@ from math import prod
 from typing import TYPE_CHECKING, Literal
 
 from packaging import version as p_version
+from typing_extensions import deprecated
 
 from qcodes.dataset.linked_datasets.links import links_to_str
+from qcodes.utils import QCoDeSDeprecationWarning
 
 from ..descriptions.versioning import serialization as serial
 from .export_to_pandas import (
@@ -210,6 +212,10 @@ def _xarray_data_array_direct(
     return ds
 
 
+@deprecated(
+    "load_to_xarray_dataarray_dict is deprecated, use load_to_xarray_dataarray_dict instead",
+    category=QCoDeSDeprecationWarning,
+)
 def load_to_xarray_dataarray_dict(
     dataset: DataSetProtocol,
     datadict: Mapping[str, Mapping[str, npt.NDArray]],
