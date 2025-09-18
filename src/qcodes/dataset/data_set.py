@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any, Literal
 import numpy
 import numpy.typing as npt
 from tqdm.auto import trange
+from typing_extensions import deprecated
 
 import qcodes
 from qcodes.dataset.data_set_protocol import (
@@ -84,6 +85,7 @@ from qcodes.dataset.sqlite.query_helpers import (
 from qcodes.utils import (
     NumpyJSONEncoder,
 )
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 from .data_set_cache import DataSetCacheWithDBBackend
 from .data_set_in_memory import DataSetInMem, load_from_file
@@ -95,7 +97,7 @@ from .exporters.export_to_pandas import (
     load_to_dataframe_dict,
 )
 from .exporters.export_to_xarray import (
-    load_to_xarray_dataarray_dict,
+    load_to_xarray_dataarray_dict,  # pyright: ignore[reportDeprecated]
     load_to_xarray_dataset,
     load_to_xarray_dataset_dict,
     xarray_to_h5netcdf_with_complex_numbers,
@@ -965,6 +967,10 @@ class DataSet(BaseDataSet):
         datadict = self.get_parameter_data(*params, start=start, end=end)
         return load_to_concatenated_dataframe(datadict, self.description.interdeps)
 
+    @deprecated(
+        "to_xarray_dataarray_dict is deprecated, use to_xarray_dataset_dict instead",
+        category=QCoDeSDeprecationWarning,
+    )
     def to_xarray_dataarray_dict(
         self,
         *params: str | ParamSpec | ParameterBase,
@@ -1026,7 +1032,7 @@ class DataSet(BaseDataSet):
 
         """
         data = self.get_parameter_data(*params, start=start, end=end)
-        datadict = load_to_xarray_dataarray_dict(
+        datadict = load_to_xarray_dataarray_dict(  # pyright: ignore[reportDeprecated]
             self, data, use_multi_index=use_multi_index
         )
 

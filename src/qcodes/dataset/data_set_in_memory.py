@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 import numpy.typing as npt
+from typing_extensions import deprecated
 
 from qcodes.dataset.data_set_protocol import (
     SPECS,
@@ -40,7 +41,7 @@ from qcodes.dataset.sqlite.queries import (
     update_parent_datasets,
     update_run_description,
 )
-from qcodes.utils import NumpyJSONEncoder
+from qcodes.utils import NumpyJSONEncoder, QCoDeSDeprecationWarning
 
 from .data_set_cache import DataSetCacheDeferred, DataSetCacheInMem
 from .dataset_helpers import _add_run_to_runs_table
@@ -848,6 +849,10 @@ class DataSetInMem(BaseDataSet):
         else:
             return None
 
+    @deprecated(
+        "to_xarray_dataarray_dict is deprecated, use to_xarray_dataset_dict instead",
+        category=QCoDeSDeprecationWarning,
+    )
     def to_xarray_dataarray_dict(
         self,
         *params: str | ParamSpec | ParameterBase,
@@ -856,7 +861,7 @@ class DataSetInMem(BaseDataSet):
         use_multi_index: Literal["auto", "always", "never"] = "auto",
     ) -> dict[str, xr.DataArray]:
         self._warn_if_set(*params, start=start, end=end)
-        return self.cache.to_xarray_dataarray_dict()
+        return self.cache.to_xarray_dataarray_dict()  # pyright: ignore[reportDeprecated]
 
     def to_xarray_dataset_dict(
         self,
