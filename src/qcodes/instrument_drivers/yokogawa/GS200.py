@@ -6,6 +6,8 @@ Will be deprecated and eventually removed.
 from functools import partial
 from typing import TYPE_CHECKING, Literal, cast
 
+from typing_extensions import deprecated
+
 from qcodes.instrument import (
     InstrumentBaseKWArgs,
     InstrumentChannel,
@@ -13,6 +15,7 @@ from qcodes.instrument import (
     VisaInstrumentKWArgs,
 )
 from qcodes.parameters import DelegateParameter
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 from qcodes.validators import Bool, Enum, Ints, Numbers
 
 if TYPE_CHECKING:
@@ -37,10 +40,20 @@ def float_round(val: float) -> int:
     return round(float(val))
 
 
+@deprecated(
+    "GS200Exception is deprecated. Please use qcodes.instrument_drivers.yokogawa.YokogawaGS200Exception instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
 class GS200Exception(Exception):
     pass
 
 
+@deprecated(
+    "GS200_Monitor is deprecated. Please use qcodes.instrument_drivers.yokogawa.YokogawaGS200Monitor instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
 class GS200_Monitor(InstrumentChannel):
     """
     Monitor part of the GS200. This is only enabled if it is
@@ -210,6 +223,11 @@ class GS200_Monitor(InstrumentChannel):
             self.measure.unit = "V"
 
 
+@deprecated(
+    "GS200Program is deprecated. Please use qcodes.instrument_drivers.yokogawa.YokogawaGS200Program instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
 class GS200Program(InstrumentChannel):
     """
     InstrumentModule that holds a Program for the YokoGawa GS200
@@ -300,6 +318,11 @@ class GS200Program(InstrumentChannel):
         )
 
 
+@deprecated(
+    "GS200 is deprecated. Please use qcodes.instrument_drivers.yokogawa.YokogawaGS200 instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
 class GS200(VisaInstrument):
     """
     This is the QCoDeS driver for the Yokogawa GS200 voltage and current source.
