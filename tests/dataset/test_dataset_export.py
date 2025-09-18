@@ -5,7 +5,7 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
@@ -34,6 +34,7 @@ from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.versioning import serialization as serial
+from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.exporters.export_to_pandas import _generate_pandas_index
 from qcodes.dataset.exporters.export_to_xarray import _calculate_index_shape
@@ -41,12 +42,16 @@ from qcodes.dataset.linked_datasets.links import links_to_str
 from qcodes.parameters import ManualParameter, Parameter
 
 if TYPE_CHECKING:
+    from collections.abc import Hashable
+
+    from pytest_mock import MockerFixture
+
     from qcodes.dataset.data_set import DataSet
     from qcodes.dataset.experiment_container import Experiment
 
 
 @pytest.fixture(name="mock_empty_dataset")
-def _make_mock_empty_dataset(experiment) -> DataSet:
+def _make_mock_empty_dataset(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric")
     yparam = ParamSpecBase("y", "numeric")
@@ -76,7 +81,7 @@ def _make_mock_dataset(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_nonunique")
-def _make_mock_dataset_nonunique_index(experiment) -> DataSet:
+def _make_mock_dataset_nonunique_index(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric")
     yparam = ParamSpecBase("y", "numeric")
@@ -92,7 +97,7 @@ def _make_mock_dataset_nonunique_index(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_label_unit")
-def _make_mock_dataset_label_unit(experiment) -> DataSet:
+def _make_mock_dataset_label_unit(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric", label="x label", unit="x unit")
     yparam = ParamSpecBase("y", "numeric", label="y label", unit="y unit")
@@ -108,7 +113,7 @@ def _make_mock_dataset_label_unit(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_complex")
-def _make_mock_dataset_complex(experiment) -> DataSet:
+def _make_mock_dataset_complex(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric")
     yparam = ParamSpecBase("y", "complex")
@@ -123,7 +128,7 @@ def _make_mock_dataset_complex(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_grid")
-def _make_mock_dataset_grid(experiment) -> DataSet:
+def _make_mock_dataset_grid(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric")
     yparam = ParamSpecBase("y", "numeric")
@@ -141,7 +146,7 @@ def _make_mock_dataset_grid(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_in_mem_grid")
-def _make_mock_dataset_in_mem_grid(experiment) -> DataSetProtocol:
+def _make_mock_dataset_in_mem_grid(experiment: Experiment) -> DataSetProtocol:
     meas = Measurement(exp=experiment, name="in_mem_ds")
     meas.register_custom_parameter("x", paramtype="numeric")
     meas.register_custom_parameter("y", paramtype="numeric")
@@ -156,7 +161,7 @@ def _make_mock_dataset_in_mem_grid(experiment) -> DataSetProtocol:
 
 
 @pytest.fixture(name="mock_dataset_grid_with_shapes")
-def _make_mock_dataset_grid_with_shapes(experiment) -> DataSet:
+def _make_mock_dataset_grid_with_shapes(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric")
     yparam = ParamSpecBase("y", "numeric")
@@ -174,7 +179,7 @@ def _make_mock_dataset_grid_with_shapes(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_grid_incomplete")
-def _make_mock_dataset_grid_incomplete(experiment) -> DataSet:
+def _make_mock_dataset_grid_incomplete(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric")
     yparam = ParamSpecBase("y", "numeric")
@@ -199,7 +204,7 @@ def _make_mock_dataset_grid_incomplete(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_grid_incomplete_with_shapes")
-def _make_mock_dataset_grid_incomplete_with_shapes(experiment) -> DataSet:
+def _make_mock_dataset_grid_incomplete_with_shapes(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric")
     yparam = ParamSpecBase("y", "numeric")
@@ -224,7 +229,7 @@ def _make_mock_dataset_grid_incomplete_with_shapes(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_numpy")
-def _make_mock_dataset_numpy(experiment) -> DataSet:
+def _make_mock_dataset_numpy(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric", label="x label", unit="x unit")
     yparam = ParamSpecBase("y", "array", label="y label", unit="y unit")
@@ -242,7 +247,7 @@ def _make_mock_dataset_numpy(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_numpy_complex")
-def _make_mock_dataset_numpy_complex(experiment) -> DataSet:
+def _make_mock_dataset_numpy_complex(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric", label="x label", unit="x unit")
     yparam = ParamSpecBase("y", "array", label="y label", unit="y unit")
@@ -260,7 +265,7 @@ def _make_mock_dataset_numpy_complex(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_non_grid")
-def _make_mock_dataset_non_grid(experiment) -> DataSet:
+def _make_mock_dataset_non_grid(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric")
     yparam = ParamSpecBase("y", "numeric")
@@ -285,7 +290,7 @@ def _make_mock_dataset_non_grid(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_non_grid_in_mem")
-def _make_mock_dataset_non_grid_in_mem(experiment) -> DataSetProtocol:
+def _make_mock_dataset_non_grid_in_mem(experiment: Experiment) -> DataSetProtocol:
     meas = Measurement(exp=experiment, name="in_mem_ds")
 
     num_samples = 50
@@ -308,7 +313,7 @@ def _make_mock_dataset_non_grid_in_mem(experiment) -> DataSetProtocol:
 
 
 @pytest.fixture(name="mock_dataset_non_grid_in_grid")
-def _make_mock_dataset_non_grid_in_grid(experiment) -> DataSet:
+def _make_mock_dataset_non_grid_in_grid(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric")
     y1param = ParamSpecBase("y1", "numeric")
@@ -333,7 +338,7 @@ def _make_mock_dataset_non_grid_in_grid(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_grid_in_non_grid")
-def _make_mock_dataset_grid_in_non_grid(experiment) -> DataSet:
+def _make_mock_dataset_grid_in_non_grid(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     x1param = ParamSpecBase("x1", "numeric")
     x2param = ParamSpecBase("x2", "numeric")
@@ -358,7 +363,7 @@ def _make_mock_dataset_grid_in_non_grid(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_non_grid_in_non_grid")
-def _make_mock_dataset_non_grid_in_non_grid(experiment) -> DataSet:
+def _make_mock_dataset_non_grid_in_non_grid(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     x1param = ParamSpecBase("x1", "numeric")
     x2param = ParamSpecBase("x2", "numeric")
@@ -389,7 +394,7 @@ def _make_mock_dataset_non_grid_in_non_grid(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_inverted_coords")
-def _make_mock_dataset_inverted_coords(experiment) -> DataSet:
+def _make_mock_dataset_inverted_coords(experiment: Experiment) -> DataSet:
     # this dataset is constructed such
     # that the two z parameters have inverted
     # coordinates. You almost certainly
@@ -416,7 +421,7 @@ def _make_mock_dataset_inverted_coords(experiment) -> DataSet:
 
 
 @pytest.mark.usefixtures("experiment")
-def test_write_data_to_text_file_save(tmp_path_factory) -> None:
+def test_write_data_to_text_file_save(tmp_path_factory: TempPathFactory) -> None:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric")
     yparam = ParamSpecBase("y", "numeric")
@@ -436,7 +441,7 @@ def test_write_data_to_text_file_save(tmp_path_factory) -> None:
 
 
 def test_write_data_to_text_file_save_multi_keys(
-    tmp_path_factory, mock_dataset
+    tmp_path_factory: TempPathFactory, mock_dataset: DataSet
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("data_to_text_file_save_multi_keys")
     path = str(tmp_path)
@@ -449,7 +454,7 @@ def test_write_data_to_text_file_save_multi_keys(
 
 
 def test_write_data_to_text_file_save_single_file(
-    tmp_path_factory, mock_dataset
+    tmp_path_factory: TempPathFactory, mock_dataset: DataSet
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("to_text_file_save_single_file")
     path = str(tmp_path)
@@ -462,7 +467,7 @@ def test_write_data_to_text_file_save_single_file(
 
 
 @pytest.mark.usefixtures("experiment")
-def test_write_data_to_text_file_length_exception(tmp_path) -> None:
+def test_write_data_to_text_file_length_exception(tmp_path: Path) -> None:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric")
     yparam = ParamSpecBase("y", "numeric")
@@ -486,7 +491,9 @@ def test_write_data_to_text_file_length_exception(tmp_path) -> None:
         )
 
 
-def test_write_data_to_text_file_name_exception(tmp_path, mock_dataset) -> None:
+def test_write_data_to_text_file_name_exception(
+    tmp_path: Path, mock_dataset: DataSet
+) -> None:
     temp_dir = str(tmp_path)
     with pytest.raises(Exception, match="desired file name"):
         mock_dataset.write_data_to_text_file(
@@ -494,7 +501,9 @@ def test_write_data_to_text_file_name_exception(tmp_path, mock_dataset) -> None:
         )
 
 
-def test_export_csv(tmp_path_factory, mock_dataset, caplog: LogCaptureFixture) -> None:
+def test_export_csv(
+    tmp_path_factory: TempPathFactory, mock_dataset: DataSet, caplog: LogCaptureFixture
+) -> None:
     tmp_path = tmp_path_factory.mktemp("export_csv")
     path = str(tmp_path)
     with caplog.at_level(logging.INFO):
@@ -515,7 +524,7 @@ def test_export_csv(tmp_path_factory, mock_dataset, caplog: LogCaptureFixture) -
 
 
 def test_export_netcdf(
-    tmp_path_factory, mock_dataset, caplog: LogCaptureFixture
+    tmp_path_factory: TempPathFactory, mock_dataset: DataSet, caplog: LogCaptureFixture
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
@@ -546,7 +555,7 @@ def test_export_netcdf(
 
 
 def test_export_netcdf_default_dir(
-    tmp_path_factory: TempPathFactory, mock_dataset
+    tmp_path_factory: TempPathFactory, mock_dataset: DataSet
 ) -> None:
     qcodes.config.dataset.export_path = "{db_location}"
     mock_dataset.export(export_type="netcdf", prefix="qcodes_")
@@ -562,7 +571,9 @@ def test_export_netcdf_default_dir(
     assert exported_dir == get_data_export_path()
 
 
-def test_export_netcdf_csv(tmp_path_factory, mock_dataset) -> None:
+def test_export_netcdf_csv(
+    tmp_path_factory: TempPathFactory, mock_dataset: DataSet
+) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
     csv_path = os.path.join(
@@ -602,7 +613,9 @@ def test_export_netcdf_csv(tmp_path_factory, mock_dataset) -> None:
     assert loaded_new_xr_ds.attrs["metadata_added_after_export_2"] == 696
 
 
-def test_export_netcdf_complex_data(tmp_path_factory, mock_dataset_complex) -> None:
+def test_export_netcdf_complex_data(
+    tmp_path_factory: TempPathFactory, mock_dataset_complex: DataSet
+) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
     mock_dataset_complex.export(export_type="netcdf", path=path, prefix="qcodes_")
@@ -620,7 +633,7 @@ def test_export_netcdf_complex_data(tmp_path_factory, mock_dataset_complex) -> N
 
 
 def test_export_no_or_nonexistent_type_specified(
-    tmp_path_factory, mock_dataset
+    tmp_path_factory: TempPathFactory, mock_dataset: DataSet
 ) -> None:
     with pytest.raises(ValueError, match="No data export type specified"):
         mock_dataset.export()
@@ -629,7 +642,9 @@ def test_export_no_or_nonexistent_type_specified(
         mock_dataset.export(export_type="foo")
 
 
-def test_export_from_config(tmp_path_factory, mock_dataset, mocker) -> None:
+def test_export_from_config(
+    tmp_path_factory: TempPathFactory, mock_dataset: DataSet, mocker: MockerFixture
+) -> None:
     tmp_path = tmp_path_factory.mktemp("export_from_config")
     path = str(tmp_path)
     mock_type = mocker.patch("qcodes.dataset.data_set_protocol.get_data_export_type")
@@ -643,7 +658,7 @@ def test_export_from_config(tmp_path_factory, mock_dataset, mocker) -> None:
 
 
 def test_export_from_config_set_name_elements(
-    tmp_path_factory, mock_dataset, mocker
+    tmp_path_factory: TempPathFactory, mock_dataset: DataSet, mocker: MockerFixture
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("export_from_config")
     path = str(tmp_path)
@@ -844,7 +859,7 @@ def test_partally_overlapping_setpoint_xarray_export_two_params_partial(
     assert filtered_data.shape == (5, 2)
 
 
-def test_export_to_xarray_dataset_empty_ds(mock_empty_dataset) -> None:
+def test_export_to_xarray_dataset_empty_ds(mock_empty_dataset: DataSet) -> None:
     ds = mock_empty_dataset.to_xarray_dataset()
     assert len(ds) == 2
     assert len(ds.coords) == 1
@@ -852,7 +867,7 @@ def test_export_to_xarray_dataset_empty_ds(mock_empty_dataset) -> None:
     _assert_xarray_metadata_is_as_expected(ds, mock_empty_dataset)
 
 
-def test_export_to_xarray_dataarray_empty_ds(mock_empty_dataset) -> None:
+def test_export_to_xarray_dataarray_empty_ds(mock_empty_dataset: DataSet) -> None:
     dad = mock_empty_dataset.to_xarray_dataarray_dict()
     assert len(dad) == 2
     assert len(dad["y"].coords) == 1
@@ -861,7 +876,7 @@ def test_export_to_xarray_dataarray_empty_ds(mock_empty_dataset) -> None:
     assert "x" in dad["z"].coords
 
 
-def test_export_to_xarray(mock_dataset) -> None:
+def test_export_to_xarray(mock_dataset: DataSet) -> None:
     ds = mock_dataset.to_xarray_dataset()
     assert len(ds) == 2
     assert "index" not in ds.coords
@@ -870,7 +885,7 @@ def test_export_to_xarray(mock_dataset) -> None:
 
 
 def test_export_to_xarray_non_unique_dependent_parameter(
-    mock_dataset_nonunique,
+    mock_dataset_nonunique: DataSet,
 ) -> None:
     """When x (the dependent parameter) contains non unique values it cannot be used
     as coordinates in xarray so check that we fall back to using an counter as index"""
@@ -884,7 +899,7 @@ def test_export_to_xarray_non_unique_dependent_parameter(
         assert "snapshot" not in ds[array_name].attrs.keys()
 
 
-def test_export_to_xarray_extra_metadata(mock_dataset) -> None:
+def test_export_to_xarray_extra_metadata(mock_dataset: DataSet) -> None:
     mock_dataset.add_metadata("mytag", "somestring")
     mock_dataset.add_metadata("myothertag", 1)
     ds = mock_dataset.to_xarray_dataset()
@@ -895,7 +910,7 @@ def test_export_to_xarray_extra_metadata(mock_dataset) -> None:
         assert "snapshot" not in ds[array_name].attrs.keys()
 
 
-def test_export_to_xarray_ds_dict_extra_metadata(mock_dataset) -> None:
+def test_export_to_xarray_ds_dict_extra_metadata(mock_dataset: DataSet) -> None:
     mock_dataset.add_metadata("mytag", "somestring")
     mock_dataset.add_metadata("myothertag", 1)
     da_dict = mock_dataset.to_xarray_dataarray_dict()
@@ -904,7 +919,9 @@ def test_export_to_xarray_ds_dict_extra_metadata(mock_dataset) -> None:
         _assert_xarray_metadata_is_as_expected(datarray, mock_dataset)
 
 
-def test_export_to_xarray_extra_metadata_can_be_stored(mock_dataset, tmp_path) -> None:
+def test_export_to_xarray_extra_metadata_can_be_stored(
+    mock_dataset: DataSet, tmp_path: Path
+) -> None:
     nt_metadata = {
         "foo": {
             "bar": {"baz": "test"},
@@ -938,7 +955,9 @@ def test_export_to_xarray_extra_metadata_can_be_stored(mock_dataset, tmp_path) -
     assert loaded_data.attrs == data_as_xarray.attrs
 
 
-def test_to_xarray_ds_paramspec_metadata_is_preserved(mock_dataset_label_unit) -> None:
+def test_to_xarray_ds_paramspec_metadata_is_preserved(
+    mock_dataset_label_unit: DataSet,
+) -> None:
     xr_ds = mock_dataset_label_unit.to_xarray_dataset()
     assert len(xr_ds.dims) == 1
     for param_name in xr_ds.dims:
@@ -952,7 +971,7 @@ def test_to_xarray_ds_paramspec_metadata_is_preserved(mock_dataset_label_unit) -
 
 
 def test_to_xarray_da_dict_paramspec_metadata_is_preserved(
-    mock_dataset_label_unit,
+    mock_dataset_label_unit: DataSet,
 ) -> None:
     xr_das = mock_dataset_label_unit.to_xarray_dataarray_dict()
 
@@ -996,7 +1015,9 @@ def test_export_2d_dataset(
 
 
 def test_export_dataset_small_no_delated(
-    tmp_path_factory: TempPathFactory, mock_dataset_numpy: DataSet, caplog
+    tmp_path_factory: TempPathFactory,
+    mock_dataset_numpy: DataSet,
+    caplog: LogCaptureFixture,
 ) -> None:
     """
     Test that a 'small' dataset does not use the delayed export.
@@ -1009,7 +1030,9 @@ def test_export_dataset_small_no_delated(
 
 
 def test_export_dataset_delayed_off_by_default(
-    tmp_path_factory: TempPathFactory, mock_dataset_grid: DataSet, caplog
+    tmp_path_factory: TempPathFactory,
+    mock_dataset_grid: DataSet,
+    caplog: LogCaptureFixture,
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     qcodes.config.dataset.export_chunked_threshold = 0
@@ -1021,7 +1044,9 @@ def test_export_dataset_delayed_off_by_default(
 
 
 def test_export_dataset_delayed_numeric(
-    tmp_path_factory: TempPathFactory, mock_dataset_grid: DataSet, caplog
+    tmp_path_factory: TempPathFactory,
+    mock_dataset_grid: DataSet,
+    caplog: LogCaptureFixture,
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     qcodes.config.dataset.export_chunked_threshold = 0
@@ -1057,7 +1082,9 @@ def test_export_dataset_delayed_numeric(
 
 
 def test_export_dataset_delayed(
-    tmp_path_factory: TempPathFactory, mock_dataset_numpy: DataSet, caplog
+    tmp_path_factory: TempPathFactory,
+    mock_dataset_numpy: DataSet,
+    caplog: LogCaptureFixture,
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     qcodes.config.dataset.export_chunked_threshold = 0
@@ -1094,7 +1121,9 @@ def test_export_dataset_delayed(
 
 
 def test_export_dataset_delayed_complex(
-    tmp_path_factory: TempPathFactory, mock_dataset_numpy_complex: DataSet, caplog
+    tmp_path_factory: TempPathFactory,
+    mock_dataset_numpy_complex: DataSet,
+    caplog: LogCaptureFixture,
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     qcodes.config.dataset.export_chunked_threshold = 0
@@ -1357,7 +1386,7 @@ def test_export_non_grid_in_non_grid_dataset(
 
 
 def test_inverted_coords_perserved_on_netcdf_roundtrip(
-    tmp_path_factory: TempPathFactory, mock_dataset_inverted_coords
+    tmp_path_factory: TempPathFactory, mock_dataset_inverted_coords: DataSet
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
@@ -1381,7 +1410,7 @@ def test_inverted_coords_perserved_on_netcdf_roundtrip(
     assert xr_ds.identical(xr_ds_reimported)
 
 
-def _get_expected_param_spec_attrs(dataset, dim):
+def _get_expected_param_spec_attrs(dataset: DataSet, dim: Hashable) -> dict[str, Any]:
     expected_attrs = dict(dataset.paramspecs[str(dim)]._to_dict())
     expected_attrs["units"] = expected_attrs["unit"]
     expected_attrs["long_name"] = expected_attrs["label"]
@@ -1389,7 +1418,9 @@ def _get_expected_param_spec_attrs(dataset, dim):
     return expected_attrs
 
 
-def _assert_xarray_metadata_is_as_expected(xarray_ds, qc_dataset):
+def _assert_xarray_metadata_is_as_expected(
+    xarray_ds: xr.Dataset | xr.DataArray, qc_dataset: DataSet
+) -> None:
     assert xarray_ds.ds_name == qc_dataset.name
     assert xarray_ds.sample_name == qc_dataset.sample_name
     assert xarray_ds.exp_name == qc_dataset.exp_name
@@ -1412,7 +1443,7 @@ def _assert_xarray_metadata_is_as_expected(xarray_ds, qc_dataset):
     )
 
 
-def test_multi_index_options_grid(mock_dataset_grid) -> None:
+def test_multi_index_options_grid(mock_dataset_grid: DataSet) -> None:
     assert mock_dataset_grid.description.shapes is None
 
     xds = mock_dataset_grid.to_xarray_dataset()
@@ -1428,7 +1459,9 @@ def test_multi_index_options_grid(mock_dataset_grid) -> None:
     assert xds_always.sizes == {"multi_index": 50}
 
 
-def test_multi_index_options_grid_with_shape(mock_dataset_grid_with_shapes) -> None:
+def test_multi_index_options_grid_with_shape(
+    mock_dataset_grid_with_shapes: DataSet,
+) -> None:
     assert mock_dataset_grid_with_shapes.description.shapes == {"z": (10, 5)}
 
     xds = mock_dataset_grid_with_shapes.to_xarray_dataset()
@@ -1446,7 +1479,9 @@ def test_multi_index_options_grid_with_shape(mock_dataset_grid_with_shapes) -> N
     assert xds_always.sizes == {"multi_index": 50}
 
 
-def test_multi_index_options_incomplete_grid(mock_dataset_grid_incomplete) -> None:
+def test_multi_index_options_incomplete_grid(
+    mock_dataset_grid_incomplete: DataSet,
+) -> None:
     assert mock_dataset_grid_incomplete.description.shapes is None
 
     xds = mock_dataset_grid_incomplete.to_xarray_dataset()
@@ -1760,7 +1795,7 @@ def test_dond_hypothesis_nd_grid(
 
 
 def test_netcdf_export_with_none_timestamp_raw(
-    tmp_path_factory: TempPathFactory, experiment
+    tmp_path_factory: TempPathFactory, experiment: Experiment
 ) -> None:
     """
     Test that datasets with None timestamp_raw values export correctly to NetCDF
@@ -1803,7 +1838,7 @@ def test_netcdf_export_with_none_timestamp_raw(
 
 
 def test_netcdf_export_with_mixed_timestamp_raw(
-    tmp_path_factory: TempPathFactory, experiment
+    tmp_path_factory: TempPathFactory, experiment: Experiment
 ) -> None:
     """
     Test NetCDF export/import with one timestamp_raw being None and one being set.
