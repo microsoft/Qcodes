@@ -290,7 +290,7 @@ class CopperMountainM5xxx(VisaInstrument):
         )
         """Selects the trigger source"""
 
-        self.date_transfer_format: Parameter = self.add_parameter(
+        self.data_transfer_format: Parameter = self.add_parameter(
             name="data_transfer_format",
             label="Data format during transfer",
             get_parser=str,
