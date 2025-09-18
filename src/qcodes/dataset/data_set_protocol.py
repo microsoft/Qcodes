@@ -233,6 +233,14 @@ class DataSetProtocol(Protocol):
         use_multi_index: Literal["auto", "always", "never"] = "auto",
     ) -> dict[str, xr.DataArray]: ...
 
+    def to_xarray_dataset_dict(
+        self,
+        *params: str | ParamSpec | ParameterBase,
+        start: int | None = None,
+        end: int | None = None,
+        use_multi_index: Literal["auto", "always", "never"] = "auto",
+    ) -> dict[str, xr.Dataset]: ...
+
     def to_xarray_dataset(
         self,
         *params: str | ParamSpec | ParameterBase,
