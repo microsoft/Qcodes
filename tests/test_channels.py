@@ -15,6 +15,9 @@ from qcodes.instrument_drivers.mock_instruments import (
     DummyChannel,
     DummyChannelInstrument,
 )
+from qcodes.parameters import (
+    MultiChannelInstrumentParameter,
+)
 from qcodes.utils import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
@@ -100,7 +103,10 @@ def test_channels_call_function(
 
 
 def test_channels_get(dci: DummyChannelInstrument) -> None:
-    temperatures = dci.channels.temperature.get()
+    temp_multi_param = dci.channels.temperature
+    assert isinstance(temp_multi_param, MultiChannelInstrumentParameter)
+
+    temperatures = temp_multi_param.get()
     assert len(temperatures) == 6
 
 
@@ -119,19 +125,25 @@ def test_channel_access_is_identical(
     assert channel_via_label.temperature() == value
     assert channel_via_name.temperature() == value
     assert dci.channels[channel].temperature() == value
-    assert dci.channels.temperature()[channel] == value
+    temp_multi_param = dci.channels.temperature
+    assert isinstance(temp_multi_param, MultiChannelInstrumentParameter)
+    assert temp_multi_param()[channel] == value
     # reset via channel name
     channel_via_name.temperature(0)
     assert channel_via_label.temperature() == 0
     assert channel_via_name.temperature() == 0
     assert dci.channels[channel].temperature() == 0
-    assert dci.channels.temperature()[channel] == 0
+    temp_multi_param = dci.channels.temperature
+    assert isinstance(temp_multi_param, MultiChannelInstrumentParameter)
+    assert temp_multi_param()[channel] == 0
     # set via index into list
     dci.channels[channel].temperature(value)
     assert channel_via_label.temperature() == value
     assert channel_via_name.temperature() == value
     assert dci.channels[channel].temperature() == value
-    assert dci.channels.temperature()[channel] == value
+    temp_multi_param = dci.channels.temperature
+    assert isinstance(temp_multi_param, MultiChannelInstrumentParameter)
+    assert temp_multi_param()[channel] == value
     # it's not possible to set via dci.channels.temperature
     # as this is a multi parameter that currently does not support set.
 
