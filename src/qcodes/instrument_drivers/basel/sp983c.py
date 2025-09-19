@@ -4,7 +4,18 @@ Will eventually be deprecated and removed
 
 """
 
+import warnings
+
+from qcodes.utils import QCoDeSDeprecationWarning
+
 from .BaselSP983c import BaselSP983c
+
+warnings.warn(
+    "The `qcodes._drivers.basel.sp983c` module is deprecated. "
+    "Please import drivers from from `qcodes.instrument_drivers.basel` instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=2,
+)
 
 
 class SP983C(BaselSP983c):
