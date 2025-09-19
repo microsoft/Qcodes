@@ -465,7 +465,7 @@ def test_combine_channels(dci: DummyChannelInstrument, setpoints: list[float]) -
     expected = (*setpoints[0:2], 0, 0, *setpoints[2:])
     assert dci.channels.temperature() == expected  # type: ignore[call-arg]
     # the return type of __getattr__ is very broad since it can return both
-    # a MultiInstrumentParameter an attribute a callable etcs
+    # a MultiInstrumentParameter, an attribute a callable etc.
 
 
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
@@ -501,8 +501,12 @@ def test_access_channels_by_tuple(
 
 
 def test_access_channels_by_name_empty_raises(dci: DummyChannelInstrument) -> None:
-    # todo this should raise a less generic error type
-    with pytest.raises(Exception, match="one or more names must be given"):
+    with pytest.raises(TypeError, match="one or more names must be given"):
+        dci.channels.get_channels_by_name()
+
+
+def test_access_channel_by_name_empty_raises(dci: DummyChannelInstrument) -> None:
+    with pytest.raises(TypeError, match="one or more names must be given"):
         dci.channels.get_channel_by_name()
 
 

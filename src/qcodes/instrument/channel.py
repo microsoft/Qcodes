@@ -348,7 +348,7 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
 
         """
         if len(names) == 0:
-            raise Exception("one or more names must be given")
+            raise TypeError("one or more names must be given")
         selected_channels = tuple(self._channel_mapping[name] for name in names)
         return type(self)(
             self._parent,
@@ -368,7 +368,7 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
 
         """
         if len(names) == 0:
-            raise Exception("one or more names must be given")
+            raise TypeError("one or more names must be given")
         if len(names) == 1:
             return self._channel_mapping[names[0]]
 
