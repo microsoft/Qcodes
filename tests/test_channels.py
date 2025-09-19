@@ -15,6 +15,7 @@ from qcodes.instrument_drivers.mock_instruments import (
     DummyChannel,
     DummyChannelInstrument,
 )
+from qcodes.utils import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     import pytest_mock
@@ -538,6 +539,9 @@ def test_set_element_by_slice(dci_with_list: DCIWithList) -> None:
     assert (
         dci_with_list.channels.get_channel_by_name("bar") == dci_with_list.channels[1]
     )
+    channels_by_name = dci_with_list.channels.get_channels_by_name("foo", "bar")
+    for i, chan in enumerate(channels_by_name):
+        assert chan == dci_with_list.channels[i]
 
 
 def test_set_element_locked_raises(dci_with_list: DCIWithList) -> None:
@@ -552,13 +556,33 @@ def test_set_element_locked_raises(dci_with_list: DCIWithList) -> None:
 
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,), deadline=1000)
 @given(myindexs=hst.lists(elements=hst.integers(0, 7), min_size=2))
-def test_access_channels_by_name(dci, myindexs) -> None:
+def test_access_channels_by_name_deprecated(
+    dci: DummyChannelInstrument, myindexs: list[int]
+) -> None:
     names = ("A", "B", "C", "D", "E", "F", "G", "H")
     channels = tuple(DummyChannel(dci, "Chan" + name, name) for name in names)
     chlist = ChannelList(dci, "channels", DummyChannel, channels)
 
     channel_names = (f"Chan{names[i]}" for i in myindexs)
-    mychans = chlist.get_channel_by_name(*channel_names)
+
+    with pytest.warns(QCoDeSDeprecationWarning, match="get_channel_by_name"):
+        mychans = chlist.get_channel_by_name(*channel_names)
+        for chan, chanindex in zip(mychans, myindexs):
+            assert chan.name == f"dci_Chan{names[chanindex]}"
+
+
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,), deadline=1000)
+@given(myindexs=hst.lists(elements=hst.integers(0, 7), min_size=1))
+def test_access_channels_by_name(
+    dci: DummyChannelInstrument, myindexs: list[int]
+) -> None:
+    names = ("A", "B", "C", "D", "E", "F", "G", "H")
+    channels = tuple(DummyChannel(dci, "Chan" + name, name) for name in names)
+    chlist = ChannelList(dci, "channels", DummyChannel, channels)
+
+    channel_names = (f"Chan{names[i]}" for i in myindexs)
+
+    mychans = chlist.get_channels_by_name(*channel_names)
     for chan, chanindex in zip(mychans, myindexs):
         assert chan.name == f"dci_Chan{names[chanindex]}"
 
