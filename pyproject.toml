@@ -62,7 +62,7 @@ Changelog = "https://microsoft.github.io/Qcodes/changes/index.html"
 zurichinstruments = ["zhinst-qcodes>=0.3"]
 loop = ["qcodes_loop>=0.1.2"]
 test = [
-    "coverage[toml]>=7.6.9",
+    "coverage[toml]>=7.10.5",
     "deepdiff>=8.6.1",
     "hypothesis>=6.130.0",
     "lxml>=4.9.4",
@@ -123,11 +123,6 @@ disable_warnings = ["module-not-measured"]
 # this warning is triggered when pytest-cov is used together with pytest-xdist
 # https://github.com/pytest-dev/pytest-cov/issues/693
 # coverage however, still seems to work fine.
-[tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "if TYPE_CHECKING:",
-]
 
 [tool.mypy]
 strict_optional = true
