@@ -17,6 +17,7 @@ from qcodes.instrument_drivers.mock_instruments import (
 )
 
 if TYPE_CHECKING:
+    import pytest_mock
     from typing_extensions import Unpack
 
     from qcodes.instrument.instrument_base import InstrumentBaseKWArgs
@@ -97,18 +98,21 @@ def test_channels_call_function(
         assert mssgs == names
 
 
-def test_channels_get(dci) -> None:
+def test_channels_get(dci: DummyChannelInstrument) -> None:
     temperatures = dci.channels.temperature.get()
     assert len(temperatures) == 6
 
 
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(value=hst.floats(0, 300), channel=hst.integers(0, 3))
-def test_channel_access_is_identical(dci, value, channel) -> None:
+def test_channel_access_is_identical(
+    dci: DummyChannelInstrument, value, channel
+) -> None:
     channel_to_label = {0: "A", 1: "B", 2: "C", 3: "D"}
     label = channel_to_label[channel]
     channel_via_label = getattr(dci, label)
     channel_via_name = dci.channels.get_channel_by_name(f"Chan{label}")
+    assert isinstance(channel_via_name, DummyChannel)
     # set via labeled channel
     channel_via_label.temperature(value)
     assert channel_via_label.temperature() == value
@@ -431,7 +435,7 @@ def test_remove_tupled_channel(dci_with_list: DCIWithList) -> None:
 
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(setpoints=hst.lists(hst.floats(0, 300), min_size=4, max_size=4))
-def test_combine_channels(dci: DummyChannelInstrument, setpoints) -> None:
+def test_combine_channels(dci: DummyChannelInstrument, setpoints: list[float]) -> None:
     assert len(dci.channels) == 6
 
     mychannels = dci.channels[0:2] + dci.channels[4:]
@@ -453,7 +457,9 @@ def test_combine_channels(dci: DummyChannelInstrument, setpoints) -> None:
 
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(start=hst.integers(-8, 7), stop=hst.integers(-8, 7), step=hst.integers(1, 7))
-def test_access_channels_by_slice(dci, start, stop, step) -> None:
+def test_access_channels_by_slice(
+    dci: DummyChannelInstrument, start: int, stop: int, step: int
+) -> None:
     names = ("A", "B", "C", "D", "E", "F", "G", "H")
     channels = tuple(DummyChannel(dci, "Chan" + name, name) for name in names)
     chlist = ChannelList(dci, "channels", DummyChannel, channels)
@@ -468,7 +474,9 @@ def test_access_channels_by_slice(dci, start, stop, step) -> None:
 
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,), deadline=1000)
 @given(myindexs=hst.lists(elements=hst.integers(-8, 7), min_size=1))
-def test_access_channels_by_tuple(dci, myindexs) -> None:
+def test_access_channels_by_tuple(
+    dci: DummyChannelInstrument, myindexs: list[int]
+) -> None:
     names = ("A", "B", "C", "D", "E", "F", "G", "H")
     mytuple = tuple(myindexs)
     channels = tuple(DummyChannel(dci, "Chan" + name, name) for name in names)
@@ -479,13 +487,13 @@ def test_access_channels_by_tuple(dci, myindexs) -> None:
         assert chan.name == f"dci_Chan{names[chanindex]}"
 
 
-def test_access_channels_by_name_empty_raises(dci) -> None:
+def test_access_channels_by_name_empty_raises(dci: DummyChannelInstrument) -> None:
     # todo this should raise a less generic error type
     with pytest.raises(Exception, match="one or more names must be given"):
         dci.channels.get_channel_by_name()
 
 
-def test_delete_from_channel_list(dci_with_list) -> None:
+def test_delete_from_channel_list(dci_with_list: DCIWithList) -> None:
     n_channels = len(dci_with_list.channels)
     chan0 = dci_with_list.channels[0]
     del dci_with_list.channels[0]
@@ -512,12 +520,12 @@ def test_delete_from_channel_list(dci_with_list) -> None:
     assert len(dci_with_list.channels) == n_channels - 3
 
 
-def test_set_element_by_int(dci_with_list) -> None:
+def test_set_element_by_int(dci_with_list: DCIWithList) -> None:
     dci_with_list.channels[0] = dci_with_list.channels[1]
     assert dci_with_list.channels[0] is dci_with_list.channels[1]
 
 
-def test_set_element_by_slice(dci_with_list) -> None:
+def test_set_element_by_slice(dci_with_list: DCIWithList) -> None:
     foo = DummyChannel(dci_with_list, name="foo", channel="foo")
     bar = DummyChannel(dci_with_list, name="bar", channel="bar")
     dci_with_list.channels[0:2] = [foo, bar]
@@ -532,7 +540,7 @@ def test_set_element_by_slice(dci_with_list) -> None:
     )
 
 
-def test_set_element_locked_raises(dci_with_list) -> None:
+def test_set_element_locked_raises(dci_with_list: DCIWithList) -> None:
     dci_with_list.channels.lock()
 
     with pytest.raises(
@@ -676,7 +684,7 @@ def test_channel_tuple_call_method_basic_test(dci: DummyChannelInstrument) -> No
 
 
 def test_channel_tuple_call_method_called_as_expected(
-    dci: DummyChannelInstrument, mocker
+    dci: DummyChannelInstrument, mocker: "pytest_mock.MockerFixture"
 ) -> None:
     for channel in dci.channels:
         channel.turn_on = mocker.MagicMock(return_value=1)
