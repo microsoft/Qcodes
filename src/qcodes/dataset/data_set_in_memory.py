@@ -285,10 +285,16 @@ class DataSetInMem(BaseDataSet):
             )
             if completed_timestamp_raw is not None:
                 completed_timestamp_raw = float(completed_timestamp_raw)
+                # Convert sentinel value back to None
+                if completed_timestamp_raw == -1:
+                    completed_timestamp_raw = None
 
             run_timestamp_raw = getattr(loaded_data, "run_timestamp_raw", None)
             if run_timestamp_raw is not None:
                 run_timestamp_raw = float(run_timestamp_raw)
+                # Convert sentinel value back to None
+                if run_timestamp_raw == -1:
+                    run_timestamp_raw = None
 
             ds = cls(
                 run_id=run_id,

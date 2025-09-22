@@ -1,5 +1,6 @@
 import contextlib
 import os
+import re
 import shutil
 from pathlib import Path
 
@@ -174,7 +175,9 @@ def test_dataset_in_memory_without_cache_raises(
 ) -> None:
     with pytest.raises(
         RuntimeError,
-        match="Cannot disable the in memory cache for a dataset that is only in memory.",
+        match=re.escape(
+            "Cannot disable the in memory cache for a dataset that is only in memory."
+        ),
     ):
         with meas_with_registered_param.run(
             dataset_class=DataSetType.DataSetInMem, in_memory_cache=False

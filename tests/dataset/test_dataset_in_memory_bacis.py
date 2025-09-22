@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import pytest
@@ -71,7 +72,7 @@ def test_prepare_twice_raises(experiment) -> None:
 
     ds.prepare(interdeps=idps, snapshot={})
     with pytest.raises(
-        RuntimeError, match="Cannot prepare a dataset that is not pristine."
+        RuntimeError, match=re.escape("Cannot prepare a dataset that is not pristine.")
     ):
         ds.prepare(interdeps=idps, snapshot={})
 

@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 import qcodes.validators as vals
@@ -255,13 +257,15 @@ def test_underlying_instrument_for_virtual_parameter() -> None:
 
 def test_get_cmd_str_no_instrument_raises() -> None:
     with pytest.raises(
-        TypeError, match="Cannot use a str get_cmd without binding to an instrument."
+        TypeError,
+        match=re.escape("Cannot use a str get_cmd without binding to an instrument."),
     ):
         Parameter(name="test", instrument=None, get_cmd="get_me")
 
 
 def test_set_cmd_str_no_instrument_raises() -> None:
     with pytest.raises(
-        TypeError, match="Cannot use a str set_cmd without binding to an instrument."
+        TypeError,
+        match=re.escape("Cannot use a str set_cmd without binding to an instrument."),
     ):
         Parameter(name="test", instrument=None, set_cmd="set_me")
