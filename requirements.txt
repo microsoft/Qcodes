@@ -299,7 +299,7 @@ pygments==2.19.2
     #   nbconvert
     #   pytest
     #   sphinx
-pyparsing==3.2.4
+pyparsing==3.2.5
     # via matplotlib
 pytest==8.4.2
     # via
