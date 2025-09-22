@@ -200,26 +200,6 @@ def expand_setpoints_helper(
         and its setpoints.
 
     """
-    # if not isinstance(parameter, ParameterWithSetpoints):
-    #     raise TypeError(
-    #         f"Expanding setpoints only works for ParameterWithSetpoints. "
-    #         f"Supplied a {type(parameter)}"
-    #     )
-    # res = []
-    # setpoint_params = []
-    # setpoint_data = []
-    # for setpointparam in parameter.setpoints:
-    #     these_setpoints = setpointparam.get()
-    #     setpoint_params.append(setpointparam)
-    #     setpoint_data.append(these_setpoints)
-    # output_grids = np.meshgrid(*setpoint_data, indexing="ij")
-    # for param, grid in zip(setpoint_params, output_grids):
-    #     res.append((param, grid))
-    # if results is None:
-    #     data = parameter.get()
-    # else:
-    #     data = results
-    # res.append((parameter, data))
     if results is not None:
         return parameter.unpack_self(results)
     else:

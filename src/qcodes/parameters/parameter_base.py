@@ -1358,14 +1358,14 @@ class ParameterSet(MutableSet, Generic[P]):  # noqa: PLW1641
         return result
 
     def intersection(self, other: ParameterSet[P]) -> ParameterSet[P]:
-        result = ParameterSet()
+        result: ParameterSet[P] = ParameterSet()
         for item in self:
             if item in other:
                 result.add(item)
         return result
 
     def difference(self, other: ParameterSet[P]) -> ParameterSet[P]:
-        result = ParameterSet()
+        result: ParameterSet[P] = ParameterSet()
         for item in self:
             if item not in other:
                 result.add(item)

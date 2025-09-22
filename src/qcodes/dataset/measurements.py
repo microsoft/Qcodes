@@ -168,8 +168,9 @@ class DataSaver:
             ]
             if len(candidate_params) > 1:
                 raise ValueError(
-                    "More than one parameter matched this name"
-                )  # TODO: Expand this
+                    f"More than one parameter matched the name {param_or_str}"
+                    f"{candidate_params}"
+                )
             elif len(candidate_params) < 1:
                 raise ValueError("No matching parameters")
             return (candidate_params[0], result_tuple[1])
@@ -1540,9 +1541,7 @@ def _deduplicate_results(
         ):
             deduplicated_results[param_spec] = list_of_ndarrays_of_values[0]
         else:
-            raise ValueError(
-                f"Multiple distinct values found for {param_spec.name}"
-            )  # TODO: Expand this error message
+            raise ValueError(f"Multiple distinct values found for {param_spec.name}")
     return deduplicated_results
 
 
