@@ -25,7 +25,6 @@ if TYPE_CHECKING:
 
     from typing_extensions import Unpack
 
-    from .instrument import Instrument
     from .instrument_base import InstrumentBaseKWArgs
 
 
@@ -566,9 +565,9 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
 
 # in index method the parameter obj should be called value but that would
 # be an incompatible change
-class ChannelList(
+class ChannelList(  #  pyright: ignore[reportIncompatibleMethodOverride]
     ChannelTuple[InstrumentModuleType], MutableSequence[InstrumentModuleType]
-):  #  pyright: ignore[reportIncompatibleMethodOverride]
+):
     """
     Mutable Container for channelized parameters that allows for sweeps over
     all channels, as well as addressing of individual channels.
@@ -878,7 +877,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
     @classmethod
     def load_from_instrument(
         cls,
-        parent: Instrument,
+        parent: InstrumentBase,
         channel_list: AutoLoadableChannelList | None = None,
         **kwargs: Any,
     ) -> list[AutoLoadableInstrumentChannel]:
@@ -907,7 +906,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
 
     @classmethod
     def _discover_from_instrument(
-        cls, parent: Instrument, **kwargs: Any
+        cls, parent: InstrumentBase, **kwargs: Any
     ) -> list[dict[Any, Any]]:
         """
         Discover channels on the instrument and return a list kwargs to create
@@ -930,7 +929,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
     @classmethod
     def new_instance(
         cls,
-        parent: Instrument,
+        parent: InstrumentBase,
         create_on_instrument: bool = True,
         channel_list: AutoLoadableChannelList | None = None,
         **kwargs: Any,
@@ -982,7 +981,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
 
     @classmethod
     def _get_new_instance_kwargs(
-        cls, parent: Instrument | None = None, **kwargs: Any
+        cls, parent: InstrumentBase | None = None, **kwargs: Any
     ) -> dict[Any, Any]:
         """
         Returns a dictionary which is used as keyword args when instantiating a
@@ -1014,7 +1013,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
 
     def __init__(
         self,
-        parent: Instrument | InstrumentChannel,
+        parent: InstrumentBase,
         name: str,
         exists_on_instrument: bool = False,
         channel_list: AutoLoadableChannelList | None = None,
@@ -1141,7 +1140,7 @@ class AutoLoadableChannelList(ChannelList[AutoLoadableInstrumentChannel]):
 
     def __init__(
         self,
-        parent: Instrument,
+        parent: InstrumentBase,
         name: str,
         chan_type: type[AutoLoadableInstrumentChannel],
         chan_list: Sequence[AutoLoadableInstrumentChannel] | None = None,

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from qcodes.instrument import Instrument, InstrumentChannel
+from qcodes.instrument import Instrument, InstrumentBase, InstrumentChannel
 from qcodes.instrument.channel import (
     AutoLoadableChannelList,
     AutoLoadableInstrumentChannel,
@@ -103,7 +103,7 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
 
     @classmethod
     def _discover_from_instrument(
-        cls, parent: Instrument, **kwargs
+        cls, parent: InstrumentBase, **kwargs
     ) -> list[dict[Any, Any]]:
         """
         New channels need `name` and `channel` keyword arguments.
@@ -131,7 +131,7 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
 
     @classmethod
     def _get_new_instance_kwargs(
-        cls, parent: Instrument | None = None, **kwargs
+        cls, parent: InstrumentBase | None = None, **kwargs
     ) -> dict[Any, Any]:
         """
         Find the smallest channel number not yet occupied. An optional keyword

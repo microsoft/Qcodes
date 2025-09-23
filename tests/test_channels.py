@@ -583,7 +583,7 @@ def test_access_channels_by_name_deprecated(
 
     with pytest.warns(QCoDeSDeprecationWarning, match="get_channel_by_name"):
         mychans = chlist.get_channel_by_name(*channel_names)
-        for chan, chanindex in zip(mychans, myindexs):
+        for chan, chanindex in zip(mychans, myindexs):  # pyright: ignore[reportArgumentType]
             assert chan.name == f"dci_Chan{names[chanindex]}"
 
 
