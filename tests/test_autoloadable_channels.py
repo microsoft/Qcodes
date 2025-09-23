@@ -17,7 +17,7 @@ from qcodes.instrument.channel import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Generator
 
 
 class MockBackendBase:
@@ -167,7 +167,9 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
         self._channel = channel
         self._greeting = greeting
 
-        self.add_parameter("hello", get_cmd=f":INST:CHN{self._channel}:HLO")
+        self.hello = self.add_parameter(
+            "hello", get_cmd=f":INST:CHN{self._channel}:HLO"
+        )
 
     def _create(self) -> None:
         """Create the channel on the instrument"""
@@ -191,7 +193,7 @@ class DummyInstrument(Instrument):
 
         self._backend = MockBackend()
 
-        self.add_parameter(
+        self.channel_catalog = self.add_parameter(
             "channel_catalog",
             get_cmd=":INST:CHN:CAT",
         )
@@ -199,7 +201,7 @@ class DummyInstrument(Instrument):
         channels = AutoLoadableChannelList(
             self, "channels", SimpleTestChannel, channels_to_skip=["5"]
         )
-        self.add_submodule("channels", channels)
+        self.channels = self.add_submodule("channels", channels)
 
     def write_raw(self, cmd: str) -> None:
         self._backend.send(cmd)
@@ -209,13 +211,13 @@ class DummyInstrument(Instrument):
 
 
 @pytest.fixture(scope="function")
-def dummy_instrument():
+def dummy_instrument() -> "Generator[DummyInstrument, None, None]":
     instrument = DummyInstrument("instrument")
     yield instrument
     instrument.close()
 
 
-def test_sanity(dummy_instrument) -> None:
+def test_sanity(dummy_instrument: DummyInstrument) -> None:
     """
     Test the basic functionality of the auto-loadable channels, without using
     the auto-loadable channels list. Please note that the `channels_to_skip`
@@ -256,7 +258,7 @@ def test_sanity(dummy_instrument) -> None:
         # longer be available
 
 
-def test_channels_list(dummy_instrument) -> None:
+def test_channels_list(dummy_instrument: DummyInstrument) -> None:
     """
     Test the auto-loadable channels list
     """
@@ -283,7 +285,7 @@ def test_channels_list(dummy_instrument) -> None:
     assert len(dummy_instrument.channels) == 2
 
 
-def test_with_kwargs(dummy_instrument) -> None:
+def test_with_kwargs(dummy_instrument: DummyInstrument) -> None:
     """
     Test keyword arguments given to the add method
     """

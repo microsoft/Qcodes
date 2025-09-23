@@ -880,7 +880,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
         parent: InstrumentBase,
         channel_list: AutoLoadableChannelList | None = None,
         **kwargs: Any,
-    ) -> list[AutoLoadableInstrumentChannel]:
+    ) -> list[Self]:
         """
         Load channels that already exist on the instrument
 
@@ -933,7 +933,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
         create_on_instrument: bool = True,
         channel_list: AutoLoadableChannelList | None = None,
         **kwargs: Any,
-    ) -> AutoLoadableInstrumentChannel:
+    ) -> Self:
         """
         Create a new instance of the channel on the instrument: This involves
         finding initialization arguments which will create a channel with a
@@ -1096,7 +1096,10 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
         return self._exists_on_instrument
 
 
-class AutoLoadableChannelList(ChannelList[AutoLoadableInstrumentChannel]):
+TAUTORELOADCHANNEL = TypeVar("TAUTORELOADCHANNEL", bound=AutoLoadableInstrumentChannel)
+
+
+class AutoLoadableChannelList(ChannelList[TAUTORELOADCHANNEL]):
     """
     Extends the QCoDeS :class:`ChannelList` class to add the following features:
     - Automatically create channel objects on initialization
@@ -1142,8 +1145,8 @@ class AutoLoadableChannelList(ChannelList[AutoLoadableInstrumentChannel]):
         self,
         parent: InstrumentBase,
         name: str,
-        chan_type: type[AutoLoadableInstrumentChannel],
-        chan_list: Sequence[AutoLoadableInstrumentChannel] | None = None,
+        chan_type: type[TAUTORELOADCHANNEL],
+        chan_list: Sequence[TAUTORELOADCHANNEL] | None = None,
         snapshotable: bool = True,
         multichan_paramclass: type = MultiChannelInstrumentParameter,
         **kwargs: Any,
@@ -1157,7 +1160,7 @@ class AutoLoadableChannelList(ChannelList[AutoLoadableInstrumentChannel]):
 
         self.extend(new_channels)
 
-    def add(self, **kwargs: Any) -> AutoLoadableInstrumentChannel:
+    def add(self, **kwargs: Any) -> TAUTORELOADCHANNEL:
         """
         Add a channel to the list
 
