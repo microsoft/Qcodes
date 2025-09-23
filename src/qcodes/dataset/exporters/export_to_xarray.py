@@ -85,7 +85,7 @@ def _load_to_xarray_dataset_dict_no_metadata(
 
         if shape_is_consistent and use_multi_index != "always":
             _LOG.info("Exporting %s to xarray using direct method", name)
-            xr_dataset_dict[name] = _xarray_data_array_direct(dataset, name, sub_dict)
+            xr_dataset_dict[name] = _xarray_data_set_direct(dataset, name, sub_dict)
         else:
             _LOG.info("Exporting %s to xarray via pandas index", name)
             index = _generate_pandas_index(
@@ -102,7 +102,7 @@ def _load_to_xarray_dataset_dict_no_metadata(
                 xr_dataset_dict[name] = xr_dataset
             elif index_is_unique:
                 df = _data_to_dataframe(sub_dict, index)
-                xr_dataset_dict[name] = _xarray_data_array_from_pandas_multi_index(
+                xr_dataset_dict[name] = _xarray_data_set_from_pandas_multi_index(
                     dataset, use_multi_index, name, df, index
                 )
             else:
@@ -112,7 +112,7 @@ def _load_to_xarray_dataset_dict_no_metadata(
     return xr_dataset_dict
 
 
-def _xarray_data_array_from_pandas_multi_index(
+def _xarray_data_set_from_pandas_multi_index(
     dataset: DataSetProtocol,
     use_multi_index: Literal["auto", "always", "never"],
     name: str,
@@ -151,7 +151,7 @@ def _xarray_data_array_from_pandas_multi_index(
     return xr_dataset
 
 
-def _xarray_data_array_direct(
+def _xarray_data_set_direct(
     dataset: DataSetProtocol, name: str, sub_dict: Mapping[str, npt.NDArray]
 ) -> xr.Dataset:
     import xarray as xr
