@@ -97,16 +97,29 @@ def _load_to_xarray_dataset_dict_no_metadata(
 
             if index is None:
                 xr_dataset: xr.Dataset = _data_to_dataframe(
-                    data=sub_dict, index=index
+                    data=sub_dict,
+                    index=index,
+                    interdeps=dataset.description.interdeps,
+                    dependent_parameter=name,
                 ).to_xarray()
                 xr_dataset_dict[name] = xr_dataset
             elif index_is_unique:
-                df = _data_to_dataframe(sub_dict, index)
+                df = _data_to_dataframe(
+                    sub_dict,
+                    index,
+                    interdeps=dataset.description.interdeps,
+                    dependent_parameter=name,
+                )
                 xr_dataset_dict[name] = _xarray_data_set_from_pandas_multi_index(
                     dataset, use_multi_index, name, df, index
                 )
             else:
-                df = _data_to_dataframe(sub_dict, index)
+                df = _data_to_dataframe(
+                    sub_dict,
+                    index,
+                    interdeps=dataset.description.interdeps,
+                    dependent_parameter=name,
+                )
                 xr_dataset_dict[name] = df.reset_index().to_xarray()
 
     return xr_dataset_dict
