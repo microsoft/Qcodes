@@ -566,7 +566,9 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
 
 # in index method the parameter obj should be called value but that would
 # be an incompatible change
-class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  #  pyright: ignore[reportIncompatibleMethodOverride]
+class ChannelList(
+    ChannelTuple[InstrumentModuleType], MutableSequence[InstrumentModuleType]
+):  #  pyright: ignore[reportIncompatibleMethodOverride]
     """
     Mutable Container for channelized parameters that allows for sweeps over
     all channels, as well as addressing of individual channels.
