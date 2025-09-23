@@ -9,9 +9,12 @@ from itertools import chain
 from typing import TYPE_CHECKING
 
 import numpy as np
+import pytest
 
 from qcodes.dataset import Measurement
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
+from qcodes.dataset.experiment_container import Experiment
+from qcodes.instrument_drivers.mock_instruments import DummyInstrument
 from qcodes.parameters import DelegateParameter, ManualParameter, Parameter
 
 if TYPE_CHECKING:
@@ -21,7 +24,9 @@ if TYPE_CHECKING:
     from qcodes.instrument_drivers.mock_instruments import DummyInstrument
 
 
-def test_inferred_parameters_transitively_collected(experiment, DAC):
+def test_inferred_parameters_transitively_collected(
+    experiment: "Experiment", DAC: "DummyInstrument"
+) -> None:
     """
     Test that parameters inferred from dependencies are properly collected
     when enqueuing results.
@@ -80,7 +85,9 @@ def test_inferred_parameters_transitively_collected(experiment, DAC):
     )
 
 
-def test_inferred_parameters_in_actual_measurement_0d(experiment, DAC):
+def test_inferred_parameters_in_actual_measurement_0d(
+    experiment: "Experiment", DAC: "DummyInstrument"
+) -> None:
     """
     Test the full measurement flow to ensure inferred parameters are saved correctly.
     """
@@ -136,7 +143,9 @@ def test_inferred_parameters_in_actual_measurement_0d(experiment, DAC):
     assert len(param_data["del_param_1"]["dummy_dac_ch1"]) == 1
 
 
-def test_inferred_parameters_in_actual_measurement_1d(experiment, DAC):
+def test_inferred_parameters_in_actual_measurement_1d(
+    experiment: "Experiment", DAC: "DummyInstrument"
+) -> None:
     """
     Test the full measurement flow to ensure inferred parameters are saved correctly.
     """
@@ -223,8 +232,12 @@ def test_inferred_parameters_in_actual_measurement_1d(experiment, DAC):
     assert len(df) == num_points
 
 
+@pytest.mark.parametrize("set_shape", [True, False])
 def test_inferred_parameters_in_actual_measurement_2d(
-    experiment: "Experiment", DAC: "DummyInstrument", caplog: "LogCaptureFixture"
+    experiment: "Experiment",
+    DAC: "DummyInstrument",
+    caplog: "LogCaptureFixture",
+    set_shape: bool,
 ) -> None:
     """
     2D version: both axes are DelegateParameters inferred from DAC channels.
@@ -252,9 +265,10 @@ def test_inferred_parameters_in_actual_measurement_2d(
 
     # Register measurement parameter with 2D setpoints
     meas.register_parameter(meas_parameter, setpoints=(del_param_1, del_param_2))
-    meas.set_shapes(
-        detect_shape_of_measurement([meas_parameter], (num_points_x, num_points_y))
-    )
+    if set_shape:
+        meas.set_shapes(
+            detect_shape_of_measurement([meas_parameter], (num_points_x, num_points_y))
+        )
 
     with meas.run() as datasaver:
         for x in np.linspace(0, 1, num_points_x):
@@ -299,10 +313,16 @@ def test_inferred_parameters_in_actual_measurement_2d(
         xarr = dataset.to_xarray_dataset()
 
     assert len(caplog.records) == 1
-    assert (
-        caplog.records[0].message
-        == "Exporting meas_parameter to xarray using direct method"
-    )
+    if set_shape:
+        assert (
+            caplog.records[0].message
+            == "Exporting meas_parameter to xarray using direct method"
+        )
+    else:
+        assert (
+            caplog.records[0].message
+            == "Exporting meas_parameter to xarray via pandas index"
+        )
 
     assert "meas_parameter" in xarr.data_vars
 
@@ -314,14 +334,17 @@ def test_inferred_parameters_in_actual_measurement_2d(
     assert xarr.coords["del_param_2"].shape == (num_points_y,)
     assert xarr.coords["del_param_2"].dims == ("del_param_2",)
 
-    assert "dummy_dac_ch1" in xarr.coords
-    assert xarr.coords["dummy_dac_ch1"].shape == (num_points_x,)
-    assert xarr.coords["dummy_dac_ch1"].dims == ("del_param_1",)
+    if set_shape:
+        assert "dummy_dac_ch1" in xarr.coords
+        assert xarr.coords["dummy_dac_ch1"].shape == (num_points_x,)
+        assert xarr.coords["dummy_dac_ch1"].dims == ("del_param_1",)
 
-    assert "dummy_dac_ch2" in xarr.coords
-    assert xarr.coords["dummy_dac_ch2"].shape == (num_points_y,)
-    assert xarr.coords["dummy_dac_ch2"].dims == ("del_param_2",)
-
+        assert "dummy_dac_ch2" in xarr.coords
+        assert xarr.coords["dummy_dac_ch2"].shape == (num_points_y,)
+        assert xarr.coords["dummy_dac_ch2"].dims == ("del_param_2",)
+    else:
+        assert "dummy_dac_ch1" not in xarr.coords
+        assert "dummy_dac_ch2" not in xarr.coords
     assert xarr["meas_parameter"].dims == ("del_param_1", "del_param_2")
     assert xarr["meas_parameter"].shape == (num_points_x, num_points_y)
 
@@ -334,7 +357,9 @@ def test_inferred_parameters_in_actual_measurement_2d(
     assert len(df) == total_points
 
 
-def test_multiple_dependent_parameters_no_cross_contamination(experiment):
+def test_multiple_dependent_parameters_no_cross_contamination(
+    experiment: "Experiment",
+) -> None:
     """
     Test that multiple dependent parameters that depend on the same independent
     parameter don't get mixed into each other's trees.
