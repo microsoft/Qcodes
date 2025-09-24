@@ -1,7 +1,7 @@
 import logging
 import re
 from collections.abc import Generator, Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, assert_type
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -285,6 +285,15 @@ def test_insert_channel(dci_with_list: DCIWithList) -> None:
 def test_insert_channel_wrong_type_raises(dci_with_list: DCIWithList) -> None:
     with pytest.raises(TypeError, match="All items in a channel list"):
         dci_with_list.channels.insert(1, EmptyChannel(parent=dci_with_list, name="foo"))  # type: ignore
+
+
+def test_channel_type_can_be_inferred(
+    dci_with_list: DCIWithList, dci: DummyChannelInstrument
+) -> None:
+    chan1 = dci_with_list.channels[0]
+    assert_type(chan1, DummyChannel)
+
+    assert_type(dci.channels[0], DummyChannel)
 
 
 def test_add_none_channel_tuple_to_channel_tuple_raises(
