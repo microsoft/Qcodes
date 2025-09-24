@@ -25,7 +25,6 @@ if TYPE_CHECKING:
 
     from typing_extensions import Unpack
 
-    from .instrument import Instrument
     from .instrument_base import InstrumentBaseKWArgs
 
 
@@ -566,7 +565,9 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
 
 # in index method the parameter obj should be called value but that would
 # be an incompatible change
-class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  #  pyright: ignore[reportIncompatibleMethodOverride]
+class ChannelList(  #  pyright: ignore[reportIncompatibleMethodOverride]
+    ChannelTuple[InstrumentModuleType], MutableSequence[InstrumentModuleType]
+):
     """
     Mutable Container for channelized parameters that allows for sweeps over
     all channels, as well as addressing of individual channels.
@@ -664,7 +665,9 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  #  pyri
         # asserts added to work around https://github.com/python/mypy/issues/7858
         if isinstance(index, int):
             assert isinstance(value, InstrumentModule)
-            self._channels[index] = value
+            self._channels[index] = value  # type: ignore[assignment]
+            # mypy does not know that InstrumentModuleType is a TypeVar bound to
+            # InstrumentModule so complains here
         else:
             assert not isinstance(value, InstrumentModule)
             self._channels[index] = value
@@ -876,10 +879,10 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
     @classmethod
     def load_from_instrument(
         cls,
-        parent: Instrument,
+        parent: InstrumentBase,
         channel_list: AutoLoadableChannelList | None = None,
         **kwargs: Any,
-    ) -> list[AutoLoadableInstrumentChannel]:
+    ) -> list[Self]:
         """
         Load channels that already exist on the instrument
 
@@ -905,7 +908,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
 
     @classmethod
     def _discover_from_instrument(
-        cls, parent: Instrument, **kwargs: Any
+        cls, parent: InstrumentBase, **kwargs: Any
     ) -> list[dict[Any, Any]]:
         """
         Discover channels on the instrument and return a list kwargs to create
@@ -928,11 +931,11 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
     @classmethod
     def new_instance(
         cls,
-        parent: Instrument,
+        parent: InstrumentBase,
         create_on_instrument: bool = True,
         channel_list: AutoLoadableChannelList | None = None,
         **kwargs: Any,
-    ) -> AutoLoadableInstrumentChannel:
+    ) -> Self:
         """
         Create a new instance of the channel on the instrument: This involves
         finding initialization arguments which will create a channel with a
@@ -980,7 +983,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
 
     @classmethod
     def _get_new_instance_kwargs(
-        cls, parent: Instrument | None = None, **kwargs: Any
+        cls, parent: InstrumentBase | None = None, **kwargs: Any
     ) -> dict[Any, Any]:
         """
         Returns a dictionary which is used as keyword args when instantiating a
@@ -1012,7 +1015,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
 
     def __init__(
         self,
-        parent: Instrument | InstrumentChannel,
+        parent: InstrumentBase,
         name: str,
         exists_on_instrument: bool = False,
         channel_list: AutoLoadableChannelList | None = None,
@@ -1095,7 +1098,10 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
         return self._exists_on_instrument
 
 
-class AutoLoadableChannelList(ChannelList[AutoLoadableInstrumentChannel]):
+TAUTORELOADCHANNEL = TypeVar("TAUTORELOADCHANNEL", bound=AutoLoadableInstrumentChannel)
+
+
+class AutoLoadableChannelList(ChannelList[TAUTORELOADCHANNEL]):
     """
     Extends the QCoDeS :class:`ChannelList` class to add the following features:
     - Automatically create channel objects on initialization
@@ -1139,10 +1145,10 @@ class AutoLoadableChannelList(ChannelList[AutoLoadableInstrumentChannel]):
 
     def __init__(
         self,
-        parent: Instrument,
+        parent: InstrumentBase,
         name: str,
-        chan_type: type[AutoLoadableInstrumentChannel],
-        chan_list: Sequence[AutoLoadableInstrumentChannel] | None = None,
+        chan_type: type[TAUTORELOADCHANNEL],
+        chan_list: Sequence[TAUTORELOADCHANNEL] | None = None,
         snapshotable: bool = True,
         multichan_paramclass: type = MultiChannelInstrumentParameter,
         **kwargs: Any,
@@ -1156,7 +1162,7 @@ class AutoLoadableChannelList(ChannelList[AutoLoadableInstrumentChannel]):
 
         self.extend(new_channels)
 
-    def add(self, **kwargs: Any) -> AutoLoadableInstrumentChannel:
+    def add(self, **kwargs: Any) -> TAUTORELOADCHANNEL:
         """
         Add a channel to the list
 
