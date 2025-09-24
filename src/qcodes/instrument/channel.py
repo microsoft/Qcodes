@@ -666,7 +666,7 @@ class ChannelList(  #  pyright: ignore[reportIncompatibleMethodOverride]
         if isinstance(index, int):
             assert isinstance(value, InstrumentModule)
             self._channels[index] = value  # type: ignore[assignment]
-            # mypy does not that InstrumentModuleType is a TypeVar bound to
+            # mypy does not know that InstrumentModuleType is a TypeVar bound to
             # InstrumentModule so complains here
         else:
             assert not isinstance(value, InstrumentModule)
