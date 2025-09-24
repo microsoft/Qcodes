@@ -23,7 +23,7 @@ def load_to_dataframe_dict(
         index = _generate_pandas_index(
             subdict, interdeps=interdeps, top_level_param_name=name
         )
-        dfs[name] = _data_to_dataframe(subdict, index)
+        dfs[name] = _data_to_dataframe(subdict, index, interdeps, name)
     return dfs
 
 
@@ -47,13 +47,16 @@ def load_to_concatenated_dataframe(
 
 
 def _data_to_dataframe(
-    data: Mapping[str, npt.NDArray], index: pd.Index | pd.MultiIndex | None
+    data: Mapping[str, npt.NDArray],
+    index: pd.Index | pd.MultiIndex | None,
+    interdeps: InterDependencies_,
+    dependent_parameter: str,
 ) -> pd.DataFrame:
     import pandas as pd
 
     if len(data) == 0:
         return pd.DataFrame()
-    dependent_col_name = next(iter(data.keys()))
+    dependent_col_name = dependent_parameter
     dependent_data = data[dependent_col_name]
     if dependent_data.dtype == np.dtype("O"):
         # ravel will not fully unpack a numpy array of arrays
