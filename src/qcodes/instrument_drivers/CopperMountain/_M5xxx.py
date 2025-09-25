@@ -331,7 +331,7 @@ class CopperMountainM5xxx(VisaInstrument):
             parameter_class=FrequencySweepMagPhase,
             docstring="Forward transmission",
         )
-        """Forward tranmission"""
+        """Forward transmission"""
 
         self.s22: FrequencySweepMagPhase = self.add_parameter(
             name="s22",
@@ -536,7 +536,7 @@ class CopperMountainM5xxx(VisaInstrument):
 
         """
 
-        with self.timeout.set(max(self.timeout(), expected_measurement_duration)):
+        with self.timeout.set_to(max(self.timeout(), expected_measurement_duration)):
             self.write("CALC1:PAR:COUN 4")  # 4 trace
             self.write("CALC1:PAR1:DEF S11")  # Choose S11 for trace 1
             self.write("CALC1:PAR2:DEF S12")  # Choose S12 for trace 2
@@ -546,12 +546,12 @@ class CopperMountainM5xxx(VisaInstrument):
             self.write("TRIG:SEQ:SING")  # Trigger a single sweep
             self.ask("*OPC?")  # Wait for measurement to complete
 
-        # Get data as string
-        freq_raw = self.ask("SENS1:FREQ:DATA?")
-        s11_raw = self.ask("CALC1:TRAC1:DATA:FDAT?")
-        s12_raw = self.ask("CALC1:TRAC2:DATA:FDAT?")
-        s21_raw = self.ask("CALC1:TRAC3:DATA:FDAT?")
-        s22_raw = self.ask("CALC1:TRAC4:DATA:FDAT?")
+            # Get data as string
+            freq_raw = self.ask("SENS1:FREQ:DATA?")
+            s11_raw = self.ask("CALC1:TRAC1:DATA:FDAT?")
+            s12_raw = self.ask("CALC1:TRAC2:DATA:FDAT?")
+            s21_raw = self.ask("CALC1:TRAC3:DATA:FDAT?")
+            s22_raw = self.ask("CALC1:TRAC4:DATA:FDAT?")
 
         # Get data as numpy array
         freq = np.fromstring(freq_raw, dtype=float, sep=",")
@@ -625,6 +625,7 @@ class FrequencySweepMagPhase(MultiParameter):
         stop: float,
         number_of_points: int,
         instrument: CopperMountainM5xxx,
+        expected_measurement_duration: float = 600,
         **kwargs: Any,
     ) -> None:
         """
@@ -637,9 +638,13 @@ class FrequencySweepMagPhase(MultiParameter):
             stop: Stop frequency of linear sweep
             number_of_points: Number of points of linear sweep
             instrument: Instrument to which sweep is bound to.
+            expected_measurement_duration: Adjusts instrument timeout (seconds). Defaults to 600 seconds.
             **kwargs: Any
 
         """
+
+        self.expected_measurement_duration = expected_measurement_duration
+
         super().__init__(
             name,
             instrument=instrument,
@@ -690,15 +695,22 @@ class FrequencySweepMagPhase(MultiParameter):
 
         """
         assert isinstance(self.instrument, CopperMountainM5xxx)
-        self.instrument.write("CALC1:PAR:COUN 1")  # 1 trace
-        self.instrument.write(f"CALC1:PAR1:DEF {self.name}")
-        self.instrument.trigger_source("bus")  # set the trigger to bus
-        self.instrument.write("TRIG:SEQ:SING")  # Trigger a single sweep
-        self.instrument.ask("*OPC?")  # Wait for measurement to complete
 
-        # get data from instrument
-        self.instrument._set_trace_formats_to_smith(traces=[1])  # ensure correct format
-        sxx_raw = self.instrument.ask("CALC1:TRAC1:DATA:FDAT?")
+        with self.instrument.timeout.set_to(
+            max(self.instrument.timeout(), self.expected_measurement_duration)
+        ):
+            self.instrument.write("CALC1:PAR:COUN 1")  # 1 trace
+            self.instrument.write(f"CALC1:PAR1:DEF {self.name}")
+            self.instrument.trigger_source("bus")  # set the trigger to bus
+            self.instrument.write("TRIG:SEQ:SING")  # Trigger a single sweep
+            self.instrument.ask("*OPC?")  # Wait for measurement to complete
+
+            # get data from instrument
+            self.instrument._set_trace_formats_to_smith(
+                traces=[1]
+            )  # ensure correct format
+            sxx_raw = self.instrument.ask("CALC1:TRAC1:DATA:FDAT?")
+
         self.instrument.write("CALC1:TRAC1:FORM MLOG")
 
         # Get data as numpy array
@@ -719,6 +731,7 @@ class PointMagPhase(MultiParameter):
         self,
         name: str,
         instrument: VisaInstrument,
+        expected_measurement_duration: float = 600,
         **kwargs: Any,
     ) -> None:
         """Magnitude and phase measurement of a single point at start
@@ -727,9 +740,12 @@ class PointMagPhase(MultiParameter):
         Args:
             name: Name of point measurement
             instrument:  Instrument to which parameter is bound to.
+            expected_measurement_duration: Adjusts instrument timeout (seconds). Defaults to 600 seconds.
             **kwargs: Any
 
         """
+
+        self.expected_measurement_duration = expected_measurement_duration
 
         super().__init__(
             name,
@@ -775,15 +791,20 @@ class PointMagPhase(MultiParameter):
                     "Please adjust start or stop."
                 )
 
-        self.instrument.write("CALC1:PAR:COUN 1")  # 1 trace
-        self.instrument.write(f"CALC1:PAR1:DEF {self.name[-3:]}")
-        self.instrument.trigger_source("bus")  # set the trigger to bus
-        self.instrument.write("TRIG:SEQ:SING")  # Trigger a single sweep
-        self.instrument.ask("*OPC?")  # Wait for measurement to complete
+        with self.instrument.timeout.set_to(
+            max(self.instrument.timeout(), self.expected_measurement_duration)
+        ):
+            self.instrument.write("CALC1:PAR:COUN 1")  # 1 trace
+            self.instrument.write(f"CALC1:PAR1:DEF {self.name[-3:]}")
+            self.instrument.trigger_source("bus")  # set the trigger to bus
+            self.instrument.write("TRIG:SEQ:SING")  # Trigger a single sweep
+            self.instrument.ask("*OPC?")  # Wait for measurement to complete
 
-        # get data from instrument
-        self.instrument._set_trace_formats_to_smith(traces=[1])  # ensure correct format
-        sxx_raw = self.instrument.ask("CALC1:TRAC1:DATA:FDAT?")
+            # get data from instrument
+            self.instrument._set_trace_formats_to_smith(
+                traces=[1]
+            )  # ensure correct format
+            sxx_raw = self.instrument.ask("CALC1:TRAC1:DATA:FDAT?")
 
         # Get data as numpy array
         sxx = np.fromstring(sxx_raw, dtype=float, sep=",")
