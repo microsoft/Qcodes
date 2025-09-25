@@ -298,7 +298,7 @@ class CopperMountainM5xxx(VisaInstrument):
             set_cmd="FORM:DATA {}",
             docstring="Sets or reads out the data transfer format "
             "when responding to certain queries.",
-            vals=Enum("ascii", "real", "real32"),
+            vals=Enum("ascii"),
         )
         """Sets or reads out the data transfer format when
         responding to certian queries."""
