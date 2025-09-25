@@ -1,6 +1,4 @@
-import cmath
 import logging
-import math
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -811,7 +809,7 @@ class PointMagPhase(MultiParameter):
         # Return the average of the trace, which will have "start" as
         # its setpoint
         sxx_mean = np.mean(sxx)
-        return 20 * math.log10(abs(sxx_mean)), (cmath.phase(sxx_mean))
+        return 20 * np.log10(abs(sxx_mean)), (np.angle(sxx_mean))
 
 
 class PointIQ(MultiParameter):
