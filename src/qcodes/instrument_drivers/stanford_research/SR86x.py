@@ -8,6 +8,7 @@ import numpy.typing as npt
 
 from qcodes.instrument import (
     ChannelList,
+    ChannelTuple,
     InstrumentBaseKWArgs,
     InstrumentChannel,
     VisaInstrument,
@@ -187,8 +188,30 @@ class SR86xBuffer(InstrumentChannel):
         then the returned value is simply equal to the current capture length.
         """
 
-        for parameter_name in ["X", "Y", "R", "T"]:
-            self.add_parameter(parameter_name, parameter_class=SR86xBufferReadout)
+        self.X: SR86xBufferReadout = self.add_parameter(
+            "X", parameter_class=SR86xBufferReadout
+        )
+        """
+        X buffer readout.
+        """
+        self.Y: SR86xBufferReadout = self.add_parameter(
+            "Y", parameter_class=SR86xBufferReadout
+        )
+        """
+        Y buffer readout.
+        """
+        self.R: SR86xBufferReadout = self.add_parameter(
+            "R", parameter_class=SR86xBufferReadout
+        )
+        """
+        R buffer readout.
+        """
+        self.T: SR86xBufferReadout = self.add_parameter(
+            "T", parameter_class=SR86xBufferReadout
+        )
+        """
+        T buffer readout.
+        """
 
     def snapshot_base(
         self,
@@ -1046,6 +1069,7 @@ class SR86x(VisaInstrument):
             "P", label="Phase", get_cmd="OUTP? 3", get_parser=float, unit="deg"
         )
         """Parameter P"""
+
         self.complex_voltage: Parameter = self.add_parameter(
             "complex_voltage",
             label="Voltage",
@@ -1146,7 +1170,10 @@ class SR86x(VisaInstrument):
             data_channels.append(data_channel)
             self.add_submodule(ch_name, data_channel)
 
-        self.add_submodule("data_channels", data_channels.to_channel_tuple())
+        self.data_channels: ChannelTuple[SR86xDataChannel] = self.add_submodule(
+            "data_channels", data_channels.to_channel_tuple()
+        )
+        """Interface for the SR86x data channels"""
 
         # Interface
         self.add_function("reset", call_cmd="*RST")
@@ -1155,7 +1182,8 @@ class SR86x(VisaInstrument):
         self.add_function("enable_front_panel", call_cmd="OVRM 1")
 
         buffer = SR86xBuffer(self, f"{self.name}_buffer")
-        self.add_submodule("buffer", buffer)
+        self.buffer: SR86xBuffer = self.add_submodule("buffer", buffer)
+        """Interface for the SR86x buffer"""
 
         self.input_config()
         self.connect_message()
