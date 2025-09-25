@@ -1,6 +1,6 @@
 import pytest
 
-from qcodes.instrument_drivers.CopperMountain.M5065 import CopperMountainM5065
+from qcodes.instrument_drivers.CopperMountain import CopperMountainM5180
 
 
 class DummyM5065:
@@ -13,7 +13,7 @@ class DummyM5065:
 
 @pytest.fixture()
 def vna():
-    instance = CopperMountainM5065(
+    instance = CopperMountainM5180(
         name="M5065",
         address="TCPIP0::localhost::hislip0::INSTR",
         pyvisa_sim_file="CopperMountain_M5065.yaml",
