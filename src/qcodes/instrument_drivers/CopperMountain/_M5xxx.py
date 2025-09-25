@@ -711,8 +711,6 @@ class FrequencySweepMagPhase(MultiParameter):
             )  # ensure correct format
             sxx_raw = self.instrument.ask("CALC1:TRAC1:DATA:FDAT?")
 
-        self.instrument.write("CALC1:TRAC1:FORM MLOG")
-
         # Get data as numpy array
         sxx = np.fromstring(sxx_raw, dtype=float, sep=",")
         sxx = sxx[0::2] + 1j * sxx[1::2]
