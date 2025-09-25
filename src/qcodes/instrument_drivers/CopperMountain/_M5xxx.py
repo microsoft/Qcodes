@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 
@@ -482,7 +482,9 @@ class CopperMountainM5xxx(VisaInstrument):
         else:
             return "bus"
 
-    def _set_trigger(self, trigger: str) -> None:
+    def _set_trigger(
+        self, trigger: Literal["external", "internal", "manual", "bus"]
+    ) -> None:
         """Sets trigger source.
 
         Args:
