@@ -508,7 +508,7 @@ class CopperMountainM5xxx(VisaInstrument):
         for trace in traces:
             self.write(f"CALC1:TRAC{trace}:FORM SMITH")
 
-    def get_s(
+    def get_s_parameters(
         self, expected_measurement_duration: float = 600
     ) -> tuple[
         np.ndarray,
