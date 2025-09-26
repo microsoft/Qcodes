@@ -1,4 +1,3 @@
-import logging
 from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
@@ -15,8 +14,6 @@ from qcodes.validators import Bool, Enum, Ints, Numbers
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
-
-log = logging.getLogger(__name__)
 
 
 class CopperMountainM5xxx(VisaInstrument):
@@ -410,7 +407,7 @@ class CopperMountainM5xxx(VisaInstrument):
         # exact value provided.
         start = self.start()
         if abs(val - start) >= 1:
-            log.info(f"Could not set start to {val} setting it to {start}")
+            self.log.info(f"Could not set start to {val} setting it to {start}")
         self.update_lin_traces()
 
     def _set_stop(self, val: float) -> None:
@@ -431,7 +428,7 @@ class CopperMountainM5xxx(VisaInstrument):
         # exact value provided.
         stop = self.stop()
         if abs(val - stop) >= 1:
-            log.info(f"Could not set stop to {val} setting it to {stop}")
+            self.log.info(f"Could not set stop to {val} setting it to {stop}")
         self.update_lin_traces()
 
     def _set_span(self, val: float) -> None:
