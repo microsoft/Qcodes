@@ -78,7 +78,7 @@ class CopperMountainM5xxx(VisaInstrument):
             set_cmd="SOUR:POW {}",
             unit="dBm",
             docstring="Sets or reads out the power level for the frequency sweep type in dBm.",
-            vals=Numbers(min_value=-50, max_value=10),
+            vals=Numbers(min_value=-55, max_value=5),
         )
         """Sets or reads out the power level for the frequency sweep type in dBm."""
 
@@ -493,7 +493,7 @@ class CopperMountainM5xxx(VisaInstrument):
         """
         self.write("TRIG:SOUR " + trigger.upper())
 
-    def _set_trace_formats_to_smith(self, traces: list[int]) -> None:
+    def _set_trace_formats_to_polar(self, traces: list[int]) -> None:
         """
         Sets the format of the specified traces to SMITH (real + imaginary).
 
@@ -506,7 +506,7 @@ class CopperMountainM5xxx(VisaInstrument):
         """
 
         for trace in traces:
-            self.write(f"CALC1:TRAC{trace}:FORM SMITH")
+            self.write(f"CALC1:TRAC{trace}:FORM POLar")
 
     def get_s_parameters(
         self, expected_measurement_duration: float = 600
@@ -542,7 +542,7 @@ class CopperMountainM5xxx(VisaInstrument):
             self.write("CALC1:PAR2:DEF S12")  # Choose S12 for trace 2
             self.write("CALC1:PAR3:DEF S21")  # Choose S21 for trace 3
             self.write("CALC1:PAR4:DEF S22")  # Choose S22 for trace 4
-            self._set_trace_formats_to_smith(traces=[1, 2, 3, 4])
+            self._set_trace_formats_to_polar(traces=[1, 2, 3, 4])
             self.write("TRIG:SEQ:SING")  # Trigger a single sweep
             self.ask("*OPC?")  # Wait for measurement to complete
 
@@ -701,21 +701,21 @@ class FrequencySweepMagPhase(MultiParameter):
         ):
             self.instrument.write("CALC1:PAR:COUN 1")  # 1 trace
             self.instrument.write(f"CALC1:PAR1:DEF {self.name}")
+            self.instrument._set_trace_formats_to_polar(
+                traces=[1]
+            )  # ensure correct format
             self.instrument.trigger_source("bus")  # set the trigger to bus
             self.instrument.write("TRIG:SEQ:SING")  # Trigger a single sweep
             self.instrument.ask("*OPC?")  # Wait for measurement to complete
 
             # get data from instrument
-            self.instrument._set_trace_formats_to_smith(
-                traces=[1]
-            )  # ensure correct format
             sxx_raw = self.instrument.ask("CALC1:TRAC1:DATA:FDAT?")
 
         # Get data as numpy array
         sxx = np.fromstring(sxx_raw, dtype=float, sep=",")
         sxx = sxx[0::2] + 1j * sxx[1::2]
 
-        return self.instrument._db(sxx), np.unwrap(np.angle(sxx))
+        return self.instrument._db(sxx), np.angle(sxx)
 
 
 class PointMagPhase(MultiParameter):
@@ -799,7 +799,7 @@ class PointMagPhase(MultiParameter):
             self.instrument.ask("*OPC?")  # Wait for measurement to complete
 
             # get data from instrument
-            self.instrument._set_trace_formats_to_smith(
+            self.instrument._set_trace_formats_to_polar(
                 traces=[1]
             )  # ensure correct format
             sxx_raw = self.instrument.ask("CALC1:TRAC1:DATA:FDAT?")
@@ -887,7 +887,7 @@ class PointIQ(MultiParameter):
         self.instrument.ask("*OPC?")  # Wait for measurement to complete
 
         # get data from instrument
-        self.instrument._set_trace_formats_to_smith(traces=[1])  # ensure correct format
+        self.instrument._set_trace_formats_to_polar(traces=[1])  # ensure correct format
         sxx_raw = self.instrument.ask("CALC1:TRAC1:DATA:FDAT?")
 
         # Get data as numpy array
