@@ -13,6 +13,7 @@ from qcodes.parameters import (
 from qcodes.validators import Bool, Enum, Ints, Numbers
 
 if TYPE_CHECKING:
+    from numpy.typing import NDArray
     from typing_extensions import Unpack
 
 
@@ -508,15 +509,15 @@ class CopperMountainM5xxx(VisaInstrument):
     def get_s_parameters(
         self, expected_measurement_duration: float = 600
     ) -> tuple[
-        np.ndarray,
-        np.ndarray,
-        np.ndarray,
-        np.ndarray,
-        np.ndarray,
-        np.ndarray,
-        np.ndarray,
-        np.ndarray,
-        np.ndarray,
+        "NDArray",
+        "NDArray",
+        "NDArray",
+        "NDArray",
+        "NDArray",
+        "NDArray",
+        "NDArray",
+        "NDArray",
+        "NDArray",
     ]:
         """
         Return all S parameters as magnitude in dB and phase in rad.
@@ -525,7 +526,7 @@ class CopperMountainM5xxx(VisaInstrument):
             expected_measurement_duration: Expected duration of the measurement in seconds.
 
         Returns:
-            Tuple[np.ndarray]: frequency [GHz],
+            Tuple[NDArray]: frequency [GHz],
             s11 magnitude [dB], s11 phase [rad],
             s12 magnitude [dB], s12 phase [rad],
             s21 magnitude [dB], s21 phase [rad],
@@ -595,7 +596,7 @@ class CopperMountainM5xxx(VisaInstrument):
         self.write("SENS1.AVER.CLE")
 
     @staticmethod
-    def _db(data: np.ndarray) -> np.ndarray:
+    def _db(data: "NDArray") -> "NDArray":
         """
         Return dB from magnitude
 
