@@ -1,0 +1,123 @@
+spec: "1.0"
+
+resources:
+  TCPIP0::localhost::hislip0::INSTR:
+    device: M5180
+
+devices:
+  M5180:
+    eom:
+      TCPIP INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "CMT, M5180, 23047001, 25.3.1/2"
+    properties:
+      output:
+        default: 0
+        getter:
+          q: "OUTP:STAT?"
+          r: "{}"
+        setter:
+          q: "OUTP:STAT {}"
+        specs:
+          type: int
+          valid: [0, 1]
+      power:
+        default: -20
+        getter:
+          q: "SOUR:POW?"
+          r: "{}"
+        setter:
+          q: "SOUR:POW {}"
+        specs:
+          min: -50
+          max: 10
+          type: float
+      if_bandwidth:
+        default: 100000
+        getter:
+          q: "SENS1:BWID?"
+          r: "{}"
+        setter:
+          q: "SENS1:BWID {}"
+      averages_enabled:
+        default: 0
+        getter:
+          q: "SENS1:AVER:STAT?"
+          r: "{}"
+        setter:
+          q: "SENS1:AVER:STAT {}"
+        specs:
+          type: int
+          valid: [0, 1]
+      averages_trigger_enabled:
+        default: 0
+        getter:
+          q: "TRIG:SEQ:AVER?"
+          r: "{}"
+        setter:
+          q: "TRIG:SEQ:AVER {}"
+        specs:
+          type: int
+          valid: [0, 1]
+      electrical_delay:
+        default: 0
+        getter:
+          q: "CALC1:CORR:EDEL:TIME?"
+          r: "{}"
+        setter:
+          q: "CALC1:CORR:EDEL:TIME {}"
+      electrical_distance:
+        default: 20
+        getter:
+          q: "CALC1:CORR:EDEL:DIST?"
+          r: "{}"
+        setter:
+          q: "CALC1:CORR:EDEL:DIST {}"
+      clock_source:
+        default: "INT"
+        getter:
+          q: "SENSe1:ROSCillator:SOURce?"
+          r: "{}"
+        setter:
+          q: "SENSe1:ROSCillator:SOURce {}"
+      start:
+        default: 300000
+        getter:
+          q: "SENS1:FREQ:STAR?"
+          r: "{}"
+        setter:
+          q: "SENS1:FREQ:STAR {}"
+        specs:
+          type: float
+      stop:
+        default: 18000000000
+        getter:
+          q: "SENS1:FREQ:STOP?"
+          r: "{}"
+        setter:
+          q: "SENS1:FREQ:STOP {}"
+        specs:
+          type: float
+      center:
+        getter:
+          q: "SENS1:FREQ:CENT?"
+          r: "{}"
+        setter:
+          q: "SENS1:FREQ:CENT {}"
+      span:
+        getter:
+          q: "SENS1:FREQ:SPAN?"
+          r: "{}"
+        setter:
+          q: "SENS1:FREQ:SPAN {}"
+      number_of_points:
+        default: 201
+        getter:
+          q: "SENS1:SWE:POIN?"
+          r: "{}"
+        setter:
+          q: "SENS1:SWE:POIN {}"
