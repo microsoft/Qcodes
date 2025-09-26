@@ -804,14 +804,15 @@ class PointMagPhase(MultiParameter):
         ):
             self.instrument.write("CALC1:PAR:COUN 1")  # 1 trace
             self.instrument.write(f"CALC1:PAR1:DEF {self.name[-3:]}")
+
+            # ensure correct format
+            self.instrument._set_trace_formats_to_polar(traces=[1])
             self.instrument.trigger_source("bus")  # set the trigger to bus
+            self.instrument.write("INIT")  # put in wait for trigger mode
             self.instrument.write("TRIG:SEQ:SING")  # Trigger a single sweep
             self.instrument.ask("*OPC?")  # Wait for measurement to complete
 
             # get data from instrument
-            self.instrument._set_trace_formats_to_polar(
-                traces=[1]
-            )  # ensure correct format
             sxx_raw = self.instrument.ask("CALC1:TRAC1:DATA:FDAT?")
 
         # Get data as numpy array
@@ -835,6 +836,7 @@ class PointIQ(MultiParameter):
         self,
         name: str,
         instrument: VisaInstrument,
+        expected_measurement_duration: float = 600,
         **kwargs: Any,
     ) -> None:
         """I and Q measurement of a single point at start
@@ -843,9 +845,12 @@ class PointIQ(MultiParameter):
         Args:
             name: Name of point measurement
             instrument:  Instrument to which parameter is bound to.
+            expected_measurement_duration: Adjusts instrument timeout (seconds). Defaults to 600 seconds.
             **kwargs: Any
 
         """
+
+        self.expected_measurement_duration = expected_measurement_duration
 
         super().__init__(
             name,
@@ -890,15 +895,21 @@ class PointIQ(MultiParameter):
                     f"Stop-start is not 1 Hz but {self.instrument.stop() - self.instrument.start()} Hz. Please adjust start or stop."
                 )
 
-        self.instrument.write("CALC1:PAR:COUN 1")  # 1 trace
-        self.instrument.write(f"CALC1:PAR1:DEF {self.name[-3:]}")
-        self.instrument.trigger_source("bus")  # set the trigger to bus
-        self.instrument.write("TRIG:SEQ:SING")  # Trigger a single sweep
-        self.instrument.ask("*OPC?")  # Wait for measurement to complete
+        with self.instrument.timeout.set_to(
+            max(self.instrument.timeout(), self.expected_measurement_duration)
+        ):
+            self.instrument.write("CALC1:PAR:COUN 1")  # 1 trace
+            self.instrument.write(f"CALC1:PAR1:DEF {self.name[-3:]}")
 
-        # get data from instrument
-        self.instrument._set_trace_formats_to_polar(traces=[1])  # ensure correct format
-        sxx_raw = self.instrument.ask("CALC1:TRAC1:DATA:FDAT?")
+            # ensure correct format
+            self.instrument._set_trace_formats_to_polar(traces=[1])
+            self.instrument.trigger_source("bus")  # set the trigger to bus
+            self.instrument.write("INIT")  # put in wait for trigger mode
+            self.instrument.write("TRIG:SEQ:SING")  # Trigger a single sweep
+            self.instrument.ask("*OPC?")  # Wait for measurement to complete
+
+            # get data from instrument
+            sxx_raw = self.instrument.ask("CALC1:TRAC1:DATA:FDAT?")
 
         # Get data as numpy array
         sxx = np.fromstring(sxx_raw, dtype=float, sep=",")
