@@ -5,7 +5,7 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
@@ -33,19 +33,25 @@ from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.versioning import serialization as serial
+from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.exporters.export_to_pandas import _generate_pandas_index
 from qcodes.dataset.exporters.export_to_xarray import _calculate_index_shape
 from qcodes.dataset.linked_datasets.links import links_to_str
 from qcodes.parameters import ManualParameter, Parameter, ParamSpecBase
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
+    from collections.abc import Hashable
+
+    from pytest_mock import MockerFixture
+
     from qcodes.dataset.data_set import DataSet
     from qcodes.dataset.experiment_container import Experiment
 
 
 @pytest.fixture(name="mock_empty_dataset")
-def _make_mock_empty_dataset(experiment) -> DataSet:
+def _make_mock_empty_dataset(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric")
     yparam = ParamSpecBase("y", "numeric")
@@ -75,7 +81,7 @@ def _make_mock_dataset(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_nonunique")
-def _make_mock_dataset_nonunique_index(experiment) -> DataSet:
+def _make_mock_dataset_nonunique_index(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric")
     yparam = ParamSpecBase("y", "numeric")
@@ -91,7 +97,7 @@ def _make_mock_dataset_nonunique_index(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_label_unit")
-def _make_mock_dataset_label_unit(experiment) -> DataSet:
+def _make_mock_dataset_label_unit(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric", label="x label", unit="x unit")
     yparam = ParamSpecBase("y", "numeric", label="y label", unit="y unit")
@@ -107,7 +113,7 @@ def _make_mock_dataset_label_unit(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_complex")
-def _make_mock_dataset_complex(experiment) -> DataSet:
+def _make_mock_dataset_complex(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric")
     yparam = ParamSpecBase("y", "complex")
@@ -122,7 +128,7 @@ def _make_mock_dataset_complex(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_grid")
-def _make_mock_dataset_grid(experiment) -> DataSet:
+def _make_mock_dataset_grid(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric")
     yparam = ParamSpecBase("y", "numeric")
@@ -140,7 +146,7 @@ def _make_mock_dataset_grid(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_in_mem_grid")
-def _make_mock_dataset_in_mem_grid(experiment) -> DataSetProtocol:
+def _make_mock_dataset_in_mem_grid(experiment: Experiment) -> DataSetProtocol:
     meas = Measurement(exp=experiment, name="in_mem_ds")
     meas.register_custom_parameter("x", paramtype="numeric")
     meas.register_custom_parameter("y", paramtype="numeric")
@@ -155,7 +161,7 @@ def _make_mock_dataset_in_mem_grid(experiment) -> DataSetProtocol:
 
 
 @pytest.fixture(name="mock_dataset_grid_with_shapes")
-def _make_mock_dataset_grid_with_shapes(experiment) -> DataSet:
+def _make_mock_dataset_grid_with_shapes(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric")
     yparam = ParamSpecBase("y", "numeric")
@@ -173,7 +179,7 @@ def _make_mock_dataset_grid_with_shapes(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_grid_incomplete")
-def _make_mock_dataset_grid_incomplete(experiment) -> DataSet:
+def _make_mock_dataset_grid_incomplete(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric")
     yparam = ParamSpecBase("y", "numeric")
@@ -198,7 +204,7 @@ def _make_mock_dataset_grid_incomplete(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_grid_incomplete_with_shapes")
-def _make_mock_dataset_grid_incomplete_with_shapes(experiment) -> DataSet:
+def _make_mock_dataset_grid_incomplete_with_shapes(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric")
     yparam = ParamSpecBase("y", "numeric")
@@ -223,7 +229,7 @@ def _make_mock_dataset_grid_incomplete_with_shapes(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_numpy")
-def _make_mock_dataset_numpy(experiment) -> DataSet:
+def _make_mock_dataset_numpy(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric", label="x label", unit="x unit")
     yparam = ParamSpecBase("y", "array", label="y label", unit="y unit")
@@ -241,7 +247,7 @@ def _make_mock_dataset_numpy(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_numpy_complex")
-def _make_mock_dataset_numpy_complex(experiment) -> DataSet:
+def _make_mock_dataset_numpy_complex(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric", label="x label", unit="x unit")
     yparam = ParamSpecBase("y", "array", label="y label", unit="y unit")
@@ -259,7 +265,7 @@ def _make_mock_dataset_numpy_complex(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_non_grid")
-def _make_mock_dataset_non_grid(experiment) -> DataSet:
+def _make_mock_dataset_non_grid(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric")
     yparam = ParamSpecBase("y", "numeric")
@@ -284,7 +290,7 @@ def _make_mock_dataset_non_grid(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_non_grid_in_mem")
-def _make_mock_dataset_non_grid_in_mem(experiment) -> DataSetProtocol:
+def _make_mock_dataset_non_grid_in_mem(experiment: Experiment) -> DataSetProtocol:
     meas = Measurement(exp=experiment, name="in_mem_ds")
 
     num_samples = 50
@@ -307,7 +313,7 @@ def _make_mock_dataset_non_grid_in_mem(experiment) -> DataSetProtocol:
 
 
 @pytest.fixture(name="mock_dataset_non_grid_in_grid")
-def _make_mock_dataset_non_grid_in_grid(experiment) -> DataSet:
+def _make_mock_dataset_non_grid_in_grid(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric")
     y1param = ParamSpecBase("y1", "numeric")
@@ -332,7 +338,7 @@ def _make_mock_dataset_non_grid_in_grid(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_grid_in_non_grid")
-def _make_mock_dataset_grid_in_non_grid(experiment) -> DataSet:
+def _make_mock_dataset_grid_in_non_grid(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     x1param = ParamSpecBase("x1", "numeric")
     x2param = ParamSpecBase("x2", "numeric")
@@ -357,7 +363,7 @@ def _make_mock_dataset_grid_in_non_grid(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_non_grid_in_non_grid")
-def _make_mock_dataset_non_grid_in_non_grid(experiment) -> DataSet:
+def _make_mock_dataset_non_grid_in_non_grid(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     x1param = ParamSpecBase("x1", "numeric")
     x2param = ParamSpecBase("x2", "numeric")
@@ -388,7 +394,7 @@ def _make_mock_dataset_non_grid_in_non_grid(experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset_inverted_coords")
-def _make_mock_dataset_inverted_coords(experiment) -> DataSet:
+def _make_mock_dataset_inverted_coords(experiment: Experiment) -> DataSet:
     # this dataset is constructed such
     # that the two z parameters have inverted
     # coordinates. You almost certainly
@@ -415,7 +421,7 @@ def _make_mock_dataset_inverted_coords(experiment) -> DataSet:
 
 
 @pytest.mark.usefixtures("experiment")
-def test_write_data_to_text_file_save(tmp_path_factory) -> None:
+def test_write_data_to_text_file_save(tmp_path_factory: TempPathFactory) -> None:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric")
     yparam = ParamSpecBase("y", "numeric")
@@ -435,7 +441,7 @@ def test_write_data_to_text_file_save(tmp_path_factory) -> None:
 
 
 def test_write_data_to_text_file_save_multi_keys(
-    tmp_path_factory, mock_dataset
+    tmp_path_factory: TempPathFactory, mock_dataset: DataSet
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("data_to_text_file_save_multi_keys")
     path = str(tmp_path)
@@ -448,7 +454,7 @@ def test_write_data_to_text_file_save_multi_keys(
 
 
 def test_write_data_to_text_file_save_single_file(
-    tmp_path_factory, mock_dataset
+    tmp_path_factory: TempPathFactory, mock_dataset: DataSet
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("to_text_file_save_single_file")
     path = str(tmp_path)
@@ -461,7 +467,7 @@ def test_write_data_to_text_file_save_single_file(
 
 
 @pytest.mark.usefixtures("experiment")
-def test_write_data_to_text_file_length_exception(tmp_path) -> None:
+def test_write_data_to_text_file_length_exception(tmp_path: Path) -> None:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric")
     yparam = ParamSpecBase("y", "numeric")
@@ -485,7 +491,9 @@ def test_write_data_to_text_file_length_exception(tmp_path) -> None:
         )
 
 
-def test_write_data_to_text_file_name_exception(tmp_path, mock_dataset) -> None:
+def test_write_data_to_text_file_name_exception(
+    tmp_path: Path, mock_dataset: DataSet
+) -> None:
     temp_dir = str(tmp_path)
     with pytest.raises(Exception, match="desired file name"):
         mock_dataset.write_data_to_text_file(
@@ -493,7 +501,9 @@ def test_write_data_to_text_file_name_exception(tmp_path, mock_dataset) -> None:
         )
 
 
-def test_export_csv(tmp_path_factory, mock_dataset, caplog: LogCaptureFixture) -> None:
+def test_export_csv(
+    tmp_path_factory: TempPathFactory, mock_dataset: DataSet, caplog: LogCaptureFixture
+) -> None:
     tmp_path = tmp_path_factory.mktemp("export_csv")
     path = str(tmp_path)
     with caplog.at_level(logging.INFO):
@@ -514,7 +524,7 @@ def test_export_csv(tmp_path_factory, mock_dataset, caplog: LogCaptureFixture) -
 
 
 def test_export_netcdf(
-    tmp_path_factory, mock_dataset, caplog: LogCaptureFixture
+    tmp_path_factory: TempPathFactory, mock_dataset: DataSet, caplog: LogCaptureFixture
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
@@ -545,7 +555,7 @@ def test_export_netcdf(
 
 
 def test_export_netcdf_default_dir(
-    tmp_path_factory: TempPathFactory, mock_dataset
+    tmp_path_factory: TempPathFactory, mock_dataset: DataSet
 ) -> None:
     qcodes.config.dataset.export_path = "{db_location}"
     mock_dataset.export(export_type="netcdf", prefix="qcodes_")
@@ -561,7 +571,9 @@ def test_export_netcdf_default_dir(
     assert exported_dir == get_data_export_path()
 
 
-def test_export_netcdf_csv(tmp_path_factory, mock_dataset) -> None:
+def test_export_netcdf_csv(
+    tmp_path_factory: TempPathFactory, mock_dataset: DataSet
+) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
     csv_path = os.path.join(
@@ -601,7 +613,9 @@ def test_export_netcdf_csv(tmp_path_factory, mock_dataset) -> None:
     assert loaded_new_xr_ds.attrs["metadata_added_after_export_2"] == 696
 
 
-def test_export_netcdf_complex_data(tmp_path_factory, mock_dataset_complex) -> None:
+def test_export_netcdf_complex_data(
+    tmp_path_factory: TempPathFactory, mock_dataset_complex: DataSet
+) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
     mock_dataset_complex.export(export_type="netcdf", path=path, prefix="qcodes_")
@@ -619,7 +633,7 @@ def test_export_netcdf_complex_data(tmp_path_factory, mock_dataset_complex) -> N
 
 
 def test_export_no_or_nonexistent_type_specified(
-    tmp_path_factory, mock_dataset
+    tmp_path_factory: TempPathFactory, mock_dataset: DataSet
 ) -> None:
     with pytest.raises(ValueError, match="No data export type specified"):
         mock_dataset.export()
@@ -628,7 +642,9 @@ def test_export_no_or_nonexistent_type_specified(
         mock_dataset.export(export_type="foo")
 
 
-def test_export_from_config(tmp_path_factory, mock_dataset, mocker) -> None:
+def test_export_from_config(
+    tmp_path_factory: TempPathFactory, mock_dataset: DataSet, mocker: MockerFixture
+) -> None:
     tmp_path = tmp_path_factory.mktemp("export_from_config")
     path = str(tmp_path)
     mock_type = mocker.patch("qcodes.dataset.data_set_protocol.get_data_export_type")
@@ -642,7 +658,7 @@ def test_export_from_config(tmp_path_factory, mock_dataset, mocker) -> None:
 
 
 def test_export_from_config_set_name_elements(
-    tmp_path_factory, mock_dataset, mocker
+    tmp_path_factory: TempPathFactory, mock_dataset: DataSet, mocker: MockerFixture
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("export_from_config")
     path = str(tmp_path)
@@ -843,7 +859,7 @@ def test_partally_overlapping_setpoint_xarray_export_two_params_partial(
     assert filtered_data.shape == (5, 2)
 
 
-def test_export_to_xarray_dataset_empty_ds(mock_empty_dataset) -> None:
+def test_export_to_xarray_dataset_empty_ds(mock_empty_dataset: DataSet) -> None:
     ds = mock_empty_dataset.to_xarray_dataset()
     assert len(ds) == 2
     assert len(ds.coords) == 1
@@ -851,8 +867,9 @@ def test_export_to_xarray_dataset_empty_ds(mock_empty_dataset) -> None:
     _assert_xarray_metadata_is_as_expected(ds, mock_empty_dataset)
 
 
-def test_export_to_xarray_dataarray_empty_ds(mock_empty_dataset) -> None:
-    dad = mock_empty_dataset.to_xarray_dataarray_dict()
+def test_export_to_xarray_dataarray_empty_ds(mock_empty_dataset: DataSet) -> None:
+    with pytest.warns(QCoDeSDeprecationWarning, match="to_xarray_dataarray_dict"):
+        dad = mock_empty_dataset.to_xarray_dataarray_dict()  # pyright: ignore[reportDeprecated]
     assert len(dad) == 2
     assert len(dad["y"].coords) == 1
     assert "x" in dad["y"].coords
@@ -860,7 +877,16 @@ def test_export_to_xarray_dataarray_empty_ds(mock_empty_dataset) -> None:
     assert "x" in dad["z"].coords
 
 
-def test_export_to_xarray(mock_dataset) -> None:
+def test_export_to_xarray_dataset_dict_empty_ds(mock_empty_dataset: DataSet) -> None:
+    dad = mock_empty_dataset.to_xarray_dataset_dict()
+    assert len(dad) == 2
+    assert len(dad["y"].coords) == 1
+    assert "x" in dad["y"].coords
+    assert len(dad["z"].coords) == 1
+    assert "x" in dad["z"].coords
+
+
+def test_export_to_xarray(mock_dataset: DataSet) -> None:
     ds = mock_dataset.to_xarray_dataset()
     assert len(ds) == 2
     assert "index" not in ds.coords
@@ -869,7 +895,7 @@ def test_export_to_xarray(mock_dataset) -> None:
 
 
 def test_export_to_xarray_non_unique_dependent_parameter(
-    mock_dataset_nonunique,
+    mock_dataset_nonunique: DataSet,
 ) -> None:
     """When x (the dependent parameter) contains non unique values it cannot be used
     as coordinates in xarray so check that we fall back to using an counter as index"""
@@ -883,7 +909,7 @@ def test_export_to_xarray_non_unique_dependent_parameter(
         assert "snapshot" not in ds[array_name].attrs.keys()
 
 
-def test_export_to_xarray_extra_metadata(mock_dataset) -> None:
+def test_export_to_xarray_extra_metadata(mock_dataset: DataSet) -> None:
     mock_dataset.add_metadata("mytag", "somestring")
     mock_dataset.add_metadata("myothertag", 1)
     ds = mock_dataset.to_xarray_dataset()
@@ -894,16 +920,28 @@ def test_export_to_xarray_extra_metadata(mock_dataset) -> None:
         assert "snapshot" not in ds[array_name].attrs.keys()
 
 
-def test_export_to_xarray_ds_dict_extra_metadata(mock_dataset) -> None:
+def test_export_to_xarray_da_dict_extra_metadata(mock_dataset: DataSet) -> None:
     mock_dataset.add_metadata("mytag", "somestring")
     mock_dataset.add_metadata("myothertag", 1)
-    da_dict = mock_dataset.to_xarray_dataarray_dict()
+    with pytest.warns(QCoDeSDeprecationWarning, match="to_xarray_dataarray_dict"):
+        da_dict = mock_dataset.to_xarray_dataarray_dict()  # pyright: ignore[reportDeprecated]
 
     for datarray in da_dict.values():
         _assert_xarray_metadata_is_as_expected(datarray, mock_dataset)
 
 
-def test_export_to_xarray_extra_metadata_can_be_stored(mock_dataset, tmp_path) -> None:
+def test_export_to_xarray_ds_dict_extra_metadata(mock_dataset: DataSet) -> None:
+    mock_dataset.add_metadata("mytag", "somestring")
+    mock_dataset.add_metadata("myothertag", 1)
+    da_dict = mock_dataset.to_xarray_dataset_dict()
+
+    for datarray in da_dict.values():
+        _assert_xarray_metadata_is_as_expected(datarray, mock_dataset)
+
+
+def test_export_to_xarray_extra_metadata_can_be_stored(
+    mock_dataset: DataSet, tmp_path: Path
+) -> None:
     nt_metadata = {
         "foo": {
             "bar": {"baz": "test"},
@@ -937,7 +975,9 @@ def test_export_to_xarray_extra_metadata_can_be_stored(mock_dataset, tmp_path) -
     assert loaded_data.attrs == data_as_xarray.attrs
 
 
-def test_to_xarray_ds_paramspec_metadata_is_preserved(mock_dataset_label_unit) -> None:
+def test_to_xarray_ds_paramspec_metadata_is_preserved(
+    mock_dataset_label_unit: DataSet,
+) -> None:
     xr_ds = mock_dataset_label_unit.to_xarray_dataset()
     assert len(xr_ds.dims) == 1
     for param_name in xr_ds.dims:
@@ -951,9 +991,10 @@ def test_to_xarray_ds_paramspec_metadata_is_preserved(mock_dataset_label_unit) -
 
 
 def test_to_xarray_da_dict_paramspec_metadata_is_preserved(
-    mock_dataset_label_unit,
+    mock_dataset_label_unit: DataSet,
 ) -> None:
-    xr_das = mock_dataset_label_unit.to_xarray_dataarray_dict()
+    with pytest.warns(QCoDeSDeprecationWarning, match="to_xarray_dataarray_dict"):
+        xr_das = mock_dataset_label_unit.to_xarray_dataarray_dict()  # pyright: ignore[reportDeprecated]
 
     for outer_param_name, xr_da in xr_das.items():
         for param_name in xr_da.dims:
@@ -965,6 +1006,23 @@ def test_to_xarray_da_dict_paramspec_metadata_is_preserved(
         )
         for spec_name, spec_value in expected_param_spec_attrs.items():
             assert xr_da.attrs[spec_name] == spec_value
+
+
+def test_to_xarray_ds_dict_paramspec_metadata_is_preserved(
+    mock_dataset_label_unit: DataSet,
+) -> None:
+    xr_das = mock_dataset_label_unit.to_xarray_dataset_dict()
+
+    for outer_param_name, xr_da in xr_das.items():
+        for param_name in xr_da.dims:
+            assert xr_da.coords[param_name].attrs == _get_expected_param_spec_attrs(
+                mock_dataset_label_unit, param_name
+            )
+        expected_param_spec_attrs = _get_expected_param_spec_attrs(
+            mock_dataset_label_unit, outer_param_name
+        )
+        for spec_name, spec_value in expected_param_spec_attrs.items():
+            assert xr_da[outer_param_name].attrs[spec_name] == spec_value
 
 
 def test_export_2d_dataset(
@@ -995,7 +1053,9 @@ def test_export_2d_dataset(
 
 
 def test_export_dataset_small_no_delated(
-    tmp_path_factory: TempPathFactory, mock_dataset_numpy: DataSet, caplog
+    tmp_path_factory: TempPathFactory,
+    mock_dataset_numpy: DataSet,
+    caplog: LogCaptureFixture,
 ) -> None:
     """
     Test that a 'small' dataset does not use the delayed export.
@@ -1008,7 +1068,9 @@ def test_export_dataset_small_no_delated(
 
 
 def test_export_dataset_delayed_off_by_default(
-    tmp_path_factory: TempPathFactory, mock_dataset_grid: DataSet, caplog
+    tmp_path_factory: TempPathFactory,
+    mock_dataset_grid: DataSet,
+    caplog: LogCaptureFixture,
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     qcodes.config.dataset.export_chunked_threshold = 0
@@ -1020,7 +1082,9 @@ def test_export_dataset_delayed_off_by_default(
 
 
 def test_export_dataset_delayed_numeric(
-    tmp_path_factory: TempPathFactory, mock_dataset_grid: DataSet, caplog
+    tmp_path_factory: TempPathFactory,
+    mock_dataset_grid: DataSet,
+    caplog: LogCaptureFixture,
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     qcodes.config.dataset.export_chunked_threshold = 0
@@ -1056,7 +1120,9 @@ def test_export_dataset_delayed_numeric(
 
 
 def test_export_dataset_delayed(
-    tmp_path_factory: TempPathFactory, mock_dataset_numpy: DataSet, caplog
+    tmp_path_factory: TempPathFactory,
+    mock_dataset_numpy: DataSet,
+    caplog: LogCaptureFixture,
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     qcodes.config.dataset.export_chunked_threshold = 0
@@ -1093,7 +1159,9 @@ def test_export_dataset_delayed(
 
 
 def test_export_dataset_delayed_complex(
-    tmp_path_factory: TempPathFactory, mock_dataset_numpy_complex: DataSet, caplog
+    tmp_path_factory: TempPathFactory,
+    mock_dataset_numpy_complex: DataSet,
+    caplog: LogCaptureFixture,
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     qcodes.config.dataset.export_chunked_threshold = 0
@@ -1356,7 +1424,7 @@ def test_export_non_grid_in_non_grid_dataset(
 
 
 def test_inverted_coords_perserved_on_netcdf_roundtrip(
-    tmp_path_factory: TempPathFactory, mock_dataset_inverted_coords
+    tmp_path_factory: TempPathFactory, mock_dataset_inverted_coords: DataSet
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
@@ -1380,7 +1448,7 @@ def test_inverted_coords_perserved_on_netcdf_roundtrip(
     assert xr_ds.identical(xr_ds_reimported)
 
 
-def _get_expected_param_spec_attrs(dataset, dim):
+def _get_expected_param_spec_attrs(dataset: DataSet, dim: Hashable) -> dict[str, Any]:
     expected_attrs = dict(dataset.paramspecs[str(dim)]._to_dict())
     expected_attrs["units"] = expected_attrs["unit"]
     expected_attrs["long_name"] = expected_attrs["label"]
@@ -1388,7 +1456,9 @@ def _get_expected_param_spec_attrs(dataset, dim):
     return expected_attrs
 
 
-def _assert_xarray_metadata_is_as_expected(xarray_ds, qc_dataset):
+def _assert_xarray_metadata_is_as_expected(
+    xarray_ds: xr.Dataset | xr.DataArray, qc_dataset: DataSet
+) -> None:
     assert xarray_ds.ds_name == qc_dataset.name
     assert xarray_ds.sample_name == qc_dataset.sample_name
     assert xarray_ds.exp_name == qc_dataset.exp_name
@@ -1411,7 +1481,7 @@ def _assert_xarray_metadata_is_as_expected(xarray_ds, qc_dataset):
     )
 
 
-def test_multi_index_options_grid(mock_dataset_grid) -> None:
+def test_multi_index_options_grid(mock_dataset_grid: DataSet) -> None:
     assert mock_dataset_grid.description.shapes is None
 
     xds = mock_dataset_grid.to_xarray_dataset()
@@ -1427,7 +1497,9 @@ def test_multi_index_options_grid(mock_dataset_grid) -> None:
     assert xds_always.sizes == {"multi_index": 50}
 
 
-def test_multi_index_options_grid_with_shape(mock_dataset_grid_with_shapes) -> None:
+def test_multi_index_options_grid_with_shape(
+    mock_dataset_grid_with_shapes: DataSet,
+) -> None:
     assert mock_dataset_grid_with_shapes.description.shapes == {"z": (10, 5)}
 
     xds = mock_dataset_grid_with_shapes.to_xarray_dataset()
@@ -1445,7 +1517,9 @@ def test_multi_index_options_grid_with_shape(mock_dataset_grid_with_shapes) -> N
     assert xds_always.sizes == {"multi_index": 50}
 
 
-def test_multi_index_options_incomplete_grid(mock_dataset_grid_incomplete) -> None:
+def test_multi_index_options_incomplete_grid(
+    mock_dataset_grid_incomplete: DataSet,
+) -> None:
     assert mock_dataset_grid_incomplete.description.shapes is None
 
     xds = mock_dataset_grid_incomplete.to_xarray_dataset()
@@ -1561,7 +1635,7 @@ def test_geneate_pandas_index() -> None:
 @given(
     function_name=hst.sampled_from(
         [
-            "to_xarray_dataarray_dict",
+            "to_xarray_dataset_dict",
             "to_pandas_dataframe",
             "to_pandas_dataframe_dict",
             "get_parameter_data",
@@ -1606,7 +1680,7 @@ def test_export_lazy_load(
 @given(
     function_name=hst.sampled_from(
         [
-            "to_xarray_dataarray_dict",
+            "to_xarray_dataset_dict",
             "to_pandas_dataframe",
             "to_pandas_dataframe_dict",
             "get_parameter_data",
@@ -1759,7 +1833,7 @@ def test_dond_hypothesis_nd_grid(
 
 
 def test_netcdf_export_with_none_timestamp_raw(
-    tmp_path_factory: TempPathFactory, experiment
+    tmp_path_factory: TempPathFactory, experiment: Experiment
 ) -> None:
     """
     Test that datasets with None timestamp_raw values export correctly to NetCDF
@@ -1802,7 +1876,7 @@ def test_netcdf_export_with_none_timestamp_raw(
 
 
 def test_netcdf_export_with_mixed_timestamp_raw(
-    tmp_path_factory: TempPathFactory, experiment
+    tmp_path_factory: TempPathFactory, experiment: Experiment
 ) -> None:
     """
     Test NetCDF export/import with one timestamp_raw being None and one being set.
@@ -1847,3 +1921,332 @@ def test_netcdf_export_with_mixed_timestamp_raw(
     # Verify timestamp_raw values are correct
     assert loaded_ds.run_timestamp_raw == ds.run_timestamp_raw
     assert loaded_ds.completed_timestamp_raw is None
+
+
+@given(data=hst.data())
+@settings(
+    max_examples=10,
+    suppress_health_check=(HealthCheck.function_scoped_fixture,),
+    deadline=None,
+)
+def test_measurement_hypothesis_nd_grid_with_inferred_param(
+    data: hst.DataObject, experiment: Experiment, caplog: LogCaptureFixture
+) -> None:
+    """
+    Randomized ND sweep using Measurement context manager with an inferred parameter:
+    - Draw N in [2, 4]
+    - For each dimension i, draw number of points n_i in [1, 5]
+    - Sweep each ManualParameter over a linspace of length n_i
+    - Choose m in [1, N-1] and a subset of m swept parameters for an inferred coord
+    - Register an inferred parameter depending on that subset and add its values
+    - Measure a deterministic function of the setpoints
+    - Assert xarray dims, coords (including inferred), and data match expectation
+    """
+    # number of dimensions and points per dimension
+    n_dims = data.draw(hst.integers(min_value=2, max_value=4), label="n_dims")
+    points_per_dim = [
+        data.draw(hst.integers(min_value=1, max_value=5), label=f"n_points_dim_{i}")
+        for i in range(n_dims)
+    ]
+
+    # build setpoint arrays and names
+    sp_names = [f"x{i}" for i in range(n_dims)]
+    sp_values: list[np.ndarray] = [
+        np.linspace(0.0, float(npts - 1), npts) for npts in points_per_dim
+    ]
+
+    # choose subset for inferred parameter (strict subset)
+    m = data.draw(hst.integers(min_value=1, max_value=n_dims - 1), label="m")
+    inf_indices = sorted(
+        data.draw(
+            hst.lists(
+                hst.integers(min_value=0, max_value=n_dims - 1),
+                min_size=m,
+                max_size=m,
+                unique=True,
+            ),
+            label="inf_indices",
+        )
+    )
+    inf_sp_names = [sp_names[i] for i in inf_indices]
+
+    # weights for measured signal
+    weights = [(i + 1) for i in range(n_dims)]
+
+    # Setup measurement with shapes so xarray direct path is used
+    meas = Measurement(exp=experiment, name="nd_grid_with_inferred")
+    # register setpoints
+    for name in sp_names:
+        meas.register_custom_parameter(name, paramtype="numeric")
+    # register inferred parameter (from subset of setpoints)
+    meas.register_custom_parameter(
+        "inf", basis=tuple(inf_sp_names), paramtype="numeric"
+    )
+    # register measured parameter depending on all setpoints
+    meas.register_custom_parameter(
+        "signal", setpoints=tuple(sp_names), paramtype="numeric"
+    )
+    meas.set_shapes({"signal": tuple(points_per_dim)})
+
+    # run measurement over full grid
+    with meas.run() as datasaver:
+        # iterate over grid indices
+        for idx in np.ndindex(*points_per_dim):
+            # collect setpoint values for this point
+            sp_items: list[tuple[str, float]] = [
+                (sp_names[k], float(sp_values[k][idx[k]])) for k in range(n_dims)
+            ]
+            # measured signal: weighted sum of all setpoints
+            signal_val = float(
+                sum(weights[k] * float(sp_values[k][idx[k]]) for k in range(n_dims))
+            )
+            # inferred value: sum over selected subset of setpoints
+            inf_val = float(sum(float(sp_values[k][idx[k]]) for k in inf_indices))
+            results: list[tuple[str, float]] = [
+                *sp_items,
+                ("inf", inf_val),
+                ("signal", signal_val),
+            ]
+            datasaver.add_result(*results)
+
+    ds = datasaver.dataset
+
+    # export to xarray and ensure direct path used
+    caplog.clear()
+    with caplog.at_level(logging.INFO):
+        xr_ds = ds.to_xarray_dataset()
+
+    assert any(
+        "Exporting signal to xarray using direct method" in record.message
+        for record in caplog.records
+    )
+
+    # Expected sizes per coordinate (all setpoints)
+    expected_sizes = {name: len(vals) for name, vals in zip(sp_names, sp_values)}
+    assert xr_ds.sizes == expected_sizes
+
+    # Check setpoint coords contents and order
+    for name, vals in zip(sp_names, sp_values):
+        assert name in xr_ds.coords
+        np.testing.assert_allclose(xr_ds.coords[name].values, vals)
+
+    # Measured data dims and values
+    assert "signal" in xr_ds.data_vars
+    assert xr_ds["signal"].dims == tuple(sp_names)
+
+    grids_all = np.meshgrid(*sp_values, indexing="ij")
+    expected_signal = np.zeros(tuple(points_per_dim), dtype=float)
+    for i, grid in enumerate(grids_all):
+        expected_signal += weights[i] * grid.astype(float)
+    np.testing.assert_allclose(xr_ds["signal"].values, expected_signal)
+
+    # Inferred coord should be present with dims equal to the subset order
+    assert "inf" in xr_ds.coords
+    expected_inf_dims = tuple(inf_sp_names)
+    assert xr_ds.coords["inf"].dims == expected_inf_dims
+
+    # Build expected inferred grid based only on the subset dims
+    subset_values = [sp_values[i] for i in inf_indices]
+    grids_subset = np.meshgrid(*subset_values, indexing="ij") if subset_values else []
+    expected_inf = np.zeros(tuple(points_per_dim[i] for i in inf_indices), dtype=float)
+    for grid in grids_subset:
+        expected_inf += grid.astype(float)
+    np.testing.assert_allclose(xr_ds.coords["inf"].values, expected_inf)
+
+    # The indexes of the inferred coord must correspond to the axes it depends on
+    # i.e., keys should match the inferred-from setpoint names, and each index equal
+    # to the dataset's index for that dimension
+    inf_indexes = xr_ds.coords["inf"].indexes
+    assert set(inf_indexes.keys()) == set(inf_sp_names)
+    for dim in inf_sp_names:
+        assert inf_indexes[dim].equals(xr_ds.indexes[dim])
+
+
+def test_measurement_2d_with_inferred_setpoint(
+    experiment: Experiment, caplog: LogCaptureFixture
+) -> None:
+    """
+    Sweep two parameters (x, y) where y is inferred from one or more basis parameters.
+    Verify that xarray export uses direct method, signal dims match, and basis
+    parameters appear as inferred coordinates with indexes corresponding to y.
+    """
+    # Grid sizes
+    nx, ny = 3, 4
+    x_vals = np.linspace(0.0, 2.0, nx)
+    # Define basis parameters for y and compute y from these
+    y_b0_vals = np.linspace(10.0, 13.0, ny)
+    y_b1_vals = np.linspace(-1.0, 2.0, ny)
+    # y is inferred from (y_b0, y_b1)
+    y_vals = y_b0_vals + 2.0 * y_b1_vals
+
+    meas = Measurement(exp=experiment, name="2d_with_inferred_setpoint")
+    # Register setpoint x
+    meas.register_custom_parameter("x", paramtype="numeric")
+    # Register basis params for y
+    meas.register_custom_parameter("y_b0", paramtype="numeric")
+    meas.register_custom_parameter("y_b1", paramtype="numeric")
+    # Register y as setpoint inferred from basis
+    meas.register_custom_parameter("y", basis=("y_b0", "y_b1"), paramtype="numeric")
+    # Register measured parameter depending on (x, y)
+    meas.register_custom_parameter("signal", setpoints=("x", "y"), paramtype="numeric")
+    meas.set_shapes({"signal": (nx, ny)})
+
+    with meas.run() as datasaver:
+        for ix in range(nx):
+            for iy in range(ny):
+                x = float(x_vals[ix])
+                y_b0 = float(y_b0_vals[iy])
+                y_b1 = float(y_b1_vals[iy])
+                y = float(y_vals[iy])
+                signal = x + 3.0 * y  # deterministic function
+                datasaver.add_result(
+                    ("x", x),
+                    ("y_b0", y_b0),
+                    ("y_b1", y_b1),
+                    ("y", y),
+                    ("signal", signal),
+                )
+
+    ds = datasaver.dataset
+
+    caplog.clear()
+    with caplog.at_level(logging.INFO):
+        xr_ds = ds.to_xarray_dataset()
+
+    assert any(
+        "Exporting signal to xarray using direct method" in record.message
+        for record in caplog.records
+    )
+
+    # Sizes and coords
+    assert xr_ds.sizes == {"x": nx, "y": ny}
+    np.testing.assert_allclose(xr_ds.coords["x"].values, x_vals)
+    np.testing.assert_allclose(xr_ds.coords["y"].values, y_vals)
+
+    # Signal dims and values
+    assert xr_ds["signal"].dims == ("x", "y")
+    expected_signal = x_vals[:, None] + 3.0 * y_vals[None, :]
+    np.testing.assert_allclose(xr_ds["signal"].values, expected_signal)
+
+    # Inferred coords for y_b0 and y_b1 exist with dims only along y
+    for name, vals in ("y_b0", y_b0_vals), ("y_b1", y_b1_vals):
+        assert name in xr_ds.coords
+        assert xr_ds.coords[name].dims == ("y",)
+        np.testing.assert_allclose(xr_ds.coords[name].values, vals)
+        # Indexes of inferred coords should correspond to the y axis index
+        inf_idx = xr_ds.coords[name].indexes
+        assert set(inf_idx.keys()) == {"y"}
+        assert inf_idx["y"].equals(xr_ds.indexes["y"])
+
+
+def test_measurement_2d_with_inferred_setpoint_from_setpoint(
+    experiment: Experiment, caplog: LogCaptureFixture
+) -> None:
+    """
+    This is not a good idea but a user can do this
+    """
+    # Grid sizes
+    nx, ny = 3, 4
+    x_vals = np.linspace(0.0, 2.0, nx)
+    y_vals = np.linspace(10.0, 13.0, ny)
+
+    meas = Measurement(exp=experiment, name="2d_with_inferred_setpoint")
+    # Register setpoint x
+    meas.register_custom_parameter("x", paramtype="numeric")
+
+    # Register y as setpoint inferred from basis
+    meas.register_custom_parameter("y", basis=("x"), paramtype="numeric")
+    # Register measured parameter depending on (x, y)
+    meas.register_custom_parameter("signal", setpoints=("x", "y"), paramtype="numeric")
+    meas.set_shapes({"signal": (nx, ny)})
+
+    with meas.run() as datasaver:
+        for ix in range(nx):
+            for iy in range(ny):
+                x = float(x_vals[ix])
+                y = float(y_vals[iy])
+                signal = x + 3.0 * y  # deterministic function
+                datasaver.add_result(
+                    ("x", x),
+                    ("y", y),
+                    ("signal", signal),
+                )
+
+    ds = datasaver.dataset
+
+    caplog.clear()
+    with caplog.at_level(logging.INFO):
+        xr_ds = ds.to_xarray_dataset()
+
+    assert any(
+        "Exporting signal to xarray using direct method" in record.message
+        for record in caplog.records
+    )
+
+    # Sizes and coords
+    assert xr_ds.sizes == {"x": nx, "y": ny}
+    np.testing.assert_allclose(xr_ds.coords["x"].values, x_vals)
+    np.testing.assert_allclose(xr_ds.coords["y"].values, y_vals)
+
+    assert len(xr_ds.coords) == 2
+
+    # Signal dims and values
+    assert xr_ds["signal"].dims == ("x", "y")
+    expected_signal = x_vals[:, None] + 3.0 * y_vals[None, :]
+    np.testing.assert_allclose(xr_ds["signal"].values, expected_signal)
+
+
+def test_measurement_2d_top_level_inferred_is_data_var(
+    experiment: Experiment, caplog: LogCaptureFixture
+) -> None:
+    """
+    If an inferred parameter is related to the top-level measured parameter,
+    it must be exported as a data variable (not a coordinate) with the full
+    dependency dimensions.
+    """
+    nx, ny = 2, 3
+    x_vals = np.linspace(0.0, 1.0, nx)
+    y_vals = np.linspace(10.0, 12.0, ny)
+
+    # Define a measured signal and an inferred param both defined on (x, y)
+    # The inferred param is related to the measured top-level param in the graph
+    meas = Measurement(exp=experiment, name="2d_top_level_inferred")
+    meas.register_custom_parameter("x", paramtype="numeric")
+    meas.register_custom_parameter("y", paramtype="numeric")
+    # Register measured top-level
+    meas.register_custom_parameter("signal", setpoints=("x", "y"), paramtype="numeric")
+    # Register inferred related to top-level (basis includes the measured top-level)
+    meas.register_custom_parameter("derived", basis=("signal",), paramtype="numeric")
+    meas.set_shapes({"signal": (nx, ny)})
+
+    with meas.run() as datasaver:
+        for ix in range(nx):
+            for iy in range(ny):
+                x = float(x_vals[ix])
+                y = float(y_vals[iy])
+                signal = x + y
+                derived = 2.0 * signal  # inferred from top-level
+                datasaver.add_result(
+                    ("x", x), ("y", y), ("signal", signal), ("derived", derived)
+                )
+
+    ds = datasaver.dataset
+    caplog.clear()
+    with caplog.at_level(logging.INFO):
+        xr_ds = ds.to_xarray_dataset()
+
+    # Direct path log should be present
+    assert any(
+        "Exporting signal to xarray using direct method" in record.message
+        for record in caplog.records
+    )
+
+    # The derived param should be a data variable with dims (x, y), not a coord
+    assert "derived" in xr_ds.data_vars
+    assert "derived" not in xr_ds.coords
+    assert xr_ds["derived"].dims == ("x", "y")
+
+    expected_signal = x_vals[:, None] + y_vals[None, :]
+    expected_derived = 2.0 * expected_signal
+    np.testing.assert_allclose(xr_ds["signal"].values, expected_signal)
+    np.testing.assert_allclose(xr_ds["derived"].values, expected_derived)

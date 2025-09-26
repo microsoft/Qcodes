@@ -87,7 +87,7 @@ fonttools==4.60.0
     # via matplotlib
 fsspec==2025.9.0
     # via dask
-furo==2025.7.19
+furo==2025.9.25
     # via qcodes (pyproject.toml)
 h5netcdf==1.6.4
     # via
@@ -102,7 +102,7 @@ h5py==3.14.0
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.140.0
+hypothesis==6.140.2
     # via qcodes (pyproject.toml)
 idna==3.10
     # via requests
@@ -335,7 +335,7 @@ pyvisa-sim==0.7.1
     # via qcodes (pyproject.toml)
 pywin32==311; sys_platform == 'win32'
     # via jupyter-core
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via
     #   dask
     #   pyvisa-sim
@@ -368,7 +368,7 @@ ruamel-yaml==0.18.15
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-ruamel-yaml-clib==0.2.12
+ruamel-yaml-clib==0.2.14
     # via ruamel-yaml
 schema==0.7.7
     # via broadbean
@@ -498,7 +498,7 @@ versioningit==3.3.0
     #   broadbean
     #   qcodes
     #   qcodes-loop
-wcwidth==0.2.13
+wcwidth==0.2.14
     # via prompt-toolkit
 webencodings==0.5.1
     # via
