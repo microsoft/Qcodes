@@ -100,7 +100,7 @@ class CopperMountainM5xxx(VisaInstrument):
             name="averages_enabled",
             label="Averages Status",
             get_cmd="SENS1:AVER:STAT?",
-            set_cmd="SENS1:AVER:STAT {}",
+            set_cmd=self._set_averages_enabled,
             val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
         )
         """Turns the measurement averaging function ON/OFF on channel 1."""
@@ -432,6 +432,17 @@ class CopperMountainM5xxx(VisaInstrument):
             self.log.info(f"Could not set stop to {val} setting it to {stop}")
         self.update_lin_traces()
 
+    def _set_averages_enabled(self, averages_enabled: str):
+        """Set averages_trigger_enabled along with averages_enabled or
+        else triggering won't work properly
+
+        Args:
+            averages_enabled: value mapping from parameter ("ON" or "OFF")
+
+        """
+        self.write(f"SENS1:AVER:STAT {averages_enabled}")
+        self.averages_trigger_enabled("ON")
+
     def _set_span(self, val: float) -> None:
         """Sets frequency span and updates linear trace parameters.
 
@@ -703,9 +714,6 @@ class FrequencySweepMagPhase(MultiParameter):
             # ensure correct format
             self.instrument._set_trace_formats_to_polar(traces=[1])
             self.instrument.trigger_source("bus")  # set the trigger to bus
-
-            # enable to trigger complete set of averages
-            self.instrument.averages_trigger_enabled(True)
             self.instrument.write("INIT")  # put in wait for trigger mode
             self.instrument.write("TRIG:SEQ:SING")  # Trigger a single sweep
             self.instrument.ask("*OPC?")  # Wait for measurement to complete
