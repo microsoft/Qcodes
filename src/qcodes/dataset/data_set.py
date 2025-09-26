@@ -110,9 +110,9 @@ if TYPE_CHECKING:
     import pandas as pd
     import xarray as xr
 
-    from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
+    from qcodes.dataset.descriptions.param_spec import ParamSpec
     from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
-    from qcodes.parameters import ParameterBase
+    from qcodes.parameters import ParameterBase, ParamSpecBase
 
 
 log = logging.getLogger(__name__)

@@ -4,14 +4,26 @@ import collections.abc
 import logging
 import time
 import warnings
+from collections.abc import Iterator, MutableSet
 from contextlib import contextmanager
 from datetime import datetime
 from functools import cached_property, wraps
-from typing import TYPE_CHECKING, Any, ClassVar, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, TypeVar, overload
+
+import numpy as np
 
 from qcodes.metadatable import Metadatable, MetadatableWithName
+from qcodes.parameters import ParamSpecBase
 from qcodes.utils import DelegateAttributes, full_class, qcodes_abstractmethod
-from qcodes.validators import Enum, Ints, Validator
+from qcodes.validators import (
+    Arrays,
+    ComplexNumbers,
+    Enum,
+    Ints,
+    Numbers,
+    Strings,
+    Validator,
+)
 
 from ..utils.types import NumberType
 from .cache import _Cache, _CacheProtocol
@@ -26,6 +38,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Iterable, Mapping, Sequence, Sized
     from types import TracebackType
 
+    from qcodes.dataset.data_set_protocol import ValuesType
     from qcodes.instrument import InstrumentBase
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 
@@ -235,6 +248,10 @@ class ParameterBase(MetadatableWithName):
         self.snapshot_exclude = snapshot_exclude
         self.on_set_callback = on_set_callback
 
+        self._depends_on: ParameterSet = ParameterSet()
+        self._has_control_of: ParameterSet = ParameterSet()
+        self._is_controlled_by: ParameterSet = ParameterSet()
+        self._param_spec: ParamSpecBase | None = None
         if not isinstance(vals, (Validator, type(None))):
             raise TypeError("vals must be None or a Validator")
         elif val_mapping is not None:
@@ -1144,6 +1161,89 @@ class ParameterBase(MetadatableWithName):
     def abstract(self) -> bool | None:
         return self._abstract
 
+    @property
+    def param_spec(self) -> ParamSpecBase:
+        if self._param_spec is None:
+            match self.vals:
+                case Arrays():
+                    paramtype = "array"
+                case Strings():
+                    paramtype = "text"
+                case ComplexNumbers():
+                    paramtype = "complex"
+                case _:
+                    paramtype = "numeric"
+
+            self._param_spec = ParamSpecBase(
+                name=self.register_name,
+                paramtype=paramtype,
+                label=None,
+                unit=None,
+            )
+        return self._param_spec
+
+    @property
+    def paramtype(self) -> str:
+        return self.param_spec.type
+
+    @paramtype.setter
+    def paramtype(self, paramtype: str) -> None:
+        self._set_paramtype(paramtype)  # Indirected here, so subclasses can override
+
+    def _set_paramtype(self, paramtype: str) -> None:
+        paramtype = paramtype.lower()
+        if paramtype not in ["array", "text", "complex", "numeric"]:
+            raise ValueError(f"{paramtype} is not a valid paramtype")
+        if self.paramtype == paramtype:
+            return
+        new_vals: Validator
+        match paramtype:
+            case "array":
+                new_vals = Arrays()
+            case "text":
+                new_vals = Strings()
+            case "complex":
+                new_vals = ComplexNumbers()
+            case "numeric":
+                new_vals = Numbers()
+            case _:
+                raise NotImplementedError("This should not be possible")
+        if self.vals is None:
+            self.vals = new_vals
+        elif type(self.vals) is not type(new_vals):
+            logging.warning(
+                f"Tried to set a new paramtype {paramtype}, but this parameter already has paramtype {self.paramtype} which does not match"
+            )
+        self.param_spec.type = paramtype
+
+    @property
+    def depends_on(self) -> ParameterSet:
+        return self._depends_on
+
+    @property
+    def has_control_of(self) -> ParameterSet:
+        return self._has_control_of
+
+    @property
+    def is_controlled_by(self) -> ParameterSet:
+        # This is equivalent to the "inferred_from" relationship
+        return self._is_controlled_by
+
+    def unpack_self(self, value: ValuesType) -> list[tuple[ParameterBase, ValuesType]]:
+        if isinstance(self.vals, Arrays):
+            if not isinstance(value, np.ndarray):
+                raise TypeError(
+                    f"Expected data for Parameter with Array validator "
+                    f"to be a numpy array but got: {type(value)}"
+                )
+
+            if self.vals.shape is not None and value.shape != self.vals.shape:
+                raise TypeError(
+                    f"Expected data with shape {self.vals.shape}, "
+                    f"but got {value.shape} for parameter: {self.full_name}"
+                )
+        return [(self, value)]
+
 
 class GetLatest(DelegateAttributes):
     """
@@ -1211,3 +1311,125 @@ class GetLatest(DelegateAttributes):
         It is recommended to use ``parameter.cache()`` instead.
         """
         return self.cache()
+
+
+P = TypeVar("P", bound=ParameterBase)
+
+
+# Does not implement __hash__, not clear it needs to
+class ParameterSet(MutableSet, Generic[P]):  # noqa: PLW1641
+    """A set-like container that preserves the insertion order of its parameters.
+
+    This class implements the common set interface methods while maintaining
+    the order in which parameters were first added.
+    """
+
+    def __init__(self, parameters: Sequence[P] | None = None) -> None:
+        self._dict: dict[P, None] = {}
+        if parameters is not None:
+            for item in parameters:
+                self.add(item)
+
+    def add(self, value: P) -> None:
+        self._dict[value] = None
+
+    def remove(self, value: P) -> None:
+        self._dict.pop(value)
+
+    def discard(self, value: P) -> None:
+        if value in self._dict:
+            self._dict.pop(value)
+
+    def clear(self) -> None:
+        self._dict.clear()
+
+    def pop(self) -> ParameterBase:
+        if not self._dict:
+            raise KeyError("pop from an empty ParameterSet")
+        item = next(iter(self._dict))
+        self._dict.pop(item)
+        return item
+
+    def union(self, other: ParameterSet[P]) -> ParameterSet[P]:
+        result = ParameterSet(list(self._dict.keys()))
+        for item in other:
+            result.add(item)
+        return result
+
+    def intersection(self, other: ParameterSet[P]) -> ParameterSet[P]:
+        result: ParameterSet[P] = ParameterSet()
+        for item in self:
+            if item in other:
+                result.add(item)
+        return result
+
+    def difference(self, other: ParameterSet[P]) -> ParameterSet[P]:
+        result: ParameterSet[P] = ParameterSet()
+        for item in self:
+            if item not in other:
+                result.add(item)
+        return result
+
+    def issubset(self, other: ParameterSet[P] | set) -> bool:
+        return all(item in other for item in self)
+
+    def issuperset(self, other: ParameterSet[P] | set) -> bool:
+        return all(item in self for item in other)
+
+    def update(self, other: Iterable[P]) -> None:
+        for item in other:
+            self.add(item)
+
+    def __iter__(self) -> Iterator[P]:
+        return iter(self._dict)
+
+    def __contains__(self, item: object) -> bool:
+        return item in self._dict
+
+    def __len__(self) -> int:
+        return len(self._dict)
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, ParameterSet):
+            return set(self._dict) == set(other._dict)
+        return False
+
+    def __repr__(self) -> str:
+        if not self:
+            return f"{self.__class__.__name__}()"
+        return f"{self.__class__.__name__}({list(self._dict.keys())})"
+
+    def __or__(self, other: object) -> ParameterSet[P]:
+        if isinstance(other, ParameterSet):
+            return self.union(other)
+        raise NotImplementedError(
+            f"OR operation is not defined between ParameterSet and {type(other)}"
+        )
+
+    def __and__(self, other: object) -> ParameterSet[P]:
+        if isinstance(other, ParameterSet):
+            return self.intersection(other)
+        raise NotImplementedError(
+            f"AND operation is not defined between ParameterSet and {type(other)}"
+        )
+
+    def __sub__(self, other: object) -> ParameterSet[P]:
+        if isinstance(other, ParameterSet):
+            return self.difference(other)
+        raise NotImplementedError(
+            f"Difference operation is not defined between ParameterSet and {type(other)}"
+        )
+
+    def __le__(self, other: object) -> bool:
+        if isinstance(other, ParameterSet):
+            return self.issubset(other)
+        raise NotImplementedError(
+            f"<= operation is not defined between ParameterSet and {type(other)}"
+        )
+
+    def __ge__(self, other: object) -> bool:
+        if isinstance(other, ParameterSet):
+            return self.issuperset(other)
+        raise NotImplementedError(
+            f">+ operation is not defined between ParameterSet and {type(other)}"
+        )

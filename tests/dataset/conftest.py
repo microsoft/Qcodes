@@ -16,7 +16,7 @@ from pytest import FixtureRequest
 import qcodes as qc
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
+from qcodes.dataset.descriptions.param_spec import ParamSpec
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.database import connect
 from qcodes.instrument_drivers.mock_instruments import (
@@ -27,7 +27,12 @@ from qcodes.instrument_drivers.mock_instruments import (
     Multi2DSetPointParam2Sizes,
     setpoint_generator,
 )
-from qcodes.parameters import ArrayParameter, Parameter, ParameterWithSetpoints
+from qcodes.parameters import (
+    ArrayParameter,
+    Parameter,
+    ParameterWithSetpoints,
+    ParamSpecBase,
+)
 from qcodes.validators import Arrays, ComplexNumbers, Numbers
 
 if TYPE_CHECKING:
