@@ -87,7 +87,7 @@ fonttools==4.60.0
     # via matplotlib
 fsspec==2025.9.0
     # via dask
-furo==2025.7.19
+furo==2025.9.25
     # via qcodes (pyproject.toml)
 h5netcdf==1.6.4
     # via
@@ -335,7 +335,7 @@ pyvisa-sim==0.7.1
     # via qcodes (pyproject.toml)
 pywin32==311; sys_platform == 'win32'
     # via jupyter-core
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via
     #   dask
     #   pyvisa-sim
