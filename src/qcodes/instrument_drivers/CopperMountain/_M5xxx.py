@@ -699,10 +699,14 @@ class FrequencySweepMagPhase(MultiParameter):
         ):
             self.instrument.write("CALC1:PAR:COUN 1")  # 1 trace
             self.instrument.write(f"CALC1:PAR1:DEF {self.name}")
-            self.instrument._set_trace_formats_to_polar(
-                traces=[1]
-            )  # ensure correct format
+
+            # ensure correct format
+            self.instrument._set_trace_formats_to_polar(traces=[1])
             self.instrument.trigger_source("bus")  # set the trigger to bus
+
+            # enable to trigger complete set of averages
+            self.instrument.averages_trigger_enabled(True)
+            self.instrument.write("INIT")  # put in wait for trigger mode
             self.instrument.write("TRIG:SEQ:SING")  # Trigger a single sweep
             self.instrument.ask("*OPC?")  # Wait for measurement to complete
 
