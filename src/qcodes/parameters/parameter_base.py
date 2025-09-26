@@ -1220,7 +1220,6 @@ class ParameterBase(MetadatableWithName):
     def depends_on(self) -> ParameterSet:
         return self._depends_on
 
-    # TODO: Decide if this should return a frozenset to make it somewhat harder to mutate accidentally
     @property
     def has_control_of(self) -> ParameterSet:
         return self._has_control_of

@@ -8,3 +8,4 @@ Registration and Unpacking interfaces created in ParameterBse
 Breaking Changes
 - A dependent parameter registered with an independent parameter as its ``setpoints`` no longer requires that the independent parameter be registered first, if the independent parameter is ParameterBase subclass and not a str
 - Previously, a ParameterWithSetpoints whose setpoints values were explicitly added in add_result would use the explicit version. Now, an error is raised if the explicit values are not within some tolerance of the internal values (as with other duplication).
+- ``DataSaver.add_result`` signature has changed from ``*res_tuple`` to ``*result_tuples``
