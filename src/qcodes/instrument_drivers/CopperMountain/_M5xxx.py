@@ -432,7 +432,7 @@ class CopperMountainM5xxx(VisaInstrument):
             self.log.info(f"Could not set stop to {val} setting it to {stop}")
         self.update_lin_traces()
 
-    def _set_averages_enabled(self, averages_enabled: str):
+    def _set_averages_enabled(self, averages_enabled: str) -> None:
         """Set averages_trigger_enabled along with averages_enabled or
         else triggering won't work properly
 
