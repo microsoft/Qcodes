@@ -389,6 +389,13 @@ class Keysight33xxx(KeysightErrorQueueMixin, VisaInstrument):
         super().__init__(name, address, **kwargs)
         self.model = self.IDN()["model"]
 
+        if self.model not in self.__class__.__name__:
+            log.warning(
+                f"The driver class name {self.__class__.__name__} does not match "
+                f"the detected model {self.model}. This might lead to "
+                "unexpected behavior including incorrect number of channels assigned."
+            )
+
         #######################################################################
         # Here go all model specific traits
 

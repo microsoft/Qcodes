@@ -3,7 +3,10 @@ from typing import TYPE_CHECKING
 import pytest
 
 from qcodes.instrument_drivers.Keysight import (
+    Keysight33511B,
+    Keysight33512B,
     Keysight33522B,
+    Keysight33622A,
 )
 
 if TYPE_CHECKING:
@@ -59,3 +62,29 @@ def test_burst(driver: Keysight33522B) -> None:
     # set to something else?
     # driver.ch1.burst_ncycles('INF')
     # assert driver.ch1.burst_ncycles() == 'INF'
+
+
+def test_wrong_model_warns(
+    caplog: pytest.LogCaptureFixture, request: pytest.FixtureRequest
+) -> None:
+    request.addfinalizer(caplog.clear)
+    request.addfinalizer(Keysight33511B.close_all)
+    request.addfinalizer(Keysight33512B.close_all)
+    request.addfinalizer(Keysight33622A.close_all)
+
+    _ = Keysight33511B(
+        "kw_sim_33511b", address="GPIB::1::INSTR", pyvisa_sim_file="Keysight_33xxx.yaml"
+    )
+    _ = Keysight33512B(
+        "kw_sim_33512b", address="GPIB::1::INSTR", pyvisa_sim_file="Keysight_33xxx.yaml"
+    )
+    _ = Keysight33622A(
+        "kw_sim_33622a", address="GPIB::1::INSTR", pyvisa_sim_file="Keysight_33xxx.yaml"
+    )
+
+    warns = [record for record in caplog.records if record.levelname == "WARNING"]
+    assert len(warns) == 3
+    assert all(
+        "The driver class name" in record.msg and "does not match the detected model"
+        for record in warns
+    )
