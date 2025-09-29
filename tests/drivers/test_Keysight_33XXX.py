@@ -1,8 +1,10 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, assert_type
 
 import pytest
 
 from qcodes.instrument_drivers.Keysight import (
+    Keysight33xxxOutputChannel,
+    Keysight33xxxSyncChannel,
     Keysight33511B,
     Keysight33512B,
     Keysight33522B,
@@ -45,6 +47,9 @@ def test_sync(driver: Keysight33522B) -> None:
 
 
 def test_channel(driver: Keysight33522B) -> None:
+    assert_type(driver.ch1, Keysight33xxxOutputChannel)
+    assert_type(driver.ch2, Keysight33xxxOutputChannel)
+    assert_type(driver.sync, Keysight33xxxSyncChannel)
     assert driver.ch1.function_type() == "SIN"
     driver.ch1.function_type("SQU")
     assert driver.ch1.function_type() == "SQU"
