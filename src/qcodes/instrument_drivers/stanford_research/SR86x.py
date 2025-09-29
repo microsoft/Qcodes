@@ -119,16 +119,14 @@ class SR86xBuffer(InstrumentChannel):
         # Maximum amount of kB that can be read per single CAPTUREGET command
         self.max_size_per_reading_in_kb = 64
 
-        self.capture_config: Parameter = (
-            self.add_parameter(  # Configure which parameters we want to capture
-                "capture_config",
-                label="capture configuration",
-                get_cmd="CAPTURECFG?",
-                set_cmd="CAPTURECFG {}",
-                val_mapping={"X": "0", "X,Y": "1", "R,T": "2", "X,Y,R,T": "3"},
-            )
+        self.capture_config: Parameter = self.add_parameter(
+            "capture_config",
+            label="capture configuration",
+            get_cmd="CAPTURECFG?",
+            set_cmd="CAPTURECFG {}",
+            val_mapping={"X": "0", "X,Y": "1", "R,T": "2", "X,Y,R,T": "3"},
         )
-        """Parameter capture_config"""
+        """Parameter capture_config configures which parameters we want to capture"""
 
         self.capture_rate_max: Parameter = self.add_parameter(
             "capture_rate_max",
@@ -151,12 +149,10 @@ class SR86xBuffer(InstrumentChannel):
         max_rate = self.capture_rate_max()
         self.available_frequencies = [max_rate / 2**i for i in range(20)]
 
-        self.capture_status: Parameter = (
-            self.add_parameter(  # Are we capturing at the moment?
-                "capture_status", label="capture status", get_cmd="CAPTURESTAT?"
-            )
+        self.capture_status: Parameter = self.add_parameter(
+            "capture_status", label="capture status", get_cmd="CAPTURESTAT?"
         )
-        """Parameter capture_status"""
+        """Parameter capture_status: Are we capturing at the moment?"""
 
         self.count_capture_bytes: Parameter = self.add_parameter(
             "count_capture_bytes",
