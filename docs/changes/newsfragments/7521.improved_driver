@@ -1,0 +1,2 @@
+Keysight 33xxx drivers now have statically assigned channels. Improving documentation
+and making it possible for type checkers and IDEs to detect class member variables.
