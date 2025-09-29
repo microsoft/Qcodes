@@ -428,7 +428,7 @@ class Keysight33xxx(KeysightErrorQueueMixin, VisaInstrument):
                 self.add_submodule(f"ch{i}", channel)
 
         sync = Keysight33xxxSyncChannel(self, "sync")
-        self.sync = self.add_submodule("sync", sync)
+        self.sync: Keysight33xxxSyncChannel = self.add_submodule("sync", sync)
         """
         Sync module
         """
@@ -467,7 +467,12 @@ class Keysight33xxxSingleChannel(Keysight33xxx):
 
         super().__init__(name, address, silent=silent, dynamic_channels=False, **kwargs)
 
-        self.ch1 = self.add_submodule("ch1", Keysight33xxxOutputChannel(self, "ch1", 1))
+        self.ch1: Keysight33xxxOutputChannel = self.add_submodule(
+            "ch1", Keysight33xxxOutputChannel(self, "ch1", 1)
+        )
+        """
+        Output channel 1
+        """
 
 
 class Keysight33xxxDualChannels(Keysight33xxx):
@@ -498,5 +503,15 @@ class Keysight33xxxDualChannels(Keysight33xxx):
 
         self.num_channels = 2
 
-        self.ch1 = self.add_submodule("ch1", Keysight33xxxOutputChannel(self, "ch1", 1))
-        self.ch2 = self.add_submodule("ch2", Keysight33xxxOutputChannel(self, "ch2", 2))
+        self.ch1: Keysight33xxxOutputChannel = self.add_submodule(
+            "ch1", Keysight33xxxOutputChannel(self, "ch1", 1)
+        )
+        """
+        Output channel 1
+        """
+        self.ch2: Keysight33xxxOutputChannel = self.add_submodule(
+            "ch2", Keysight33xxxOutputChannel(self, "ch2", 2)
+        )
+        """
+        Output channel 2
+        """
