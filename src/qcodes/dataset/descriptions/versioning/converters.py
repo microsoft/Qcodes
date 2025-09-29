@@ -8,8 +8,10 @@ This module contains functions which implement conversion between different
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from ..dependencies import InterDependencies_
-from ..param_spec import ParamSpec, ParamSpecBase
+from ..param_spec import ParamSpec
 from .rundescribertypes import (
     RunDescriberV0Dict,
     RunDescriberV1Dict,
@@ -17,6 +19,9 @@ from .rundescribertypes import (
     RunDescriberV3Dict,
 )
 from .v0 import InterDependencies
+
+if TYPE_CHECKING:
+    from qcodes.parameters import ParamSpecBase
 
 
 def old_to_new(idps: InterDependencies) -> InterDependencies_:

@@ -8,9 +8,9 @@ from hypothesis import HealthCheck, given, settings
 
 from qcodes.dataset import load_by_id, new_data_set
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.measurements import DataSaver, Measurement
-from qcodes.parameters import Parameter
+from qcodes.parameters import ManualParameter, Parameter, ParamSpecBase
+from qcodes.validators import Strings
 
 
 def test_string_via_dataset(experiment) -> None:
@@ -36,14 +36,19 @@ def test_string_via_datasaver(experiment) -> None:
     Test that we can save text into database via DataSaver API
     """
     p = ParamSpecBase(name="p", paramtype="text")
-
+    p_param = ManualParameter("p", vals=Strings())
     test_set = new_data_set("test-dataset")
     idps = InterDependencies_(standalones=(p,))
     test_set.prepare(snapshot={}, interdeps=idps)
 
     idps = InterDependencies_(standalones=(p,))
 
-    data_saver = DataSaver(dataset=test_set, write_period=0, interdeps=idps)
+    data_saver = DataSaver(
+        dataset=test_set,
+        write_period=0,
+        interdeps=idps,
+        registered_parameters=[p_param],
+    )
 
     data_saver.add_result(("p", "some text"))
     data_saver.flush_data_to_database()
@@ -110,7 +115,7 @@ def test_string_with_wrong_paramtype_via_datasaver() -> None:
     parameter via DataSaver object
     """
     p = ParamSpecBase("p", "numeric")
-
+    p_param = ManualParameter("p")
     test_set = new_data_set("test-dataset")
     idps = InterDependencies_(standalones=(p,))
     test_set.set_interdependencies(idps)
@@ -118,7 +123,12 @@ def test_string_with_wrong_paramtype_via_datasaver() -> None:
 
     idps = InterDependencies_(standalones=(p,))
 
-    data_saver = DataSaver(dataset=test_set, write_period=0, interdeps=idps)
+    data_saver = DataSaver(
+        dataset=test_set,
+        write_period=0,
+        interdeps=idps,
+        registered_parameters=[p_param],
+    )
 
     try:
         msg = re.escape(

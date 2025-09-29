@@ -18,9 +18,8 @@ from qcodes.dataset import Measurement, load_by_id, load_by_run_spec
 from qcodes.dataset.data_set_in_memory import DataSetInMem, load_from_file
 from qcodes.dataset.data_set_protocol import DataSetType
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.sqlite.connection import AtomicConnection, atomic_transaction
-from qcodes.parameters import ManualParameter, Parameter
+from qcodes.parameters import ManualParameter, Parameter, ParamSpecBase
 from qcodes.station import Station
 
 if TYPE_CHECKING:

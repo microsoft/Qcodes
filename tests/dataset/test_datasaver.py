@@ -6,8 +6,9 @@ import pytest
 
 from qcodes.dataset import new_data_set
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.measurements import DataSaver
+from qcodes.parameters import ManualParameter, ParamSpecBase
+from qcodes.validators import Strings
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -54,7 +55,12 @@ def test_default_callback(bg_writing) -> None:
 
         test_set = new_data_set("test-dataset")
         test_set.add_metadata("snapshot", "reasonable_snapshot")
-        DataSaver(dataset=test_set, write_period=0, interdeps=InterDependencies_())
+        DataSaver(
+            dataset=test_set,
+            write_period=0,
+            interdeps=InterDependencies_(),
+            registered_parameters=[],
+        )
         test_set.mark_started(start_bg_writer=bg_writing)
         test_set.mark_completed()
         assert CALLBACK_SNAPSHOT == "reasonable_snapshot"
@@ -75,6 +81,7 @@ def test_numpy_types(bg_writing) -> None:
     """
 
     p = ParamSpecBase(name="p", paramtype="numeric")
+    p_param = ManualParameter("p")
     test_set = new_data_set("test-dataset")
     test_set.prepare(
         snapshot={},
@@ -84,7 +91,12 @@ def test_numpy_types(bg_writing) -> None:
 
     idps = InterDependencies_(standalones=(p,))
 
-    data_saver = DataSaver(dataset=test_set, write_period=0, interdeps=idps)
+    data_saver = DataSaver(
+        dataset=test_set,
+        write_period=0,
+        interdeps=idps,
+        registered_parameters=[p_param],
+    )
 
     dtypes: list[Callable] = [
         np.int8,
@@ -128,14 +140,19 @@ def test_saving_numeric_values_as_text(numeric_type, bg_writing) -> None:
     Test the saving numeric values into 'text' parameter raises an exception
     """
     p = ParamSpecBase("p", "text")
-
+    p_param = ManualParameter("p", vals=Strings())
     test_set = new_data_set("test-dataset")
     test_set.set_interdependencies(InterDependencies_(standalones=(p,)))
     test_set.mark_started(start_bg_writer=bg_writing)
 
     idps = InterDependencies_(standalones=(p,))
 
-    data_saver = DataSaver(dataset=test_set, write_period=0, interdeps=idps)
+    data_saver = DataSaver(
+        dataset=test_set,
+        write_period=0,
+        interdeps=idps,
+        registered_parameters=[p_param],
+    )
 
     try:
         value = numeric_type(2)
@@ -160,6 +177,7 @@ def test_duplicated_parameter_raises() -> None:
     Test that passing same parameter multiple times to ``add_result`` raises an exception
     """
     p = ParamSpecBase("p", "text")
+    p_param = ManualParameter("p", vals=Strings())
 
     test_set = new_data_set("test-dataset")
     test_set.set_interdependencies(InterDependencies_(standalones=(p,)))
@@ -167,7 +185,12 @@ def test_duplicated_parameter_raises() -> None:
 
     idps = InterDependencies_(standalones=(p,))
 
-    data_saver = DataSaver(dataset=test_set, write_period=0, interdeps=idps)
+    data_saver = DataSaver(
+        dataset=test_set,
+        write_period=0,
+        interdeps=idps,
+        registered_parameters=[p_param],
+    )
 
     try:
         msg = re.escape(

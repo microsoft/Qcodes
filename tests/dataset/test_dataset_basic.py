@@ -23,12 +23,12 @@ from qcodes.dataset import (
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.data_set_protocol import CompletedError
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.guids import parse_guid
 from qcodes.dataset.sqlite.connection import atomic, path_to_dbfile
 from qcodes.dataset.sqlite.database import _convert_array, get_DB_location
 from qcodes.dataset.sqlite.queries import _rewrite_timestamps, _unicode_categories
+from qcodes.parameters import ParamSpecBase
 from qcodes.utils.types import complex_types, numpy_complex, numpy_floats, numpy_ints
 from tests.common import error_caused_by
 from tests.dataset.helper_functions import verify_data_dict

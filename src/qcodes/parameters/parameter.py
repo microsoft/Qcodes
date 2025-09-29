@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
     from qcodes.instrument import InstrumentBase
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
+    from qcodes.parameters import ParamSpecBase
     from qcodes.validators import Validator
 
 
@@ -436,6 +437,13 @@ class Parameter(ParameterBase):
 
         """
         return SweepFixedValues(self, start=start, stop=stop, step=step, num=num)
+
+    @property
+    def param_spec(self) -> ParamSpecBase:
+        paramspecbase = super().param_spec  # Sets the name and paramtype
+        paramspecbase.label = self.label
+        paramspecbase.unit = self.unit
+        return paramspecbase
 
 
 class ManualParameter(Parameter):
