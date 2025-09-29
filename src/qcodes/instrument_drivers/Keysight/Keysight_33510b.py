@@ -1,7 +1,7 @@
-from .KeysightAgilent_33XXX import Keysight33xxx2Channels
+from .KeysightAgilent_33XXX import Keysight33xxxDualChannels
 
 
-class Keysight33510B(Keysight33xxx2Channels):
+class Keysight33510B(Keysight33xxxDualChannels):
     """
     QCoDeS driver for the Keysight 33510B waveform generator.
     """

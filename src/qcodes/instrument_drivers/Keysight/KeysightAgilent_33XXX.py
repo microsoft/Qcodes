@@ -441,7 +441,7 @@ class Keysight33xxx(KeysightErrorQueueMixin, VisaInstrument):
             self.connect_message()
 
 
-class Keysight33xxx1Channel(Keysight33xxx):
+class Keysight33xxxSingleChannel(Keysight33xxx):
     """
     Subclass for 1 channel Keysight/Agilent 33XXX waveform generators.
 
@@ -470,7 +470,7 @@ class Keysight33xxx1Channel(Keysight33xxx):
         self.ch1 = self.add_submodule("ch1", Keysight33xxxOutputChannel(self, "ch1", 1))
 
 
-class Keysight33xxx2Channels(Keysight33xxx):
+class Keysight33xxxDualChannels(Keysight33xxx):
     """
     Subclass for 2 channel Keysight/Agilent 33XXX waveform generators.
 
