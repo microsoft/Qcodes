@@ -1,3 +1,6 @@
+# NOTE SR86x.py is generated from a template file (SR86x.jinja).
+# To make changes, edit the template file and regenerate.
+# Any changes to SR86x.py will be overwritten.
 from __future__ import annotations
 
 import logging
