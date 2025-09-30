@@ -467,92 +467,36 @@ class SR86x(VisaInstrument):
         """Parameter R_expand"""
 
         # Aux input/output
-        self.aux_in0 = self.add_parameter(
-            "aux_in0",
-            label="Aux input 0",
-            get_cmd="OAUX? 0",
+        {% for i in [0, 1, 2, 3] %}
+        self.aux_in{{i}} = self.add_parameter(
+            "aux_in{{i}}",
+            label="Aux input {{i}}",
+            get_cmd="OAUX? {{i}}",
             get_parser=float,
             unit="V",
         )
-        self.aux_out0 = self.add_parameter(
-            "aux_out0",
-            label="Aux output 0",
-            get_cmd="AUXV? 0",
+        self.aux_out{{i}} = self.add_parameter(
+            "aux_out{{i}}",
+            label="Aux output {{i}}",
+            get_cmd="AUXV? {{i}}",
             get_parser=float,
-            set_cmd="AUXV 0, {}",
+            set_cmd="AUXV {{i}}, {}",
             unit="V",
         )
-        self.aux_in1 = self.add_parameter(
-            "aux_in1",
-            label="Aux input 1",
-            get_cmd="OAUX? 1",
-            get_parser=float,
-            unit="V",
-        )
-        self.aux_out1 = self.add_parameter(
-            "aux_out1",
-            label="Aux output 1",
-            get_cmd="AUXV? 1",
-            get_parser=float,
-            set_cmd="AUXV 1, {}",
-            unit="V",
-        )
-        self.aux_in2 = self.add_parameter(
-            "aux_in2",
-            label="Aux input 2",
-            get_cmd="OAUX? 2",
-            get_parser=float,
-            unit="V",
-        )
-        self.aux_out2 = self.add_parameter(
-            "aux_out2",
-            label="Aux output 2",
-            get_cmd="AUXV? 2",
-            get_parser=float,
-            set_cmd="AUXV 2, {}",
-            unit="V",
-        )
-        self.aux_in3 = self.add_parameter(
-            "aux_in3",
-            label="Aux input 3",
-            get_cmd="OAUX? 3",
-            get_parser=float,
-            unit="V",
-        )
-        self.aux_out3 = self.add_parameter(
-            "aux_out3",
-            label="Aux output 3",
-            get_cmd="AUXV? 3",
-            get_parser=float,
-            set_cmd="AUXV 3, {}",
-            unit="V",
-        )
+        {% endfor %}
 
         # Data channels:
         # 'DAT1' (green), 'DAT2' (blue), 'DAT3' (yellow), 'DAT4' (orange)
         data_channels = ChannelList(
             self, "data_channels", SR86xDataChannel, snapshotable=False
         )
+        {% for num, color in [(0, "green"), (1, "blue"), (2, "yellow"), (3, "orange")] %}
 
-        data_channel = SR86xDataChannel(self, "data_channel_1", "0", "DAT1", "green")
-
-        data_channels.append(data_channel)
-        self.data_channel_1 = self.add_submodule("data_channel_1", data_channel)
-
-        data_channel = SR86xDataChannel(self, "data_channel_2", "1", "DAT2", "blue")
+        data_channel = SR86xDataChannel(self, "data_channel_{{ num + 1 }}", "{{ num }}", "DAT{{ num + 1 }}", "{{ color }}")
 
         data_channels.append(data_channel)
-        self.data_channel_2 = self.add_submodule("data_channel_2", data_channel)
-
-        data_channel = SR86xDataChannel(self, "data_channel_3", "2", "DAT3", "yellow")
-
-        data_channels.append(data_channel)
-        self.data_channel_3 = self.add_submodule("data_channel_3", data_channel)
-
-        data_channel = SR86xDataChannel(self, "data_channel_4", "3", "DAT4", "orange")
-
-        data_channels.append(data_channel)
-        self.data_channel_4 = self.add_submodule("data_channel_4", data_channel)
+        self.data_channel_{{ num + 1 }} = self.add_submodule("data_channel_{{ num + 1 }}", data_channel)
+        {% endfor %}
 
         self.data_channels: ChannelTuple[SR86xDataChannel] = self.add_submodule(
             "data_channels", data_channels.to_channel_tuple()
