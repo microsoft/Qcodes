@@ -1,5 +1,0 @@
-Exporting datasets to XArray no longer warns if two or more variables are exported with different setpoint names and/or values.
-No functionality of the export has changed.
-If the setpoints for different measured parameters have the same name, missing values will be replaced by NaN such that the
-measured parameters have the same coordinates in XArray. If different setpoint names
-are used, the exporter will automatically handle merging coordinates so each data variable is assigned its own coordinates.

@@ -1,3 +1,0 @@
-The methods ``InstrumentBase.__getitem__``, ``InstrumentBase.get``, ``InstrumentBase.set``, ``InstrumentBase.call`` are now deprecated
-with a PendingDeprecationWarning rather than a QCoDeSDeprecationWarning. This better reflects the state where there is no plan to remove
-them but usage is discouraged. The PendingDeprecationWarning is not printed to console by default.

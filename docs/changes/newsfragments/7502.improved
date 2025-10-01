@@ -1,1 +1,0 @@
-Fixed a bug where omitting data for one or more variables could result in an inconsistent dataset cache. Missing data is now filled with appropriate empty values (0, "" or NaN depending on the data type)

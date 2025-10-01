@@ -1,1 +1,0 @@
-Fix ``load_from_netcdf`` failing for non-completed datasets due to missing ``completed_timestamp_raw`` or ``run_timestamp_raw`` attribute.

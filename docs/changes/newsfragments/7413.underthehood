@@ -1,3 +1,0 @@
-``DataSetProtocol.to_xarray_dataset`` and ``DataSetProtocol.to_xarray_dataarray_dict`` now avoids creating a Pandas MultiIndex to infer the
-correct dataset shape if the shape is already known. This will resolve issues where datasets are exported with incorrect array shapes due to
-round off errors in the setpoints (coordinates).

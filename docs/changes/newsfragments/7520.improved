@@ -1,4 +1,0 @@
-``ChannelList`` and ``AutoLoadableChannelList`` can now correctly infer the type of channels in the list
-when indexed using ``__get_item`` e.g. ``mychannellist[0]`` For consistency with the base classes the parent type
-in  ``AutoLoadableChannelList`` has changed from ``Instrument`` to ``InstrumentBase`` which may require downstream
-changes for type checking to work correctly.

@@ -1,9 +1,0 @@
-The QCoDeS dataset now correctly captures data for inferred parameters when added via ``datasaver.add_result``. Previously these were discarded due to an oversight.
-Any parameters added in this way are available via ``DataSetProtocol.get_parameter_data`` but not exported to xarray or pandas.
-Future improvements to these parameters are planned and tracked `here <https://github.com/microsoft/Qcodes/issues/7060>`_.
-
-The property ``InterDependencies_.non_dependencies`` has been deprecated and replaced by ``InterDependencies_.top_level_parameters`` that correctly includes inferred parameters.
-The ``InterDependencies_`` object has gained two additional methods ``find_all_parameters_in_tree`` and ``all_parameters_in_tree_by_group``.
-
-The not documented but publicly importable functions ``qcodes.dataset.exporters.export_to_pandas.load_to_concatenated_dataframe`` and ``qcodes.dataset.exporters.export_to_pandas.load_to_dataframe_dict``
-now require an extra argument in the form of an ``InterDependencies_`` object. Users are discouraged from using anything not documented in `the QCoDeS API documentation <https://microsoft.github.io/Qcodes/api/index.html>`_ outside QCoDeS.
