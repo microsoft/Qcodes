@@ -1,3 +1,10 @@
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#   "jinja2>=3.1.6",
+# ]
+# ///
+
 from jinja2 import Environment, FileSystemLoader
 
 env = Environment(
