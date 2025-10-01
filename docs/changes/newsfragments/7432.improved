@@ -1,3 +1,0 @@
-When exporting Datasets to xarray where the shape is known, either by the use
-of utilities such as `dond` or manually specified, inferred parameters related
-to the setpoints and measured parameters are now included in the XArray Dataset.

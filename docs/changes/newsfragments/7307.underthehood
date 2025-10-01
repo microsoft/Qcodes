@@ -1,1 +1,0 @@
-In dond, only process get_after_set in the loop instances where the parameter is actually being set

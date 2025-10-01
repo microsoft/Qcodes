@@ -1,4 +1,0 @@
-The method ``to_xarray_dataarray_dict`` on the classes ``DataSet`` and ``DataSetInMem``
-have been deprecated and replaced by ``to_xarray_dataset_dict``. This new method allows
-export of datasets that still only contain one measured parameter but can contain
-related coordinates such as these given by an inferred relationship.

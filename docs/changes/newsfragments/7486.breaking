@@ -1,4 +1,0 @@
-``ChannelTuple/ChannelList.get_channel_by_name`` support for getting more than one channel has been deprecated. To get more than one channel use ``get_channels_by_name``.
-``get_channels_by_name`` is guaranteed to always return an instance of the class it was called on independently of the number of channels supplied. In the future
-``get_channel_by_name`` will be updated to ensure that it always returns a single channel. The Exception raised when
-no argument is given to ``get_channel_by_name`` has changed from ``Exception`` to ``TypeError`` in line with how functions behave when an argument is missing.

@@ -1,1 +1,0 @@
-Added :func:`qcodes.dataset.export_datasets_and_create_metadata_db` function to export all datasets from a database to NetCDF files and create a new metadata-only database. This enables users to maintain lightweight databases for metadata while relying on NetCDF files for data analysis, significantly reducing storage requirements for large experimental datasets.

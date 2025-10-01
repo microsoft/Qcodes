@@ -1,1 +1,0 @@
-Fix NetCDF export for datasets with None timestamp_raw values by using sentinel values (-1) during export and converting them back to None on import. This ensures NetCDF compatibility while preserving the original None values through round-trip export/import operations.
