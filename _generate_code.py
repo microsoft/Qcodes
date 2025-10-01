@@ -12,6 +12,7 @@ env = Environment(
     lstrip_blocks=True,
     trim_blocks=True,
     keep_trailing_newline=True,
+    newline_sequence="\n",
 )
 template = env.get_template("SR86x.jinja")
 
