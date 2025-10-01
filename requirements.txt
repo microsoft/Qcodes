@@ -116,7 +116,7 @@ ipykernel==6.30.1
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-ipython==9.5.0
+ipython==9.6.0
     # via
     #   ipykernel
     #   ipywidgets
