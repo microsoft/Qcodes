@@ -512,7 +512,7 @@ widgetsnbextension==4.0.14
     # via ipywidgets
 wrapt==1.17.3
     # via qcodes
-xarray==2025.9.0
+xarray==2025.9.1
     # via
     #   qcodes (pyproject.toml)
     #   cf-xarray
