@@ -83,7 +83,10 @@ def _load_to_xarray_dataset_dict_no_metadata(
             and sub_dict[name].shape == dataset.description.shapes[name]
         )
 
-        if shape_is_consistent and use_multi_index != "always":
+        if shape_is_consistent and use_multi_index != "always" and False:
+            # disabled for now to think about how to best handle
+            # parameters that are measured in decreasing order
+            # where this export is inverted compared to the original export order
             _LOG.info("Exporting %s to xarray using direct method", name)
             xr_dataset_dict[name] = _xarray_data_set_direct(dataset, name, sub_dict)
         else:
