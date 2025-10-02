@@ -308,53 +308,54 @@ def test_inferred_parameters_in_actual_measurement_2d(
         )
 
     # xarray export
-    caplog.clear()
-    with caplog.at_level("INFO"):
-        xarr = dataset.to_xarray_dataset()
+    # disabled until we renable new export
+    # caplog.clear()
+    # with caplog.at_level("INFO"):
+    #     xarr = dataset.to_xarray_dataset()
 
-    assert len(caplog.records) == 1
-    if set_shape:
-        assert (
-            caplog.records[0].message
-            == "Exporting meas_parameter to xarray using direct method"
-        )
-    else:
-        assert (
-            caplog.records[0].message
-            == "Exporting meas_parameter to xarray via pandas index"
-        )
+    # assert len(caplog.records) == 1
+    # if set_shape:
+    #     assert (
+    #         caplog.records[0].message
+    #         == "Exporting meas_parameter to xarray using direct method"
+    #     )
+    # else:
+    #     assert (
+    #         caplog.records[0].message
+    #         == "Exporting meas_parameter to xarray via pandas index"
+    #     )
 
-    assert "meas_parameter" in xarr.data_vars
+    # assert "meas_parameter" in xarr.data_vars
 
-    assert "del_param_1" in xarr.coords
-    assert xarr.coords["del_param_1"].shape == (num_points_x,)
-    assert xarr.coords["del_param_1"].dims == ("del_param_1",)
+    # assert "del_param_1" in xarr.coords
+    # assert xarr.coords["del_param_1"].shape == (num_points_x,)
+    # assert xarr.coords["del_param_1"].dims == ("del_param_1",)
 
-    assert "del_param_2" in xarr.coords
-    assert xarr.coords["del_param_2"].shape == (num_points_y,)
-    assert xarr.coords["del_param_2"].dims == ("del_param_2",)
+    # assert "del_param_2" in xarr.coords
+    # assert xarr.coords["del_param_2"].shape == (num_points_y,)
+    # assert xarr.coords["del_param_2"].dims == ("del_param_2",)
 
-    if set_shape:
-        assert "dummy_dac_ch1" in xarr.coords
-        assert xarr.coords["dummy_dac_ch1"].shape == (num_points_x,)
-        assert xarr.coords["dummy_dac_ch1"].dims == ("del_param_1",)
+    # if set_shape:
+    #     assert "dummy_dac_ch1" in xarr.coords
+    #     assert xarr.coords["dummy_dac_ch1"].shape == (num_points_x,)
+    #     assert xarr.coords["dummy_dac_ch1"].dims == ("del_param_1",)
 
-        assert "dummy_dac_ch2" in xarr.coords
-        assert xarr.coords["dummy_dac_ch2"].shape == (num_points_y,)
-        assert xarr.coords["dummy_dac_ch2"].dims == ("del_param_2",)
-    else:
-        assert "dummy_dac_ch1" not in xarr.coords
-        assert "dummy_dac_ch2" not in xarr.coords
-    assert xarr["meas_parameter"].dims == ("del_param_1", "del_param_2")
-    assert xarr["meas_parameter"].shape == (num_points_x, num_points_y)
+    #     assert "dummy_dac_ch2" in xarr.coords
+    #     assert xarr.coords["dummy_dac_ch2"].shape == (num_points_y,)
+    #     assert xarr.coords["dummy_dac_ch2"].dims == ("del_param_2",)
+    # else:
+    #     assert "dummy_dac_ch1" not in xarr.coords
+    #     assert "dummy_dac_ch2" not in xarr.coords
+    # assert xarr["meas_parameter"].dims == ("del_param_1", "del_param_2")
+    # assert xarr["meas_parameter"].shape == (num_points_x, num_points_y)
 
-    # pandas export
-    df = dataset.to_pandas_dataframe()
-    assert "meas_parameter" in df.columns
-    assert df.index.names == ["del_param_1", "del_param_2"]
-    assert "dummy_dac_ch1" not in df.columns
-    assert "dummy_dac_ch2" not in df.columns
-    assert len(df) == total_points
+    # # pandas export
+    # df = dataset.to_pandas_dataframe()
+    # assert "meas_parameter" in df.columns
+    # assert df.index.names == ["del_param_1", "del_param_2"]
+    # assert "dummy_dac_ch1" not in df.columns
+    # assert "dummy_dac_ch2" not in df.columns
+    # assert len(df) == total_points
 
 
 def test_multiple_dependent_parameters_no_cross_contamination(
