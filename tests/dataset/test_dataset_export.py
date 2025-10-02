@@ -13,7 +13,7 @@ import pytest
 import xarray as xr
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as hst
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_equal
 from pytest import LogCaptureFixture, TempPathFactory
 
 import qcodes
@@ -2250,3 +2250,63 @@ def test_measurement_2d_top_level_inferred_is_data_var(
     expected_derived = 2.0 * expected_signal
     np.testing.assert_allclose(xr_ds["signal"].values, expected_signal)
     np.testing.assert_allclose(xr_ds["derived"].values, expected_derived)
+
+
+def test_with_without_shape_is_the_same(experiment: Experiment) -> None:
+    nx, ny = 2, 3
+    x_vals = np.linspace(0.0, -1.0, nx)
+    y_vals = np.linspace(10.0, 12.0, ny)
+
+    # simple 2d grid with no shapes
+    meas1 = Measurement(exp=experiment, name="2d_no_shape")
+    meas1.register_custom_parameter("x", paramtype="numeric")
+    meas1.register_custom_parameter("y", paramtype="numeric")
+    meas1.register_custom_parameter("z", paramtype="numeric", setpoints=("x", "y"))
+    with meas1.run() as datasaver:
+        for ix in range(nx):
+            for iy in range(ny):
+                x = float(x_vals[ix])
+                y = float(y_vals[iy])
+                z = x + y
+                datasaver.add_result(
+                    ("x", x),
+                    ("y", y),
+                    ("z", z),
+                )
+        ds1 = datasaver.dataset
+
+    dsx1 = ds1.to_xarray_dataset()
+
+    # simple 2d grid with knwon shapes
+    meas2 = Measurement(exp=experiment, name="2d_shape")
+    meas2.register_custom_parameter("x", paramtype="numeric")
+    meas2.register_custom_parameter("y", paramtype="numeric")
+    meas2.register_custom_parameter("z", paramtype="numeric", setpoints=("x", "y"))
+    meas2.set_shapes({"z": (nx, ny)})
+    with meas2.run() as datasaver:
+        for ix in range(nx):
+            for iy in range(ny):
+                x = float(x_vals[ix])
+                y = float(y_vals[iy])
+                z = x + y
+                datasaver.add_result(
+                    ("x", x),
+                    ("y", y),
+                    ("z", z),
+                )
+        ds2 = datasaver.dataset
+    dsx2 = ds2.to_xarray_dataset()
+
+    # the two export methods inverts the x axis such that the new export method
+    # matches the order the data is written in which is arguably more correct
+    assert_array_equal(dsx2["x"].values, x_vals)
+
+    assert_array_equal(np.flip(dsx1["x"].values), dsx2["x"].values)
+
+    dsx2_sorted = dsx2.sortby(["x", "y"])
+
+    assert_array_equal(dsx1["x"].values, dsx2_sorted["x"].values)
+
+    # however data for a given coordinate is the same
+    assert bool((dsx2 - dsx1)["z"].max() == 0)
+    assert bool((dsx2 - dsx1)["x"].max() == 0)
