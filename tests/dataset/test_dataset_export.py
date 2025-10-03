@@ -1923,7 +1923,6 @@ def test_netcdf_export_with_mixed_timestamp_raw(
     assert loaded_ds.completed_timestamp_raw is None
 
 
-@pytest.mark.skip(reason="Disabled until we renable new export")
 @given(data=hst.data())
 @settings(
     max_examples=10,
@@ -2114,11 +2113,10 @@ def test_measurement_2d_with_inferred_setpoint(
     with caplog.at_level(logging.INFO):
         xr_ds = ds.to_xarray_dataset()
 
-    # disabled until we renable new export
-    # assert any(
-    #     "Exporting signal to xarray using direct method" in record.message
-    #     for record in caplog.records
-    # )
+    assert any(
+        "Exporting signal to xarray using direct method" in record.message
+        for record in caplog.records
+    )
 
     # Sizes and coords
     assert xr_ds.sizes == {"x": nx, "y": ny}
@@ -2130,16 +2128,15 @@ def test_measurement_2d_with_inferred_setpoint(
     expected_signal = x_vals[:, None] + 3.0 * y_vals[None, :]
     np.testing.assert_allclose(xr_ds["signal"].values, expected_signal)
 
-    # disabled until we renable new export
-    # # Inferred coords for y_b0 and y_b1 exist with dims only along y
-    # for name, vals in ("y_b0", y_b0_vals), ("y_b1", y_b1_vals):
-    #     assert name in xr_ds.coords
-    #     assert xr_ds.coords[name].dims == ("y",)
-    #     np.testing.assert_allclose(xr_ds.coords[name].values, vals)
-    #     # Indexes of inferred coords should correspond to the y axis index
-    #     inf_idx = xr_ds.coords[name].indexes
-    #     assert set(inf_idx.keys()) == {"y"}
-    #     assert inf_idx["y"].equals(xr_ds.indexes["y"])
+    # Inferred coords for y_b0 and y_b1 exist with dims only along y
+    for name, vals in ("y_b0", y_b0_vals), ("y_b1", y_b1_vals):
+        assert name in xr_ds.coords
+        assert xr_ds.coords[name].dims == ("y",)
+        np.testing.assert_allclose(xr_ds.coords[name].values, vals)
+        # Indexes of inferred coords should correspond to the y axis index
+        inf_idx = xr_ds.coords[name].indexes
+        assert set(inf_idx.keys()) == {"y"}
+        assert inf_idx["y"].equals(xr_ds.indexes["y"])
 
 
 def test_measurement_2d_with_inferred_setpoint_from_setpoint(
@@ -2181,11 +2178,10 @@ def test_measurement_2d_with_inferred_setpoint_from_setpoint(
     with caplog.at_level(logging.INFO):
         xr_ds = ds.to_xarray_dataset()
 
-    # disabled until we renable new export
-    # assert any(
-    #     "Exporting signal to xarray using direct method" in record.message
-    #     for record in caplog.records
-    # )
+    assert any(
+        "Exporting signal to xarray using direct method" in record.message
+        for record in caplog.records
+    )
 
     # Sizes and coords
     assert xr_ds.sizes == {"x": nx, "y": ny}
@@ -2240,24 +2236,22 @@ def test_measurement_2d_top_level_inferred_is_data_var(
         xr_ds = ds.to_xarray_dataset()
 
     # Direct path log should be present
-    # disabled until we renable new export
-    # assert any(
-    #     "Exporting signal to xarray using direct method" in record.message
-    #     for record in caplog.records
-    # )
+    assert any(
+        "Exporting signal to xarray using direct method" in record.message
+        for record in caplog.records
+    )
 
     # The derived param should be a data variable with dims (x, y), not a coord
-    # assert "derived" in xr_ds.data_vars
-    # assert "derived" not in xr_ds.coords
-    # assert xr_ds["derived"].dims == ("x", "y")
+    assert "derived" in xr_ds.data_vars
+    assert "derived" not in xr_ds.coords
+    assert xr_ds["derived"].dims == ("x", "y")
 
     expected_signal = x_vals[:, None] + y_vals[None, :]
-    # expected_derived = 2.0 * expected_signal
+    expected_derived = 2.0 * expected_signal
     np.testing.assert_allclose(xr_ds["signal"].values, expected_signal)
-    # np.testing.assert_allclose(xr_ds["derived"].values, expected_derived)
+    np.testing.assert_allclose(xr_ds["derived"].values, expected_derived)
 
 
-@pytest.mark.skip(reason="Disabled until we renable new export")
 def test_with_without_shape_is_the_same(experiment: Experiment) -> None:
     nx, ny = 2, 3
     x_vals = np.linspace(0.0, -1.0, nx)
