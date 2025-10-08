@@ -453,7 +453,7 @@ traitlets==5.14.3
     #   nbconvert
     #   nbformat
     #   nbsphinx
-types-jsonschema==4.25.1.20250822
+types-jsonschema==4.25.1.20251008
     # via qcodes (pyproject.toml)
 types-networkx==3.5.0.20251001
     # via qcodes (pyproject.toml)
