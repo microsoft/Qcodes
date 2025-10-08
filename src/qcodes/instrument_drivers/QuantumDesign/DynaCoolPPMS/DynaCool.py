@@ -410,6 +410,12 @@ class DynaCool(VisaInstrument):
         values[self.temp_params.index(param)] = value
 
         self.write(f"TEMP {values[0]}, {values[1]}, {values[2]}")
+        self._block_on_temperature_ramp()
+
+    def _block_on_temperature_ramp(self) -> None:
+        """Block all instrument interactions until temperature stabilizes."""
+        while self.temperature_state() != "stable":
+            sleep(1)
 
     def write(self, cmd: str) -> None:
         """
