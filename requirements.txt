@@ -210,7 +210,7 @@ nest-asyncio==1.6.0
     # via ipykernel
 networkx==3.5
     # via qcodes (pyproject.toml)
-numpy==2.3.3
+numpy==2.3.4
     # via
     #   qcodes (pyproject.toml)
     #   broadbean
