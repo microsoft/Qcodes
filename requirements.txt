@@ -120,7 +120,6 @@ ipython==9.6.0
     # via
     #   ipykernel
     #   ipywidgets
-    #   qcodes
     #   qcodes-loop
 ipython-pygments-lexers==1.1.1
     # via ipython
@@ -209,7 +208,9 @@ nbsphinx==0.9.6
 nest-asyncio==1.6.0
     # via ipykernel
 networkx==3.5
-    # via qcodes (pyproject.toml)
+    # via
+    #   qcodes (pyproject.toml)
+    #   qcodes
 numpy==2.3.4
     # via
     #   qcodes (pyproject.toml)
@@ -333,8 +334,6 @@ pyvisa==1.15.0
     #   qcodes
 pyvisa-sim==0.7.1
     # via qcodes (pyproject.toml)
-pywin32==311; sys_platform == 'win32'
-    # via jupyter-core
 pyyaml==6.0.3
     # via
     #   dask
@@ -432,7 +431,6 @@ tornado==6.5.2
     # via
     #   ipykernel
     #   jupyter-client
-    #   qcodes
 towncrier==25.8.0
     # via
     #   qcodes (pyproject.toml)
@@ -510,8 +508,6 @@ websockets==15.0.1
     #   qcodes
 widgetsnbextension==4.0.14
     # via ipywidgets
-wrapt==1.17.3
-    # via qcodes
 xarray==2025.10.1
     # via
     #   qcodes (pyproject.toml)
