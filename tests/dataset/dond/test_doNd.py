@@ -8,7 +8,6 @@ from functools import partial
 from typing import assert_type
 
 import hypothesis.strategies as hst
-import matplotlib
 import matplotlib.axes
 import matplotlib.colorbar
 import matplotlib.pyplot as plt

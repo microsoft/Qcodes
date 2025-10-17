@@ -1,7 +1,6 @@
 import logging
 
 import hypothesis.strategies as hst
-import matplotlib
 import matplotlib.axes
 import matplotlib.pyplot as plt
 import numpy as np

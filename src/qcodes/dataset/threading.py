@@ -4,7 +4,6 @@ from __future__ import annotations
 # we want to happen simultaneously within one process (namely getting
 # several parameters in parallel), we can parallelize them with threads.
 # That way the things we call need not be rewritten explicitly async.
-import concurrent
 import concurrent.futures
 import itertools
 import logging

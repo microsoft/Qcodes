@@ -4,7 +4,6 @@ import os
 from functools import partial
 from unittest.mock import PropertyMock, mock_open
 
-import jsonschema
 import jsonschema.exceptions
 import pytest
 

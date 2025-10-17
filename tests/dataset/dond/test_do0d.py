@@ -1,5 +1,4 @@
 import hypothesis.strategies as hst
-import matplotlib
 import matplotlib.axes
 import numpy as np
 import pytest

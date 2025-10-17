@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import collections
-import collections.abc
 import logging
 from copy import copy
 from typing import TYPE_CHECKING, Any

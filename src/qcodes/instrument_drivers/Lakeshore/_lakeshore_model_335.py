@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING, ClassVar
 
 import pyvisa.constants
-import pyvisa.resources
 import pyvisa.resources.serial
 
 import qcodes.validators as vals
