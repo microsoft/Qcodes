@@ -3,7 +3,6 @@ These are the basic black box tests for the doNd functions.
 """
 
 import hypothesis.strategies as hst
-import matplotlib
 import matplotlib.axes
 import matplotlib.pyplot as plt
 import numpy as np

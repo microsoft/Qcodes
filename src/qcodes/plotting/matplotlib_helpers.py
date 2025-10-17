@@ -5,7 +5,6 @@ import logging
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 if TYPE_CHECKING:
-    import matplotlib
     import matplotlib.colorbar
 
 import numpy as np

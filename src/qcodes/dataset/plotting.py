@@ -19,7 +19,6 @@ import numpy.typing as npt
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    import matplotlib
     import matplotlib.axes
     import matplotlib.ticker
     from matplotlib.axes import Axes

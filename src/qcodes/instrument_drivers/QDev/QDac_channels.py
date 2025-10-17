@@ -5,7 +5,6 @@ import time
 from functools import partial
 from typing import TYPE_CHECKING, Any
 
-import pyvisa
 import pyvisa.constants
 from pyvisa.resources.serial import SerialInstrument
 

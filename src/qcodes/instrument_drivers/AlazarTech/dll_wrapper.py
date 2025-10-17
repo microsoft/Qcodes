@@ -8,7 +8,6 @@ specify their signatures in terms of :mod:`ctypes` types.
 
 from __future__ import annotations
 
-import concurrent
 import concurrent.futures
 import ctypes
 import logging

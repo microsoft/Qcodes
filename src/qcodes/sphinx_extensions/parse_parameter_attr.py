@@ -10,7 +10,6 @@ import inspect
 from typing import Any
 
 import parso
-import parso.python
 import parso.python.tree
 import parso.tree
 from sphinx.util import logging
