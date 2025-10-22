@@ -89,7 +89,7 @@ fsspec==2025.9.0
     # via dask
 furo==2025.9.25
     # via qcodes (pyproject.toml)
-h5netcdf==1.7.2
+h5netcdf==1.7.3
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
