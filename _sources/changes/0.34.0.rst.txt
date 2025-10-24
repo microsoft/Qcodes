@@ -1,0 +1,39 @@
+QCoDeS 0.34.0 (2022-06-10)
+==========================
+
+Breaking Changes:
+-----------------
+
+- The deprecated driver for ZI UHFLI has been removed. Please use the drivers provided by `zhinst-qcodes`. (:pr:`4081`)
+- InstrumentBase class now raises error if name is an invalid identifier.
+  This effects creation of instruments, channels, modules. (:pr:`4178`)
+- The deprecated fallback for visa addresses containing an ``@`` and the backend has been removed. (:pr:`4219`)
+- QCoDeS no longer explicitly sets the read and write terminators to `""` (The empty string) by default.
+  The default terminators are now set by PyVISA. This should only have implications for RS232 instruments where
+  the default read and write terminators now are ``\r``. (:pr:`4219`)
+
+
+New:
+----
+
+- The QCoDeS instrument baseclass has gained a method `invalidate_cache`.
+  This will mark the cache of all parameters on the instrument and its submodules as
+  invalid. This is useful if you manually (e.g. via the front panel) make changes to
+  the instrument that QCoDeS cannot know about. (:pr:`4161`)
+
+
+Improved:
+---------
+
+- Improved conversion between `qcodes.data.data_set.DataSet` and `xarray`. The conversion from `xarray` format to QCoDeS is more robust in reordering the coordinates.
+  The dataset attributes `label` and `unit` are now converted as well. (:pr:`4011`)
+
+
+Improved Drivers:
+-----------------
+
+- Fixed issue #4121 of setting the mode of the Keithley 6500 by adding single quotes around the mode value in the set_cmd string. (:pr:`4122`)
+- Add db/phase sweep parameter for rohde_schwarz ZNB driver (:pr:`4139`)
+- Add polar parameter to Keysight PNA to fetch the data using the polar format.
+  This reduces the measurement time; instead of pulling magnitude and phase separately,
+  we now get all complex data points in a single trace. (:pr:`4182`)

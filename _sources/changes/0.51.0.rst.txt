@@ -1,0 +1,27 @@
+QCoDeS 0.51.0 (2025-02-14)
+==========================
+
+Breaking Changes:
+-----------------
+
+- The deprecated and non functional function `qcodes.test()` has been removed. (:pr:`6665`)
+
+
+Improved:
+---------
+
+- ``DelegateParameter`` now includes validators of its source Parameter into its validators. This ensures that a ``DelegateParameter``
+  with a non numeric source parameter is registered correctly in a measurement when the ``DelegateParameter`` it self does not
+  set a validator. (:pr:`6585`)
+- Fix a regression introduced in 0.50.0 where a DelegateParameter initialized with a None source
+  would not correctly call get/set on the source parameter when this has been set. (:pr:`6671`)
+- When passing ``bind_to_instrument=False`` to ``InstrumentBase.add_parameter`` a warning that
+  recommends not doing this is now raised suggesting a better alternative.
+  This replaces an existing inconsistent warning which was misleading. (:pr:`6722`)
+- Only add magnet parameters if a magnet is detected in the Oxford Triton driver. (:pr:`6792`)
+
+
+Improved Drivers:
+-----------------
+
+- Enabled use of ZNLE R&S VNA by recognizing the model name in RohdeSchwarzZNBBase, and creating an ZNLE## class as an alias (:pr:`6796`)
