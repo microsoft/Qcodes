@@ -263,7 +263,7 @@ class CryomagneticsModel4G(VisaInstrument):
 
         """
         # Convert field setpoint to kG for the instrument
-        field_setpoint_kg = field_setpoint * 10
+        field_setpoint_kg = field_setpoint / self.KG_TO_TESLA
         # Determine sweep direction based on setpoint and current field
         current_field = self._get_field()
 
@@ -318,7 +318,7 @@ class CryomagneticsModel4G(VisaInstrument):
         """Waits while the magnet is ramping, checking the field value."""
         if getattr(self, "visabackend", False) == "sim":
             # write setpoint directly in sim mode
-            self.write(f"IMAG {value * 10}")
+            self.write(f"IMAG {value / self.KG_TO_TESLA}")
         last_check_time = time.time()
         stability_check_interval = 20
         last_stable_field = self._get_field()

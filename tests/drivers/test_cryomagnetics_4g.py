@@ -161,7 +161,6 @@ def test_set_rate(cryo_instrument):
 
     with (
         patch.object(cryo_instrument, "write") as mock_write,
-        patch.object(cryo_instrument, "_get_field", return_value=0.5),
     ):
         # _set_rate() converts T/min to A/s for all ranges
         cryo_instrument._set_rate(1.0)
