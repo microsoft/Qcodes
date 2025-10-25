@@ -14,6 +14,7 @@ devices:
     dialogues:
       - q: "*IDN?"
         r: "CMT, M5065, 23047001, 25.3.1/2"
+      - q: "*RST"
     properties:
       output:
         default: 0
@@ -53,6 +54,16 @@ devices:
         specs:
           type: int
           valid: [0, 1]
+      averages_count:
+        default: 1
+        getter:
+          q: "SENS1:AVER:COUN?"
+          r: "{}"
+        setter:
+          q: "SENS1:AVER:COUN {}"
+        specs:
+          type: int
+          min: 1
       averages_trigger_enabled:
         default: 0
         getter:
@@ -77,6 +88,13 @@ devices:
           r: "{}"
         setter:
           q: "CALC1:CORR:EDEL:DIST {}"
+      electrical_distance_unit:
+        default: MET
+        getter:
+          q: "CALC1:CORR:EDEL:DIST:UNIT?"
+          r: "{}"
+        setter:
+          q: "CALC1:CORR:EDEL:DIST:UNIT {}"
       clock_source:
         default: "INT"
         getter:
