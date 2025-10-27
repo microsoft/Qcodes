@@ -51,6 +51,36 @@ devices:
         specs:
           type: str
           valid: ["UP", "DOWN"]
+      ramp_rate:
+        default: 0.0
+        getter:
+          q: "RATE?"
+          r: "{}"
+        setter:
+          q: "RATE {}"
+        specs:
+          type: float
+      magnet_voltage:
+        default: 0.0
+        getter:
+          q: "VMAG?"
+          r: "{}"
+        specs:
+          type: float
+      output_voltage:
+        default: 0.0
+        getter:
+          q: "VOUT?"
+          r: "{}"
+        specs:
+          type: float
+      output_current:
+        default: 0.0
+        getter:
+          q: "IOUT?"
+          r: "{}"
+        specs:
+          type: float
     current_limits:
       range:
         ids: [1, 2, 3, 4, 5, 6]
@@ -63,6 +93,8 @@ devices:
               type: float
           rate:
             default: 0.0
+            getter:
+              q: "RATE? {range_id}"
             setter:
               q: "RATE {range_id} {}"
             specs:
