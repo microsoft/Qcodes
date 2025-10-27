@@ -44,6 +44,7 @@ class DynaCool(VisaInstrument):
     # the ramp time resolution is in (s) and is used in the
     # _do_blocking_ramp method
     _ramp_time_resolution = 0.1
+    _blocking_t_sleep = 0.5
 
     temp_params = ("temperature_setpoint", "temperature_rate", "temperature_settling")
     field_params = ("field_target", "field_rate", "field_approach")
@@ -423,7 +424,7 @@ class DynaCool(VisaInstrument):
 
         if block_while_ramping:
             while self.temperature_state() != "stable":
-                sleep(self._ramp_time_resolution)
+                sleep(self._blocking_t_sleep)
 
     def write(self, cmd: str) -> None:
         """
