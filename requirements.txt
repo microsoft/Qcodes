@@ -281,7 +281,7 @@ pluggy==1.6.0
     #   pytest-cov
 prompt-toolkit==3.0.52
     # via ipython
-psutil==7.1.1
+psutil==7.1.2
     # via ipykernel
 pure-eval==0.2.3
     # via stack-data
