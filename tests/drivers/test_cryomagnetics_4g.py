@@ -34,8 +34,8 @@ def test_initialization(cryo_instrument):
 
 def test_get_field(cryo_instrument):
     cryo_instrument.units = MagicMock(return_value="T")
-    with patch.object(cryo_instrument, "ask", return_value="50.0 kG"):
-        assert cryo_instrument.field() == 5.0
+    cryo_instrument.field(5.0)
+    assert cryo_instrument.field() == 5.0
 
 
 def test_initialization_visa_sim(cryo_instrument):
@@ -85,8 +85,6 @@ def test_magnet_operating_state(
 def test_set_field_successful(cryo_instrument, caplog):
     with (
         patch.object(cryo_instrument, "write") as mock_write,
-        patch.object(cryo_instrument, "ask", return_value="2"),
-        patch.object(cryo_instrument, "_get_field", return_value=0),
     ):
         with caplog.at_level(logging.WARNING):
             cryo_instrument.set_field(0.1, block=False)
@@ -102,12 +100,6 @@ def test_set_field_successful(cryo_instrument, caplog):
 def test_set_field_blocking(cryo_instrument):
     with (
         patch.object(cryo_instrument, "write") as mock_write,
-        patch.object(cryo_instrument, "_get_field", return_value=0),
-        patch.object(
-            cryo_instrument,
-            "magnet_operating_state",
-            return_value=CryomagneticsOperatingState(holding=True, ramping=False),
-        ),
         patch.object(
             cryo_instrument,
             "wait_while_ramping",
@@ -141,9 +133,7 @@ def test_wait_while_ramping_timeout(cryo_instrument):
 
 def test_wait_while_ramping_success(cryo_instrument):
     # Simulate _get_field returning values that reach the setpoint
-    field_values = [0.0, 0.2, 0.4, 0.5]  # Last value matches setpoint
     with (
-        patch.object(cryo_instrument, "_get_field", side_effect=field_values),
         patch.object(cryo_instrument, "_sleep"),
         patch.object(
             cryo_instrument,
@@ -171,7 +161,6 @@ def test_set_rate(cryo_instrument):
 
     with (
         patch.object(cryo_instrument, "write") as mock_write,
-        patch.object(cryo_instrument, "_get_field", return_value=0.5),
     ):
         # _set_rate() converts T/min to A/s for all ranges
         cryo_instrument._set_rate(1.0)

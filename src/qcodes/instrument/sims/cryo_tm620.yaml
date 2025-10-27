@@ -13,6 +13,7 @@ devices:
         r: "{RANDOM(54, 56, 1):.2f}K\r\n"
       - q: "MEAS? B"
         r: "{RANDOM(3, 5, 1):.2f}K\r\n"
+      - q: "REMOTE"
 
     properties:
       shield:

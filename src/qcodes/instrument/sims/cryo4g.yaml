@@ -95,7 +95,6 @@ devices:
             default: 0.0
             getter:
               q: "RATE? {range_id}"
-              r: "{}"
             setter:
               q: "RATE {range_id} {}"
             specs:

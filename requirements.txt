@@ -102,7 +102,7 @@ h5py==3.15.1
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.142.3
+hypothesis==6.142.4
     # via qcodes (pyproject.toml)
 idna==3.11
     # via requests
@@ -281,11 +281,11 @@ pluggy==1.6.0
     #   pytest-cov
 prompt-toolkit==3.0.52
     # via ipython
-psutil==7.1.1
+psutil==7.1.2
     # via ipykernel
 pure-eval==0.2.3
     # via stack-data
-pyarrow==21.0.0
+pyarrow==22.0.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
