@@ -83,6 +83,15 @@ class DynaCool(VisaInstrument):
         )
         """Parameter temperature_setpoint"""
 
+        self.blocking_t: Parameter = self.add_parameter(
+            "blocking_t",
+            label="Block instrument while ramping temp",
+            unit="K",
+            vals=vals.Numbers(1.6, 400),
+            set_cmd=partial(self._temp_setter, "temperature_setpoint", True),
+        )
+        """Parameter blocking_t will block instrument interaction while temperature is ramping to setpoint."""
+
         self.temperature_rate: Parameter = self.add_parameter(
             "temperature_rate",
             label="Temperature settle rate",
@@ -400,6 +409,7 @@ class DynaCool(VisaInstrument):
             "temperature_setpoint", "temperature_rate", "temperature_settling"
         ],
         value: float,
+        block_while_ramping: bool = False,
     ) -> None:
         """
         The setter function for the temperature parameters. All three are set
@@ -410,12 +420,10 @@ class DynaCool(VisaInstrument):
         values[self.temp_params.index(param)] = value
 
         self.write(f"TEMP {values[0]}, {values[1]}, {values[2]}")
-        self._block_on_temperature_ramp()
 
-    def _block_on_temperature_ramp(self) -> None:
-        """Block all instrument interactions until temperature stabilizes."""
-        while self.temperature_state() != "stable":
-            sleep(1)
+        if block_while_ramping:
+            while self.temperature_state() != "stable":
+                sleep(self._ramp_time_resolution)
 
     def write(self, cmd: str) -> None:
         """
