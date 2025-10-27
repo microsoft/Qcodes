@@ -9,48 +9,64 @@ devices:
     dialogues:
       - q: "*IDN?"
         r: "Cryomagnetics,4G,2239,1.02,208"
-      - q: "UNITS?"
-        r: "T"
-      - q: "UNITS A"
-        r: ""
-      - q: "UNITS kG"
-        r: ""
-      - q: "UNITS T"
-        r: ""
-      - q: "VMAG?"
-        r: "4.75"
-      - q: "VOUT?"
-        r: "12.0"
-      - q: "IOUT?"
-        r: "85.0"
-      - q: "QRESET"
-        r: ""
+      - q: "*STB?"
+        r: "0"
       - q: "REMOTE"
-        r: ""
-      - q: "SWEEP ZERO"
-        r: ""
-      - q: "*STB?"
-        r: "0"  # standby mode
-      - q: "*STB?"
-        r: "1"  # ramping mode
-      - q: "IMAG?"
-        r: "85.0 kG"
-      - q: "RATE?"
-        r: "5.0"
-      - q: "LLIM 50"
-        r: ""
-      - q: "ULIM 100"
-        r: ""
-      - q: "SWEEP UP"
-        r: ""
-      - q: "SWEEP DOWN"
-        r: ""
-      - q: "RANGE 0 100.0"
-        r: ""
-      - q: "RATE 0 1.0"
-        r: ""
-      - q: "SWEEP PAUSE"
-        r: ""
+    properties:
+      unit:
+        default: "T"
+        getter:
+          q: "UNITS?"
+          r: "{}"
+        setter:
+          q: "UNITS {}"
+        specs:
+          type: str
+          valid: ["T", "A", "kG"]
+      field:
+        default: 0.0
+        getter:
+          q: "IMAG?"
+          r: "{} kG"
+        setter:
+          q: "IMAG {}"
+        specs:
+          type: float
+      ramp_field_up:
+        default: 0.0
+        setter:
+          q: "ULIM {}"
+        specs:
+          type: float
+      ramp_field_down:
+        default: 0.0
+        setter:
+          q: "LLIM {}"
+        specs:
+          type: float
+      sweep_direction:
+        default: "UP"
+        setter:
+          q: "SWEEP {}"
+        specs:
+          type: str
+          valid: ["UP", "DOWN"]
+    current_limits:
+      range:
+        ids: [1, 2, 3, 4, 5, 6]
+        properties:
+          range:
+            default: 0.0
+            setter:
+              q: "RANGE {range_id} {}"
+            specs:
+              type: float
+          rate:
+            default: 0.0
+            setter:
+              q: "RATE {range_id} {}"
+            specs:
+              type: float
 
 resources:
   GPIB::1::INSTR:
