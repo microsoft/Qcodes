@@ -21,7 +21,7 @@ beautifulsoup4==4.14.2
     # via
     #   furo
     #   nbconvert
-bleach==6.2.0
+bleach==6.3.0
     # via nbconvert
 broadbean==0.14.0
     # via
