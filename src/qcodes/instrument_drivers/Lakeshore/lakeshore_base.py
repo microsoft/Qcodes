@@ -373,6 +373,11 @@ class LakeshoreBaseOutput(InstrumentChannel):
         be reached within the current range.
         """
 
+    @property
+    def _is_simulated(self) -> bool:
+        """Check if this instrument is using PyVISA simulation backend."""
+        return getattr(self.root_instrument, "visabackend", None) == "sim"
+
     def _set_blocking_t(self, temperature: float) -> None:
         self.set_range_from_temperature(temperature)
         self.setpoint(temperature)
@@ -489,6 +494,10 @@ class LakeshoreBaseOutput(InstrumentChannel):
             )
 
         t_setpoint = self.setpoint()
+
+        if self._is_simulated:
+            # In sim mode, bypass the wait loop by setting temperature to setpoint
+            active_channel.temperature(t_setpoint)
 
         time_now = time.perf_counter()
         time_enter_tolerance_zone = time_now
