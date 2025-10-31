@@ -85,6 +85,10 @@ class LakeshoreModel336VoltageSource(LakeshoreBaseOutput):
 
     RANGES: ClassVar[dict[str, int]] = {"off": 0, "low": 1, "medium": 2, "high": 3}
 
+    _input_channel_parameter_kwargs: ClassVar[dict[str, dict[str, int]]] = {
+        "val_mapping": _channel_name_to_outmode_command_map
+    }
+
     def __init__(
         self,
         parent: "LakeshoreModel336",
