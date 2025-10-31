@@ -29,3 +29,10 @@ repos:
     rev: 3.0.0
     hooks:
     - id: shellcheck
+  - repo: local
+    hooks:
+      - id: generate-jinja2-code
+        name: Generate Jinja2 Code
+        entry: uv run --extra test _generate_code.py
+        language: system
+        files: '\.jinja$'
