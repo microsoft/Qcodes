@@ -16,6 +16,8 @@ devices:
         getter:
           q: "KRDG? A"
           r: "{}"
+        setter:
+          q: "SIMTEMP A,{}"  # Custom simulation-only command
 
       sensor_raw_A:
         default: 101.0
@@ -51,7 +53,7 @@ devices:
           q: "INTYPE? A"
           r: "{}"
         setter:
-          q: "INTYPE A,{},{},{},{},{}"
+          q: "INTYPE A,{}"
 
       sensor_curve_number_A:
         default: 42
@@ -70,6 +72,8 @@ devices:
         getter:
           q: "KRDG? B"
           r: "{}"
+        setter:
+          q: "SIMTEMP B,{}"  # Custom simulation-only command
 
       sensor_raw_B:
         default: 101.0
@@ -105,7 +109,7 @@ devices:
           q: "INTYPE? B"
           r: "{}"
         setter:
-          q: "INTYPE B,{},{},{},{},{}"
+          q: "INTYPE B,{}"
 
       sensor_curve_number_B:
         default: 41
@@ -123,6 +127,8 @@ devices:
         getter:
           q: "KRDG? C"
           r: "{}"
+        setter:
+          q: "SIMTEMP C,{}"  # Custom simulation-only command
 
       sensor_raw_C:
         default: 101.0
@@ -158,7 +164,7 @@ devices:
           q: "INTYPE? C"
           r: "{}"
         setter:
-          q: "INTYPE C,{},{},{},{},{}"
+          q: "INTYPE C,{}"
 
       sensor_curve_number_C:
         default: 40
@@ -176,6 +182,8 @@ devices:
         getter:
           q: "KRDG? D"
           r: "{}"
+        setter:
+          q: "SIMTEMP D,{}"  # Custom simulation-only command
 
       sensor_raw_D:
         default: 101.0
@@ -211,7 +219,7 @@ devices:
           q: "INTYPE? D"
           r: "{}"
         setter:
-          q: "INTYPE D,{},{},{},{},{}"
+          q: "INTYPE D,{}"
 
       sensor_curve_number_D:
         default: 39
@@ -225,36 +233,36 @@ devices:
           r: "DT-039,01110039,2,339.0,1"
 
       pid_output_1:
-        default: "80,20,0"
+        default: "10,20,30"
         getter:
           q: "PID? 1"
           r: "{}"
         setter:
-          q: "PID 1,{},{},{}"
+          q: "PID 1,{}"
 
       pid_output_2:
-        default: "80,20,0"
+        default: "10,20,30"
         getter:
           q: "PID? 2"
           r: "{}"
         setter:
-          q: "PID 2,{},{},{}"
+          q: "PID 2,{}"
 
       outmode_output_1:
-        default: "3,1,1"
+        default: "1,2,0"
         getter:
           q: "OUTMODE? 1"
           r: "{}"
         setter:
-          q: "OUTMODE 1,{},{},{}"
+          q: "OUTMODE 1, {}"
 
       outmode_output_2:
-        default: "3,1,1"
+        default: "1,1,0"
         getter:
           q: "OUTMODE? 2"
           r: "{}"
         setter:
-          q: "OUTMODE 2,{},{},{}"
+          q: "OUTMODE 2, {}"
 
       range_output_1:
         default: 1
@@ -301,20 +309,20 @@ devices:
           r: "{}"
 
       htrset_output_1:
-        default: "0,1,0,0,1"
+        default: "1, 5"
         getter:
           q: "HTRSET? 1"
           r: "{}"
         setter:
-          q: "HTRSET 1,{},{},{},{},{}"
+          q: "HTRSET 1, {}"
 
       htrset_output_2:
-        default: "0,1,0,0,1"
+        default: "1, 5"
         getter:
           q: "HTRSET? 2"
           r: "{}"
         setter:
-          q: "HTRSET 2,{},{},{},{},{}"
+          q: "HTRSET 2, {}"
 
       ramp_output_1:
         default: "0,0"
@@ -322,7 +330,7 @@ devices:
           q: "RAMP? 1"
           r: "{}"
         setter:
-          q: "RAMP 1,{},{}"
+          q: "RAMP 1,{}"
 
       ramp_output_2:
         default: "0,0"
@@ -330,7 +338,7 @@ devices:
           q: "RAMP? 2"
           r: "{}"
         setter:
-          q: "RAMP 2,{},{}"
+          q: "RAMP 2,{}"
 
       rampst_output_1:
         default: 0
@@ -342,6 +350,100 @@ devices:
         default: 0
         getter:
           q: "RAMPST? 2"
+          r: "{}"
+
+      # ====================
+      # Output 3 (Voltage Source, no PID)
+      # ====================
+      outmode_output_3:
+        default: "1,1,0"
+        getter:
+          q: "OUTMODE? 3"
+          r: "{}"
+        setter:
+          q: "OUTMODE 3, {}"
+
+      range_output_3:
+        default: 1
+        getter:
+          q: "RANGE? 3"
+          r: "{}"
+        setter:
+          q: "RANGE 3,{}"
+
+      setpoint_output_3:
+        default: 0
+        getter:
+          q: "SETP? 3"
+          r: "{}"
+        setter:
+          q: "SETP 3,{}"
+
+      htr_output_3:
+        default: 0
+        getter:
+          q: "HTR? 3"
+          r: "{}"
+
+      ramp_output_3:
+        default: "0,0"
+        getter:
+          q: "RAMP? 3"
+          r: "{}"
+        setter:
+          q: "RAMP 3,{}"
+
+      rampst_output_3:
+        default: 0
+        getter:
+          q: "RAMPST? 3"
+          r: "{}"
+
+      # ====================
+      # Output 4 (Voltage Source, no PID)
+      # ====================
+      outmode_output_4:
+        default: "1,2,0"
+        getter:
+          q: "OUTMODE? 4"
+          r: "{}"
+        setter:
+          q: "OUTMODE 4, {}"
+
+      range_output_4:
+        default: 1
+        getter:
+          q: "RANGE? 4"
+          r: "{}"
+        setter:
+          q: "RANGE 4,{}"
+
+      setpoint_output_4:
+        default: 0
+        getter:
+          q: "SETP? 4"
+          r: "{}"
+        setter:
+          q: "SETP 4,{}"
+
+      htr_output_4:
+        default: 0
+        getter:
+          q: "HTR? 4"
+          r: "{}"
+
+      ramp_output_4:
+        default: "0,0"
+        getter:
+          q: "RAMP? 4"
+          r: "{}"
+        setter:
+          q: "RAMP 4,{}"
+
+      rampst_output_4:
+        default: 0
+        getter:
+          q: "RAMPST? 4"
           r: "{}"
 
 resources:
