@@ -1,0 +1,2 @@
+Fixes a bug in the LinSweeper iterator that caused it to always raise StopIteration after
+completing a single sweep. This bug meant LinSweeper could not be used in a nested measurement function.

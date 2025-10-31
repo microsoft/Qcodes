@@ -236,4 +236,5 @@ class LinSweeper(LinSweep):
             self._iter_index += 1
             return set_val
         else:
+            self._iter_index = 0
             raise StopIteration
