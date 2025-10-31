@@ -493,11 +493,12 @@ class LakeshoreBaseOutput(InstrumentChannel):
                 f"be set to 'kelvin'."
             )
 
-        t_setpoint = self.setpoint()
-
         if self._is_simulated:
-            # In sim mode, bypass the wait loop by setting temperature to setpoint
-            active_channel.temperature(t_setpoint)
+            # Use custom SIMTEMP command to update read-only temperature sensor
+            # in order to "trick" wait loop into thinking temperature was ramped
+            self.write(f"SIMTEMP {active_channel_name_on_instrument},{self.setpoint()}")
+
+        t_setpoint = self.setpoint()
 
         time_now = time.perf_counter()
         time_enter_tolerance_zone = time_now
