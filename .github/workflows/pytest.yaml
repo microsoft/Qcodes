@@ -30,7 +30,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.11", "3.12", "3.13"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
         min-version: [false]
         include:
           - os: ubuntu-latest
@@ -43,6 +43,8 @@ jobs:
             python-version: "3.11"
           - os: windows-latest
             python-version: "3.13"
+          - os: windows-latest
+            python-version: "3.14"
     env:
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}
