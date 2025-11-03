@@ -1,0 +1,3 @@
+- Improved pyvisa-sim YAMLs for Lakeshore Models 335, 336, and 372.
+- Updated Lakeshore tests to use pyvisa-sim backend instead of mocked classes.
+- Updated lakeshore_base.py to bypass waiting when using blocking_t in sim mode.
