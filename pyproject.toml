@@ -16,6 +16,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering",
 ]
 license = "MIT"
@@ -217,11 +218,10 @@ markers = "serial"
 filterwarnings = [
     'error',
     'ignore:open_binary is deprecated:DeprecationWarning', # pyvisa-sim deprecated in 3.11 un-deprecated in 3.12. Drop filter once we drop support for 3.11
-    'ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning', # jupyter
     'ignore:unclosed database in:ResourceWarning', # internal should be fixed
     'ignore:unclosed\ <socket\.socket:ResourceWarning', # not clear from where this is coming
+    "ignore:'asyncio.iscoroutinefunction' is deprecated and slated for removal:DeprecationWarning",  # opentelemetry
     'ignore:Model_336 is deprecated:qcodes.utils.deprecate.QCoDeSDeprecationWarning',  # remove once deprecated Lakeshore Model_336 and its tests has been removed
-    "ignore:'mode' parameter is deprecated and will be removed in Pillow 13:DeprecationWarning",  # deprecation warning in pillow triggered by matplotlib should be fixed in mpl 3.10.4
 ]
 
 [tool.ruff]

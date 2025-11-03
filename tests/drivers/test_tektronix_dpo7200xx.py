@@ -1,13 +1,17 @@
 import sys
 import timeit
+from typing import TYPE_CHECKING
 
 import pytest
 
 from qcodes.instrument_drivers.tektronix.DPO7200xx import TektronixDPO7000xx
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 
 @pytest.fixture(scope="function")
-def tektronix_dpo():
+def tektronix_dpo() -> "Generator[TektronixDPO7000xx, None, None]":
     """
     A six channel-per-relay instrument
     """
@@ -24,7 +28,7 @@ def tektronix_dpo():
 @pytest.mark.xfail(
     condition=sys.platform == "win32", reason="Time resolution is too low on windows"
 )
-def test_adjust_timer(tektronix_dpo) -> None:
+def test_adjust_timer(tektronix_dpo: TektronixDPO7000xx) -> None:
     """
     After adjusting the type of the measurement or the source of the
     measurement, we need wait at least 0.1 seconds
@@ -54,7 +58,7 @@ def test_adjust_timer(tektronix_dpo) -> None:
     # measurements slightly sooner then 'minimum_adjustment_time'
 
 
-def test_measurements_return_float(tektronix_dpo) -> None:
+def test_measurements_return_float(tektronix_dpo: TektronixDPO7000xx) -> None:
     amplitude = tektronix_dpo.measurement[0].amplitude()
     assert isinstance(amplitude, float)
 
@@ -62,6 +66,6 @@ def test_measurements_return_float(tektronix_dpo) -> None:
     assert isinstance(mean_amplitude, float)
 
 
-def test_measurement_sets_state(tektronix_dpo) -> None:
+def test_measurement_sets_state(tektronix_dpo: TektronixDPO7000xx) -> None:
     tektronix_dpo.measurement[1].frequency()
     assert tektronix_dpo.measurement[1].state() == 1

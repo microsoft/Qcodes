@@ -106,10 +106,14 @@ class TektronixDPO7000xx(VisaInstrument):
             self.add_submodule(measurement_name, measurement_module)
             measurement_list.append(measurement_module)
 
-        self.add_submodule("measurement", measurement_list)
-        self.add_submodule(
+        self.measurement: ChannelList[TektronixDPOMeasurement] = self.add_submodule(
+            "measurement", measurement_list
+        )
+        """Instrument module measurement"""
+        self.statistics: TektronixDPOMeasurementStatistics = self.add_submodule(
             "statistics", TektronixDPOMeasurementStatistics(self, "statistics")
         )
+        """Instrument module statistics"""
 
         channel_list = ChannelList(self, "channel", TektronixDPOChannel)
         for channel_number in range(1, self.number_of_channels + 1):
@@ -123,7 +127,10 @@ class TektronixDPO7000xx(VisaInstrument):
             self.add_submodule(channel_name, channel_module)
             channel_list.append(channel_module)
 
-        self.add_submodule("channel", channel_list)
+        self.channel: ChannelList[TektronixDPOChannel] = self.add_submodule(
+            "channel", channel_list
+        )
+        """Instrument module channel"""
 
         self.connect_message()
 
@@ -445,9 +452,10 @@ class TektronixDPOChannel(InstrumentChannel):
         super().__init__(parent, name, **kwargs)
         self._identifier = f"CH{channel_number}"
 
-        self.add_submodule(
+        self.waveform: TektronixDPOWaveform = self.add_submodule(
             "waveform", TektronixDPOWaveform(self, "waveform", self._identifier)
         )
+        """Instrument module waveform"""
 
         self.scale: Parameter = self.add_parameter(
             "scale",
