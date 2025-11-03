@@ -123,7 +123,7 @@ ipython==9.6.0
     #   qcodes-loop
 ipython-pygments-lexers==1.1.1
     # via ipython
-ipywidgets==8.1.7
+ipywidgets==8.1.8
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -160,7 +160,7 @@ jupyter-core==5.9.1
     #   nbformat
 jupyterlab-pygments==0.3.0
     # via nbconvert
-jupyterlab-widgets==3.0.15
+jupyterlab-widgets==3.0.16
     # via ipywidgets
 kiwisolver==1.4.9
     # via matplotlib
@@ -506,7 +506,7 @@ websockets==15.0.1
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-widgetsnbextension==4.0.14
+widgetsnbextension==4.0.15
     # via ipywidgets
 xarray==2025.10.1
     # via
