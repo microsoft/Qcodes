@@ -7,12 +7,16 @@ from qcodes.instrument_drivers.Lakeshore.Model_336 import (
 
 @pytest.fixture(scope="function")
 def lakeshore_336():
-    return Model_336(  # type: ignore
+    inst = Model_336(  # type: ignore
         "lakeshore_336_fixture",
         "GPIB::2::INSTR",
         pyvisa_sim_file="lakeshore_model336.yaml",
         device_clear=False,
     )
+    try:
+        yield inst
+    finally:
+        inst.close()
 
 
 def test_pid_set(lakeshore_336) -> None:
