@@ -39,7 +39,7 @@ click==8.3.0
     # via
     #   dask
     #   towncrier
-cloudpickle==3.1.1
+cloudpickle==3.1.2
     # via dask
 colorama==0.4.6
     # via
