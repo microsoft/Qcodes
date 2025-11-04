@@ -373,11 +373,6 @@ class LakeshoreBaseOutput(InstrumentChannel):
         be reached within the current range.
         """
 
-    @property
-    def _is_simulated(self) -> bool:
-        """Check if this instrument is using PyVISA simulation backend."""
-        return getattr(self.root_instrument, "visabackend", None) == "sim"
-
     def _set_blocking_t(self, temperature: float) -> None:
         self.set_range_from_temperature(temperature)
         self.setpoint(temperature)
@@ -492,11 +487,6 @@ class LakeshoreBaseOutput(InstrumentChannel):
                 f"channel's {active_channel._channel!r} units to "
                 f"be set to 'kelvin'."
             )
-
-        if self._is_simulated:
-            # Use custom SIMTEMP command to update read-only temperature sensor
-            # in order to "trick" wait loop into thinking temperature was ramped
-            self.write(f"SIMTEMP {active_channel_name_on_instrument},{self.setpoint()}")
 
         t_setpoint = self.setpoint()
 

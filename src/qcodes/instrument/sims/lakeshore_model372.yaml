@@ -23,8 +23,6 @@ devices:
         getter:
           q: "KRDG? 1"
           r: "{}"
-        setter:
-          q: "SIMTEMP 1,{}"
 
       sensor_raw_1:
         default: 100.0
@@ -78,8 +76,6 @@ devices:
         getter:
           q: "KRDG? 2"
           r: "{}"
-        setter:
-          q: "SIMTEMP 2,{}"
 
       sensor_raw_2:
         default: 100.0
@@ -133,8 +129,6 @@ devices:
         getter:
           q: "KRDG? 3"
           r: "{}"
-        setter:
-          q: "SIMTEMP 3,{}"
 
       sensor_raw_3:
         default: 100.0
@@ -188,8 +182,6 @@ devices:
         getter:
           q: "KRDG? 4"
           r: "{}"
-        setter:
-          q: "SIMTEMP 4,{}"
 
       sensor_raw_4:
         default: 100.0
@@ -243,8 +235,6 @@ devices:
         getter:
           q: "KRDG? 5"
           r: "{}"
-        setter:
-          q: "SIMTEMP 5,{}"
 
       sensor_raw_5:
         default: 100.0
@@ -298,8 +288,6 @@ devices:
         getter:
           q: "KRDG? 6"
           r: "{}"
-        setter:
-          q: "SIMTEMP 6,{}"
 
       sensor_raw_6:
         default: 100.0
@@ -353,8 +341,6 @@ devices:
         getter:
           q: "KRDG? 7"
           r: "{}"
-        setter:
-          q: "SIMTEMP 7,{}"
 
       sensor_raw_7:
         default: 100.0
@@ -408,8 +394,6 @@ devices:
         getter:
           q: "KRDG? 8"
           r: "{}"
-        setter:
-          q: "SIMTEMP 8,{}"
 
       sensor_raw_8:
         default: 100.0
@@ -463,8 +447,6 @@ devices:
         getter:
           q: "KRDG? 9"
           r: "{}"
-        setter:
-          q: "SIMTEMP 9,{}"
 
       sensor_raw_9:
         default: 100.0
@@ -518,8 +500,6 @@ devices:
         getter:
           q: "KRDG? 10"
           r: "{}"
-        setter:
-          q: "SIMTEMP 10,{}"
 
       sensor_raw_10:
         default: 100.0
@@ -573,8 +553,6 @@ devices:
         getter:
           q: "KRDG? 11"
           r: "{}"
-        setter:
-          q: "SIMTEMP 11,{}"
 
       sensor_raw_11:
         default: 100.0
@@ -628,8 +606,6 @@ devices:
         getter:
           q: "KRDG? 12"
           r: "{}"
-        setter:
-          q: "SIMTEMP 12,{}"
 
       sensor_raw_12:
         default: 100.0
@@ -683,8 +659,6 @@ devices:
         getter:
           q: "KRDG? 13"
           r: "{}"
-        setter:
-          q: "SIMTEMP 13,{}"
 
       sensor_raw_13:
         default: 100.0
@@ -738,8 +712,6 @@ devices:
         getter:
           q: "KRDG? 14"
           r: "{}"
-        setter:
-          q: "SIMTEMP 14,{}"
 
       sensor_raw_14:
         default: 100.0
@@ -793,8 +765,6 @@ devices:
         getter:
           q: "KRDG? 15"
           r: "{}"
-        setter:
-          q: "SIMTEMP 15,{}"
 
       sensor_raw_15:
         default: 100.0
@@ -848,8 +818,6 @@ devices:
         getter:
           q: "KRDG? 16"
           r: "{}"
-        setter:
-          q: "SIMTEMP 16,{}"
 
       sensor_raw_16:
         default: 100.0

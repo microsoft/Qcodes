@@ -16,8 +16,6 @@ devices:
         getter:
           q: "KRDG? A"
           r: "{}"
-        setter:
-          q: "SIMTEMP A,{}"  # Custom simulation-only command
 
       sensor_raw_A:
         default: 101.0
@@ -77,8 +75,6 @@ devices:
         getter:
           q: "KRDG? B"
           r: "{}"
-        setter:
-          q: "SIMTEMP B,{}"  # Custom simulation-only command
 
       sensor_raw_B:
         default: 101.0
