@@ -15,9 +15,9 @@ import qcodes as qc
 from qcodes import logger
 from qcodes.instrument import Instrument
 from qcodes.instrument_drivers.american_magnetics import AMIModel430, AMIModel4303D
-from qcodes.instrument_drivers.Lakeshore import LakeshoreModel372
 from qcodes.instrument_drivers.tektronix import TektronixAWG5208
 from qcodes.logger.log_analysis import capture_dataframe
+from tests.drivers.test_lakeshore_372 import LakeshoreModel372Mock
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
@@ -58,8 +58,8 @@ def awg5208(caplog: LogCaptureFixture) -> "Generator[TektronixAWG5208, None, Non
 
 
 @pytest.fixture
-def model372() -> "Generator[LakeshoreModel372, None, None]":
-    inst = LakeshoreModel372(
+def model372() -> "Generator[LakeshoreModel372Mock, None, None]":
+    inst = LakeshoreModel372Mock(
         "lakeshore_372",
         "GPIB::3::INSTR",
         pyvisa_sim_file="lakeshore_model372.yaml",
@@ -231,7 +231,7 @@ def test_capture_dataframe() -> None:
     assert df.message[0] == TEST_LOG_MESSAGE
 
 
-def test_channels(model372: LakeshoreModel372) -> None:
+def test_channels(model372: LakeshoreModel372Mock) -> None:
     """
     Test that messages logged in a channel are propagated to the
     main instrument.
@@ -265,7 +265,7 @@ def test_channels(model372: LakeshoreModel372) -> None:
         assert f == u
 
 
-def test_channels_nomessages(model372: LakeshoreModel372) -> None:
+def test_channels_nomessages(model372: LakeshoreModel372Mock) -> None:
     """
     Test that messages logged in a channel are not propagated to
     any instrument.
