@@ -1,20 +1,101 @@
-import pytest
+import logging
+import time
 
+from qcodes.instrument import InstrumentBase
 from qcodes.instrument_drivers.Lakeshore import LakeshoreModel335
 
+from .test_lakeshore_372 import (
+    DictClass,
+    MockVisaInstrument,
+    instrument_fixture,
+    query,
+)
 
-@pytest.fixture(scope="function", name="lakeshore_335")
+log = logging.getLogger(__name__)
+
+VISA_LOGGER = ".".join((InstrumentBase.__module__, "com", "visa"))
+
+
+class LakeshoreModel335Mock(MockVisaInstrument, LakeshoreModel335):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        # initial values
+        self.heaters: dict[str, DictClass] = {}
+        self.heaters["1"] = DictClass(
+            P=1,
+            I=2,
+            D=3,
+            mode=1,  # 'off'
+            input_channel=1,  # 'A'
+            powerup_enable=0,
+            polarity=0,
+            use_filter=0,
+            delay=1,
+            output_range=0,
+            setpoint=4,
+        )
+        self.heaters["2"] = DictClass(
+            P=1,
+            I=2,
+            D=3,
+            mode=2,  # 'closed_loop'
+            input_channel=2,  # 'B'
+            powerup_enable=0,
+            polarity=0,
+            use_filter=0,
+            delay=1,
+            output_range=0,
+            setpoint=4,
+        )
+
+        self.channel_mock = {
+            str(i): DictClass(
+                t_limit=i,
+                T=4,
+                sensor_name=f"sensor_{i}",
+                sensor_type=1,  # 'diode',
+                auto_range_enabled=0,  # 'off',
+                range=0,
+                compensation_enabled=0,  # False,
+                units=1,
+            )  # 'kelvin')
+            for i in self.channel_name_command.keys()
+        }
+
+        # simulate delayed heating
+        self.simulate_heating = False
+        self.start_heating_time = time.perf_counter()
+
+    def start_heating(self):
+        self.start_heating_time = time.perf_counter()
+        self.simulate_heating = True
+
+    def get_t_when_heating(self):
+        """
+        Simply define a fixed setpoint of 4 k for now
+        """
+        delta = abs(time.perf_counter() - self.start_heating_time)
+        # make it simple to start with: linear ramp 1K per second
+        # start at 7K.
+        return max(4, 7 - delta)
+
+    @query("KRDG?")
+    def temperature(self, output):
+        chan = self.channel_mock[output]
+        if self.simulate_heating:
+            return self.get_t_when_heating()
+        return f"{chan.T}"
+
+
+@instrument_fixture(scope="function", name="lakeshore_335")
 def _make_lakeshore_335():
-    inst = LakeshoreModel335(
+    return LakeshoreModel335Mock(
         "lakeshore_335_fixture",
         "GPIB::2::INSTR",
         pyvisa_sim_file="lakeshore_model335.yaml",
         device_clear=False,
     )
-    try:
-        yield inst
-    finally:
-        inst.close()
 
 
 def test_pid_set(lakeshore_335) -> None:
@@ -88,6 +169,7 @@ def test_select_range_limits(lakeshore_335) -> None:
 def test_set_and_wait_unit_setpoint_reached(lakeshore_335) -> None:
     ls = lakeshore_335
     ls.output_1.setpoint(4)
+    ls.start_heating()
     ls.output_1.wait_until_set_point_reached()
 
 
@@ -96,4 +178,5 @@ def test_blocking_t(lakeshore_335) -> None:
     h = ls.output_1
     ranges = [1.2, 2.4, 3.1]
     h.range_limits(ranges)
+    ls.start_heating()
     h.blocking_t(4)
