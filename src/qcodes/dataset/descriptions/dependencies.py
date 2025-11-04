@@ -21,8 +21,6 @@ from qcodes.utils import QCoDeSDeprecationWarning
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from networkx.classes.reportviews import DegreeView
-
     from .versioning.rundescribertypes import InterDependencies_Dict
 _LOGGER = logging.getLogger(__name__)
 ParamSpecTree = dict[ParamSpecBase, tuple[ParamSpecBase, ...]]
@@ -137,9 +135,6 @@ class InterDependencies_:  # noqa: PLW1641
     def _validate_no_chained_dependencies(self, interdeps: ParamSpecTree) -> None:
         for node, in_degree in self._dependency_subgraph.in_degree:
             out_degree = self._dependency_subgraph.out_degree(node)
-            assert isinstance(out_degree, int), (
-                "The out_degree method with arguments should have returned an int"
-            )
             if in_degree > 0 and out_degree > 0:
                 depends_on_nodes = list(self._dependency_subgraph.successors(node))
                 depended_on_nodes = list(self._dependency_subgraph.predecessors(node))
@@ -155,6 +150,8 @@ class InterDependencies_:  # noqa: PLW1641
             for edge in self.graph.edges
             if self.graph.edges[edge]["interdep_type"] == "depends_on"
         ]
+        # the type annotations does not currently encode that edge_subgraph of a DiGraph
+        # is a DiGraph
         return cast("nx.DiGraph[str]", self.graph.edge_subgraph(depends_on_edges))
 
     @property
@@ -164,6 +161,8 @@ class InterDependencies_:  # noqa: PLW1641
             for edge in self.graph.edges
             if self.graph.edges[edge]["interdep_type"] == "inferred_from"
         ]
+        # the type annotations does not currently encode that edge_subgraph of a DiGraph
+        # is a DiGraph
         return cast("nx.DiGraph[str]", self.graph.edge_subgraph(inferred_from_edges))
 
     def extend(
@@ -195,7 +194,7 @@ class InterDependencies_:  # noqa: PLW1641
         return {key: tuple(val) for key, val in paramspec_tree_list.items()}
 
     def _node_to_paramspec(self, node_id: str) -> ParamSpecBase:
-        return cast("ParamSpecBase", self.graph.nodes[node_id]["value"])
+        return self.graph.nodes[node_id]["value"]
 
     def _paramspec_predecessors_by_type(
         self, paramspec: ParamSpecBase, interdep_type: _InterDepType
@@ -247,13 +246,10 @@ class InterDependencies_:  # noqa: PLW1641
 
     @property
     def standalones(self) -> frozenset[ParamSpecBase]:
-        # since we are not requesting the degree of a specific node, we will get a DegreeView
-        # the type stubs does not yet reflect this so we cast away the int type here
-        degree_iterator = cast("DegreeView[str]", self.graph.degree)
         return frozenset(
             [
                 self._node_to_paramspec(node_id)
-                for node_id, degree in degree_iterator
+                for node_id, degree in self.graph.degree
                 if degree == 0
             ]
         )
@@ -270,10 +266,7 @@ class InterDependencies_:  # noqa: PLW1641
         """
         Return the ParamSpecBase objects of this instance
         """
-        return tuple(
-            cast("ParamSpecBase", paramspec)
-            for _, paramspec in self.graph.nodes(data="value")
-        )
+        return tuple(paramspec for _, paramspec in self.graph.nodes(data="value"))
 
     @property
     @deprecated(
@@ -319,9 +312,7 @@ class InterDependencies_:  # noqa: PLW1641
         }
         standalone_top_level = {
             self._node_to_paramspec(node_id)
-            # since we are not requesting the degree of a specific node, we will get a DegreeView
-            # the type stubs does not yet reflect this so we cast away the int type here
-            for node_id, degree in cast("DegreeView[str]", self._graph.degree)
+            for node_id, degree in self._graph.degree
             if degree == 0
         }
 
@@ -349,9 +340,6 @@ class InterDependencies_:  # noqa: PLW1641
         to this instance, but has the given parameter removed.
         """
         paramspec_in_degree = self.graph.in_degree(paramspec.name)
-        assert isinstance(paramspec_in_degree, int), (
-            "The in_degree method with arguments should have returned an int"
-        )
         if paramspec_in_degree > 0:
             raise ValueError(
                 f"Cannot remove {paramspec.name}, other parameters depend on or are inferred from it"
