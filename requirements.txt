@@ -166,7 +166,7 @@ kiwisolver==1.4.9
     # via matplotlib
 lazy-loader==0.4
     # via qcodes-loop
-libcst==1.8.5
+libcst==1.8.6
     # via qcodes (pyproject.toml)
 locket==1.0.0
     # via partd
