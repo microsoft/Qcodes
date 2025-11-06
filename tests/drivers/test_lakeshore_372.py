@@ -4,7 +4,6 @@ import logging
 import time
 import warnings
 from contextlib import suppress
-from functools import wraps
 from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 import pytest
@@ -108,18 +107,6 @@ def command(name: str) -> Callable[[Callable[P, T]], Callable[P, T]]:
     return wrapper
 
 
-def split_args(split_char: str = ","):
-    def wrapper(func):
-        @wraps(func)
-        def decorated_func(self, string_arg):
-            args = string_arg.split(split_char)
-            return func(self, *args)
-
-        return decorated_func
-
-    return wrapper
-
-
 class DictClass:
     def __init__(self, **kwargs):
         # https://stackoverflow.com/questions/16237659/python-how-to-implement-getattr
@@ -219,123 +206,6 @@ class LakeshoreModel372Mock(MockVisaInstrument, LakeshoreModel372):
         # make it simple to start with: linear ramp 1K per second
         # start at 7K.
         return max(4, 7 - delta)
-
-    @query("PID?")
-    def pidq(self, arg):
-        heater = self.heaters[arg]
-        return f"{heater.P},{heater.I},{heater.D}"
-
-    @command("PID")
-    @split_args()
-    def pid(self, output, P, I, D):  # noqa  E741
-        for a, v in zip(["P", "I", "D"], [P, I, D]):
-            setattr(self.heaters[output], a, v)
-
-    @query("OUTMODE?")
-    def outmodeq(self, arg):
-        heater = self.heaters[arg]
-        return (
-            f"{heater.mode},{heater.input_channel},"
-            f"{heater.powerup_enable},{heater.polarity},"
-            f"{heater.use_filter},{heater.delay}"
-        )
-
-    @command("OUTMODE")
-    @split_args()
-    def outputmode(
-        self, output, mode, input_channel, powerup_enable, polarity, use_filter, delay
-    ):
-        h = self.heaters[output]
-        h.output = output
-        h.mode = mode
-        h.input_channel = input_channel
-        h.powerup_enable = powerup_enable
-        h.polarity = polarity
-        h.use_filter = use_filter
-        h.delay = delay
-
-    @query("INSET?")
-    def insetq(self, channel):
-        ch = self.channel_mock[channel]
-        return (
-            f"{ch.enabled},{ch.dwell},"
-            f"{ch.pause},{ch.curve_number},"
-            f"{ch.temperature_coefficient}"
-        )
-
-    @command("INSET")
-    @split_args()
-    def inset(
-        self, channel, enabled, dwell, pause, curve_number, temperature_coefficient
-    ):
-        ch = self.channel_mock[channel]
-        ch.enabled = enabled
-        ch.dwell = dwell
-        ch.pause = pause
-        ch.curve_number = curve_number
-        ch.temperature_coefficient = temperature_coefficient
-
-    @query("INTYPE?")
-    def intypeq(self, channel):
-        ch = self.channel_mock[channel]
-        return (
-            f"{ch.excitation_mode},{ch.excitation_range_number},"
-            f"{ch.auto_range},{ch.range},"
-            f"{ch.current_source_shunted},{ch.units}"
-        )
-
-    @command("INTYPE")
-    @split_args()
-    def intype(
-        self,
-        channel,
-        excitation_mode,
-        excitation_range_number,
-        auto_range,
-        range,
-        current_source_shunted,
-        units,
-    ):
-        ch = self.channel_mock[channel]
-        ch.excitation_mode = excitation_mode
-        ch.excitation_range_number = excitation_range_number
-        ch.auto_range = auto_range
-        ch.range = range
-        ch.current_source_shunted = current_source_shunted
-        ch.units = units
-
-    @query("RANGE?")
-    def rangeq(self, heater):
-        h = self.heaters[heater]
-        return f"{h.output_range}"
-
-    @command("RANGE")
-    @split_args()
-    def range_cmd(self, heater, output_range):
-        h = self.heaters[heater]
-        h.output_range = output_range
-
-    @query("SETP?")
-    def setpointq(self, heater):
-        h = self.heaters[heater]
-        return f"{h.setpoint}"
-
-    @command("SETP")
-    @split_args()
-    def setpoint(self, heater, setpoint):
-        h = self.heaters[heater]
-        h.setpoint = setpoint
-
-    @query("TLIMIT?")
-    def tlimitq(self, channel):
-        chan = self.channel_mock[channel]
-        return f"{chan.tlimit}"
-
-    @command("TLIMIT")
-    @split_args()
-    def tlimitcmd(self, channel, tlimit):
-        chan = self.channel_mock[channel]
-        chan.tlimit = tlimit
 
     @query("KRDG?")
     def temperature(self, output):

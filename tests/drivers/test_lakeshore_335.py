@@ -7,10 +7,8 @@ from qcodes.instrument_drivers.Lakeshore import LakeshoreModel335
 from .test_lakeshore_372 import (
     DictClass,
     MockVisaInstrument,
-    command,
     instrument_fixture,
     query,
-    split_args,
 )
 
 log = logging.getLogger(__name__)
@@ -81,91 +79,6 @@ class LakeshoreModel335Mock(MockVisaInstrument, LakeshoreModel335):
         # make it simple to start with: linear ramp 1K per second
         # start at 7K.
         return max(4, 7 - delta)
-
-    @query("PID?")
-    def pidq(self, arg):
-        heater = self.heaters[arg]
-        return f"{heater.P},{heater.I},{heater.D}"
-
-    @command("PID")
-    @split_args()
-    def pid(self, output, P, I, D):  # noqa  E741
-        for a, v in zip(["P", "I", "D"], [P, I, D]):
-            setattr(self.heaters[output], a, v)
-
-    @query("OUTMODE?")
-    def outmodeq(self, arg):
-        heater = self.heaters[arg]
-        return f"{heater.mode},{heater.input_channel},{heater.powerup_enable}"
-
-    @command("OUTMODE")
-    @split_args()
-    def outputmode(self, output, mode, input_channel, powerup_enable):
-        h = self.heaters[output]
-        h.output = output
-        h.mode = mode
-        h.input_channel = input_channel
-        h.powerup_enable = powerup_enable
-
-    @query("INTYPE?")
-    def intypeq(self, channel):
-        ch = self.channel_mock[channel]
-        return (
-            f"{ch.sensor_type},"
-            f"{ch.auto_range_enabled},{ch.range},"
-            f"{ch.compensation_enabled},{ch.units}"
-        )
-
-    @command("INTYPE")
-    @split_args()
-    def intype(
-        self,
-        channel,
-        sensor_type,
-        auto_range_enabled,
-        range_,
-        compensation_enabled,
-        units,
-    ):
-        ch = self.channel_mock[channel]
-        ch.sensor_type = sensor_type
-        ch.auto_range_enabled = auto_range_enabled
-        ch.range = range_
-        ch.compensation_enabled = compensation_enabled
-        ch.units = units
-
-    @query("RANGE?")
-    def rangeq(self, heater):
-        h = self.heaters[heater]
-        return f"{h.output_range}"
-
-    @command("RANGE")
-    @split_args()
-    def range_cmd(self, heater, output_range):
-        h = self.heaters[heater]
-        h.output_range = output_range
-
-    @query("SETP?")
-    def setpointq(self, heater):
-        h = self.heaters[heater]
-        return f"{h.setpoint}"
-
-    @command("SETP")
-    @split_args()
-    def setpoint(self, heater, setpoint):
-        h = self.heaters[heater]
-        h.setpoint = setpoint
-
-    @query("TLIMIT?")
-    def tlimitq(self, channel):
-        chan = self.channel_mock[channel]
-        return f"{chan.tlimit}"
-
-    @command("TLIMIT")
-    @split_args()
-    def tlimitcmd(self, channel, tlimit):
-        chan = self.channel_mock[channel]
-        chan.tlimit = tlimit
 
     @query("KRDG?")
     def temperature(self, output):
