@@ -27,9 +27,6 @@ VISA_LOGGER = ".".join((InstrumentBase.__module__, "com", "visa"))
 P = ParamSpec("P")
 T = TypeVar("T")
 
-P = ParamSpec("P")
-T = TypeVar("T")
-
 
 class MockVisaInstrument:
     """
