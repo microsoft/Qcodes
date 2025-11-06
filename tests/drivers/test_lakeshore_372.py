@@ -207,6 +207,13 @@ class LakeshoreModel372Mock(MockVisaInstrument, LakeshoreModel372):
         # start at 7K.
         return max(4, 7 - delta)
 
+    @query("KRDG?")
+    def temperature(self, output):
+        chan = self.channel_mock[output]
+        if self.simulate_heating:
+            return self.get_t_when_heating()
+        return f"{chan.T}"
+
 
 def instrument_fixture(
     scope: Literal["session", "package", "module", "class", "function"] = "function",
