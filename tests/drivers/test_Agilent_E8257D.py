@@ -2,7 +2,7 @@ from qcodes.extensions import DriverTestCase
 from qcodes.instrument_drivers.agilent import AgilentE8257D
 
 
-class TestAgilentE8257D(DriverTestCase):
+class TestAgilentE8257D(DriverTestCase[AgilentE8257D]):
     """
     This is a test suite for testing the QuTech_ControlBox Instrument.
     It is designed to provide a test function for each function as well as for
