@@ -1173,7 +1173,10 @@ class RohdeSchwarzZNBBase(VisaInstrument):
         channels = ChannelList(
             self, "VNAChannels", self.CHANNEL_CLASS, snapshotable=True
         )
-        self.add_submodule("channels", channels)
+        self.channels: ChannelList[RohdeSchwarzZNBChannel] = self.add_submodule(
+            "channels", channels
+        )
+        """Submodule channels: List of VNA channels."""
         if init_s_params:
             for i in range(1, num_ports + 1):
                 for j in range(1, num_ports + 1):
