@@ -1,0 +1,33 @@
+QCoDeS 0.41.0 (2023-10-18)
+==========================
+
+Breaking Changes:
+-----------------
+
+- The deprecated modules
+  `qcodes.data`, `qcodes.loop`, `qcodes.actions`, `qcodes.plots`,
+  `qcodes.measure`, `qcodes.extensions.slack`, `qcodes.utils.magic`, qcodes.utils.qt_helpers`
+  `qcodes.utils.slack` has been removed.
+  The modules can be found in `qcodes_loop <https://github.com/qcodes/qcodes_loop>`_ (:pr:`5367`)
+- Update QCoDeS to work with the upcoming release of numpy 2.0.
+  The unused attributes `qcodes.utils.types.numpy_non_concrete_floats_instantiable` and
+  `qcodes.utils.types.numpy_non_concrete_complex_instantiable` have been removed from QCoDeS. (:pr:`5399`)
+- The extra install targets qcodes[slack] and qcodes[qtplot] have been removed.
+  All dependencies on slack and pyqtgraph have moved to qcodes_loop. (:pr:`5425`)
+
+
+New:
+----
+
+- QCoDeS now exports data that isn't measured on a grid to a XArray using `MultiIndex`.
+  Support for exporting these datasets to NetCDF has also been implemented.
+  See `this notebook <../examples/DataSet/Working-With-Pandas-and-XArray.ipynb>`__ for additional details. (:pr:`5334`)
+- Add a register_name keyword to the ParameterBase constructor. If supplied, this value
+  will be used to register parameters in datasets instead of the default full_name.
+  Note that the MultiParameter and ArrayParameter classes do not currently support use
+  of the register_name. (:pr:`5381`)
+- Large datasets are now exported to NetCDF4 using Dask delayed writer.
+  This avoids allocating a large amount of memory to process the whole dataset at the same time.
+  Size threshold at the moment is set to approximately 1 GB. (:pr:`5391`)
+- The QCoDeS Parameters have now gained the ability to use multiple validators.
+  See `here <../examples/Parameters/Parameters.ipynb>`__ for examples of how to use this. (:pr:`5426`)
