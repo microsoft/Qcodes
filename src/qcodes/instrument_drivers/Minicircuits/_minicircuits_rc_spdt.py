@@ -11,6 +11,7 @@ from qcodes.instrument import (
 if TYPE_CHECKING:
     from typing_extensions import Unpack
 
+    from qcodes.instrument.channel import ChannelTuple
     from qcodes.parameters import Parameter
 
 
@@ -91,7 +92,10 @@ class MiniCircuitsRCSPDT(IPInstrument):
             channel = MiniCircuitsRCSPDTChannel(self, f"channel_{c}", c)
             channels.append(channel)
             self.add_submodule(f"channel_{c}", channel)
-        self.add_submodule("channels", channels.to_channel_tuple())
+        self.channels: ChannelTuple[MiniCircuitsRCSPDTChannel] = self.add_submodule(
+            "channels", channels.to_channel_tuple()
+        )
+        """Tuple of MiniCircuitsRCSPDTChannel"""
 
         self.connect_message()
 
