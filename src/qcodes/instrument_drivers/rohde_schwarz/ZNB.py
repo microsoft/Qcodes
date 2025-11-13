@@ -1183,7 +1183,7 @@ class RohdeSchwarzZNBBase(VisaInstrument):
                     ch_name = "S" + str(i) + str(j)
                     self.add_channel(ch_name)
             self.display_sij_split()
-            self.channels.autoscale()
+            self.channels.multi_function("autoscale")()
 
         self.update_display_on()
         if reset_channels:
