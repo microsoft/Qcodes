@@ -8,6 +8,7 @@ from qcodes.instrument_drivers.Keysight import (
     Keysight33511B,
     Keysight33512B,
     Keysight33522B,
+    Keysight33611A,
     Keysight33622A,
 )
 
@@ -75,6 +76,7 @@ def test_wrong_model_warns(
     request.addfinalizer(caplog.clear)
     request.addfinalizer(Keysight33511B.close_all)
     request.addfinalizer(Keysight33512B.close_all)
+    request.addfinalizer(Keysight33611A.close_all)
     request.addfinalizer(Keysight33622A.close_all)
 
     _ = Keysight33511B(
@@ -83,12 +85,15 @@ def test_wrong_model_warns(
     _ = Keysight33512B(
         "kw_sim_33512b", address="GPIB::1::INSTR", pyvisa_sim_file="Keysight_33xxx.yaml"
     )
+    _ = Keysight33611A(
+        "kw_sim_33611a", address="GPIB::1::INSTR", pyvisa_sim_file="Keysight_33xxx.yaml"
+    )
     _ = Keysight33622A(
         "kw_sim_33622a", address="GPIB::1::INSTR", pyvisa_sim_file="Keysight_33xxx.yaml"
     )
 
     warns = [record for record in caplog.records if record.levelname == "WARNING"]
-    assert len(warns) == 3
+    assert len(warns) == 4
     assert all(
         "The driver class name" in record.msg and "does not match the detected model"
         for record in warns

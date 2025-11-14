@@ -406,6 +406,7 @@ class Keysight33xxx(KeysightErrorQueueMixin, VisaInstrument):
             "33511B": 1,
             "33512B": 2,
             "33522B": 2,
+            "33611A": 1,
             "33622A": 2,
             "33510B": 2,
         }
@@ -416,6 +417,7 @@ class Keysight33xxx(KeysightErrorQueueMixin, VisaInstrument):
             "33512B": 20e6,
             "33250A": 80e6,
             "33522B": 30e6,
+            "33611A": 80e6,
             "33622A": 120e6,
             "33510B": 20e6,
         }
