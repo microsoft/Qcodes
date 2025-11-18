@@ -8,9 +8,10 @@ from collections.abc import Iterator, MutableSet
 from contextlib import contextmanager
 from datetime import datetime
 from functools import cached_property, wraps
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, TypeVar, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, overload
 
 import numpy as np
+from typing_extensions import TypeVar
 
 from qcodes.metadatable import Metadatable, MetadatableWithName
 from qcodes.parameters import ParamSpecBase
@@ -41,6 +42,13 @@ if TYPE_CHECKING:
     from qcodes.dataset.data_set_protocol import ValuesType
     from qcodes.instrument import InstrumentBase
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
+
+_InstrumentType_co = TypeVar(
+    "_InstrumentType_co",
+    bound="InstrumentBase | None",
+    default="InstrumentBase | None",
+    covariant=True,
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -109,7 +117,7 @@ def invert_val_mapping(val_mapping: Mapping[Any, Any]) -> dict[Any, Any]:
     return {v: k for k, v in val_mapping.items()}
 
 
-class ParameterBase(MetadatableWithName):
+class ParameterBase(MetadatableWithName, Generic[_InstrumentType_co]):
     """
     Shared behavior for all parameters. Not intended to be used
     directly, normally you should use ``Parameter``, ``ArrayParameter``,
@@ -212,7 +220,7 @@ class ParameterBase(MetadatableWithName):
     def __init__(
         self,
         name: str,
-        instrument: InstrumentBase | None,
+        instrument: _InstrumentType_co = None,
         snapshot_get: bool = True,
         metadata: Mapping[Any, Any] | None = None,
         step: float | None = None,
@@ -606,7 +614,7 @@ class ParameterBase(MetadatableWithName):
             state["ts"] = dttime.strftime("%Y-%m-%d %H:%M:%S")
 
         for attr in set(self._meta_attrs):
-            if attr == "instrument" and self._instrument:
+            if attr == "instrument" and self._instrument is not None:
                 state.update(
                     {
                         "instrument": full_class(self._instrument),
@@ -1033,7 +1041,7 @@ class ParameterBase(MetadatableWithName):
         return self._register_name or self.full_name
 
     @property
-    def instrument(self) -> InstrumentBase | None:
+    def instrument(self) -> _InstrumentType_co:
         """
         Return the first instrument that this parameter is bound to.
         E.g if this is bound to a channel it will return the channel

@@ -1,6 +1,6 @@
 import re
 import textwrap
-from typing import TYPE_CHECKING, Any, Literal, NotRequired, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, NotRequired, overload
 
 import numpy as np
 import numpy.typing as npt
@@ -701,7 +701,7 @@ Alias for backwards compatibility
 """
 
 
-class _ParameterWithStatus(Parameter):
+class _ParameterWithStatus(Parameter["KeysightB1517A"]):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
@@ -728,7 +728,7 @@ class _ParameterWithStatus(Parameter):
 
 class _SpotMeasurementVoltageParameter(_ParameterWithStatus):
     def set_raw(self, value: ParamRawDataType) -> None:
-        smu = cast("KeysightB1517A", self.instrument)
+        smu = self.instrument
 
         if smu._source_config["output_range"] is None:
             smu._source_config["output_range"] = constants.VOutputRange.AUTO
@@ -752,7 +752,7 @@ class _SpotMeasurementVoltageParameter(_ParameterWithStatus):
         )
 
     def get_raw(self) -> ParamRawDataType:
-        smu = cast("KeysightB1517A", self.instrument)
+        smu = self.instrument
 
         msg = MessageBuilder().tv(
             chnum=smu.channels[0],
@@ -769,7 +769,7 @@ class _SpotMeasurementVoltageParameter(_ParameterWithStatus):
 
 class _SpotMeasurementCurrentParameter(_ParameterWithStatus):
     def set_raw(self, value: ParamRawDataType) -> None:
-        smu = cast("KeysightB1517A", self.instrument)
+        smu = self.instrument
 
         if smu._source_config["output_range"] is None:
             smu._source_config["output_range"] = constants.IOutputRange.AUTO
@@ -793,7 +793,7 @@ class _SpotMeasurementCurrentParameter(_ParameterWithStatus):
         )
 
     def get_raw(self) -> ParamRawDataType:
-        smu = cast("KeysightB1517A", self.instrument)
+        smu = self.instrument
 
         msg = MessageBuilder().ti(
             chnum=smu.channels[0],
