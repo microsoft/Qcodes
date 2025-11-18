@@ -1,6 +1,6 @@
 import logging
 from functools import partial
-from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from qcodes import validators as vals
 from qcodes.instrument import (
@@ -129,7 +129,7 @@ class RigolDG1062Burst(InstrumentChannel):
         self.parent.write_raw(f":SOUR{self.channel}:BURS:TRIG")
 
 
-class RigolDG1062Channel(InstrumentChannel):
+class RigolDG1062Channel(InstrumentChannel["RigolDG1062"]):
     min_impedance = 1
     max_impedance = 10000
 
@@ -261,9 +261,7 @@ class RigolDG1062Channel(InstrumentChannel):
         For other waveforms it will give the user an error
         """
 
-        burst = RigolDG1062Burst(
-            cast("RigolDG1062", self.parent), "burst", self.channel
-        )
+        burst = RigolDG1062Burst(self.parent, "burst", self.channel)
         self.add_submodule("burst", burst)
 
         # We want to be able to do the following:
@@ -371,7 +369,7 @@ class RigolDG1062Channel(InstrumentChannel):
         string += ",".join(values)
         self.parent.write_raw(string)
 
-    def _get_duty_cycle(self) -> float:
+    def _get_duty_cycle(self) -> str:
         """
         Reads the duty cycle after checking waveform
         """

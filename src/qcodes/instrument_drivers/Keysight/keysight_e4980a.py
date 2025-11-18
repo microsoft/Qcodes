@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from packaging import version
 from pyvisa.errors import VisaIOError
@@ -371,14 +371,16 @@ class KeysightE4980A(VisaInstrument):
         )
         """This parameter tracks the signal mode which is being set."""
 
-        self.add_submodule("_correction", KeysightE4980ACorrection(self, "correction"))
+        self._correction: KeysightE4980ACorrection = self.add_submodule(
+            "_correction", KeysightE4980ACorrection(self, "correction")
+        )
         self._set_signal_mode_on_driver_initialization()
         self.connect_message()
 
     @property
     def correction(self) -> KeysightE4980ACorrection:
-        submodule = self.submodules["_correction"]
-        return cast("KeysightE4980ACorrection", submodule)
+        submodule = self._correction
+        return submodule
 
     @property
     def measure_impedance(self) -> KeysightE4980AMeasurementPair:

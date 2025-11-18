@@ -213,7 +213,7 @@ class _FunctionMode(TypedDict):
     range_vals: Numbers
 
 
-class Keithley2450Sense(InstrumentChannel):
+class Keithley2450Sense(InstrumentChannel["Keithley2450"]):
     """
     The sense module of the Keithley 2450 SMU.
 
@@ -340,7 +340,7 @@ class Keithley2450Sense(InstrumentChannel):
         return float(self.ask(f":MEASure? '{buffer_name}'"))
 
     def _measure_sweep(self) -> npt.NDArray:
-        source = cast("Keithley2450Source", self.parent.source)
+        source = self.parent.source
         source.sweep_start()
         buffer_name = self.parent.buffer_name()
         buffer = cast(
