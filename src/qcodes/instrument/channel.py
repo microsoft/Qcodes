@@ -5,7 +5,9 @@ from __future__ import annotations
 import sys
 import warnings
 from collections.abc import Callable, Iterable, Iterator, MutableSequence, Sequence
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Any, Generic, cast, overload
+
+from typing_extensions import TypeVar
 
 from qcodes.metadatable import MetadatableWithName
 from qcodes.parameters import (
