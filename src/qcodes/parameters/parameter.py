@@ -6,7 +6,9 @@ from __future__ import annotations
 import logging
 import os
 from types import MethodType
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Generic, Literal
+
+from typing_extensions import TypeVar
 
 from .command import Command
 from .parameter_base import ParamDataType, ParameterBase, ParamRawDataType
@@ -24,7 +26,15 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-class Parameter(ParameterBase):
+_InstrumentType_co = TypeVar(
+    "_InstrumentType_co",
+    bound="InstrumentBase | None",
+    default="InstrumentBase | None",
+    covariant=True,
+)
+
+
+class Parameter(ParameterBase[_InstrumentType_co], Generic[_InstrumentType_co]):
     """
     A parameter represents a single degree of freedom. Most often,
     this is the standard parameter for Instruments, though it can also be
@@ -172,7 +182,7 @@ class Parameter(ParameterBase):
     def __init__(
         self,
         name: str,
-        instrument: InstrumentBase | None = None,
+        instrument: _InstrumentType_co = None,
         label: str | None = None,
         unit: str | None = None,
         get_cmd: str | Callable[..., Any] | Literal[False] | None = None,
