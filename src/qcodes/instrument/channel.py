@@ -5,7 +5,9 @@ from __future__ import annotations
 import sys
 import warnings
 from collections.abc import Callable, Iterable, Iterator, MutableSequence, Sequence
-from typing import TYPE_CHECKING, Any, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Any, Generic, cast, overload
+
+from typing_extensions import TypeVar
 
 from qcodes.metadatable import MetadatableWithName
 from qcodes.parameters import (
@@ -28,7 +30,12 @@ if TYPE_CHECKING:
     from .instrument_base import InstrumentBaseKWArgs
 
 
-class InstrumentModule(InstrumentBase):
+_TIB_co = TypeVar(
+    "_TIB_co", bound="InstrumentBase", default=InstrumentBase, covariant=True
+)
+
+
+class InstrumentModule(InstrumentBase, Generic[_TIB_co]):
     """
     Base class for a module in an instrument.
     This could be in the form of a channel (e.g. something that
@@ -45,7 +52,7 @@ class InstrumentModule(InstrumentBase):
     """
 
     def __init__(
-        self, parent: InstrumentBase, name: str, **kwargs: Unpack[InstrumentBaseKWArgs]
+        self, parent: _TIB_co, name: str, **kwargs: Unpack[InstrumentBaseKWArgs]
     ) -> None:
         # need to specify parent before `super().__init__` so that the right
         # `full_name` is available in that scope. `full_name` is used for
@@ -76,7 +83,7 @@ class InstrumentModule(InstrumentBase):
         return self._parent.ask_raw(cmd)
 
     @property
-    def parent(self) -> InstrumentBase:
+    def parent(self) -> _TIB_co:
         return self._parent
 
     @property
@@ -90,7 +97,7 @@ class InstrumentModule(InstrumentBase):
         return name_parts
 
 
-class InstrumentChannel(InstrumentModule):
+class InstrumentChannel(InstrumentModule[_TIB_co], Generic[_TIB_co]):
     pass
 
 
