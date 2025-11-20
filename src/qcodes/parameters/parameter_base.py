@@ -8,7 +8,7 @@ from collections.abc import Iterator, MutableSet
 from contextlib import contextmanager
 from datetime import datetime
 from functools import cached_property, wraps
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, cast, overload
 
 import numpy as np
 from typing_extensions import TypeVar
@@ -42,7 +42,7 @@ if TYPE_CHECKING:
     from qcodes.dataset.data_set_protocol import ValuesType
     from qcodes.instrument import InstrumentBase
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
-
+_ParameterDataTypeVar = TypeVar("_ParameterDataTypeVar", default=Any)
 _InstrumentType_co = TypeVar(
     "_InstrumentType_co",
     bound="InstrumentBase | None",
@@ -117,7 +117,9 @@ def invert_val_mapping(val_mapping: Mapping[Any, Any]) -> dict[Any, Any]:
     return {v: k for k, v in val_mapping.items()}
 
 
-class ParameterBase(MetadatableWithName, Generic[_InstrumentType_co]):
+class ParameterBase(
+    MetadatableWithName, Generic[_ParameterDataTypeVar, _InstrumentType_co]
+):
     """
     Shared behavior for all parameters. Not intended to be used
     directly, normally you should use ``Parameter``, ``ArrayParameter``,
@@ -214,7 +216,7 @@ class ParameterBase(MetadatableWithName, Generic[_InstrumentType_co]):
     """
 
     global_on_set_callback: ClassVar[
-        Callable[[ParameterBase, ParamDataType], None] | None
+        Callable[[ParameterBase, _ParameterDataTypeVar], None] | None
     ] = None
 
     def __init__(
@@ -238,7 +240,8 @@ class ParameterBase(MetadatableWithName, Generic[_InstrumentType_co]):
         abstract: bool | None = False,
         bind_to_instrument: bool = True,
         register_name: str | None = None,
-        on_set_callback: Callable[[ParameterBase, ParamDataType], None] | None = None,
+        on_set_callback: Callable[[ParameterBase, _ParameterDataTypeVar], None]
+        | None = None,
     ) -> None:
         super().__init__(metadata)
         if not str(name).isidentifier():
@@ -292,10 +295,10 @@ class ParameterBase(MetadatableWithName, Generic[_InstrumentType_co]):
         # implement a subset of features which ``_Cache`` has.
         # It is left for now for backwards compatibility reasons and shall
         # be deprecated and removed in the future versions.
-        self.get_latest: GetLatest
-        self.get_latest = GetLatest(self)
+        self.get_latest: GetLatest[_ParameterDataTypeVar]
+        self.get_latest = GetLatest[_ParameterDataTypeVar](self)
 
-        self.get: Callable[..., ParamDataType]
+        self.get: Callable[..., _ParameterDataTypeVar]
         self._gettable = False
         if self._implements_get_raw:
             self.get = self._wrap_get(self.get_raw)
@@ -535,14 +538,14 @@ class ParameterBase(MetadatableWithName, Generic[_InstrumentType_co]):
         return named_repr(self)
 
     @overload
-    def __call__(self) -> ParamDataType:
+    def __call__(self) -> _ParameterDataTypeVar:
         pass
 
     @overload
-    def __call__(self, value: ParamDataType, **kwargs: Any) -> None:
+    def __call__(self, value: _ParameterDataTypeVar, **kwargs: Any) -> None:
         pass
 
-    def __call__(self, *args: Any, **kwargs: Any) -> ParamDataType | None:
+    def __call__(self, *args: Any, **kwargs: Any) -> _ParameterDataTypeVar | None:
         if len(args) == 0 and len(kwargs) == 0:
             if self.gettable:
                 return self.get()
@@ -643,7 +646,9 @@ class ParameterBase(MetadatableWithName, Generic[_InstrumentType_co]):
         """
         return self._snapshot_value
 
-    def _from_value_to_raw_value(self, value: ParamDataType) -> ParamRawDataType:
+    def _from_value_to_raw_value(
+        self, value: _ParameterDataTypeVar
+    ) -> ParamRawDataType:
         raw_value: ParamRawDataType
 
         if self.val_mapping is not None:
@@ -681,8 +686,10 @@ class ParameterBase(MetadatableWithName, Generic[_InstrumentType_co]):
 
         return raw_value
 
-    def _from_raw_value_to_value(self, raw_value: ParamRawDataType) -> ParamDataType:
-        value: ParamDataType
+    def _from_raw_value_to_value(
+        self, raw_value: ParamRawDataType
+    ) -> _ParameterDataTypeVar:
+        value: _ParameterDataTypeVar
 
         if self.get_parser is not None:
             value = self.get_parser(raw_value)
@@ -690,6 +697,7 @@ class ParameterBase(MetadatableWithName, Generic[_InstrumentType_co]):
             value = raw_value
 
         # apply offset first (native scale)
+
         if self.offset is not None and value is not None:
             # offset values
             try:
@@ -734,9 +742,9 @@ class ParameterBase(MetadatableWithName, Generic[_InstrumentType_co]):
 
     def _wrap_get(
         self, get_function: Callable[..., ParamRawDataType]
-    ) -> Callable[..., ParamDataType]:
+    ) -> Callable[..., _ParameterDataTypeVar]:
         @wraps(get_function)
-        def get_wrapper(*args: Any, **kwargs: Any) -> ParamDataType:
+        def get_wrapper(*args: Any, **kwargs: Any) -> _ParameterDataTypeVar:
             if not self.gettable:
                 raise TypeError("Trying to get a parameter that is not gettable.")
             if self.abstract:
@@ -764,7 +772,7 @@ class ParameterBase(MetadatableWithName, Generic[_InstrumentType_co]):
 
     def _wrap_set(self, set_function: Callable[..., None]) -> Callable[..., None]:
         @wraps(set_function)
-        def set_wrapper(value: ParamDataType, **kwargs: Any) -> None:
+        def set_wrapper(value: _ParameterDataTypeVar, **kwargs: Any) -> None:
             try:
                 if not self.settable:
                     raise TypeError("Trying to set a parameter that is not settable.")
@@ -817,7 +825,7 @@ class ParameterBase(MetadatableWithName, Generic[_InstrumentType_co]):
 
         return set_wrapper
 
-    def _call_on_set_callback(self, value: ParamDataType) -> None:
+    def _call_on_set_callback(self, value: _ParameterDataTypeVar) -> None:
         try:
             if self.on_set_callback is not None:
                 self.on_set_callback(self, value)
@@ -888,7 +896,7 @@ class ParameterBase(MetadatableWithName, Generic[_InstrumentType_co]):
             context = self.name
         return "Parameter: " + context
 
-    def validate(self, value: ParamDataType) -> None:
+    def validate(self, value: _ParameterDataTypeVar) -> None:
         """
         Validate the value supplied.
 
@@ -1064,7 +1072,7 @@ class ParameterBase(MetadatableWithName, Generic[_InstrumentType_co]):
             return None
 
     def set_to(
-        self, value: ParamDataType, allow_changes: bool = False
+        self, value: _ParameterDataTypeVar, allow_changes: bool = False
     ) -> _SetParamContext:
         """
         Use a context manager to temporarily set a parameter to a value. By
@@ -1253,7 +1261,7 @@ class ParameterBase(MetadatableWithName, Generic[_InstrumentType_co]):
         return [(self, value)]
 
 
-class GetLatest(DelegateAttributes):
+class GetLatest(DelegateAttributes, Generic[_ParameterDataTypeVar]):
     """
     Wrapper for a class:`.Parameter` that just returns the last set or measured
     value stored in the class:`.Parameter` itself. If get has never been called
@@ -1285,7 +1293,7 @@ class GetLatest(DelegateAttributes):
     delegate_attr_objects: ClassVar[list[str]] = ["parameter"]
     omit_delegate_attrs: ClassVar[list[str]] = ["set"]
 
-    def get(self) -> ParamDataType:
+    def get(self) -> _ParameterDataTypeVar:
         """
         Return latest value if time since get was less than
         `max_val_age`, otherwise perform `get()` and
@@ -1312,7 +1320,7 @@ class GetLatest(DelegateAttributes):
         """
         return self.cache._raw_value
 
-    def __call__(self) -> ParamDataType:
+    def __call__(self) -> _ParameterDataTypeVar:
         """
         Same as ``get()``
 
