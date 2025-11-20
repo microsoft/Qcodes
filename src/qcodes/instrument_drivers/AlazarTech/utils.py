@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from .ATS import AlazarTechATS  # noqa: F401
 
 
-class TraceParameter(Parameter["AlazarTechATS"]):
+class TraceParameter(Parameter[Any, "AlazarTechATS"]):
     """
     A parameter that keeps track of if its value has been synced to
     the ``Instrument``. To achieve that, this parameter sets
