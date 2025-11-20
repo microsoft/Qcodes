@@ -216,7 +216,7 @@ class ParameterBase(
     """
 
     global_on_set_callback: ClassVar[
-        Callable[[ParameterBase, _ParameterDataTypeVar], None] | None
+        Callable[[ParameterBase, ParamDataType], None] | None
     ] = None
 
     def __init__(
