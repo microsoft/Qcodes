@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from functools import wraps
 from operator import xor
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Generic, ParamSpec, TypeAlias, TypeVar
 
 from . import constants
 
@@ -9,33 +9,33 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 
-def as_csv(comps: "Iterable[Any]", sep: str = ",") -> str:
+def as_csv(comps: "Iterable[object]", sep: str = ",") -> str:
     """Returns items in iterable ls as comma-separated string"""
     return sep.join(format(x) for x in comps)
 
 
-MessageBuilderMethodT = TypeVar(
-    "MessageBuilderMethodT", bound=Callable[..., "MessageBuilder"]
-)
+P = ParamSpec("P")
+T = TypeVar("T")
+MessageBuilderMethodT: TypeAlias = Callable[P, "MessageBuilder"]
 
 
 def final_command(f: MessageBuilderMethodT) -> MessageBuilderMethodT:
     @wraps(f)
-    def wrapper(*args: Any, **kwargs: Any) -> "MessageBuilder":
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> "MessageBuilder":
         res: MessageBuilder = f(*args, **kwargs)
         res._msg.set_final()
 
         return res
 
-    return cast("MessageBuilderMethodT", wrapper)
+    return wrapper
 
 
-class CommandList(list[Any]):
+class CommandList(list[T], Generic[T]):
     def __init__(self) -> None:
         super().__init__()
         self.is_final = False
 
-    def append(self, obj: Any) -> None:
+    def append(self, obj: T) -> None:
         if self.is_final:
             raise ValueError(
                 f"Cannot add commands after `{self[-1]}`. "
