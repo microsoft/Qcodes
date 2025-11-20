@@ -701,7 +701,7 @@ Alias for backwards compatibility
 """
 
 
-class _ParameterWithStatus(Parameter["KeysightB1517A"]):
+class _ParameterWithStatus(Parameter[Any, "KeysightB1517A"]):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
