@@ -767,7 +767,7 @@ class TektronixDPOTrigger(InstrumentChannel):
         self.write(f"TRIGger:{self._identifier}:TYPE {value}")
 
 
-class TektronixDPOMeasurementParameter(Parameter["TektronixDPOMeasurement"]):
+class TektronixDPOMeasurementParameter(Parameter[Any, "TektronixDPOMeasurement"]):
     """
     A measurement parameter does not only return the instantaneous value
     of a measurement, but can also return some statistics. The accumulation
