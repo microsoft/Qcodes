@@ -8,7 +8,7 @@ from collections.abc import Iterator, MutableSet
 from contextlib import contextmanager
 from datetime import datetime
 from functools import cached_property, wraps
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, cast, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, overload
 
 import numpy as np
 from typing_extensions import TypeVar
