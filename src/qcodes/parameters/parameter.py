@@ -6,10 +6,12 @@ from __future__ import annotations
 import logging
 import os
 from types import MethodType
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Generic, Literal
+
+from typing_extensions import TypeVar
 
 from .command import Command
-from .parameter_base import ParamDataType, ParameterBase, ParamRawDataType
+from .parameter_base import ParameterBase, ParamRawDataType
 from .sweep_values import SweepFixedValues
 
 if TYPE_CHECKING:
@@ -23,8 +25,19 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
+_ParameterDataTypeVar = TypeVar("_ParameterDataTypeVar", default=Any)
+_InstrumentType_co = TypeVar(
+    "_InstrumentType_co",
+    bound="InstrumentBase | None",
+    default="InstrumentBase | None",
+    covariant=True,
+)
 
-class Parameter(ParameterBase):
+
+class Parameter(
+    ParameterBase[_ParameterDataTypeVar, _InstrumentType_co],
+    Generic[_ParameterDataTypeVar, _InstrumentType_co],
+):
     """
     A parameter represents a single degree of freedom. Most often,
     this is the standard parameter for Instruments, though it can also be
@@ -172,7 +185,7 @@ class Parameter(ParameterBase):
     def __init__(
         self,
         name: str,
-        instrument: InstrumentBase | None = None,
+        instrument: _InstrumentType_co = None,
         label: str | None = None,
         unit: str | None = None,
         get_cmd: str | Callable[..., Any] | Literal[False] | None = None,
@@ -396,14 +409,16 @@ class Parameter(ParameterBase):
         """
         return SweepFixedValues(self, keys)
 
-    def increment(self, value: ParamDataType) -> None:
+    def increment(self, value: _ParameterDataTypeVar) -> None:
         """Increment the parameter with a value
 
         Args:
             value: Value to be added to the parameter.
 
         """
-        self.set(self.get() + value)
+        # this method only works with parameters that support addition
+        # however we don't currently enforce that via typing
+        self.set(self.get() + value)  # type: ignore[operator]
 
     def sweep(
         self,
