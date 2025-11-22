@@ -1,5 +1,5 @@
 from functools import partial
-from typing import TYPE_CHECKING, Literal, TypeVar, cast
+from typing import TYPE_CHECKING, Literal
 
 from qcodes.instrument import (
     InstrumentBaseKWArgs,
