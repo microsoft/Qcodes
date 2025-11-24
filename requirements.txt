@@ -207,7 +207,7 @@ nbsphinx==0.9.6
     # via qcodes (pyproject.toml)
 nest-asyncio==1.6.0
     # via ipykernel
-networkx==3.5
+networkx==3.6
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
