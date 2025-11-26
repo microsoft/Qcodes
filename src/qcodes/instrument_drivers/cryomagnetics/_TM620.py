@@ -23,6 +23,7 @@ class CryomagneticsModelTM620(VisaInstrument):
     """
 
     float_pattern = re.compile(r"[0-9]+\.[0-9]+")
+    default_terminator = "\r\n"
 
     def __init__(
         self,
