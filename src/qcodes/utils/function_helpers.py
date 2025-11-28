@@ -28,4 +28,7 @@ def is_function(f: object, arg_count: int, coroutine: bool = False) -> bool:
         # otherwise the user should make an explicit function.
         return arg_count == 1
 
-    return arg_count == (f.__code__.co_argcount)
+    if getattr(f, '__self__', None) is not None:
+        # bound method
+        return arg_count == f.__code__.co_argcount - 1
+    return arg_count == f.__code__.co_argcount
