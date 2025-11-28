@@ -1,5 +1,4 @@
 from asyncio import iscoroutinefunction
-from inspect import signature
 
 
 def is_function(f: object, arg_count: int, coroutine: bool = False) -> bool:
@@ -29,16 +28,4 @@ def is_function(f: object, arg_count: int, coroutine: bool = False) -> bool:
         # otherwise the user should make an explicit function.
         return arg_count == 1
 
-    try:
-        sig = signature(f)
-    except ValueError:
-        # some built-in functions/methods don't describe themselves to inspect
-        # we already know it's a callable and coroutine is correct.
-        return True
-
-    try:
-        inputs = [0] * arg_count
-        sig.bind(*inputs)
-        return True
-    except TypeError:
-        return False
+    return arg_count == (f.__code__.co_argcount)
