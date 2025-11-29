@@ -190,7 +190,7 @@ matplotlib-inline==0.2.1
     #   ipython
 mistune==3.1.4
     # via nbconvert
-mypy==1.18.2
+mypy==1.19.0
     # via qcodes (pyproject.toml)
 mypy-extensions==1.1.0
     # via mypy
