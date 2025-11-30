@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Generic
 
 import numpy as np
 
-from qcodes.parameters.parameter import Parameter
+from qcodes.parameters.parameter import (
+    Parameter,
+    _InstrumentType_co,
+    _ParameterDataTypeVar,
+)
 from qcodes.parameters.parameter_base import ParameterBase, ParameterSet
 from qcodes.validators import Arrays, Validator
 
@@ -18,7 +22,10 @@ if TYPE_CHECKING:
 LOG = logging.getLogger(__name__)
 
 
-class ParameterWithSetpoints(Parameter):
+class ParameterWithSetpoints(
+    Parameter[_ParameterDataTypeVar, _InstrumentType_co],
+    Generic[_ParameterDataTypeVar, _InstrumentType_co],
+):
     """
     A parameter that has associated setpoints. The setpoints is nothing
     more than a list of other parameters that describe the values, names
