@@ -222,7 +222,7 @@ class ParameterBase(
     def __init__(
         self,
         name: str,
-        instrument: _InstrumentType_co = None,
+        instrument: _InstrumentType_co = None,  # type: ignore[assignment]
         snapshot_get: bool = True,
         metadata: Mapping[Any, Any] | None = None,
         step: float | None = None,
@@ -696,21 +696,25 @@ class ParameterBase(
         else:
             value = raw_value
 
+        # the code below is not very type safe but relies on duck typing / try except
+        # and assumes the user does not set scale/offset unless the datatype is numeric
+        # this should probably be rewritten but for now we ignore type errors
         # apply offset first (native scale)
 
         if self.offset is not None and value is not None:
             # offset values
             try:
-                value = value - self.offset
+                value = value - self.offset  # type: ignore[operator,assignment]
             except TypeError:
                 if isinstance(self.offset, collections.abc.Iterable):
                     # offset contains multiple elements, one for each value
-                    value = tuple(
-                        val - offset for val, offset in zip(value, self.offset)
+                    value = tuple(  # type: ignore[assignment]
+                        val - offset
+                        for val, offset in zip(value, self.offset)  # type: ignore[call-overload]
                     )
                 elif isinstance(value, collections.abc.Iterable):
                     # Use single offset for all values
-                    value = tuple(val - self.offset for val in value)
+                    value = tuple(val - self.offset for val in value)  # type: ignore[assignment]
                 else:
                     raise
 
@@ -718,14 +722,14 @@ class ParameterBase(
         if self.scale is not None and value is not None:
             # Scale values
             try:
-                value = value / self.scale
+                value = value / self.scale  # type: ignore[assignment,operator]
             except TypeError:
                 if isinstance(self.scale, collections.abc.Iterable):
                     # Scale contains multiple elements, one for each value
-                    value = tuple(val / scale for val, scale in zip(value, self.scale))
+                    value = tuple(val / scale for val, scale in zip(value, self.scale))  # type: ignore[call-overload,assignment]
                 elif isinstance(value, collections.abc.Iterable):
                     # Use single scale for all values
-                    value = tuple(val / self.scale for val in value)
+                    value = tuple(val / self.scale for val in value)  # type: ignore[assignment]
                 else:
                     raise
 
@@ -734,11 +738,11 @@ class ParameterBase(
                 value = self.inverse_val_mapping[value]
             else:
                 try:
-                    value = self.inverse_val_mapping[int(value)]
+                    value = self.inverse_val_mapping[int(value)]  # type: ignore[call-overload]
                 except (ValueError, KeyError):
                     raise KeyError(f"'{value}' not in val_mapping")
 
-        return value
+        return value  # pyright: ignore[reportReturnType]
 
     def _wrap_get(
         self, get_function: Callable[..., ParamRawDataType]
@@ -782,17 +786,20 @@ class ParameterBase(
                     )
                 self.validate(value)
 
+                # the code below is written in a duck typed way that assumes that
+                # the user has correctly set step size etc. This could be rewritten
+
                 # In some cases intermediate sweep values must be used.
                 # Unless `self.step` is defined, get_sweep_values will return
                 # a list containing only `value`.
-                steps = self.get_ramp_values(value, step=self.step)
+                steps = self.get_ramp_values(value, step=self.step)  # type: ignore[arg-type]
 
                 for val_step in steps:
                     # even if the final value is valid we may be generating
                     # steps that are not so validate them too
-                    self.validate(val_step)
+                    self.validate(val_step)  # type: ignore[arg-type]
 
-                    raw_val_step = self._from_value_to_raw_value(val_step)
+                    raw_val_step = self._from_value_to_raw_value(val_step)  # type: ignore[arg-type]
 
                     # Check if delay between set operations is required
                     t_elapsed = time.perf_counter() - self._t_last_set
@@ -817,7 +824,7 @@ class ParameterBase(
 
                     self.cache._update_with(value=val_step, raw_value=raw_val_step)
 
-                    self._call_on_set_callback(val_step)
+                    self._call_on_set_callback(val_step)  # type: ignore[arg-type]
 
             except Exception as e:
                 e.args = (*e.args, f"setting {self} to {value}")

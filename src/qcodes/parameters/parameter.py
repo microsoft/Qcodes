@@ -185,7 +185,9 @@ class Parameter(
     def __init__(
         self,
         name: str,
-        instrument: _InstrumentType_co = None,
+        # mypy seems to be confused here. The bound and default for _InstrumentType_co
+        # contains None but mypy will now allow it as a default as of v 1.19.0
+        instrument: _InstrumentType_co = None,  # type: ignore[assignment]
         label: str | None = None,
         unit: str | None = None,
         get_cmd: str | Callable[..., Any] | Literal[False] | None = None,
