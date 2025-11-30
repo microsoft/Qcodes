@@ -470,8 +470,8 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel["KeysightN9030B"]):
                 is_big_endian=False,
             )
 
-        data = np.array(data).reshape((-1, 2))
-        return data[:, 1]
+        data_array = np.array(data).reshape((-1, 2))
+        return data_array[:, 1]
 
     def update_trace(self) -> None:
         """
