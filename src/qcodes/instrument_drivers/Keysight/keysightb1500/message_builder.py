@@ -1,12 +1,11 @@
-from collections.abc import Callable
 from functools import wraps
 from operator import xor
-from typing import TYPE_CHECKING, Generic, ParamSpec, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Generic, ParamSpec, TypeVar
 
 from . import constants
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Callable, Iterable
 
 
 def as_csv(comps: "Iterable[object]", sep: str = ",") -> str:
@@ -18,7 +17,7 @@ P = ParamSpec("P")
 T = TypeVar("T")
 
 
-def final_command(f: Callable[P, "MessageBuilder"]) -> Callable[P, "MessageBuilder"]:
+def final_command(f: "Callable[P, MessageBuilder]") -> "Callable[P, MessageBuilder]":
     @wraps(f)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> "MessageBuilder":
         res: MessageBuilder = f(*args, **kwargs)
@@ -66,7 +65,7 @@ class MessageBuilder:
     """
 
     def __init__(self) -> None:
-        self._msg = CommandList()
+        self._msg: CommandList[str] = CommandList()
 
     @property
     def message(self) -> str:
