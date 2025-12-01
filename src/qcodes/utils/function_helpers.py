@@ -31,7 +31,8 @@ def is_function(f: object, arg_count: int, coroutine: bool = False) -> bool:
 
     if (func_code := getattr(f, '__code__', None)):
         # handle objects like functools.partial(f, ...)
-        ndefaults = len(f.__defaults__) if f.__defaults__ is not None else 0
+        func_defaults = getattr(f, '__defaults__', None)
+        number_of_defaults = len(func_defaults) if func_defaults is not None else 0
 
         if func_code.co_flags & CO_VARARGS:
             # we have *args
@@ -39,10 +40,10 @@ def is_function(f: object, arg_count: int, coroutine: bool = False) -> bool:
 
         if getattr(f, '__self__', None) is not None:
             # bound method
-            min_positional = func_code.co_argcount - 1 - ndefaults
+            min_positional = func_code.co_argcount - 1 - number_of_defaults
             max_positional = func_code.co_argcount - 1 
         else:
-            min_positional = func_code.co_argcount  - ndefaults
+            min_positional = func_code.co_argcount  - number_of_defaults
             max_positional = func_code.co_argcount  
         ev = min_positional <= arg_count <= max_positional
         return ev
