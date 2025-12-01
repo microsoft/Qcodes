@@ -1,4 +1,5 @@
 from asyncio import iscoroutinefunction
+from inspect import signature, CO_VARARGS
 
 
 def is_function(f: object, arg_count: int, coroutine: bool = False) -> bool:
@@ -28,7 +29,34 @@ def is_function(f: object, arg_count: int, coroutine: bool = False) -> bool:
         # otherwise the user should make an explicit function.
         return arg_count == 1
 
-    if getattr(f, '__self__', None) is not None:
-        # bound method
-        return arg_count == f.__code__.co_argcount - 1
-    return arg_count == f.__code__.co_argcount
+    if (func_code := getattr(f, '__code__', None)):
+        # handle objects like functools.partial(f, ...)
+        ndefaults = len(f.__defaults__) if f.__defaults__ is not None else 0
+
+        if func_code.co_flags & CO_VARARGS:
+            # we have *args
+            return True
+
+        if getattr(f, '__self__', None) is not None:
+            # bound method
+            min_positional = func_code.co_argcount - 1 - ndefaults
+            max_positional = func_code.co_argcount - 1 
+        else:
+            min_positional = func_code.co_argcount  - ndefaults
+            max_positional = func_code.co_argcount  
+        ev = min_positional <= arg_count <= max_positional
+        return ev
+    
+    try:
+        sig = signature(f)
+    except ValueError:
+        # some built-in functions/methods don't describe themselves to inspect
+        # we already know it's a callable and coroutine is correct.
+        return True
+
+    try:
+        inputs = [0] * arg_count
+        sig.bind(*inputs)
+        return True
+    except TypeError:
+        return False

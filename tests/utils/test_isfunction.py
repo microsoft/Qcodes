@@ -1,5 +1,5 @@
 from typing import NoReturn
-
+from functools import partial
 import pytest
 
 from qcodes.utils import is_function
@@ -35,6 +35,19 @@ def test_function() -> None:
     with pytest.raises(TypeError):
         is_function(f0, -1)
 
+def test_function_partial() -> None:
+    def f0(one_arg : int) -> int:
+        return one_arg
+    f = partial(f0, 1)
+    assert is_function(f, 0)
+    assert not is_function(f, 1)
+
+def test_function_varargs() -> None:
+    def f(*args) -> int:
+        return None
+    assert is_function(f, 0)
+    assert is_function(f, 1)
+    assert is_function(f, 100)
 
 class AClass:
     def method_a(self) -> NoReturn:
