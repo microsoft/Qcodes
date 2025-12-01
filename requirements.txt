@@ -397,7 +397,7 @@ sphinx-favicon==1.0.1
     # via qcodes (pyproject.toml)
 sphinx-issues==5.0.1
     # via qcodes (pyproject.toml)
-sphinx-jsonschema==1.19.1
+sphinx-jsonschema==1.19.2
     # via qcodes (pyproject.toml)
 sphinxcontrib-applehelp==2.0.0
     # via sphinx
