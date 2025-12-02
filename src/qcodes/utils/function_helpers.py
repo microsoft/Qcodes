@@ -1,5 +1,5 @@
 from asyncio import iscoroutinefunction
-from inspect import signature, CO_VARARGS
+from inspect import CO_VARARGS, signature
 
 
 def is_function(f: object, arg_count: int, coroutine: bool = False) -> bool:
@@ -37,7 +37,7 @@ def is_function(f: object, arg_count: int, coroutine: bool = False) -> bool:
         if getattr(f, '__self__', None) is not None:
             # bound method
             min_positional = func_code.co_argcount - 1 - number_of_defaults
-            max_positional = func_code.co_argcount - 1 
+            max_positional = func_code.co_argcount - 1
         else:
             min_positional = func_code.co_argcount  - number_of_defaults
             max_positional = func_code.co_argcount
@@ -45,10 +45,10 @@ def is_function(f: object, arg_count: int, coroutine: bool = False) -> bool:
         if func_code.co_flags & CO_VARARGS:
                 # we have *args
                 max_positional = 10e10
-            
+
         ev = min_positional <= arg_count <= max_positional
         return ev
-    
+
     try:
         sig = signature(f)
     except ValueError:
