@@ -34,17 +34,18 @@ def is_function(f: object, arg_count: int, coroutine: bool = False) -> bool:
         func_defaults = getattr(f, '__defaults__', None)
         number_of_defaults = len(func_defaults) if func_defaults is not None else 0
 
-        if func_code.co_flags & CO_VARARGS:
-            # we have *args
-            return True
-
         if getattr(f, '__self__', None) is not None:
             # bound method
             min_positional = func_code.co_argcount - 1 - number_of_defaults
             max_positional = func_code.co_argcount - 1 
         else:
             min_positional = func_code.co_argcount  - number_of_defaults
-            max_positional = func_code.co_argcount  
+            max_positional = func_code.co_argcount
+
+        if func_code.co_flags & CO_VARARGS:
+                # we have *args
+                max_positional = 10e10
+            
         ev = min_positional <= arg_count <= max_positional
         return ev
     

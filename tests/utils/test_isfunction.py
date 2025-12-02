@@ -43,11 +43,19 @@ def test_function_partial() -> None:
     assert not is_function(f, 1)
 
 def test_function_varargs() -> None:
-    def f(*args) -> int:
+    def f(*args) -> None:
         return None
     assert is_function(f, 0)
     assert is_function(f, 1)
     assert is_function(f, 100)
+
+    def f(a, b=1, *args) -> None:
+        return None
+    assert not is_function(f, 0)
+    assert is_function(f, 1)
+    assert is_function(f, 2)
+    assert is_function(f, 100)
+
 
 class AClass:
     def method_a(self) -> NoReturn:
