@@ -35,26 +35,31 @@ def test_function() -> None:
     with pytest.raises(TypeError):
         is_function(f0, -1)
 
+
 def test_function_partial() -> None:
-    def f0(one_arg : int) -> int:
+    def f0(one_arg: int) -> int:
         return one_arg
+
     f = partial(f0, 1)
     assert is_function(f, 0)
     assert not is_function(f, 1)
 
+
 def test_function_varargs() -> None:
     def f(*args) -> None:
         return None
+
     assert is_function(f, 0)
     assert is_function(f, 1)
     assert is_function(f, 100)
 
-    def f(a, b=1, *args) -> None:
+    def g(a, b=1, *args) -> None:
         return None
-    assert not is_function(f, 0)
-    assert is_function(f, 1)
-    assert is_function(f, 2)
-    assert is_function(f, 100)
+
+    assert not is_function(g, 0)
+    assert is_function(g, 1)
+    assert is_function(g, 2)
+    assert is_function(g, 100)
 
 
 class AClass:
