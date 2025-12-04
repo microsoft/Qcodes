@@ -831,6 +831,20 @@ def test_multi_function_invalid_name_raises(dci: DummyChannelInstrument) -> None
         dci.channels.multi_function("nonexistent_func")
 
 
+def test_multi_function_on_empty_channel_tuple_raises(
+    empty_instrument: Instrument,
+) -> None:
+    """Test that multi_function raises AttributeError on empty channel tuple."""
+    channels = ChannelTuple(empty_instrument, "channels", chan_type=DummyChannel)
+    empty_instrument.add_submodule("channels", channels)
+
+    with pytest.raises(
+        AttributeError,
+        match="'ChannelTuple' object has no callable or function 'temperature'",
+    ):
+        channels.multi_function("temperature")
+
+
 def _verify_multiparam_data(data) -> None:
     assert "multi_setpoint_param_this_setpoint_set" in data.arrays.keys()
     assert_array_equal(
