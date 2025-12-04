@@ -1,7 +1,7 @@
 import binascii
 import logging
 from functools import partial
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import numpy.typing as npt
@@ -17,6 +17,9 @@ from qcodes.instrument import (
     VisaInstrumentKWArgs,
 )
 from qcodes.parameters import ArrayParameter, Parameter, ParamRawDataType
+
+if TYPE_CHECKING:
+    from qcodes.instrument.channel import ChannelTuple
 
 log = logging.getLogger(__name__)
 
@@ -416,7 +419,10 @@ class TektronixTPS2012(VisaInstrument):
             channel = TektronixTPS2012Channel(self, ch_name, ch_num)
             channels.append(channel)
             self.add_submodule(ch_name, channel)
-        self.add_submodule("channels", channels.to_channel_tuple())
+        self.channels: ChannelTuple[TektronixTPS2012Channel] = self.add_submodule(
+            "channels", channels.to_channel_tuple()
+        )
+        """Tuple of TektronixTPS2012Channel"""
 
         # Necessary settings for parsing the binary curve data
         self.visa_handle.encoding = "latin-1"
