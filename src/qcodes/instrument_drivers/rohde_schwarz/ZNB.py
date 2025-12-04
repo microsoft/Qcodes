@@ -1109,7 +1109,7 @@ class RohdeSchwarzZNBBase(VisaInstrument):
         self._max_freq: float
         self._min_freq, self._max_freq = m_frequency[model]
 
-        self.num_ports: Parameter = self.add_parameter(
+        self.num_ports: Parameter[int, RohdeSchwarzZNBBase] = self.add_parameter(
             name="num_ports", get_cmd="INST:PORT:COUN?", get_parser=int
         )
         """Parameter num_ports"""
