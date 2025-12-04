@@ -475,7 +475,7 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
         """
         Look up a callable or QCoDeS function by name. If this is the name of a callable or function
         on the channel type contained in this container return a callable that calls this callable on
-        all parameters in the Sequence
+        all channels in the Sequence
 
         Args:
             name: The name of the callable/function that we want to
@@ -509,7 +509,7 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
 
             return multi_callable
         raise AttributeError(
-            f"'{self.__class__.__name__}' object has no parameter '{name}'"
+            f"'{self.__class__.__name__}' object has no callable or function '{name}'"
         )
 
     def __getattr__(self, name: str) -> Any:
@@ -522,7 +522,7 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
         type safe as it will return any matching attribute. To get a channel
         by name use ``get_channels_by_name`` instead. To get a parameter use
         ``multi_parameter``. To get a a callable or a qcodes function use
-        ``multi_functions``
+        ``multi_function``
 
         Args:
             name: The name of the parameter, function or channel that we want to
