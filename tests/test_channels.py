@@ -753,6 +753,84 @@ def test_channel_tuple_names(dci: DummyChannelInstrument) -> None:
     assert dci.channels.full_name == "dci_TempSensors"
 
 
+def test_multi_parameter_returns_multichannel_parameter(
+    dci: DummyChannelInstrument,
+) -> None:
+    """Test that multi_parameter returns a MultiChannelInstrumentParameter for valid parameter name."""
+    temp_multi_param = dci.channels.multi_parameter("temperature")
+    assert isinstance(temp_multi_param, MultiChannelInstrumentParameter)
+
+    temperatures = temp_multi_param.get()
+    assert len(temperatures) == 6
+
+
+def test_multi_parameter_invalid_name_raises(dci: DummyChannelInstrument) -> None:
+    """Test that multi_parameter raises AttributeError for invalid parameter name."""
+    with pytest.raises(
+        AttributeError,
+        match="'ChannelTuple' object has no parameter 'nonexistent_param'",
+    ):
+        dci.channels.multi_parameter("nonexistent_param")
+
+
+def test_multi_parameter_on_empty_channel_tuple_raises(
+    empty_instrument: Instrument,
+) -> None:
+    """Test that multi_parameter raises AttributeError on empty channel tuple."""
+    channels = ChannelTuple(empty_instrument, "channels", chan_type=DummyChannel)
+    empty_instrument.add_submodule("channels", channels)
+
+    with pytest.raises(
+        AttributeError,
+        match="'ChannelTuple' object has no parameter 'temperature'",
+    ):
+        channels.multi_parameter("temperature")
+
+
+def test_multi_function_returns_callable(dci: DummyChannelInstrument) -> None:
+    """Test that multi_function returns a callable for valid function name."""
+    multi_func = dci.channels.multi_function("log_my_name")
+    assert callable(multi_func)
+
+
+def test_multi_function_calls_function_on_all_channels(
+    dci: DummyChannelInstrument, caplog: LogCaptureFixture
+) -> None:
+    """Test that the returned callable calls the function on all channels."""
+    with caplog.at_level(
+        logging.DEBUG, logger="qcodes.instrument_drivers.mock_instruments"
+    ):
+        caplog.clear()
+        multi_func = dci.channels.multi_function("log_my_name")
+        multi_func()
+        mssgs = [rec.message for rec in caplog.records]
+        names = [ch.name.replace("dci_", "") for ch in dci.channels]
+        assert mssgs == names
+
+
+def test_multi_function_with_callable_method(
+    dci: DummyChannelInstrument, mocker: "pytest_mock.MockerFixture"
+) -> None:
+    """Test that multi_function works with callable methods on channels."""
+    for channel in dci.channels:
+        channel.turn_on = mocker.MagicMock(return_value=1)
+
+    multi_func = dci.channels.multi_function("turn_on")
+    result = multi_func("bar")
+    assert result is None
+    for channel in dci.channels:
+        channel.turn_on.assert_called_with("bar")  # type: ignore[union-attr]
+
+
+def test_multi_function_invalid_name_raises(dci: DummyChannelInstrument) -> None:
+    """Test that multi_function raises AttributeError for invalid function/callable name."""
+    with pytest.raises(
+        AttributeError,
+        match="'ChannelTuple' object has no parameter 'nonexistent_func'",
+    ):
+        dci.channels.multi_function("nonexistent_func")
+
+
 def _verify_multiparam_data(data) -> None:
     assert "multi_setpoint_param_this_setpoint_set" in data.arrays.keys()
     assert_array_equal(
