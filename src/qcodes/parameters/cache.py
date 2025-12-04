@@ -1,14 +1,21 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Generic, Literal, Protocol, overload
+
+from .parameter_base import (
+    _ParameterDataTypeVar,
+)
 
 if TYPE_CHECKING:
-    from .parameter_base import ParamDataType, ParameterBase, ParamRawDataType
+    from .parameter_base import (
+        ParameterBase,
+        ParamRawDataType,
+    )
 
 
 # The protocol is private to qcodes but used elsewhere in the codebase
-class _CacheProtocol(Protocol):  # noqa: PYI046
+class _CacheProtocol(Protocol, Generic[_ParameterDataTypeVar]):  # noqa: PYI046
     """
     This protocol defines the interface that a Parameter Cache implementation
     must implement. This is currently used for 2 implementations, one in
@@ -29,24 +36,33 @@ class _CacheProtocol(Protocol):  # noqa: PYI046
 
     def invalidate(self) -> None: ...
 
-    def set(self, value: ParamDataType) -> None: ...
+    def set(self, value: _ParameterDataTypeVar) -> None: ...
 
     def _set_from_raw_value(self, raw_value: ParamRawDataType) -> None: ...
 
-    def get(self, get_if_invalid: bool = True) -> ParamDataType: ...
+    @overload
+    def get(self, get_if_invalid: Literal[True]) -> _ParameterDataTypeVar: ...
+
+    @overload
+    def get(self) -> _ParameterDataTypeVar: ...
+
+    @overload
+    def get(self, get_if_invalid: Literal[False]) -> _ParameterDataTypeVar | None: ...
+
+    def get(self, get_if_invalid: bool = True) -> _ParameterDataTypeVar | None: ...
 
     def _update_with(
         self,
         *,
-        value: ParamDataType,
+        value: _ParameterDataTypeVar,
         raw_value: ParamRawDataType,
         timestamp: datetime | None = None,
     ) -> None: ...
 
-    def __call__(self) -> ParamDataType: ...
+    def __call__(self) -> _ParameterDataTypeVar: ...
 
 
-class _Cache:
+class _Cache(Generic[_ParameterDataTypeVar]):
     """
     Cache object for parameter to hold its value and raw value
 
@@ -66,9 +82,11 @@ class _Cache:
 
     """
 
-    def __init__(self, parameter: ParameterBase, max_val_age: float | None = None):
+    def __init__(
+        self, parameter: ParameterBase, max_val_age: float | None = None
+    ) -> None:
         self._parameter = parameter
-        self._value: ParamDataType = None
+        self._value: _ParameterDataTypeVar | None = None
         self._raw_value: ParamRawDataType = None
         self._timestamp: datetime | None = None
         self._max_val_age = max_val_age
@@ -115,7 +133,7 @@ class _Cache:
         """
         self._marked_valid = False
 
-    def set(self, value: ParamDataType) -> None:
+    def set(self, value: _ParameterDataTypeVar) -> None:
         """
         Set the cached value of the parameter without invoking the
         ``set_cmd`` of the parameter (if it has one). For example, in case of
@@ -146,7 +164,7 @@ class _Cache:
     def _update_with(
         self,
         *,
-        value: ParamDataType,
+        value: _ParameterDataTypeVar,
         raw_value: ParamRawDataType,
         timestamp: datetime | None = None,
     ) -> None:
@@ -187,7 +205,16 @@ class _Cache:
             # parameter is still valid
             return False
 
-    def get(self, get_if_invalid: bool = True) -> ParamDataType:
+    @overload
+    def get(self, get_if_invalid: Literal[True]) -> _ParameterDataTypeVar: ...
+
+    @overload
+    def get(self) -> _ParameterDataTypeVar: ...
+
+    @overload
+    def get(self, get_if_invalid: Literal[False]) -> _ParameterDataTypeVar | None: ...
+
+    def get(self, get_if_invalid: bool = True) -> _ParameterDataTypeVar | None:
         """
         Return cached value if time since get was less than ``max_val_age``,
         or the parameter was explicitly marked invalid.
@@ -246,7 +273,7 @@ class _Cache:
             )
         return error_msg
 
-    def __call__(self) -> ParamDataType:
+    def __call__(self) -> _ParameterDataTypeVar:
         """
         Same as :meth:`get` but always call ``get`` on parameter if the
         cache is not valid
