@@ -826,7 +826,7 @@ def test_multi_function_invalid_name_raises(dci: DummyChannelInstrument) -> None
     """Test that multi_function raises AttributeError for invalid function/callable name."""
     with pytest.raises(
         AttributeError,
-        match="'ChannelTuple' object has no parameter 'nonexistent_func'",
+        match="'ChannelTuple' object has no callable or function 'nonexistent_func'",
     ):
         dci.channels.multi_function("nonexistent_func")
 
