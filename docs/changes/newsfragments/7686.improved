@@ -1,0 +1,3 @@
+The ``ChannelTuple`` class now has ``multi_parameter`` and ``multi_function`` methods that
+provide type-safe access to parameters and functions on all channels in the tuple. These methods
+allow accessing attributes with proper type information, improving IDE integration and type checking.
