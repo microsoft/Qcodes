@@ -192,11 +192,11 @@ class Parameter(
         unit: str | None = None,
         get_cmd: str | Callable[..., Any] | Literal[False] | None = None,
         set_cmd: str | Callable[..., Any] | Literal[False] | None = False,
-        initial_value: float | str | None = None,
+        initial_value: _ParameterDataTypeVar | None = None,
         max_val_age: float | None = None,
         vals: Validator[Any] | None = None,
         docstring: str | None = None,
-        initial_cache_value: float | str | None = None,
+        initial_cache_value: _ParameterDataTypeVar | None = None,
         bind_to_instrument: bool = True,
         **kwargs: Any,
     ) -> None:

@@ -290,7 +290,9 @@ class ParameterBase(
 
         # ``_Cache`` stores "latest" value (and raw value) and timestamp
         # when it was set or measured
-        self.cache: _CacheProtocol = _Cache(self, max_val_age=max_val_age)
+        self.cache: _CacheProtocol[_ParameterDataTypeVar] = _Cache[
+            _ParameterDataTypeVar
+        ](self, max_val_age=max_val_age)
         # ``GetLatest`` is left from previous versions where it would
         # implement a subset of features which ``_Cache`` has.
         # It is left for now for backwards compatibility reasons and shall
@@ -822,7 +824,7 @@ class ParameterBase(
                         # Sleep until total time is larger than self.post_delay
                         time.sleep(self.post_delay - t_elapsed)
 
-                    self.cache._update_with(value=val_step, raw_value=raw_val_step)
+                    self.cache._update_with(value=val_step, raw_value=raw_val_step)  # type: ignore[arg-type]
 
                     self._call_on_set_callback(val_step)  # type: ignore[arg-type]
 
