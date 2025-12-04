@@ -488,6 +488,10 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
             AttributeError: If no callable with the given name exists.
 
         """
+        if len(self) == 0:
+            raise AttributeError(
+                f"'{self.__class__.__name__}' object has no callable or function '{name}'"
+            )
         # Check if this is a valid function
         if name in self._channels[0].functions:
             # We want to return a reference to a function that would call the
