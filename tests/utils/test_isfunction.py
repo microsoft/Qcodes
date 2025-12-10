@@ -1,5 +1,6 @@
-from typing import NoReturn
 from functools import partial
+from typing import NoReturn
+
 import pytest
 
 from qcodes.utils import is_function
