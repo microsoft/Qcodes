@@ -1,0 +1,7 @@
+The ``ChannelTuple`` class now has ``multi_parameter`` and ``multi_function`` methods that
+provide type-safe access to parameters and functions on all channels in the tuple. These methods
+allow accessing attributes with proper type information, improving IDE integration and type checking.
+The return type annotation of ``__getattr__`` has been changed to ``Any`` reflecting the fact that
+this is not a type safe interface and it is impossible for a static type checker to infer the type
+of the dynamic attribute. ``multi_parameter``, ``multi_function`` and ``get_channel_by_name`` should
+be used when a more specific type is requested.

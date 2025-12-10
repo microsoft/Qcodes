@@ -1,0 +1,3 @@
+The ``RohdeSchwarzZNBBase``, ``MiniCircuitsRCSPDT``, and ``TektronixTPS2012`` drivers now have
+explicit type annotations on their ``channels`` submodule, enabling better type checking and
+IDE integration.
