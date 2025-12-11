@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from functools import cached_property
 from typing import TYPE_CHECKING, Any, final
 
 from qcodes.utils import deep_update
@@ -79,7 +80,7 @@ class MetadatableWithName(Metadatable):
         Name excluding name of any parent that this object is bound to.
         """
 
-    @property
+    @cached_property
     @abstractmethod
     def full_name(self) -> str:
         """

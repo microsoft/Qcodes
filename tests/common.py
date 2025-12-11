@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import cProfile
 import os
-from functools import wraps
+from functools import cached_property, wraps
 from time import sleep
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -159,6 +159,6 @@ class DummyComponent(MetadatableWithName):
     def short_name(self) -> str:
         return self.name
 
-    @property
+    @cached_property
     def full_name(self) -> str:
         return self.full_name
