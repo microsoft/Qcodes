@@ -17,7 +17,7 @@ from copy import deepcopy
 from inspect import signature
 from itertools import chain
 from numbers import Number
-from time import perf_counter
+from time import perf_counter, perf_counter_ns
 from typing import TYPE_CHECKING, Any, TypeAlias, TypeVar, cast
 
 import numpy as np
@@ -99,7 +99,7 @@ class DataSaver:
     ) -> None:
         self._span = span
         self._dataset = dataset
-        self._add_result_time = 0.0
+        self._add_result_time_ns = 0
         if (
             DataSaver.default_callback is not None
             and "run_tables_subscription_callback" in DataSaver.default_callback
@@ -209,7 +209,7 @@ class DataSaver:
                 its type.
 
         """
-        start_time = perf_counter()
+        start_time = perf_counter_ns()
 
         parameter_results: list[ParameterResultType] = [
             self._coerce_result_tuple_to_parameter_result_type(result_tuple)
@@ -280,7 +280,7 @@ class DataSaver:
         if perf_counter() - self._last_save_time > self.write_period:
             self.flush_data_to_database()
             self._last_save_time = perf_counter()
-        self._add_result_time += perf_counter() - start_time
+        self._add_result_time_ns += perf_counter_ns() - start_time
 
     def _unpack_arrayparameter(
         self, partial_result: ResType
@@ -738,8 +738,8 @@ class Runner:
         with DelayedKeyboardInterrupt(
             context={"reason": "qcodes measurement exit", "qcodes_guid": self.ds.guid}
         ):
-            add_result_time = self.datasaver._add_result_time
-            self._span.set_attribute("qcodes_add_result_time", add_result_time)
+            add_result_time = self.datasaver._add_result_time_ns
+            self._span.set_attribute("qcodes_add_result_time_ms", add_result_time / 1e6)
             self.datasaver.flush_data_to_database(block=True)
 
             # perform the "teardown" events
