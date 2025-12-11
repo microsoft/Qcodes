@@ -5,6 +5,7 @@ from __future__ import annotations
 import collections.abc
 import logging
 import warnings
+from functools import cached_property
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
 import numpy as np
@@ -736,7 +737,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         """
         return [self.short_name]
 
-    @property
+    @cached_property
     def full_name(self) -> str:
         """
         Full name of the instrument.

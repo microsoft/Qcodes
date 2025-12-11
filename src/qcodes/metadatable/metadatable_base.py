@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from functools import cached_property
 from typing import TYPE_CHECKING, Any, Literal, final, overload
 
 from typing_extensions import deprecated
@@ -164,7 +165,7 @@ class MetadatableWithName(Metadatable):
         Name excluding name of any parent that this object is bound to.
         """
 
-    @property
+    @cached_property
     @abstractmethod
     def full_name(self) -> str:
         """
