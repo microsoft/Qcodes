@@ -234,10 +234,6 @@ class DataSaver:
                 legacy_results_dict.update(
                     self._unpack_arrayparameter(parameter_result)
                 )
-            elif isinstance(parameter_result[0], MultiParameter):
-                legacy_results_dict.update(
-                    self._unpack_multiparameter(parameter_result)
-                )
             else:
                 self_unpacked_parameter_results.extend(
                     parameter_result[0].unpack_self(parameter_result[1])

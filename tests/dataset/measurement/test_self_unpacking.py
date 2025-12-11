@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pytest
@@ -11,6 +11,7 @@ from qcodes.dataset.measurements import (
 )
 from qcodes.parameters import (
     ManualParameter,
+    MultiParameter,
     Parameter,
     ParameterWithSetpoints,
     ParamRawDataType,
@@ -91,6 +92,53 @@ def test_add_result_self_unpack(controlling_parameters, experiment):
     assert meas1_data["control1"] == pytest.approx(np.linspace(0, 1, 11))
     assert meas1_data["comp1"] == pytest.approx(np.linspace(0, 1, 11))
     assert meas1_data["comp2"] == pytest.approx(np.linspace(10, 9, 11))
+
+
+class SimpleMultiParam(MultiParameter):
+    def __init__(self, name: str, **kwargs: Any) -> None:
+        super().__init__(
+            name=name,
+            names=("a", "b"),
+            shapes=((5,), (5,)),
+            labels=("A", "B"),
+            units=("A", "B"),
+            # Setpoints are 1D arrays
+            setpoints=((np.linspace(0, 4, 5),), (np.linspace(0, 4, 5),)),
+            setpoint_names=(("sp_a",), ("sp_b",)),
+            setpoint_labels=(("SP A",), ("SP B",)),
+            setpoint_units=(("V",), ("V",)),
+            **kwargs,
+        )
+
+    def get_raw(self) -> tuple[np.ndarray, np.ndarray]:
+        return np.arange(5), np.arange(5) + 10
+
+
+def test_add_result_multiparameter(experiment) -> None:
+    meas = Measurement(experiment)
+    multiparam = SimpleMultiParam("multi")
+
+    meas.register_parameter(multiparam)
+
+    with meas.run() as datasaver:
+        datasaver.add_result((multiparam, multiparam()))
+        ds = datasaver.dataset
+
+    data = ds.get_parameter_data()
+
+    # The MultiParameter is not attached to an instrument, so the keys for its
+    # components are their short names ('a' and 'b').
+
+    # Check component "a"
+    assert "a" in data
+    # Inner keys are also short names, 'a' for the component value and 'sp_a' for its setpoint
+    assert data["a"]["a"] == pytest.approx(np.arange(5))
+    assert data["a"]["sp_a"] == pytest.approx(np.linspace(0, 4, 5))
+
+    # Check component "b"
+    assert "b" in data
+    assert data["b"]["b"] == pytest.approx(np.arange(5) + 10)
+    assert data["b"]["sp_b"] == pytest.approx(np.linspace(0, 4, 5))
 
 
 def test_add_result_self_unpack_with_PWS(controlling_parameters, experiment):

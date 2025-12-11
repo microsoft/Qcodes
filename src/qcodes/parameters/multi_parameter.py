@@ -273,3 +273,67 @@ class MultiParameter(ParameterBase):
             return tuple(full_sp_names)
         else:
             return self.setpoint_names
+
+    def unpack_self(self, value: Sequence[Any]) -> list[tuple[ParameterBase, Any]]:
+        """
+        Unpack the `subarrays` and `setpoints` from a :class:`MultiParameter`
+        into a list of tuples of (Parameter, values).
+        """
+        result_list: list[tuple[ParameterBase, Any]] = []
+
+        if self.setpoints is None:
+            raise RuntimeError(
+                f"{self.full_name} is an "
+                f"{type(self)} "
+                f"without setpoints. Cannot handle this."
+            )
+
+        for i, shape in enumerate(self.shapes):
+            # value corresponds to the return of get(), which is a sequence
+            data = value[i]
+
+            # Main component parameter
+            name = self.full_names[i]
+            # Create a proxy parameter with the correct name
+            param = ParameterBase(name=name, instrument=None)
+            result_list.append((param, data))
+
+            if shape != ():
+                # Handle setpoints
+                fallback_sp_name = f"{name}_setpoint"
+
+                sp_names: Sequence[str] | None = None
+                if (
+                    self.setpoint_full_names is not None
+                    and self.setpoint_full_names[i] is not None
+                ):
+                    sp_names = self.setpoint_full_names[i]
+
+                sp_values = self.setpoints[i]
+
+                setpoint_axes = []
+                setpoint_parameters_names = []
+
+                for j, sps in enumerate(sp_values):
+                    if sp_names is not None:
+                        spname = sp_names[j]
+                    else:
+                        spname = f"{fallback_sp_name}_{j}"
+
+                    sps_arr = np.array(sps)
+                    while sps_arr.ndim > 1:
+                        # The outermost setpoint axis or an nD param is nD
+                        # but the innermost is 1D. In all cases we just need
+                        # the axis along one dim, the innermost one.
+                        sps_arr = sps_arr[0]
+
+                    setpoint_axes.append(sps_arr)
+                    setpoint_parameters_names.append(spname)
+
+                output_grids = np.meshgrid(*setpoint_axes, indexing="ij")
+
+                for grid, sp_name in zip(output_grids, setpoint_parameters_names):
+                    sp_param = ParameterBase(name=sp_name, instrument=None)
+                    result_list.append((sp_param, grid))
+
+        return result_list
