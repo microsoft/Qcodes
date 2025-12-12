@@ -655,6 +655,7 @@ class FrozenInterDependencies_(InterDependencies_):  # noqa: PLW1641
             tuple[ParamSpecBase, ...], tuple[set[str], set[str]] | None
         ] = {}
         self._id_to_paramspec_cache: dict[str, ParamSpecBase] | None = None
+        self._paramspec_to_id_cache: dict[ParamSpecBase, str] | None = None
 
     def add_dependencies(self, dependencies: ParamSpecTree | None) -> None:
         raise TypeError("FrozenInterDependencies_ is immutable")
@@ -752,6 +753,14 @@ class FrozenInterDependencies_(InterDependencies_):  # noqa: PLW1641
                 node_id: data["value"] for node_id, data in self.graph.nodes(data=True)
             }
         return self._id_to_paramspec_cache
+
+    @property
+    def _paramspec_to_id(self) -> dict[ParamSpecBase, str]:
+        if self._paramspec_to_id_cache is None:
+            self._paramspec_to_id_cache = {
+                data["value"]: node_id for node_id, data in self.graph.nodes(data=True)
+            }
+        return self._paramspec_to_id_cache
 
     def __repr__(self) -> str:
         rep = (
