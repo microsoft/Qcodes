@@ -751,3 +751,11 @@ class FrozenInterDependencies_(InterDependencies_):
                 node_id: data["value"] for node_id, data in self.graph.nodes(data=True)
             }
         return self._id_to_paramspec_cache
+
+    def __repr__(self) -> str:
+        rep = (
+            f"FrozenInterDependencies_(dependencies={self.dependencies}, "
+            f"inferences={self.inferences}, "
+            f"standalones={self.standalones})"
+        )
+        return rep
