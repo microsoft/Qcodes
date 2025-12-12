@@ -431,7 +431,7 @@ class InterDependencies_:  # noqa: PLW1641
     def _invalid_subsets(
         self, paramspecs: Sequence[ParamSpecBase]
     ) -> tuple[set[str], set[str]] | None:
-        subset_nodes = set([paramspec.name for paramspec in paramspecs])
+        subset_nodes = {paramspec.name for paramspec in paramspecs}
         for subset_node in subset_nodes:
             descendant_nodes_per_subset_node = nx.descendants(self.graph, subset_node)
             if missing_nodes := descendant_nodes_per_subset_node.difference(
