@@ -37,21 +37,37 @@ devices:
         setter:
           q: "INNAME A,\"{}\""
 
+      sensor_tlimit_A:
+        default: "300.0"
+        getter:
+          q: "TLIMIT? A"
+          r: "{}"
+        setter:
+          q: "TLIMIT A,{}"
+
+      sensor_type_A:
+        default: "1,0,1,0,1"
+        getter:
+          q: "INTYPE? A"
+          r: "{}"
+        setter:
+          q: "INTYPE A,{}"
+
       sensor_setpoint_A:
         default: "100"
         getter:
-          q: "setp? A"
+          q: "SETP? A"
           r: "{}"
         setter:
-          q: "setp A,\"{}\""
+          q: "SETP A,\"{}\""
 
       sensor_range_A:
         default: "1"
         getter:
-          q: "range? A"
+          q: "RANGE? A"
           r: "{}"
         setter:
-          q: "range A,\"{}\""
+          q: "RANGE A,\"{}\""
 
 
       temperature_B:
@@ -80,21 +96,157 @@ devices:
         setter:
           q: "INNAME B,\"{}\""
 
+      sensor_tlimit_B:
+        default: "300.0"
+        getter:
+          q: "TLIMIT? B"
+          r: "{}"
+        setter:
+          q: "TLIMIT B,{}"
+
+      sensor_type_B:
+        default: "1,0,1,0,1"
+        getter:
+          q: "INTYPE? B"
+          r: "{}"
+        setter:
+          q: "INTYPE B,{}"
+
       sensor_setpoint_B:
         default: "100"
         getter:
-          q: "setp? A"
+          q: "SETP? B"
           r: "{}"
         setter:
-          q: "setp A,\"{}\""
+          q: "SETP B,\"{}\""
 
       sensor_range_B:
         default: "1"
         getter:
-          q: "range? A"
+          q: "RANGE? B"
           r: "{}"
         setter:
-          q: "range A,\"{}\""
+          q: "RANGE B,\"{}\""
+
+      output_mode_1:
+        default: "1,1,0"
+        getter:
+          q: "OUTMODE? 1"
+          r: "{}"
+        setter:
+          q: "OUTMODE 1,{}"
+
+      output_mode_2:
+        default: "1,2,0"
+        getter:
+          q: "OUTMODE? 2"
+          r: "{}"
+        setter:
+          q: "OUTMODE 2,{}"
+
+      pid_output_1:
+        default: "10,20,30"
+        getter:
+          q: "PID? 1"
+          r: "{}"
+        setter:
+          q: "PID 1,{}"
+
+      pid_output_2:
+        default: "10,20,30"
+        getter:
+          q: "PID? 2"
+          r: "{}"
+        setter:
+          q: "PID 2,{}"
+
+      output_range_1:
+        default: "1"
+        getter:
+          q: "RANGE? 1"
+          r: "{}"
+        setter:
+          q: "RANGE 1,{}"
+
+      output_range_2:
+        default: "1"
+        getter:
+          q: "RANGE? 2"
+          r: "{}"
+        setter:
+          q: "RANGE 2,{}"
+
+      heater_output_1:
+        default: "0.0"
+        getter:
+          q: "HTR? 1"
+          r: "{}"
+
+      heater_output_2:
+        default: "0.0"
+        getter:
+          q: "HTR? 2"
+          r: "{}"
+
+      output_setpoint_1:
+        default: "100.0"
+        getter:
+          q: "SETP? 1"
+          r: "{}"
+        setter:
+          q: "SETP 1,{}"
+
+      output_setpoint_2:
+        default: "100.0"
+        getter:
+          q: "SETP? 2"
+          r: "{}"
+        setter:
+          q: "SETP 2,{}"
+
+      heater_setup_1:
+        default: "0,1,0,0.0,1"
+        getter:
+          q: "HTRSET? 1"
+          r: "{}"
+        setter:
+          q: "HTRSET 1,{}"
+
+      heater_setup_2:
+        default: "0,1,0,0.0,1"
+        getter:
+          q: "HTRSET? 2"
+          r: "{}"
+        setter:
+          q: "HTRSET 2,{}"
+
+      setpoint_ramp_1:
+        default: "0,0.0"
+        getter:
+          q: "RAMP? 1"
+          r: "{}"
+        setter:
+          q: "RAMP 1,{}"
+
+      setpoint_ramp_2:
+        default: "0,0.0"
+        getter:
+          q: "RAMP? 2"
+          r: "{}"
+        setter:
+          q: "RAMP 2,{}"
+
+      setpoint_ramp_status_1:
+        default: "0"
+        getter:
+          q: "RAMPST? 1"
+          r: "{}"
+
+      setpoint_ramp_status_2:
+        default: "0"
+        getter:
+          q: "RAMPST? 2"
+          r: "{}"
 
 
 resources:

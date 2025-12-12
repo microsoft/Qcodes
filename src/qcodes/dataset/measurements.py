@@ -36,6 +36,7 @@ from qcodes.dataset.data_set_protocol import (
     ValuesType,
 )
 from qcodes.dataset.descriptions.dependencies import (
+    FrozenInterDependencies_,
     IncompleteSubsetError,
     InterDependencies_,
     ParamSpecTree,
@@ -758,6 +759,28 @@ class Runner:
                 if isinstance(exception_value, Exception):
                     self._span.record_exception(exception_value)
                 self.ds.add_metadata("measurement_exception", exception_string)
+
+            # for now we set the interdependencies back to the
+            # not frozen state, so that further modifications are possible
+            # this is not recommended but we want to minimize the changes for now
+
+            if isinstance(self.ds.description.interdeps, FrozenInterDependencies_):
+                intedeps = self.ds.description.interdeps.to_interdependencies()
+            else:
+                intedeps = self.ds.description.interdeps
+
+            if isinstance(self.ds, DataSet):
+                self.ds.set_interdependencies(
+                    shapes=self.ds.description.shapes,
+                    interdeps=intedeps,
+                    override=True,
+                )
+            elif isinstance(self.ds, DataSetInMem):
+                self.ds._set_interdependencies(
+                    shapes=self.ds.description.shapes,
+                    interdeps=intedeps,
+                    override=True,
+                )
 
             # and finally mark the dataset as closed, thus
             # finishing the measurement
@@ -1508,7 +1531,7 @@ class Measurement:
             self.experiment,
             station=self.station,
             write_period=self._write_period,
-            interdeps=self._interdeps,
+            interdeps=FrozenInterDependencies_(self._interdeps),
             name=self.name,
             subscribers=self.subscribers,
             parent_datasets=self._parent_datasets,

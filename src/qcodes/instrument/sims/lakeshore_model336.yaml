@@ -37,21 +37,21 @@ devices:
         setter:
           q: "INNAME A,\"{}\""
 
-      sensor_setpoint_A:
-        default: "100"
+      sensor_tlimit_A:
+        default: 0
         getter:
-          q: "setp? A"
+          q: "TLIMIT? A"
           r: "{}"
         setter:
-          q: "setp A,\"{}\""
+          q: "TLIMIT A,{}"
 
-      sensor_range_A:
-        default: "1"
+      sensor_intype_A:
+        default: "0,0,1,0,1"
         getter:
-          q: "range? A"
+          q: "INTYPE? A"
           r: "{}"
         setter:
-          q: "range A,\"{}\""
+          q: "INTYPE A,{}"
 
       sensor_curve_number_A:
         default: 42
@@ -91,21 +91,21 @@ devices:
         setter:
           q: "INNAME B,\"{}\""
 
-      sensor_setpoint_B:
-        default: "100"
+      sensor_tlimit_B:
+        default: 0
         getter:
-          q: "setp? A"
+          q: "TLIMIT? B"
           r: "{}"
         setter:
-          q: "setp A,\"{}\""
+          q: "TLIMIT B,{}"
 
-      sensor_range_B:
-        default: "1"
+      sensor_intype_B:
+        default: "0,0,1,0,1"
         getter:
-          q: "range? A"
+          q: "INTYPE? B"
           r: "{}"
         setter:
-          q: "range A,\"{}\""
+          q: "INTYPE B,{}"
 
       sensor_curve_number_B:
         default: 41
@@ -144,21 +144,21 @@ devices:
         setter:
           q: "INNAME C,\"{}\""
 
-      sensor_setpoint_C:
-        default: "100"
+      sensor_tlimit_C:
+        default: 0
         getter:
-          q: "setp? A"
+          q: "TLIMIT? C"
           r: "{}"
         setter:
-          q: "setp A,\"{}\""
+          q: "TLIMIT C,{}"
 
-      sensor_range_C:
-        default: "1"
+      sensor_intype_C:
+        default: "0,0,1,0,1"
         getter:
-          q: "range? A"
+          q: "INTYPE? C"
           r: "{}"
         setter:
-          q: "range A,\"{}\""
+          q: "INTYPE C,{}"
 
       sensor_curve_number_C:
         default: 40
@@ -197,21 +197,21 @@ devices:
         setter:
           q: "INNAME D,\"{}\""
 
-      sensor_setpoint_D:
-        default: "100"
+      sensor_tlimit_D:
+        default: 0
         getter:
-          q: "setp? A"
+          q: "TLIMIT? D"
           r: "{}"
         setter:
-          q: "setp A,\"{}\""
+          q: "TLIMIT D,{}"
 
-      sensor_range_D:
-        default: "1"
+      sensor_intype_D:
+        default: "0,0,1,0,1"
         getter:
-          q: "range? A"
+          q: "INTYPE? D"
           r: "{}"
         setter:
-          q: "range A,\"{}\""
+          q: "INTYPE D,{}"
 
       sensor_curve_number_D:
         default: 39
@@ -224,6 +224,219 @@ devices:
           q: "CRVHDR? 39"
           r: "DT-039,01110039,2,339.0,1"
 
+      pid_output_1:
+        default: "10,20,30"
+        getter:
+          q: "PID? 1"
+          r: "{}"
+        setter:
+          q: "PID 1,{}"
+
+      pid_output_2:
+        default: "10,20,30"
+        getter:
+          q: "PID? 2"
+          r: "{}"
+        setter:
+          q: "PID 2,{}"
+
+      outmode_output_1:
+        default: "1,2,0"
+        getter:
+          q: "OUTMODE? 1"
+          r: "{}"
+        setter:
+          q: "OUTMODE 1, {}"
+
+      outmode_output_2:
+        default: "1,1,0"
+        getter:
+          q: "OUTMODE? 2"
+          r: "{}"
+        setter:
+          q: "OUTMODE 2, {}"
+
+      range_output_1:
+        default: 1
+        getter:
+          q: "RANGE? 1"
+          r: "{}"
+        setter:
+          q: "RANGE 1,{}"
+
+      range_output_2:
+        default: 1
+        getter:
+          q: "RANGE? 2"
+          r: "{}"
+        setter:
+          q: "RANGE 2,{}"
+
+      setpoint_output_1:
+        default: 0
+        getter:
+          q: "SETP? 1"
+          r: "{}"
+        setter:
+          q: "SETP 1,{}"
+
+      setpoint_output_2:
+        default: 0
+        getter:
+          q: "SETP? 2"
+          r: "{}"
+        setter:
+          q: "SETP 2,{}"
+
+      htr_output_1:
+        default: 0.005
+        getter:
+          q: "HTR? 1"
+          r: "{}"
+
+      htr_output_2:
+        default: 0.005
+        getter:
+          q: "HTR? 2"
+          r: "{}"
+
+      htrset_output_1:
+        default: "1, 5"
+        getter:
+          q: "HTRSET? 1"
+          r: "{}"
+        setter:
+          q: "HTRSET 1, {}"
+
+      htrset_output_2:
+        default: "1, 5"
+        getter:
+          q: "HTRSET? 2"
+          r: "{}"
+        setter:
+          q: "HTRSET 2, {}"
+
+      ramp_output_1:
+        default: "0,0"
+        getter:
+          q: "RAMP? 1"
+          r: "{}"
+        setter:
+          q: "RAMP 1,{}"
+
+      ramp_output_2:
+        default: "0,0"
+        getter:
+          q: "RAMP? 2"
+          r: "{}"
+        setter:
+          q: "RAMP 2,{}"
+
+      rampst_output_1:
+        default: 0
+        getter:
+          q: "RAMPST? 1"
+          r: "{}"
+
+      rampst_output_2:
+        default: 0
+        getter:
+          q: "RAMPST? 2"
+          r: "{}"
+
+      # ====================
+      # Output 3 (Voltage Source, no PID)
+      # ====================
+      outmode_output_3:
+        default: "1,1,0"
+        getter:
+          q: "OUTMODE? 3"
+          r: "{}"
+        setter:
+          q: "OUTMODE 3, {}"
+
+      range_output_3:
+        default: 1
+        getter:
+          q: "RANGE? 3"
+          r: "{}"
+        setter:
+          q: "RANGE 3,{}"
+
+      setpoint_output_3:
+        default: 0
+        getter:
+          q: "SETP? 3"
+          r: "{}"
+        setter:
+          q: "SETP 3,{}"
+
+      htr_output_3:
+        default: 0
+        getter:
+          q: "HTR? 3"
+          r: "{}"
+
+      ramp_output_3:
+        default: "0,0"
+        getter:
+          q: "RAMP? 3"
+          r: "{}"
+        setter:
+          q: "RAMP 3,{}"
+
+      rampst_output_3:
+        default: 0
+        getter:
+          q: "RAMPST? 3"
+          r: "{}"
+
+      # ====================
+      # Output 4 (Voltage Source, no PID)
+      # ====================
+      outmode_output_4:
+        default: "1,2,0"
+        getter:
+          q: "OUTMODE? 4"
+          r: "{}"
+        setter:
+          q: "OUTMODE 4, {}"
+
+      range_output_4:
+        default: 1
+        getter:
+          q: "RANGE? 4"
+          r: "{}"
+        setter:
+          q: "RANGE 4,{}"
+
+      setpoint_output_4:
+        default: 0
+        getter:
+          q: "SETP? 4"
+          r: "{}"
+        setter:
+          q: "SETP 4,{}"
+
+      htr_output_4:
+        default: 0
+        getter:
+          q: "HTR? 4"
+          r: "{}"
+
+      ramp_output_4:
+        default: "0,0"
+        getter:
+          q: "RAMP? 4"
+          r: "{}"
+        setter:
+          q: "RAMP 4,{}"
+
+      rampst_output_4:
+        default: 0
+        getter:
+          q: "RAMPST? 4"
+          r: "{}"
 
 resources:
   GPIB::2::INSTR:

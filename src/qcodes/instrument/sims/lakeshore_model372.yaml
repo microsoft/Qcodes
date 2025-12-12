@@ -1,14 +1,972 @@
 spec: "1.0"
+
 devices:
   device 1:
     eom:
       GPIB INSTR:
         q: "\r\n"
         r: "\r\n"
-    error: ERROR
+    error:
+      command error: CMD_ERROR
+      query error: Q_ERROR
+
     dialogues:
       - q: "*IDN?"
-        r: "QCoDeS, m0d3l, 336, 0.0.01"
+        r: "QCoDeS, m0d3l, 372, 0.0.01"
+
+    properties:
+      # ====================
+      # Sensor Channel 1 (ch01)
+      # ====================
+      temperature_1:
+        default: 4.0
+        getter:
+          q: "KRDG? 1"
+          r: "{}"
+
+      sensor_raw_1:
+        default: 100.0
+        getter:
+          q: "SRDG? 1"
+          r: "{}"
+
+      sensor_status_1:
+        default: 0
+        getter:
+          q: "RDGST? 1"
+          r: "{}"
+
+      sensor_name_1:
+        default: "Channel 1"
+        getter:
+          q: "INNAME? 1"
+          r: "{}"
+        setter:
+          q: "INNAME 1,\"{}\""
+
+      sensor_tlimit_1:
+        default: 300.0
+        getter:
+          q: "TLIMIT? 1"
+          r: "{}"
+        setter:
+          q: "TLIMIT 1,{}"
+
+      inset_1:
+        default: "1,100,3,0,1"
+        getter:
+          q: "INSET? 1"
+          r: "{}"
+        setter:
+          q: "INSET 1,{}"
+
+      intype_1:
+        default: "0,1,0,5,0,1"
+        getter:
+          q: "INTYPE? 1"
+          r: "{}"
+        setter:
+          q: "INTYPE 1,{}"
+
+      # ====================
+      # Sensor Channel 2 (ch02)
+      # ====================
+      temperature_2:
+        default: 4.0
+        getter:
+          q: "KRDG? 2"
+          r: "{}"
+
+      sensor_raw_2:
+        default: 100.0
+        getter:
+          q: "SRDG? 2"
+          r: "{}"
+
+      sensor_status_2:
+        default: 0
+        getter:
+          q: "RDGST? 2"
+          r: "{}"
+
+      sensor_name_2:
+        default: "Channel 2"
+        getter:
+          q: "INNAME? 2"
+          r: "{}"
+        setter:
+          q: "INNAME 2,\"{}\""
+
+      sensor_tlimit_2:
+        default: 300.0
+        getter:
+          q: "TLIMIT? 2"
+          r: "{}"
+        setter:
+          q: "TLIMIT 2,{}"
+
+      inset_2:
+        default: "1,100,3,0,1"
+        getter:
+          q: "INSET? 2"
+          r: "{}"
+        setter:
+          q: "INSET 2,{}"
+
+      intype_2:
+        default: "0,1,0,5,0,1"
+        getter:
+          q: "INTYPE? 2"
+          r: "{}"
+        setter:
+          q: "INTYPE 2,{}"
+
+      # ====================
+      # Sensor Channel 3 (ch03)
+      # ====================
+      temperature_3:
+        default: 4.0
+        getter:
+          q: "KRDG? 3"
+          r: "{}"
+
+      sensor_raw_3:
+        default: 100.0
+        getter:
+          q: "SRDG? 3"
+          r: "{}"
+
+      sensor_status_3:
+        default: 0
+        getter:
+          q: "RDGST? 3"
+          r: "{}"
+
+      sensor_name_3:
+        default: "Channel 3"
+        getter:
+          q: "INNAME? 3"
+          r: "{}"
+        setter:
+          q: "INNAME 3,\"{}\""
+
+      sensor_tlimit_3:
+        default: 300.0
+        getter:
+          q: "TLIMIT? 3"
+          r: "{}"
+        setter:
+          q: "TLIMIT 3,{}"
+
+      inset_3:
+        default: "1,100,3,0,1"
+        getter:
+          q: "INSET? 3"
+          r: "{}"
+        setter:
+          q: "INSET 3,{}"
+
+      intype_3:
+        default: "0,1,0,5,0,1"
+        getter:
+          q: "INTYPE? 3"
+          r: "{}"
+        setter:
+          q: "INTYPE 3,{}"
+
+      # ====================
+      # Sensor Channel 4 (ch04)
+      # ====================
+      temperature_4:
+        default: 4.0
+        getter:
+          q: "KRDG? 4"
+          r: "{}"
+
+      sensor_raw_4:
+        default: 100.0
+        getter:
+          q: "SRDG? 4"
+          r: "{}"
+
+      sensor_status_4:
+        default: 0
+        getter:
+          q: "RDGST? 4"
+          r: "{}"
+
+      sensor_name_4:
+        default: "Channel 4"
+        getter:
+          q: "INNAME? 4"
+          r: "{}"
+        setter:
+          q: "INNAME 4,\"{}\""
+
+      sensor_tlimit_4:
+        default: 300.0
+        getter:
+          q: "TLIMIT? 4"
+          r: "{}"
+        setter:
+          q: "TLIMIT 4,{}"
+
+      inset_4:
+        default: "1,100,3,0,1"
+        getter:
+          q: "INSET? 4"
+          r: "{}"
+        setter:
+          q: "INSET 4,{}"
+
+      intype_4:
+        default: "0,1,0,5,0,1"
+        getter:
+          q: "INTYPE? 4"
+          r: "{}"
+        setter:
+          q: "INTYPE 4,{}"
+
+      # ====================
+      # Sensor Channel 5 (ch05)
+      # ====================
+      temperature_5:
+        default: 4.0
+        getter:
+          q: "KRDG? 5"
+          r: "{}"
+
+      sensor_raw_5:
+        default: 100.0
+        getter:
+          q: "SRDG? 5"
+          r: "{}"
+
+      sensor_status_5:
+        default: 0
+        getter:
+          q: "RDGST? 5"
+          r: "{}"
+
+      sensor_name_5:
+        default: "Channel 5"
+        getter:
+          q: "INNAME? 5"
+          r: "{}"
+        setter:
+          q: "INNAME 5,\"{}\""
+
+      sensor_tlimit_5:
+        default: 300.0
+        getter:
+          q: "TLIMIT? 5"
+          r: "{}"
+        setter:
+          q: "TLIMIT 5,{}"
+
+      inset_5:
+        default: "1,100,3,0,1"
+        getter:
+          q: "INSET? 5"
+          r: "{}"
+        setter:
+          q: "INSET 5,{}"
+
+      intype_5:
+        default: "0,1,0,5,0,1"
+        getter:
+          q: "INTYPE? 5"
+          r: "{}"
+        setter:
+          q: "INTYPE 5,{}"
+
+      # ====================
+      # Sensor Channel 6 (ch06)
+      # ====================
+      temperature_6:
+        default: 4.0
+        getter:
+          q: "KRDG? 6"
+          r: "{}"
+
+      sensor_raw_6:
+        default: 100.0
+        getter:
+          q: "SRDG? 6"
+          r: "{}"
+
+      sensor_status_6:
+        default: 0
+        getter:
+          q: "RDGST? 6"
+          r: "{}"
+
+      sensor_name_6:
+        default: "Channel 6"
+        getter:
+          q: "INNAME? 6"
+          r: "{}"
+        setter:
+          q: "INNAME 6,\"{}\""
+
+      sensor_tlimit_6:
+        default: 300.0
+        getter:
+          q: "TLIMIT? 6"
+          r: "{}"
+        setter:
+          q: "TLIMIT 6,{}"
+
+      inset_6:
+        default: "1,100,3,0,1"
+        getter:
+          q: "INSET? 6"
+          r: "{}"
+        setter:
+          q: "INSET 6,{}"
+
+      intype_6:
+        default: "0,1,0,5,0,1"
+        getter:
+          q: "INTYPE? 6"
+          r: "{}"
+        setter:
+          q: "INTYPE 6,{}"
+
+      # ====================
+      # Sensor Channel 7 (ch07)
+      # ====================
+      temperature_7:
+        default: 4.0
+        getter:
+          q: "KRDG? 7"
+          r: "{}"
+
+      sensor_raw_7:
+        default: 100.0
+        getter:
+          q: "SRDG? 7"
+          r: "{}"
+
+      sensor_status_7:
+        default: 0
+        getter:
+          q: "RDGST? 7"
+          r: "{}"
+
+      sensor_name_7:
+        default: "Channel 7"
+        getter:
+          q: "INNAME? 7"
+          r: "{}"
+        setter:
+          q: "INNAME 7,\"{}\""
+
+      sensor_tlimit_7:
+        default: 300.0
+        getter:
+          q: "TLIMIT? 7"
+          r: "{}"
+        setter:
+          q: "TLIMIT 7,{}"
+
+      inset_7:
+        default: "1,100,3,0,1"
+        getter:
+          q: "INSET? 7"
+          r: "{}"
+        setter:
+          q: "INSET 7,{}"
+
+      intype_7:
+        default: "0,1,0,5,0,1"
+        getter:
+          q: "INTYPE? 7"
+          r: "{}"
+        setter:
+          q: "INTYPE 7,{}"
+
+      # ====================
+      # Sensor Channel 8 (ch08)
+      # ====================
+      temperature_8:
+        default: 4.0
+        getter:
+          q: "KRDG? 8"
+          r: "{}"
+
+      sensor_raw_8:
+        default: 100.0
+        getter:
+          q: "SRDG? 8"
+          r: "{}"
+
+      sensor_status_8:
+        default: 0
+        getter:
+          q: "RDGST? 8"
+          r: "{}"
+
+      sensor_name_8:
+        default: "Channel 8"
+        getter:
+          q: "INNAME? 8"
+          r: "{}"
+        setter:
+          q: "INNAME 8,\"{}\""
+
+      sensor_tlimit_8:
+        default: 300.0
+        getter:
+          q: "TLIMIT? 8"
+          r: "{}"
+        setter:
+          q: "TLIMIT 8,{}"
+
+      inset_8:
+        default: "1,100,3,0,1"
+        getter:
+          q: "INSET? 8"
+          r: "{}"
+        setter:
+          q: "INSET 8,{}"
+
+      intype_8:
+        default: "0,1,0,5,0,1"
+        getter:
+          q: "INTYPE? 8"
+          r: "{}"
+        setter:
+          q: "INTYPE 8,{}"
+
+      # ====================
+      # Sensor Channel 9 (ch09)
+      # ====================
+      temperature_9:
+        default: 4.0
+        getter:
+          q: "KRDG? 9"
+          r: "{}"
+
+      sensor_raw_9:
+        default: 100.0
+        getter:
+          q: "SRDG? 9"
+          r: "{}"
+
+      sensor_status_9:
+        default: 0
+        getter:
+          q: "RDGST? 9"
+          r: "{}"
+
+      sensor_name_9:
+        default: "Channel 9"
+        getter:
+          q: "INNAME? 9"
+          r: "{}"
+        setter:
+          q: "INNAME 9,\"{}\""
+
+      sensor_tlimit_9:
+        default: 300.0
+        getter:
+          q: "TLIMIT? 9"
+          r: "{}"
+        setter:
+          q: "TLIMIT 9,{}"
+
+      inset_9:
+        default: "1,100,3,0,1"
+        getter:
+          q: "INSET? 9"
+          r: "{}"
+        setter:
+          q: "INSET 9,{}"
+
+      intype_9:
+        default: "0,1,0,5,0,1"
+        getter:
+          q: "INTYPE? 9"
+          r: "{}"
+        setter:
+          q: "INTYPE 9,{}"
+
+      # ====================
+      # Sensor Channel 10 (ch10)
+      # ====================
+      temperature_10:
+        default: 4.0
+        getter:
+          q: "KRDG? 10"
+          r: "{}"
+
+      sensor_raw_10:
+        default: 100.0
+        getter:
+          q: "SRDG? 10"
+          r: "{}"
+
+      sensor_status_10:
+        default: 0
+        getter:
+          q: "RDGST? 10"
+          r: "{}"
+
+      sensor_name_10:
+        default: "Channel 10"
+        getter:
+          q: "INNAME? 10"
+          r: "{}"
+        setter:
+          q: "INNAME 10,\"{}\""
+
+      sensor_tlimit_10:
+        default: 300.0
+        getter:
+          q: "TLIMIT? 10"
+          r: "{}"
+        setter:
+          q: "TLIMIT 10,{}"
+
+      inset_10:
+        default: "1,100,3,0,1"
+        getter:
+          q: "INSET? 10"
+          r: "{}"
+        setter:
+          q: "INSET 10,{}"
+
+      intype_10:
+        default: "0,1,0,5,0,1"
+        getter:
+          q: "INTYPE? 10"
+          r: "{}"
+        setter:
+          q: "INTYPE 10,{}"
+
+      # ====================
+      # Sensor Channel 11 (ch11)
+      # ====================
+      temperature_11:
+        default: 4.0
+        getter:
+          q: "KRDG? 11"
+          r: "{}"
+
+      sensor_raw_11:
+        default: 100.0
+        getter:
+          q: "SRDG? 11"
+          r: "{}"
+
+      sensor_status_11:
+        default: 0
+        getter:
+          q: "RDGST? 11"
+          r: "{}"
+
+      sensor_name_11:
+        default: "Channel 11"
+        getter:
+          q: "INNAME? 11"
+          r: "{}"
+        setter:
+          q: "INNAME 11,\"{}\""
+
+      sensor_tlimit_11:
+        default: 300.0
+        getter:
+          q: "TLIMIT? 11"
+          r: "{}"
+        setter:
+          q: "TLIMIT 11,{}"
+
+      inset_11:
+        default: "1,100,3,0,1"
+        getter:
+          q: "INSET? 11"
+          r: "{}"
+        setter:
+          q: "INSET 11,{}"
+
+      intype_11:
+        default: "0,1,0,5,0,1"
+        getter:
+          q: "INTYPE? 11"
+          r: "{}"
+        setter:
+          q: "INTYPE 11,{}"
+
+      # ====================
+      # Sensor Channel 12 (ch12)
+      # ====================
+      temperature_12:
+        default: 4.0
+        getter:
+          q: "KRDG? 12"
+          r: "{}"
+
+      sensor_raw_12:
+        default: 100.0
+        getter:
+          q: "SRDG? 12"
+          r: "{}"
+
+      sensor_status_12:
+        default: 0
+        getter:
+          q: "RDGST? 12"
+          r: "{}"
+
+      sensor_name_12:
+        default: "Channel 12"
+        getter:
+          q: "INNAME? 12"
+          r: "{}"
+        setter:
+          q: "INNAME 12,\"{}\""
+
+      sensor_tlimit_12:
+        default: 300.0
+        getter:
+          q: "TLIMIT? 12"
+          r: "{}"
+        setter:
+          q: "TLIMIT 12,{}"
+
+      inset_12:
+        default: "1,100,3,0,1"
+        getter:
+          q: "INSET? 12"
+          r: "{}"
+        setter:
+          q: "INSET 12,{}"
+
+      intype_12:
+        default: "0,1,0,5,0,1"
+        getter:
+          q: "INTYPE? 12"
+          r: "{}"
+        setter:
+          q: "INTYPE 12,{}"
+
+      # ====================
+      # Sensor Channel 13 (ch13)
+      # ====================
+      temperature_13:
+        default: 4.0
+        getter:
+          q: "KRDG? 13"
+          r: "{}"
+
+      sensor_raw_13:
+        default: 100.0
+        getter:
+          q: "SRDG? 13"
+          r: "{}"
+
+      sensor_status_13:
+        default: 0
+        getter:
+          q: "RDGST? 13"
+          r: "{}"
+
+      sensor_name_13:
+        default: "Channel 13"
+        getter:
+          q: "INNAME? 13"
+          r: "{}"
+        setter:
+          q: "INNAME 13,\"{}\""
+
+      sensor_tlimit_13:
+        default: 300.0
+        getter:
+          q: "TLIMIT? 13"
+          r: "{}"
+        setter:
+          q: "TLIMIT 13,{}"
+
+      inset_13:
+        default: "1,100,3,0,1"
+        getter:
+          q: "INSET? 13"
+          r: "{}"
+        setter:
+          q: "INSET 13,{}"
+
+      intype_13:
+        default: "0,1,0,5,0,1"
+        getter:
+          q: "INTYPE? 13"
+          r: "{}"
+        setter:
+          q: "INTYPE 13,{}"
+
+      # ====================
+      # Sensor Channel 14 (ch14)
+      # ====================
+      temperature_14:
+        default: 4.0
+        getter:
+          q: "KRDG? 14"
+          r: "{}"
+
+      sensor_raw_14:
+        default: 100.0
+        getter:
+          q: "SRDG? 14"
+          r: "{}"
+
+      sensor_status_14:
+        default: 0
+        getter:
+          q: "RDGST? 14"
+          r: "{}"
+
+      sensor_name_14:
+        default: "Channel 14"
+        getter:
+          q: "INNAME? 14"
+          r: "{}"
+        setter:
+          q: "INNAME 14,\"{}\""
+
+      sensor_tlimit_14:
+        default: 300.0
+        getter:
+          q: "TLIMIT? 14"
+          r: "{}"
+        setter:
+          q: "TLIMIT 14,{}"
+
+      inset_14:
+        default: "1,100,3,0,1"
+        getter:
+          q: "INSET? 14"
+          r: "{}"
+        setter:
+          q: "INSET 14,{}"
+
+      intype_14:
+        default: "0,1,0,5,0,1"
+        getter:
+          q: "INTYPE? 14"
+          r: "{}"
+        setter:
+          q: "INTYPE 14,{}"
+
+      # ====================
+      # Sensor Channel 15 (ch15)
+      # ====================
+      temperature_15:
+        default: 4.0
+        getter:
+          q: "KRDG? 15"
+          r: "{}"
+
+      sensor_raw_15:
+        default: 100.0
+        getter:
+          q: "SRDG? 15"
+          r: "{}"
+
+      sensor_status_15:
+        default: 0
+        getter:
+          q: "RDGST? 15"
+          r: "{}"
+
+      sensor_name_15:
+        default: "Channel 15"
+        getter:
+          q: "INNAME? 15"
+          r: "{}"
+        setter:
+          q: "INNAME 15,\"{}\""
+
+      sensor_tlimit_15:
+        default: 300.0
+        getter:
+          q: "TLIMIT? 15"
+          r: "{}"
+        setter:
+          q: "TLIMIT 15,{}"
+
+      inset_15:
+        default: "1,100,3,0,1"
+        getter:
+          q: "INSET? 15"
+          r: "{}"
+        setter:
+          q: "INSET 15,{}"
+
+      intype_15:
+        default: "0,1,0,5,0,1"
+        getter:
+          q: "INTYPE? 15"
+          r: "{}"
+        setter:
+          q: "INTYPE 15,{}"
+
+      # ====================
+      # Sensor Channel 16 (ch16)
+      # ====================
+      temperature_16:
+        default: 4.0
+        getter:
+          q: "KRDG? 16"
+          r: "{}"
+
+      sensor_raw_16:
+        default: 100.0
+        getter:
+          q: "SRDG? 16"
+          r: "{}"
+
+      sensor_status_16:
+        default: 0
+        getter:
+          q: "RDGST? 16"
+          r: "{}"
+
+      sensor_name_16:
+        default: "Channel 16"
+        getter:
+          q: "INNAME? 16"
+          r: "{}"
+        setter:
+          q: "INNAME 16,\"{}\""
+
+      sensor_tlimit_16:
+        default: 300.0
+        getter:
+          q: "TLIMIT? 16"
+          r: "{}"
+        setter:
+          q: "TLIMIT 16,{}"
+
+      inset_16:
+        default: "1,100,3,0,1"
+        getter:
+          q: "INSET? 16"
+          r: "{}"
+        setter:
+          q: "INSET 16,{}"
+
+      intype_16:
+        default: "0,1,0,5,0,1"
+        getter:
+          q: "INTYPE? 16"
+          r: "{}"
+        setter:
+          q: "INTYPE 16,{}"
+
+      # ====================
+      # Heater Output 0 (sample_heater)
+      # ====================
+      outmode_output_0:
+        default: "5,2,0,0,0,1"
+        getter:
+          q: "OUTMODE? 0"
+          r: "{}"
+        setter:
+          q: "OUTMODE 0,{}"
+
+      pid_output_0:
+        default: "10,20,30"
+        getter:
+          q: "PID? 0"
+          r: "{}"
+        setter:
+          q: "PID 0,{}"
+
+      range_output_0:
+        default: 0
+        getter:
+          q: "RANGE? 0"
+          r: "{}"
+        setter:
+          q: "RANGE 0,{}"
+
+      setpoint_output_0:
+        default: 4.0
+        getter:
+          q: "SETP? 0"
+          r: "{}"
+        setter:
+          q: "SETP 0,{}"
+
+      # ====================
+      # Heater Output 1 (warmup_heater)
+      # ====================
+      outmode_output_1:
+        default: "5,2,0,0,0,1"
+        getter:
+          q: "OUTMODE? 1"
+          r: "{}"
+        setter:
+          q: "OUTMODE 1,{}"
+
+      pid_output_1:
+        default: "1,2,3"
+        getter:
+          q: "PID? 1"
+          r: "{}"
+        setter:
+          q: "PID 1,{}"
+
+      range_output_1:
+        default: 0
+        getter:
+          q: "RANGE? 1"
+          r: "{}"
+        setter:
+          q: "RANGE 1,{}"
+
+      setpoint_output_1:
+        default: 4.0
+        getter:
+          q: "SETP? 1"
+          r: "{}"
+        setter:
+          q: "SETP 1,{}"
+
+      # ====================
+      # Heater Output 2 (analog_heater)
+      # ====================
+      outmode_output_2:
+        default: "5,2,0,0,0,1"
+        getter:
+          q: "OUTMODE? 2"
+          r: "{}"
+        setter:
+          q: "OUTMODE 2,{}"
+
+      pid_output_2:
+        default: "10,20,30"
+        getter:
+          q: "PID? 2"
+          r: "{}"
+        setter:
+          q: "PID 2,{}"
+
+      range_output_2:
+        default: 0
+        getter:
+          q: "RANGE? 2"
+          r: "{}"
+        setter:
+          q: "RANGE 2,{}"
+
+      setpoint_output_2:
+        default: 4.0
+        getter:
+          q: "SETP? 2"
+          r: "{}"
+        setter:
+          q: "SETP 2,{}"
 
 resources:
   GPIB::3::INSTR:
