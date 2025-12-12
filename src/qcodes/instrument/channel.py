@@ -5,6 +5,7 @@ from __future__ import annotations
 import sys
 import warnings
 from collections.abc import Callable, Iterable, Iterator, MutableSequence, Sequence
+from functools import cached_property
 from typing import TYPE_CHECKING, Any, Generic, Self, cast, overload
 
 from typing_extensions import TypeVar
@@ -291,7 +292,7 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
     def short_name(self) -> str:
         return self._name
 
-    @property
+    @cached_property
     def full_name(self) -> str:
         return "_".join(self.name_parts)
 
