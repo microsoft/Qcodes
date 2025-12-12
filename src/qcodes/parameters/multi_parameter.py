@@ -10,6 +10,7 @@ from .parameter_base import ParameterBase
 from .sequence_helpers import is_sequence_of
 
 if TYPE_CHECKING:
+    from qcodes.dataset.data_set_protocol import ValuesType
     from qcodes.instrument import InstrumentBase
 
 try:
@@ -274,12 +275,12 @@ class MultiParameter(ParameterBase):
         else:
             return self.setpoint_names
 
-    def unpack_self(self, value: Sequence[Any]) -> list[tuple[ParameterBase, Any]]:
+    def unpack_self(self, value: ValuesType) -> list[tuple[ParameterBase, ValuesType]]:
         """
         Unpack the `subarrays` and `setpoints` from a :class:`MultiParameter`
         into a list of tuples of (Parameter, values).
         """
-        result_list: list[tuple[ParameterBase, Any]] = []
+        result_list: list[tuple[ParameterBase, ValuesType]] = []
 
         if self.setpoints is None:
             raise RuntimeError(
