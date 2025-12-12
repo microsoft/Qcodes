@@ -624,3 +624,98 @@ def paramspec_tree_to_param_name_tree(
     return {
         key.name: [item.name for item in items] for key, items in paramspec_tree.items()
     }
+
+
+class FrozenInterDependencies_(InterDependencies_):
+    """
+    A frozen version of InterDependencies_ that is immutable and caches
+    expensive lookups.
+    """
+
+    def __init__(self, interdeps: InterDependencies_):
+        self._graph = interdeps.graph.copy()
+        nx.freeze(self._graph)
+        self._top_level_parameters_cache: tuple[ParamSpecBase, ...] | None = None
+        self._dependencies_cache: ParamSpecTree | None = None
+        self._inferences_cache: ParamSpecTree | None = None
+        self._standalones_cache: frozenset[ParamSpecBase] | None = None
+        self._find_all_parameters_in_tree_cache: dict[
+            ParamSpecBase, set[ParamSpecBase]
+        ] = {}
+
+    def add_dependencies(self, dependencies: ParamSpecTree | None) -> None:
+        raise TypeError("FrozenInterDependencies_ is immutable")
+
+    def add_inferences(self, inferences: ParamSpecTree | None) -> None:
+        raise TypeError("FrozenInterDependencies_ is immutable")
+
+    def add_standalones(self, standalones: tuple[ParamSpecBase, ...]) -> None:
+        raise TypeError("FrozenInterDependencies_ is immutable")
+
+    def add_paramspecs(self, paramspecs: Sequence[ParamSpecBase]) -> None:
+        raise TypeError("FrozenInterDependencies_ is immutable")
+
+    def remove(self, paramspec: ParamSpecBase) -> InterDependencies_:
+        raise TypeError("FrozenInterDependencies_ is immutable")
+
+    def extend(
+        self,
+        dependencies: ParamSpecTree | None = None,
+        inferences: ParamSpecTree | None = None,
+        standalones: tuple[ParamSpecBase, ...] = (),
+    ) -> InterDependencies_:
+        """
+        Create a new :class:`InterDependencies_` object
+        that is an extension of this instance with the provided input
+        """
+        # We need to unfreeze the graph for the new instance
+        new_graph = nx.DiGraph(self.graph)
+        new_interdependencies = InterDependencies_._from_graph(new_graph)
+
+        new_interdependencies.add_dependencies(dependencies)
+        new_interdependencies.add_inferences(inferences)
+        new_interdependencies.add_standalones(standalones)
+        return new_interdependencies
+
+    @property
+    def top_level_parameters(self) -> tuple[ParamSpecBase, ...]:
+        if self._top_level_parameters_cache is None:
+            self._top_level_parameters_cache = super().top_level_parameters
+        return self._top_level_parameters_cache
+
+    @property
+    def dependencies(self) -> ParamSpecTree:
+        if self._dependencies_cache is None:
+            self._dependencies_cache = super().dependencies
+        return self._dependencies_cache.copy()
+
+    @property
+    def inferences(self) -> ParamSpecTree:
+        if self._inferences_cache is None:
+            self._inferences_cache = super().inferences
+        return self._inferences_cache.copy()
+
+    @property
+    def standalones(self) -> frozenset[ParamSpecBase]:
+        if self._standalones_cache is None:
+            self._standalones_cache = super().standalones
+        return self._standalones_cache
+
+    def find_all_parameters_in_tree(
+        self, initial_param: ParamSpecBase
+    ) -> set[ParamSpecBase]:
+        if initial_param not in self._find_all_parameters_in_tree_cache:
+            self._find_all_parameters_in_tree_cache[initial_param] = (
+                super().find_all_parameters_in_tree(initial_param)
+            )
+        return self._find_all_parameters_in_tree_cache[initial_param].copy()
+
+    @classmethod
+    def _from_dict(cls, ser: InterDependencies_Dict) -> FrozenInterDependencies_:
+        interdeps = InterDependencies_._from_dict(ser)
+        return cls(interdeps)
+
+    @classmethod
+    def _from_graph(cls, graph: nx.DiGraph[str]) -> FrozenInterDependencies_:
+        interdeps = InterDependencies_._from_graph(graph)
+        return cls(interdeps)

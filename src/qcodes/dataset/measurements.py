@@ -36,6 +36,7 @@ from qcodes.dataset.data_set_protocol import (
     ValuesType,
 )
 from qcodes.dataset.descriptions.dependencies import (
+    FrozenInterDependencies_,
     IncompleteSubsetError,
     InterDependencies_,
     ParamSpecTree,
@@ -1514,7 +1515,7 @@ class Measurement:
             self.experiment,
             station=self.station,
             write_period=self._write_period,
-            interdeps=self._interdeps,
+            interdeps=FrozenInterDependencies_(self._interdeps),
             name=self.name,
             subscribers=self.subscribers,
             parent_datasets=self._parent_datasets,
