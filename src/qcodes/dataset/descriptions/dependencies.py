@@ -634,7 +634,8 @@ def paramspec_tree_to_param_name_tree(
     }
 
 
-class FrozenInterDependencies_(InterDependencies_):
+class FrozenInterDependencies_(InterDependencies_):  # noqa: PLW1641
+    # todo: not clear if this should implement __hash__.
     """
     A frozen version of InterDependencies_ that is immutable and caches
     expensive lookups.
@@ -759,3 +760,8 @@ class FrozenInterDependencies_(InterDependencies_):
             f"standalones={self.standalones})"
         )
         return rep
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, FrozenInterDependencies_):
+            return False
+        return nx.utils.graphs_equal(self.graph, other.graph)
