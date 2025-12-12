@@ -779,3 +779,14 @@ class FrozenInterDependencies_(InterDependencies_):  # noqa: PLW1641
         if not isinstance(other, FrozenInterDependencies_):
             return False
         return nx.utils.graphs_equal(self.graph, other.graph)
+
+    def to_interdependencies(self) -> InterDependencies_:
+        """
+        Convert this FrozenInterDependencies_ back to a mutable InterDependencies_ instance.
+
+        Returns:
+            A new InterDependencies_ instance with the same data as this frozen instance.
+
+        """
+        new_graph = nx.DiGraph(self.graph)
+        return InterDependencies_._from_graph(new_graph)

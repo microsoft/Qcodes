@@ -766,6 +766,28 @@ class Runner:
                     self._span.record_exception(exception_value)
                 self.ds.add_metadata("measurement_exception", exception_string)
 
+            # for now we set the interdependencies back to the
+            # not frozen state, so that further modifications are possible
+            # this is not recommended but we want to minimize the changes for now
+
+            if isinstance(self.ds.description.interdeps, FrozenInterDependencies_):
+                intedeps = self.ds.description.interdeps.to_interdependencies()
+            else:
+                intedeps = self.ds.description.interdeps
+
+            if isinstance(self.ds, DataSet):
+                self.ds.set_interdependencies(
+                    shapes=self.ds.description.shapes,
+                    interdeps=intedeps,
+                    override=True,
+                )
+            elif isinstance(self.ds, DataSetInMem):
+                self.ds._set_interdependencies(
+                    shapes=self.ds.description.shapes,
+                    interdeps=intedeps,
+                    override=True,
+                )
+
             # and finally mark the dataset as closed, thus
             # finishing the measurement
             # Note that the completion of a dataset entails waiting for the

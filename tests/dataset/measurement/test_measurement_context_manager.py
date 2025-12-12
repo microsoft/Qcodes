@@ -736,7 +736,8 @@ def test_datasaver_scalars(
 
     ds = datasaver.dataset
     assert isinstance(ds, DataSet)
-    assert isinstance(ds.description.interdeps, FrozenInterDependencies_)
+    assert isinstance(ds.description.interdeps, InterDependencies_)
+    assert not isinstance(ds.description.interdeps, FrozenInterDependencies_)
 
     loaded_ds = load_by_id(ds.run_id)
 
