@@ -428,6 +428,18 @@ class InterDependencies_:  # noqa: PLW1641
         else:
             raise ValueError(f"Invalid {interdep_type_internal}") from TypeError(cause)
 
+    def _invalid_subsets(
+        self, paramspecs: Sequence[ParamSpecBase]
+    ) -> tuple[set[str], set[str]] | None:
+        subset_nodes = set([paramspec.name for paramspec in paramspecs])
+        for subset_node in subset_nodes:
+            descendant_nodes_per_subset_node = nx.descendants(self.graph, subset_node)
+            if missing_nodes := descendant_nodes_per_subset_node.difference(
+                subset_nodes
+            ):
+                return (subset_nodes, missing_nodes)
+        return None
+
     def validate_subset(self, paramspecs: Sequence[ParamSpecBase]) -> None:
         """
         Validate that the given parameters form a valid subset of the
@@ -442,15 +454,11 @@ class InterDependencies_:  # noqa: PLW1641
             InterdependencyError: If a dependency or inference is missing
 
         """
-        subset_nodes = set([paramspec.name for paramspec in paramspecs])
-        for subset_node in subset_nodes:
-            descendant_nodes_per_subset_node = nx.descendants(self.graph, subset_node)
-            if missing_nodes := descendant_nodes_per_subset_node.difference(
-                subset_nodes
-            ):
-                raise IncompleteSubsetError(
-                    subset_params=subset_nodes, missing_params=missing_nodes
-                )
+        invalid_subset = self._invalid_subsets(paramspecs)
+        if invalid_subset is not None:
+            raise IncompleteSubsetError(
+                subset_params=invalid_subset[0], missing_params=invalid_subset[1]
+            )
 
     @classmethod
     def _from_graph(cls, graph: nx.DiGraph[str]) -> InterDependencies_:
@@ -642,6 +650,9 @@ class FrozenInterDependencies_(InterDependencies_):
         self._find_all_parameters_in_tree_cache: dict[
             ParamSpecBase, set[ParamSpecBase]
         ] = {}
+        self._invalid_subsets_cache: dict[
+            tuple[ParamSpecBase, ...], tuple[set[str], set[str]] | None
+        ] = {}
 
     def add_dependencies(self, dependencies: ParamSpecTree | None) -> None:
         raise TypeError("FrozenInterDependencies_ is immutable")
@@ -719,3 +730,15 @@ class FrozenInterDependencies_(InterDependencies_):
     def _from_graph(cls, graph: nx.DiGraph[str]) -> FrozenInterDependencies_:
         interdeps = InterDependencies_._from_graph(graph)
         return cls(interdeps)
+
+    def validate_subset(self, paramspecs: Sequence[ParamSpecBase]) -> None:
+        paramspecs_tuple = tuple(paramspecs)
+        if paramspecs_tuple not in self._invalid_subsets_cache:
+            self._invalid_subsets_cache[paramspecs_tuple] = self._invalid_subsets(
+                paramspecs_tuple
+            )
+        invalid_subset = self._invalid_subsets_cache[paramspecs_tuple]
+        if invalid_subset is not None:
+            raise IncompleteSubsetError(
+                subset_params=invalid_subset[0], missing_params=invalid_subset[1]
+            )
