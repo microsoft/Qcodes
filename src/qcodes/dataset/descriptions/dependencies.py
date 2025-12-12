@@ -638,7 +638,12 @@ class FrozenInterDependencies_(InterDependencies_):  # noqa: PLW1641
     # todo: not clear if this should implement __hash__.
     """
     A frozen version of InterDependencies_ that is immutable and caches
-    expensive lookups.
+    expensive lookups. This is used exclusively while running a measurement
+    to minimize the overhead of dependency lookups for each data operation.
+
+    Args:
+        interdeps: An InterDependencies_ instance to freeze
+
     """
 
     def __init__(self, interdeps: InterDependencies_):
