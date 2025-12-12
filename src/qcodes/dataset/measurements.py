@@ -312,65 +312,6 @@ class DataSaver:
 
         return res_dict
 
-    def _unpack_multiparameter(
-        self, partial_result: ResType
-    ) -> dict[ParamSpecBase, npt.NDArray]:
-        """
-        Unpack the `subarrays` and `setpoints` from a :class:`MultiParameter`
-        and into a standard results dict form and return that dict
-
-        """
-
-        parameter, data = partial_result
-        parameter = cast("MultiParameter", parameter)
-
-        result_dict = {}
-
-        if parameter.setpoints is None:
-            raise RuntimeError(
-                f"{parameter.full_name} is an "
-                f"{type(parameter)} "
-                f"without setpoints. Cannot handle this."
-            )
-        for i in range(len(parameter.shapes)):
-            # if this loop runs, then 'data' is a Sequence
-            data = cast("Sequence[str | int | float | Any]", data)
-
-            shape = parameter.shapes[i]
-
-            try:
-                paramspec = self._interdeps._id_to_paramspec[parameter.full_names[i]]
-            except KeyError:
-                raise ValueError(
-                    "Can not add result for parameter "
-                    f"{parameter.names[i]}, "
-                    "no such parameter registered "
-                    "with this measurement."
-                )
-
-            result_dict.update({paramspec: np.array(data[i])})
-            if shape != ():
-                # array parameter like part of the multiparameter
-                # need to find setpoints too
-                fallback_sp_name = f"{parameter.full_names[i]}_setpoint"
-
-                sp_names: Sequence[str] | None
-                if (
-                    parameter.setpoint_full_names is not None
-                    and parameter.setpoint_full_names[i] is not None
-                ):
-                    sp_names = parameter.setpoint_full_names[i]
-                else:
-                    sp_names = None
-
-                result_dict.update(
-                    self._unpack_setpoints_from_parameter(
-                        parameter, parameter.setpoints[i], sp_names, fallback_sp_name
-                    )
-                )
-
-        return result_dict
-
     def _unpack_setpoints_from_parameter(
         self,
         parameter: ParameterBase,
