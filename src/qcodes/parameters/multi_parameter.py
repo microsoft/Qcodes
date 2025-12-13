@@ -2,15 +2,12 @@ from __future__ import annotations
 
 import os
 from collections.abc import Iterator, Mapping, Sequence
-from typing import TYPE_CHECKING, Any
+from typing import Any, Generic
 
 import numpy as np
 
-from .parameter_base import ParameterBase
+from .parameter_base import ParameterBase, _InstrumentType_co, _ParameterDataTypeVar
 from .sequence_helpers import is_sequence_of
-
-if TYPE_CHECKING:
-    from qcodes.instrument import InstrumentBase
 
 try:
     from qcodes_loop.data.data_array import DataArray
@@ -50,7 +47,10 @@ def _is_nested_sequence_or_none(
     return True
 
 
-class MultiParameter(ParameterBase):
+class MultiParameter(
+    ParameterBase[_ParameterDataTypeVar, _InstrumentType_co],
+    Generic[_ParameterDataTypeVar, _InstrumentType_co],
+):
     """
     A gettable parameter that returns multiple values with separate names,
     each of arbitrary shape. Not necessarily part of an instrument.
@@ -141,7 +141,7 @@ class MultiParameter(ParameterBase):
         name: str,
         names: Sequence[str],
         shapes: Sequence[Sequence[int]],
-        instrument: InstrumentBase | None = None,
+        instrument: _InstrumentType_co = None,
         labels: Sequence[str] | None = None,
         units: Sequence[str] | None = None,
         setpoints: Sequence[Sequence[Any]] | None = None,

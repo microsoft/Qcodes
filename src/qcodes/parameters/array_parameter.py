@@ -12,14 +12,13 @@ try:
     has_loop = True
 except ImportError:
     has_loop = False
+from typing import Generic
 
-from .parameter_base import ParameterBase
+from .parameter_base import ParameterBase, _InstrumentType_co, _ParameterDataTypeVar
 from .sequence_helpers import is_sequence_of
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
-
-    from qcodes.instrument import InstrumentBase
 
 
 try:
@@ -41,7 +40,10 @@ except ImportError:
     )
 
 
-class ArrayParameter(ParameterBase):
+class ArrayParameter(
+    ParameterBase[_ParameterDataTypeVar, _InstrumentType_co],
+    Generic[_ParameterDataTypeVar, _InstrumentType_co],
+):
     """
     A gettable parameter that returns an array of values.
     Not necessarily part of an instrument.
@@ -131,7 +133,7 @@ class ArrayParameter(ParameterBase):
         self,
         name: str,
         shape: Sequence[int],
-        instrument: InstrumentBase | None = None,
+        instrument: _InstrumentType_co = None,
         label: str | None = None,
         unit: str | None = None,
         setpoints: Sequence[Any] | None = None,
