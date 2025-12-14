@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Generic
 
-from .parameter import Parameter
+from .parameter import Parameter, _InstrumentType_co, _ParameterDataTypeVar
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -10,10 +10,16 @@ if TYPE_CHECKING:
 
     from qcodes.validators.validators import Validator
 
-    from .parameter_base import ParamDataType, ParamRawDataType
+    from .parameter_base import (
+        ParamDataType,
+        ParamRawDataType,
+    )
 
 
-class DelegateParameter(Parameter):
+class DelegateParameter(
+    Parameter[_ParameterDataTypeVar, _InstrumentType_co],
+    Generic[_ParameterDataTypeVar, _InstrumentType_co],
+):
     """
     The :class:`.DelegateParameter` wraps a given `source` :class:`Parameter`.
     Setting/getting it results in a set/get of the source parameter with
@@ -52,7 +58,10 @@ class DelegateParameter(Parameter):
     """
 
     class _DelegateCache:
-        def __init__(self, parameter: DelegateParameter):
+        def __init__(
+            self,
+            parameter: DelegateParameter[_ParameterDataTypeVar, _InstrumentType_co],
+        ):
             self._parameter = parameter
             self._marked_valid: bool = False
 
@@ -99,7 +108,7 @@ class DelegateParameter(Parameter):
             if self._parameter.source is not None:
                 self._parameter.source.cache.invalidate()
 
-        def get(self, get_if_invalid: bool = True) -> ParamDataType:
+        def get(self, get_if_invalid: bool = True) -> _ParameterDataTypeVar:
             if self._parameter.source is None:
                 raise TypeError(
                     "Cannot get the cache of a DelegateParameter that delegates to None"
@@ -108,7 +117,7 @@ class DelegateParameter(Parameter):
                 self._parameter.source.cache.get(get_if_invalid=get_if_invalid)
             )
 
-        def set(self, value: ParamDataType) -> None:
+        def set(self, value: _ParameterDataTypeVar) -> None:
             if self._parameter.source is None:
                 raise TypeError(
                     "Cannot set the cache of a DelegateParameter that delegates to None"
@@ -128,7 +137,7 @@ class DelegateParameter(Parameter):
         def _update_with(
             self,
             *,
-            value: ParamDataType,
+            value: _ParameterDataTypeVar,
             raw_value: ParamRawDataType,
             timestamp: datetime | None = None,
         ) -> None:
@@ -142,7 +151,7 @@ class DelegateParameter(Parameter):
             """
             pass
 
-        def __call__(self) -> ParamDataType:
+        def __call__(self) -> _ParameterDataTypeVar:
             return self.get(get_if_invalid=True)
 
     def __init__(
