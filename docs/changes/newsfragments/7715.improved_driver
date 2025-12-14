@@ -1,0 +1,1 @@
+In the Rohde Schwarz ZNB drivers QCoDeS functions have been converted to regular methods. This ensures that methods are type checked and can be discovered by IDEs.
