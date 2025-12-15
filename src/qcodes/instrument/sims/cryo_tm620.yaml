@@ -9,21 +9,18 @@ devices:
     dialogues:
       - q: "*IDN?"
         r: "Cryomagnetics,TM-620_simulation,2002,2.00"
-      - q: "MEAS? A"
-        r: "{RANDOM(54, 56, 1):.2f}K\r\n"
-      - q: "MEAS? B"
-        r: "{RANDOM(3, 5, 1):.2f}K\r\n"
-      - q: "REMOTE"
 
     properties:
       shield:
+        default: "55.5 K"
         getter:
           q: "MEAS? A"
-          r: "{RANDOM(54, 56, 1):.2f}K\r\n"
+          r: "{}"
       magnet:
+        default: "4.12 k"
         getter:
           q: "MEAS? B"
-          r: "{RANDOM(3, 5, 1):.2f}K\r\n"
+          r: "{}"
 
 
 resources:

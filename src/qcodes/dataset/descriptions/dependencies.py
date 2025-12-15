@@ -428,6 +428,18 @@ class InterDependencies_:  # noqa: PLW1641
         else:
             raise ValueError(f"Invalid {interdep_type_internal}") from TypeError(cause)
 
+    def _invalid_subsets(
+        self, paramspecs: Sequence[ParamSpecBase]
+    ) -> tuple[set[str], set[str]] | None:
+        subset_nodes = {paramspec.name for paramspec in paramspecs}
+        for subset_node in subset_nodes:
+            descendant_nodes_per_subset_node = nx.descendants(self.graph, subset_node)
+            if missing_nodes := descendant_nodes_per_subset_node.difference(
+                subset_nodes
+            ):
+                return (subset_nodes, missing_nodes)
+        return None
+
     def validate_subset(self, paramspecs: Sequence[ParamSpecBase]) -> None:
         """
         Validate that the given parameters form a valid subset of the
@@ -442,15 +454,11 @@ class InterDependencies_:  # noqa: PLW1641
             InterdependencyError: If a dependency or inference is missing
 
         """
-        subset_nodes = set([paramspec.name for paramspec in paramspecs])
-        for subset_node in subset_nodes:
-            descendant_nodes_per_subset_node = nx.descendants(self.graph, subset_node)
-            if missing_nodes := descendant_nodes_per_subset_node.difference(
-                subset_nodes
-            ):
-                raise IncompleteSubsetError(
-                    subset_params=subset_nodes, missing_params=missing_nodes
-                )
+        invalid_subset = self._invalid_subsets(paramspecs)
+        if invalid_subset is not None:
+            raise IncompleteSubsetError(
+                subset_params=invalid_subset[0], missing_params=invalid_subset[1]
+            )
 
     @classmethod
     def _from_graph(cls, graph: nx.DiGraph[str]) -> InterDependencies_:
@@ -624,3 +632,161 @@ def paramspec_tree_to_param_name_tree(
     return {
         key.name: [item.name for item in items] for key, items in paramspec_tree.items()
     }
+
+
+class FrozenInterDependencies_(InterDependencies_):  # noqa: PLW1641
+    # todo: not clear if this should implement __hash__.
+    """
+    A frozen version of InterDependencies_ that is immutable and caches
+    expensive lookups. This is used exclusively while running a measurement
+    to minimize the overhead of dependency lookups for each data operation.
+
+    Args:
+        interdeps: An InterDependencies_ instance to freeze
+
+    """
+
+    def __init__(self, interdeps: InterDependencies_):
+        self._graph = interdeps.graph.copy()
+        nx.freeze(self._graph)
+        self._top_level_parameters_cache: tuple[ParamSpecBase, ...] | None = None
+        self._dependencies_cache: ParamSpecTree | None = None
+        self._inferences_cache: ParamSpecTree | None = None
+        self._standalones_cache: frozenset[ParamSpecBase] | None = None
+        self._find_all_parameters_in_tree_cache: dict[
+            ParamSpecBase, set[ParamSpecBase]
+        ] = {}
+        self._invalid_subsets_cache: dict[
+            tuple[ParamSpecBase, ...], tuple[set[str], set[str]] | None
+        ] = {}
+        self._id_to_paramspec_cache: dict[str, ParamSpecBase] | None = None
+        self._paramspec_to_id_cache: dict[ParamSpecBase, str] | None = None
+
+    def add_dependencies(self, dependencies: ParamSpecTree | None) -> None:
+        raise TypeError("FrozenInterDependencies_ is immutable")
+
+    def add_inferences(self, inferences: ParamSpecTree | None) -> None:
+        raise TypeError("FrozenInterDependencies_ is immutable")
+
+    def add_standalones(self, standalones: tuple[ParamSpecBase, ...]) -> None:
+        raise TypeError("FrozenInterDependencies_ is immutable")
+
+    def add_paramspecs(self, paramspecs: Sequence[ParamSpecBase]) -> None:
+        raise TypeError("FrozenInterDependencies_ is immutable")
+
+    def remove(self, paramspec: ParamSpecBase) -> InterDependencies_:
+        raise TypeError("FrozenInterDependencies_ is immutable")
+
+    def extend(
+        self,
+        dependencies: ParamSpecTree | None = None,
+        inferences: ParamSpecTree | None = None,
+        standalones: tuple[ParamSpecBase, ...] = (),
+    ) -> InterDependencies_:
+        """
+        Create a new :class:`InterDependencies_` object
+        that is an extension of this instance with the provided input
+        """
+        # We need to unfreeze the graph for the new instance
+        new_graph = nx.DiGraph(self.graph)
+        new_interdependencies = InterDependencies_._from_graph(new_graph)
+
+        new_interdependencies.add_dependencies(dependencies)
+        new_interdependencies.add_inferences(inferences)
+        new_interdependencies.add_standalones(standalones)
+        return new_interdependencies
+
+    @property
+    def top_level_parameters(self) -> tuple[ParamSpecBase, ...]:
+        if self._top_level_parameters_cache is None:
+            self._top_level_parameters_cache = super().top_level_parameters
+        return self._top_level_parameters_cache
+
+    @property
+    def dependencies(self) -> ParamSpecTree:
+        if self._dependencies_cache is None:
+            self._dependencies_cache = super().dependencies
+        return self._dependencies_cache.copy()
+
+    @property
+    def inferences(self) -> ParamSpecTree:
+        if self._inferences_cache is None:
+            self._inferences_cache = super().inferences
+        return self._inferences_cache.copy()
+
+    @property
+    def standalones(self) -> frozenset[ParamSpecBase]:
+        if self._standalones_cache is None:
+            self._standalones_cache = super().standalones
+        return self._standalones_cache
+
+    def find_all_parameters_in_tree(
+        self, initial_param: ParamSpecBase
+    ) -> set[ParamSpecBase]:
+        if initial_param not in self._find_all_parameters_in_tree_cache:
+            self._find_all_parameters_in_tree_cache[initial_param] = (
+                super().find_all_parameters_in_tree(initial_param)
+            )
+        return self._find_all_parameters_in_tree_cache[initial_param].copy()
+
+    @classmethod
+    def _from_dict(cls, ser: InterDependencies_Dict) -> FrozenInterDependencies_:
+        interdeps = InterDependencies_._from_dict(ser)
+        return cls(interdeps)
+
+    @classmethod
+    def _from_graph(cls, graph: nx.DiGraph[str]) -> FrozenInterDependencies_:
+        interdeps = InterDependencies_._from_graph(graph)
+        return cls(interdeps)
+
+    def validate_subset(self, paramspecs: Sequence[ParamSpecBase]) -> None:
+        paramspecs_tuple = tuple(paramspecs)
+        if paramspecs_tuple not in self._invalid_subsets_cache:
+            self._invalid_subsets_cache[paramspecs_tuple] = self._invalid_subsets(
+                paramspecs_tuple
+            )
+        invalid_subset = self._invalid_subsets_cache[paramspecs_tuple]
+        if invalid_subset is not None:
+            raise IncompleteSubsetError(
+                subset_params=invalid_subset[0], missing_params=invalid_subset[1]
+            )
+
+    @property
+    def _id_to_paramspec(self) -> dict[str, ParamSpecBase]:
+        if self._id_to_paramspec_cache is None:
+            self._id_to_paramspec_cache = {
+                node_id: data["value"] for node_id, data in self.graph.nodes(data=True)
+            }
+        return self._id_to_paramspec_cache
+
+    @property
+    def _paramspec_to_id(self) -> dict[ParamSpecBase, str]:
+        if self._paramspec_to_id_cache is None:
+            self._paramspec_to_id_cache = {
+                data["value"]: node_id for node_id, data in self.graph.nodes(data=True)
+            }
+        return self._paramspec_to_id_cache
+
+    def __repr__(self) -> str:
+        rep = (
+            f"FrozenInterDependencies_(dependencies={self.dependencies}, "
+            f"inferences={self.inferences}, "
+            f"standalones={self.standalones})"
+        )
+        return rep
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, FrozenInterDependencies_):
+            return False
+        return nx.utils.graphs_equal(self.graph, other.graph)
+
+    def to_interdependencies(self) -> InterDependencies_:
+        """
+        Convert this FrozenInterDependencies_ back to a mutable InterDependencies_ instance.
+
+        Returns:
+            A new InterDependencies_ instance with the same data as this frozen instance.
+
+        """
+        new_graph = nx.DiGraph(self.graph)
+        return InterDependencies_._from_graph(new_graph)

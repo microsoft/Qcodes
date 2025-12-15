@@ -17,7 +17,7 @@ from copy import deepcopy
 from inspect import signature
 from itertools import chain
 from numbers import Number
-from time import perf_counter
+from time import perf_counter, perf_counter_ns
 from typing import TYPE_CHECKING, Any, TypeAlias, TypeVar, cast
 
 import numpy as np
@@ -36,6 +36,7 @@ from qcodes.dataset.data_set_protocol import (
     ValuesType,
 )
 from qcodes.dataset.descriptions.dependencies import (
+    FrozenInterDependencies_,
     IncompleteSubsetError,
     InterDependencies_,
     ParamSpecTree,
@@ -66,6 +67,7 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 TRACER = trace.get_tracer(__name__)
+
 
 ActionType = tuple[Callable[..., Any], Sequence[Any]]
 SubscriberType = tuple[
@@ -98,6 +100,7 @@ class DataSaver:
     ) -> None:
         self._span = span
         self._dataset = dataset
+        self._add_result_time_ns = 0
         if (
             DataSaver.default_callback is not None
             and "run_tables_subscription_callback" in DataSaver.default_callback
@@ -207,6 +210,7 @@ class DataSaver:
                 its type.
 
         """
+        start_time = perf_counter_ns()
 
         parameter_results: list[ParameterResultType] = [
             self._coerce_result_tuple_to_parameter_result_type(result_tuple)
@@ -277,6 +281,7 @@ class DataSaver:
         if perf_counter() - self._last_save_time > self.write_period:
             self.flush_data_to_database()
             self._last_save_time = perf_counter()
+        self._add_result_time_ns += perf_counter_ns() - start_time
 
     def _unpack_arrayparameter(
         self, partial_result: ResType
@@ -734,6 +739,8 @@ class Runner:
         with DelayedKeyboardInterrupt(
             context={"reason": "qcodes measurement exit", "qcodes_guid": self.ds.guid}
         ):
+            add_result_time = self.datasaver._add_result_time_ns
+            self._span.set_attribute("qcodes_add_result_time_ms", add_result_time / 1e6)
             self.datasaver.flush_data_to_database(block=True)
 
             # perform the "teardown" events
@@ -758,6 +765,28 @@ class Runner:
                 if isinstance(exception_value, Exception):
                     self._span.record_exception(exception_value)
                 self.ds.add_metadata("measurement_exception", exception_string)
+
+            # for now we set the interdependencies back to the
+            # not frozen state, so that further modifications are possible
+            # this is not recommended but we want to minimize the changes for now
+
+            if isinstance(self.ds.description.interdeps, FrozenInterDependencies_):
+                intedeps = self.ds.description.interdeps.to_interdependencies()
+            else:
+                intedeps = self.ds.description.interdeps
+
+            if isinstance(self.ds, DataSet):
+                self.ds.set_interdependencies(
+                    shapes=self.ds.description.shapes,
+                    interdeps=intedeps,
+                    override=True,
+                )
+            elif isinstance(self.ds, DataSetInMem):
+                self.ds._set_interdependencies(
+                    shapes=self.ds.description.shapes,
+                    interdeps=intedeps,
+                    override=True,
+                )
 
             # and finally mark the dataset as closed, thus
             # finishing the measurement
@@ -1508,7 +1537,7 @@ class Measurement:
             self.experiment,
             station=self.station,
             write_period=self._write_period,
-            interdeps=self._interdeps,
+            interdeps=FrozenInterDependencies_(self._interdeps),
             name=self.name,
             subscribers=self.subscribers,
             parent_datasets=self._parent_datasets,

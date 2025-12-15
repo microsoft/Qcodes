@@ -735,12 +735,13 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
         using the other channel settings and zero delay
         """
 
-        self.add_function(
-            "set_electrical_delay_auto", call_cmd=f"SENS{n}:CORR:EDEL:AUTO ONCE"
-        )
-        self.add_function(
-            "autoscale",
-            call_cmd=f"DISPlay:TRACe1:Y:SCALe:AUTO ONCE, {self._tracename}",
+    def set_electrical_delay_auto(self) -> None:
+        n = self._instrument_channel
+        self.root_instrument.write(f"SENS{n}:CORR:EDEL:AUTO ONCE")
+
+    def autoscale(self) -> None:
+        self.root_instrument.write(
+            f"DISPlay:TRACe1:Y:SCALe:AUTO ONCE, {self._tracename}"
         )
 
     def _get_format(self, tracename: str) -> str:
@@ -1146,41 +1147,23 @@ class RohdeSchwarzZNBBase(VisaInstrument):
         For external reference: check frequency and level of the supplied
         reference signal.
         """
-
-        self.add_function("reset", call_cmd="*RST")
-        self.add_function("tooltip_on", call_cmd="SYST:ERR:DISP ON")
-        self.add_function("tooltip_off", call_cmd="SYST:ERR:DISP OFF")
-        self.add_function("cont_meas_on", call_cmd="INIT:CONT:ALL ON")
-        self.add_function("cont_meas_off", call_cmd="INIT:CONT:ALL OFF")
-        self.add_function("update_display_once", call_cmd="SYST:DISP:UPD ONCE")
-        self.add_function("update_display_on", call_cmd="SYST:DISP:UPD ON")
-        self.add_function("update_display_off", call_cmd="SYST:DISP:UPD OFF")
-        self.add_function(
-            "display_sij_split",
-            call_cmd=f"DISP:LAY GRID;:DISP:LAY:GRID {num_ports},{num_ports}",
-        )
-        self.add_function(
-            "display_single_window", call_cmd="DISP:LAY GRID;:DISP:LAY:GRID 1,1"
-        )
-        self.add_function(
-            "display_dual_window", call_cmd="DISP:LAY GRID;:DISP:LAY:GRID 2,1"
-        )
-        self.add_function("rf_off", call_cmd="OUTP1 OFF")
-        self.add_function("rf_on", call_cmd="OUTP1 ON")
         if reset_channels:
             self.reset()
             self.clear_channels()
         channels = ChannelList(
             self, "VNAChannels", self.CHANNEL_CLASS, snapshotable=True
         )
-        self.add_submodule("channels", channels)
+        self.channels: ChannelList[RohdeSchwarzZNBChannel] = self.add_submodule(
+            "channels", channels
+        )
+        """Submodule channels: List of VNA channels."""
         if init_s_params:
             for i in range(1, num_ports + 1):
                 for j in range(1, num_ports + 1):
                     ch_name = "S" + str(i) + str(j)
                     self.add_channel(ch_name)
             self.display_sij_split()
-            self.channels.autoscale()
+            self.channels.multi_function("autoscale")()
 
         self.update_display_on()
         if reset_channels:
@@ -1225,3 +1208,46 @@ class RohdeSchwarzZNBBase(VisaInstrument):
         for submodule in self.submodules.values():
             if isinstance(submodule, ChannelList):
                 submodule.clear()
+
+    def reset(self) -> None:
+        """
+        Reset the instrument to default settings.
+        """
+        self.write("*RST")
+
+    def update_display_on(self) -> None:
+        self.write("SYST:DISP:UPD ON")
+
+    def tooltip_on(self) -> None:
+        self.write("SYST:ERR:DISP ON")
+
+    def tooltip_off(self) -> None:
+        self.write("SYST:ERR:DISP OFF")
+
+    def cont_meas_on(self) -> None:
+        self.write("INIT:CONT:ALL ON")
+
+    def cont_meas_off(self) -> None:
+        self.write("INIT:CONT:ALL OFF")
+
+    def update_display_once(self) -> None:
+        self.write("SYST:DISP:UPD ONCE")
+
+    def update_display_off(self) -> None:
+        self.write("SYST:DISP:UPD OFF")
+
+    def display_sij_split(self) -> None:
+        num_ports = self.num_ports.cache.get()
+        self.write(f"DISP:LAY GRID;:DISP:LAY:GRID {num_ports},{num_ports}")
+
+    def display_single_window(self) -> None:
+        self.write("DISP:LAY GRID;:DISP:LAY:GRID 1,1")
+
+    def display_dual_window(self) -> None:
+        self.write("DISP:LAY GRID;:DISP:LAY:GRID 2,1")
+
+    def rf_off(self) -> None:
+        self.write("OUTP1 OFF")
+
+    def rf_on(self) -> None:
+        self.write("OUTP1 ON")

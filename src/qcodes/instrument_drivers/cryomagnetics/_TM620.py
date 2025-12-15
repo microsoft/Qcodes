@@ -1,4 +1,5 @@
 import re
+from time import sleep
 from typing import TYPE_CHECKING
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
@@ -23,6 +24,7 @@ class CryomagneticsModelTM620(VisaInstrument):
     """
 
     float_pattern = re.compile(r"[0-9]+\.[0-9]+")
+    default_terminator = "\r\n"
 
     def __init__(
         self,
@@ -51,6 +53,9 @@ class CryomagneticsModelTM620(VisaInstrument):
         """4K magnet temperature"""
 
         self.operating_mode()
+        # Communication is a bit slow, so add small time delay to avoid errors
+        # during initialization
+        sleep(0.1)
         self.connect_message()
 
     def operating_mode(self, remote: bool = True) -> None:

@@ -7,7 +7,6 @@ from typing import (
     SupportsBytes,
     SupportsIndex,
     TextIO,
-    cast,
 )
 
 from qcodes.instrument import (
@@ -303,7 +302,7 @@ class LakeshoreModel325Curve(InstrumentChannel):
             self.write(cmd_str)
 
 
-class LakeshoreModel325Sensor(InstrumentChannel):
+class LakeshoreModel325Sensor(InstrumentChannel["LakeshoreModel325"]):
     """
     InstrumentChannel for a single sensor of a Lakeshore Model 325.
 
@@ -396,8 +395,7 @@ class LakeshoreModel325Sensor(InstrumentChannel):
 
     @property
     def curve(self) -> LakeshoreModel325Curve:
-        parent = cast("LakeshoreModel325", self.parent)
-        return LakeshoreModel325Curve(parent, self.curve_index())
+        return LakeshoreModel325Curve(self.parent, self.curve_index())
 
 
 class LakeshoreModel325Heater(InstrumentChannel):
@@ -582,7 +580,10 @@ class LakeshoreModel325(VisaInstrument):
         super().__init__(name, address, **kwargs)
 
         sensors = ChannelList(
-            self, "sensor", LakeshoreModel325Sensor, snapshotable=False
+            self,
+            "sensor",
+            LakeshoreModel325Sensor,
+            snapshotable=False,
         )
 
         self.sensor_A: LakeshoreModel325Sensor = self.add_submodule(

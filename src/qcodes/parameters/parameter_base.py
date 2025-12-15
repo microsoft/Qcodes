@@ -1317,7 +1317,7 @@ P = TypeVar("P", bound=ParameterBase)
 
 
 # Does not implement __hash__, not clear it needs to
-class ParameterSet(MutableSet, Generic[P]):  # noqa: PLW1641
+class ParameterSet(MutableSet[P], Generic[P]):  # noqa: PLW1641
     """A set-like container that preserves the insertion order of its parameters.
 
     This class implements the common set interface methods while maintaining
@@ -1343,7 +1343,7 @@ class ParameterSet(MutableSet, Generic[P]):  # noqa: PLW1641
     def clear(self) -> None:
         self._dict.clear()
 
-    def pop(self) -> ParameterBase:
+    def pop(self) -> P:
         if not self._dict:
             raise KeyError("pop from an empty ParameterSet")
         item = next(iter(self._dict))

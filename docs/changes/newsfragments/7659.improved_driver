@@ -1,0 +1,2 @@
+The ``KeysightE4980A`` driver now names the ``correction`` submodule correctly as ``correction`` reflecting the public attribute to access the module.
+This also means that in the snapshot ``correction`` is used as the module name rather than ``_correction``

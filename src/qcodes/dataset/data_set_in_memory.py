@@ -748,7 +748,10 @@ class DataSetInMem(BaseDataSet):
         self._parent_dataset_links = links
 
     def _set_interdependencies(
-        self, interdeps: InterDependencies_, shapes: Shapes | None = None
+        self,
+        interdeps: InterDependencies_,
+        shapes: Shapes | None = None,
+        override: bool = False,
     ) -> None:
         """
         Set the interdependencies object (which holds all added
@@ -761,7 +764,7 @@ class DataSetInMem(BaseDataSet):
                 f"Wrong input type. Expected InterDepencies_, got {type(interdeps)}"
             )
 
-        if not self.pristine:
+        if not self.pristine and not override:
             mssg = "Can not set interdependencies on a DataSet that has been started."
             raise RuntimeError(mssg)
         self._rundescriber = RunDescriber(interdeps, shapes=shapes)

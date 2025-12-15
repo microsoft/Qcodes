@@ -2,7 +2,7 @@ from qcodes.extensions import DriverTestCase
 from qcodes.instrument_drivers.weinschel import Weinschel8320
 
 
-class TestWeinschel8320(DriverTestCase):
+class TestWeinschel8320(DriverTestCase[Weinschel8320]):
     """
     This is a test suite for testing the weinschel/aeroflex stepped attenuator.
     It is designed to provide a test function for each function as well as for
