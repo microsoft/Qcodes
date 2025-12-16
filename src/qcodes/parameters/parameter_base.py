@@ -45,10 +45,16 @@ if TYPE_CHECKING:
     from qcodes.instrument import InstrumentBase
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 ParameterDataTypeVar = TypeVar("ParameterDataTypeVar", default=Any)
-InstrumentType = TypeVar(
-    "InstrumentType",
+# InstrumentType_co is a covariant type variable representing the instrument
+# type associated with the parameter. It needs to be covariant to allow passing
+# a Parameter bound to None or a specific instrument where the default is used in the type hint.
+# Otherwise we see errors such as
+# Type parameter "InstrumentType@ParameterBase" is invariant, but "None" is not the same as "InstrumentBase | None"
+InstrumentType_co = TypeVar(
+    "InstrumentType_co",
     bound="InstrumentBase | None",
     default="InstrumentBase | None",
+    covariant=True,
 )
 
 LOG = logging.getLogger(__name__)
@@ -118,7 +124,9 @@ def invert_val_mapping(val_mapping: Mapping[Any, Any]) -> dict[Any, Any]:
     return {v: k for k, v in val_mapping.items()}
 
 
-class ParameterBase(MetadatableWithName, Generic[ParameterDataTypeVar, InstrumentType]):
+class ParameterBase(
+    MetadatableWithName, Generic[ParameterDataTypeVar, InstrumentType_co]
+):
     """
     Shared behavior for all parameters. Not intended to be used
     directly, normally you should use ``Parameter``, ``ArrayParameter``,
@@ -221,7 +229,7 @@ class ParameterBase(MetadatableWithName, Generic[ParameterDataTypeVar, Instrumen
     def __init__(
         self,
         name: str,
-        instrument: InstrumentType = None,  # type: ignore[assignment]
+        instrument: InstrumentType_co = None,  # type: ignore[assignment]
         snapshot_get: bool = True,
         metadata: Mapping[Any, Any] | None = None,
         step: float | None = None,
@@ -1055,7 +1063,7 @@ class ParameterBase(MetadatableWithName, Generic[ParameterDataTypeVar, Instrumen
         return self._register_name or self.full_name
 
     @property
-    def instrument(self) -> InstrumentType:
+    def instrument(self) -> InstrumentType_co:
         """
         Return the first instrument that this parameter is bound to.
         E.g if this is bound to a channel it will return the channel
