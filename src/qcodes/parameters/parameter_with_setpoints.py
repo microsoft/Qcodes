@@ -160,6 +160,17 @@ class ParameterWithSetpoints(Parameter):
         return ParameterSet(self.setpoints)
 
     def unpack_self(self, value: ValuesType) -> list[tuple[ParameterBase, ValuesType]]:
+        """
+        Unpacks the ParameterWithSetpoints, its setpoints and any inferred
+        parameters controlled by the setpoints.
+
+        Args:
+            value(ValuesType): The data acquired from this parameter.
+
+        Returns:
+            A list of tuples of parameters and values to be added as results
+            to the dataset.
+        """
         unpacked_results: list[tuple[ParameterBase, ValuesType]] = []
         setpoint_params = list(self.setpoints)
         setpoint_data = [param.get() for param in setpoint_params]
