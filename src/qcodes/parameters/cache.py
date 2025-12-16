@@ -50,6 +50,9 @@ class _CacheProtocol(Protocol, Generic[ParameterDataTypeVar]):  # noqa: PYI046
     @overload
     def get(self, get_if_invalid: Literal[False]) -> ParameterDataTypeVar | None: ...
 
+    @overload
+    def get(self, get_if_invalid: bool) -> ParameterDataTypeVar | None: ...
+
     def get(self, get_if_invalid: bool = True) -> ParameterDataTypeVar | None: ...
 
     def _update_with(
@@ -214,6 +217,9 @@ class _Cache(Generic[ParameterDataTypeVar]):
 
     @overload
     def get(self, get_if_invalid: Literal[False]) -> ParameterDataTypeVar | None: ...
+
+    @overload
+    def get(self, get_if_invalid: bool) -> ParameterDataTypeVar | None: ...
 
     def get(self, get_if_invalid: bool = True) -> ParameterDataTypeVar | None:
         """
