@@ -161,13 +161,17 @@ class ParameterWithSetpoints(Parameter):
 
     def unpack_self(self, value: ValuesType) -> list[tuple[ParameterBase, ValuesType]]:
         unpacked_results: list[tuple[ParameterBase, ValuesType]] = []
-        setpoint_params = []
-        setpoint_data = []
-        for setpointparam in self.setpoints:
-            these_setpoints = setpointparam.get()
-            setpoint_params.append(setpointparam)
-            setpoint_data.append(these_setpoints)
+        setpoint_params = list(self.setpoints)
+        setpoint_data = [param.get() for param in setpoint_params]
         output_grids = np.meshgrid(*setpoint_data, indexing="ij")
+        for i, param in enumerate(setpoint_params[:]):
+            for inferred_param in param.has_control_of:
+                copy_setpoint_data = setpoint_data[:]
+                copy_setpoint_data[i] = inferred_param.get()
+                setpoint_params.append(inferred_param)
+                output_grids.append(
+                    np.meshgrid(*copy_setpoint_data, indexing="ij")[i]
+                )
         for param, grid in zip(setpoint_params, output_grids):
             unpacked_results.append((param, grid))
         unpacked_results.extend(
