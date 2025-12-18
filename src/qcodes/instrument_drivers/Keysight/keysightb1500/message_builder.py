@@ -33,7 +33,7 @@ class CommandList(list[T], Generic[T]):
         super().__init__()
         self.is_final = False
 
-    def append(self, obj: T) -> None:
+    def append(self, value: T) -> None:
         if self.is_final:
             raise ValueError(
                 f"Cannot add commands after `{self[-1]}`. "
@@ -41,7 +41,7 @@ class CommandList(list[T], Generic[T]):
                 f"message."
             )
         else:
-            super().append(obj)
+            super().append(value)
 
     def set_final(self) -> None:
         self.is_final = True
