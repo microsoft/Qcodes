@@ -149,10 +149,9 @@ def test_add_result_self_unpack_with_PWS(controlling_parameters, experiment):
 def test_add_result_self_unpack_with_PWS_and_inferred_setpoints(
         experiment, controlling_parameters):
     """
-    Docstring for test_add_result_self_unpack_with_PWS_and_inferred_setpoints
-    
-    :param experiment: Description
-    :param controlling_parameters: Description
+    Test that a ParameterWithSetpoints that has setpoints which themselves
+    have inferred parameters controlled by a ControllingParameter unpacks
+    correctly.
     """
     control1, comp1, comp2 = controlling_parameters
     for param in (control1, comp1, comp2):
