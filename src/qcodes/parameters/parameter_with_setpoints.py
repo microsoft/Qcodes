@@ -183,8 +183,7 @@ class ParameterWithSetpoints(Parameter):
                 output_grids.append(
                     np.meshgrid(*copy_setpoint_data, indexing="ij")[i]
                 )
-        for param, grid in zip(setpoint_params, output_grids):
-            unpacked_results.append((param, grid))
+        unpacked_results = list(zip(setpoint_params, output_grids))
         unpacked_results.extend(
             super().unpack_self(value)
         )  # Must come last to preserve original ordering
