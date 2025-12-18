@@ -174,7 +174,7 @@ class ParameterWithSetpoints(Parameter):
         unpacked_results: list[tuple[ParameterBase, ValuesType]] = []
         setpoint_params = list(self.setpoints)
         setpoint_data = [param.get() for param in setpoint_params]
-        output_grids = np.meshgrid(*setpoint_data, indexing="ij")
+        output_grids = list(np.meshgrid(*setpoint_data, indexing="ij"))
         for i, param in enumerate(setpoint_params[:]):
             for inferred_param in param.has_control_of:
                 copy_setpoint_data = setpoint_data[:]
