@@ -414,9 +414,13 @@ class RigolDG1062(VisaInstrument):
     ):
         super().__init__(name, address, **kwargs)
 
-        self.ch1 = self.add_submodule("ch1", RigolDG1062Channel(self, "ch1", 1))
+        self.ch1: RigolDG1062Channel = self.add_submodule(
+            "ch1", RigolDG1062Channel(self, "ch1", 1)
+        )
         """Channel 1 submodule"""
-        self.ch2 = self.add_submodule("ch2", RigolDG1062Channel(self, "ch2", 2))
+        self.ch2: RigolDG1062Channel = self.add_submodule(
+            "ch2", RigolDG1062Channel(self, "ch2", 2)
+        )
         """Channel 2 submodule"""
 
         self.channels: ChannelTuple[RigolDG1062Channel] = self.add_submodule(
