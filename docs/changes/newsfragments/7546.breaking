@@ -1,4 +1,4 @@
-The functionality to export qcodes datasets to XArray/netcdf4 has been significantly for datasets where the shape of the data is known from metadata e.g. using dond or similar:
+The functionality to export qcodes datasets to XArray/netcdf4 has been significantly improved for datasets where the shape of the data is known from metadata e.g. using dond or similar:
 
 * The memory overhead of exporting the data has been reduced.
 * The coordinate order is maintained such that data is stored in the order it was measured. Previously data was implicitly sorted by coordinates during the export.
