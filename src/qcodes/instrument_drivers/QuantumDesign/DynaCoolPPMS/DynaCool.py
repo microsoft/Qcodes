@@ -1,13 +1,7 @@
 import warnings
 from functools import partial
 from time import sleep
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Literal,
-    cast,
-)
+from typing import TYPE_CHECKING, ClassVar, Literal, TypeVar, cast
 
 import numpy as np
 from pyvisa import VisaIOError
@@ -21,6 +15,8 @@ if TYPE_CHECKING:
     from typing_extensions import Unpack
 
     from qcodes.parameters import Parameter
+
+_T = TypeVar("_T")
 
 
 class DynaCool(VisaInstrument):
@@ -281,7 +277,7 @@ class DynaCool(VisaInstrument):
         return self._error_code
 
     @staticmethod
-    def _pick_one(which_one: int, parser: type, resp: str) -> Any:
+    def _pick_one(which_one: int, parser: "Callable[[str], _T]", resp: str) -> _T:
         """
         Since most of the API calls return several values in a comma-separated
         string, here's a convenience function to pick out the substring of
@@ -367,7 +363,7 @@ class DynaCool(VisaInstrument):
 
     def _measured_field_getter(self) -> float:
         resp = self.ask("FELD?")
-        number_in_oersted = cast("float", DynaCool._pick_one(1, float, resp))
+        number_in_oersted = DynaCool._pick_one(1, float, resp)
         number_in_tesla = number_in_oersted * 1e-4
         return number_in_tesla
 
