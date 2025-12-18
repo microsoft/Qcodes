@@ -37,8 +37,12 @@ class ControllingParameter(Parameter):
 
     def set_raw(self, value: ParamRawDataType) -> None:
         # Set all dependent parameters based on their mapping functions
+        self.value = value
         for param, slope_offset in self._components_dict.items():
             param(value * slope_offset[0] + slope_offset[1])
+
+    def get_raw(self) -> ParamRawDataType:
+        return self.value
 
     def unpack_self(
         self, value: "ValuesType"
@@ -142,6 +146,51 @@ def test_add_result_self_unpack_with_PWS(controlling_parameters, experiment):
     assert pws_data["pws"].shape == (11, 11)
     assert pws_data["pws_setpoints"].shape == (11, 11)
 
+def test_add_result_self_unpack_with_PWS_and_inferred_setpoints(
+        experiment, controlling_parameters):
+    """
+    Docstring for test_add_result_self_unpack_with_PWS_and_inferred_setpoints
+    
+    :param experiment: Description
+    :param controlling_parameters: Description
+    """
+    control1, comp1, comp2 = controlling_parameters
+    for param in (control1, comp1, comp2):
+        param.vals = Arrays(shape=(11,))
+    pws_other_setpoints = Parameter(
+        "pws_other_setpoints",
+        get_cmd=lambda: np.linspace(-1, 1, 13),
+        vals=Arrays(shape=(13,)),
+    )
+    pws = ParameterWithSetpoints(
+        "pws",
+        setpoints=(control1, pws_other_setpoints,),
+        vals=Arrays(shape=(11,13)),
+        get_cmd=lambda: np.zeros((11,13)),
+    )
+
+    meas = Measurement(experiment)
+    meas.register_parameter(pws)
+
+    assert all(
+        param in meas._registered_parameters
+        for param in (comp1, comp2, control1, pws)
+    )
+    control1.set(np.linspace(-1, 1, 11))
+    with meas.run() as datasaver:
+        datasaver.add_result((pws, pws()))
+        ds = datasaver.dataset
+
+    dataset_data = ds.get_parameter_data()
+    pws_data = dataset_data.get("pws", None)
+    assert (pws_data) is not None
+    print(pws_data.keys())
+    assert all(
+        param_name in pws_data.keys()
+        for param_name in ("pws", "comp1", "comp2", "control1", "pws_other_setpoints")
+    )
+    for result in ('control1', 'comp1', 'comp2', 'pws', 'pws_other_setpoints'):
+        assert pws_data[result].shape == (1, 11, 13)
 
 # Testing equality methods for deduplication
 def test_non_numeric_values_are_equal() -> None:
