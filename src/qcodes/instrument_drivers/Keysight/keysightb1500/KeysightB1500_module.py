@@ -279,7 +279,9 @@ def _convert_to_nan_if_dummy_value(value: float) -> float:
     return float("nan") if value > 1e99 else value
 
 
-class KeysightB1500Module(InstrumentChannel):
+class KeysightB1500Module(
+    InstrumentChannel["qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500"]
+):
     """Base class for all modules of B1500 Parameter Analyzer
 
     When subclassing,
