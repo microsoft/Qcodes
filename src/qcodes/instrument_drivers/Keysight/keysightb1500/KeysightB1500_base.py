@@ -1,10 +1,11 @@
 import re
 import textwrap
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Generic
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import MultiParameter, Parameter, create_on_off_val_mapping
+from qcodes.parameters.parameter_base import ParameterDataTypeVar
 
 from . import constants
 from .KeysightB1500_module import (
@@ -481,7 +482,11 @@ class KeysightB1500(VisaInstrument):
         )
 
 
-class IVSweepMeasurement(MultiParameter, StatusMixin):
+class IVSweepMeasurement(
+    MultiParameter[ParameterDataTypeVar, KeysightB1517A],
+    StatusMixin,
+    Generic[ParameterDataTypeVar],
+):
     """
     IV sweep measurement outputs a list of measured current parameters
     as a result of voltage sweep.
@@ -506,13 +511,18 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
             **kwargs,
         )
 
-        self.instrument: KeysightB1517A
-        self.root_instrument: KeysightB1500
-
         self.param1 = _FMTResponse(None, None, None, None)
         self.param2 = _FMTResponse(None, None, None, None)
         self.source_voltage = _FMTResponse(None, None, None, None)
         self._fudge: float = 1.5
+
+    @property
+    def root_instrument(self) -> KeysightB1500:
+        # since Parameter is not generic over RootInstrument type
+        # we override the property here to make the root_instrument type
+        # explicit
+        assert isinstance(self.instrument.root_instrument, KeysightB1500)
+        return self.instrument.root_instrument
 
     def set_names_labels_and_units(
         self,
