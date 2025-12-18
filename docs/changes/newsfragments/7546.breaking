@@ -1,0 +1,7 @@
+The functionality to export qcodes datasets to XArray/netcdf4 has been significantly improved for datasets where the shape of the data is known from metadata e.g. using dond or similar:
+
+* The memory overhead of exporting the data has been reduced.
+* The coordinate order is maintained such that data is stored in the order it was measured. Previously data was implicitly sorted by coordinates during the export.
+* When exporting Datasets to xarray where the shape is known, either by the use of utilities such as ``dond`` or manually specified, inferred parameters related to the setpoints and measured parameters are now included in the XArray Dataset.
+
+These changed were previously part of ``0.54.0`` but reverted in ``0.54.1`` since the change in coordinate sorting was not announced.
