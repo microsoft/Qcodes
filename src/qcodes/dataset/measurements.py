@@ -47,8 +47,8 @@ from qcodes.parameters import (
     GroupedParameter,
     ManualParameter,
     MultiParameter,
-    Parameter,
     ParameterBase,
+    ParameterSet,
     ParameterWithSetpoints,
     ParamSpecBase,
 )
@@ -850,8 +850,15 @@ class Measurement:
         if setpoints is not None:
             for setpoint in setpoints:
                 if isinstance(setpoint, ParameterBase):
-                    paramspecs.append(setpoint.param_spec)
-                    parameters.append(setpoint)
+                    if isinstance(setpoint, MultiParameter):
+                        specs, params = self._paramspecs_and_parameters_from_setpoints(
+                            setpoint.full_names
+                        )
+                        paramspecs.extend(specs)
+                        parameters.extend(params)
+                    else:
+                        paramspecs.append(setpoint.param_spec)
+                        parameters.append(setpoint)
                 elif (
                     isinstance(setpoint, str)
                     and (
@@ -868,12 +875,26 @@ class Measurement:
                     )
         return paramspecs, parameters
 
+    @staticmethod
+    def _extend_paramspecs(paramspecs: list[ParamSpecBase], parameters: ParameterSet):
+        for param in parameters:
+            if not isinstance(param, MultiParameter):
+                paramspecs.append(param.param_spec)
+            else:
+                paramspecs.extend(p.param_spec for p in param.register_parameters)
+        return paramspecs
+
     def _self_register_parameter(
         self: Self,
         parameter: ParameterBase,
         setpoints: SetpointsType | None = None,
         basis: SetpointsType | None = None,
     ) -> Self:
+        if isinstance(parameter, MultiParameter):
+            for mp_param in parameter.register_parameters:
+                self._self_register_parameter(mp_param, setpoints, basis)
+            return self
+
         # It is important to preserve the order of the setpoints (and basis) arguments
         # when building the dependency trees, as this order is implicitly used to assign
         # the axis-order for multidimensional data variables where shape alone is
@@ -888,11 +909,11 @@ class Measurement:
         )
 
         # Append internal dependencies/inferences
-        dependency_paramspecs.extend(
-            [param.param_spec for param in parameter.depends_on]
+        dependency_paramspecs = self._extend_paramspecs(
+            dependency_paramspecs, parameter.depends_on
         )
-        inference_paramspecs.extend(
-            [param.param_spec for param in parameter.is_controlled_by]
+        inference_paramspecs = self._extend_paramspecs(
+            inference_paramspecs, parameter.is_controlled_by
         )
 
         # Make ParamSpecTrees and extend interdeps
@@ -917,15 +938,11 @@ class Measurement:
         log.info(f"Registered {parameter.register_name} in the Measurement.")
 
         # Recursively register all other interdependent parameters related to this parameter
-        interdependent_parameters = list(
-            chain.from_iterable(
-                [
-                    dependency_parameters,
-                    inference_parameters,
-                    parameter.depends_on,
-                    parameter.is_controlled_by,
-                ]
-            )
+        interdependent_parameters = chain(
+            dependency_parameters,
+            inference_parameters,
+            parameter.depends_on,
+            parameter.is_controlled_by,
         )
         for interdependent_parameter in interdependent_parameters:
             if interdependent_parameter not in self._registered_parameters:
@@ -973,14 +990,7 @@ class Measurement:
             case ArrayParameter():
                 paramtype = self._infer_paramtype(parameter, paramtype)
                 self._register_arrayparameter(parameter, setpoints, basis, paramtype)
-            case MultiParameter():
-                paramtype = self._infer_paramtype(parameter, paramtype)
-                self._register_multiparameter(
-                    parameter,
-                    setpoints,
-                    basis,
-                    paramtype,
-                )
+                self._registered_parameters.add(parameter)
             case GroupedParameter():
                 paramtype = self._infer_paramtype(parameter, paramtype)
                 self._register_parameter(
@@ -991,16 +1001,15 @@ class Measurement:
                     basis,
                     paramtype,
                 )
-            case ParameterBase() | ParameterWithSetpoints():
-                if paramtype is not None:
-                    parameter.paramtype = paramtype
+                self._registered_parameters.add(parameter)
+            case ParameterBase() | ParameterWithSetpoints() | MultiParameter():
+                parameter.paramtype = self._infer_paramtype(parameter, paramtype)
                 self._self_register_parameter(parameter, setpoints, basis)
             case _:
                 raise ValueError(
                     f"Can not register object of type {type(parameter)}. Can only "
                     "register a QCoDeS Parameter."
                 )
-        self._registered_parameters.add(parameter)
 
         return self
 
@@ -1033,6 +1042,12 @@ class Measurement:
         return_paramtype: str
         if paramtype is not None:  # override with argument
             return_paramtype = paramtype
+        elif isinstance(parameter, MultiParameter):
+            # No vals by default.
+            if any(shp for shp in parameter.shapes):
+                return_paramtype = "array"
+            else:
+                return_paramtype = "numeric"
         elif isinstance(parameter.vals, vals.Arrays):
             return_paramtype = "array"
         elif isinstance(parameter, ArrayParameter):
@@ -1161,112 +1176,6 @@ class Measurement:
             basis,
             paramtype,
         )
-
-    def _register_parameter_with_setpoints(
-        self,
-        parameter: ParameterWithSetpoints,
-        setpoints: SetpointsType | None,
-        basis: SetpointsType | None,
-        paramtype: str,
-    ) -> None:
-        """
-        Register an ParameterWithSetpoints and the setpoints belonging to the
-        Parameter
-        """
-        my_setpoints = list(setpoints) if setpoints else []
-        for sp in parameter.setpoints:
-            if not isinstance(sp, Parameter):
-                raise RuntimeError(
-                    "The setpoints of a ParameterWithSetpoints must be a Parameter"
-                )
-            spname = sp.register_name
-            splabel = sp.label
-            spunit = sp.unit
-
-            self._register_parameter(
-                name=spname,
-                paramtype=paramtype,
-                label=splabel,
-                unit=spunit,
-                setpoints=None,
-                basis=None,
-            )
-
-            my_setpoints.append(spname)
-
-        self._register_parameter(
-            parameter.register_name,
-            parameter.label,
-            parameter.unit,
-            my_setpoints,
-            basis,
-            paramtype,
-        )
-
-    def _register_multiparameter(
-        self,
-        multiparameter: MultiParameter,
-        setpoints: SetpointsType | None,
-        basis: SetpointsType | None,
-        paramtype: str,
-    ) -> None:
-        """
-        Find the individual multiparameter components and their setpoints
-        and register those as individual parameters
-        """
-        setpoints_lists = []
-        for i in range(len(multiparameter.shapes)):
-            shape = multiparameter.shapes[i]
-            name = multiparameter.full_names[i]
-            if shape == ():
-                my_setpoints = setpoints
-            else:
-                my_setpoints = list(setpoints) if setpoints else []
-                for j in range(len(shape)):
-                    if (
-                        multiparameter.setpoint_full_names is not None
-                        and multiparameter.setpoint_full_names[i] is not None
-                    ):
-                        spname = multiparameter.setpoint_full_names[i][j]
-                    else:
-                        spname = f"{name}_setpoint_{j}"
-                    if (
-                        multiparameter.setpoint_labels is not None
-                        and multiparameter.setpoint_labels[i] is not None
-                    ):
-                        splabel = multiparameter.setpoint_labels[i][j]
-                    else:
-                        splabel = ""
-                    if (
-                        multiparameter.setpoint_units is not None
-                        and multiparameter.setpoint_units[i] is not None
-                    ):
-                        spunit = multiparameter.setpoint_units[i][j]
-                    else:
-                        spunit = ""
-
-                    self._register_parameter(
-                        name=spname,
-                        paramtype=paramtype,
-                        label=splabel,
-                        unit=spunit,
-                        setpoints=None,
-                        basis=None,
-                    )
-
-                    my_setpoints += [spname]
-
-            setpoints_lists.append(my_setpoints)
-
-        for i, expanded_setpoints in enumerate(setpoints_lists):
-            self._register_parameter(
-                multiparameter.full_names[i],
-                multiparameter.labels[i],
-                multiparameter.units[i],
-                expanded_setpoints,
-                basis,
-                paramtype,
-            )
 
     def register_custom_parameter(
         self: Self,

@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import os
 from collections.abc import Iterator, Mapping, Sequence
+from functools import cached_property
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from .parameter_base import ParameterBase
+from .. import validators
+from .parameter import ManualParameter
+from .parameter_base import ParameterBase, ParameterSet
+from .parameter_with_setpoints import ParameterWithSetpoints
 from .sequence_helpers import is_sequence_of
 
 if TYPE_CHECKING:
@@ -166,6 +170,8 @@ class MultiParameter(ParameterBase):
             **kwargs,
         )
 
+        # This is potentially wrong, but the design does not allow heterogeneous types currently
+        self._paramtype: str = "array" if any(shp for shp in shapes) else "numeric"
         self._meta_attrs.extend(
             [
                 "setpoint_names",
@@ -275,7 +281,87 @@ class MultiParameter(ParameterBase):
         else:
             return self.setpoint_names
 
-    def unpack_self(self, value: ValuesType) -> list[tuple[ParameterBase, ValuesType]]:
+    @property
+    def paramtype(self) -> str:
+        # Override because parent method asks param_spec, which MultiParameter does not have.
+        return self._paramtype
+
+    @paramtype.setter
+    def paramtype(self, paramtype: str) -> None:
+        self._paramtype = paramtype
+
+    @cached_property
+    def register_parameters(
+        self,
+    ) -> ParameterSet[ManualParameter | ParameterWithSetpoints]:
+        """Persistent set of dummy parameters used for registering the
+        MultiParameter in a measurement."""
+        mp_parameters = []
+        for i in range(len(self.shapes)):
+            shape = self.shapes[i]
+            name = self.full_names[i]
+            mp_parameter: ManualParameter | ParameterWithSetpoints
+            sp_parameters = []
+            if shape != ():
+                for j in range(len(shape)):
+                    if (
+                        self.setpoint_full_names is not None
+                        and self.setpoint_full_names[i] is not None
+                    ):
+                        spname = self.setpoint_full_names[i][j]
+                    else:
+                        spname = f"{name}_setpoint_{j}"
+                    if (
+                        self.setpoint_labels is not None
+                        and self.setpoint_labels[i] is not None
+                    ):
+                        splabel = self.setpoint_labels[i][j]
+                    else:
+                        splabel = ""
+                    if (
+                        self.setpoint_units is not None
+                        and self.setpoint_units[i] is not None
+                    ):
+                        spunit = self.setpoint_units[i][j]
+                    else:
+                        spunit = ""
+
+                    sp_parameter = ManualParameter(
+                        name=spname,
+                        label=splabel,
+                        unit=spunit,
+                        vals=validators.Arrays(shape=(shape[j],)),
+                    )
+                    sp_parameters.append(sp_parameter)
+
+                mp_parameter = ParameterWithSetpoints(
+                    name=self.full_names[i],
+                    label=self.labels[i],
+                    unit=self.units[i],
+                    setpoints=sp_parameters,
+                    vals=validators.Arrays(shape=shape),
+                )
+                # PWS.paramtype is array always
+            else:
+                mp_parameter = ManualParameter(
+                    name=self.full_names[i],
+                    label=self.labels[i],
+                    unit=self.units[i],
+                )
+                if self.paramtype is not None:
+                    mp_parameter.paramtype = self.paramtype
+
+            mp_parameter.depends_on.update(self.depends_on)
+            mp_parameter.has_control_of.update(self.has_control_of)
+            mp_parameter.is_controlled_by.update(self.is_controlled_by)
+            mp_parameters.append(mp_parameter)
+
+        return ParameterSet(mp_parameters)
+
+    def unpack_self(
+        self,
+        value: Sequence[ValuesType],  # type: ignore[override]
+    ) -> list[tuple[ParameterBase, ValuesType]]:
         """
         Unpack the `subarrays` and `setpoints` from a :class:`MultiParameter`
         into a list of tuples of (Parameter, values).
