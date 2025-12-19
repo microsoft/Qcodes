@@ -205,6 +205,14 @@ reportUnusedClass = "none"
 reportUnnecessaryCast = "none"  # mypy already checks this. If it fails for pyright its because mypy requires it
 reportUnnecessaryContains = "none"
 
+[tool.ty]
+
+[[tool.ty.overrides]]
+include = ["src/qcodes/instrument_drivers/Harvard/Decadac.py"]
+
+[tool.ty.overrides.rules]
+unresolved-attribute = "ignore"
+
 [tool.pytest.ini_options]
 minversion = "7.2"
 testpaths = "tests"
