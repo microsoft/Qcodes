@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
@@ -11,12 +11,12 @@ from qcodes.dataset.measurements import (
 )
 from qcodes.parameters import (
     ManualParameter,
-    MultiParameter,
     Parameter,
     ParameterWithSetpoints,
     ParamRawDataType,
 )
 from qcodes.validators import Arrays
+from tests.dataset.conftest import SimpleMultiParam
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -94,27 +94,7 @@ def test_add_result_self_unpack(controlling_parameters, experiment):
     assert meas1_data["comp2"] == pytest.approx(np.linspace(10, 9, 11))
 
 
-class SimpleMultiParam(MultiParameter):
-    def __init__(self, name: str, **kwargs: Any) -> None:
-        super().__init__(
-            name=name,
-            names=("a", "b"),
-            shapes=((5,), (5,)),
-            labels=("A", "B"),
-            units=("A", "B"),
-            # Setpoints are 1D arrays
-            setpoints=((np.linspace(0, 4, 5),), (np.linspace(0, 4, 5),)),
-            setpoint_names=(("sp_a",), ("sp_b",)),
-            setpoint_labels=(("SP A",), ("SP B",)),
-            setpoint_units=(("V",), ("V",)),
-            **kwargs,
-        )
-
-    def get_raw(self) -> tuple[np.ndarray, np.ndarray]:
-        return np.arange(5), np.arange(5) + 10
-
-
-def test_add_result_multiparameter(experiment) -> None:
+def test_add_result_self_unpack_with_multiparameter(experiment) -> None:
     meas = Measurement(experiment)
     multiparam = SimpleMultiParam("multi")
 
@@ -132,13 +112,13 @@ def test_add_result_multiparameter(experiment) -> None:
     # Check component "a"
     assert "a" in data
     # Inner keys are also short names, 'a' for the component value and 'sp_a' for its setpoint
-    assert data["a"]["a"] == pytest.approx(np.arange(5))
-    assert data["a"]["sp_a"] == pytest.approx(np.linspace(0, 4, 5))
+    assert data["a"]["a"] == pytest.approx(np.linspace(0, 4, 5)[None, :])
+    assert data["a"]["sp_a"] == pytest.approx(np.arange(5)[None, :])
 
     # Check component "b"
     assert "b" in data
-    assert data["b"]["b"] == pytest.approx(np.arange(5) + 10)
-    assert data["b"]["sp_b"] == pytest.approx(np.linspace(0, 4, 5))
+    assert data["b"]["b"] == pytest.approx(np.arange(5)[None, :] + 10)
+    assert data["b"]["sp_b"] == pytest.approx(np.linspace(1, 2, 5)[None, :])
 
 
 def test_add_result_self_unpack_with_PWS(controlling_parameters, experiment):
@@ -155,40 +135,49 @@ def test_add_result_self_unpack_with_PWS(controlling_parameters, experiment):
         get_cmd=lambda: np.linspace(-2, 2, 11) + comp1(),
     )
 
-    meas = Measurement(experiment)
-    meas.register_parameter(pws, setpoints=[control1])
+    def make_assertions(meas):
+        assert all(
+            param in meas._registered_parameters
+            for param in (comp1, comp2, control1, pws, pws_setpoints)
+        )
 
-    assert all(
-        param in meas._registered_parameters
-        for param in (comp1, comp2, control1, pws, pws_setpoints)
-    )
+        with meas.run() as datasaver:
+            for val in np.linspace(0, 1, 11):
+                control1(val)
+                datasaver.add_result((pws, pws()), (control1, val))
+            ds = datasaver.dataset
 
-    with meas.run() as datasaver:
-        for val in np.linspace(0, 1, 11):
-            control1(val)
-            datasaver.add_result((pws, pws()), (control1, val))
-        ds = datasaver.dataset
+        dataset_data = ds.get_parameter_data()
+        pws_data = dataset_data.get("pws", None)
+        assert (pws_data) is not None
+        assert all(
+            param_name in pws_data.keys()
+            for param_name in ("pws", "comp1", "comp2", "control1", "pws_setpoints")
+        )
+        expected_setpoints, expected_control = np.meshgrid(
+            np.linspace(-1, 1, 11), np.linspace(0, 1, 11)
+        )
+        assert pws_data["control1"] == pytest.approx(expected_control)
+        assert pws_data["comp1"] == pytest.approx(expected_control)
+        assert pws_data["comp2"] == pytest.approx(10 - expected_control)
+        assert pws_data["pws_setpoints"] == pytest.approx(expected_setpoints)
 
-    dataset_data = ds.get_parameter_data()
-    pws_data = dataset_data.get("pws", None)
-    assert (pws_data) is not None
-    assert all(
-        param_name in pws_data.keys()
-        for param_name in ("pws", "comp1", "comp2", "control1", "pws_setpoints")
-    )
-    expected_setpoints, expected_control = np.meshgrid(
-        np.linspace(-1, 1, 11), np.linspace(0, 1, 11)
-    )
-    assert pws_data["control1"] == pytest.approx(expected_control)
-    assert pws_data["comp1"] == pytest.approx(expected_control)
-    assert pws_data["comp2"] == pytest.approx(10 - expected_control)
-    assert pws_data["pws_setpoints"] == pytest.approx(expected_setpoints)
+        assert pws_data["control1"].shape == (11, 11)
+        assert pws_data["comp1"].shape == (11, 11)
+        assert pws_data["comp2"].shape == (11, 11)
+        assert pws_data["pws"].shape == (11, 11)
+        assert pws_data["pws_setpoints"].shape == (11, 11)
 
-    assert pws_data["control1"].shape == (11, 11)
-    assert pws_data["comp1"].shape == (11, 11)
-    assert pws_data["comp2"].shape == (11, 11)
-    assert pws_data["pws"].shape == (11, 11)
-    assert pws_data["pws_setpoints"].shape == (11, 11)
+    meas1 = Measurement(experiment)
+    meas1.register_parameter(pws, setpoints=[control1])
+
+    make_assertions(meas1)
+
+    pws.depends_on.add(control1)
+    meas2 = Measurement(experiment)
+    meas2.register_parameter(pws)
+
+    make_assertions(meas2)
 
 
 # Testing equality methods for deduplication
