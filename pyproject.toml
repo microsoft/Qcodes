@@ -207,6 +207,17 @@ reportUnnecessaryContains = "none"
 
 [tool.ty]
 
+[tool.ty.rules]
+
+# we catch these via pyright so disable here to
+# reduce duplicate pragmas
+# we trigger deprecated on use of deprecated methods in
+# other deprecated methods. We trigger unresolved-import
+# in various libraries for specific instrument drivers
+unresolved-import = "ignore"
+deprecated = "ignore"
+
+
 [[tool.ty.overrides]]
 include = ["src/qcodes/instrument_drivers/Harvard/Decadac.py"]
 
