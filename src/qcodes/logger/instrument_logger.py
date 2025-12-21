@@ -13,12 +13,12 @@ import sys
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any
 
-from qcodes.instrument import InstrumentBase
-
 from .logger import LevelType, get_console_handler, handler_level
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping, MutableMapping, Sequence
+
+    from qcodes.instrument import InstrumentBase
 
 
 class InstrumentLoggerAdapter(logging.LoggerAdapter):
@@ -107,6 +107,9 @@ class InstrumentFilter(logging.Filter):
     """
 
     def __init__(self, instruments: InstrumentBase | Sequence[InstrumentBase]):
+        # avoid importing qcodes.instrument at module level to prevent circular imports
+        from qcodes.instrument import InstrumentBase  # noqa: PLC0415
+
         super().__init__()
         if isinstance(instruments, InstrumentBase):
             instrument_seq: Sequence[str] = (instruments.full_name,)
