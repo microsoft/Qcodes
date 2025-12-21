@@ -23,6 +23,7 @@ from qcodes.dataset.dond.do_nd_utils import (
     _set_write_period,
     catch_interrupts,
 )
+from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.threading import (
     SequentialParamsCaller,
@@ -42,7 +43,7 @@ if TYPE_CHECKING:
         MultiAxesTupleListWithDataSet,
         ParamMeasT,
     )
-    from qcodes.dataset.experiment_container import Experiment
+
 
 LOG = logging.getLogger(__name__)
 SweepVarType = Any
@@ -400,8 +401,12 @@ class _Measurements:
             experiments_internal: Sequence[Experiment | None] = [
                 experiments
             ] * n_experiments_required
-        else:
+        elif not isinstance(experiments, Experiment):
             experiments_internal = experiments
+        else:
+            raise TypeError(
+                f"Invalid type for experiments got {experiments} of type {type(experiments)}"
+            )
 
         if len(experiments_internal) != n_experiments_required:
             raise ValueError(
