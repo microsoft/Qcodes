@@ -87,7 +87,7 @@ fonttools==4.61.1
     # via matplotlib
 fsspec==2025.12.0
     # via dask
-furo==2025.9.25
+furo==2025.12.19
     # via qcodes (pyproject.toml)
 h5netcdf==1.7.3
     # via
