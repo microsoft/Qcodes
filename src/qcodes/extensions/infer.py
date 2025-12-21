@@ -264,8 +264,10 @@ def get_parent_instruments_from_chain_of_type(
 
     param_chain = get_parameter_chain(parameter)
     return tuple(
+        # cast is required since mypy as of 1.19.1 cannot infer the type narrowing based
+        # on isinstance checks inside comprehensions
         [
-            cast("TInstrument", param.instrument)
+            cast("TInstrument", param.instrument)  # ty: ignore[redundant-cast]
             for param in param_chain
             if isinstance(param.instrument, instrument_type)
         ]
