@@ -174,7 +174,7 @@ class ArrayParameter(
 
         if not is_sequence_of(shape, int):
             raise ValueError("shapes must be a tuple of ints, not " + repr(shape))
-        self.shape = shape
+        self.shape: tuple[int, ...] = tuple(shape)
 
         # require one setpoint per dimension of shape
         sp_shape = (len(shape),)
