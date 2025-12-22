@@ -194,7 +194,7 @@ mypy==1.19.1
     # via qcodes (pyproject.toml)
 mypy-extensions==1.1.0
     # via mypy
-nbclient==0.10.2
+nbclient==0.10.3
     # via nbconvert
 nbconvert==7.16.6
     # via nbsphinx
