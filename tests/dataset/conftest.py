@@ -7,13 +7,14 @@ import tempfile
 from collections.abc import Generator
 from contextlib import contextmanager
 from enum import StrEnum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pytest
 from pytest import FixtureRequest
 
 import qcodes as qc
+from qcodes import MultiParameter
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec
@@ -796,3 +797,42 @@ class ArrayshapedParam(Parameter):
         shape = self.vals.shape
 
         return np.random.rand(*shape)
+
+
+class SimpleMultiParam(MultiParameter):
+    def __init__(self, name: str, npts: int = 5, **kwargs: Any) -> None:
+        self.npts = npts
+        if self.npts == 0:
+            sp_kwargs = dict(
+                shapes=((),) * 2,
+                setpoints=((),) * 2,
+                setpoint_names=((),) * 2,
+                setpoint_labels=((),) * 2,
+                setpoint_units=((),) * 2,
+            )
+        else:
+            sp_kwargs = dict(
+                # Setpoints are 1D arrays
+                shapes=((self.npts,), (self.npts,)),
+                setpoints=(
+                    (np.linspace(0, 4, self.npts),),
+                    (np.linspace(1, 2, self.npts),),
+                ),
+                setpoint_names=(("sp_a",), ("sp_b",)),
+                setpoint_labels=(("SP A",), ("SP B",)),
+                setpoint_units=(("SPAU",), ("SPBU",)),
+            )
+        super().__init__(
+            name=name,
+            names=("a", "b"),
+            labels=("A", "B"),
+            units=("AU", "BU"),
+            **sp_kwargs,
+            **kwargs,
+        )
+
+    def get_raw(self) -> tuple[np.ndarray | float, np.ndarray | float]:
+        if self.npts == 0:
+            return 0.0, 10.0
+        else:
+            return np.arange(self.npts), np.arange(self.npts) + 10
