@@ -1413,8 +1413,8 @@ class ParameterSet(MutableSet[P], Generic[P]):  # noqa: PLW1641
     def __iter__(self) -> Iterator[P]:
         return iter(self._dict)
 
-    def __contains__(self, item: object) -> bool:
-        return item in self._dict
+    def __contains__(self, x: object) -> bool:
+        return x in self._dict
 
     def __len__(self) -> int:
         return len(self._dict)
