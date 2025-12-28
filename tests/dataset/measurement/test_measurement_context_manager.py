@@ -21,6 +21,10 @@ from pytest import LogCaptureFixture
 import qcodes as qc
 import qcodes.validators as vals
 from qcodes.dataset.data_set import DataSet, load_by_id
+from qcodes.dataset.descriptions.dependencies import (
+    FrozenInterDependencies_,
+    InterDependencies_,
+)
 from qcodes.dataset.experiment_container import new_experiment
 from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.measurements import Measurement
@@ -729,6 +733,16 @@ def test_datasaver_scalars(
             datasaver.add_result((DAC.ch2, 1), (DAC.ch2, 2))
         with pytest.raises(ValueError):
             datasaver.add_result((DMM.v1, 0))
+
+    ds = datasaver.dataset
+    assert isinstance(ds, DataSet)
+    assert isinstance(ds.description.interdeps, InterDependencies_)
+    assert not isinstance(ds.description.interdeps, FrozenInterDependencies_)
+
+    loaded_ds = load_by_id(ds.run_id)
+
+    assert isinstance(loaded_ds.description.interdeps, InterDependencies_)
+    assert not isinstance(loaded_ds.description.interdeps, FrozenInterDependencies_)
 
     # More assertions of setpoints, labels and units in the DB!
 

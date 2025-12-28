@@ -1,3 +1,0 @@
-The Stanford SR86x drivers now statically assign attributes statically
-for more member InstrumentModules and parameters enabling better documentation,
-type checking and IDE integration.
