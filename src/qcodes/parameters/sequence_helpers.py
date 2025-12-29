@@ -59,6 +59,14 @@ def is_sequence_of(
 
         next_shape = cast("tuple[int, ...]", shape[1:])
 
+    # ty currently cannot infer that depth is not None here
+    # when both branches of the if are taken into account
+    # the type is narrowed to be not None in both branches
+    if depth is None:
+        raise ValueError(
+            f"Could not infer depth. depth is {depth} and shape is {shape}"
+        )
+
     for item in obj:
         if depth > 1:
             if not is_sequence_of(item, types, depth=depth - 1, shape=next_shape):
