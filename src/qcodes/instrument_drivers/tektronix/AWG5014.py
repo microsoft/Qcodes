@@ -915,6 +915,9 @@ class TektronixAWG5014(VisaInstrument):
     def _pack_record(
         self, name: str, value: float | str | Sequence[Any] | npt.NDArray, dtype: str
     ) -> bytes:
+        def _pack_numpy_array(array: npt.NDArray) -> bytes:
+            return array.astype("<u2").tobytes()
+
         """
         Packs awg_file record into a struct in the folowing way:
             struct.pack(fmtstring, namesize, datasize, name, data)
@@ -945,8 +948,8 @@ class TektronixAWG5014(VisaInstrument):
         else:
             assert isinstance(value, (abc.Sequence, np.ndarray))
             if dtype[-1] == "H" and isinstance(value, np.ndarray):
-                # numpy conversion is fast
-                record_data = value.astype("<u2").tobytes()
+                # numpy conversion is fast so use that when possible
+                record_data = _pack_numpy_array(value)
             else:
                 # argument unpacking is slow
                 record_data = struct.pack("<" + dtype, *value)
