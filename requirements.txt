@@ -268,7 +268,7 @@ partd==1.4.2
     # via dask
 pathspec==0.12.1
     # via mypy
-pillow==12.0.0
+pillow==12.1.0
     # via
     #   qcodes (pyproject.toml)
     #   matplotlib
