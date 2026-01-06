@@ -1,5 +1,4 @@
-from asyncio import iscoroutinefunction
-from inspect import CO_VARARGS, signature
+from inspect import CO_VARARGS, iscoroutinefunction, signature
 
 
 def is_function(f: object, arg_count: int, coroutine: bool | None = False) -> bool:
