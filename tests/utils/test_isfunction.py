@@ -26,6 +26,10 @@ def test_function() -> None:
     assert is_function(f1, 1)
     assert is_function(f2, 2)
 
+    assert is_function(f0, 0, coroutine = False)
+    assert is_function(f1, 1, coroutine = False)
+    assert is_function(f2, 2, coroutine = False)
+
     assert not (is_function(f0, 1) or is_function(f0, 2))
     assert not (is_function(f1, 0) or is_function(f1, 2))
     assert not (is_function(f2, 0) or is_function(f2, 1))
@@ -105,3 +109,4 @@ def test_coroutine_check() -> None:
     assert not is_function(f_async, 0, coroutine=False)
     assert is_function(f_async, 0, coroutine=True)
     assert not is_function(f_async, 0)
+    assert is_function(f_async, 0, coroutine=None)

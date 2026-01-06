@@ -2,7 +2,7 @@ from asyncio import iscoroutinefunction
 from inspect import CO_VARARGS, signature
 
 
-def is_function(f: object, arg_count: int, coroutine: bool = False) -> bool:
+def is_function(f: object, arg_count: int, coroutine: bool | None = False) -> bool:
     """
     Check and require a function that can accept the specified number of
     positional arguments, which either is or is not a coroutine
@@ -20,8 +20,11 @@ def is_function(f: object, arg_count: int, coroutine: bool = False) -> bool:
     if not isinstance(arg_count, int) or arg_count < 0:
         raise TypeError("arg_count must be a non-negative integer")
 
-    if not (callable(f) and bool(coroutine) is iscoroutinefunction(f)):
+    if not callable(f):
         return False
+    if coroutine is not None:
+        if  bool(coroutine) is not iscoroutinefunction(f):
+            return False
 
     if isinstance(f, type):
         # for type casting functions, eg int, str, float
