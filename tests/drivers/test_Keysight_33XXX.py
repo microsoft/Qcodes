@@ -95,10 +95,10 @@ def test_wrong_model_warns(
     warns = [record for record in caplog.records if record.levelname == "WARNING"]
     assert len(warns) >= 4
     assert (
-        len(
+        sum(
             [
-                "The driver class name" in record.msg
-                and "does not match the detected model"
+                "The driver class name " in record.msg
+                and "does not match the detected model" in record.msg
                 for record in warns
             ]
         )
