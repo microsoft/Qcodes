@@ -101,7 +101,7 @@ jobs:
       uses: jakebailey/pyright-action@6cabc0f01c4994be48fd45cd9dbacdd6e1ee6e5e # v2.3.3
       with:
         version: ${{ steps.pyright-version.outputs.version }}
-      if: ${{ !matrix.min-version && always() }}
+      if: ${{ always() }}
       id: pyright
     - name: Run Mypy
       run: mypy -p qcodes
