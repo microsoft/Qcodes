@@ -1,6 +1,7 @@
 import itertools
 import textwrap
 import warnings
+from time import sleep
 from typing import TYPE_CHECKING
 
 import qcodes.validators as vals
@@ -31,16 +32,23 @@ class Keithley3706A(VisaInstrument):
         self,
         name: str,
         address: str,
+        use_forbidden_channels_cache: bool = False,
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ) -> None:
         """
         Args:
             name: Name to use internally in QCoDeS
             address: VISA resource address
+            use_forbidden_channels_cache: If True, use local
+                forbidden channel cache instead of querying instrument.
+                See `Keithley3706A.get_forbidden_channels()` for
+                usage details and warnings.
             **kwargs: kwargs are forwarded to base class.
 
         """
         super().__init__(name, address, **kwargs)
+        self.use_forbidden_channels_cache: bool = use_forbidden_channels_cache
+        self.forbidden_channels_cache: str = ""
 
         self.channel_connect_rule: Parameter = self.add_parameter(
             "channel_connect_rule",
@@ -155,7 +163,9 @@ class Keithley3706A(VisaInstrument):
 
         """
         slots = ["allslots", *self._get_slot_names()]
-        forbidden_channels = self.get_forbidden_channels("allslots")
+        forbidden_channels = self.get_forbidden_channels(
+            "allslots", fetch_from_cache=self.use_forbidden_channels_cache
+        )
         if val in slots:
             raise Keithley3706AInvalidValue("Slots cannot be closed all together.")
         if not self._validator(val):
@@ -330,8 +340,9 @@ class Keithley3706A(VisaInstrument):
                 'ranges, slots, backplane relays or "allslots".'
             )
         self.write(f"channel.setforbidden('{val}')")
+        self.forbidden_channels_cache = val
 
-    def get_forbidden_channels(self, val: str) -> str:
+    def get_forbidden_channels(self, val: str, fetch_from_cache: bool = False) -> str:
         """
         Returns a string that lists the channels and backplane relays
         that are forbidden to close.
@@ -340,8 +351,23 @@ class Keithley3706A(VisaInstrument):
             val: A string representing the channels,
                 backplane relays or channel patterns to be queried to see
                 if they are forbidden to close.
+            fetch_from_cache: If True, will fetch forbidden channels from cache,
+                otherwise, it will query the instrument.
+                May save time during measurements
+                where closing channels happens frequently. Please use with
+                caution since the local cache may become out of sync with
+                the instrument in the case of an instrument reset and/or
+                powercycle. If intending to set forbidden channels, always
+                do so before running a measurement to minimize risk of
+                cache being out of sync.
 
         """
+
+        # NOTE: The cache string should already be validated from
+        # calling set_forbidden_channels, so we can just return it
+        if fetch_from_cache:
+            return self.forbidden_channels_cache
+
         if not self._validator(val):
             raise Keithley3706AInvalidValue(
                 f"{val} is not a valid specifier. "
@@ -366,6 +392,11 @@ class Keithley3706A(VisaInstrument):
                 'ranges, slots, backplane relays or "allslots".'
             )
         self.write(f"channel.clearforbidden('{val}')")
+
+        wait_for_instrument_to_update_settings_delay = 0.25
+        sleep(wait_for_instrument_to_update_settings_delay)
+
+        self.forbidden_channels_cache = self.get_forbidden_channels("allslots")
 
     def set_delay(self, val: str, delay_time: float) -> None:
         """
