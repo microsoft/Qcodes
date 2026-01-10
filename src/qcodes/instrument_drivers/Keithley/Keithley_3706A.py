@@ -340,7 +340,9 @@ class Keithley3706A(VisaInstrument):
                 'ranges, slots, backplane relays or "allslots".'
             )
         self.write(f"channel.setforbidden('{val}')")
-        self.forbidden_channels_cache = val
+
+        if self.use_forbidden_channels_cache:
+            self.forbidden_channels_cache = val
 
     def get_forbidden_channels(self, val: str, fetch_from_cache: bool = False) -> str:
         """
@@ -393,10 +395,11 @@ class Keithley3706A(VisaInstrument):
             )
         self.write(f"channel.clearforbidden('{val}')")
 
-        wait_for_instrument_to_update_settings_delay = 0.25
-        sleep(wait_for_instrument_to_update_settings_delay)
+        if self.use_forbidden_channels_cache:
+            wait_for_instrument_to_update_settings_delay = 0.25
+            sleep(wait_for_instrument_to_update_settings_delay)
 
-        self.forbidden_channels_cache = self.get_forbidden_channels("allslots")
+            self.forbidden_channels_cache = self.get_forbidden_channels("allslots")
 
     def set_delay(self, val: str, delay_time: float) -> None:
         """
