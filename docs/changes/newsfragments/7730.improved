@@ -1,0 +1,4 @@
+The QCoDeS Parameter classes ``ParameterBase``, ``Parameter``, ``ParameterWithSetpoints``, ``DelegateParameter``, ``ArrayParameter`` and ``MultiParameter`` now
+takes two Optional Generic arguments to allow the data type and the type of the instrument the parameter is bound to to be fixed statically. This enables
+the type of the output of ``parameter.get()``, input of ``parameter.set()`` and value of ``parameter.instrument`` to be known statically such that type
+checkers and IDE's can make use of this information.
