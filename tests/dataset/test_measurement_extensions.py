@@ -331,7 +331,7 @@ def test_dond_into_fails_with_together_sweeps(
 
             dond_into(
                 datasaver,
-                TogetherSweep(sweep1, sweep2),  # pyright: ignore [reportArgumentType]
+                TogetherSweep(sweep1, sweep2),  # type: ignore
                 meas1,
             )
             _ = datasaver.dataset
@@ -352,8 +352,8 @@ def test_dond_into_fails_with_groups(default_params, default_database_and_experi
             dond_into(
                 datasaver,
                 sweep1,
-                [meas1],  # pyright: ignore [reportArgumentType]
-                [meas2],  # pyright: ignore [reportArgumentType]
+                [meas1],  # type: ignore
+                [meas2],  # type: ignore
             )
             _ = datasaver.dataset
 

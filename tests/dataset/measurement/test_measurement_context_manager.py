@@ -297,7 +297,7 @@ def test_unregister_parameter(DAC, DMM) -> None:
     not_parameters = [DAC, DMM, 0.0, 1]
     for notparam in not_parameters:
         with pytest.raises(ValueError):
-            meas.unregister_parameter(notparam)  # pyright: ignore[reportArgumentType]
+            meas.unregister_parameter(notparam)  # type: ignore
 
     # unregistering something not registered should silently "succeed"
     meas.unregister_parameter("totes_not_registered")
