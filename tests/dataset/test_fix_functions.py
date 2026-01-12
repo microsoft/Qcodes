@@ -18,6 +18,7 @@ from qcodes.dataset.sqlite.queries import get_run_description
 from tests.common import skip_if_no_fixtures
 from tests.dataset.conftest import temporarily_copied_DB
 
+assert tests.dataset.__file__ is not None
 fixturepath = os.sep.join(tests.dataset.__file__.split(os.sep)[:-1])
 fixturepath = os.path.join(fixturepath, "fixtures")
 
