@@ -52,6 +52,7 @@ from qcodes.parameters import Parameter, ParamSpecBase
 from tests.common import error_caused_by, skip_if_no_fixtures
 from tests.dataset.conftest import temporarily_copied_DB
 
+assert tests.dataset.__file__ is not None
 fixturepath = os.sep.join(tests.dataset.__file__.split(os.sep)[:-1])
 fixturepath = os.path.join(fixturepath, "fixtures")
 

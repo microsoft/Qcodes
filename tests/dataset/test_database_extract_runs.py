@@ -744,6 +744,7 @@ def test_old_versions_not_touched(
 
     _, new_v = get_db_version_and_newest_available_version(source_path)
 
+    assert tests.dataset.__file__ is not None
     fixturepath = os.sep.join(tests.dataset.__file__.split(os.sep)[:-1])
     fixturepath = os.path.join(
         fixturepath, "fixtures", "db_files", "version2", "some_runs.db"
