@@ -8,8 +8,8 @@ import operator
 import traceback
 from datetime import datetime
 from functools import partial, reduce
-from typing import TYPE_CHECKING, Any, Literal
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, Literal
 
 from ipywidgets import (  # type: ignore[import-untyped]
     HTML,
@@ -442,14 +442,21 @@ def _get_plot_button(ds: DataSetProtocol, tab: Tab) -> Button:
         button_kwargs=dict(icon="line-chart"),
     )
 
-def _get_export_button(ds: DataSetProtocol, tab: Tab) -> Button: # New button in the table to export each dataset
+
+def _get_export_button(
+    ds: DataSetProtocol, tab: Tab
+) -> Button:  # New button in the table to export each dataset
     return button(
         "",
         "warning",
         tooltip="Click to export this DataSet as ASCII.",
-        on_click=lambda _: ds.export("csv", path=Path.cwd() / "export",),     
+        on_click=lambda _: ds.export(
+            "csv",
+            path=Path.cwd() / "export",
+        ),
         button_kwargs=dict(icon="file-export"),
     )
+
 
 def _experiment_widget(
     data_sets: Iterable[DataSetProtocol], tab: Tab
@@ -466,7 +473,7 @@ def _experiment_widget(
         "Notes",
         "Snapshot",
         "Plot",
-        "Export"
+        "Export",
     ]
 
     header = {n: button(n, "info") for n in header_names}
