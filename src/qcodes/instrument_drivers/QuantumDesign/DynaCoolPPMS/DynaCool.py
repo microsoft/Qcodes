@@ -86,7 +86,7 @@ class DynaCool(VisaInstrument):
 
         self.blocking_t: Parameter = self.add_parameter(
             "blocking_t",
-            label="Block instrument while ramping temp",
+            label="Block instrument while ramping temperature",
             unit="K",
             vals=vals.Numbers(1.6, 400),
             get_cmd=False,
