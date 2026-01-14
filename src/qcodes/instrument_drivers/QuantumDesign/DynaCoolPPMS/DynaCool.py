@@ -44,7 +44,6 @@ class DynaCool(VisaInstrument):
     # the ramp time resolution is in (s) and is used in the
     # _do_blocking_ramp method
     _ramp_time_resolution = 0.1
-    _blocking_t_sleep = 0.5
 
     temp_params = ("temperature_setpoint", "temperature_rate", "temperature_settling")
     field_params = ("field_target", "field_rate", "field_approach")
@@ -95,6 +94,17 @@ class DynaCool(VisaInstrument):
             ),
         )
         """Parameter blocking_t will block instrument interaction while temperature is ramping to setpoint."""
+
+        self.blocking_t_state_check_interval: Parameter = self.add_parameter(
+            name="blocking_t_state_check_interval",
+            instrument=self,
+            initial_value=0.5,
+            unit="s",
+            vals=vals.Numbers(0, 60),
+            set_cmd=None,
+            get_cmd=None,
+        )
+        """Parameter blocking_t_state_check_interval sets how often blocking_t checks for temperature stability."""
 
         self.temperature_rate: Parameter = self.add_parameter(
             "temperature_rate",
@@ -427,7 +437,7 @@ class DynaCool(VisaInstrument):
 
         if block_while_ramping:
             while self.temperature_state() != "stable":
-                sleep(self._blocking_t_sleep)
+                sleep(self.blocking_t_state_check_interval())
 
         self.setpoint.cache._set_from_raw_value(values[0])
         self.blocking_t.cache._set_from_raw_value(values[0])
