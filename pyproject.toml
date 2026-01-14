@@ -29,7 +29,7 @@ dependencies = [
     "ipywidgets>=8.0.0,<9.0.0",
     "ipykernel>=6.12.0", # implicitly required by ipywidgets >=8.0.5
     "jsonschema>=4.9.0",
-    "matplotlib>=3.6.0",
+    "matplotlib>=3.8.0",
     "networkx>=3.1",
     "numpy>=1.22.4",
     "packaging>=20.0",
@@ -42,10 +42,10 @@ dependencies = [
     "tqdm>=4.59.0",
     "uncertainties>=3.2.0",
     "versioningit>=2.2.1",
-    "websockets>=11.0",
+    "websockets>=13.0",
     "xarray>=2023.08.0",
     "cf_xarray>=0.8.4",
-    "opentelemetry-api>=1.17.0",
+    "opentelemetry-api>=1.25.0",
     "pillow>=9.2.0",
     "dask>=2022.1.0", # we are making use of xarray features that requires dask implicitly
 ]
@@ -60,7 +60,7 @@ Tracker = "https://github.com/microsoft/Qcodes/issues"
 Changelog = "https://microsoft.github.io/Qcodes/changes/index.html"
 
 [project.optional-dependencies]
-zurichinstruments = ["zhinst-qcodes>=0.3"]
+zurichinstruments = ["zhinst-qcodes>=0.5"]
 loop = ["qcodes_loop>=0.1.2"]
 test = [
     "coverage[toml]>=7.10.5",
@@ -79,13 +79,13 @@ test = [
     "PyVisa-sim>=0.6.0",
     "sphinx>=4.5.0",  # sphinx extension tests
     "types-jsonschema>=4.16.0",
-    "types-networkx >= 3.1", # Version should match the networkx requirment
+    "types-networkx >= 3.5.0.20251104",
     "types_requests>=0.1.8",
     "types-tabulate>=0.1.0",
     "types-tqdm>=4.64.6",
     "types_pywin32>=305.0.0.7",
     "qcodes_loop>=0.1.1",
-    "zhinst.qcodes>=0.5", # typecheck zhinst driver alias
+    "zhinst-qcodes>=0.5", # typecheck zhinst driver alias
     "libcst>=1.2.0", # refactor tests
 ]
 docs = [
