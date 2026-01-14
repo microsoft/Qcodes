@@ -89,6 +89,7 @@ class DynaCool(VisaInstrument):
             label="Block instrument while ramping temp",
             unit="K",
             vals=vals.Numbers(1.6, 400),
+            get_cmd=False,
             set_cmd=partial(
                 self._temp_setter, "temperature_setpoint", block_while_ramping=True
             ),
