@@ -428,8 +428,10 @@ class DynaCool(VisaInstrument):
         if block_while_ramping:
             while self.temperature_state() != "stable":
                 sleep(self._blocking_t_sleep)
+
         self.setpoint.cache._set_from_raw_value(values[0])
         self.blocking_t.cache._set_from_raw_value(values[0])
+
     def write(self, cmd: str) -> None:
         """
         Since the error code is always returned, we must read it back
