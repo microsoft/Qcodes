@@ -524,7 +524,7 @@ zhinst-timing-models==25.10.0
     # via zhinst-utils
 zhinst-toolkit==1.2.0
     # via zhinst-qcodes
-zhinst-utils==0.7.0
+zhinst-utils==0.7.1
     # via zhinst-toolkit
 zipp==3.23.0
     # via importlib-metadata
