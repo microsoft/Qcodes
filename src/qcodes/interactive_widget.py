@@ -8,6 +8,7 @@ import operator
 import traceback
 from datetime import datetime
 from functools import partial, reduce
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 from ipywidgets import (  # type: ignore[import-untyped]
@@ -442,6 +443,21 @@ def _get_plot_button(ds: DataSetProtocol, tab: Tab) -> Button:
     )
 
 
+def _get_export_button(
+    ds: DataSetProtocol, tab: Tab
+) -> Button:  # New button in the table to export each dataset
+    return button(
+        "",
+        "warning",
+        tooltip="Click to export this DataSet as ASCII.",
+        on_click=lambda _: ds.export(
+            "csv",
+            path=Path.cwd() / "export",
+        ),
+        button_kwargs=dict(icon="file-export"),
+    )
+
+
 def _experiment_widget(
     data_sets: Iterable[DataSetProtocol], tab: Tab
 ) -> GridspecLayout:
@@ -457,6 +473,7 @@ def _experiment_widget(
         "Notes",
         "Snapshot",
         "Plot",
+        "Export",
     ]
 
     header = {n: button(n, "info") for n in header_names}
@@ -471,6 +488,7 @@ def _experiment_widget(
         row["MSMT Time"] = _get_timestamp_button(ds)
         row["Snapshot"] = _get_snapshot_button(ds, tab)
         row["Plot"] = _get_plot_button(ds, tab)
+        row["Export"] = _get_export_button(ds, tab)
         rows.append(row)
 
     grid = GridspecLayout(n_rows=len(rows), n_columns=len(header_names))

@@ -75,6 +75,13 @@ def test_snapshot_button(tab, standalone_parameters_dataset) -> None:
     assert "snapshot" in tab.get_title(1)
 
 
+def test_export_button(tab, standalone_parameters_dataset) -> None:
+    ds = standalone_parameters_dataset
+    export_button = interactive_widget._get_export_button(ds, tab)
+    export_button.click()
+    time.sleep(0.5)  # after click
+
+
 @patch("matplotlib.pyplot.show")
 def test_plot_button(tab, standalone_parameters_dataset) -> None:
     ds = standalone_parameters_dataset

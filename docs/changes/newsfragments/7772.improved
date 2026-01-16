@@ -1,0 +1,5 @@
+The table created by experiments_widget() now has a column of buttons by which individual datasets can be exported as ASCII files. This is a user-friendly way to use the qcode.dataset.export() method.
+
+To demo this feature, run
+> experiments_widget(sort_by="timestamp")
+in Jupyter, and click on one of the cells in the "Export" column.
