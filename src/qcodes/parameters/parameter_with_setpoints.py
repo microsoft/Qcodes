@@ -160,16 +160,30 @@ class ParameterWithSetpoints(Parameter):
         return ParameterSet(self.setpoints)
 
     def unpack_self(self, value: ValuesType) -> list[tuple[ParameterBase, ValuesType]]:
+        """
+        Unpacks the ParameterWithSetpoints, its setpoints and any inferred
+        parameters controlled by the setpoints.
+
+        Args:
+            value(ValuesType): The data acquired from this parameter.
+
+        Returns:
+            A list of tuples of parameters and values to be added as results
+            to the dataset.
+        """
         unpacked_results: list[tuple[ParameterBase, ValuesType]] = []
-        setpoint_params = []
-        setpoint_data = []
-        for setpointparam in self.setpoints:
-            these_setpoints = setpointparam.get()
-            setpoint_params.append(setpointparam)
-            setpoint_data.append(these_setpoints)
-        output_grids = np.meshgrid(*setpoint_data, indexing="ij")
-        for param, grid in zip(setpoint_params, output_grids):
-            unpacked_results.append((param, grid))
+        setpoint_params = list(self.setpoints)
+        setpoint_data = [param.get() for param in setpoint_params]
+        output_grids = list(np.meshgrid(*setpoint_data, indexing="ij"))
+        for i, param in enumerate(setpoint_params[:]):
+            for inferred_param in param.has_control_of:
+                copy_setpoint_data = setpoint_data[:]
+                copy_setpoint_data[i] = inferred_param.get()
+                setpoint_params.append(inferred_param)
+                output_grids.append(
+                    np.meshgrid(*copy_setpoint_data, indexing="ij")[i]
+                )
+        unpacked_results = list(zip(setpoint_params, output_grids))
         unpacked_results.extend(
             super().unpack_self(value)
         )  # Must come last to preserve original ordering
