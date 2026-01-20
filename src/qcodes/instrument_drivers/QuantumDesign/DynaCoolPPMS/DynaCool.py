@@ -83,17 +83,16 @@ class DynaCool(VisaInstrument):
         )
         """Parameter temperature_setpoint"""
 
-        self.blocking_t: Parameter = self.add_parameter(
-            "blocking_t",
+        self.block_while_ramping_temperature: Parameter = self.add_parameter(
+            "block_while_ramping_temperature",
             label="Block instrument while ramping temperature",
-            unit="K",
-            vals=vals.Numbers(1.6, 400),
+            initial_value=False,
+            vals=vals.Bool(),
             get_cmd=False,
-            set_cmd=partial(
-                self._temp_setter, "temperature_setpoint", block_while_ramping=True
-            ),
+            set_cmd=False,
         )
-        """Parameter blocking_t will block instrument interaction while temperature is ramping to setpoint."""
+        """Parameter block_while_ramping_temperature, when set to True,
+        will block further interaction while temperature is ramping to setpoint."""
 
         self.blocking_t_state_check_interval: Parameter = self.add_parameter(
             name="blocking_t_state_check_interval",
@@ -104,7 +103,8 @@ class DynaCool(VisaInstrument):
             set_cmd=None,
             get_cmd=None,
         )
-        """Parameter blocking_t_state_check_interval sets how often blocking_t checks for temperature stability."""
+        """Parameter blocking_t_state_check_interval sets how often
+        temperature_setpoint checks for temperature stability when block_while_ramping_temperature is True."""
 
         self.temperature_rate: Parameter = self.add_parameter(
             "temperature_rate",
@@ -423,7 +423,6 @@ class DynaCool(VisaInstrument):
             "temperature_setpoint", "temperature_rate", "temperature_settling"
         ],
         value: float,
-        block_while_ramping: bool = False,
     ) -> None:
         """
         The setter function for the temperature parameters. All three are set
@@ -435,12 +434,11 @@ class DynaCool(VisaInstrument):
 
         self.write(f"TEMP {values[0]}, {values[1]}, {values[2]}")
 
-        if block_while_ramping:
+        if self.block_while_ramping_temperature():
             while self.temperature_state() != "stable":
                 sleep(self.blocking_t_state_check_interval())
 
         self.setpoint.cache._set_from_raw_value(values[0])
-        self.blocking_t.cache._set_from_raw_value(values[0])
 
     def write(self, cmd: str) -> None:
         """
