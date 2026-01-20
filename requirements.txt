@@ -60,7 +60,7 @@ coverage==7.13.1
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2025.12.0
+dask==2026.1.1
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -89,7 +89,7 @@ fsspec==2026.1.0
     # via dask
 furo==2025.12.19
     # via qcodes (pyproject.toml)
-h5netcdf==1.7.3
+h5netcdf==1.8.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -102,7 +102,7 @@ h5py==3.15.1
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.150.1
+hypothesis==6.150.2
     # via qcodes (pyproject.toml)
 idna==3.11
     # via requests
@@ -211,7 +211,7 @@ networkx==3.6.1
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-numpy==2.3.5
+numpy==2.4.1
     # via
     #   qcodes (pyproject.toml)
     #   broadbean
@@ -258,7 +258,7 @@ pandas==2.3.3
     #   qcodes
     #   qcodes-loop
     #   xarray
-pandas-stubs==2.3.3.251219
+pandas-stubs==2.3.3.260113
     # via qcodes (pyproject.toml)
 pandocfilters==1.5.1
     # via nbconvert
@@ -285,7 +285,7 @@ psutil==7.2.1
     # via ipykernel
 pure-eval==0.2.3
     # via stack-data
-pyarrow==22.0.0
+pyarrow==23.0.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -327,7 +327,7 @@ python-dateutil==2.9.0.post0
     #   pandas
 pytz==2025.2
     # via pandas
-pyvisa==1.16.0
+pyvisa==1.16.1
     # via
     #   qcodes (pyproject.toml)
     #   pyvisa-sim
@@ -379,7 +379,7 @@ snowballstemmer==3.0.1
     # via sphinx
 sortedcontainers==2.4.0
     # via hypothesis
-soupsieve==2.8.1
+soupsieve==2.8.2
     # via beautifulsoup4
 sphinx==8.2.3
     # via
@@ -524,7 +524,7 @@ zhinst-timing-models==25.10.0
     # via zhinst-utils
 zhinst-toolkit==1.2.0
     # via zhinst-qcodes
-zhinst-utils==0.7.0
+zhinst-utils==0.7.1
     # via zhinst-toolkit
 zipp==3.23.0
     # via importlib-metadata
