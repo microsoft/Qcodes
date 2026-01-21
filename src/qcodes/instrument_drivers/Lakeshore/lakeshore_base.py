@@ -488,7 +488,12 @@ class LakeshoreBaseOutput(InstrumentChannel):
                 f"be set to 'kelvin'."
             )
 
-        t_setpoint = self.setpoint()
+        # NOTE: Getting the setpoint directly from the instrument too soon
+        # after setting the setpoint may result in the last setpoint
+        # being returned, in which case the loop below will never exit
+        # because it is expecting the wrong setpoint. Use get_latest
+        # to read from the parameter directly instead of the instrument.
+        t_setpoint = self.setpoint.get_latest()
 
         time_now = time.perf_counter()
         time_enter_tolerance_zone = time_now
