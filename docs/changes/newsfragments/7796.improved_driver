@@ -1,0 +1,2 @@
+Fixed bug in Lakeshore driver that was causing blocking_t
+to periodically hang indefinitely.
