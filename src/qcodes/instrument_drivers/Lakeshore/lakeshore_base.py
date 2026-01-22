@@ -236,6 +236,7 @@ class LakeshoreBaseOutput(InstrumentChannel):
             get_parser=float,
             set_cmd=f"SETP {output_index}, {{}}",
             get_cmd=f"SETP? {output_index}",
+            post_delay=0.5,  # getting setpoint too soon after getting may fetch previous setpoint
         )
         """
         The value of the setpoint in the preferred units of the control loop sensor
@@ -350,22 +351,6 @@ class LakeshoreBaseOutput(InstrumentChannel):
         )
         """Duration during which temperature has to be within tolerance"""
         self.wait_equilibration_time(0.5)
-
-        self.setpoint_settle_delay: Parameter = self.add_parameter(
-            "setpoint_settle_delay",
-            set_cmd=None,
-            get_cmd=None,
-            initial_value=0.5,
-            vals=vals.Numbers(0, 5),
-            label="Setpoint settle delay",
-            docstring="Short time delay to ensure instrument returns correct"
-            "setpoint when setpoint() is called immediately after setting. This is used"
-            "inside the function `wait_until_set_point_reached`.",
-            unit="s",
-        )
-        """Short time delay after setting setpoint to ensure instrument returns correct
-        setpoint when setpoint() is called immediately after setting. This is used
-        inside the function `wait_until_set_point_reached`."""
 
         self.blocking_t: Parameter = self.add_parameter(
             "blocking_t",
@@ -504,10 +489,6 @@ class LakeshoreBaseOutput(InstrumentChannel):
                 f"be set to 'kelvin'."
             )
 
-        # NOTE: Adding a small delay to give the instrument time to
-        # update its setpoint to ensure correct setpoint is returned,
-        # otherwise the while loop below will never be exited.
-        time.sleep(self.setpoint_settle_delay.get_latest())
         t_setpoint = self.setpoint()
 
         time_now = time.perf_counter()
