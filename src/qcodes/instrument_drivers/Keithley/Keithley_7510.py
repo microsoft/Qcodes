@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, ClassVar, TypedDict, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Self, TypedDict, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -276,7 +276,7 @@ class Keithley7510Buffer(InstrumentChannel):
         if label is not None:
             self.setpoints.label = label
 
-    def __enter__(self) -> "Keithley7510Buffer":
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(
