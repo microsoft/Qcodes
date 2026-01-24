@@ -8,6 +8,7 @@ import os
 from types import MethodType
 from typing import TYPE_CHECKING, Any, Literal
 
+from . import ParamSpecBase
 from .command import Command
 from .parameter_base import ParamDataType, ParameterBase, ParamRawDataType
 from .sweep_values import SweepFixedValues
@@ -17,7 +18,6 @@ if TYPE_CHECKING:
 
     from qcodes.instrument import InstrumentBase
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
-    from qcodes.parameters import ParamSpecBase
     from qcodes.validators import Validator
 
 
@@ -441,9 +441,9 @@ class Parameter(ParameterBase):
     @property
     def param_spec(self) -> ParamSpecBase:
         paramspecbase = super().param_spec  # Sets the name and paramtype
-        paramspecbase.label = self.label
-        paramspecbase.unit = self.unit
-        return paramspecbase
+        return ParamSpecBase(
+            paramspecbase.name, paramspecbase.type, self.label, self.unit
+        )
 
 
 class ManualParameter(Parameter):
