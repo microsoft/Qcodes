@@ -60,7 +60,7 @@ coverage==7.13.1
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2025.12.0
+dask==2026.1.1
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -89,7 +89,7 @@ fsspec==2026.1.0
     # via dask
 furo==2025.12.19
     # via qcodes (pyproject.toml)
-h5netcdf==1.7.3
+h5netcdf==1.8.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -237,7 +237,7 @@ opentelemetry-api==1.39.1
     #   qcodes
 orderly-set==5.5.0
     # via deepdiff
-packaging==25.0
+packaging==26.0
     # via
     #   qcodes (pyproject.toml)
     #   dask
@@ -252,7 +252,7 @@ packaging==25.0
     #   sphinx
     #   versioningit
     #   xarray
-pandas==2.3.3
+pandas==3.0.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -285,7 +285,7 @@ psutil==7.2.1
     # via ipykernel
 pure-eval==0.2.3
     # via stack-data
-pyarrow==22.0.0
+pyarrow==23.0.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -300,7 +300,7 @@ pygments==2.19.2
     #   nbconvert
     #   pytest
     #   sphinx
-pyparsing==3.3.1
+pyparsing==3.3.2
     # via matplotlib
 pytest==9.0.2
     # via
@@ -379,7 +379,7 @@ snowballstemmer==3.0.1
     # via sphinx
 sortedcontainers==2.4.0
     # via hypothesis
-soupsieve==2.8.1
+soupsieve==2.8.3
     # via beautifulsoup4
 sphinx==8.2.3
     # via
@@ -496,7 +496,7 @@ versioningit==3.3.0
     #   broadbean
     #   qcodes
     #   qcodes-loop
-wcwidth==0.2.14
+wcwidth==0.3.1
     # via prompt-toolkit
 webencodings==0.5.1
     # via
