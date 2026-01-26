@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Self, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -132,7 +132,7 @@ class Keithley2450Buffer(InstrumentChannel):
             return []
         return [self.inverted_buffer_elements[element] for element in element_scpis]
 
-    def __enter__(self) -> "Keithley2450Buffer":
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(
