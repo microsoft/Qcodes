@@ -68,7 +68,9 @@ class Command(Generic[Output, ParsedOutput]):
     ):
         self.arg_count = arg_count
 
-        if no_cmd_function is not None and not is_function(no_cmd_function, arg_count):
+        if no_cmd_function is not None and not is_function(
+            no_cmd_function, arg_count, coroutine=None
+        ):
             raise TypeError(
                 f"no_cmd_function must be None or a function "
                 f"taking the same args as the command, not "
