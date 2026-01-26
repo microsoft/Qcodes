@@ -1,7 +1,7 @@
-from inspect import iscoroutinefunction, signature
+from inspect import CO_VARARGS, iscoroutinefunction, signature
 
 
-def is_function(f: object, arg_count: int, coroutine: bool = False) -> bool:
+def is_function(f: object, arg_count: int, coroutine: bool | None = False) -> bool:
     """
     Check and require a function that can accept the specified number of
     positional arguments, which either is or is not a coroutine
@@ -19,14 +19,37 @@ def is_function(f: object, arg_count: int, coroutine: bool = False) -> bool:
     if not isinstance(arg_count, int) or arg_count < 0:
         raise TypeError("arg_count must be a non-negative integer")
 
-    if not (callable(f) and bool(coroutine) is iscoroutinefunction(f)):
+    if not callable(f):
         return False
+    if coroutine is not None:
+        if bool(coroutine) is not iscoroutinefunction(f):
+            return False
 
     if isinstance(f, type):
         # for type casting functions, eg int, str, float
         # only support the one-parameter form of these,
         # otherwise the user should make an explicit function.
         return arg_count == 1
+
+    if func_code := getattr(f, "__code__", None):
+        # handle objects like functools.partial(f, ...)
+        func_defaults = getattr(f, "__defaults__", None)
+        number_of_defaults = len(func_defaults) if func_defaults is not None else 0
+
+        if getattr(f, "__self__", None) is not None:
+            # bound method
+            min_positional = func_code.co_argcount - 1 - number_of_defaults
+            max_positional = func_code.co_argcount - 1
+        else:
+            min_positional = func_code.co_argcount - number_of_defaults
+            max_positional = func_code.co_argcount
+
+        if func_code.co_flags & CO_VARARGS:
+            # we have *args
+            max_positional = 10e10
+
+        ev = min_positional <= arg_count <= max_positional
+        return ev
 
     try:
         sig = signature(f)

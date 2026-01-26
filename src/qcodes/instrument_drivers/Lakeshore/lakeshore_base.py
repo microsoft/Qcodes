@@ -236,6 +236,7 @@ class LakeshoreBaseOutput(InstrumentChannel):
             get_parser=float,
             set_cmd=f"SETP {output_index}, {{}}",
             get_cmd=f"SETP? {output_index}",
+            post_delay=0.5,  # getting setpoint too soon after setting may fetch previous setpoint
         )
         """
         The value of the setpoint in the preferred units of the control loop sensor
