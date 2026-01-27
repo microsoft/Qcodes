@@ -1,3 +1,4 @@
+import functools
 import itertools
 import textwrap
 import warnings
@@ -933,21 +934,25 @@ class Keithley3706A(VisaInstrument):
         """
         self.write(f"setup.recall('{val}')")
 
+    @functools.cached_property
+    def _valid_specifiers(self) -> frozenset[str]:
+        """
+        Cache valid channel specifiers for fast validation.
+        This property is computed once on first access and cached.
+        """
+        ch = self.get_channels()
+        ch_range = self._get_channel_ranges()
+        slots = ["allslots", *self._get_slot_names()]
+        backplanes = self.get_analog_backplane_specifiers()
+        return frozenset((*ch, *ch_range, *slots, *backplanes))
+
     def _validator(self, val: str) -> bool:
         """
         Instrument specific validator. As the number of validation points
         are around 15k, to avoid QCoDeS parameter validation to print them all,
         we shall raise a custom exception.
         """
-        ch = self.get_channels()
-        ch_range = self._get_channel_ranges()
-        slots = ["allslots", *self._get_slot_names()]
-        backplanes = self.get_analog_backplane_specifiers()
-        specifier = val.split(",")
-        for element in specifier:
-            if element not in (*ch, *ch_range, *slots, *backplanes):
-                return False
-        return True
+        return all(element in self._valid_specifiers for element in val.split(","))
 
     def connect_message(
         self, idn_param: str = "IDN", begin_time: float | None = None
