@@ -1,0 +1,2 @@
+On Keithly3706A, allow users to cache forbidden channels in order to bypass unnecessary `_validator()` calls when closing channels.
+Results in significant time savings when running measurements with repeated calls to `close_channel()`.
