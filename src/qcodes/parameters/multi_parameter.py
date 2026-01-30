@@ -142,7 +142,7 @@ class MultiParameter(
         names: Sequence[str],
         shapes: Sequence[Sequence[int]],
         # mypy seems to be confused here. The bound and default for InstrumentType_co
-        # contains None but mypy will now allow it as a default as of v 1.19.0
+        # contains None but mypy will not allow it as a default as of v 1.19.0
         instrument: InstrumentType_co = None,  # type: ignore[assignment]
         labels: Sequence[str] | None = None,
         units: Sequence[str] | None = None,
