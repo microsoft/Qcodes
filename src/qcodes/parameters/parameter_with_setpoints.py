@@ -9,7 +9,7 @@ from qcodes.parameters.parameter import (
     Parameter,
 )
 from qcodes.parameters.parameter_base import (
-    InstrumentType_co,
+    InstrumentTypeVar_co,
     ParameterBase,
     ParameterDataTypeVar,
     ParameterSet,
@@ -26,8 +26,8 @@ LOG = logging.getLogger(__name__)
 
 
 class ParameterWithSetpoints(
-    Parameter[ParameterDataTypeVar, InstrumentType_co],
-    Generic[ParameterDataTypeVar, InstrumentType_co],
+    Parameter[ParameterDataTypeVar, InstrumentTypeVar_co],
+    Generic[ParameterDataTypeVar, InstrumentTypeVar_co],
 ):
     """
     A parameter that has associated setpoints. The setpoints is nothing

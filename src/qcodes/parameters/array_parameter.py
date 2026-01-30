@@ -14,7 +14,7 @@ except ImportError:
     has_loop = False
 from typing import Generic
 
-from .parameter_base import InstrumentType_co, ParameterBase, ParameterDataTypeVar
+from .parameter_base import InstrumentTypeVar_co, ParameterBase, ParameterDataTypeVar
 from .sequence_helpers import is_sequence_of
 
 if TYPE_CHECKING:
@@ -41,8 +41,8 @@ except ImportError:
 
 
 class ArrayParameter(
-    ParameterBase[ParameterDataTypeVar, InstrumentType_co],
-    Generic[ParameterDataTypeVar, InstrumentType_co],
+    ParameterBase[ParameterDataTypeVar, InstrumentTypeVar_co],
+    Generic[ParameterDataTypeVar, InstrumentTypeVar_co],
 ):
     """
     A gettable parameter that returns an array of values.
@@ -133,9 +133,9 @@ class ArrayParameter(
         self,
         name: str,
         shape: Sequence[int],
-        # mypy seems to be confused here. The bound and default for InstrumentType_co
+        # mypy seems to be confused here. The bound and default for InstrumentTypeVar_co
         # contains None but mypy will not allow it as a default as of v 1.19.0
-        instrument: InstrumentType_co = None,  # type: ignore[assignment]
+        instrument: InstrumentTypeVar_co = None,  # type: ignore[assignment]
         label: str | None = None,
         unit: str | None = None,
         setpoints: Sequence[Any] | None = None,

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Generic, Literal
 
 from .command import Command
 from .parameter_base import (
-    InstrumentType_co,
+    InstrumentTypeVar_co,
     ParameterBase,
     ParameterDataTypeVar,
     ParamRawDataType,
@@ -30,8 +30,8 @@ log = logging.getLogger(__name__)
 
 
 class Parameter(
-    ParameterBase[ParameterDataTypeVar, InstrumentType_co],
-    Generic[ParameterDataTypeVar, InstrumentType_co],
+    ParameterBase[ParameterDataTypeVar, InstrumentTypeVar_co],
+    Generic[ParameterDataTypeVar, InstrumentTypeVar_co],
 ):
     """
     A parameter represents a single degree of freedom. Most often,
@@ -180,9 +180,9 @@ class Parameter(
     def __init__(
         self,
         name: str,
-        # mypy seems to be confused here. The bound and default for InstrumentType_co
+        # mypy seems to be confused here. The bound and default for InstrumentTypeVar_co
         # contains None but mypy will not allow None as a default as of v 1.19.0
-        instrument: InstrumentType_co = None,  # type: ignore[assignment]
+        instrument: InstrumentTypeVar_co = None,  # type: ignore[assignment]
         label: str | None = None,
         unit: str | None = None,
         get_cmd: str | Callable[..., Any] | Literal[False] | None = None,

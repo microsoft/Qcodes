@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Generic
 from typing_extensions import TypeVar
 
 from .parameter import Parameter
-from .parameter_base import InstrumentType_co, ParameterDataTypeVar
+from .parameter_base import InstrumentTypeVar_co, ParameterDataTypeVar
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -22,8 +22,8 @@ if TYPE_CHECKING:
 # Generic type variables for inner cache class
 # these need to be different variables such that both classes can be generic
 _local_ParameterDataTypeVar = TypeVar("_local_ParameterDataTypeVar", default=Any)
-_local_InstrumentType_co = TypeVar(
-    "_local_InstrumentType_co",
+_local_InstrumentTypeVar_co = TypeVar(
+    "_local_InstrumentTypeVar_co",
     bound="InstrumentBase | None",
     default="InstrumentBase | None",
     covariant=True,
@@ -31,8 +31,8 @@ _local_InstrumentType_co = TypeVar(
 
 
 class DelegateParameter(
-    Parameter[ParameterDataTypeVar, InstrumentType_co],
-    Generic[ParameterDataTypeVar, InstrumentType_co],
+    Parameter[ParameterDataTypeVar, InstrumentTypeVar_co],
+    Generic[ParameterDataTypeVar, InstrumentTypeVar_co],
 ):
     """
     The :class:`.DelegateParameter` wraps a given `source` :class:`Parameter`.
@@ -72,12 +72,12 @@ class DelegateParameter(
     """
 
     class _DelegateCache(
-        Generic[_local_ParameterDataTypeVar, _local_InstrumentType_co]
+        Generic[_local_ParameterDataTypeVar, _local_InstrumentTypeVar_co]
     ):
         def __init__(
             self,
             parameter: DelegateParameter[
-                _local_ParameterDataTypeVar, _local_InstrumentType_co
+                _local_ParameterDataTypeVar, _local_InstrumentTypeVar_co
             ],
         ):
             self._parameter = parameter
@@ -210,7 +210,9 @@ class DelegateParameter(
         # i.e. _SetParamContext overrides it
         self._settable = True
 
-        self.cache = self._DelegateCache[ParameterDataTypeVar, InstrumentType_co](self)
+        self.cache = self._DelegateCache[ParameterDataTypeVar, InstrumentTypeVar_co](
+            self
+        )
         if initial_cache_value is not None:
             self.cache.set(initial_cache_value)
 
