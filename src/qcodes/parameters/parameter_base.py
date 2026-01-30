@@ -229,7 +229,7 @@ class ParameterBase(
     def __init__(
         self,
         name: str,
-        instrument: InstrumentType_co = None,  # type: ignore[assignment]
+        instrument: InstrumentType_co,
         snapshot_get: bool = True,
         metadata: Mapping[Any, Any] | None = None,
         step: float | None = None,
