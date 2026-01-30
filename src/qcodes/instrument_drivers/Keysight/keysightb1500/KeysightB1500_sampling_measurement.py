@@ -1,7 +1,8 @@
 import warnings
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy
+import numpy.typing as npt
 
 from qcodes.parameters import ParameterWithSetpoints
 
@@ -19,11 +20,13 @@ if TYPE_CHECKING:
         KeysightB1500,
     )
     from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import (
-        KeysightB1517A,
+        KeysightB1517A,  # noqa: F401 # used in generic argument below
     )
 
 
-class SamplingMeasurement(ParameterWithSetpoints):
+class SamplingMeasurement(
+    ParameterWithSetpoints[npt.NDArray[numpy.float64], "KeysightB1517A"]
+):
     """
     Performs sampling measurement using semiconductor
     parameter analyzer B1500A.
@@ -36,10 +39,15 @@ class SamplingMeasurement(ParameterWithSetpoints):
 
     def __init__(self, name: str, **kwargs: Any):
         super().__init__(name, **kwargs)
-        self.instrument: KeysightB1517A
-        self.root_instrument: KeysightB1500
 
         self.data = _FMTResponse(None, None, None, None)
+
+    @property
+    def root_instrument(self) -> "KeysightB1500":
+        # since Parameter is not generic over RootInstrument type
+        # we override the property here to make the root_instrument type
+        # explicit
+        return cast("KeysightB1500", self.instrument.root_instrument)
 
     def get_raw(self) -> numpy.ndarray:
         """

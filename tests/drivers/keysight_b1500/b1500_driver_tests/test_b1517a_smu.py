@@ -88,6 +88,7 @@ def test_getting_voltage_after_calling_v_measure_range_config(
     smu: KeysightB1517A,
 ) -> None:
     mainframe = smu.parent
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = "NAV-000.002E-01\r"
 
     smu.v_measure_range_config(VMeasRange.FIX_2V)
@@ -125,6 +126,7 @@ def test_getting_current_after_calling_i_measure_range_config(
     smu: KeysightB1517A,
 ) -> None:
     mainframe = smu.parent
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = "NAI+000.005E-06\r"
 
     smu.i_measure_range_config(IMeasRange.MIN_100mA)
@@ -151,7 +153,7 @@ def test_force_invalid_current_output_range(smu: KeysightB1517A) -> None:
 
 def test_force_voltage_with_autorange(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
-
+    assert isinstance(mainframe, MagicMock)
     smu.source_config(output_range=VOutputRange.AUTO)
     smu.voltage(10)
 
@@ -160,7 +162,7 @@ def test_force_voltage_with_autorange(smu: KeysightB1517A) -> None:
 
 def test_force_voltage_autorange_and_compliance(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
-
+    assert isinstance(mainframe, MagicMock)
     smu.source_config(
         output_range=VOutputRange.AUTO,
         compliance=1e-6,
@@ -176,7 +178,7 @@ def test_new_source_config_should_invalidate_old_source_config(
     smu: KeysightB1517A,
 ) -> None:
     mainframe = smu.parent
-
+    assert isinstance(mainframe, MagicMock)
     smu.source_config(
         output_range=VOutputRange.AUTO,
         compliance=1e-6,
@@ -192,7 +194,7 @@ def test_new_source_config_should_invalidate_old_source_config(
 
 def test_unconfigured_source_defaults_to_autorange_v(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
-
+    assert isinstance(mainframe, MagicMock)
     smu.voltage(10)
 
     mainframe.write.assert_called_once_with("DV 1,0,10")
@@ -200,7 +202,7 @@ def test_unconfigured_source_defaults_to_autorange_v(smu: KeysightB1517A) -> Non
 
 def test_unconfigured_source_defaults_to_autorange_i(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
-
+    assert isinstance(mainframe, MagicMock)
     smu.current(0.2)
 
     mainframe.write.assert_called_once_with("DI 1,0,0.2")
@@ -208,7 +210,7 @@ def test_unconfigured_source_defaults_to_autorange_i(smu: KeysightB1517A) -> Non
 
 def test_force_current_with_autorange(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
-
+    assert isinstance(mainframe, MagicMock)
     smu.source_config(output_range=IOutputRange.AUTO)
     smu.current(0.1)
 
@@ -235,6 +237,7 @@ def test_raise_warning_output_range_mismatches_output_command(
 
 def test_measure_current(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = "NAI+000.005E-06\r"
 
     assert smu.current.measurement_status is None
@@ -245,6 +248,7 @@ def test_measure_current(smu: KeysightB1517A) -> None:
 
 def test_measure_voltage(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = "NAV+000.123E-06\r"
 
     assert smu.voltage.measurement_status is None
@@ -258,6 +262,7 @@ def test_measure_voltage(smu: KeysightB1517A) -> None:
 
 def test_measure_current_shows_compliance_hit(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = "CAI+000.123E-06\r"
 
     assert smu.current.measurement_status is None
@@ -268,6 +273,7 @@ def test_measure_current_shows_compliance_hit(smu: KeysightB1517A) -> None:
 
 def test_measured_voltage_with_V_status_returns_nan(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = "VAV+199.999E+99\r"
 
     assert smu.voltage.measurement_status is None
@@ -278,7 +284,7 @@ def test_measured_voltage_with_V_status_returns_nan(smu: KeysightB1517A) -> None
 
 def test_some_voltage_sourcing_and_current_measurement(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
-
+    assert isinstance(mainframe, MagicMock)
     smu.source_config(output_range=VOutputRange.MIN_0V5, compliance=1e-9)
     smu.i_measure_range_config(IMeasRange.FIX_100nA)
 
@@ -296,7 +302,7 @@ def test_some_voltage_sourcing_and_current_measurement(smu: KeysightB1517A) -> N
 
 def test_use_high_resolution_adc(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
-
+    assert isinstance(mainframe, MagicMock)
     smu.use_high_resolution_adc()
 
     mainframe.write.assert_called_once_with("AAD 1,1")
@@ -304,7 +310,7 @@ def test_use_high_resolution_adc(smu: KeysightB1517A) -> None:
 
 def test_use_high_speed_adc(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
-
+    assert isinstance(mainframe, MagicMock)
     smu.use_high_speed_adc()
 
     mainframe.write.assert_called_once_with("AAD 1,0")
@@ -317,7 +323,7 @@ def test_measurement_mode_at_init(smu: KeysightB1517A) -> None:
 
 def test_measurement_mode_to_enum_value(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
-
+    assert isinstance(mainframe, MagicMock)
     smu.measurement_mode(MM.Mode.SAMPLING)
     mainframe.write.assert_called_once_with("MM 10,1")
 
@@ -327,7 +333,7 @@ def test_measurement_mode_to_enum_value(smu: KeysightB1517A) -> None:
 
 def test_measurement_mode_to_int_value(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
-
+    assert isinstance(mainframe, MagicMock)
     smu.measurement_mode(10)
     mainframe.write.assert_called_once_with("MM 10,1")
 
@@ -337,7 +343,7 @@ def test_measurement_mode_to_int_value(smu: KeysightB1517A) -> None:
 
 def test_setting_timing_parameters(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
-
+    assert isinstance(mainframe, MagicMock)
     smu.timing_parameters(0.0, 0.42, 32)
     mainframe.write.assert_called_once_with("MT 0.0,0.42,32")
 
@@ -349,7 +355,7 @@ def test_setting_timing_parameters(smu: KeysightB1517A) -> None:
 
 def test_set_average_samples_for_high_speed_adc(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
-
+    assert isinstance(mainframe, MagicMock)
     smu.set_average_samples_for_high_speed_adc(131, constants.AV.Mode.MANUAL)
     mainframe.write.assert_called_once_with("AV 131,1")
     mainframe.reset_mock()
@@ -366,7 +372,7 @@ def test_set_average_samples_for_high_speed_adc(smu: KeysightB1517A) -> None:
 
 def test_measurement_operation_mode(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
-
+    assert isinstance(mainframe, MagicMock)
     smu.measurement_operation_mode(constants.CMM.Mode.COMPLIANCE_SIDE)
     mainframe.write.assert_called_once_with("CMM 1,0")
 
@@ -381,7 +387,7 @@ def test_measurement_operation_mode(smu: KeysightB1517A) -> None:
 
 def test_current_measurement_range(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
-
+    assert isinstance(mainframe, MagicMock)
     smu.current_measurement_range(constants.IMeasRange.FIX_1A)
     mainframe.write.assert_called_once_with("RI 1,-20")
 
@@ -394,6 +400,8 @@ def test_current_measurement_range(smu: KeysightB1517A) -> None:
 
 def test_get_sweep_mode_range_start_end_steps(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
+    assert isinstance(mainframe, MagicMock)
+
     mainframe.ask.return_value = "WV1,1,50,+3.0E+00,-3.0E+00,201"
 
     sweep_mode = smu.iv_sweep.sweep_mode()
@@ -439,6 +447,7 @@ def test_iv_sweep_delay(smu: KeysightB1517A) -> None:
 
 def test_iv_sweep_mode_start_end_steps_compliance(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
+    assert isinstance(mainframe, MagicMock)
 
     smu.iv_sweep.sweep_mode(constants.SweepMode.LINEAR_TWO_WAY)
     smu.iv_sweep.sweep_range(constants.VOutputRange.MIN_2V)
@@ -463,7 +472,7 @@ def test_iv_sweep_mode_start_end_steps_compliance(smu: KeysightB1517A) -> None:
 
 def test_set_sweep_auto_abort(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
-
+    assert isinstance(mainframe, MagicMock)
     smu.iv_sweep.sweep_auto_abort(constants.Abort.ENABLED)
 
     mainframe.write.assert_called_once_with("WM 2")
@@ -471,6 +480,7 @@ def test_set_sweep_auto_abort(smu: KeysightB1517A) -> None:
 
 def test_get_sweep_auto_abort(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
+    assert isinstance(mainframe, MagicMock)
 
     mainframe.ask.return_value = "WM2,2;WT1.0,0.0,0.0,0.0,0.0;"
     condition = smu.iv_sweep.sweep_auto_abort()
@@ -479,6 +489,7 @@ def test_get_sweep_auto_abort(smu: KeysightB1517A) -> None:
 
 def test_set_post_sweep_voltage_cond(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = "WM2,2;WT1.0,0.0,0.0,0.0,0.0"
     smu.iv_sweep.post_sweep_voltage_condition(constants.WMDCV.Post.STOP)
 
@@ -487,6 +498,7 @@ def test_set_post_sweep_voltage_cond(smu: KeysightB1517A) -> None:
 
 def test_get_post_sweep_voltage_cond(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
+    assert isinstance(mainframe, MagicMock)
 
     mainframe.ask.return_value = "WM2,2;WT1.0,0.0,0.0,0.0,0.0"
     condition = smu.iv_sweep.post_sweep_voltage_condition()
