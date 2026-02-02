@@ -2,7 +2,6 @@ import functools
 import itertools
 import textwrap
 import warnings
-from time import sleep
 from typing import TYPE_CHECKING
 
 import qcodes.validators as vals
@@ -397,10 +396,7 @@ class Keithley3706A(VisaInstrument):
         self.write(f"channel.clearforbidden('{val}')")
 
         if self.use_forbidden_channels_cache:
-            wait_for_instrument_to_update_settings_delay = 0.25
-            sleep(wait_for_instrument_to_update_settings_delay)
-
-            self._forbidden_channels_cache = self.get_forbidden_channels("allslots")
+            self._forbidden_channels_cache = ""
 
     def set_delay(self, val: str, delay_time: float) -> None:
         """
