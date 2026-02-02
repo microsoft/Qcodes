@@ -1,5 +1,5 @@
 from functools import partial
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, Self
 
 from qcodes.instrument import (
     InstrumentBaseKWArgs,

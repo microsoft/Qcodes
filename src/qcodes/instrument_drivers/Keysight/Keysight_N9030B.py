@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Generic, Literal
+from typing import TYPE_CHECKING, Any, Generic, Literal, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -117,16 +117,14 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel["KeysightN9030B"]):
         self._max_freq = self._valid_max_freq[opt]
 
         # Frequency Parameters
-        self.start: Parameter[float, Self] = (
-            self.add_parameter(
-                name="start",
-                unit="Hz",
-                get_cmd=":SENSe:FREQuency:STARt?",
-                set_cmd=self._set_start,
-                get_parser=float,
-                vals=Numbers(self._min_freq, self._max_freq - 10),
-                docstring="Start Frequency",
-            )
+        self.start: Parameter[float, Self] = self.add_parameter(
+            name="start",
+            unit="Hz",
+            get_cmd=":SENSe:FREQuency:STARt?",
+            set_cmd=self._set_start,
+            get_parser=float,
+            vals=Numbers(self._min_freq, self._max_freq - 10),
+            docstring="Start Frequency",
         )
         """Start Frequency"""
         self.stop: Parameter[float, KeysightN9030BSpectrumAnalyzerMode] = (
