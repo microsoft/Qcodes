@@ -558,7 +558,7 @@ class IVSweepMeasurement(
         Note that ``.shapes`` of this parameter will also be updated to
         be in sync with the number of names.
         """
-        measurement_mode = self.instrument.get_measurement_mode()
+        measurement_mode = self.instrument.measurement_mode()
         channels = measurement_mode["channels"]
 
         if names is None:
