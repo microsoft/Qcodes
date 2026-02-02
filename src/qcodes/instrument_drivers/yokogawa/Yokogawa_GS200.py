@@ -440,7 +440,7 @@ class YokogawaGS200(VisaInstrument):
         )
         """Parameter voltage_limit"""
 
-        self.current_limit: Parameter[float, YokogawaGS200] = self.add_parameter(
+        self.current_limit: Parameter[float, Self] = self.add_parameter(
             "current_limit",
             label="Current Protection Limit",
             unit="I",

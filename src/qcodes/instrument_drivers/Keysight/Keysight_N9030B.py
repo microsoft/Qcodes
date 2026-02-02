@@ -117,7 +117,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel["KeysightN9030B"]):
         self._max_freq = self._valid_max_freq[opt]
 
         # Frequency Parameters
-        self.start: Parameter[float, KeysightN9030BSpectrumAnalyzerMode] = (
+        self.start: Parameter[float, Self] = (
             self.add_parameter(
                 name="start",
                 unit="Hz",
