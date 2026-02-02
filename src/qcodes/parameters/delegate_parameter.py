@@ -1,19 +1,39 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Generic
+
+from typing_extensions import TypeVar
 
 from .parameter import Parameter
+from .parameter_base import InstrumentTypeVar_co, ParameterDataTypeVar
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from datetime import datetime
 
+    from qcodes.instrument import InstrumentBase
     from qcodes.validators.validators import Validator
 
-    from .parameter_base import ParamDataType, ParamRawDataType
+    from .parameter_base import (
+        ParamDataType,
+        ParamRawDataType,
+    )
+
+# Generic type variables for inner cache class
+# these need to be different variables such that both classes can be generic
+_local_ParameterDataTypeVar = TypeVar("_local_ParameterDataTypeVar", default=Any)
+_local_InstrumentTypeVar_co = TypeVar(
+    "_local_InstrumentTypeVar_co",
+    bound="InstrumentBase | None",
+    default="InstrumentBase | None",
+    covariant=True,
+)
 
 
-class DelegateParameter(Parameter):
+class DelegateParameter(
+    Parameter[ParameterDataTypeVar, InstrumentTypeVar_co],
+    Generic[ParameterDataTypeVar, InstrumentTypeVar_co],
+):
     """
     The :class:`.DelegateParameter` wraps a given `source` :class:`Parameter`.
     Setting/getting it results in a set/get of the source parameter with
@@ -51,8 +71,15 @@ class DelegateParameter(Parameter):
 
     """
 
-    class _DelegateCache:
-        def __init__(self, parameter: DelegateParameter):
+    class _DelegateCache(
+        Generic[_local_ParameterDataTypeVar, _local_InstrumentTypeVar_co]
+    ):
+        def __init__(
+            self,
+            parameter: DelegateParameter[
+                _local_ParameterDataTypeVar, _local_InstrumentTypeVar_co
+            ],
+        ):
             self._parameter = parameter
             self._marked_valid: bool = False
 
@@ -99,7 +126,7 @@ class DelegateParameter(Parameter):
             if self._parameter.source is not None:
                 self._parameter.source.cache.invalidate()
 
-        def get(self, get_if_invalid: bool = True) -> ParamDataType:
+        def get(self, get_if_invalid: bool = True) -> _local_ParameterDataTypeVar:
             if self._parameter.source is None:
                 raise TypeError(
                     "Cannot get the cache of a DelegateParameter that delegates to None"
@@ -108,7 +135,7 @@ class DelegateParameter(Parameter):
                 self._parameter.source.cache.get(get_if_invalid=get_if_invalid)
             )
 
-        def set(self, value: ParamDataType) -> None:
+        def set(self, value: _local_ParameterDataTypeVar) -> None:
             if self._parameter.source is None:
                 raise TypeError(
                     "Cannot set the cache of a DelegateParameter that delegates to None"
@@ -128,7 +155,7 @@ class DelegateParameter(Parameter):
         def _update_with(
             self,
             *,
-            value: ParamDataType,
+            value: _local_ParameterDataTypeVar,
             raw_value: ParamRawDataType,
             timestamp: datetime | None = None,
         ) -> None:
@@ -142,7 +169,7 @@ class DelegateParameter(Parameter):
             """
             pass
 
-        def __call__(self) -> ParamDataType:
+        def __call__(self) -> _local_ParameterDataTypeVar:
             return self.get(get_if_invalid=True)
 
     def __init__(
@@ -183,7 +210,9 @@ class DelegateParameter(Parameter):
         # i.e. _SetParamContext overrides it
         self._settable = True
 
-        self.cache = self._DelegateCache(self)
+        self.cache = self._DelegateCache[ParameterDataTypeVar, InstrumentTypeVar_co](
+            self
+        )
         if initial_cache_value is not None:
             self.cache.set(initial_cache_value)
 

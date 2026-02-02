@@ -65,7 +65,6 @@ def test_datasaver_multidimarrayparameter_as_array(
     for datadict_list in datadicts:
         assert len(datadict_list) == 4
         for datadict in datadict_list:
-            datadict["data"].shape = (int(np.prod(expected_shape)),)
             if datadict["name"] == "dummy_SA_Frequency0":
                 temp_data = np.linspace(
                     array_param.start, array_param.stop, array_param.npts[0]
@@ -91,6 +90,7 @@ def test_datasaver_multidimarrayparameter_as_array(
                 expected_data = inserted_data.ravel()
             else:
                 raise RuntimeError(f"Unexpected datadict item {datadict['name']}")
+            expected_data = expected_data.reshape(expected_shape)
             assert_allclose(datadict["data"], expected_data)
 
 
@@ -123,7 +123,6 @@ def test_datasaver_multidimarrayparameter_as_numeric(
     for datadict_list in datadicts:
         assert len(datadict_list) == 4
         for datadict in datadict_list:
-            datadict["data"].shape = (np.prod(expected_shape),)
             if datadict["name"] == "dummy_SA_Frequency0":
                 temp_data = np.linspace(
                     array_param.start, array_param.stop, array_param.npts[0]

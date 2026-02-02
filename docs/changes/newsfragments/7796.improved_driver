@@ -1,0 +1,4 @@
+Fixed bug in Lakeshore driver that was causing blocking_t
+to periodically hang indefinitely: a 0.5 seconds post delay was added to
+setpoint parameter to ensure that the setpoint value propagated to the
+instrument when the set of the setpoint parameter returns.
