@@ -54,7 +54,12 @@ _EXPORT_CALLBACKS = set(entry_points(group="qcodes.dataset.on_export"))
 ScalarResTypes: TypeAlias = (
     str | complex | np.integer | np.floating | np.complexfloating
 )
-ValuesType: TypeAlias = ScalarResTypes | npt.NDArray | Sequence[ScalarResTypes]
+ValuesType: TypeAlias = (
+    ScalarResTypes
+    | npt.NDArray
+    | Sequence[ScalarResTypes]
+    | Sequence[Sequence[ScalarResTypes]]
+)
 ResType: TypeAlias = "tuple[ParameterBase | str, ValuesType]"
 SetpointsType: TypeAlias = "Sequence[str | ParameterBase]"
 
