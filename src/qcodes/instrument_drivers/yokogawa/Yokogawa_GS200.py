@@ -11,6 +11,8 @@ from qcodes.parameters import DelegateParameter
 from qcodes.validators import Bool, Enum, Ints, Numbers
 
 if TYPE_CHECKING:
+    from typing import assert_never
+
     from typing_extensions import Unpack
 
     from qcodes.parameters import Parameter
@@ -412,13 +414,19 @@ class YokogawaGS200(VisaInstrument):
         # We need to pass the source parameter for delegate parameters
         # (range and output_level) here according to the present
         # source_mode.
-        match self.source_mode():
+        match mode := self.source_mode():
             case "VOLT":
                 self.range.source = self.voltage_range
                 self.output_level.source = self.voltage
             case "CURR":
                 self.range.source = self.current_range
                 self.output_level.source = self.current
+            case _:
+                if TYPE_CHECKING:
+                    assert_never(mode)
+                raise ValueError(
+                    f"Invalid mode {mode}. Mode must be one of 'CURR' or 'VOLT'"
+                )
 
         self.voltage_limit: Parameter = self.add_parameter(
             "voltage_limit",
@@ -623,12 +631,18 @@ class YokogawaGS200(VisaInstrument):
                     "Trying to set output but not in auto mode and range is unknown."
                 )
         else:
-            mode = self.source_mode.get_latest()
+            mode = self.source_mode.cache.get(get_if_invalid=True)
             match mode:
                 case "CURR":
                     self_range = 200e-3
                 case "VOLT":
                     self_range = 30.0
+                case _:
+                    if TYPE_CHECKING:
+                        assert_never(mode)
+                    raise ValueError(
+                        f"Invalid mode {mode}. Mode must be one of 'CURR' or 'VOLT'"
+                    )
 
         # Check we are not trying to set an out of range value
         if self.range() is None or abs(output_level) > abs(self_range):
