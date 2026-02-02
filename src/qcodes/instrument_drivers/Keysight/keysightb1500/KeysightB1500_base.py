@@ -488,7 +488,7 @@ class KeysightB1500(VisaInstrument):
 
 
 class IVSweepMeasurement(
-    MultiParameter[ParameterDataTypeVar, KeysightB1517A],
+    MultiParameter[ParameterDataTypeVar, KeysightB1500],
     StatusMixin,
     Generic[ParameterDataTypeVar],
 ):
@@ -502,7 +502,7 @@ class IVSweepMeasurement(
 
     """
 
-    def __init__(self, name: str, instrument: KeysightB1517A, **kwargs: Any):
+    def __init__(self, name: str, instrument: KeysightB1500, **kwargs: Any):
         super().__init__(
             name,
             names=tuple(["param1", "param2"]),
@@ -520,14 +520,6 @@ class IVSweepMeasurement(
         self.param2 = _FMTResponse(None, None, None, None)
         self.source_voltage = _FMTResponse(None, None, None, None)
         self._fudge: float = 1.5
-
-    @property
-    def root_instrument(self) -> KeysightB1500:
-        # since Parameter is not generic over RootInstrument type
-        # we override the property here to make the root_instrument type
-        # explicit
-        assert isinstance(self.instrument.root_instrument, KeysightB1500)
-        return self.instrument.root_instrument
 
     def set_names_labels_and_units(
         self,
@@ -563,7 +555,7 @@ class IVSweepMeasurement(
         Note that ``.shapes`` of this parameter will also be updated to
         be in sync with the number of names.
         """
-        measurement_mode = self.root_instrument.get_measurement_mode()
+        measurement_mode = self.instrument.get_measurement_mode()
         channels = measurement_mode["channels"]
 
         if names is None:
@@ -657,8 +649,7 @@ class IVSweepMeasurement(
                 f"enough names, units, and labels for all the channels that "
                 f"are to be measured."
             )
-
-        smu = self.root_instrument.by_channel[channels[0]]
+        smu = self.instrument.by_channel[constants.ChNr(channels[0])]
         smu = cast("KeysightB1517A", smu)
 
         if not smu.setup_fnc_already_run:
@@ -680,17 +671,15 @@ class IVSweepMeasurement(
         estimated_timeout = max(delay_time, calculated_time) * num_steps
         new_timeout = estimated_timeout * self._fudge
 
-        format_and_mode = self.root_instrument.get_response_format_and_mode()
+        format_and_mode = self.instrument.get_response_format_and_mode()
         fmt_format = format_and_mode["format"]
         fmt_mode = format_and_mode["mode"]
         try:
-            self.root_instrument.write(MessageBuilder().fmt(1, 1).message)
-            with self.root_instrument.timeout.set_to(new_timeout):
-                raw_data = self.root_instrument.ask(MessageBuilder().xe().message)
+            self.instrument.write(MessageBuilder().fmt(1, 1).message)
+            with self.instrument.timeout.set_to(new_timeout):
+                raw_data = self.instrument.ask(MessageBuilder().xe().message)
         finally:
-            self.root_instrument.write(
-                MessageBuilder().fmt(fmt_format, fmt_mode).message
-            )
+            self.instrument.write(MessageBuilder().fmt(fmt_format, fmt_mode).message)
 
         parsed_data = fmt_response_base_parser(raw_data)
 
