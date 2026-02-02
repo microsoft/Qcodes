@@ -442,7 +442,7 @@ def test_perform_and_enable_correction(cmu: KeysightB1520A) -> None:
 
 def test_abort(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
+    assert isinstance(mainframe, MagicMock)
 
     cmu.abort()
-    assert isinstance(mainframe, MagicMock)
     mainframe.write.assert_called_once_with("AB")
