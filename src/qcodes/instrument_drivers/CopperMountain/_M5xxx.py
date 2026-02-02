@@ -544,8 +544,10 @@ class CopperMountainM5xxx(VisaInstrument):
             s22 magnitude [dB], s22 phase [rad]
 
         """
+        timeout = self.timeout()
+        current_timeout = timeout if timeout is not None else float("inf")
 
-        with self.timeout.set_to(max(self.timeout(), expected_measurement_duration)):
+        with self.timeout.set_to(max(current_timeout, expected_measurement_duration)):
             self.write("CALC1:PAR:COUN 4")  # 4 trace
             self.write("CALC1:PAR1:DEF S11")  # Choose S11 for trace 1
             self.write("CALC1:PAR2:DEF S12")  # Choose S12 for trace 2
@@ -705,8 +707,11 @@ class FrequencySweepMagPhase(MultiParameter):
         """
         assert isinstance(self.instrument, CopperMountainM5xxx)
 
+        timeout = self.instrument.timeout()
+        current_timeout = timeout if timeout is not None else float("inf")
+
         with self.instrument.timeout.set_to(
-            max(self.instrument.timeout(), self.expected_measurement_duration)
+            max(current_timeout, self.expected_measurement_duration)
         ):
             self.instrument.write("CALC1:PAR:COUN 1")  # 1 trace
             self.instrument.write(f"CALC1:PAR1:DEF {self.name}")
@@ -799,8 +804,11 @@ class PointMagPhase(MultiParameter):
                     "Please adjust start or stop."
                 )
 
+        timeout = self.instrument.timeout()
+        current_timeout = timeout if timeout is not None else float("inf")
+
         with self.instrument.timeout.set_to(
-            max(self.instrument.timeout(), self.expected_measurement_duration)
+            max(current_timeout, self.expected_measurement_duration)
         ):
             self.instrument.write("CALC1:PAR:COUN 1")  # 1 trace
             self.instrument.write(f"CALC1:PAR1:DEF {self.name[-3:]}")
@@ -895,8 +903,11 @@ class PointIQ(MultiParameter):
                     f"Stop-start is not 1 Hz but {self.instrument.stop() - self.instrument.start()} Hz. Please adjust start or stop."
                 )
 
+        timeout = self.instrument.timeout()
+        current_timeout = timeout if timeout is not None else float("inf")
+
         with self.instrument.timeout.set_to(
-            max(self.instrument.timeout(), self.expected_measurement_duration)
+            max(current_timeout, self.expected_measurement_duration)
         ):
             self.instrument.write("CALC1:PAR:COUN 1")  # 1 trace
             self.instrument.write(f"CALC1:PAR1:DEF {self.name[-3:]}")

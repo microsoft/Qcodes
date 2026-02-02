@@ -557,22 +557,17 @@ class TimeTrace(ParameterWithSetpoints[npt.NDArray[np.float64], "Keysight344xxA"
             self._acquire_timeout_fudge_factor * meas_time, self.instrument.timeout()
         )
 
-        param_settings = [
-            (self.instrument.trigger.count, 1),
-            (self.instrument.trigger.source, "BUS"),
-            (self.instrument.sample.source, "TIM"),
-            (self.instrument.sample.timer, dt),
-            (self.instrument.sample.count, npts),
-            (self.instrument.timeout, new_timeout),
-            (self.instrument.display.text, disp_text),
-        ]
-
-        if self.instrument.has_DIG:
-            param_settings.append((self.instrument.sample.pretrigger_count, 0))
-
         with ExitStack() as stack:
-            for ps in param_settings:
-                stack.enter_context(ps[0].set_to(ps[1]))
+            stack.enter_context(self.instrument.trigger.count.set_to(1))
+            stack.enter_context(self.instrument.trigger.source.set_to("BUS"))
+            stack.enter_context(self.instrument.sample.source.set_to("TIM"))
+            stack.enter_context(self.instrument.sample.timer.set_to(dt))
+            stack.enter_context(self.instrument.sample.count.set_to(npts))
+            stack.enter_context(self.instrument.timeout.set_to(new_timeout))
+            stack.enter_context(self.instrument.display.text.set_to(disp_text))
+
+            if self.instrument.has_DIG:
+                stack.enter_context(self.instrument.sample.pretrigger_count.set_to(0))
 
             self.instrument.init_measurement()
             self.instrument.trigger.force()

@@ -69,6 +69,8 @@ class SamplingMeasurement(
         measurement_time = self.instrument._total_measurement_time()
         time_out = measurement_time * self._timeout_response_factor
         default_timeout = self.root_instrument.timeout()
+        if default_timeout is None:
+            default_timeout = float("inf")
 
         # if time out to be set is lower than the default value
         # then keep default
