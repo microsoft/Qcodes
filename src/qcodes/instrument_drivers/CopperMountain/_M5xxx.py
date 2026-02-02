@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
+from numpy.typing import NDArray
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import (
@@ -13,7 +14,6 @@ from qcodes.parameters import (
 from qcodes.validators import Bool, Enum, Ints, Numbers
 
 if TYPE_CHECKING:
-    from numpy.typing import NDArray
     from typing_extensions import Unpack
 
 
@@ -624,7 +624,9 @@ class CopperMountainM5xxx(VisaInstrument):
         return 20.0 * np.log10(np.abs(data))
 
 
-class FrequencySweepMagPhase(MultiParameter):
+class FrequencySweepMagPhase(
+    MultiParameter[tuple[NDArray, NDArray], CopperMountainM5xxx]
+):
     """
     Sweep that returns magnitude and phase.
     """
@@ -698,14 +700,13 @@ class FrequencySweepMagPhase(MultiParameter):
         self.setpoints = ((f,), (f,))
         self.shapes = ((number_of_points,), (number_of_points,))
 
-    def get_raw(self) -> tuple[ParamRawDataType, ParamRawDataType]:
+    def get_raw(self) -> tuple[NDArray, NDArray]:
         """Gets data from instrument
 
         Returns:
             Tuple[ParamRawDataType, ...]: magnitude, phase
 
         """
-        assert isinstance(self.instrument, CopperMountainM5xxx)
 
         timeout = self.instrument.timeout()
         current_timeout = timeout if timeout is not None else float("inf")
@@ -733,7 +734,9 @@ class FrequencySweepMagPhase(MultiParameter):
         return self.instrument._db(sxx), np.angle(sxx)
 
 
-class PointMagPhase(MultiParameter):
+class PointMagPhase(
+    MultiParameter[tuple[np.floating, np.floating], CopperMountainM5xxx]
+):
     """
     Returns the average Sxx of a frequency sweep.
     Work around for a CW mode where only one point is read.
@@ -743,7 +746,7 @@ class PointMagPhase(MultiParameter):
     def __init__(
         self,
         name: str,
-        instrument: VisaInstrument,
+        instrument: CopperMountainM5xxx,
         expected_measurement_duration: float = 600,
         **kwargs: Any,
     ) -> None:
@@ -790,8 +793,6 @@ class PointMagPhase(MultiParameter):
             Tuple[ParamRawDataType, ...]: magnitude, phase
 
         """
-
-        assert isinstance(self.instrument, CopperMountainM5xxx)
         # check that number_of_points, start and stop fullfill requirements if point_check_sweep_first is True.
         if self.instrument.point_check_sweep_first():
             if self.instrument.number_of_points() != 2:
@@ -833,7 +834,7 @@ class PointMagPhase(MultiParameter):
         return 20 * np.log10(abs(sxx_mean)), (np.angle(sxx_mean))
 
 
-class PointIQ(MultiParameter):
+class PointIQ(MultiParameter[tuple[np.floating, np.floating], CopperMountainM5xxx]):
     """
     Returns the average Sxx of a frequency sweep, in terms of I and Q.
     Work around for a CW mode where only one point is read.
@@ -843,7 +844,7 @@ class PointIQ(MultiParameter):
     def __init__(
         self,
         name: str,
-        instrument: VisaInstrument,
+        instrument: CopperMountainM5xxx,
         expected_measurement_duration: float = 600,
         **kwargs: Any,
     ) -> None:
@@ -890,8 +891,6 @@ class PointIQ(MultiParameter):
             Tuple[ParamRawDataType, ...]: I, Q
 
         """
-
-        assert isinstance(self.instrument, CopperMountainM5xxx)
         # check that number_of_points, start and stop fullfill requirements if point_check_sweep_first is True.
         if self.instrument.point_check_sweep_first():
             if self.instrument.number_of_points() != 2:
