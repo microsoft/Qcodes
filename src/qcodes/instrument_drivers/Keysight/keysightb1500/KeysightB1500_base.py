@@ -1,7 +1,7 @@
 import re
 import textwrap
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Generic, cast
+from typing import TYPE_CHECKING, Any, Generic, TypedDict, cast
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import MultiParameter, Parameter, create_on_off_val_mapping
@@ -27,6 +27,11 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from typing_extensions import Unpack
+
+
+class MeasurementModeDict(TypedDict):
+    mode: constants.MM.Mode
+    channels: list[int]
 
 
 class KeysightB1500(VisaInstrument):
@@ -418,7 +423,7 @@ class KeysightB1500(VisaInstrument):
         msg = MessageBuilder().mm(mode=mode, channels=channels).message
         self.write(msg)
 
-    def get_measurement_mode(self) -> dict[str, constants.MM.Mode | list[int]]:
+    def get_measurement_mode(self) -> MeasurementModeDict:
         """
         This method gets the measurement mode(MM) and the channels used
         for measurements. It outputs a dictionary with 'mode' and
@@ -433,11 +438,11 @@ class KeysightB1500(VisaInstrument):
         if not match:
             raise ValueError("Measurement Mode (MM) not found.")
 
-        out_dict: dict[str, constants.MM.Mode | list[int]] = {}
         resp_dict = match.groupdict()
-        out_dict["mode"] = constants.MM.Mode(int(resp_dict["mode"]))
-        out_dict["channels"] = list(map(int, resp_dict["channels"].split(",")))
-        return out_dict
+        return MeasurementModeDict(
+            mode=constants.MM.Mode(int(resp_dict["mode"])),
+            channels=list(map(int, resp_dict["channels"].split(","))),
+        )
 
     def get_response_format_and_mode(
         self,
@@ -558,7 +563,7 @@ class IVSweepMeasurement(
         Note that ``.shapes`` of this parameter will also be updated to
         be in sync with the number of names.
         """
-        measurement_mode = self.instrument.measurement_mode()
+        measurement_mode = self.root_instrument.get_measurement_mode()
         channels = measurement_mode["channels"]
 
         if names is None:
