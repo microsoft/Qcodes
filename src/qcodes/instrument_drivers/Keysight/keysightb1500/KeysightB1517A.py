@@ -752,7 +752,7 @@ class _SpotMeasurementVoltageParameter(
         )
         smu.write(msg.message)
 
-        smu.root_instrument._reset_measurement_statuses_of_smu_spot_measurement_parameters(
+        smu.parent._reset_measurement_statuses_of_smu_spot_measurement_parameters(
             "voltage"
         )
 
@@ -795,7 +795,7 @@ class _SpotMeasurementCurrentParameter(
         )
         smu.write(msg.message)
 
-        smu.root_instrument._reset_measurement_statuses_of_smu_spot_measurement_parameters(
+        smu.parent._reset_measurement_statuses_of_smu_spot_measurement_parameters(
             "current"
         )
 
@@ -1155,7 +1155,7 @@ class KeysightB1517A(KeysightB1500Module):
                 True: Connect.
 
         """
-        self.root_instrument.enable_smu_filters(
+        self.parent.enable_smu_filters(
             enable_filter=enable_filter, channels=[self.channels[0]]
         )
 
@@ -1407,7 +1407,7 @@ class KeysightB1517A(KeysightB1500Module):
         self.iv_sweep.sweep_end(v_end)
         self.iv_sweep.sweep_steps(n_steps)
         self.iv_sweep.current_compliance(i_comp)
-        self.root_instrument.clear_timer_count()
+        self.parent.clear_timer_count()
 
         self.setup_fnc_already_run = True
 

@@ -956,7 +956,7 @@ class KeysightB1520A(KeysightB1500Module):
             :class:`.constants.ADJQuery.Response`
 
         """
-        with self.root_instrument.timeout.set_to(self.phase_compensation_timeout):
+        with self.parent.timeout.set_to(self.phase_compensation_timeout):
             msg = MessageBuilder().adj_query(chnum=self.channels[0], mode=mode)
             response = self.ask(msg.message)
         return constants.ADJQuery.Response(int(response))
@@ -987,9 +987,7 @@ class KeysightB1520A(KeysightB1500Module):
         self.write(msg.message)
 
     def _set_measurement_mode(self, mode: MM.Mode | int) -> None:
-        self.root_instrument.set_measurement_mode(
-            mode=mode, channels=(self.channels[0],)
-        )
+        self.parent.set_measurement_mode(mode=mode, channels=(self.channels[0],))
 
     def _set_impedance_model(self, val: constants.IMP.MeasurementMode) -> None:
         msg = MessageBuilder().imp(mode=val)
