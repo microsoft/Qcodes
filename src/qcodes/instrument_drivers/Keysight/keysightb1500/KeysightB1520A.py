@@ -1200,7 +1200,7 @@ class KeysightB1500CVSweepMeasurement(
         # since Parameter is not generic over RootInstrument type
         # we override the property here to make the root_instrument type
         # explicit
-        return cast("KeysightB1500", self.instrument.root_instrument)
+        return cast("KeysightB1500", super().root_instrument)
 
     def get_raw(self) -> tuple[tuple[float, ...], tuple[float, ...]]:
         if not self.instrument.setup_fnc_already_run:
@@ -1259,7 +1259,7 @@ Alias for backwards compatibility
 """
 
 
-class KeysightB1500Correction(InstrumentChannel):
+class KeysightB1500Correction(InstrumentChannel["KeysightB1520A"]):
     """
     A Keysight B1520A CMU submodule for performing open/short/load corrections.
     """
@@ -1429,7 +1429,7 @@ Alias for backwards compatibility
 """
 
 
-class KeysightB1500FrequencyList(InstrumentChannel):
+class KeysightB1500FrequencyList(InstrumentChannel["KeysightB1500Correction"]):
     """
     A frequency list for open/short/load correction for Keysight B1520A CMU.
     """

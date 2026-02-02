@@ -16,10 +16,10 @@ from .KeysightB1500_module import (
 from .message_builder import MessageBuilder
 
 if TYPE_CHECKING:
-    from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base import (
+    from .KeysightB1500_base import (
         KeysightB1500,
     )
-    from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import (
+    from .KeysightB1517A import (
         KeysightB1517A,  # noqa: F401 # used in generic argument below
     )
 
@@ -47,7 +47,8 @@ class SamplingMeasurement(
         # since Parameter is not generic over RootInstrument type
         # we override the property here to make the root_instrument type
         # explicit
-        return cast("KeysightB1500", self.instrument.root_instrument)
+
+        return cast("KeysightB1500", super().root_instrument)
 
     def get_raw(self) -> numpy.ndarray:
         """
