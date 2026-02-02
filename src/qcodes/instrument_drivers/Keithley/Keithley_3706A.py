@@ -49,7 +49,7 @@ class Keithley3706A(VisaInstrument):
         """
         super().__init__(name, address, **kwargs)
         self.use_forbidden_channels_cache: bool = use_forbidden_channels_cache
-        self.forbidden_channels_cache: str = ""
+        self._forbidden_channels_cache: str = ""
 
         self.channel_connect_rule: Parameter = self.add_parameter(
             "channel_connect_rule",
@@ -343,7 +343,7 @@ class Keithley3706A(VisaInstrument):
         self.write(f"channel.setforbidden('{val}')")
 
         if self.use_forbidden_channels_cache:
-            self.forbidden_channels_cache = val
+            self._forbidden_channels_cache = val
 
     def get_forbidden_channels(self, val: str, fetch_from_cache: bool = False) -> str:
         """
@@ -369,7 +369,7 @@ class Keithley3706A(VisaInstrument):
         # NOTE: The cache string should already be validated from
         # calling set_forbidden_channels, so we can just return it
         if fetch_from_cache:
-            return self.forbidden_channels_cache
+            return self._forbidden_channels_cache
 
         if not self._validator(val):
             raise Keithley3706AInvalidValue(
@@ -400,7 +400,7 @@ class Keithley3706A(VisaInstrument):
             wait_for_instrument_to_update_settings_delay = 0.25
             sleep(wait_for_instrument_to_update_settings_delay)
 
-            self.forbidden_channels_cache = self.get_forbidden_channels("allslots")
+            self._forbidden_channels_cache = self.get_forbidden_channels("allslots")
 
     def set_delay(self, val: str, delay_time: float) -> None:
         """
