@@ -1,7 +1,7 @@
 import re
 import textwrap
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Generic
+from typing import TYPE_CHECKING, Any, Generic, cast
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import MultiParameter, Parameter, create_on_off_val_mapping
@@ -653,7 +653,8 @@ class IVSweepMeasurement(
                 f"are to be measured."
             )
 
-        smu = self.instrument.by_channel[channels[0]]
+        smu = self.root_instrument.by_channel[channels[0]]
+        smu = cast("KeysightB1517A", smu)
 
         if not smu.setup_fnc_already_run:
             raise Exception(
@@ -674,13 +675,13 @@ class IVSweepMeasurement(
         estimated_timeout = max(delay_time, calculated_time) * num_steps
         new_timeout = estimated_timeout * self._fudge
 
-        format_and_mode = self.instrument.get_response_format_and_mode()
+        format_and_mode = self.root_instrument.get_response_format_and_mode()
         fmt_format = format_and_mode["format"]
         fmt_mode = format_and_mode["mode"]
         try:
             self.root_instrument.write(MessageBuilder().fmt(1, 1).message)
             with self.root_instrument.timeout.set_to(new_timeout):
-                raw_data = self.instrument.ask(MessageBuilder().xe().message)
+                raw_data = self.root_instrument.ask(MessageBuilder().xe().message)
         finally:
             self.root_instrument.write(
                 MessageBuilder().fmt(fmt_format, fmt_mode).message
