@@ -13,6 +13,7 @@ from pyvisa.constants import StatusCode
 import qcodes.validators as vals
 from qcodes.instrument import (
     ChannelList,
+    ChannelTuple,
     InstrumentBase,
     InstrumentBaseKWArgs,
     InstrumentChannel,
@@ -89,7 +90,11 @@ class DSOFrequencyAxisParam(Parameter):
         )
 
 
-class DSOTraceParam(ParameterWithSetpoints):
+class DSOTraceParam(
+    ParameterWithSetpoints[
+        npt.NDArray, "KeysightInfiniiumChannel | KeysightInfiniiumFunction"
+    ]
+):
     """
     Trace parameter for the Infiniium series DSO
     """
@@ -180,7 +185,7 @@ class DSOTraceParam(ParameterWithSetpoints):
         acquisition if instr.cache_setpoints is False
         """
         instrument: KeysightInfiniiumChannel | KeysightInfiniiumFunction
-        instrument = self.instrument  # type: ignore[assignment]
+        instrument = self.instrument
         if preamble is None:
             instrument.write(f":WAV:SOUR {self._channel}")
             preamble = instrument.ask(":WAV:PRE?").strip().split(",")
@@ -257,6 +262,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
         self,
         parent: InstrumentBase,
         name: str,
+        channel: str,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
         """
@@ -264,6 +270,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
         directly, rather initialize BoundMeasurementSubsystem
         or UnboundMeasurementSubsystem.
         """
+        self._channel = channel
         super().__init__(parent, name, **kwargs)
 
         ###################################
@@ -477,11 +484,8 @@ class KeysightInfiniiumBoundMeasurement(AbstractMeasurementSubsystem):
         """
         Initialize measurement subsystem bound to a specific channel
         """
-        # Bind the channel
-        self._channel = parent.channel_name
-
         # Initialize measurement parameters
-        super().__init__(parent, name, **kwargs)
+        super().__init__(parent, name, channel=parent.channel_name, **kwargs)
 
 
 BoundMeasurement = KeysightInfiniiumBoundMeasurement
@@ -500,11 +504,8 @@ class KeysightInfiniiumUnboundMeasurement(AbstractMeasurementSubsystem):
         """
         Initialize measurement subsystem where target is set by the parameter `source`.
         """
-        # Blank channel
-        self._channel = ""
-
         # Initialize measurement parameters
-        super().__init__(parent, name, **kwargs)
+        super().__init__(parent, name, channel="", **kwargs)
 
         self.source = Parameter(
             name="source",
@@ -514,6 +515,12 @@ class KeysightInfiniiumUnboundMeasurement(AbstractMeasurementSubsystem):
             get_cmd=self._get_source,
             snapshot_value=False,
         )
+
+    @property
+    def root_instrument(self) -> "KeysightInfiniium":
+        root_instrument = super().root_instrument
+        assert isinstance(root_instrument, KeysightInfiniium)
+        return root_instrument
 
     def _validate_source(self, source: str) -> str:
         """Validate and set the source."""
@@ -692,7 +699,7 @@ Alias for backwards compatibility
 """
 
 
-class KeysightInfiniiumChannel(InstrumentChannel):
+class KeysightInfiniiumChannel(InstrumentChannel["KeysightInfiniium"]):
     def __init__(
         self,
         parent: "KeysightInfiniium",
@@ -1081,7 +1088,10 @@ class KeysightInfiniium(VisaInstrument):
             channel = KeysightInfiniiumChannel(self, f"chan{i}", i)
             _channels.append(channel)
             self.add_submodule(f"ch{i}", channel)
-        self.add_submodule("channels", _channels.to_channel_tuple())
+        self.channels: ChannelTuple[KeysightInfiniiumChannel] = self.add_submodule(
+            "channels", _channels.to_channel_tuple()
+        )
+        """Tuple of oscilloscope channels."""
 
         # Functions
         _functions = ChannelList(
@@ -1093,11 +1103,17 @@ class KeysightInfiniium(VisaInstrument):
             self.add_submodule(f"func{i}", function)
         # Have to call channel list "funcs" here as functions is a
         # reserved name in Instrument.
-        self.add_submodule("funcs", _functions.to_channel_tuple())
+        self.funcs: ChannelTuple[KeysightInfiniiumFunction] = self.add_submodule(
+            "funcs", _functions.to_channel_tuple()
+        )
+        """Tuple of oscilloscope functions."""
 
         # Submodules
         meassubsys = KeysightInfiniiumUnboundMeasurement(self, "measure")
-        self.add_submodule("measure", meassubsys)
+        self.measure: KeysightInfiniiumUnboundMeasurement = self.add_submodule(
+            "measure", meassubsys
+        )
+        """Unbound measurement subsystem."""
 
     def _query_capabilities(self) -> None:
         """
