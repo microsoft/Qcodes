@@ -7,7 +7,7 @@ MSO70000/C/DX Series Digital Oscilloscopes
 import textwrap
 import time
 from functools import partial
-from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Generic
 
 import numpy as np
 import numpy.typing as npt
@@ -26,6 +26,7 @@ from qcodes.parameters import (
     ParameterWithSetpoints,
     create_on_off_val_mapping,
 )
+from qcodes.parameters.parameter_base import ParameterDataTypeVar
 from qcodes.validators import Arrays, Enum
 
 if TYPE_CHECKING:
@@ -767,7 +768,10 @@ class TektronixDPOTrigger(InstrumentChannel):
         self.write(f"TRIGger:{self._identifier}:TYPE {value}")
 
 
-class TektronixDPOMeasurementParameter(Parameter):
+class TektronixDPOMeasurementParameter(
+    Parameter[ParameterDataTypeVar, "TektronixDPOMeasurement"],
+    Generic[ParameterDataTypeVar],
+):
     """
     A measurement parameter does not only return the instantaneous value
     of a measurement, but can also return some statistics. The accumulation
@@ -778,7 +782,7 @@ class TektronixDPOMeasurementParameter(Parameter):
     """
 
     def _get(self, metric: str) -> float:
-        measurement_channel = cast("TektronixDPOMeasurement", self.instrument)
+        measurement_channel = self.instrument
         if measurement_channel.type.get_latest() != self.name:
             measurement_channel.type(self.name)
 

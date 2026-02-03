@@ -15,7 +15,7 @@ attrs==25.4.0
     #   referencing
 autodocsumm==0.2.14
     # via qcodes (pyproject.toml)
-babel==2.17.0
+babel==2.18.0
     # via sphinx
 beautifulsoup4==4.14.3
     # via
@@ -60,7 +60,7 @@ coverage==7.13.2
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2026.1.1
+dask==2026.1.2
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -116,7 +116,7 @@ ipykernel==7.1.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-ipython==9.9.0
+ipython==9.10.0
     # via
     #   ipykernel
     #   ipywidgets
@@ -211,7 +211,7 @@ networkx==3.6.1
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-numpy==2.4.1
+numpy==2.4.2
     # via
     #   qcodes (pyproject.toml)
     #   broadbean
@@ -281,7 +281,7 @@ pluggy==1.6.0
     #   pytest-cov
 prompt-toolkit==3.0.52
     # via ipython
-psutil==7.2.1
+psutil==7.2.2
     # via ipykernel
 pure-eval==0.2.3
     # via stack-data
@@ -435,7 +435,7 @@ towncrier==25.8.0
     # via
     #   qcodes (pyproject.toml)
     #   sphinxcontrib-towncrier
-tqdm==4.67.1
+tqdm==4.67.2
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -451,7 +451,7 @@ traitlets==5.14.3
     #   nbconvert
     #   nbformat
     #   nbsphinx
-types-jsonschema==4.26.0.20260109
+types-jsonschema==4.26.0.20260202
     # via qcodes (pyproject.toml)
 types-networkx==3.6.1.20251220
     # via qcodes (pyproject.toml)
@@ -465,7 +465,7 @@ types-requests==2.32.4.20260107
     #   types-tqdm
 types-tabulate==0.9.0.20241207
     # via qcodes (pyproject.toml)
-types-tqdm==4.67.0.20250809
+types-tqdm==4.67.2.20260202
     # via qcodes (pyproject.toml)
 typing-extensions==4.15.0
     # via
@@ -496,7 +496,7 @@ versioningit==3.3.0
     #   broadbean
     #   qcodes
     #   qcodes-loop
-wcwidth==0.5.2
+wcwidth==0.5.3
     # via prompt-toolkit
 webencodings==0.5.1
     # via

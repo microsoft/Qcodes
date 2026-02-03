@@ -1,0 +1,16 @@
+Several instrument drivers now make better use of the newly added generic datatype and instrument arguments to ParameterBase and subclasses.
+
+- AlazarTech ATS: ``TraceParameter`` now uses generic type parameters.
+- CopperMountain M5xxx: ``FrequencySweepMagPhase``, ``PointMagPhase``, and ``PointIQ`` now use generic type parameters. Removed unnecessary ``assert isinstance`` calls. Fixed timeout handling when timeout is ``None``.
+- Keysight 344xxA: ``Keysight344xxATrigger``, ``Keysight344xxASample``, ``Keysight344xxADisplay`` and ``TimeTrace`` now use generic type parameters. Refactored ``_acquire_time_trace`` to use explicit context managers instead of a list of parameter settings. ..  gitleaks:allow
+- Keysight B1500: Added ``MeasurementModeDict`` TypedDict. ``IVSweepMeasurement`` corrected instrument type and now uses generic type parameters. ``KeysightB1500Module`` now uses generic type parameters.
+- Keysight B1517A: ``KeysightB1500IVSweeper``, ``_ParameterWithStatus``, ``_SpotMeasurementVoltageParameter``, and ``_SpotMeasurementCurrentParameter`` now use generic type parameters. Removed unnecessary ``cast`` calls.  ..  gitleaks:allow
+- Keysight B1520A: ``KeysightB1500CVSweeper`` and ``KeysightB1500CVSweepMeasurement`` now use generic type parameters. Added ``root_instrument`` property to ``KeysightB1500CVSweepMeasurement``.   ..  gitleaks:allow
+- Keysight B1500 sampling measurement: ``SamplingMeasurement`` now uses generic type parameters and has a ``root_instrument`` property. Fixed timeout handling when timeout is ``None``.
+- Keysight B1500 message builder: Improved type annotations using ``ParamSpec`` and ``TypeVar``. Made ``CommandList`` generic.
+- Keysight KtM960x: ``Measure`` parameter now uses generic type parameters.
+- Keysight N9030B: ``FrequencyAxis``, ``Trace``, ``KeysightN9030BSpectrumAnalyzerMode``, and ``KeysightN9030BPhaseNoiseMode`` now use generic type parameters. Replaced ``assert`` statements with proper error handling.
+- QuantumDesign DynaCool: Improved type annotation for ``_pick_one`` method. Removed unnecessary ``cast`` call.
+- Rohde & Schwarz ZNB: ``FixedFrequencyTraceIQ``, ``FixedFrequencyPointIQ``, ``FixedFrequencyPointMagPhase``, ``FrequencySweepMagPhase``, ``FrequencySweepDBPhase``, and ``FrequencySweep`` now use generic type parameters. Removed unnecessary ``assert isinstance`` calls.
+- Tektronix DPO7200xx: ``TektronixDPOMeasurementParameter`` now uses generic type parameters. Removed unnecessary ``cast`` call.
+- Yokogawa GS200: ``source_mode`` and ``current_limit`` parameters now use generic type parameters. Replaced if-else statements with match statements for source mode handling.
