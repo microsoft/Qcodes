@@ -89,7 +89,7 @@ class SR86xBufferReadout(ArrayParameter):
         return self._capture_data
 
 
-class SR86xBuffer(InstrumentChannel):
+class SR86xBuffer(InstrumentChannel["SR86x"]):
     """
     Buffer module for the SR86x drivers.
 
@@ -529,7 +529,7 @@ class SR86xBuffer(InstrumentChannel):
                 f"({size_of_currently_captured_data}kB)"
             )
 
-        values = self._parent.visa_handle.query_binary_values(
+        values = self.parent.visa_handle.query_binary_values(
             f"CAPTUREGET? {offset_in_kb}, {size_in_kb}",
             datatype="f",
             is_big_endian=False,
@@ -621,7 +621,7 @@ class SR86xBuffer(InstrumentChannel):
         return self.get_capture_data(sample_count)
 
 
-class SR86xDataChannel(InstrumentChannel):
+class SR86xDataChannel(InstrumentChannel["SR86x"]):
     """
     Implements a data channel of SR86x lock-in amplifier. Parameters that are
     assigned to these channels get plotted on the display of the instrument.
