@@ -340,7 +340,7 @@ class KeysightB1500(VisaInstrument):
 
         """
         msg = MessageBuilder().cal_query(slot=slot)
-        with self.root_instrument.timeout.set_to(self.calibration_time_out):
+        with self.timeout.set_to(self.calibration_time_out):
             response = self.ask(msg.message)
         return constants.CALResponse(int(response))
 
