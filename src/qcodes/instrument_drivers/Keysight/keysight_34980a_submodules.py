@@ -1,15 +1,17 @@
 from typing import TYPE_CHECKING
 
-from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel, VisaInstrument
+from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
 
+    from .keysight_34980a import Keysight34980A
 
-class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
+
+class Keysight34980ASwitchMatrixSubModule(InstrumentChannel["Keysight34980A"]):
     def __init__(
         self,
-        parent: VisaInstrument | InstrumentChannel,
+        parent: "Keysight34980A",
         name: str,
         slot: int,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
