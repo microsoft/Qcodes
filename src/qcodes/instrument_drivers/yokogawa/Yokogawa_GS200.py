@@ -38,7 +38,7 @@ class YokogawaGS200Exception(Exception):
     pass
 
 
-class YokogawaGS200Monitor(InstrumentChannel):
+class YokogawaGS200Monitor(InstrumentChannel["YokogawaGS200"]):
     """
     Monitor part of the GS200. This is only enabled if it is
     installed in the GS200 (it is an optional extra).
@@ -169,7 +169,7 @@ class YokogawaGS200Monitor(InstrumentChannel):
     def _get_measurement(self) -> float:
         if self._unit is None or self._range is None:
             raise YokogawaGS200Exception("Measurement module not initialized.")
-        if self._parent.auto_range.get() or (self._unit == "VOLT" and self._range < 1):
+        if self.parent.auto_range.get() or (self._unit == "VOLT" and self._range < 1):
             # Measurements will not work with autorange, or when
             # range is <1V.
             self._enabled = False
@@ -207,7 +207,7 @@ class YokogawaGS200Monitor(InstrumentChannel):
             self.measure.unit = "V"
 
 
-class YokogawaGS200Program(InstrumentChannel):
+class YokogawaGS200Program(InstrumentChannel["YokogawaGS200"]):
     """
     InstrumentModule that holds a Program for the YokoGawa GS200
 
