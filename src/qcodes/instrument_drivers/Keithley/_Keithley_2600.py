@@ -11,7 +11,6 @@ import numpy.typing as npt
 
 import qcodes.validators as vals
 from qcodes.instrument import (
-    Instrument,
     InstrumentChannel,
     VisaInstrument,
     VisaInstrumentKWArgs,
@@ -34,13 +33,15 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-class LuaSweepParameter(ArrayParameter):
+class LuaSweepParameter(ArrayParameter[npt.NDArray, "Keithley2600Channel"]):
     """
     Parameter class to hold the data from a
     deployed Lua script sweep.
     """
 
-    def __init__(self, name: str, instrument: Instrument, **kwargs: Any) -> None:
+    def __init__(
+        self, name: str, instrument: Keithley2600Channel, **kwargs: Any
+    ) -> None:
         super().__init__(
             name=name,
             shape=(1,),
@@ -49,7 +50,13 @@ class LuaSweepParameter(ArrayParameter):
             **kwargs,
         )
 
-    def prepareSweep(self, start: float, stop: float, steps: int, mode: str) -> None:
+    def prepareSweep(
+        self,
+        start: float,
+        stop: float,
+        steps: int,
+        mode: Literal["IV", "VI", "VIfourprobe"],
+    ) -> None:
         """
         Builds setpoints and labels
 
@@ -63,31 +70,29 @@ class LuaSweepParameter(ArrayParameter):
 
         """
 
-        if mode not in ["IV", "VI", "VIfourprobe"]:
-            raise ValueError('mode must be either "VI", "IV" or "VIfourprobe"')
-
         self.shape = (steps,)
 
-        if mode == "IV":
-            self.unit = "A"
-            self.setpoint_names = ("Voltage",)
-            self.setpoint_units = ("V",)
-            self.label = "current"
-            self._short_name = "iv_sweep"
-
-        if mode == "VI":
-            self.unit = "V"
-            self.setpoint_names = ("Current",)
-            self.setpoint_units = ("A",)
-            self.label = "voltage"
-            self._short_name = "vi_sweep"
-
-        if mode == "VIfourprobe":
-            self.unit = "V"
-            self.setpoint_names = ("Current",)
-            self.setpoint_units = ("A",)
-            self.label = "voltage"
-            self._short_name = "vi_sweep_four_probe"
+        match mode:
+            case "IV":
+                self.unit = "A"
+                self.setpoint_names = ("Voltage",)
+                self.setpoint_units = ("V",)
+                self.label = "current"
+                self._short_name = "iv_sweep"
+            case "VI":
+                self.unit = "V"
+                self.setpoint_names = ("Current",)
+                self.setpoint_units = ("A",)
+                self.label = "voltage"
+                self._short_name = "vi_sweep"
+            case "VIfourprobe":
+                self.unit = "V"
+                self.setpoint_names = ("Current",)
+                self.setpoint_units = ("A",)
+                self.label = "voltage"
+                self._short_name = "vi_sweep_four_probe"
+            case _:
+                raise ValueError('mode must be either "VI", "IV" or "VIfourprobe"')
 
         self.setpoints = (tuple(np.linspace(start, stop, steps)),)
 
@@ -107,7 +112,7 @@ class LuaSweepParameter(ArrayParameter):
         return data
 
 
-class TimeTrace(ParameterWithSetpoints):
+class TimeTrace(ParameterWithSetpoints[npt.NDArray, "Keithley2600Channel"]):
     """
     A parameter class that holds the data corresponding to the time dependence of
     current and voltage.
@@ -198,7 +203,7 @@ class TimeTrace(ParameterWithSetpoints):
         return data
 
 
-class TimeAxis(Parameter):
+class TimeAxis(Parameter[npt.NDArray, "Keithley2600Channel"]):
     """
     A simple :class:`.Parameter` that holds all the times (relative to the
     measurement start) at which the points of the time trace were acquired.
@@ -238,7 +243,7 @@ _from_bits_tuple_to_status = {
 }
 
 
-class _ParameterWithStatus(Parameter):
+class _ParameterWithStatus(Parameter[ParamRawDataType, "Keithley2600Channel"]):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
@@ -278,9 +283,6 @@ class _ParameterWithStatus(Parameter):
 
 class _MeasurementCurrentParameter(_ParameterWithStatus):
     def set_raw(self, value: ParamRawDataType) -> None:
-        assert isinstance(self.instrument, Keithley2600Channel)
-        assert isinstance(self.root_instrument, Keithley2600)
-
         smu_chan = self.instrument
         channel = smu_chan.channel
 
@@ -289,9 +291,6 @@ class _MeasurementCurrentParameter(_ParameterWithStatus):
         smu_chan._reset_measurement_statuses_of_parameters()
 
     def get_raw(self) -> ParamRawDataType:
-        assert isinstance(self.instrument, Keithley2600Channel)
-        assert isinstance(self.root_instrument, Keithley2600)
-
         smu = self.instrument
         channel = self.instrument.channel
 
@@ -307,9 +306,6 @@ class _MeasurementCurrentParameter(_ParameterWithStatus):
 
 class _MeasurementVoltageParameter(_ParameterWithStatus):
     def set_raw(self, value: ParamRawDataType) -> None:
-        assert isinstance(self.instrument, Keithley2600Channel)
-        assert isinstance(self.root_instrument, Keithley2600)
-
         smu_chan = self.instrument
         channel = smu_chan.channel
 
@@ -318,9 +314,6 @@ class _MeasurementVoltageParameter(_ParameterWithStatus):
         smu_chan._reset_measurement_statuses_of_parameters()
 
     def get_raw(self) -> ParamRawDataType:
-        assert isinstance(self.instrument, Keithley2600Channel)
-        assert isinstance(self.root_instrument, Keithley2600)
-
         smu = self.instrument
         channel = self.instrument.channel
 
@@ -334,13 +327,13 @@ class _MeasurementVoltageParameter(_ParameterWithStatus):
         return value
 
 
-class Keithley2600Channel(InstrumentChannel):
+class Keithley2600Channel(InstrumentChannel["Keithley2600"]):
     """
     Class to hold the two Keithley channels, i.e.
     SMUA and SMUB.
     """
 
-    def __init__(self, parent: Instrument, name: str, channel: str) -> None:
+    def __init__(self, parent: Keithley2600, name: str, channel: str) -> None:
         """
         Args:
             parent: The Instrument instance to which the channel is
@@ -355,12 +348,12 @@ class Keithley2600Channel(InstrumentChannel):
             raise ValueError('channel must be either "smub" or "smua"')
 
         super().__init__(parent, name)
-        self.model = self._parent.model
+        self.model = self.parent.model
         self._extra_visa_timeout = 5000
         self._measurement_duration_factor = 2  # Ensures that we are always above
         # the expected time.
-        vranges = self._parent._vranges
-        iranges = self._parent._iranges
+        vranges = self.parent._vranges
+        iranges = self.parent._iranges
         vlimit_minmax = self.parent._vlimit_minmax
         ilimit_minmax = self.parent._ilimit_minmax
 
@@ -630,9 +623,8 @@ class Keithley2600Channel(InstrumentChannel):
         self.channel = channel
 
     def _reset_measurement_statuses_of_parameters(self) -> None:
-        assert isinstance(self.volt, _ParameterWithStatus)
         self.volt._measurement_status = None
-        assert isinstance(self.curr, _ParameterWithStatus)
+
         self.curr._measurement_status = None
 
     def reset(self) -> None:
@@ -645,7 +637,13 @@ class Keithley2600Channel(InstrumentChannel):
         log.debug(f"Reset channel {self.channel}. Updating settings...")
         self.snapshot(update=True)
 
-    def doFastSweep(self, start: float, stop: float, steps: int, mode: str) -> DataSet:
+    def doFastSweep(
+        self,
+        start: float,
+        stop: float,
+        steps: int,
+        mode: Literal["IV", "VI", "VIfourprobe"],
+    ) -> DataSet:
         """
         Perform a fast sweep using a deployed lua script and
         return a QCoDeS DataSet with the sweep.
@@ -705,23 +703,24 @@ class Keithley2600Channel(InstrumentChannel):
 
         dV = (stop - start) / (steps - 1)
 
-        if mode == "IV":
-            meas = "i"
-            sour = "v"
-            func = "1"
-            sense_mode = "0"
-        elif mode == "VI":
-            meas = "v"
-            sour = "i"
-            func = "0"
-            sense_mode = "0"
-        elif mode == "VIfourprobe":
-            meas = "v"
-            sour = "i"
-            func = "0"
-            sense_mode = "1"
-        else:
-            raise ValueError(f"Invalid mode {mode}")
+        match mode:
+            case "IV":
+                meas = "i"
+                sour = "v"
+                func = "1"
+                sense_mode = "0"
+            case "VI":
+                meas = "v"
+                sour = "i"
+                func = "0"
+                sense_mode = "0"
+            case "VIfourprobe":
+                meas = "v"
+                sour = "i"
+                func = "0"
+                sense_mode = "1"
+            case _:
+                raise ValueError(f"Invalid mode {mode}")
 
         script = [
             f"{channel}.measure.nplc = {nplc:.12f}",
@@ -765,7 +764,7 @@ class Keithley2600Channel(InstrumentChannel):
             estimated_measurement_duration + _time_trace_extra_visa_timeout
         )
 
-        self.write(self.root_instrument._scriptwrapper(program=_script, debug=True))
+        self.write(self.parent._scriptwrapper(program=_script, debug=True))
 
         # now poll all the data
         # The problem is that a '\n' character might by chance be present in
@@ -774,9 +773,9 @@ class Keithley2600Channel(InstrumentChannel):
         received = 0
         data = b""
         # we must wait for the script to execute
-        with self.root_instrument.timeout.set_to(new_visa_timeout):
+        with self.parent.timeout.set_to(new_visa_timeout):
             while received < fullsize:
-                data_temp = self.root_instrument.visa_handle.read_raw()
+                data_temp = self.parent.visa_handle.read_raw()
                 received += len(data_temp)
                 data += data_temp
 
