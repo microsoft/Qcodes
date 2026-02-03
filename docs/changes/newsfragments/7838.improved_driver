@@ -1,0 +1,1 @@
+Add TektronixDPOAcquisition, TektronixDPOCursor, and TektronixDPOMeasurementImmediate modules to the Tektronix DPO7200xx driver. Enhanced TektronixDPOTrigger with ready, state, and level parameters. Added coupling parameter to TektronixDPOChannel.
