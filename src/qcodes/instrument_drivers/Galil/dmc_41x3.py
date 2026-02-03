@@ -254,7 +254,7 @@ Alias for backwards compatibility
 """
 
 
-class GalilDMC4133Motor(InstrumentChannel):
+class GalilDMC4133Motor(InstrumentChannel["GalilDMC4133Controller"]):
     """
     Class to control a single motor (independent of possible other motors)
     """
@@ -458,7 +458,7 @@ class GalilDMC4133Motor(InstrumentChannel):
             while self.is_in_motion():
                 pass
         except KeyboardInterrupt:
-            self.root_instrument.abort()
+            self.parent.abort()
             self.off()
 
     def error_magnitude(self) -> float:
