@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Generic, Literal, Self
 
 import numpy as np
+import numpy.typing as npt
+from typing_extensions import TypeVar
 
 from qcodes.instrument import (
     InstrumentBaseKWArgs,
@@ -16,6 +18,7 @@ from qcodes.parameters import (
     ParamRawDataType,
     create_on_off_val_mapping,
 )
+from qcodes.parameters.parameter_base import ParameterDataTypeVar
 from qcodes.validators import Arrays, Bool, Enum, Ints, Numbers
 
 if TYPE_CHECKING:
@@ -23,56 +26,65 @@ if TYPE_CHECKING:
 
     from typing_extensions import Unpack
 
+_T = TypeVar(
+    "_T",
+    bound="KeysightN9030BSpectrumAnalyzerMode | KeysightN9030BPhaseNoiseMode",
+    default="KeysightN9030BSpectrumAnalyzerMode | KeysightN9030BPhaseNoiseMode",
+)
 
-class FrequencyAxis(Parameter):
+
+class FrequencyAxis(
+    Parameter[
+        npt.NDArray[np.float64],
+        _T,
+    ],
+    Generic[_T],
+):
     def __init__(
         self,
-        start: Parameter,
-        stop: Parameter,
-        npts: Parameter,
+        start: Parameter[float, _T],
+        stop: Parameter[float, _T],
+        npts: Parameter[int, _T],
         *args: Any,
         **kwargs: Any,
     ) -> None:
         super().__init__(*args, **kwargs)
-        self._start: Parameter = start
-        self._stop: Parameter = stop
-        self._npts: Parameter = npts
+        self._start = start
+        self._stop = stop
+        self._npts = npts
 
-    def get_raw(self) -> ParamRawDataType:
+    def get_raw(self) -> npt.NDArray[np.float64]:
         start_val = self._start()
         stop_val = self._stop()
         npts_val = self._npts()
-        assert start_val is not None
-        assert stop_val is not None
-        assert npts_val is not None
+        if start_val is None or stop_val is None or npts_val is None:
+            raise RuntimeError("Start, Stop and Npts parameters must be set.")
         return np.linspace(start_val, stop_val, npts_val)
 
 
-class Trace(ParameterWithSetpoints):
+class Trace(
+    ParameterWithSetpoints[ParameterDataTypeVar, _T], Generic[ParameterDataTypeVar, _T]
+):
     def __init__(
         self,
         number: int,
         *args: Any,
-        get_data: Callable[[int], ParamRawDataType],
+        get_data: Callable[[int], ParameterDataTypeVar],
         **kwargs: Any,
     ) -> None:
         super().__init__(*args, **kwargs)
-        # the parameter classes should ideally be generic in instrument
-        # and root instrument classes so we can specialize here.
-        # for now we have to ignore a type error from pyright
-        self.instrument: (
-            KeysightN9030BSpectrumAnalyzerMode | KeysightN9030BPhaseNoiseMode
-        )
+        # while the parameter classes should ideally be generic in instrument
+        # type it is not generic in the root instrument type
         self.root_instrument: KeysightN9030B
 
         self.number = number
         self.get_data = get_data
 
-    def get_raw(self) -> ParamRawDataType:
+    def get_raw(self) -> ParameterDataTypeVar:
         return self.get_data(self.number)
 
 
-class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
+class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel["KeysightN9030B"]):
     """
     Spectrum Analyzer Mode for Keysight N9030B instrument.
     """
@@ -86,6 +98,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
         **kwargs: Unpack[InstrumentBaseKWArgs],
     ):
         super().__init__(parent, name, *arg, **kwargs)
+        self.root_instrument: KeysightN9030B
 
         self._additional_wait = additional_wait
         self._min_freq = -8e7
@@ -104,7 +117,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
         self._max_freq = self._valid_max_freq[opt]
 
         # Frequency Parameters
-        self.start: Parameter = self.add_parameter(
+        self.start: Parameter[float, Self] = self.add_parameter(
             name="start",
             unit="Hz",
             get_cmd=":SENSe:FREQuency:STARt?",
@@ -114,58 +127,70 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             docstring="Start Frequency",
         )
         """Start Frequency"""
-        self.stop: Parameter = self.add_parameter(
-            name="stop",
-            unit="Hz",
-            get_cmd=":SENSe:FREQuency:STOP?",
-            set_cmd=self._set_stop,
-            get_parser=float,
-            vals=Numbers(self._min_freq + 10, self._max_freq),
-            docstring="Stop Frequency",
+        self.stop: Parameter[float, KeysightN9030BSpectrumAnalyzerMode] = (
+            self.add_parameter(
+                name="stop",
+                unit="Hz",
+                get_cmd=":SENSe:FREQuency:STOP?",
+                set_cmd=self._set_stop,
+                get_parser=float,
+                vals=Numbers(self._min_freq + 10, self._max_freq),
+                docstring="Stop Frequency",
+            )
         )
         """Stop Frequency"""
-        self.center: Parameter = self.add_parameter(
-            name="center",
-            unit="Hz",
-            get_cmd=":SENSe:FREQuency:CENTer?",
-            set_cmd=self._set_center,
-            get_parser=float,
-            vals=Numbers(self._min_freq + 5, self._max_freq - 5),
-            docstring="Sets and gets center frequency",
+        self.center: Parameter[float, KeysightN9030BSpectrumAnalyzerMode] = (
+            self.add_parameter(
+                name="center",
+                unit="Hz",
+                get_cmd=":SENSe:FREQuency:CENTer?",
+                set_cmd=self._set_center,
+                get_parser=float,
+                vals=Numbers(self._min_freq + 5, self._max_freq - 5),
+                docstring="Sets and gets center frequency",
+            )
         )
         """Sets and gets center frequency"""
-        self.span: Parameter = self.add_parameter(
-            name="span",
-            unit="Hz",
-            get_cmd=":SENSe:FREQuency:SPAN?",
-            set_cmd=self._set_span,
-            get_parser=float,
-            vals=Numbers(10, self._max_freq - self._min_freq),
-            docstring="Changes span of frequency",
+        self.span: Parameter[float, KeysightN9030BSpectrumAnalyzerMode] = (
+            self.add_parameter(
+                name="span",
+                unit="Hz",
+                get_cmd=":SENSe:FREQuency:SPAN?",
+                set_cmd=self._set_span,
+                get_parser=float,
+                vals=Numbers(10, self._max_freq - self._min_freq),
+                docstring="Changes span of frequency",
+            )
         )
         """Changes span of frequency"""
-        self.npts: Parameter = self.add_parameter(
-            name="npts",
-            get_cmd=":SENSe:SWEep:POINts?",
-            set_cmd=":SENSe:SWEep:POINts {}",
-            get_parser=int,
-            vals=Ints(1, 20001),
-            docstring="Number of points for the sweep",
+        self.npts: Parameter[int, KeysightN9030BSpectrumAnalyzerMode] = (
+            self.add_parameter(
+                name="npts",
+                get_cmd=":SENSe:SWEep:POINts?",
+                set_cmd=":SENSe:SWEep:POINts {}",
+                get_parser=int,
+                vals=Ints(1, 20001),
+                docstring="Number of points for the sweep",
+            )
         )
         """Number of points for the sweep"""
 
         # Amplitude/Input Parameters
-        self.mech_attenuation: Parameter = self.add_parameter(
-            name="mech_attenuation",
-            unit="dB",
-            get_cmd=":SENS:POW:ATT?",
-            set_cmd=":SENS:POW:ATT {}",
-            get_parser=int,
-            vals=Ints(0, 70),
-            docstring="Internal mechanical attenuation",
+        self.mech_attenuation: Parameter[int, KeysightN9030BSpectrumAnalyzerMode] = (
+            self.add_parameter(
+                name="mech_attenuation",
+                unit="dB",
+                get_cmd=":SENS:POW:ATT?",
+                set_cmd=":SENS:POW:ATT {}",
+                get_parser=int,
+                vals=Ints(0, 70),
+                docstring="Internal mechanical attenuation",
+            )
         )
         """Internal mechanical attenuation"""
-        self.preamp: Parameter = self.add_parameter(
+        self.preamp: Parameter[
+            Literal["LOW", "FULL"], KeysightN9030BSpectrumAnalyzerMode
+        ] = self.add_parameter(
             name="preamp",
             get_cmd=":SENS:POW:GAIN:BAND?",
             set_cmd=":SENS:POW:GAIN:BAND {}",
@@ -354,20 +379,25 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
         """Sets up sweep type. Possible options are 'fft' and 'sweep'."""
 
         # Array (Data) Parameters
-        self.freq_axis: FrequencyAxis = self.add_parameter(
-            name="freq_axis",
-            label="Frequency",
-            unit="Hz",
-            start=self.start,
-            stop=self.stop,
-            npts=self.npts,
-            vals=Arrays(shape=(self.npts.get_latest,)),
-            parameter_class=FrequencyAxis,
-            docstring="Creates frequency axis for the sweep from start, "
-            "stop and npts values.",
+        self.freq_axis: FrequencyAxis[KeysightN9030BSpectrumAnalyzerMode] = (
+            self.add_parameter(
+                name="freq_axis",
+                label="Frequency",
+                unit="Hz",
+                start=self.start,
+                stop=self.stop,
+                npts=self.npts,
+                vals=Arrays(shape=(self.npts.get_latest,)),
+                parameter_class=FrequencyAxis[KeysightN9030BSpectrumAnalyzerMode],
+                docstring="Creates frequency axis for the sweep from start, "
+                "stop and npts values.",
+            )
         )
+
         """Creates frequency axis for the sweep from start, stop and npts values."""
-        self.trace: Trace = self.add_parameter(
+        self.trace: Trace[
+            npt.NDArray[np.float64], KeysightN9030BSpectrumAnalyzerMode
+        ] = self.add_parameter(
             name="trace",
             label="Trace",
             unit="dB",
@@ -375,7 +405,9 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             vals=Arrays(shape=(self.npts.get_latest,)),
             setpoints=(self.freq_axis,),
             get_data=self._get_data,
-            parameter_class=Trace,
+            parameter_class=Trace[
+                npt.NDArray[np.float64], KeysightN9030BSpectrumAnalyzerMode
+            ],
             docstring="Gets trace data.",
         )
         """Gets trace data."""
@@ -418,7 +450,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
         self.write(f":SENSe:FREQuency:SPAN {val}")
         self.update_trace()
 
-    def _get_data(self, trace_num: int) -> ParamRawDataType:
+    def _get_data(self, trace_num: int) -> npt.NDArray[np.float64]:
         """
         Gets data from the measurement.
         """
@@ -443,8 +475,8 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
                 is_big_endian=False,
             )
 
-        data = np.array(data).reshape((-1, 2))
-        return data[:, 1]
+        data_array = np.array(data).reshape((-1, 2))
+        return data_array[:, 1]
 
     def update_trace(self) -> None:
         """
@@ -481,7 +513,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
         self.center()
 
 
-class KeysightN9030BPhaseNoiseMode(InstrumentChannel):
+class KeysightN9030BPhaseNoiseMode(InstrumentChannel["KeysightN9030B"]):
     """
     Phase Noise Mode for Keysight N9030B instrument.
     """

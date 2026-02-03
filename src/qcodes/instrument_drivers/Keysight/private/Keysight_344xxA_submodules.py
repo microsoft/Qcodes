@@ -10,7 +10,6 @@ from packaging import version
 
 import qcodes.validators as vals
 from qcodes.instrument import (
-    Instrument,
     InstrumentBaseKWArgs,
     InstrumentChannel,
     VisaInstrument,
@@ -30,7 +29,7 @@ if TYPE_CHECKING:
     from typing_extensions import Unpack
 
 
-class Keysight344xxATrigger(InstrumentChannel):
+class Keysight344xxATrigger(InstrumentChannel["Keysight344xxA"]):
     """Implements triggering parameters and methods of Keysight 344xxA."""
 
     def __init__(
@@ -227,7 +226,7 @@ class Keysight344xxATrigger(InstrumentChannel):
         self.write("*TRG")
 
 
-class Keysight344xxASample(InstrumentChannel):
+class Keysight344xxASample(InstrumentChannel["Keysight344xxA"]):
     """Implements sampling parameters of Keysight 344xxA."""
 
     def __init__(
@@ -425,7 +424,7 @@ for every measurement (not multiple ranges, just one range up or
 down per measurement)."""
 
 
-class Keysight344xxADisplay(InstrumentChannel):
+class Keysight344xxADisplay(InstrumentChannel["Keysight344xxA"]):
     """Implements interaction with the display of Keysight 344xxA."""
 
     def __init__(
@@ -494,15 +493,14 @@ achieved by calling `display.clear`."""
         self.text.get()  # also update the parameter value
 
 
-class TimeTrace(ParameterWithSetpoints):
+class TimeTrace(ParameterWithSetpoints[npt.NDArray[np.float64], "Keysight344xxA"]):
     """
     A parameter class that holds the data for a time trace type measurement,
     i.e. a measurement of N voltage or current values measured at fixed time
     intervals
     """
 
-    def __init__(self, name: str, instrument: Instrument, **kwargs: Any):
-        self.instrument: Instrument
+    def __init__(self, name: str, instrument: "Keysight344xxA", **kwargs: Any):
         super().__init__(name=name, instrument=instrument, **kwargs)
 
         # the extra time needed to avoid timeouts during acquisition
@@ -547,7 +545,7 @@ class TimeTrace(ParameterWithSetpoints):
         conf = self.instrument.sense_function()
         self.unit, self.label = units_and_labels[conf]
 
-    def _acquire_time_trace(self) -> npt.NDArray:
+    def _acquire_time_trace(self) -> npt.NDArray[np.float64]:
         """
         The function that prepares the measurement and fetches the data
         """
@@ -559,22 +557,17 @@ class TimeTrace(ParameterWithSetpoints):
             self._acquire_timeout_fudge_factor * meas_time, self.instrument.timeout()
         )
 
-        param_settings = [
-            (self.instrument.trigger.count, 1),
-            (self.instrument.trigger.source, "BUS"),
-            (self.instrument.sample.source, "TIM"),
-            (self.instrument.sample.timer, dt),
-            (self.instrument.sample.count, npts),
-            (self.instrument.timeout, new_timeout),
-            (self.instrument.display.text, disp_text),
-        ]
-
-        if self.instrument.has_DIG:
-            param_settings.append((self.instrument.sample.pretrigger_count, 0))
-
         with ExitStack() as stack:
-            for ps in param_settings:
-                stack.enter_context(ps[0].set_to(ps[1]))
+            stack.enter_context(self.instrument.trigger.count.set_to(1))
+            stack.enter_context(self.instrument.trigger.source.set_to("BUS"))
+            stack.enter_context(self.instrument.sample.source.set_to("TIM"))
+            stack.enter_context(self.instrument.sample.timer.set_to(dt))
+            stack.enter_context(self.instrument.sample.count.set_to(npts))
+            stack.enter_context(self.instrument.timeout.set_to(new_timeout))
+            stack.enter_context(self.instrument.display.text.set_to(disp_text))
+
+            if self.instrument.has_DIG:
+                stack.enter_context(self.instrument.sample.pretrigger_count.set_to(0))
 
             self.instrument.init_measurement()
             self.instrument.trigger.force()
@@ -582,7 +575,7 @@ class TimeTrace(ParameterWithSetpoints):
 
         return data
 
-    def get_raw(self) -> npt.NDArray:
+    def get_raw(self) -> npt.NDArray[np.float64]:
         self._validate_dt()
         self._set_units_and_labels()
         data = self._acquire_time_trace()
@@ -1188,7 +1181,7 @@ mode."""
 
         return float(response)
 
-    def fetch(self) -> npt.NDArray:
+    def fetch(self) -> npt.NDArray[np.float64]:
         """
         Waits for measurements to complete and copies all available
         measurements to the instrument's output buffer. The readings remain
@@ -1205,7 +1198,7 @@ mode."""
         raw_vals: str = self.ask("FETCH?")
         return _raw_vals_to_array(raw_vals)
 
-    def read(self) -> npt.NDArray:
+    def read(self) -> npt.NDArray[np.float64]:
         """
         Starts a new set of measurements, waits for all measurements to
         complete, and transfers all available measurements.
@@ -1355,7 +1348,7 @@ mode."""
             self.range(self.ranges[0])
 
 
-def _raw_vals_to_array(raw_vals: str) -> npt.NDArray:
+def _raw_vals_to_array(raw_vals: str) -> npt.NDArray[np.float64]:
     """
     Helper function that converts comma-delimited string of floating-point
     values to a numpy 1D array of them. Most data retrieval command of these

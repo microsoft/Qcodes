@@ -14,7 +14,9 @@ from .message_builder import MessageBuilder
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    import qcodes.instrument_drivers.Keysight.keysightb1500
+    from .KeysightB1500_base import (
+        KeysightB1500,
+    )
 
 
 # the use of _FMTResponse in the code is inconsistent
@@ -279,7 +281,7 @@ def _convert_to_nan_if_dummy_value(value: float) -> float:
     return float("nan") if value > 1e99 else value
 
 
-class KeysightB1500Module(InstrumentChannel):
+class KeysightB1500Module(InstrumentChannel["KeysightB1500"]):
     """Base class for all modules of B1500 Parameter Analyzer
 
     When subclassing,
@@ -302,7 +304,7 @@ class KeysightB1500Module(InstrumentChannel):
 
     def __init__(
         self,
-        parent: "qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500",
+        parent: "KeysightB1500",
         name: str | None,
         slot_nr: int,
         **kwargs: Unpack[InstrumentBaseKWArgs],
