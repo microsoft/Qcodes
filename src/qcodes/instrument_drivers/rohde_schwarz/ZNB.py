@@ -8,7 +8,6 @@ import numpy.typing as npt
 import qcodes.validators as vals
 from qcodes.instrument import (
     ChannelList,
-    Instrument,
     InstrumentBaseKWArgs,
     InstrumentChannel,
     VisaInstrument,
@@ -19,7 +18,6 @@ from qcodes.parameters import (
     ManualParameter,
     MultiParameter,
     Parameter,
-    ParamRawDataType,
     create_on_off_val_mapping,
 )
 
@@ -29,7 +27,12 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-class FixedFrequencyTraceIQ(MultiParameter):
+class FixedFrequencyTraceIQ(
+    MultiParameter[
+        tuple[npt.NDArray[np.floating], npt.NDArray[np.floating]],
+        "RohdeSchwarzZNBChannel",
+    ]
+):
     """
     Parameter for sweep that returns the real (I) and imaginary (Q) parts of
     the VNA response.
@@ -94,12 +97,16 @@ class FixedFrequencyTraceIQ(MultiParameter):
         `cw_check_sweep_first` is set to `True` then at the cost of a few ms
         overhead checks if the vna is setup correctly.
         """
-        assert isinstance(self.instrument, RohdeSchwarzZNBChannel)
         i, q = self.instrument._get_cw_data()
         return i, q
 
 
-class FixedFrequencyPointIQ(MultiParameter):
+class FixedFrequencyPointIQ(
+    MultiParameter[
+        tuple[float, float],
+        "RohdeSchwarzZNBChannel",
+    ]
+):
     """
     Parameter for sweep that returns the mean of the real (I) and imaginary (Q)
     parts of the VNA response.
@@ -142,12 +149,16 @@ class FixedFrequencyPointIQ(MultiParameter):
         parameter `cw_check_sweep_first` is set to `True` then at the cost of a
         few ms overhead checks if the vna is setup correctly.
         """
-        assert isinstance(self.instrument, RohdeSchwarzZNBChannel)
         i, q = self.instrument._get_cw_data()
         return float(np.mean(i)), float(np.mean(q))
 
 
-class FixedFrequencyPointMagPhase(MultiParameter):
+class FixedFrequencyPointMagPhase(
+    MultiParameter[
+        tuple[float, float],
+        "RohdeSchwarzZNBChannel",
+    ]
+):
     """
     Parameter for sweep that returns the magnitude of mean of the real (I) and
     imaginary (Q) parts of the VNA response and it's phase.
@@ -185,20 +196,24 @@ class FixedFrequencyPointMagPhase(MultiParameter):
             **kwargs,
         )
 
-    def get_raw(self) -> tuple[float, ...]:
+    def get_raw(self) -> tuple[float, float]:
         """
         Gets the magnitude and phase of the mean of the raw real and imaginary
         part of the data. If the parameter `cw_check_sweep_first` is set to
         `True` for the instrument then at the cost of a few ms overhead
         checks if the vna is setup correctly.
         """
-        assert isinstance(self.instrument, RohdeSchwarzZNBChannel)
         i, q = self.instrument._get_cw_data()
         s = np.mean(i) + 1j * np.mean(q)
         return float(np.abs(s)), float(np.angle(s))
 
 
-class FrequencySweepMagPhase(MultiParameter):
+class FrequencySweepMagPhase(
+    MultiParameter[
+        tuple[npt.NDArray[np.floating], npt.NDArray[np.floating]],
+        "RohdeSchwarzZNBChannel",
+    ]
+):
     """
     Sweep that return magnitude and phase.
     """
@@ -247,14 +262,18 @@ class FrequencySweepMagPhase(MultiParameter):
         self.setpoints = ((f,), (f,))
         self.shapes = ((npts,), (npts,))
 
-    def get_raw(self) -> tuple[ParamRawDataType, ...]:
-        assert isinstance(self.instrument, RohdeSchwarzZNBChannel)
+    def get_raw(self) -> tuple[npt.NDArray[np.floating], npt.NDArray[np.floating]]:
         with self.instrument.format.set_to("Complex"):
             data = self.instrument._get_sweep_data(force_polar=True)
         return abs(data), np.angle(data)
 
 
-class FrequencySweepDBPhase(MultiParameter):
+class FrequencySweepDBPhase(
+    MultiParameter[
+        tuple[npt.NDArray[np.floating], npt.NDArray[np.floating]],
+        "RohdeSchwarzZNBChannel",
+    ]
+):
     """
     Sweep that return magnitude in decibel (dB) and phase in radians.
     """
@@ -303,14 +322,18 @@ class FrequencySweepDBPhase(MultiParameter):
         self.setpoints = ((f,), (f,))
         self.shapes = ((npts,), (npts,))
 
-    def get_raw(self) -> tuple[ParamRawDataType, ...]:
-        assert isinstance(self.instrument, RohdeSchwarzZNBChannel)
+    def get_raw(self) -> tuple[npt.NDArray[np.floating], npt.NDArray[np.floating]]:
         with self.instrument.format.set_to("Complex"):
             data = self.instrument._get_sweep_data(force_polar=True)
         return 20 * np.log10(np.abs(data)), np.angle(data)
 
 
-class FrequencySweep(ArrayParameter):
+class FrequencySweep(
+    ArrayParameter[
+        npt.NDArray[np.floating],
+        "RohdeSchwarzZNBChannel",
+    ]
+):
     """
     Hardware controlled parameter class for Rohde Schwarz ZNB trace.
 
@@ -332,7 +355,7 @@ class FrequencySweep(ArrayParameter):
     def __init__(
         self,
         name: str,
-        instrument: Instrument,
+        instrument: "RohdeSchwarzZNBChannel",
         start: float,
         stop: float,
         npts: int,
@@ -370,8 +393,7 @@ class FrequencySweep(ArrayParameter):
         self.setpoints = (f,)
         self.shape = (npts,)
 
-    def get_raw(self) -> ParamRawDataType:
-        assert isinstance(self.instrument, RohdeSchwarzZNBChannel)
+    def get_raw(self) -> npt.NDArray[np.floating]:
         return self.instrument._get_sweep_data()
 
 
@@ -1087,7 +1109,7 @@ class RohdeSchwarzZNBBase(VisaInstrument):
         self._max_freq: float
         self._min_freq, self._max_freq = m_frequency[model]
 
-        self.num_ports: Parameter = self.add_parameter(
+        self.num_ports: Parameter[int, RohdeSchwarzZNBBase] = self.add_parameter(
             name="num_ports", get_cmd="INST:PORT:COUN?", get_parser=int
         )
         """Parameter num_ports"""
