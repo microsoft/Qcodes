@@ -24,9 +24,11 @@ from __future__ import annotations
 
 import logging
 import warnings
-from typing import Any, ClassVar
+from typing import Any, ClassVar, TypeVar
 
 from qcodes.parameters import ParameterBase
+
+T = TypeVar("T")
 
 log = logging.getLogger(__name__)
 
@@ -244,8 +246,8 @@ class ParameterMixin:
 
     @classmethod
     def _get_leaf_classes(
-        cls, base_type: type, exclude_base_type: type | None = None
-    ) -> list[type]:
+        cls, base_type: type[T], exclude_base_type: type | None = None
+    ) -> list[type[T]]:
         """
         Retrieve all leaf classes in the MRO of cls that are subclasses of base_type,
         excluding first MRO entry and any classes that are subclasses of exclude_base_type.
@@ -288,8 +290,8 @@ class ParameterMixin:
 
     @classmethod
     def _get_mixin_classes(
-        cls, base_type: type, exclude_base_type: type | None = None
-    ) -> list[type]:
+        cls, base_type: type[T], exclude_base_type: type | None = None
+    ) -> list[type[T]]:
         """
         Retrieve all classes in the MRO of cls that are subclasses of base_type,
         excluding any classes that are subclasses of exclude_base_type and the first MRO entry.
