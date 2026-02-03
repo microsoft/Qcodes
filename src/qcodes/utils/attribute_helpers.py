@@ -36,41 +36,42 @@ class DelegateAttributes:
     A list of attribute names (strings)
     to *not* delegate to any other dictionary or object.
     """
+    if not TYPE_CHECKING:
 
-    def __getattr__(self, key: str) -> Any:
-        if key in self.omit_delegate_attrs:
+        def __getattr__(self, key: str) -> Any:
+            if key in self.omit_delegate_attrs:
+                raise AttributeError(
+                    f"'{self.__class__.__name__}' does not delegate attribute {key}"
+                )
+
+            for name in self.delegate_attr_dicts:
+                if key == name:
+                    # needed to prevent infinite loops!
+                    raise AttributeError(
+                        f"dict '{key}' has not been created in object '{self.__class__.__name__}'"
+                    )
+                try:
+                    d = getattr(self, name, None)
+                    if d is not None:
+                        return d[key]
+                except KeyError:
+                    pass
+
+            for name in self.delegate_attr_objects:
+                if key == name:
+                    raise AttributeError(
+                        f"object '{key}' has not been created in object '{self.__class__.__name__}'"
+                    )
+                try:
+                    obj = getattr(self, name, None)
+                    if obj is not None:
+                        return getattr(obj, key)
+                except AttributeError:
+                    pass
+
             raise AttributeError(
-                f"'{self.__class__.__name__}' does not delegate attribute {key}"
+                f"'{self.__class__.__name__}' object and its delegates have no attribute '{key}'"
             )
-
-        for name in self.delegate_attr_dicts:
-            if key == name:
-                # needed to prevent infinite loops!
-                raise AttributeError(
-                    f"dict '{key}' has not been created in object '{self.__class__.__name__}'"
-                )
-            try:
-                d = getattr(self, name, None)
-                if d is not None:
-                    return d[key]
-            except KeyError:
-                pass
-
-        for name in self.delegate_attr_objects:
-            if key == name:
-                raise AttributeError(
-                    f"object '{key}' has not been created in object '{self.__class__.__name__}'"
-                )
-            try:
-                obj = getattr(self, name, None)
-                if obj is not None:
-                    return getattr(obj, key)
-            except AttributeError:
-                pass
-
-        raise AttributeError(
-            f"'{self.__class__.__name__}' object and its delegates have no attribute '{key}'"
-        )
 
     def __dir__(self) -> list[str]:
         names = list(super().__dir__())
