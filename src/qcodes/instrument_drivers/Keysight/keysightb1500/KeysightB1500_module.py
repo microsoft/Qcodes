@@ -373,7 +373,7 @@ class KeysightB1500Module(InstrumentChannel["KeysightB1500"]):
         is not effective for the 4 byte binary data output format
         (FMT3 and FMT4).
         """
-        self.root_instrument.clear_timer_count(chnum=self.channels)
+        self.parent.clear_timer_count(chnum=self.channels)
 
 
 class StatusMixin:
