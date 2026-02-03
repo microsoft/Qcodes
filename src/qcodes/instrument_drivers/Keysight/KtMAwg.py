@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from typing_extensions import Unpack
 
 
-class KeysightM9336AAWGChannel(InstrumentChannel):
+class KeysightM9336AAWGChannel(InstrumentChannel["KeysightM9336A"]):
     """
     Represent the three channels of the Keysight KTM Awg driver.
     The channels can be independently controlled and programmed with
@@ -134,6 +134,12 @@ class KeysightM9336AAWGChannel(InstrumentChannel):
             get_cmd=self._get_digital_gain,
         )
         """Parameter digital_gain"""
+
+    @property
+    def root_instrument(self) -> "KeysightM9336A":
+        root_instrument = super().root_instrument
+        assert isinstance(root_instrument, KeysightM9336A)
+        return root_instrument
 
     def load_waveform(self, filename: str) -> None:
         path = ctypes.create_string_buffer(filename.encode("ascii"))
