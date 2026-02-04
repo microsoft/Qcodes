@@ -7,7 +7,7 @@ MSO70000/C/DX Series Digital Oscilloscopes
 import textwrap
 import time
 from functools import partial
-from typing import TYPE_CHECKING, Any, ClassVar, Generic
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -220,7 +220,7 @@ class TektronixDPOData(InstrumentChannel):
         """
 
 
-class TektronixDPOWaveform(InstrumentChannel):
+class TektronixDPOWaveform(InstrumentChannel["TektronixDPOChannel"]):
     """
     This submodule retrieves data from waveform sources, e.g.
     channels.
@@ -234,7 +234,7 @@ class TektronixDPOWaveform(InstrumentChannel):
 
     def __init__(
         self,
-        parent: InstrumentBase,
+        parent: "TektronixDPOChannel",
         name: str,
         identifier: str,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
@@ -333,6 +333,12 @@ class TektronixDPOWaveform(InstrumentChannel):
         )
         """Parameter trace"""
 
+    @property
+    def root_instrument(self) -> "TektronixDPO7000xx":
+        root_instrument = super().root_instrument
+        assert isinstance(root_instrument, TektronixDPO7000xx)
+        return root_instrument
+
     def _get_cmd(self, cmd_string: str) -> "Callable[[], str]":
         """
         Parameters defined in this submodule require the correct
@@ -351,7 +357,7 @@ class TektronixDPOWaveform(InstrumentChannel):
 
         if not waveform.is_binary():
             raw_data = self.root_instrument.visa_handle.query_ascii_values(
-                "CURVE?", container=np.array
+                "CURVE?", container=np.ndarray
             )
         else:
             bytes_per_sample = waveform.bytes_per_sample()
@@ -366,7 +372,7 @@ class TektronixDPOWaveform(InstrumentChannel):
                 "CURVE?",
                 datatype=data_type,
                 is_big_endian=is_big_endian,
-                container=np.array,
+                container=np.ndarray,
             )
 
         return (raw_data - self.raw_data_offset()) * self.scale() + self.offset()
@@ -418,7 +424,7 @@ class TektronixDPOWaveformFormat(InstrumentChannel):
         )
         """Parameter is_big_endian"""
 
-        self.bytes_per_sample: Parameter = self.add_parameter(
+        self.bytes_per_sample: Parameter[int, Self] = self.add_parameter(
             "bytes_per_sample",
             get_cmd="WFMOutpre:BYT_Nr?",
             set_cmd="WFMOutpre:BYT_Nr {}",
@@ -436,7 +442,7 @@ class TektronixDPOWaveformFormat(InstrumentChannel):
         """Parameter is_binary"""
 
 
-class TektronixDPOChannel(InstrumentChannel):
+class TektronixDPOChannel(InstrumentChannel[TektronixDPO7000xx]):
     """
     The main channel module for the oscilloscope. The parameters
     defined here reflect the waveforms as they are displayed on
@@ -445,7 +451,7 @@ class TektronixDPOChannel(InstrumentChannel):
 
     def __init__(
         self,
-        parent: Instrument | InstrumentChannel,
+        parent: TektronixDPO7000xx,
         name: str,
         channel_number: int,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
@@ -522,15 +528,15 @@ class TektronixDPOChannel(InstrumentChannel):
             value: The requested number of samples in the trace
 
         """
-        if self.root_instrument.horizontal.record_length() < value:
+        if self.parent.horizontal.record_length() < value:
             raise ValueError(
                 "Cannot set a trace length which is larger than "
                 "the record length. Please switch to manual mode "
                 "and adjust the record length first"
             )
 
-        self.root_instrument.data.start_index(1)
-        self.root_instrument.data.stop_index(value)
+        self.parent.data.start_index(1)
+        self.parent.data.stop_index(value)
 
     def set_trace_time(self, value: float) -> None:
         """
@@ -538,7 +544,7 @@ class TektronixDPOChannel(InstrumentChannel):
             value: The time over which a trace is desired.
 
         """
-        sample_rate = self.root_instrument.horizontal.sample_rate()
+        sample_rate = self.parent.horizontal.sample_rate()
         required_sample_count = int(sample_rate * value)
         self.set_trace_length(required_sample_count)
 
