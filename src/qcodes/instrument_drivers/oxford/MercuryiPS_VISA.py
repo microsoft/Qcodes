@@ -76,14 +76,14 @@ def _temp_parser(response: str) -> float:
     return float(response.rsplit(":", maxsplit=1)[-1][:-1])
 
 
-class OxfordMercuryWorkerPS(InstrumentChannel):
+class OxfordMercuryWorkerPS(InstrumentChannel["OxfordMercuryiPS"]):
     """
     Class to hold a worker power supply for the Oxford MercuryiPS
     """
 
     def __init__(
         self,
-        parent: VisaInstrument,
+        parent: OxfordMercuryiPS,
         name: str,
         UID: str,
         **kwargs: Unpack[InstrumentBaseKWArgs],
@@ -108,7 +108,7 @@ class OxfordMercuryWorkerPS(InstrumentChannel):
 
         # The firmware update from 2.5 -> 2.6 changed the command
         # syntax slightly
-        if version.parse(self.root_instrument.firmware) >= version.parse("2.6"):
+        if version.parse(self.parent.firmware) >= version.parse("2.6"):
             self.psu_string = "SPSU"
         else:
             self.psu_string = "PSU"
@@ -348,10 +348,14 @@ class OxfordMercuryiPS(VisaInstrument):
         self.firmware = self.IDN()["firmware"]
 
         # TODO: Query instrument to ensure which PSUs are actually present
-        for grp in ["GRPX", "GRPY", "GRPZ"]:
-            psu_name = grp
-            psu = OxfordMercuryWorkerPS(self, psu_name, grp)
-            self.add_submodule(psu_name, psu)
+        GRPX = OxfordMercuryWorkerPS(self, "GRPX", "GRPX")
+        self.GRPX: OxfordMercuryWorkerPS = self.add_submodule("GRPX", GRPX)
+
+        GRPY = OxfordMercuryWorkerPS(self, "GRPY", "GRPY")
+        self.GRPY: OxfordMercuryWorkerPS = self.add_submodule("GRPY", GRPY)
+
+        GRPZ = OxfordMercuryWorkerPS(self, "GRPZ", "GRPZ")
+        self.GRPZ: OxfordMercuryWorkerPS = self.add_submodule("GRPZ", GRPZ)
 
         self._field_limits = field_limits if field_limits else lambda x, y, z: True
 
