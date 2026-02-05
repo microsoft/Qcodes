@@ -8,7 +8,9 @@ if TYPE_CHECKING:
     from typing_extensions import Unpack
 
 
-class CurrentParameter(MultiParameter):
+class CurrentParameter(
+    MultiParameter[tuple[float, float], "Ithaco1211"],
+):
     """
     Voltage measurement via an Ithaco preamp and converting volt to current.
 
@@ -35,7 +37,7 @@ class CurrentParameter(MultiParameter):
     """
 
     def __init__(
-        self, measured_param: Parameter, c_amp_ins: "Ithaco_1211", name: str = "curr"
+        self, measured_param: Parameter, c_amp_ins: "Ithaco1211", name: str = "curr"
     ):
         p_name = measured_param.name
 
