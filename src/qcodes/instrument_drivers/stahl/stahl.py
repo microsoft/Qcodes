@@ -57,12 +57,12 @@ def chain(*functions: Callable[..., Any]) -> Callable[..., Any]:
     return inner
 
 
-class StahlChannel(InstrumentChannel):
+class StahlChannel(InstrumentChannel["Stahl"]):
     acknowledge_reply = chr(6)
 
     def __init__(
         self,
-        parent: VisaInstrument,
+        parent: "Stahl",
         name: str,
         channel_number: int,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
@@ -215,7 +215,10 @@ class Stahl(VisaInstrument):
             self.add_submodule(name, channel)
             channels.append(channel)
 
-        self.add_submodule("channel", channels)
+        self.channels: ChannelList[StahlChannel] = self.add_submodule(
+            "channel", channels
+        )
+        """List of channels"""
 
         self.temperature: Parameter = self.add_parameter(
             "temperature",
