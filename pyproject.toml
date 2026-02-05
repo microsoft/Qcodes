@@ -215,7 +215,7 @@ reportUnnecessaryContains = "none"
 # unused-ignore-comment: mypy already checks for unused-ignores so it they are unused by ty its because mypy requires them
 unresolved-import = "ignore"
 deprecated = "ignore"
-unused-ignore-comment = "ignore"
+unused-type-ignore-comment = "ignore"
 
 [[tool.ty.overrides]]
 include = ["src/qcodes/instrument_drivers/Harvard/Decadac.py"]
