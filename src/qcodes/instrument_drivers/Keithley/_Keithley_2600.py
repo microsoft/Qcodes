@@ -4,7 +4,7 @@ import logging
 import struct
 import warnings
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import numpy.typing as npt
@@ -17,7 +17,6 @@ from qcodes.instrument import (
     VisaInstrumentKWArgs,
 )
 from qcodes.parameters import (
-    ArrayParameter,
     Parameter,
     ParameterWithSetpoints,
     ParamRawDataType,
@@ -27,14 +26,13 @@ from qcodes.parameters import (
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from qcodes_loop.data.data_set import DataSet
     from typing_extensions import Unpack
 
 
 log = logging.getLogger(__name__)
 
 
-class LuaSweepParameter(ArrayParameter):
+class LuaSweepParameter(ParameterWithSetpoints):
     """
     Parameter class to hold the data from a
     deployed Lua script sweep.
@@ -49,25 +47,7 @@ class LuaSweepParameter(ArrayParameter):
             **kwargs,
         )
 
-    def prepareSweep(self, start: float, stop: float, steps: int, mode: str) -> None:
-        """
-        Builds setpoints and labels
-
-        Args:
-            start: Starting point of the sweep
-            stop: Endpoint of the sweep
-            steps: No. of sweep steps
-            mode: Type of sweep, either 'IV' (voltage sweep),
-                'VI' (current sweep two probe setup) or
-                'VIfourprobe' (current sweep four probe setup)
-
-        """
-
-        if mode not in ["IV", "VI", "VIfourprobe"]:
-            raise ValueError('mode must be either "VI", "IV" or "VIfourprobe"')
-
-        self.shape = (steps,)
-
+    def _set_mode(self, mode: str) -> None:
         if mode == "IV":
             self.unit = "A"
             self.setpoint_names = ("Voltage",)
@@ -89,22 +69,85 @@ class LuaSweepParameter(ArrayParameter):
             self.label = "voltage"
             self._short_name = "vi_sweep_four_probe"
 
-        self.setpoints = (tuple(np.linspace(start, stop, steps)),)
-
-        self.start = start
-        self.stop = stop
-        self.steps = steps
-        self.mode = mode
-
-    def get_raw(self) -> npt.NDArray:
-        if self.instrument is not None:
-            data = self.instrument._fast_sweep(
-                self.start, self.stop, self.steps, self.mode
-            )
-        else:
+    def _fast_sweep(self) -> npt.NDArray:
+        if self.instrument is None:
             raise RuntimeError("No instrument attached to Parameter.")
 
+        channel = self.instrument.channel
+
+        # an extra visa query, a necessary precaution
+        # to avoid timing out when waiting for long
+        # measurements
+        nplc = self.instrument.nplc()
+
+        mode = self.instrument.fastsweep_mode()
+        start = self.instrument.fastsweep_start()
+        stop = self.instrument.fastsweep_stop()
+        steps = self.instrument.fastsweep_npts()
+
+        dV = (stop - start) / (steps - 1)
+
+        if mode == "IV":
+            meas = "i"
+            source = "v"
+            func = "1"
+            sense_mode = "0"
+        elif mode == "VI":
+            meas = "v"
+            source = "i"
+            func = "0"
+            sense_mode = "0"
+        elif mode == "VIfourprobe":
+            meas = "v"
+            source = "i"
+            func = "0"
+            sense_mode = "1"
+        else:
+            raise ValueError(f"Invalid fastsweep mode {mode}")
+
+        script = [
+            f"{channel}.measure.nplc = {nplc:.12f}",
+            f"{channel}.source.output = 1",
+            f"startX = {start:.12f}",
+            f"dX = {dV:.12f}",
+            f"{channel}.sense = {sense_mode}",
+            f"{channel}.source.output = 1",
+            f"{channel}.source.func = {func}",
+            f"{channel}.measure.count = 1",
+            f"{channel}.nvbuffer1.clear()",
+            f"{channel}.nvbuffer1.appendmode = 1",
+            f"for index = 1, {steps} do",
+            "  target = startX + (index-1)*dX",
+            f"  {channel}.source.level{source} = target",
+            f"  {channel}.measure.{meas}({channel}.nvbuffer1)",
+            "end",
+            "format.data = format.REAL32",
+            "format.byteorder = format.LITTLEENDIAN",
+            f"printbuffer(1, {steps}, {channel}.nvbuffer1.readings)",
+        ]
+
+        return self.instrument._execute_lua(script, steps)
+
+    def get_raw(self) -> npt.NDArray:
+        data = self._fast_sweep()
+
         return data
+
+
+class FastSweepSetpoints(Parameter):
+    """
+    A simple :class:`.Parameter` that holds all the setpoints (relative to the
+    measurement start) at which the points of the time trace were acquired.
+    """
+
+    def get_raw(self) -> npt.NDArray:
+        if self.instrument is None:
+            raise RuntimeError("No instrument attached to Parameter.")
+
+        npts = self.instrument.fastsweep_npts()
+        start = self.instrument.fastsweep_start()
+        stop = self.instrument.fastsweep_stop()
+        return np.linspace(start, stop, npts)
 
 
 class TimeTrace(ParameterWithSetpoints):
@@ -576,10 +619,51 @@ class Keithley2600Channel(InstrumentChannel):
         )
         """Current limit e.g. the maximum current allowed in voltage mode. If exceeded the voltage will be clipped."""
 
-        self.fastsweep: LuaSweepParameter = self.add_parameter(
-            "fastsweep", parameter_class=LuaSweepParameter
+        self.fastsweep_npts: Parameter = self.add_parameter(
+            "fastsweep_npts",
+            initial_value=20,
+            label="Number of fastweep points",
+            get_cmd=None,
+            set_cmd=None,
         )
-        """Parameter fastsweep"""
+        """Parameter fastweep_npts"""
+
+        self.fastsweep_start: Parameter = self.add_parameter(
+            "fastsweep_start", label="fastsweep start", get_cmd=None, set_cmd=None
+        )
+        """Starting value of fastsweep. Can be current or voltage."""
+
+        self.fastsweep_stop: Parameter = self.add_parameter(
+            "fastsweep_stop", label="fastsweep stop", get_cmd=None, set_cmd=None
+        )
+        """Stopping value of fastsweep. Can be current or voltage."""
+
+        self.fastsweep_axis: FastSweepSetpoints = self.add_parameter(
+            name="fastsweep_axis",
+            label="Fastsweep",
+            snapshot_value=False,
+            vals=vals.Arrays(shape=(self.fastsweep_npts,)),
+            parameter_class=FastSweepSetpoints,
+        )
+        """Holds array of setpoints for doing a fastsweep. Can
+        be of units V or I depending on `Keithley2600Channel.fastsweep_mode`"""
+
+        self.fastsweep: LuaSweepParameter = self.add_parameter(
+            "fastsweep",
+            vals=vals.Arrays(shape=(self.fastsweep_npts,)),
+            setpoints=(self.fastsweep_axis,),
+            parameter_class=LuaSweepParameter,
+        )
+        """Performs buffered readout of desired sweep mode."""
+
+        self.fastsweep_mode: Parameter = self.add_parameter(
+            "fastsweep_mode",
+            initial_value="IV",
+            get_cmd=None,
+            set_cmd=self.fastsweep._set_mode,
+            vals=vals.Enum("IV", "VI", "VIfourprobe"),
+        )
+        """Parameter fastsweep_mode"""
 
         self.timetrace_npts: Parameter = self.add_parameter(
             "timetrace_npts",
@@ -644,107 +728,6 @@ class Keithley2600Channel(InstrumentChannel):
         # remember to update all the metadata
         log.debug(f"Reset channel {self.channel}. Updating settings...")
         self.snapshot(update=True)
-
-    def doFastSweep(self, start: float, stop: float, steps: int, mode: str) -> DataSet:
-        """
-        Perform a fast sweep using a deployed lua script and
-        return a QCoDeS DataSet with the sweep.
-
-        Args:
-            start: starting sweep value (V or A)
-            stop: end sweep value (V or A)
-            steps: number of steps
-            mode: Type of sweep, either 'IV' (voltage sweep),
-                'VI' (current sweep two probe setup) or
-                'VIfourprobe' (current sweep four probe setup)
-
-        """
-        try:
-            # lazy import to avoid a geneal dependency on qcodes_loop
-            from qcodes_loop.measure import Measure
-        except ImportError as e:
-            raise ImportError(
-                "The doFastSweep method requires the "
-                "qcodes_loop package to be installed."
-            ) from e
-        # prepare setpoints, units, name
-        self.fastsweep.prepareSweep(start, stop, steps, mode)
-
-        data = Measure(self.fastsweep).run()
-
-        return data
-
-    def _fast_sweep(
-        self,
-        start: float,
-        stop: float,
-        steps: int,
-        mode: Literal["IV", "VI", "VIfourprobe"] = "IV",
-    ) -> npt.NDArray:
-        """
-        Perform a fast sweep using a deployed Lua script.
-        This is the engine that forms the script, uploads it,
-        runs it, collects the data, and casts the data correctly.
-
-        Args:
-            start: starting voltage
-            stop: end voltage
-            steps: number of steps
-            mode: Type of sweep, either 'IV' (voltage sweep),
-                'VI' (current sweep two probe setup) or
-                'VIfourprobe' (current sweep four probe setup)
-
-        """
-
-        channel = self.channel
-
-        # an extra visa query, a necessary precaution
-        # to avoid timing out when waiting for long
-        # measurements
-        nplc = self.nplc()
-
-        dV = (stop - start) / (steps - 1)
-
-        if mode == "IV":
-            meas = "i"
-            sour = "v"
-            func = "1"
-            sense_mode = "0"
-        elif mode == "VI":
-            meas = "v"
-            sour = "i"
-            func = "0"
-            sense_mode = "0"
-        elif mode == "VIfourprobe":
-            meas = "v"
-            sour = "i"
-            func = "0"
-            sense_mode = "1"
-        else:
-            raise ValueError(f"Invalid mode {mode}")
-
-        script = [
-            f"{channel}.measure.nplc = {nplc:.12f}",
-            f"{channel}.source.output = 1",
-            f"startX = {start:.12f}",
-            f"dX = {dV:.12f}",
-            f"{channel}.sense = {sense_mode}",
-            f"{channel}.source.output = 1",
-            f"{channel}.source.func = {func}",
-            f"{channel}.measure.count = 1",
-            f"{channel}.nvbuffer1.clear()",
-            f"{channel}.nvbuffer1.appendmode = 1",
-            f"for index = 1, {steps} do",
-            "  target = startX + (index-1)*dX",
-            f"  {channel}.source.level{sour} = target",
-            f"  {channel}.measure.{meas}({channel}.nvbuffer1)",
-            "end",
-            "format.data = format.REAL32",
-            "format.byteorder = format.LITTLEENDIAN",
-            f"printbuffer(1, {steps}, {channel}.nvbuffer1.readings)",
-        ]
-
-        return self._execute_lua(script, steps)
 
     def _execute_lua(self, _script: list[str], steps: int) -> npt.NDArray:
         """
