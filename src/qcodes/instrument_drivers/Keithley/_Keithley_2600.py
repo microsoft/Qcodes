@@ -38,14 +38,6 @@ class LuaSweepParameter(ParameterWithSetpoints):
     deployed Lua script sweep.
     """
 
-    def __init__(self, name: str, instrument: Instrument, **kwargs: Any) -> None:
-        super().__init__(
-            name=name,
-            docstring="Holds a sweep",
-            instrument=instrument,
-            **kwargs,
-        )
-
     def _set_mode(self, mode: str) -> None:
         if mode == "IV":
             self.unit = "A"
