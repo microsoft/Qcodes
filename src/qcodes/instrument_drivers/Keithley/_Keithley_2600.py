@@ -629,9 +629,9 @@ class Keithley2600Channel(InstrumentChannel):
         )
         """Stopping value of fastsweep. Can be current or voltage."""
 
-        self.fastsweep_axis: FastSweepSetpoints = self.add_parameter(
-            name="fastsweep_axis",
-            label="Fastsweep",
+        self.fastsweep_setpoints: FastSweepSetpoints = self.add_parameter(
+            name="fastsweep_setpoints",
+            label="Fastsweep setpoints",
             snapshot_value=False,
             vals=vals.Arrays(shape=(self.fastsweep_npts,)),
             parameter_class=FastSweepSetpoints,
@@ -642,7 +642,7 @@ class Keithley2600Channel(InstrumentChannel):
         self.fastsweep: LuaSweepParameter = self.add_parameter(
             "fastsweep",
             vals=vals.Arrays(shape=(self.fastsweep_npts,)),
-            setpoints=(self.fastsweep_axis,),
+            setpoints=(self.fastsweep_setpoints,),
             parameter_class=LuaSweepParameter,
         )
         """Performs buffered readout of desired sweep mode."""
