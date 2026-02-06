@@ -41,7 +41,6 @@ class LuaSweepParameter(ParameterWithSetpoints):
     def __init__(self, name: str, instrument: Instrument, **kwargs: Any) -> None:
         super().__init__(
             name=name,
-            shape=(1,),
             docstring="Holds a sweep",
             instrument=instrument,
             **kwargs,
