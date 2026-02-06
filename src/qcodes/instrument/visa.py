@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import warnings
 from importlib.resources import as_file, files
-from typing import TYPE_CHECKING, Any, Literal, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, Self, TypedDict
 from weakref import finalize
 
 import pyvisa
@@ -25,6 +25,8 @@ if TYPE_CHECKING:
     from typing import NotRequired
 
     from typing_extensions import Unpack
+
+    from qcodes.parameters.parameter import Parameter
 
 VISA_LOGGER = ".".join((InstrumentBase.__module__, "com", "visa"))
 
@@ -153,7 +155,7 @@ class VisaInstrument(Instrument):
         super().__init__(name, **kwargs)
         self.visa_log = get_instrument_logger(self, VISA_LOGGER)
 
-        self.add_parameter(
+        self.timeout: Parameter[float | None, Self] = self.add_parameter(
             "timeout",
             get_cmd=self._get_visa_timeout,
             set_cmd=self._set_visa_timeout,

@@ -12,14 +12,13 @@ try:
     has_loop = True
 except ImportError:
     has_loop = False
+from typing import Generic
 
-from .parameter_base import ParameterBase
+from .parameter_base import InstrumentTypeVar_co, ParameterBase, ParameterDataTypeVar
 from .sequence_helpers import is_sequence_of
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
-
-    from qcodes.instrument import InstrumentBase
 
 
 try:
@@ -41,7 +40,10 @@ except ImportError:
     )
 
 
-class ArrayParameter(ParameterBase):
+class ArrayParameter(
+    ParameterBase[ParameterDataTypeVar, InstrumentTypeVar_co],
+    Generic[ParameterDataTypeVar, InstrumentTypeVar_co],
+):
     """
     A gettable parameter that returns an array of values.
     Not necessarily part of an instrument.
@@ -131,7 +133,9 @@ class ArrayParameter(ParameterBase):
         self,
         name: str,
         shape: Sequence[int],
-        instrument: InstrumentBase | None = None,
+        # mypy seems to be confused here. The bound and default for InstrumentTypeVar_co
+        # contains None but mypy will not allow it as a default as of v 1.19.0
+        instrument: InstrumentTypeVar_co = None,  # type: ignore[assignment]
         label: str | None = None,
         unit: str | None = None,
         setpoints: Sequence[Any] | None = None,

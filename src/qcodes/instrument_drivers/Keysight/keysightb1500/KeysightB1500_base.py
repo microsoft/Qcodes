@@ -1,10 +1,11 @@
 import re
 import textwrap
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Generic, TypedDict, cast
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import MultiParameter, Parameter, create_on_off_val_mapping
+from qcodes.parameters.parameter_base import ParameterDataTypeVar
 
 from . import constants
 from .KeysightB1500_module import (
@@ -26,6 +27,11 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from typing_extensions import Unpack
+
+
+class MeasurementModeDict(TypedDict):
+    mode: constants.MM.Mode
+    channels: list[int]
 
 
 class KeysightB1500(VisaInstrument):
@@ -417,7 +423,7 @@ class KeysightB1500(VisaInstrument):
         msg = MessageBuilder().mm(mode=mode, channels=channels).message
         self.write(msg)
 
-    def get_measurement_mode(self) -> dict[str, constants.MM.Mode | list[int]]:
+    def get_measurement_mode(self) -> MeasurementModeDict:
         """
         This method gets the measurement mode(MM) and the channels used
         for measurements. It outputs a dictionary with 'mode' and
@@ -432,11 +438,11 @@ class KeysightB1500(VisaInstrument):
         if not match:
             raise ValueError("Measurement Mode (MM) not found.")
 
-        out_dict: dict[str, constants.MM.Mode | list[int]] = {}
         resp_dict = match.groupdict()
-        out_dict["mode"] = constants.MM.Mode(int(resp_dict["mode"]))
-        out_dict["channels"] = list(map(int, resp_dict["channels"].split(",")))
-        return out_dict
+        return MeasurementModeDict(
+            mode=constants.MM.Mode(int(resp_dict["mode"])),
+            channels=list(map(int, resp_dict["channels"].split(","))),
+        )
 
     def get_response_format_and_mode(
         self,
@@ -481,7 +487,11 @@ class KeysightB1500(VisaInstrument):
         )
 
 
-class IVSweepMeasurement(MultiParameter, StatusMixin):
+class IVSweepMeasurement(
+    MultiParameter[ParameterDataTypeVar, KeysightB1500],
+    StatusMixin,
+    Generic[ParameterDataTypeVar],
+):
     """
     IV sweep measurement outputs a list of measured current parameters
     as a result of voltage sweep.
@@ -492,7 +502,7 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
 
     """
 
-    def __init__(self, name: str, instrument: KeysightB1517A, **kwargs: Any):
+    def __init__(self, name: str, instrument: KeysightB1500, **kwargs: Any):
         super().__init__(
             name,
             names=tuple(["param1", "param2"]),
@@ -505,9 +515,6 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
             instrument=instrument,
             **kwargs,
         )
-
-        self.instrument: KeysightB1517A
-        self.root_instrument: KeysightB1500
 
         self.param1 = _FMTResponse(None, None, None, None)
         self.param2 = _FMTResponse(None, None, None, None)
@@ -642,8 +649,8 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
                 f"enough names, units, and labels for all the channels that "
                 f"are to be measured."
             )
-
-        smu = self.instrument.by_channel[channels[0]]
+        smu = self.instrument.by_channel[constants.ChNr(channels[0])]
+        smu = cast("KeysightB1517A", smu)
 
         if not smu.setup_fnc_already_run:
             raise Exception(
@@ -668,13 +675,11 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
         fmt_format = format_and_mode["format"]
         fmt_mode = format_and_mode["mode"]
         try:
-            self.root_instrument.write(MessageBuilder().fmt(1, 1).message)
-            with self.root_instrument.timeout.set_to(new_timeout):
+            self.instrument.write(MessageBuilder().fmt(1, 1).message)
+            with self.instrument.timeout.set_to(new_timeout):
                 raw_data = self.instrument.ask(MessageBuilder().xe().message)
         finally:
-            self.root_instrument.write(
-                MessageBuilder().fmt(fmt_format, fmt_mode).message
-            )
+            self.instrument.write(MessageBuilder().fmt(fmt_format, fmt_mode).message)
 
         parsed_data = fmt_response_base_parser(raw_data)
 
