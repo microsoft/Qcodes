@@ -73,7 +73,7 @@ def _temp_parser(response: str) -> float:
         response: What comes back from instrument.ask
 
     """
-    return float(response.split(":")[-1][:-1])
+    return float(response.rsplit(":", maxsplit=1)[-1][:-1])
 
 
 class OxfordMercuryWorkerPS(InstrumentChannel):

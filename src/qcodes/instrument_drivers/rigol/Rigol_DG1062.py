@@ -209,9 +209,11 @@ class RigolDG1062Channel(InstrumentChannel["RigolDG1062"]):
                 vals.Enum("INF", "MIN", "MAX", "HighZ"),
             ),
             get_parser=(
-                lambda value: "HighZ"
-                if float(value) > RigolDG1062Channel.max_impedance
-                else float(value)
+                lambda value: (
+                    "HighZ"
+                    if float(value) > RigolDG1062Channel.max_impedance
+                    else float(value)
+                )
             ),
             set_parser=lambda value: "INF" if value == "HighZ" else value,
         )

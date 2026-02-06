@@ -536,9 +536,9 @@ def experiments_widget(
     elif sort_by == "timestamp":
         data_sets = sorted(
             data_sets,
-            key=lambda ds: ds.run_timestamp_raw
-            if ds.run_timestamp_raw is not None
-            else 0,
+            key=lambda ds: (
+                ds.run_timestamp_raw if ds.run_timestamp_raw is not None else 0
+            ),
             reverse=True,
         )
 

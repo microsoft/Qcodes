@@ -67,7 +67,7 @@ class MockVisaHandle(pyvisa.resources.MessageBasedResource):
     ) -> int:
         if self.closed:
             raise RuntimeError("Trying to write to a closed instrument")
-        num = float(message.split(":")[-1])
+        num = float(message.rsplit(":", maxsplit=1)[-1])
         self.state = num
 
         if num < 0:
