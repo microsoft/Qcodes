@@ -1,9 +1,12 @@
 from collections import Counter
+from typing import cast
+from unittest.mock import patch
 
 import numpy as np
 import pytest
 
 from qcodes.instrument_drivers.Keithley import (
+    Keithley2600Channel,
     Keithley2600MeasurementStatus,
     Keithley2614B,
 )
@@ -176,3 +179,60 @@ def test_setting_measure_current_range_disables_autorange(smus) -> None:
         some_valid_measurerange_i = smu.root_instrument._iranges[smu.model][2]
         smu.measurerange_i(some_valid_measurerange_i)
         assert smu.measure_autorange_i_enabled() is False
+
+
+def test_fast_sweep_parameters(smus) -> None:
+    for smu in smus:
+        smu = cast("Keithley2600Channel", smu)
+
+        start_val = 0.0001
+        stop_val = 0.001
+        npts = 50
+
+        # Test IV mode
+        smu.fastsweep_mode("IV")
+        assert smu.fastsweep.unit == "A"
+        assert smu.fastsweep.label == "current"
+
+        # Test VI mode
+        smu.fastsweep_mode("VI")
+        assert smu.fastsweep.unit == "V"
+        assert smu.fastsweep.label == "voltage"
+
+        # Test VIfourprobe mode
+        smu.fastsweep_mode("VIfourprobe")
+        assert smu.fastsweep.unit == "V"
+        assert smu.fastsweep.label == "voltage"
+
+        smu.fastsweep_start(start_val)
+        assert smu.fastsweep_start() == start_val
+
+        smu.fastsweep_stop(stop_val)
+        assert smu.fastsweep_stop() == stop_val
+
+        smu.fastsweep_npts(npts)
+        assert smu.fastsweep_npts() == npts
+
+        # Test the setpoints (fastsweep_setpoints)
+        setpoints = smu.fastsweep_setpoints()
+        expected_setpoints = np.linspace(start_val, stop_val, npts)
+        np.testing.assert_array_almost_equal(setpoints, expected_setpoints)
+
+
+def test_fastsweep(driver) -> None:
+    smu = driver.smua
+
+    # Configure the fastsweep
+    smu.fastsweep_mode("IV")
+    smu.fastsweep_start(0.0)
+    smu.fastsweep_stop(1.0)
+    smu.fastsweep_npts(10)
+
+    # Mock _execute_lua to return fake measurement data
+    fake_data = np.linspace(0, 0.001, 10)  # Fake current readings
+
+    with patch.object(smu, "_execute_lua", return_value=fake_data):
+        result = smu.fastsweep()
+
+    assert len(result) == 10
+    np.testing.assert_array_equal(result, fake_data)
