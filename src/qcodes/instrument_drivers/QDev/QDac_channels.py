@@ -450,7 +450,7 @@ class QDevQDac(VisaInstrument):
         value descriptor.
         """
         if self.verbose.get_latest():
-            s = s.split(": ")[-1]
+            s = s.rsplit(": ", maxsplit=1)[-1]
         return float(s)
 
     def _current_parser(self, s: str) -> float:
