@@ -1,0 +1,7 @@
+Plotting
+--------
+
+.. toctree::
+    :glob:
+
+    *
