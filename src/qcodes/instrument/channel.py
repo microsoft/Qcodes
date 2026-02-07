@@ -198,42 +198,42 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
                 )
 
     @overload
-    def __getitem__(self, i: int) -> InstrumentModuleType: ...
+    def __getitem__(self, index: int) -> InstrumentModuleType: ...
 
     @overload
-    def __getitem__(self: Self, i: slice | tuple[int, ...]) -> Self: ...
+    def __getitem__(self: Self, index: slice | tuple[int, ...]) -> Self: ...
 
     def __getitem__(
-        self: Self, i: int | slice | tuple[int, ...]
+        self: Self, index: int | slice | tuple[int, ...]
     ) -> InstrumentModuleType | Self:
         """
         Return either a single channel, or a new :class:`ChannelTuple`
         containing only the specified channels
 
         Args:
-            i: Either a single channel index or a slice of channels
+            index: Either a single channel index or a slice of channels
               to get
 
         """
-        if isinstance(i, slice):
+        if isinstance(index, slice):
             return type(self)(
                 self._parent,
                 self._name,
                 self._chan_type,
-                self._channels[i],
+                self._channels[index],
                 multichan_paramclass=self._paramclass,
                 snapshotable=self._snapshotable,
             )
-        elif isinstance(i, tuple):
+        elif isinstance(index, tuple):
             return type(self)(
                 self._parent,
                 self._name,
                 self._chan_type,
-                [self._channels[j] for j in i],
+                [self._channels[j] for j in index],
                 multichan_paramclass=self._paramclass,
                 snapshotable=self._snapshotable,
             )
-        return self._channels[i]
+        return self._channels[index]
 
     def __iter__(self) -> Iterator[InstrumentModuleType]:
         return iter(self._channels)
@@ -244,8 +244,8 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
     def __len__(self) -> int:
         return len(self._channels)
 
-    def __contains__(self, item: object) -> bool:
-        return item in self._channels
+    def __contains__(self, value: object) -> bool:
+        return value in self._channels
 
     def __repr__(self) -> str:
         return (
@@ -315,11 +315,9 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
         name_parts.append(self.short_name)
         return name_parts
 
-    # the parameter obj should be called value but that would
-    # be an incompatible change
-    def index(  #  pyright: ignore[reportIncompatibleMethodOverride]
+    def index(
         self,
-        obj: InstrumentModuleType,
+        value: InstrumentModuleType,
         start: int = 0,
         stop: int = sys.maxsize,
     ) -> int:
@@ -327,23 +325,21 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
         Return the index of the given object
 
         Args:
-            obj: The object to find in the channel list.
+            value: The object to find in the channel list.
             start: Index to start searching from.
             stop: Index to stop searching at.
 
         """
-        return self._channels.index(obj, start, stop)
+        return self._channels.index(value, start, stop)
 
-    def count(  #  pyright: ignore[reportIncompatibleMethodOverride]
-        self, obj: InstrumentModuleType
-    ) -> int:
+    def count(self, value: InstrumentModuleType) -> int:
         """Returns number of instances of the given object in the list
 
         Args:
-            obj: The object to find in the ChannelTuple.
+            value: The object to find in the ChannelTuple.
 
         """
-        return self._channels.count(obj)
+        return self._channels.count(value)
 
     def get_channels_by_name(self: Self, *names: str) -> Self:
         """
@@ -717,15 +713,15 @@ class ChannelList(  #  pyright: ignore[reportIncompatibleMethodOverride]
             self._locked = False
 
     @overload
-    def __delitem__(self, key: int) -> None: ...
+    def __delitem__(self, index: int) -> None: ...
 
     @overload
-    def __delitem__(self, key: slice) -> None: ...
+    def __delitem__(self, index: slice) -> None: ...
 
-    def __delitem__(self, key: int | slice) -> None:
+    def __delitem__(self, index: int | slice) -> None:
         if self._locked:
             raise AttributeError("Cannot delete from a locked channel list")
-        self._channels.__delitem__(key)
+        self._channels.__delitem__(index)
         self._channel_mapping = {
             channel.short_name: channel for channel in self._channels
         }
@@ -759,27 +755,25 @@ class ChannelList(  #  pyright: ignore[reportIncompatibleMethodOverride]
             channel.short_name: channel for channel in self._channels
         }
 
-    def append(  #  pyright: ignore[reportIncompatibleMethodOverride]
-        self, obj: InstrumentModuleType
-    ) -> None:
+    def append(self, value: InstrumentModuleType) -> None:
         """
         Append a Channel to this list. Requires that the ChannelList is not
         locked and that the channel is of the same type as the ones in the list.
 
         Args:
-            obj: New channel to add to the list.
+            value: New channel to add to the list.
 
         """
         if self._locked:
             raise AttributeError("Cannot append to a locked channel list")
-        if not isinstance(obj, self._chan_type):
+        if not isinstance(value, self._chan_type):
             raise TypeError(
                 f"All items in a channel list must be of the same "
-                f"type. Adding {type(obj).__name__} to a "
+                f"type. Adding {type(value).__name__} to a "
                 f"list of {self._chan_type.__name__}."
             )
-        self._channel_mapping[obj.short_name] = obj
-        self._channels.append(obj)
+        self._channel_mapping[value.short_name] = value
+        self._channels.append(value)
 
     def clear(self) -> None:
         """
@@ -791,63 +785,59 @@ class ChannelList(  #  pyright: ignore[reportIncompatibleMethodOverride]
         self._channels.clear()
         self._channel_mapping.clear()
 
-    def remove(  #  pyright: ignore[reportIncompatibleMethodOverride]
-        self, obj: InstrumentModuleType
-    ) -> None:
+    def remove(self, value: InstrumentModuleType) -> None:
         """
-        Removes obj from ChannelList if not locked.
+        Removes value from ChannelList if not locked.
 
         Args:
-            obj: Channel to remove from the list.
+            value: Channel to remove from the list.
 
         """
         if self._locked:
             raise AttributeError("Cannot remove from a locked channel list")
         else:
-            self._channels.remove(obj)
-            self._channel_mapping.pop(obj.short_name)
+            self._channels.remove(value)
+            self._channel_mapping.pop(value.short_name)
 
-    def extend(  #  pyright: ignore[reportIncompatibleMethodOverride]
-        self, objects: Iterable[InstrumentModuleType]
-    ) -> None:
+    def extend(self, values: Iterable[InstrumentModuleType]) -> None:
         """
-        Insert an iterable of objects into the list of channels.
+        Insert an iterable of InstrumentModules into the list of channels.
 
         Args:
-            objects: A list of objects to add into the
+            values: A list of InstrumentModules to add into the
               :class:`ChannelList`.
 
         """
-        # objects may be a generator but we need to iterate over it twice
+        # values may be a generator but we need to iterate over it twice
         # below so copy it into a tuple just in case.
         if self._locked:
             raise AttributeError("Cannot extend a locked channel list")
-        objects_tuple = tuple(objects)
-        if not all(isinstance(obj, self._chan_type) for obj in objects_tuple):
+        values_tuple = tuple(values)
+        if not all(isinstance(value, self._chan_type) for value in values_tuple):
             raise TypeError("All items in a channel list must be of the same type.")
-        self._channels.extend(objects_tuple)
-        self._channel_mapping.update({obj.short_name: obj for obj in objects_tuple})
+        self._channels.extend(values_tuple)
+        self._channel_mapping.update(
+            {value.short_name: value for value in values_tuple}
+        )
 
-    def insert(  #  pyright: ignore[reportIncompatibleMethodOverride]
-        self, index: int, obj: InstrumentModuleType
-    ) -> None:
+    def insert(self, index: int, value: InstrumentModuleType) -> None:
         """
         Insert an object into the ChannelList at a specific index.
 
         Args:
             index: Index to insert object.
-            obj: Object of type chan_type to insert.
+            value: Object of type chan_type to insert.
 
         """
         if self._locked:
             raise AttributeError("Cannot insert into a locked channel list")
-        if not isinstance(obj, self._chan_type):
+        if not isinstance(value, self._chan_type):
             raise TypeError(
                 f"All items in a channel list must be of the same "
-                f"type. Adding {type(obj).__name__} to a list of {self._chan_type.__name__}."
+                f"type. Adding {type(value).__name__} to a list of {self._chan_type.__name__}."
             )
-        self._channels.insert(index, obj)
-        self._channel_mapping[obj.short_name] = obj
+        self._channels.insert(index, value)
+        self._channel_mapping[value.short_name] = value
 
     def get_validator(self) -> ChannelTupleValidator:
         """

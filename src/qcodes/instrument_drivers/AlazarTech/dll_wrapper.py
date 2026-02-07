@@ -62,6 +62,7 @@ def _mark_params_as_updated(*args: Any) -> None:
 def _check_error_code(
     return_code: int, func: Callable[..., Any], arguments: tuple[Any, ...]
 ) -> tuple[Any, ...]:
+    func_name: str = getattr(func, "__name__", "UnknownFunction")
     if return_code not in {API_SUCCESS, API_DMA_IN_PROGRESS}:
         argrepr = repr(arguments)
         if len(argrepr) > 100:
@@ -69,15 +70,15 @@ def _check_error_code(
 
         logger.error(
             f"Alazar API returned code {return_code} from function "
-            f"{func.__name__} with args {argrepr}"
+            f"{func_name} with args {argrepr}"
         )
 
         if return_code not in ERROR_CODES:
             raise RuntimeError(
-                f"unknown error {return_code} from function {func.__name__} with args: {argrepr}"
+                f"unknown error {return_code} from function {func_name} with args: {argrepr}"
             )
         raise RuntimeError(
-            f"error {return_code}: {ERROR_CODES[ReturnCode(return_code)]} from function {func.__name__} with args: {argrepr}"
+            f"error {return_code}: {ERROR_CODES[ReturnCode(return_code)]} from function {func_name} with args: {argrepr}"
         )
 
     return arguments
