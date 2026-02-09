@@ -4,7 +4,7 @@ import logging
 import os
 import warnings
 from collections.abc import Callable, Mapping, Sequence
-from enum import Enum
+from enum import StrEnum
 from importlib.metadata import entry_points
 from pathlib import Path
 from typing import (
@@ -555,6 +555,6 @@ class BaseDataSet(DataSetProtocol, Protocol):
         return tuple(self.description.interdeps.dependencies.keys())
 
 
-class DataSetType(str, Enum):
+class DataSetType(StrEnum):
     DataSet = "DataSet"
     DataSetInMem = "DataSetInMem"
