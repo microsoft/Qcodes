@@ -72,7 +72,7 @@ class AMI430SwitchHeater(InstrumentChannel):
             "enabled",
             label="Switch Heater Enabled",
             get_cmd=self._check_enabled,
-            set_cmd=lambda x: (self._enable() if x else self._disable()),
+            set_cmd=lambda x: self._enable() if x else self._disable(),
             vals=Bool(),
         )
         """Parameter enabled"""
@@ -80,7 +80,7 @@ class AMI430SwitchHeater(InstrumentChannel):
             "state",
             label="Switch Heater On",
             get_cmd=self._check_state,
-            set_cmd=lambda x: (self._on() if x else self._off()),
+            set_cmd=lambda x: self._on() if x else self._off(),
             vals=Bool(),
         )
         """Parameter state. Always False is the switch heater is not enabled"""
@@ -262,8 +262,8 @@ class AMIModel430(VisaInstrument):
         """Parameter current_ramp_limit"""
         self.field_ramp_limit: Parameter = self.add_parameter(
             "field_ramp_limit",
-            get_cmd=lambda: self.current_ramp_limit(),
-            set_cmd=lambda x: self.current_ramp_limit(x),
+            get_cmd=self.current_ramp_limit,
+            set_cmd=self.current_ramp_limit,
             scale=1 / float(self.ask("COIL?")),
             unit="T/s",
         )
