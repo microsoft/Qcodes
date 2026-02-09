@@ -1,0 +1,1 @@
+Add hold parameter, force_jump parameter, and set_event_jump method to the Tektronix AWG70000A driver for improved sequence control.

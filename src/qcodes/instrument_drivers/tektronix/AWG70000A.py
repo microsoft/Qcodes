@@ -8,7 +8,7 @@ import time
 import xml.etree.ElementTree as ET
 import zipfile as zf
 from functools import partial
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -206,10 +206,7 @@ class Tektronix70000AWGChannel(InstrumentChannel):
             label=f"Channel {channel} hold value",
             get_cmd=f"OUTPut{channel}:WVALUE:ANALOG:STATE?",
             set_cmd=f"OUTPut{channel}:WVALUE:ANALOG:STATE {{}}",
-            val_mapping={
-                "FIRST": "FIRST",
-                "ZERO": "ZERO",
-            },
+            vals=vals.Enum("FIRST", "ZERO"),
         )
         """ the output condition of a waveform of the specified
           channel to hold while the instrument is in the waiting-for-trigger state.
@@ -601,7 +598,7 @@ class TektronixAWG70000Base(VisaInstrument):
         )
         """Parameter all_output_off"""
 
-        self.force_jump: Parameter = self.add_parameter(
+        self.force_jump: Parameter[int, Self] = self.add_parameter(
             "force_jump",
             label="Force Jump",
             set_cmd="SOURCE1:JUMP:FORCE {}",
@@ -651,6 +648,7 @@ class TektronixAWG70000Base(VisaInstrument):
             sequence_name: The name of the sequence
             current_step: The step number in the sequence (1-indexed)
             next_step: The step number to jump to (1-indexed)
+
         """
 
         self.write(

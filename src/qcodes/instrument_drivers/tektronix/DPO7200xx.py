@@ -7,7 +7,7 @@ MSO70000/C/DX Series Digital Oscilloscopes
 import textwrap
 import time
 from functools import partial
-from typing import TYPE_CHECKING, Any, ClassVar, Generic
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Literal, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -27,7 +27,7 @@ from qcodes.parameters import (
     create_on_off_val_mapping,
 )
 from qcodes.parameters.parameter_base import ParameterDataTypeVar
-from qcodes.validators import Arrays, Enum
+from qcodes.validators import Arrays, Enum, Numbers
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -95,22 +95,20 @@ class TektronixDPO7000xx(VisaInstrument):
             "delayed_trigger",
             TektronixDPOTrigger(self, "delayed_trigger", delayed_trigger=True),
         )
-        """Instrument module acquisition"""
+        """Instrument module delayed_trigger"""
         self.acquisition: TektronixDPOAcquisition = self.add_submodule(
             "acquisition", TektronixDPOAcquisition(self, "acquisition")
         )
-
-        """Instrument module cursor"""
+        """Instrument module acquisition"""
         self.cursor: TektronixDPOCursor = self.add_submodule(
             "cursor", TektronixDPOCursor(self, "cursor")
         )
-
-        """Instrument module measure immediate"""
+        """Instrument module cursor"""
         self.measure_immediate: TektronixDPOMeasurementImmediate = self.add_submodule(
             "measure_immediate",
             TektronixDPOMeasurementImmediate(self, "measure_immediate"),
         )
-
+        """Instrument module measure immediate"""
         measurement_list = ChannelList(self, "measurement", TektronixDPOMeasurement)
         for measurement_number in range(1, self.number_of_measurements):
             measurement_name = f"measurement{measurement_number}"
@@ -472,12 +470,14 @@ class TektronixDPOChannel(InstrumentChannel):
         )
         """Instrument module waveform"""
 
-        self.coupling: Parameter = self.add_parameter(
-            "coupling",
-            get_cmd=f"{self._identifier}:COUPling?",
-            set_cmd=f"{self._identifier}:COUPling {{}}",
-            vals=Enum("AC", "DC", "DCREJECT" "GND"),
-            get_parser=str,
+        self.coupling: Parameter[Literal["AC", "DC", "DCREJECT", "GND"], Self] = (
+            self.add_parameter(
+                "coupling",
+                get_cmd=f"{self._identifier}:COUPling?",
+                set_cmd=f"{self._identifier}:COUPling {{}}",
+                vals=Enum("AC", "DC", "DCREJECT", "GND"),
+                get_parser=str,
+            )
         )
         """Parameter coupling: 'AC', 'DC', 'DCREJECT', 'GND'"""
 
@@ -504,6 +504,7 @@ class TektronixDPOChannel(InstrumentChannel):
             get_cmd=f"{self._identifier}:POS?",
             set_cmd=f"{self._identifier}:POS {{}}",
             get_parser=float,
+            vals=Numbers(-8, 8),
             unit="div",
         )
         """Parameter position [-8, 8] divisions"""
@@ -715,7 +716,10 @@ class TektronixDPOAcquisition(InstrumentChannel):
     ) -> None:
         super().__init__(parent, name, **kwargs)
 
-        self.mode: Parameter = self.add_parameter(
+        self.mode: Parameter[
+            Literal["sample", "peakdetect", "average", "high_res", "wfmdb", "envelope"],
+            Self,
+        ] = self.add_parameter(
             "mode",
             get_cmd="ACQuire:MODe?",
             set_cmd="ACQuire:MODe {}",
@@ -724,41 +728,57 @@ class TektronixDPOAcquisition(InstrumentChannel):
                 "peakdetect",
                 "average",
                 "high_res",
-                "average",
                 "wfmdb",
                 "envelope",
             ),
             get_parser=str.lower,
         )
-        """Parameter mode"""
+        """Sample mode. This command sets or queries the acquisition mode. The acquisition mode
+        determines how the instrument acquires and processes data. The available acquisition modes are:
+        - Sample:       The instrument acquires data at the specified sample rate and record length.
+                        This is the default acquisition mode.
+        - Peak Detect:  The instrument captures the maximum and minimum values for each sample interval. This mode is useful
+                        for capturing narrow pulses or glitches that may be missed in sample mode.
+        - Average:      The instrument acquires multiple waveforms and averages them together to reduce noise.
+                        The number of waveforms to average can be set with the 'averages' parameter.
+        - High Res:     The instrument acquires data at a higher resolution by using oversampling and digital filtering.
+                            This mode is useful for capturing small signal details.
+        - WfmDB:        Statistical database aquisition mode. The instrument acquires data and stores it in a statistical
+                        database for later analysis.
+        - Envelope:     The instrument captures the maximum and minimum values for each sample interval over multiple acquisitions
+        """
 
-        self.state: Parameter = self.add_parameter(
-            "state",
-            get_cmd="ACQuire:STATE?",
-            set_cmd=f"ACQuire:STATE {{}}",
-            vals=Enum(
-                "ON",
-                "OFF",
-                "RUN",
-                "STOP",
-            ),
-            get_parser=str.lower,
+        self.state: Parameter[Literal["ON", "OFF", "RUN", "STOP"], Self] = (
+            self.add_parameter(
+                "state",
+                get_cmd="ACQuire:STATE?",
+                set_cmd="ACQuire:STATE {}",
+                vals=Enum(
+                    "ON",
+                    "OFF",
+                    "RUN",
+                    "STOP",
+                ),
+                get_parser=str.upper,
+            )
         )
-        """This command starts or stops acquisitions. When state is set to ON or RUN, a
+        """
+        This command starts or stops acquisitions. When state is set to ON or RUN, a
         new acquisition will be started. If the last acquisition was a single acquisition
         sequence, a new single sequence acquisition will be started. If the last acquisition
         was continuous, a new continuous acquisition will be started.
-        
+
         Args:
             state: 'ON', 'OFF', 'RUN', or 'STOP'
+
         """
 
         self.stop_after: Parameter = self.add_parameter(
             "stop_after",
             get_cmd="ACQuire:STOPAfter?",
-            set_cmd=f"ACQuire:STOPAfter {{}}",
+            set_cmd="ACQuire:STOPAfter {}",
             vals=Enum("SEQUENCE", "RUNSTOP"),
-            get_parser=str.lower,
+            get_parser=str.upper,
         )
         """This command sets or queries whether the instrument continually acquires
         acquisitions or acquires a single sequence. Pressing SINGLE on the front
@@ -1155,6 +1175,7 @@ class TektronixDPOMeasurementImmediate(InstrumentChannel):
         - x2: Set or get the x2 position of the cursor (in seconds)
         - y1: Set or get the y1 position of the cursor (in Volts)
         - y2: Set or get the y2 position of the cursor (in Volts)
+
     """
 
     def __init__(
@@ -1224,6 +1245,7 @@ class TektronixDPOCursor(InstrumentChannel):
         - x2: Set or get the x2 position of the cursor (in seconds)
         - y1: Set or get the y1 position of the cursor (in Volts)
         - y2: Set or get the y2 position of the cursor (in Volts)
+
     """
 
     def __init__(
