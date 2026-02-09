@@ -4,7 +4,7 @@ import logging
 import struct
 import warnings
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -32,33 +32,32 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-class LuaSweepParameter(ParameterWithSetpoints):
+class LuaSweepParameter(ParameterWithSetpoints[npt.NDArray, "Keithley2600Channel"]):
     """
     Parameter class to hold the data from a
     deployed Lua script sweep.
     """
 
-    def _set_mode(self, mode: str) -> None:
-        if mode == "IV":
-            self.unit = "A"
-            self.setpoint_names = ("Voltage",)
-            self.setpoint_units = ("V",)
-            self.label = "current"
-            self._short_name = "iv_sweep"
-
-        if mode == "VI":
-            self.unit = "V"
-            self.setpoint_names = ("Current",)
-            self.setpoint_units = ("A",)
-            self.label = "voltage"
-            self._short_name = "vi_sweep"
-
-        if mode == "VIfourprobe":
-            self.unit = "V"
-            self.setpoint_names = ("Current",)
-            self.setpoint_units = ("A",)
-            self.label = "voltage"
-            self._short_name = "vi_sweep_four_probe"
+    def _set_mode(self, mode: Literal["IV", "VI", "VIfourprobe"]) -> None:
+        match mode:
+            case "IV":
+                self.unit = "A"
+                self.setpoint_names = ("Voltage",)
+                self.setpoint_units = ("V",)
+                self.label = "current"
+                self._short_name = "iv_sweep"
+            case "VI":
+                self.unit = "V"
+                self.setpoint_names = ("Current",)
+                self.setpoint_units = ("A",)
+                self.label = "voltage"
+                self._short_name = "vi_sweep"
+            case "VIfourprobe":
+                self.unit = "V"
+                self.setpoint_names = ("Current",)
+                self.setpoint_units = ("A",)
+                self.label = "voltage"
+                self._short_name = "vi_sweep_four_probe"
 
     def _fast_sweep(self) -> npt.NDArray:
         if self.instrument is None:
@@ -78,23 +77,24 @@ class LuaSweepParameter(ParameterWithSetpoints):
 
         dV = (stop - start) / (steps - 1)
 
-        if mode == "IV":
-            meas = "i"
-            source = "v"
-            func = "1"
-            sense_mode = "0"
-        elif mode == "VI":
-            meas = "v"
-            source = "i"
-            func = "0"
-            sense_mode = "0"
-        elif mode == "VIfourprobe":
-            meas = "v"
-            source = "i"
-            func = "0"
-            sense_mode = "1"
-        else:
-            raise ValueError(f"Invalid fastsweep mode {mode}")
+        match mode:
+            case "IV":
+                meas = "i"
+                source = "v"
+                func = "1"
+                sense_mode = "0"
+            case "VI":
+                meas = "v"
+                source = "i"
+                func = "0"
+                sense_mode = "0"
+            case "VIfourprobe":
+                meas = "v"
+                source = "i"
+                func = "0"
+                sense_mode = "1"
+            case _:
+                raise ValueError(f"Invalid fastsweep mode {mode}")
 
         script = [
             f"{channel}.measure.nplc = {nplc:.12f}",
@@ -125,7 +125,7 @@ class LuaSweepParameter(ParameterWithSetpoints):
         return data
 
 
-class FastSweepSetpoints(Parameter):
+class FastSweepSetpoints(Parameter[npt.NDArray, "Keithley2600Channel"]):
     """
     A simple :class:`.Parameter` that holds all the setpoints (relative to the
     measurement start) at which the points of the time trace were acquired.
@@ -610,7 +610,7 @@ class Keithley2600Channel(InstrumentChannel):
         )
         """Current limit e.g. the maximum current allowed in voltage mode. If exceeded the voltage will be clipped."""
 
-        self.fastsweep_npts: Parameter = self.add_parameter(
+        self.fastsweep_npts: Parameter[int, Self] = self.add_parameter(
             "fastsweep_npts",
             initial_value=20,
             label="Number of fastweep points",
@@ -619,12 +619,12 @@ class Keithley2600Channel(InstrumentChannel):
         )
         """Parameter fastweep_npts"""
 
-        self.fastsweep_start: Parameter = self.add_parameter(
+        self.fastsweep_start: Parameter[float, Self] = self.add_parameter(
             "fastsweep_start", label="fastsweep start", get_cmd=None, set_cmd=None
         )
         """Starting value of fastsweep. Can be current or voltage."""
 
-        self.fastsweep_stop: Parameter = self.add_parameter(
+        self.fastsweep_stop: Parameter[float, Self] = self.add_parameter(
             "fastsweep_stop", label="fastsweep stop", get_cmd=None, set_cmd=None
         )
         """Stopping value of fastsweep. Can be current or voltage."""
@@ -647,12 +647,14 @@ class Keithley2600Channel(InstrumentChannel):
         )
         """Performs buffered readout of desired sweep mode."""
 
-        self.fastsweep_mode: Parameter = self.add_parameter(
-            "fastsweep_mode",
-            initial_value="IV",
-            get_cmd=None,
-            set_cmd=self.fastsweep._set_mode,
-            vals=vals.Enum("IV", "VI", "VIfourprobe"),
+        self.fastsweep_mode: Parameter[Literal["IV", "VI", "VIfourprobe"], Self] = (
+            self.add_parameter(
+                "fastsweep_mode",
+                initial_value="IV",
+                get_cmd=None,
+                set_cmd=self.fastsweep._set_mode,
+                vals=vals.Enum("IV", "VI", "VIfourprobe"),
+            )
         )
         """Parameter fastsweep_mode"""
 
