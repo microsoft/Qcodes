@@ -306,7 +306,7 @@ class OxfordTriton(IPInstrument):
         return self._get_response_value(self.ask(cmd[:-2]) + cmd[-2:])
 
     def _get_response(self, msg: str) -> str:
-        return msg.split(":")[-1]
+        return msg.rsplit(":", maxsplit=1)[-1]
 
     def _get_response_value(self, msg: str) -> float | str | list[float] | None:
         msg = self._get_response(msg)
@@ -551,12 +551,12 @@ class OxfordTriton(IPInstrument):
     def _parse_temp(self, msg: str) -> float | None:
         if "NOT_FOUND" in msg:
             return None
-        return float(msg.split("SIG:TEMP:")[-1].strip("K"))
+        return float(msg.rsplit("SIG:TEMP:", maxsplit=1)[-1].strip("K"))
 
     def _parse_pres(self, msg: str) -> float | None:
         if "NOT_FOUND" in msg:
             return None
-        return float(msg.split("SIG:PRES:")[-1].strip("mB")) * 1e3
+        return float(msg.rsplit("SIG:PRES:", maxsplit=1)[-1].strip("mB")) * 1e3
 
     def _recv(self) -> str:
         return super()._recv().rstrip()
@@ -579,7 +579,7 @@ class OxfordTriton(IPInstrument):
     def _get_parser_pump_speed(self, msg: str) -> float | None:
         if "NOT_FOUND" in msg:
             return None
-        return float(msg.split("SPD:")[-1].strip("Hz"))
+        return float(msg.rsplit("SPD:", maxsplit=1)[-1].strip("Hz"))
 
     def _add_temp_state(self) -> None:
         for i in range(1, 17):
@@ -599,7 +599,7 @@ class OxfordTriton(IPInstrument):
     def _get_parser_state(self, key: str, msg: str) -> str | None:
         if "NOT_FOUND" in msg:
             return None
-        return msg.split(f"{key}:")[-1]
+        return msg.rsplit(f"{key}:", maxsplit=1)[-1]
 
 
 Triton = OxfordTriton
