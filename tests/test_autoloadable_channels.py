@@ -80,7 +80,7 @@ class MockBackend(MockBackendBase):
 
         self._command_dict = {
             r":INST:CHN(\d):HLO": lambda chn: (
-                self._greetings[chn] + " from channel " + str(chn)
+                f"{self._greetings[chn]} from channel {chn}"
             ),
             r":INST:CHN:ADD (\d), (.+)": self._add_channel,
             r":INST:CHN:DEL (\d)": self._channel_catalog.remove,
