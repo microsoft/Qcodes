@@ -1,0 +1,2 @@
+Refactored ``Keithley2600`` driver to use `ParameterWithSetpoints` instead
+of relying on deprecated `qcodes_loop` code.
