@@ -752,7 +752,7 @@ class TektronixDPOAcquisition(InstrumentChannel):
             self.add_parameter(
                 "state",
                 get_cmd="ACQuire:STATE?",
-                set_cmd=f"ACQuire:STATE {{}}",
+                set_cmd="ACQuire:STATE {}",
                 vals=Enum(
                     "ON",
                     "OFF",
@@ -767,7 +767,7 @@ class TektronixDPOAcquisition(InstrumentChannel):
         new acquisition will be started. If the last acquisition was a single acquisition
         sequence, a new single sequence acquisition will be started. If the last acquisition
         was continuous, a new continuous acquisition will be started.
-        
+
         Args:
             state: 'ON', 'OFF', 'RUN', or 'STOP'
 
@@ -776,7 +776,7 @@ class TektronixDPOAcquisition(InstrumentChannel):
         self.stop_after: Parameter = self.add_parameter(
             "stop_after",
             get_cmd="ACQuire:STOPAfter?",
-            set_cmd=f"ACQuire:STOPAfter {{}}",
+            set_cmd="ACQuire:STOPAfter {}",
             vals=Enum("SEQUENCE", "RUNSTOP"),
             get_parser=str.upper,
         )
@@ -1175,6 +1175,7 @@ class TektronixDPOMeasurementImmediate(InstrumentChannel):
         - x2: Set or get the x2 position of the cursor (in seconds)
         - y1: Set or get the y1 position of the cursor (in Volts)
         - y2: Set or get the y2 position of the cursor (in Volts)
+
     """
 
     def __init__(
@@ -1244,6 +1245,7 @@ class TektronixDPOCursor(InstrumentChannel):
         - x2: Set or get the x2 position of the cursor (in seconds)
         - y1: Set or get the y1 position of the cursor (in Volts)
         - y2: Set or get the y2 position of the cursor (in Volts)
+
     """
 
     def __init__(
