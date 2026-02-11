@@ -8,7 +8,7 @@ import time
 import xml.etree.ElementTree as ET
 import zipfile as zf
 from functools import partial
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, Literal, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -201,7 +201,7 @@ class Tektronix70000AWGChannel(InstrumentChannel):
         )
         """Channel State: (OFF: 0, ON: 1)"""
 
-        self.hold: Parameter = self.add_parameter(
+        self.hold: Parameter[Literal["FIRST", "ZERO"], Self] = self.add_parameter(
             "hold",
             label=f"Channel {channel} hold value",
             get_cmd=f"OUTPut{channel}:WVALUE:ANALOG:STATE?",
