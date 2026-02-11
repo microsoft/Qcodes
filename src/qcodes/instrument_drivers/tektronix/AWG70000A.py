@@ -191,7 +191,7 @@ class Tektronix70000AWGChannel(InstrumentChannel):
         if channel not in list(range(1, num_channels + 1)):
             raise ValueError("Illegal channel value.")
 
-        self.state: Parameter = self.add_parameter(
+        self.state: Parameter[int, Self] = self.add_parameter(
             "state",
             label=f"Channel {channel} state",
             get_cmd=f"OUTPut{channel}:STATe?",
