@@ -768,8 +768,7 @@ class TektronixDPOAcquisition(InstrumentChannel):
         sequence, a new single sequence acquisition will be started. If the last acquisition
         was continuous, a new continuous acquisition will be started.
 
-        Args:
-            state: 'ON', 'OFF', 'RUN', or 'STOP'
+        State can be 'ON', 'OFF', 'RUN', or 'STOP'.
 
         """
 
@@ -815,7 +814,7 @@ class TektronixDPOTrigger(InstrumentChannel):
         super().__init__(parent, name, **kwargs)
         self._identifier = "B" if delayed_trigger else "A"
 
-        trigger_types = ["EDGE", "edge", "logic", "pulse"]
+        trigger_types = ["edge", "logic", "pulse"]
         if self._identifier == "A":
             trigger_types.extend(
                 ["video", "i2c", "can", "spi", "communication", "serial", "rs232"]
@@ -877,7 +876,10 @@ class TektronixDPOTrigger(InstrumentChannel):
             vals=Enum(*edge_couplings),
             get_parser=str.lower,
         )
-        """Trigger edge coupling: 'ac', 'dc', 'hfrej', 'lfrej', 'noiserej', 'atrigger'"""
+        """Trigger edge coupling for A and B triggers:
+        Trigger A: 'ac', 'dc', 'hfrej', 'lfrej', 'noiserej'
+        Trigger B: 'ac', 'dc', 'hfrej', 'lfrej', 'noiserej', 'atrigger'
+        """
 
         self.edge_slope: Parameter = self.add_parameter(
             "edge_slope",
@@ -1162,19 +1164,10 @@ class TektronixDPOMeasurementStatistics(InstrumentChannel):
 
 class TektronixDPOMeasurementImmediate(InstrumentChannel):
     """
-    The cursor submodule allows you to set and retrieve
-    information regarding the cursor type, state, and
-    positions. The cursor can be used to measure
-    voltage and time differences between two points on
-    the waveform display.
-
-    Methods:
-        - function: Set or get the cursor type (e.g., horizontal bars, vertical bars, etc.)
-        - state: Set or get the cursor state (ON or OFF)
-        - x1: Set or get the x1 position of the cursor (in seconds)
-        - x2: Set or get the x2 position of the cursor (in seconds)
-        - y1: Set or get the y1 position of the cursor (in Volts)
-        - y2: Set or get the y2 position of the cursor (in Volts)
+    The measurement commands let you specify an additional measurement, IMMed. The immediate measurement
+    has no front panel equivalent. Immediate measurements are never displayed.
+    Because they are computed only when needed, immediate measurements slow the
+    waveform update rate less than displayed measurements.
 
     """
 
@@ -1192,12 +1185,22 @@ class TektronixDPOMeasurementImmediate(InstrumentChannel):
             set_cmd="MEASUrement:GATing {}",
             vals=Enum("ON", "OFF", "ZOOM1", "ZOOM2", "ZOOM3", "ZOOM4", "CURSOR"),
         )
+        """Gating for the immediate measurement. Gating allows you to specify a subset of the waveform
+        to be measured. When gating is on, the measurement is performed only on the portion of the waveform
+        defined by the gate. The gate can be defined by zooming in on a portion of
+        the waveform and selecting one of the zoom gates (ZOOM1, ZOOM2, ZOOM3, ZOOM4), or by using the
+        cursor gate (CURSOR), which uses the horizontal positions of the cursors to define the gate.
+        """
+
         self.source1: Parameter = self.add_parameter(
             "source1",
             get_cmd="MEASUrement:IMMed:SOUrce1?",
             set_cmd="MEASUrement:IMMed:SOUrce1 {}",
             vals=Enum(*TektronixDPOWaveform.valid_identifiers),
         )
+        """Source 1 for the immediate measurement:
+        CH1, CH2, CH3, CH4, MATH1, MATH2, MATH3, MATH4,
+        REF1, REF2, REF3, REF4, HISTogram"""
 
         self.source2: Parameter = self.add_parameter(
             "source2",
@@ -1205,29 +1208,93 @@ class TektronixDPOMeasurementImmediate(InstrumentChannel):
             set_cmd="MEASUrement:IMMed:SOUrce2 {}",
             vals=Enum(*TektronixDPOWaveform.valid_identifiers),
         )
+        """Source 2 for the immediate measurement.  Source2 measurements only apply
+        to phase and delay measurement types, which require both a target (Source1)
+        and reference (Source2) source.
+        CH1, CH2, CH3, CH4, MATH1, MATH2, MATH3, MATH4,
+        REF1, REF2, REF3, REF4
+        """
 
         self.type: Parameter = self.add_parameter(
             "type",
             get_cmd="MEASUrement:IMMed:TYPE?",
             set_cmd="MEASUrement:IMMed:TYPE {}",
             vals=Enum(
+                "ACRMS",
+                "AMPlitude",
+                "AREa",
+                "BURst",
+                "CARea",
+                "CMEan",
+                "CRMs",
+                "DELay",
+                "DISTDUty",
+                "EXTINCTDB",
+                "EXTINCTPCT",
+                "EXTINCTRATIO",
+                "EYEHeight",
+                "EYEWIdth",
+                "FALL",
+                "FREQuency",
+                "HIGH",
+                "HITs",
+                "LOW",
+                "MAXimum",
                 "MEAN",
+                "MEDian",
+                "MINImum",
+                "NCROss",
+                "NDUty",
+                "NOVershoot",
+                "NWIdth",
+                "PBASe",
+                "PCROss",
+                "PCTCROss",
+                "PDUty",
+                "PEAKHits",
+                "PERIod",
+                "PHAse",
+                "PK2Pk",
+                "PKPKJitter",
+                "PKPKNoise",
+                "POVershoot",
+                "PTOP",
+                "PWIdth",
+                "QFACtor",
+                "RISe",
+                "RMS",
+                "RMSJitter",
+                "RMSNoise",
+                "SIGMA1",
+                "SIGMA2",
+                "SIGMA3",
+                "SIXSigmajit",
+                "SNRatio",
+                "STDdev",
+                "UNDEFINED",
+                "WAVEFORMS",
             ),
             get_parser=str.lower,
         )
-        """Cursor Type [OFF, HBARS, VBARS, SCREEN, WAVEFORM]"""
+        """
+        Immediate measurement type
+        Please see page 2-547 of the programmers manual for a detailed description of these arguments.
+        https://download.tek.com/manual/MSO-DPO5000-B-DPO7000-C-DPO70000-B-C-D-DX-DSA70000-B-C-D-and-MSO70000-C-DX-_2.pdf
+        """
 
         self.units: Parameter = self.add_parameter(
             "units",
             get_cmd="MEASUrement:IMMed:UNITS?",
             get_parser=strip_quotes,
         )
+        """Units of the immediate measurement"""
 
         self.value: Parameter = self.add_parameter(
             "value",
             get_cmd="MEASUrement:IMMed:VALue?",
             get_parser=float,
         )
+        """The value of the immediate measurement"""
 
 
 class TektronixDPOCursor(InstrumentChannel):
