@@ -9,28 +9,32 @@ if TYPE_CHECKING:
     from collections.abc import Generator
 
 
+class DummyHolder(DummyInstrument):
+    def __init__(self, name: str) -> None:
+        super().__init__(name)
+        self.test = self.add_parameter(
+            "test",
+            parameter_class=InstrumentRefParameter,
+            initial_value=None,
+        )
+
+
 @pytest.fixture(name="instrument_a")
-def _make_instrument_a() -> "Generator[DummyInstrument, None, None]":
-    a = DummyInstrument("dummy_holder")
-    try:
-        yield a
-    finally:
-        a.close()
+def _make_instrument_a() -> "Generator[DummyHolder, None, None]":
+
+    a = DummyHolder("dummy_holder")
+    yield a
+    a.close()
 
 
 @pytest.fixture(name="instrument_d")
 def _make_instrument_d() -> "Generator[DummyInstrument, None, None]":
     d = DummyInstrument("dummy")
-    try:
-        yield d
-    finally:
-        d.close()
+    yield d
+    d.close()
 
 
-def test_get_instr(
-    instrument_a: DummyInstrument, instrument_d: DummyInstrument
-) -> None:
-    instrument_a.add_parameter("test", parameter_class=InstrumentRefParameter)
+def test_get_instr(instrument_a: DummyHolder, instrument_d: DummyInstrument) -> None:
 
     instrument_a.test.set(instrument_d.name)
 
