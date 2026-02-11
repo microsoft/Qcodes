@@ -1044,7 +1044,7 @@ class ParameterBase(
         full name refer to :meth:`full_name`."""
         return self._short_name
 
-    @property
+    @cached_property
     def full_name(self) -> str:
         """
         Name of the parameter including the name of the instrument and
