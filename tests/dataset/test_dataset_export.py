@@ -1579,13 +1579,13 @@ def test_multi_index_options_non_grid(mock_dataset_non_grid: DataSet) -> None:
 
 def test_multi_index_wrong_option(mock_dataset_non_grid: DataSet) -> None:
     with pytest.raises(ValueError, match="Invalid value for use_multi_index"):
-        mock_dataset_non_grid.to_xarray_dataset(use_multi_index=True)  # pyright: ignore[reportArgumentType]
+        mock_dataset_non_grid.to_xarray_dataset(use_multi_index=True)  # type: ignore
 
     with pytest.raises(ValueError, match="Invalid value for use_multi_index"):
-        mock_dataset_non_grid.to_xarray_dataset(use_multi_index=False)  # pyright: ignore[reportArgumentType]
+        mock_dataset_non_grid.to_xarray_dataset(use_multi_index=False)  # type: ignore
 
     with pytest.raises(ValueError, match="Invalid value for use_multi_index"):
-        mock_dataset_non_grid.to_xarray_dataset(use_multi_index="perhaps")  # pyright: ignore[reportArgumentType]
+        mock_dataset_non_grid.to_xarray_dataset(use_multi_index="perhaps")  # type: ignore
 
 
 def test_geneate_pandas_index() -> None:

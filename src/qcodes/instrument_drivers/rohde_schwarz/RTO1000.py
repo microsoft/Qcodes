@@ -1,6 +1,5 @@
 # All manual references are to R&S RTO Digital Oscilloscope User Manual
 # for firmware 3.65, 2017
-
 import logging
 import time
 import warnings
@@ -12,6 +11,8 @@ from packaging import version
 
 import qcodes.validators as vals
 from qcodes.instrument import (
+    ChannelList,
+    ChannelTuple,
     Instrument,
     InstrumentBaseKWArgs,
     InstrumentChannel,
@@ -26,9 +27,13 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-class ScopeTrace(ArrayParameter):
+class ScopeTrace(ArrayParameter[npt.NDArray, "RohdeSchwarzRTO1000ScopeChannel"]):
     def __init__(
-        self, name: str, instrument: InstrumentChannel, channum: int, **kwargs: Any
+        self,
+        name: str,
+        instrument: "RohdeSchwarzRTO1000ScopeChannel",
+        channum: int,
+        **kwargs: Any,
     ) -> None:
         """
         The ScopeTrace parameter is attached to a channel of the oscilloscope.
@@ -52,6 +57,12 @@ class ScopeTrace(ArrayParameter):
         self.channel = instrument
         self.channum = channum
         self._trace_ready = False
+
+    @property
+    def root_instrument(self) -> "RohdeSchwarzRTO1000":
+        root_instrument = super().root_instrument
+        assert isinstance(root_instrument, RohdeSchwarzRTO1000)
+        return root_instrument
 
     def prepare_trace(self) -> None:
         """
@@ -452,7 +463,7 @@ class RohdeSchwarzRTO1000ScopeMeasurement(InstrumentChannel):
 ScopeMeasurement = RohdeSchwarzRTO1000ScopeMeasurement
 
 
-class RohdeSchwarzRTO1000ScopeChannel(InstrumentChannel):
+class RohdeSchwarzRTO1000ScopeChannel(InstrumentChannel["RohdeSchwarzRTO1000"]):
     """
     Class to hold an input channel of the scope.
 
@@ -462,7 +473,7 @@ class RohdeSchwarzRTO1000ScopeChannel(InstrumentChannel):
 
     def __init__(
         self,
-        parent: Instrument,
+        parent: "RohdeSchwarzRTO1000",
         name: str,
         channum: int,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
@@ -631,12 +642,12 @@ class RohdeSchwarzRTO1000ScopeChannel(InstrumentChannel):
     def _set_range(self, value: float) -> None:
         self.scale.cache.set(value / 10)
 
-        self._parent.write(f"CHANnel{self.channum}:RANGe {value}")
+        self.parent.write(f"CHANnel{self.channum}:RANGe {value}")
 
     def _set_scale(self, value: float) -> None:
         self.range.cache.set(value * 10)
 
-        self._parent.write(f"CHANnel{self.channum}:SCALe {value}")
+        self.parent.write(f"CHANnel{self.channum}:SCALe {value}")
 
 
 ScopeChannel = RohdeSchwarzRTO1000ScopeChannel
@@ -966,15 +977,31 @@ Warning/Bug: By opening the HD acquisition menu on the scope, this value will be
         """Parameter error_next"""
 
         # Add the channels to the instrument
+        scope_channels = ChannelList(
+            self, "scope_channels", RohdeSchwarzRTO1000ScopeChannel
+        )
+        """ChannelTuple holding the scope channels.
+        """
         for ch in range(1, self.num_chans + 1):
             chan = RohdeSchwarzRTO1000ScopeChannel(self, f"channel{ch}", ch)
+            scope_channels.append(chan)
             self.add_submodule(f"ch{ch}", chan)
-
+        self.scope_channels: ChannelTuple[RohdeSchwarzRTO1000ScopeChannel] = (
+            self.add_submodule("scope_channels", scope_channels.to_channel_tuple())
+        )
+        measurements = ChannelList(
+            self, "measurements", RohdeSchwarzRTO1000ScopeMeasurement
+        )
         for measId in range(1, self.num_meas + 1):
             measCh = RohdeSchwarzRTO1000ScopeMeasurement(
                 self, f"measurement{measId}", measId
             )
+            measurements.append(measCh)
             self.add_submodule(f"meas{measId}", measCh)
+        self.measurements: ChannelTuple[RohdeSchwarzRTO1000ScopeMeasurement] = (
+            self.add_submodule("measurements", measurements.to_channel_tuple())
+        )
+        """ChannelTuple holding the scope measurements."""
 
         self.add_function("stop", call_cmd="STOP")
         self.add_function("reset", call_cmd="*RST")
@@ -1055,10 +1082,8 @@ Warning/Bug: By opening the HD acquisition menu on the scope, this value will be
         """
         Make the scope traces be not ready.
         """
-        self.ch1.trace._trace_ready = False
-        self.ch2.trace._trace_ready = False
-        self.ch3.trace._trace_ready = False
-        self.ch4.trace._trace_ready = False
+        for chan in self.scope_channels:
+            chan.trace._trace_ready = False
 
     def _set_trigger_level(self, value: float) -> None:
         """
@@ -1071,7 +1096,7 @@ Warning/Bug: By opening the HD acquisition menu on the scope, this value will be
         source = trans[self.trigger_source.get()]
         if source != 5:
             submodule = self.submodules[f"ch{source}"]
-            assert isinstance(submodule, InstrumentChannel)
+            assert isinstance(submodule, RohdeSchwarzRTO1000ScopeChannel)
             v_range = submodule.range()
             offset = submodule.offset()
 

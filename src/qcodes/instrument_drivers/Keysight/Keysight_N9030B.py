@@ -98,7 +98,6 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel["KeysightN9030B"]):
         **kwargs: Unpack[InstrumentBaseKWArgs],
     ):
         super().__init__(parent, name, *arg, **kwargs)
-        self.root_instrument: KeysightN9030B
 
         self._additional_wait = additional_wait
         self._min_freq = -8e7
@@ -111,7 +110,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel["KeysightN9030B"]):
         }
         opt: str | None = None
         for hw_opt_for_max_freq in self._valid_max_freq:
-            if hw_opt_for_max_freq in self.root_instrument.options():
+            if hw_opt_for_max_freq in self.parent.options():
                 opt = hw_opt_for_max_freq
         assert opt is not None
         self._max_freq = self._valid_max_freq[opt]
@@ -454,23 +453,22 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel["KeysightN9030B"]):
         """
         Gets data from the measurement.
         """
-        root_instr = self.root_instrument
         # Check if we should run a new sweep
-        auto_sweep = root_instr.auto_sweep()
+        auto_sweep = self.parent.auto_sweep()
 
         if auto_sweep:
             # If we need to run a sweep, we need to set the timeout to take into account
             # the sweep time
             timeout = self.sweep_time() + self._additional_wait
-            with root_instr.timeout.set_to(timeout):
-                data = root_instr.visa_handle.query_binary_values(
-                    f":READ:{root_instr.measurement()}{trace_num}?",
+            with self.parent.timeout.set_to(timeout):
+                data = self.parent.visa_handle.query_binary_values(
+                    f":READ:{self.parent.measurement()}{trace_num}?",
                     datatype="d",
                     is_big_endian=False,
                 )
         else:
-            data = root_instr.visa_handle.query_binary_values(
-                f":FETC:{root_instr.measurement()}{trace_num}?",
+            data = self.parent.visa_handle.query_binary_values(
+                f":FETC:{self.parent.measurement()}{trace_num}?",
                 datatype="d",
                 is_big_endian=False,
             )
@@ -491,9 +489,9 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel["KeysightN9030B"]):
         """
         Sets up the Swept SA measurement sweep for Spectrum Analyzer Mode.
         """
-        self.root_instrument.mode("SA")
-        if "SAN" in self.root_instrument.available_meas():
-            self.root_instrument.measurement("SAN")
+        self.parent.mode("SA")
+        if "SAN" in self.parent.available_meas():
+            self.parent.measurement("SAN")
         else:
             raise RuntimeError(
                 "Swept SA measurement is not available on your "
@@ -537,7 +535,7 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel["KeysightN9030B"]):
         }
         opt: str | None = None
         for hw_opt_for_max_freq in self._valid_max_freq:
-            if hw_opt_for_max_freq in self.root_instrument.options():
+            if hw_opt_for_max_freq in self.parent.options():
                 opt = hw_opt_for_max_freq
         assert opt is not None
         self._max_freq = self._valid_max_freq[opt]
@@ -668,9 +666,8 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel["KeysightN9030B"]):
         """
         Gets data from the measurement.
         """
-        root_instr = self.root_instrument
-        measurement = root_instr.measurement()
-        raw_data = root_instr.visa_handle.query_binary_values(
+        measurement = self.parent.measurement()
+        raw_data = self.parent.visa_handle.query_binary_values(
             f":READ:{measurement}1?",
             datatype="d",
             is_big_endian=False,
@@ -684,7 +681,7 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel["KeysightN9030B"]):
             return -1 * np.ones(self.npts())
 
         try:
-            data = root_instr.visa_handle.query_binary_values(
+            data = self.parent.visa_handle.query_binary_values(
                 f":READ:{measurement}{trace_num}?",
                 datatype="d",
                 is_big_endian=False,
@@ -701,9 +698,9 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel["KeysightN9030B"]):
         """
         Sets up the Log Plot measurement sweep for Phase Noise Mode.
         """
-        self.root_instrument.mode("PNOISE")
-        if "LPL" in self.root_instrument.available_meas():
-            self.root_instrument.measurement("LPL")
+        self.parent.mode("PNOISE")
+        if "LPL" in self.parent.available_meas():
+            self.parent.measurement("LPL")
         else:
             raise RuntimeError(
                 "Log Plot measurement is not available on your "

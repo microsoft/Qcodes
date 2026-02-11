@@ -163,7 +163,7 @@ class MockAMI430:
             if callable(handler):
                 # some of the callables in the dict does not take arguments.
                 # ignore that warning for now since this is mock code only
-                rval = handler(args)  # pyright: ignore[reportCallIssue]
+                rval = handler(args)  # pyright: ignore[reportCallIssue]  # ty: ignore[ too-many-positional-arguments]
             else:
                 rval = handler
 

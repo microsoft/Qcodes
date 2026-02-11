@@ -397,7 +397,7 @@ class FrequencySweep(
         return self.instrument._get_sweep_data()
 
 
-class RohdeSchwarzZNBChannel(InstrumentChannel):
+class RohdeSchwarzZNBChannel(InstrumentChannel["RohdeSchwarzZNBBase"]):
     def __init__(
         self,
         parent: "RohdeSchwarzZNBBase",
@@ -432,7 +432,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
         if existing_trace_to_bind_to is None:
             self._tracename = f"Trc{channel}"
         else:
-            traces = self._parent.ask("CONFigure:TRACe:CATalog?")
+            traces = self.parent.ask("CONFigure:TRACe:CATalog?")
             if existing_trace_to_bind_to not in traces:
                 raise RuntimeError(
                     f"Trying to bind to"
@@ -759,12 +759,10 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
 
     def set_electrical_delay_auto(self) -> None:
         n = self._instrument_channel
-        self.root_instrument.write(f"SENS{n}:CORR:EDEL:AUTO ONCE")
+        self.parent.write(f"SENS{n}:CORR:EDEL:AUTO ONCE")
 
     def autoscale(self) -> None:
-        self.root_instrument.write(
-            f"DISPlay:TRACe1:Y:SCALe:AUTO ONCE, {self._tracename}"
-        )
+        self.parent.write(f"DISPlay:TRACe1:Y:SCALe:AUTO ONCE, {self._tracename}")
 
     def _get_format(self, tracename: str) -> str:
         n = self._instrument_channel
@@ -925,7 +923,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
 
         # preserve original state of the znb
         with self.status.set_to(1):
-            self.root_instrument.cont_meas_off()
+            self.parent.cont_meas_off()
             try:
                 # if force polar is set, the SDAT data format will be used.
                 # Here the data will be transferred as a complex number
@@ -935,7 +933,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
                 else:
                     data_format_command = "FDAT"
 
-                with self.root_instrument.timeout.set_to(self._get_timeout()):
+                with self.parent.timeout.set_to(self._get_timeout()):
                     # instrument averages over its last 'avg' number of sweeps
                     # need to ensure averaged result is returned
                     for _ in range(self.avg()):
@@ -950,7 +948,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
                 if self.format() in ["Polar", "Complex", "Smith", "Inverse Smith"]:
                     data = data[0::2] + 1j * data[1::2]
             finally:
-                self.root_instrument.cont_meas_on()
+                self.parent.cont_meas_on()
         return data
 
     def setup_cw_sweep(self) -> None:
@@ -977,7 +975,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
         self.auto_sweep_time_enabled(True)
         # Set cont measurement off here so we don't have to send that command
         # while measuring later.
-        self.root_instrument.cont_meas_off()
+        self.parent.cont_meas_off()
 
     def setup_lin_sweep(self) -> None:
         """
@@ -985,7 +983,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
         """
         self.sweep_type("Linear")
         self.averaging_enabled(True)
-        self.root_instrument.cont_meas_on()
+        self.parent.cont_meas_on()
 
     def _check_cw_sweep(self) -> None:
         """
@@ -998,7 +996,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
                 f"mode, instead it is: {self.sweep_type()}"
             )
 
-        if not self.root_instrument.rf_power():
+        if not self.parent.rf_power():
             log.warning("RF output is off when getting sweep data")
 
         # It is possible that the instrument and QCoDeS disagree about
@@ -1016,7 +1014,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
         # Set the format to complex.
         self.format("Complex")
         # Set cont measurement off.
-        self.root_instrument.cont_meas_off()
+        self.parent.cont_meas_off()
         # Cache the sweep time so it is up to date when setting timeouts
         self.sweep_time()
 
@@ -1027,7 +1025,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
             self._check_cw_sweep()
 
         with self.status.set_to(1):
-            with self.root_instrument.timeout.set_to(self._get_timeout()):
+            with self.parent.timeout.set_to(self._get_timeout()):
                 self.write(f"INIT{self._instrument_channel}:IMM; *WAI")
                 data_str = self.ask(f"CALC{self._instrument_channel}:DATA? SDAT")
             data = np.array(data_str.rstrip().split(",")).astype("float64")
@@ -1037,7 +1035,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
         return i, q
 
     def _get_timeout(self) -> float:
-        timeout = self.root_instrument.timeout() or float("+inf")
+        timeout = self.parent.timeout() or float("+inf")
         timeout = max(self.sweep_time.cache.get() * 1.5, timeout)
         return timeout
 

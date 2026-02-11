@@ -17,7 +17,6 @@ from broadbean.sequence import InvalidForgedSequenceError, fs_schema
 from qcodes import validators as vals
 from qcodes.instrument import (
     ChannelList,
-    Instrument,
     InstrumentBaseKWArgs,
     InstrumentChannel,
     VisaInstrument,
@@ -157,14 +156,14 @@ class SRValidator(vals.Validator[float]):
             validator.validate(value)
 
 
-class Tektronix70000AWGChannel(InstrumentChannel):
+class Tektronix70000AWGChannel(InstrumentChannel["TektronixAWG70000Base"]):
     """
     Class to hold a channel of the AWG.
     """
 
     def __init__(
         self,
-        parent: Instrument,
+        parent: TektronixAWG70000Base,
         name: str,
         channel: int,
         **kwargs: Unpack[InstrumentBaseKWArgs],
@@ -183,8 +182,8 @@ class Tektronix70000AWGChannel(InstrumentChannel):
 
         self.channel = channel
 
-        num_channels = self.root_instrument.num_channels
-        self.model = self.root_instrument.model
+        num_channels = self.parent.num_channels
+        self.model = self.parent.model
 
         fg = "function generator"
 
@@ -253,7 +252,7 @@ class Tektronix70000AWGChannel(InstrumentChannel):
             label=f"Channel {channel} {fg} signal path",
             set_cmd=f"FGEN:CHANnel{channel}:PATH {{}}",
             get_cmd=f"FGEN:CHANnel{channel}:PATH?",
-            val_mapping=_fg_path_val_map[self.root_instrument.model],
+            val_mapping=_fg_path_val_map[self.parent.model],
         )
         """Parameter fgen_signalpath"""
 
@@ -430,7 +429,7 @@ class Tektronix70000AWGChannel(InstrumentChannel):
                 "Hz, minimum is 1 Hz"
             )
         else:
-            self.root_instrument.write(f"FGEN:CHANnel{channel}:FREQuency {frequency}")
+            self.parent.write(f"FGEN:CHANnel{channel}:FREQuency {frequency}")
 
     def setWaveform(self, name: str) -> None:
         """
@@ -440,10 +439,10 @@ class Tektronix70000AWGChannel(InstrumentChannel):
             name: The name of the waveform
 
         """
-        if name not in self.root_instrument.waveformList:
+        if name not in self.parent.waveformList:
             raise ValueError("No such waveform in the waveform list")
 
-        self.root_instrument.write(f'SOURce{self.channel}:CASSet:WAVeform "{name}"')
+        self.parent.write(f'SOURce{self.channel}:CASSet:WAVeform "{name}"')
 
     def setSequenceTrack(self, seqname: str, tracknr: int) -> None:
         """
@@ -454,8 +453,7 @@ class Tektronix70000AWGChannel(InstrumentChannel):
             tracknr: Which track to use (1 or 2)
 
         """
-
-        self.root_instrument.write(
+        self.parent.write(
             f'SOURCE{self.channel}:CASSet:SEQuence "{seqname}", {tracknr}'
         )
 
@@ -464,7 +462,7 @@ class Tektronix70000AWGChannel(InstrumentChannel):
         Clear assigned assets on this channel
         """
 
-        self.root_instrument.write(f"SOURce{self.channel}:CASSet:CLEAR")
+        self.parent.write(f"SOURce{self.channel}:CASSet:CLEAR")
 
 
 AWGChannel = Tektronix70000AWGChannel

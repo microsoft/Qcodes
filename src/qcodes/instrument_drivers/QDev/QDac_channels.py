@@ -11,7 +11,7 @@ from pyvisa.resources.serial import SerialInstrument
 from qcodes import validators as vals
 from qcodes.instrument import (
     ChannelList,
-    Instrument,
+    ChannelTuple,
     InstrumentBaseKWArgs,
     InstrumentChannel,
     VisaInstrument,
@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-class QDevQDacChannel(InstrumentChannel):
+class QDevQDacChannel(InstrumentChannel["QDevQDac"]):
     """
     A single output channel of the QDac.
 
@@ -40,7 +40,7 @@ class QDevQDacChannel(InstrumentChannel):
 
     def __init__(
         self,
-        parent: Instrument,
+        parent: "QDevQDac",
         name: str,
         channum: int,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
@@ -143,9 +143,20 @@ class QDevQDacChannel(InstrumentChannel):
         update: bool | None = False,
         params_to_skip_update: "Sequence[str] | None" = None,
     ) -> dict[Any, Any]:
-        update_currents = self._parent._update_currents and update
-        if update and not self._parent._get_status_performed:
-            self._parent._update_cache(readcurrents=update_currents)
+        # setting update not None will override parent setting
+        # otherwise we use parent setting
+        # parent._update | update | do update
+        # True           | True   | True
+        # True           | None   | True
+        # True           | False  | False
+        # False          | True   | True
+        # False          | None   | False
+        # False          | False  | False
+        update_currents = (
+            self.parent._update_currents and update is not False
+        ) or update is True
+        if update and not self.parent._get_status_performed:
+            self.parent._update_cache(readcurrents=update_currents)
         # call get_status rather than getting the status individually for
         # each parameter. This is only done if _get_status_performed is False
         # this is used to signal that the parent has already called it and
@@ -287,7 +298,10 @@ class QDevQDac(VisaInstrument):
             channels.append(channel)
             # Should raise valueerror if name is invalid (silently fails now)
             self.add_submodule(f"ch{i:02}", channel)
-        self.add_submodule("channels", channels.to_channel_tuple())
+        self.channels: ChannelTuple[QDevQDacChannel] = self.add_submodule(
+            "channels", channels.to_channel_tuple()
+        )
+        """ChannelTuple containing all QDevQDacChannel instances"""
 
         for board in range(6):
             for sensor in range(3):

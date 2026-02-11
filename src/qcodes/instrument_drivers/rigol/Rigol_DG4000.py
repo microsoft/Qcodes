@@ -738,12 +738,14 @@ class RigolDG4000(VisaInstrument):
         # Trace
         self.add_function("upload_data", call_cmd=self._upload_data, args=[Anything()])
 
-        self.add_function("reset", call_cmd="*RST")
-
         if reset:
             self.reset()
 
         self.connect_message()
+
+    def reset(self) -> None:
+        """Reset the instrument to default settings."""
+        self.write("*RST")
 
     def _upload_data(self, data: "Sequence[float] | npt.NDArray") -> None:
         """

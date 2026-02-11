@@ -8,6 +8,7 @@ from pyvisa import constants, errors
 
 from qcodes.instrument import (
     ChannelList,
+    ChannelTuple,
     InstrumentBaseKWArgs,
     InstrumentChannel,
     VisaInstrument,
@@ -69,7 +70,7 @@ class PNATimeAxisParameter(PNAAxisParameter):
         return np.linspace(0, self._stopparam(), self._pointsparam())
 
 
-class FormattedSweep(ParameterWithSetpoints):
+class FormattedSweep(ParameterWithSetpoints[npt.NDArray, "KeysightPNATrace"]):
     """
     Mag will run a sweep, including averaging, before returning data.
     As such, wait time in a loop is not needed.
@@ -96,7 +97,7 @@ class FormattedSweep(ParameterWithSetpoints):
         """
         if self.instrument is None:
             raise RuntimeError("Cannot return setpoints if not attached to instrument")
-        root_instrument: KeysightPNABase = self.root_instrument  # type: ignore[assignment]
+        root_instrument: KeysightPNABase = self.root_instrument
         sweep_type = root_instrument.sweep_type()
         if sweep_type == "LIN":
             return (root_instrument.frequency_axis,)
@@ -115,10 +116,16 @@ class FormattedSweep(ParameterWithSetpoints):
         """
         return
 
+    @property
+    def root_instrument(self) -> "KeysightPNABase":
+        root_instrument = super().root_instrument
+        assert isinstance(root_instrument, KeysightPNABase)
+        return root_instrument
+
     def get_raw(self) -> npt.NDArray:
         if self.instrument is None:
             raise RuntimeError("Cannot get data without instrument")
-        root_instr = self.instrument.root_instrument
+        root_instr = self.root_instrument
         # Check if we should run a new sweep
         auto_sweep = root_instr.auto_sweep()
 
@@ -182,7 +189,7 @@ PNAPort = KeysightPNAPort
 "Alis for backwards compatibility"
 
 
-class KeysightPNATrace(InstrumentChannel):
+class KeysightPNATrace(InstrumentChannel["KeysightPNABase"]):
     """
     Allow operations on individual PNA traces.
     """
@@ -291,6 +298,12 @@ class KeysightPNATrace(InstrumentChannel):
             vals=Arrays(shape=(self.parent.points,), valid_types=(complex,)),
         )
         """Parameter polar"""
+
+    @property
+    def root_instrument(self) -> "KeysightPNABase":
+        root_instrument = super().root_instrument
+        assert isinstance(root_instrument, KeysightPNABase)
+        return root_instrument
 
     def disable(self) -> None:
         """
@@ -438,7 +451,11 @@ class KeysightPNABase(VisaInstrument):
             )
             ports.append(port)
             self.add_submodule(f"port{port_num}", port)
-        self.add_submodule("ports", ports.to_channel_tuple())
+
+        self.ports: ChannelTuple[KeysightPNAPort] = self.add_submodule(
+            "ports", ports.to_channel_tuple()
+        )
+        """Tuple of KeysightPNAPort submodules"""
 
         # RF output
         self.output: Parameter = self.add_parameter(

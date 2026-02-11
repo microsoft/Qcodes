@@ -15,10 +15,10 @@ def test_literal_validator() -> None:
     a123_val.validate(1)
 
     with pytest.raises(ValueError, match="5 is not a member of "):
-        a123_val.validate(5, context="Outside range")  # pyright: ignore[reportArgumentType]
+        a123_val.validate(5, context="Outside range")  # type: ignore
 
     with pytest.raises(ValueError, match="some_str is not a member of "):
-        a123_val.validate("some_str", context="Wrong type")  # pyright: ignore[reportArgumentType]
+        a123_val.validate("some_str", context="Wrong type")  # type: ignore
 
 
 def test_literal_validator_repr() -> None:

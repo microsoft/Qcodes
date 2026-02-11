@@ -205,6 +205,7 @@ def test_seqxfile_from_fs(forged_sequence) -> None:
     # typing convenience
     make_seqx = TektronixAWG70000Base.make_SEQX_from_forged_sequence
 
+    assert auxfiles.__file__ is not None
     path_to_schema = auxfiles.__file__.replace("__init__.py", "awgSeqDataSets.xsd")
 
     with open(path_to_schema) as fid:
