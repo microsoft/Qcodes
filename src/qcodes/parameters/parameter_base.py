@@ -42,7 +42,7 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from qcodes.dataset.data_set_protocol import ValuesType
-    from qcodes.instrument import InstrumentBase
+    from qcodes.instrument import Instrument, InstrumentBase
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 ParameterDataTypeVar = TypeVar("ParameterDataTypeVar", default=Any)
 # InstrumentTypeVar_co is a covariant type variable representing the instrument
@@ -1073,7 +1073,7 @@ class ParameterBase(
         return self._instrument
 
     @property
-    def root_instrument(self) -> InstrumentBase | None:
+    def root_instrument(self) -> Instrument | None:
         """
         Return the fundamental instrument that this parameter belongs too.
         E.g if the parameter is bound to a channel this will return the
