@@ -36,6 +36,9 @@ class LuaSweepParameter(ParameterWithSetpoints[npt.NDArray, "Keithley2600Channel
     """
     Parameter class to hold the data from a
     deployed Lua script sweep.
+
+    For more information on writing Lua scripts for the Keithley2600, please see
+    https://www.tek.com/en/documents/application-note/how-to-write-scripts-for-test-script-processing-(tsp)
     """
 
     def _set_mode(self, mode: Literal["IV", "VI", "VIfourprobe"]) -> None:
@@ -110,12 +113,22 @@ class LuaSweepParameter(ParameterWithSetpoints[npt.NDArray, "Keithley2600Channel
             f"for index = 1, {steps} do",
             "  target = startX + (index-1)*dX",
             f"  {channel}.source.level{source} = target",
-            f"  {channel}.measure.{meas}({channel}.nvbuffer1)",
-            "end",
-            "format.data = format.REAL32",
-            "format.byteorder = format.LITTLEENDIAN",
-            f"printbuffer(1, {steps}, {channel}.nvbuffer1.readings)",
         ]
+
+        # Only add delay code to lua script if greater than 0
+        inter_delay = self.instrument.fastsweep_inter_delay.get_latest()
+        if inter_delay > 0:
+            script.append(f"  delay({inter_delay})")
+
+        script.extend(
+            [
+                f"  {channel}.measure.{meas}({channel}.nvbuffer1)",
+                "end",
+                "format.data = format.REAL32",
+                "format.byteorder = format.LITTLEENDIAN",
+                f"printbuffer(1, {steps}, {channel}.nvbuffer1.readings)",
+            ]
+        )
 
         return self.instrument._execute_lua(script, steps)
 
@@ -628,6 +641,17 @@ class Keithley2600Channel(InstrumentChannel):
             "fastsweep_stop", label="fastsweep stop", get_cmd=None, set_cmd=None
         )
         """Stopping value of fastsweep. Can be current or voltage."""
+
+        self.fastsweep_inter_delay: Parameter[float, Self] = self.add_parameter(
+            name="fastsweep_inter_delay",
+            label="Fastsweep Inter Delay",
+            initial_value=0,
+            vals=vals.Numbers(min_value=0),
+            unit="s",
+            get_cmd=None,
+            set_cmd=None,
+        )
+        """Time in seconds to wait between setting a target value and taking a measurement."""
 
         self.fastsweep_setpoints: FastSweepSetpoints = self.add_parameter(
             name="fastsweep_setpoints",
