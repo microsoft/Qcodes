@@ -140,8 +140,7 @@ class LuaSweepParameter(ParameterWithSetpoints[npt.NDArray, "Keithley2600Channel
 
 class FastSweepSetpoints(Parameter[npt.NDArray, "Keithley2600Channel"]):
     """
-    A simple :class:`.Parameter` that holds all the setpoints (relative to the
-    measurement start) at which the points of the time trace were acquired.
+    A simple :class:`Parameter` that holds all the setpoints for a fastsweep
     """
 
     def get_raw(self) -> npt.NDArray:
