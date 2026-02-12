@@ -8,7 +8,7 @@ import time
 import xml.etree.ElementTree as ET
 import zipfile as zf
 from functools import partial
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -191,7 +191,7 @@ class Tektronix70000AWGChannel(InstrumentChannel):
         if channel not in list(range(1, num_channels + 1)):
             raise ValueError("Illegal channel value.")
 
-        self.state: Parameter = self.add_parameter(
+        self.state: Parameter[int, Self] = self.add_parameter(
             "state",
             label=f"Channel {channel} state",
             get_cmd=f"OUTPut{channel}:STATe?",
@@ -199,7 +199,18 @@ class Tektronix70000AWGChannel(InstrumentChannel):
             vals=vals.Ints(0, 1),
             get_parser=int,
         )
-        """Parameter state"""
+        """Channel State: (OFF: 0, ON: 1)"""
+
+        self.hold: Parameter[Literal["FIRST", "ZERO"], Self] = self.add_parameter(
+            "hold",
+            label=f"Channel {channel} hold value",
+            get_cmd=f"OUTPut{channel}:WVALUE:ANALOG:STATE?",
+            set_cmd=f"OUTPut{channel}:WVALUE:ANALOG:STATE {{}}",
+            vals=vals.Enum("FIRST", "ZERO"),
+        )
+        """ the output condition of a waveform of the specified
+          channel to hold while the instrument is in the waiting-for-trigger state.
+          ZERO = 0V, FIRST = first value of next sequence"""
 
         ##################################################
         # FGEN PARAMETERS
@@ -587,6 +598,14 @@ class TektronixAWG70000Base(VisaInstrument):
         )
         """Parameter all_output_off"""
 
+        self.force_jump: Parameter[int, Self] = self.add_parameter(
+            "force_jump",
+            label="Force Jump",
+            set_cmd="SOURCE1:JUMP:FORCE {}",
+            vals=vals.Ints(1, 16383),
+        )
+        """Parameter force_jump"""
+
         add_channel_list = self.num_channels > 2
         # We deem 2 channels too few for a channel list
         if add_channel_list:
@@ -618,6 +637,23 @@ class TektronixAWG70000Base(VisaInstrument):
         self.current_directory(self.wfmxFileFolder)
 
         self.connect_message()
+
+    def set_event_jump(
+        self, sequence_name: str, current_step: int, next_step: int
+    ) -> None:
+        """
+        Set event jump for a given step in the sequence
+
+        Args:
+            sequence_name: The name of the sequence
+            current_step: The step number in the sequence (1-indexed)
+            next_step: The step number to jump to (1-indexed)
+
+        """
+
+        self.write(
+            f"SLISt:SEQuence:STEP{current_step}:EJUMp {sequence_name}, {next_step}"
+        )
 
     def force_triggerA(self) -> None:
         """
