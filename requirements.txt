@@ -273,7 +273,7 @@ pillow==12.1.1
     #   qcodes (pyproject.toml)
     #   matplotlib
     #   qcodes
-platformdirs==4.5.1
+platformdirs==4.7.0
     # via jupyter-core
 pluggy==1.6.0
     # via
@@ -393,7 +393,7 @@ sphinx==8.2.3
     #   sphinxcontrib-towncrier
 sphinx-basic-ng==1.0.0b2
     # via furo
-sphinx-favicon==1.0.1
+sphinx-favicon==1.1.0
     # via qcodes (pyproject.toml)
 sphinx-issues==5.0.1
     # via qcodes (pyproject.toml)
