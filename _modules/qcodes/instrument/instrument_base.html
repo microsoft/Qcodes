@@ -1,0 +1,1383 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../../../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../../genindex.html"><link rel="search" title="Search" href="../../../search.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.12.19 -->
+        <title>qcodes.instrument.instrument_base - QCoDeS 0.55.0.dev570 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../../index.html"><div class="brand">QCoDeS 0.55.0.dev570 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../index.html">
+  
+  <span class="sidebar-brand-text">QCoDeS 0.55.0.dev570 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../start/index.html">Getting Started</a><input aria-label="Toggle navigation of Getting Started" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/basic_examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../examples/index.html">Examples of using QCoDeS</a><input aria-label="Toggle navigation of Examples of using QCoDeS" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../examples/basic_examples/index.html">Basic examples</a><input aria-label="Toggle navigation of Basic examples" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/basic_examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/basic_examples/Configuring_QCoDeS.html">QCoDeS config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/basic_examples/Station.html">Station</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../examples/Parameters/index.html">Parameters</a><input aria-label="Toggle navigation of Parameters" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/Parameters/Complex_Parameters.html">Complex Numbers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/Parameters/Legacy_Parameters.html">Legacy parameter examples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/Parameters/MultiParameter.html">MultiParameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/Parameters/Parameter-With-Setpoints-defined-on-a-different-instrument.html">ParameterWithSetpoints with setpoints defined on another instrument.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/Parameters/Parameter_defined_InterDependencies.html">Parameter-defined InterDependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/Parameters/Parameter_defined_InterDependencies.html#ControllingParameter-Example">ControllingParameter Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/Parameters/Parameters.html">Parameters in QCoDeS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/Parameters/Scaled_Parameter.html">ScaledParameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/Parameters/Simple-Example-of-ParameterWithSetpoints.html">Simple Example of ParameterWithSetpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../examples/DataSet/index.html">DataSet</a><input aria-label="Toggle navigation of DataSet" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/Accessing-data-in-DataSet.html">Accessing data in a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/Benchmarking.html">Dataset Benchmarking</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/DataSet-class-walkthrough.html">DataSet class walkthrough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/Database.html">Databases</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/Datasaver_Builder.html">Using <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> and <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> to streamline measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/Dataset_Performance.html">DataSet Performance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/Exporting-data-to-other-file-formats.html">Exporting QCoDes Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/Extracting-runs-from-one-DB-file-to-another.html">Extracting runs from one DB file to another</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/InMemoryDataSet.html">In memory dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/Linking%20to%20parent%20datasets.html">Linking to parent datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/Measuring%20X%20as%20a%20function%20of%20time.html">Measuring X as a function of time</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/Offline%20Plotting%20Tutorial.html">Offline Plotting Tutorial</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/Offline%20plotting%20with%20categorical%20data.html">Offline plotting with categorical data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/Offline%20plotting%20with%20complex%20data.html">Offline plotting with complex data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/Paramtypes%20explained.html">Paramtypes explained</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/Pedestrian%20example%20of%20subscribing%20to%20a%20DataSet.html">Pedestrian example of subscribing to a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html">Performing measurements using QCoDeS parameters and DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/Saving_data_in_the_background.html">Saving data in the background</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/The-Experiment-Container.html">The Experiment Container</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/Threaded%20data%20acquisition.html">Threaded data acquisition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html">Using doNd functions in comparison to Measurement context manager for performing measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/Using_register_name.html">Using the <code class="docutils literal notranslate"><span class="pre">register_name</span></code> kwarg to select how a parameter is saved to a dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/Working%20with%20snapshots.html">Working with snapshots</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/Working-With-Pandas-and-XArray.html">Working with Pandas and XArray</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/import-data-from-legacy-dat-files.html">Importing data from legacy .dat files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/subscriber%20json%20exporter.html">Subscriber with JSON export</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/Real_instruments/Example%20Measurements%20with%20Real%20Instruments.html">Example Measurements with Real Instruments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/Cache/read_data_from_cache.html">Read data from cache</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/DataSet/Cache/write_for_caching.html">Write data to cache</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../examples/plotting/index.html">Plotting</a><input aria-label="Toggle navigation of Plotting" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/plotting/How-to-use-Plottr-with-QCoDeS-for-live-plotting.html">How to use Plottr with QCoDeS for live plotting?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/plotting/auto_color_scale.html">Auto Color Scale</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../examples/driver_examples/index.html">Drivers</a><input aria-label="Toggle navigation of Drivers" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/QCoDeS%20Example%20with%20Keysight%20E4980A%20LCR%20meter.html">QCoDeS Example with Keysight E4980A LCR meter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/QCoDeS%20Example%20with%20Yokogawa%20GS200%20and%20Keithley%207510.html">QCoDeS Example with Yokogawa GS200 and Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/QCoDeS%20example%20with%20Aim%20TTi%20PL601-P.html">QCoDeS example with Aim TTi PL601-P</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/QCoDeS%20example%20with%20CopperMountain_M5065.html">Example with Copper Mountain Model M5065 Vector Network Analyzer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/QCoDeS%20example%20with%20DelegateInstrument.html">Qcodes example with DelegateInstrument driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/QCoDeS%20example%20with%20Galil%20DMC4133%20Controller.html">QCoDeS example with Galil DMC4133 Controller</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/QCoDeS%20example%20with%20InstrumentGroup%20and%20DelegateInstrument.html">Qcodes example with InstrumentGroup driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/QCoDeS%20example%20with%20Keithley%203706A%20System%20Switch.html">QCoDeS example with Keithley 3706A System Switch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/QCodes%20example%20with%20Keithley%20S46.html">QCoDeS Example with Tektronix Keithley S46</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/QCodes%20example%20with%20Rigol%20DG1062.html">QCoDeS Example with the Rigol DG 1062 Instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/QCodes%20example%20with%20Tektronix%20DPO%2072004C.html">QCoDeS example with Textronix DPO 7200xx scopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20AMI430.html">QCoDeS Example with AMI430</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Agilent%2034400A.html">QCoDeS Example with Agilent 34400A</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Alazar%20ATS9360.html">QCoDeS Example with Alazar ATS 9360</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Basel%20SP983c%20Preamp.html">Qcodes example with Basel SP983c Preamp and its Remote SP983a</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Cryomagnetics%20TM-620.html">Cryomagnetics TM-620 QCoDeS Driver Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Cryomagnetics4G.html">Cryomagnetics 4G QCoDeS Driver Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20DynaCool%20PPMS.html">QCoDeS Example with DynaCool PPMS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20HP8753D.html">QCoDeS Example with HP8753D</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Ithaco.html">QCoDeS Example with Itacho</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Keithley%202600.html">QCoDeS Example with with Keithley 2600 series</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Keithley%207510.html">QCoDeS Example with Tektronix Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Keysight%2033500B.html">QCoDeS Example with Keysight 33500B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Keysight%20344xxA.html">QCoDeS Example with Keysight 344xxA</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Keysight%2034980A%20Switch%20Mainframe%20and%20Modules.html">QCoDeS Example with Keysight 34980A Multifunction Switch / Measure Mainframe and Modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Keysight%20B1500%20Parameter%20Analyzer.html">Qcodes example with Keysight B1500 Semiconductor Parameter Analyzer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Keysight%20B2200%20Series%20Femto%20Leakage%20Switch%20Matrix.html">QCoDeS Example with Keysight B2200 Series Femto Leakage Switch Matrix</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Keysight%20Infiniium%20Oscilloscope.html">QCoDeS Example with Keysight Infiniium Oscilloscopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Keysight%20N9030B.html">Qcodes example with Keysight N9030B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Keysight%20Network%20Analyzer.html">QCoDeS Example with Keysight Network Analyzers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Lakeshore%20325.html">QCoDeS Example with Lakeshore 325</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Lakeshore%20336%20or%20372%20-%20Bluefors%20T%20control.html">QCoDeS Example with the Lakeshore Model 372 to Control the Temperature of the Bluefors Fridge</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Minicircuits%20Switch%20boxes%20%28USB-XSPDT%29.html">QCoDeS Example with Minicircuits Switch Boxes Controlled via USB</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Oxford%20Mercury%20iPS.html">QCoDeS Example with Mercury iPS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Oxford%20Triton.html">QCoDeS Example with Oxford Triton</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20QDev_QDac.html">QCoDeS Example with QDac_channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Rigol%20DP832.html">QCoDeS Example with Rigol DP832 Power Supply</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Rigol%20DS1074Z.html">QCoDeS Example with the Rigol DS 1074 Z oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Rohde%20Schwarz%20RTO%201000%20series%20Oscilloscope.html">QCoDeS Example with Rohde Schwarz RTO 1000 Series Oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Rohde%20Schwarz%20SGS100A.html">QCoDeS Example with Rohde Schwarz SGS100A RF source</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Rohde%20Schwarz%20ZNB.html">QCoDeS Example with Rohde Schwarz ZNB20/8</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Stahl.html">QCoDeS Example with the Stahl Bias Sources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Stanford%20SR830.html">QCoDeS Example with Stanford SR830</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Stanford%20SR86x%20with%20buffered%20readout.html">QCoDeS Example with Standford Research SR86x Lock-in Amplifier with Buffered Readout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Tektronix%20AWG5014C.html">QCoDeS Example with Tektronix AWG5014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Tektronix%20AWG70002A.html">QCoDeS Example with Tektronix AWG70002A</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Tektronix%20TPS2012.html">QCoDeS Example with Tektronix TPS2012</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20Yokogawa%20GS2xx.html">QCoDeS Example with Yokogawa GS200/GS210</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%20example%20with%20keithley%202450.html">QCoDeS Example with Tektronix Keithley 2450 Source Meter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes%2Bbroadbean%20example%20with%20Tektronix%20AWG5208.html">QCoDeS+Broadbean Example with Tektronix AWG5208</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes-example-with-Signal-Hound-USB-SA124B.html">QCoDeS Example with Signal Hound USB-SA124B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/driver_examples/Qcodes-example-with-Signal-Hound-USB-SA124B-ParameterWithSetpoints.html">QCoDeS Example with Signal Hound USB-SA124B ParameterWithSetpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../examples/writing_drivers/index.html">Writing Drivers</a><input aria-label="Toggle navigation of Writing Drivers" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/writing_drivers/A-ParameterWithSetpoints-Example-with-Dual-Setpoints.html">A ParameterWithSetpoints Example with Dual Setpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/writing_drivers/Creating-Instrument-Drivers.html">Creating QCoDeS instrument drivers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/writing_drivers/Creating-Simulated-PyVISA-Instruments.html">Creating Simulated PyVISA Instruments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/writing_drivers/Instruments.html">Instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/writing_drivers/abstract_instruments.html">Abstract Instruments and parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/writing_drivers/abstract_instruments.html#Working-subclass">Working subclass</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../examples/logging/index.html">Logging</a><input aria-label="Toggle navigation of Logging" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/logging/logfile_parsing.html">Logfile parsing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../examples/logging/logging_example.html">Logging</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../community/index.html">Community Guide</a><input aria-label="Toggle navigation of Community Guide" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../community/install.html">Source Code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../community/contributing.html">Contributing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../community/related_projects.html">Related Projects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../community/objects.html">Object Hierarchy</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../dataset/index.html">DataSet</a><input aria-label="Toggle navigation of DataSet" class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../dataset/introduction.html">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../dataset/spec.html">DataSet Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../dataset/dataset_design.html">Dataset Design</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../dataset/interdependentparams.html">Interdependent Parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../api/index.html">QCoDes API documentation</a><input aria-label="Toggle navigation of QCoDes API documentation" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/calibrations/index.html">qcodes.calibrations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/configuration/index.html">qcodes.configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/dataset/index.html">qcodes.dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/extensions/index.html">qcodes.extensions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/instrument/index.html">qcodes.instrument</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/interactive_widget.html">qcodes.interactive_widget</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/logger/index.html">qcodes.logger</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/math_utils/index.html">qcodes.math_utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/metadatable/index.html">qcodes.metadatable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/monitor/index.html">qcodes.monitor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/parameters/index.html">qcodes.parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/plotting/index.html">qcodes.plotting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/station.html">qcodes.station</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/utils/index.html">qcodes.utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/validators/index.html">qcodes.validators</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../drivers_api/index.html">Instrument Drivers</a><input aria-label="Toggle navigation of Instrument Drivers" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../drivers_api/Agilent.html">Agilent Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../drivers_api/AimTTi.html">AimTTi Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../drivers_api/AlazarTech.html">Alazar Tech Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../drivers_api/American_magnetics.html">American Magnetics Inc Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../drivers_api/Basel.html">Basel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../drivers_api/CryoMagnetics.html">Cryomagnetics Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../drivers_api/Galil.html">Galil Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../drivers_api/HP.html">Hewlett Packard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../drivers_api/Harvard.html">Harvard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../drivers_api/Ithaco.html">Ithaco Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../drivers_api/Keithley.html">Keithley Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../drivers_api/Keysight.html">Keysight Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../drivers_api/Lakeshore.html">Lakeshore Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../drivers_api/Minicircuits.html">MiniCircuits Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../drivers_api/Oxford.html">Oxford Instruments Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../drivers_api/QDev.html">QDev Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../drivers_api/QuantumDesign.html">Quantum Design Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../drivers_api/Rigol.html">Rigol Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../drivers_api/RohdeSchwarz.html">Rohde &amp; Schwarz Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../drivers_api/SRS.html">Stanford Research Systems Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../drivers_api/SignalHound.html">Signal Hound Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../drivers_api/Stahl.html">Stahl Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../drivers_api/Tektronix.html">Tektronix Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../drivers_api/Weinschel.html">Weinschel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../drivers_api/Yokogawa.html">Yokogawa Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../drivers_api/Zhinst.html">Zurich Instruments Drivers</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../changes/index.html">Changelogs</a><input aria-label="Toggle navigation of Changelogs" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/unreleased.html">Unreleased</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.54.4.html">0.54.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.54.3.html">0.54.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.54.1.html">0.54.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.54.0.html">0.54.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.53.0.html">0.53.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.52.0.html">0.52.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.51.0.html">0.51.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.50.1.html">0.50.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.50.0.html">0.50.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.49.0.html">0.49.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.48.0.html">0.48.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.47.0.html">0.47.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.46.0.html">0.46.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.45.0.html">0.45.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.44.1.html">0.44.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.44.0.html">0.44.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.43.0.html">0.43.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.42.1.html">0.42.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.42.0.html">0.42.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.41.1.html">0.41.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.41.0.html">0.41.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.40.0.html">0.40.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.39.1.html">0.39.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.39.0.html">0.39.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.38.1.html">0.38.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.38.0.html">0.38.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.37.0.html">0.37.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.36.1.html">0.36.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.36.0.html">0.36.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.35.2.html">0.35.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.35.1.html">0.35.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.35.0.html">0.35.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.35.0b1.html">0.35.0b1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.34.1.html">0.34.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.34.0.html">0.34.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.33.0.html">0.33.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.32.0.html">0.32.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.31.0.html">0.31.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.30.1.html">0.30.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.30.0.html">0.30.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.29.1.html">0.29.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.29.0.html">0.29.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.28.0.html">0.28.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.27.0.html">0.27.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.26.0.html">0.26.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.25.0.html">0.25.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.24.0.html">0.24.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.23.0.html">0.23.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.22.0.html">0.22.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.21.0.html">0.21.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.20.1.html">0.20.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.20.0.html">0.20.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.19.2.html">0.19.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.19.1.html">0.19.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.19.0.html">0.19.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.18.0.html">0.18.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.17.0.html">0.17.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.16.0.html">0.16.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.15.0.html">0.15.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.15.0a1.html">0.15.0a1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.14.0.html">0.14.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.13.0.html">0.13.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.12.1.html">0.12.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.12.0.html">0.12.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.11.0.html">0.11.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.10.0.html">0.10.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.9.0.html">0.9.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.8.1.html">0.8.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.8.0.html">0.8.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.7.0.html">0.7.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.6.0.html">0.6.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.5.2.html">0.5.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.5.1.html">0.5.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.5.0.html">0.5.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.4.0.html">0.4.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.3.0.html">0.3.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.2.1.html">0.2.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.2.0.html">0.2.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.1.11.html">0.1.11</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.1.10.html">0.1.10</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.1.9.html">0.1.9</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.1.7.html">0.1.7</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.1.6.html">0.1.6</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.1.5.html">0.1.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.1.4.html">0.1.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.1.3.html">0.1.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.1.2.html">0.1.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes/0.1.0.html">0.1.0</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../help.html">Get Help</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <h1>Source code for qcodes.instrument.instrument_base</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Base class for Instrument and InstrumentModule&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">collections.abc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">ClassVar</span><span class="p">,</span> <span class="n">cast</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedDict</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">deprecated</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qcodes.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_instrument_logger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qcodes.metadatable</span><span class="w"> </span><span class="kn">import</span> <span class="n">Metadatable</span><span class="p">,</span> <span class="n">MetadatableWithName</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qcodes.parameters</span><span class="w"> </span><span class="kn">import</span> <span class="n">Function</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">ParameterBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qcodes.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">DelegateAttributes</span><span class="p">,</span> <span class="n">full_class</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NotRequired</span>
+
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qcodes.instrument.channel</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChannelTuple</span><span class="p">,</span> <span class="n">InstrumentModule</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">qcodes.logger.instrument_logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">InstrumentLoggerAdapter</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qcodes.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">QCoDeSDeprecationWarning</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="n">TParameter</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;TParameter&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="s2">&quot;ParameterBase&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;Parameter&quot;</span><span class="p">)</span>
+<span class="n">TSubmodule</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span>
+    <span class="s2">&quot;TSubmodule&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="s2">&quot;InstrumentModule | ChannelTuple&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;InstrumentModule&quot;</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="InstrumentBaseKWArgs">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.InstrumentBaseKWArgs">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">InstrumentBaseKWArgs</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This TypedDict defines the type of the kwargs that can be passed to the InstrumentBase class.</span>
+<span class="sd">    A subclass of VisaInstrument should take ``**kwargs: Unpack[InstrumentBaseKWArgs]`` as input</span>
+<span class="sd">    and forward this to the super class to ensure that it can accept all the arguments defined here.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">metadata</span><span class="p">:</span> <span class="n">NotRequired</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Additional static metadata to add to this</span>
+<span class="sd">    instrument&#39;s JSON snapshot.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">label</span><span class="p">:</span> <span class="n">NotRequired</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Nicely formatted name of the instrument; if None,</span>
+<span class="sd">    the ``name`` is used.</span>
+<span class="sd">    &quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="InstrumentBase">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.InstrumentBase">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">InstrumentBase</span><span class="p">(</span><span class="n">MetadatableWithName</span><span class="p">,</span> <span class="n">DelegateAttributes</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Base class for all QCodes instruments and instrument channels</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name: an identifier for this instrument, particularly for</span>
+<span class="sd">            attaching it to a Station.</span>
+<span class="sd">        metadata: additional static metadata to add to this</span>
+<span class="sd">            instrument&#39;s JSON snapshot.</span>
+<span class="sd">        label: nicely formatted name of the instrument; if None, the</span>
+<span class="sd">            ``name`` is used.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_replace_hyphen</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_short_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_valid_identifier</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">full_name</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">name</span> <span class="k">if</span> <span class="n">label</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">label</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_label</span><span class="p">:</span> <span class="nb">str</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ParameterBase</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        All the parameters supported by this instrument.</span>
+<span class="sd">        Usually populated via :py:meth:`add_parameter`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">functions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Function</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        All the functions supported by this</span>
+<span class="sd">        instrument. Usually populated via :py:meth:`add_function`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">submodules</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">InstrumentModule</span> <span class="o">|</span> <span class="n">ChannelTuple</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        All the submodules of this instrument</span>
+<span class="sd">        such as channel lists or logical groupings of parameters.</span>
+<span class="sd">        Usually populated via :py:meth:`add_submodule`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instrument_modules</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">InstrumentModule</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        All the :class:`InstrumentModule` of this instrument</span>
+<span class="sd">        Usually populated via :py:meth:`add_submodule`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_channel_lists</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ChannelTuple</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        All the ChannelTuples of this instrument</span>
+<span class="sd">        Usually populated via :py:meth:`add_submodule`.</span>
+<span class="sd">        This is private until the correct name has been decided.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">metadata</span><span class="p">)</span>
+
+        <span class="c1"># This is needed for snapshot method to work</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_meta_attrs</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">:</span> <span class="n">InstrumentLoggerAdapter</span> <span class="o">=</span> <span class="n">get_instrument_logger</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="vm">__name__</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Created instrument: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_name</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">label</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Nicely formatted label of the instrument.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_label</span>
+
+    <span class="nd">@label</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">label</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_label</span> <span class="o">=</span> <span class="n">label</span>
+
+<div class="viewcode-block" id="InstrumentBase.add_parameter">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.InstrumentBase.add_parameter">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_parameter</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">parameter_class</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">TParameter</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TParameter</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Bind one Parameter to this instrument.</span>
+
+<span class="sd">        Instrument subclasses can call this repeatedly in their ``__init__``</span>
+<span class="sd">        for every real parameter of the instrument.</span>
+
+<span class="sd">        In this sense, parameters are the state variables of the instrument,</span>
+<span class="sd">        anything the user can set and/or get.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name: How the parameter will be stored within</span>
+<span class="sd">                :attr:`.parameters` and also how you address it using the</span>
+<span class="sd">                shortcut methods: ``instrument.set(param_name, value)`` etc.</span>
+
+<span class="sd">            parameter_class: You can construct the parameter</span>
+<span class="sd">                out of any class. Default :class:`.parameters.Parameter`.</span>
+
+<span class="sd">            **kwargs: Constructor arguments for ``parameter_class``.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            KeyError: If this instrument already has a parameter with this</span>
+<span class="sd">                name and the parameter being replaced is not an abstract</span>
+<span class="sd">                parameter.</span>
+
+<span class="sd">            ValueError: If there is an existing abstract parameter and the</span>
+<span class="sd">                unit of the new parameter is inconsistent with the existing</span>
+<span class="sd">                one.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The created Parameter.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">parameter_class</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parameter_class</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="s2">&quot;type[TParameter]&quot;</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;bind_to_instrument&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;bind_to_instrument&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="n">bind_to_instrument</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;bind_to_instrument&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">bind_to_instrument</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Parameter </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> passed to `add_parameter` &quot;</span>
+                <span class="s2">&quot;on instrument </span><span class="si">{self.full_name}</span><span class="s2"> with `bind_to_instrument=False`. &quot;</span>
+                <span class="s2">&quot;This is not recommended as it results in inconsistent behavior. &quot;</span>
+                <span class="s2">&quot;To disable snapshotting of the parameter set `snapshot_exclude=True`.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">param</span> <span class="o">=</span> <span class="n">parameter_class</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">instrument</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;bind_to_instrument&quot;</span><span class="p">)</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Parameter </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> on instrument </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> does &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;not correctly pass kwargs to its baseclass. A &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Parameter class must take `**kwargs` and forward &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;them to its baseclass.&quot;</span><span class="p">,</span>
+                <span class="n">QCoDeSDeprecationWarning</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">param</span> <span class="o">=</span> <span class="n">parameter_class</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">instrument</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">existing_parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">existing_parameter</span> <span class="ow">and</span> <span class="n">bind_to_instrument</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Parameter </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> did not correctly register itself on instrument&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">. Please check that `instrument` argument is passed &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;from </span><span class="si">{</span><span class="n">parameter_class</span><span class="si">!r}</span><span class="s2"> all the way to `ParameterBase`. &quot;</span>
+                <span class="s2">&quot;This will be an error in the future.&quot;</span><span class="p">,</span>
+                <span class="n">QCoDeSDeprecationWarning</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">param</span>
+        <span class="k">return</span> <span class="n">param</span></div>
+
+
+<div class="viewcode-block" id="InstrumentBase.remove_parameter">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.InstrumentBase.remove_parameter">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">remove_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove a Parameter from this instrument.</span>
+
+<span class="sd">        Unlike modifying the parameters dict directly, this method will</span>
+<span class="sd">        make sure that the parameter is properly unbound from the instrument</span>
+<span class="sd">        if the parameter is added as a real attribute to the instrument.</span>
+<span class="sd">        If a property of the same name exists it will not be modified.</span>
+<span class="sd">        If name is an attribute but not a parameter, it will not be modified.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name: The name of the parameter to remove.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            KeyError: If the parameter does not exist on the instrument.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="n">is_property</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="nb">property</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_property</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;Could not remove attribute </span><span class="si">%s</span><span class="s2"> from </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_name</span>
+                <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InstrumentBase.add_function">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.InstrumentBase.add_function">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Bind one ``Function`` to this instrument.</span>
+
+<span class="sd">        Instrument subclasses can call this repeatedly in their ``__init__``</span>
+<span class="sd">        for every real function of the instrument.</span>
+
+<span class="sd">        This functionality is meant for simple cases, principally things that</span>
+<span class="sd">        map to simple commands like ``*RST`` (reset) or those with just a few</span>
+<span class="sd">        arguments. It requires a fixed argument count, and positional args</span>
+<span class="sd">        only.</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            We do not recommend the usage of Function for any new driver.</span>
+<span class="sd">            Function does not add any significant features over a method</span>
+<span class="sd">            defined on the class.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name: How the Function will be stored within</span>
+<span class="sd">                ``instrument.Functions`` and also how you  address it using the</span>
+<span class="sd">                shortcut methods: ``instrument.call(func_name, *args)`` etc.</span>
+<span class="sd">            **kwargs: constructor kwargs for ``Function``</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            KeyError: If this instrument already has a function with this</span>
+<span class="sd">                name.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">functions</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Duplicate function name </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="n">Function</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">instrument</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">functions</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">func</span></div>
+
+
+<div class="viewcode-block" id="InstrumentBase.add_submodule">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.InstrumentBase.add_submodule">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_submodule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">submodule</span><span class="p">:</span> <span class="n">TSubmodule</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TSubmodule</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Bind one submodule to this instrument.</span>
+
+<span class="sd">        Instrument subclasses can call this repeatedly in their ``__init__``</span>
+<span class="sd">        method for every submodule of the instrument.</span>
+
+<span class="sd">        Submodules can effectively be considered as instruments within</span>
+<span class="sd">        the main instrument, and should at minimum be</span>
+<span class="sd">        snapshottable. For example, they can be used to either store</span>
+<span class="sd">        logical groupings of parameters, which may or may not be</span>
+<span class="sd">        repeated, or channel lists. They should either be an instance</span>
+<span class="sd">        of an ``InstrumentModule`` or a ``ChannelTuple``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name: How the submodule will be stored within</span>
+<span class="sd">                ``instrument.submodules`` and also how it can be</span>
+<span class="sd">                addressed.</span>
+<span class="sd">            submodule: The submodule to be stored.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            KeyError: If this instrument already contains a submodule with this</span>
+<span class="sd">                name.</span>
+<span class="sd">            TypeError: If the submodule that we are trying to add is</span>
+<span class="sd">                not an instance of an ``Metadatable`` object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The submodule.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodules</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Duplicate submodule name </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">submodule</span><span class="p">,</span> <span class="n">Metadatable</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Submodules must be metadatable.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">submodules</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">submodule</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">submodule</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Sequence</span><span class="p">):</span>
+            <span class="c1"># this is channel_list like:</span>
+            <span class="c1"># We cannot check against ChannelsList itself since that</span>
+            <span class="c1"># would introduce a circular dependency.</span>
+            <span class="c1"># ignore since mypy&#39;s type narrowing is not smart enough to understand</span>
+            <span class="c1"># that a TSubmodule that is s Sequence must be a ChannelTuple</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_channel_lists</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">submodule</span>  <span class="c1"># type: ignore[assignment]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">instrument_modules</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">submodule</span>
+        <span class="k">return</span> <span class="n">submodule</span></div>
+
+
+<div class="viewcode-block" id="InstrumentBase.get_component">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.InstrumentBase.get_component">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">full_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MetadatableWithName</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Recursively get a component of the instrument by full_name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            full_name: The name of the component to get.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The component with the given name.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            KeyError: If the component does not exist.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">name_parts</span> <span class="o">=</span> <span class="n">full_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span>
+        <span class="n">name_parts</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+
+        <span class="n">component</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_component_by_name</span><span class="p">(</span><span class="n">name_parts</span><span class="o">.</span><span class="n">pop</span><span class="p">(),</span> <span class="n">name_parts</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">component</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_component_by_name</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">potential_top_level_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">remaining_name_parts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MetadatableWithName</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="s2">&quot;trying to find component </span><span class="si">%s</span><span class="s2"> on </span><span class="si">%s</span><span class="s2">, remaining </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">potential_top_level_name</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">full_name</span><span class="p">,</span>
+            <span class="n">remaining_name_parts</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">component</span><span class="p">:</span> <span class="n">MetadatableWithName</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">sub_component_name_map</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">sub_component</span><span class="o">.</span><span class="n">short_name</span><span class="p">:</span> <span class="n">sub_component</span>
+            <span class="k">for</span> <span class="n">sub_component</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodules</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+        <span class="p">}</span>
+
+        <span class="n">channel_name_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">InstrumentModule</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">channel_list</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel_lists</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">local_channels_name_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">InstrumentModule</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">channel</span><span class="o">.</span><span class="n">short_name</span><span class="p">:</span> <span class="n">channel</span> <span class="k">for</span> <span class="n">channel</span> <span class="ow">in</span> <span class="n">channel_list</span>
+            <span class="p">}</span>
+            <span class="n">channel_name_map</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">local_channels_name_map</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+
+        <span class="k">if</span> <span class="n">potential_top_level_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
+            <span class="n">component</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">potential_top_level_name</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">potential_top_level_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">functions</span><span class="p">:</span>
+            <span class="n">component</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">functions</span><span class="p">[</span><span class="n">potential_top_level_name</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">potential_top_level_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodules</span><span class="p">:</span>
+            <span class="c1"># recursive call on found component</span>
+            <span class="n">component</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodules</span><span class="p">[</span><span class="n">potential_top_level_name</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">remaining_name_parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">remaining_name_parts</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+                <span class="n">remaining_name</span> <span class="o">=</span> <span class="s2">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">remaining_name_parts</span><span class="p">)</span>
+                <span class="n">component</span> <span class="o">=</span> <span class="n">component</span><span class="o">.</span><span class="n">get_component</span><span class="p">(</span><span class="n">remaining_name</span><span class="p">)</span>
+                <span class="n">remaining_name_parts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">elif</span> <span class="n">potential_top_level_name</span> <span class="ow">in</span> <span class="n">sub_component_name_map</span><span class="p">:</span>
+            <span class="n">component</span> <span class="o">=</span> <span class="n">sub_component_name_map</span><span class="p">[</span><span class="n">potential_top_level_name</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">remaining_name_parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">remaining_name_parts</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+                <span class="n">remaining_name</span> <span class="o">=</span> <span class="s2">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">remaining_name_parts</span><span class="p">)</span>
+                <span class="n">component</span> <span class="o">=</span> <span class="n">component</span><span class="o">.</span><span class="n">get_component</span><span class="p">(</span><span class="n">remaining_name</span><span class="p">)</span>
+                <span class="n">remaining_name_parts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">elif</span> <span class="n">potential_top_level_name</span> <span class="ow">in</span> <span class="n">channel_name_map</span><span class="p">:</span>
+            <span class="n">component</span> <span class="o">=</span> <span class="n">channel_name_map</span><span class="p">[</span><span class="n">potential_top_level_name</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">remaining_name_parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">remaining_name_parts</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+                <span class="n">remaining_name</span> <span class="o">=</span> <span class="s2">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">remaining_name_parts</span><span class="p">)</span>
+                <span class="n">component</span> <span class="o">=</span> <span class="n">component</span><span class="o">.</span><span class="n">get_component</span><span class="p">(</span><span class="n">remaining_name</span><span class="p">)</span>
+                <span class="n">remaining_name_parts</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="n">component</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">remaining_name_parts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">component</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">remaining_name_parts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Found component </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">full_name</span><span class="si">}</span><span class="s2"> but could not &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;match </span><span class="si">{</span><span class="n">potential_top_level_name</span><span class="si">}</span><span class="s2"> part.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">new_potential_top_level_name</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">potential_top_level_name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">remaining_name_parts</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+        <span class="n">component</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_component_by_name</span><span class="p">(</span>
+            <span class="n">new_potential_top_level_name</span><span class="p">,</span> <span class="n">remaining_name_parts</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">component</span>
+
+<div class="viewcode-block" id="InstrumentBase.snapshot_base">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.InstrumentBase.snapshot_base">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">snapshot_base</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">update</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">params_to_skip_update</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        State of the instrument as a JSON-compatible dict (everything that</span>
+<span class="sd">        the custom JSON encoder class</span>
+<span class="sd">        :class:`.NumpyJSONEncoder`</span>
+<span class="sd">        supports).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            update: If ``True``, update the state by querying the</span>
+<span class="sd">                instrument. If None update the state if known to be invalid.</span>
+<span class="sd">                If ``False``, just use the latest values in memory and never</span>
+<span class="sd">                update state.</span>
+<span class="sd">            params_to_skip_update: List of parameter names that will be skipped</span>
+<span class="sd">                in update even if update is True. This is useful if you have</span>
+<span class="sd">                parameters that are slow to update but can be updated in a</span>
+<span class="sd">                different way (as in the qdac). If you want to skip the</span>
+<span class="sd">                update of certain parameters in all snapshots, use the</span>
+<span class="sd">                ``snapshot_get`` attribute of those parameters instead.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: base snapshot</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">params_to_skip_update</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">params_to_skip_update</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">snap</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;functions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="n">name</span><span class="p">:</span> <span class="n">func</span><span class="o">.</span><span class="n">snapshot</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="n">update</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">func</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;submodules&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="n">name</span><span class="p">:</span> <span class="n">subm</span><span class="o">.</span><span class="n">snapshot</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="n">update</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">subm</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodules</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">{},</span>
+            <span class="s2">&quot;__class__&quot;</span><span class="p">:</span> <span class="n">full_class</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+        <span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">snapshot_exclude</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">params_to_skip_update</span> <span class="ow">and</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">params_to_skip_update</span><span class="p">:</span>
+                <span class="n">update_par</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">update_par</span> <span class="o">=</span> <span class="n">update</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">snap</span><span class="p">[</span><span class="s2">&quot;parameters&quot;</span><span class="p">][</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">snapshot</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="n">update_par</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="c1"># really log this twice. Once verbose for the UI and once</span>
+                <span class="c1"># at lower level with more info for file based loggers</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Snapshot: Could not update parameter: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Details for Snapshot:&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">snap</span><span class="p">[</span><span class="s2">&quot;parameters&quot;</span><span class="p">][</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">snapshot</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_meta_attrs</span><span class="p">):</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">Metadatable</span><span class="p">):</span>
+                    <span class="n">snap</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">snapshot</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="n">update</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">snap</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+
+        <span class="k">return</span> <span class="n">snap</span></div>
+
+
+<div class="viewcode-block" id="InstrumentBase.print_readable_snapshot">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.InstrumentBase.print_readable_snapshot">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">print_readable_snapshot</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">update</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">max_chars</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">80</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Prints a readable version of the snapshot.</span>
+<span class="sd">        The readable snapshot includes the name, value and unit of each</span>
+<span class="sd">        parameter.</span>
+<span class="sd">        A convenience function to quickly get an overview of the</span>
+<span class="sd">        status of an instrument.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            update: If ``True``, update the state by querying the</span>
+<span class="sd">                instrument. If ``False``, just use the latest values in memory.</span>
+<span class="sd">                This argument gets passed to the snapshot function.</span>
+<span class="sd">            max_chars: the maximum number of characters per line. The</span>
+<span class="sd">                readable snapshot will be cropped if this value is exceeded.</span>
+<span class="sd">                Defaults to 80 to be consistent with default terminal width.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">floating_types</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">)</span>
+        <span class="n">snapshot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">snapshot</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="n">update</span><span class="p">)</span>
+
+        <span class="n">par_lengths</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">snapshot</span><span class="p">[</span><span class="s2">&quot;parameters&quot;</span><span class="p">]]</span>
+        <span class="c1"># handle the case of no parameters</span>
+        <span class="n">par_lengths</span> <span class="o">=</span> <span class="n">par_lengths</span> <span class="ow">or</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Min of 50 is to prevent a super long parameter name to break this</span>
+        <span class="c1"># function</span>
+        <span class="n">par_field_len</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">par_lengths</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;:&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;{0:&lt;</span><span class="si">{1}</span><span class="s2">}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">parameter &quot;</span><span class="p">,</span> <span class="n">par_field_len</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;value&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="n">max_chars</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">par</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">snapshot</span><span class="p">[</span><span class="s2">&quot;parameters&quot;</span><span class="p">]):</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">snapshot</span><span class="p">[</span><span class="s2">&quot;parameters&quot;</span><span class="p">][</span><span class="n">par</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;{0:&lt;</span><span class="si">{1}</span><span class="s2">}:&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">par_field_len</span><span class="p">)</span>
+
+            <span class="c1"># in case of e.g. ArrayParameters, that usually have</span>
+            <span class="c1"># snapshot_value == False, the parameter may not have</span>
+            <span class="c1"># a value in the snapshot</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">snapshot</span><span class="p">[</span><span class="s2">&quot;parameters&quot;</span><span class="p">][</span><span class="n">par</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="s2">&quot;Not available&quot;</span><span class="p">)</span>
+
+            <span class="n">unit</span> <span class="o">=</span> <span class="n">snapshot</span><span class="p">[</span><span class="s2">&quot;parameters&quot;</span><span class="p">][</span><span class="n">par</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;unit&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">unit</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># this may be a multi parameter</span>
+                <span class="n">unit</span> <span class="o">=</span> <span class="n">snapshot</span><span class="p">[</span><span class="s2">&quot;parameters&quot;</span><span class="p">][</span><span class="n">par</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;units&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">floating_types</span><span class="p">):</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="si">{</span><span class="n">val</span><span class="si">:</span><span class="s2">.5g</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="c1"># numpy float and int types format like builtins</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="k">if</span> <span class="n">unit</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>  <span class="c1"># corresponds to no unit</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">unit</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="c1"># Truncate the message if it is longer than max length</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">max_chars</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">max_chars</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="n">msg</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="n">max_chars</span> <span class="o">-</span> <span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;...&quot;</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">submodule</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodules</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">submodule</span><span class="o">.</span><span class="n">print_readable_snapshot</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="n">update</span><span class="p">,</span> <span class="n">max_chars</span><span class="o">=</span><span class="n">max_chars</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InstrumentBase.invalidate_cache">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.InstrumentBase.invalidate_cache">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">invalidate_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Invalidate the cache of all parameters on the instrument.</span>
+<span class="sd">        Calling this method will recursively mark the cache of all parameters</span>
+<span class="sd">        on the instrument and any parameter on instrument modules as invalid.</span>
+
+<span class="sd">        This is useful if you have performed manual operations</span>
+<span class="sd">        (e.g. using the frontpanel)</span>
+<span class="sd">        which changes the state of the instrument outside QCoDeS.</span>
+
+<span class="sd">        This in turn means that the next snapshot of the instrument will trigger</span>
+<span class="sd">        a (potentially slow) reread of all parameters of the instrument if you pass</span>
+<span class="sd">        `update=None` to snapshot.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">parameter</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">invalidate</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">submodule</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodules</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">submodule</span><span class="o">.</span><span class="n">invalidate_cache</span><span class="p">()</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parent</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InstrumentBase</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The parent instrument. By default, this is ``None``.</span>
+<span class="sd">        Any SubInstrument should subclass this to return the parent instrument.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ancestors</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">InstrumentBase</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Ancestors in the form of a list of :class:`InstrumentBase`</span>
+
+<span class="sd">        The list starts with the current module</span>
+<span class="sd">        then the parent and the parents parent</span>
+<span class="sd">        until the root instrument is reached.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">ancestors</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="p">,)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">root_instrument</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InstrumentBase</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The topmost parent of this module.</span>
+
+<span class="sd">        For the ``root_instrument`` this is ``self``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">name_parts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A list of all the parts of the instrument name from :meth:`root_instrument`</span>
+<span class="sd">        to the current :class:`InstrumentModule`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">short_name</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">full_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Full name of the instrument.</span>
+
+<span class="sd">        For an :class:`InstrumentModule` this includes</span>
+<span class="sd">        all parents separated by ``_``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name_parts</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Full name of the instrument</span>
+
+<span class="sd">        This is equivalent to :meth:`full_name` for backwards compatibility.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">short_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Short name of the instrument.</span>
+
+<span class="sd">        For an :class:`InstrumentModule` this does</span>
+<span class="sd">        not include any parent names.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_short_name</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_is_valid_identifier</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check whether given name is a valid instrument identifier.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">isidentifier</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> invalid instrument identifier&quot;</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_replace_hyphen</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Replace - in name with _ and warn if any is found.&quot;&quot;&quot;</span>
+        <span class="n">new_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">!=</span> <span class="n">new_name</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Changed </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">new_name</span><span class="si">}</span><span class="s2"> for instrument identifier&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">new_name</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_is_abstract</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method is run after the initialization of an instrument but</span>
+<span class="sd">        before the instrument is registered. It recursively checks that there are</span>
+<span class="sd">        no abstract parameters defined on the instrument or any instrument channels.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">is_abstract</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">abstract_parameters</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">parameter</span><span class="o">.</span><span class="n">name</span>
+            <span class="k">for</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">parameter</span><span class="o">.</span><span class="n">abstract</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">abstract_parameters</span><span class="p">):</span>
+            <span class="n">is_abstract</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">for</span> <span class="n">submodule</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument_modules</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">submodule</span><span class="o">.</span><span class="n">_is_abstract</span><span class="p">():</span>
+                <span class="n">is_abstract</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">for</span> <span class="n">chanel_list</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel_lists</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">channel</span> <span class="ow">in</span> <span class="n">chanel_list</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">channel</span><span class="o">.</span><span class="n">_is_abstract</span><span class="p">():</span>
+                    <span class="n">is_abstract</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="n">is_abstract</span>
+
+    <span class="c1">#</span>
+    <span class="c1"># shortcuts to parameters &amp; setters &amp; getters                           #</span>
+    <span class="c1">#</span>
+    <span class="c1"># instrument[&#39;someparam&#39;] === instrument.parameters[&#39;someparam&#39;]        #</span>
+    <span class="c1"># instrument.someparam === instrument.parameters[&#39;someparam&#39;]           #</span>
+    <span class="c1"># instrument.get(&#39;someparam&#39;) === instrument[&#39;someparam&#39;].get()         #</span>
+    <span class="c1"># etc...                                                                #</span>
+    <span class="c1">#</span>
+    <span class="n">delegate_attr_dicts</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;parameters&quot;</span><span class="p">,</span> <span class="s2">&quot;functions&quot;</span><span class="p">,</span> <span class="s2">&quot;submodules&quot;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="InstrumentBase.__getitem__">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.InstrumentBase.__getitem__">[docs]</a>
+    <span class="nd">@deprecated</span><span class="p">(</span>
+        <span class="s2">&quot;Use of `__getitem__` is not recommended for new code. &quot;</span>
+        <span class="s2">&quot;Use attributes directly on the instrument object instead. &quot;</span>
+        <span class="s2">&quot;There is no plan to remove this functionality, but it is not recommended.&quot;</span><span class="p">,</span>
+        <span class="n">category</span><span class="o">=</span><span class="ne">PendingDeprecationWarning</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">Parameter</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delegate instrument[&#39;name&#39;] to parameter or function &#39;name&#39;.</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            This is deprecated. Use attributes directly or if dynamic attribute required look up via</span>
+<span class="sd">            .parameters or .functions dictionaries</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">functions</span><span class="p">[</span><span class="n">key</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="InstrumentBase.set">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.InstrumentBase.set">[docs]</a>
+    <span class="nd">@deprecated</span><span class="p">(</span>
+        <span class="s2">&quot;Use of `set` is not recommended for new code. &quot;</span>
+        <span class="s2">&quot;Call set directly on the parameter instead. &quot;</span>
+        <span class="s2">&quot;There is no plan to remove this functionality, but it is not recommended for new code.&quot;</span><span class="p">,</span>
+        <span class="n">category</span><span class="o">=</span><span class="ne">PendingDeprecationWarning</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Shortcut for setting a parameter from its name and new value.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            param_name: The name of a parameter of this instrument.</span>
+<span class="sd">            value: The new value to set.</span>
+
+
+<span class="sd">        Note:</span>
+<span class="sd">            This is deprecated. Call set directly on the parameter.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">param_name</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InstrumentBase.get">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.InstrumentBase.get">[docs]</a>
+    <span class="nd">@deprecated</span><span class="p">(</span>
+        <span class="s2">&quot;Use of `get` is not recommended for new code. &quot;</span>
+        <span class="s2">&quot;Call get directly on the parameter.&quot;</span>
+        <span class="s2">&quot;There is no plan to remove this functionality, but it is not recommended for new code.&quot;</span><span class="p">,</span>
+        <span class="n">category</span><span class="o">=</span><span class="ne">PendingDeprecationWarning</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Shortcut for getting a parameter from its name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            param_name: The name of a parameter of this instrument.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The current value of the parameter.</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            This is deprecated. Call get directly on the parameter.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">param_name</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="InstrumentBase.call">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.InstrumentBase.call">[docs]</a>
+    <span class="nd">@deprecated</span><span class="p">(</span>
+        <span class="s2">&quot;Use of `call` is not recommended for new code. &quot;</span>
+        <span class="s2">&quot;Call the function directly instead. &quot;</span>
+        <span class="s2">&quot;There is no plan to remove this functionality, but it is not recommended for new code.&quot;</span><span class="p">,</span>
+        <span class="n">category</span><span class="o">=</span><span class="ne">PendingDeprecationWarning</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Shortcut for calling a function from its name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            func_name: The name of a function of this instrument.</span>
+<span class="sd">            *args: any arguments to the function.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The return value of the function.</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            This is deprecated. Call the function directly.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">functions</span><span class="p">[</span><span class="n">func_name</span><span class="p">]</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InstrumentBase.__getstate__">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.InstrumentBase.__getstate__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Prevent pickling instruments, and give a nice error message.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Error when pickling instrument </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;QCoDeS instruments can not be pickled.&quot;</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InstrumentBase.validate_status">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.InstrumentBase.validate_status">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate the values of all gettable parameters</span>
+
+<span class="sd">        The validation is done for all parameters that have both a get and</span>
+<span class="sd">        set method.</span>
+
+<span class="sd">        Arguments:</span>
+<span class="sd">            verbose: If ``True``, then information about the</span>
+<span class="sd">                parameters that are being check is printed.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">gettable</span> <span class="ow">and</span> <span class="n">p</span><span class="o">.</span><span class="n">settable</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;validate_status: param </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">p</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script src="../../../_static/documentation_options.js?v=14f3ca12"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    </body>
+</html>

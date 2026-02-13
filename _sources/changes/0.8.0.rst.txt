@@ -1,0 +1,87 @@
+Changelog for QCoDeS 0.8.0
+==========================
+
+The November 2019 release of QCoDeS
+
+New:
+____
+
+* Introduce 'safe experiment abort' feature: On ctrl-c the running experiment
+  will be halted, but ongoing VISA commands will be completed and all captured
+  data will be written to the database, so that the system is left in a clean
+  state.
+  A second 'ctrl-c' event will stop the execution without any of those safty
+  measures and will thereby reproduce the previous behavior of a single 'ctrl-c'.
+  (:pr:`1701`)
+* Added validation of station configuration files, including live
+  linting and auto-complete features for vscode (:pr:`1759`).
+* Enable setting parameters on ``ChannelLists`` in the station config file (:pr:`1785`)
+
+
+Improved:
+_________
+
+* Complete overhaul of the parameter cache including ``GetLatest``.
+  This improves API experience, removes dangerous bugs as well as sources of
+  potential new bugs. (:pr:`1757`, :pr:`1790`, :pr:`1789`, :pr:`1768`, :pr:`1787`, :pr:`1788`, :pr:`1827`, :pr:`1832`)
+* Enable logging from multiple processes at the same time (:pr:`1816`)
+* Documentation: Add new documentation (DataSet :pr:`1715`), remove outdated
+  documentation (:pr:`1779`) and improve existing.
+  (:pr:`1780`, :pr:`1771`, :pr:`1770`, :pr:`1781`, :pr:`1777`, :pr:`1798`, :pr:`1803`)
+* Added more and fixed type Annotations.
+  (:pr:`1769`, :pr:`1797`, :pr:`1794`, :pr:`1795`, :pr:`1807`, :pr:`1811`, :pr:`1814`, :pr:`1815`, :pr:`1817`, :pr:`1822`)
+* Added ``name`` kwarg for initialising ``Measurement`` objects (:pr:`1741`)
+* Bugfix: properly write complex standalone parameter to DB (:pr:`1823`)
+* consistent ``snapshot_base`` signatures. (:pr:`1768`)
+* enable customized log messages for measurement start and end events (:pr:`1808`)
+
+New Instrument drivers:
+_______________________
+
+* Driver for AimTTi Pl601-P (:pr:`1763`)
+
+
+Under the hood:
+_______________
+
+* Deprecation decorator for classes (:pr:`1805`, :pr:`1806`)
+* Improved CI/CD (:pr:`1774`)
+* Make tests less flaky (:pr:`1772`, :pr:`1826`)
+* Docs build on sphinx 2.2.0 (:pr:`1783`)
+* Getting ready for python 3.8 (:pr:`1793`)
+* Mypy version 0.740 adaption (:pr:`1794`)
+* Consistent linting through ``.pylintrc`` (:pr:`1804`)
+* Fix local docs built (:pr:`1803`)
+
+
+
+Breaking Changes:
+_________________
+
+* The ``name`` and ``short_name`` attributes of ``InstrumentBase`` became
+  read-only properties because it should not be possible to change them on
+  an instantiated instrument. (:pr:`1820`)
+
+* deferred operations have been removed (:pr:`1818`).
+
+Deprecations:
+_____________
+
+* There has been a great contribution of community drivers over the years and
+  and encourage the community to further contribute. To ensure a continued high
+  quality standard of the 'core' drivers and reduce the latencies of contributed
+  drivers we split out drivers for devices that are not being used within the
+  Microsoft Quantum Program into a separate repository that will be community
+  maintained. Find the ``qcodes_contrib_drivers`` here:
+  https://github.com/QCoDeS/Qcodes_contrib_drivers
+* Module ``qcodes.utils.zmq_helpers`` (:pr:`1819`)
+
+
+Recommended Dependencies:
+_________________________
+
+* numpy 1.16.4->1.17
+
+* pyvisa 1.10->1.10.1
+
+* websockets 8.0.2->8.1

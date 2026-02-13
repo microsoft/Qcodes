@@ -1,0 +1,1524 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../../_static/qcodes_favicon.png"><link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html"><link rel="next" title="Qcodes example with Basel SP983c Preamp and its Remote SP983a" href="Qcodes%20example%20with%20Basel%20SP983c%20Preamp.html"><link rel="prev" title="QCoDeS Example with Agilent 34400A" href="Qcodes%20example%20with%20Agilent%2034400A.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.12.19 -->
+        <title>QCoDeS Example with Alazar ATS 9360 - QCoDeS 0.55.0.dev570 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../index.html"><div class="brand">QCoDeS 0.55.0.dev570 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
+  
+  <span class="sidebar-brand-text">QCoDeS 0.55.0.dev570 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../start/index.html">Getting Started</a><input aria-label="Toggle navigation of Getting Started" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../basic_examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../index.html">Examples of using QCoDeS</a><input aria-label="Toggle navigation of Examples of using QCoDeS" checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l2 has-children"><a class="reference internal" href="../basic_examples/index.html">Basic examples</a><input aria-label="Toggle navigation of Basic examples" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../basic_examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../basic_examples/Configuring_QCoDeS.html">QCoDeS config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../basic_examples/Station.html">Station</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../Parameters/index.html">Parameters</a><input aria-label="Toggle navigation of Parameters" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Complex_Parameters.html">Complex Numbers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Legacy_Parameters.html">Legacy parameter examples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/MultiParameter.html">MultiParameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Parameter-With-Setpoints-defined-on-a-different-instrument.html">ParameterWithSetpoints with setpoints defined on another instrument.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Parameter_defined_InterDependencies.html">Parameter-defined InterDependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Parameter_defined_InterDependencies.html#ControllingParameter-Example">ControllingParameter Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Parameters.html">Parameters in QCoDeS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Scaled_Parameter.html">ScaledParameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Simple-Example-of-ParameterWithSetpoints.html">Simple Example of ParameterWithSetpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../DataSet/index.html">DataSet</a><input aria-label="Toggle navigation of DataSet" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Accessing-data-in-DataSet.html">Accessing data in a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Benchmarking.html">Dataset Benchmarking</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/DataSet-class-walkthrough.html">DataSet class walkthrough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Database.html">Databases</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Datasaver_Builder.html">Using <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> and <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> to streamline measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Dataset_Performance.html">DataSet Performance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Exporting-data-to-other-file-formats.html">Exporting QCoDes Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Extracting-runs-from-one-DB-file-to-another.html">Extracting runs from one DB file to another</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/InMemoryDataSet.html">In memory dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Linking%20to%20parent%20datasets.html">Linking to parent datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Measuring%20X%20as%20a%20function%20of%20time.html">Measuring X as a function of time</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Offline%20Plotting%20Tutorial.html">Offline Plotting Tutorial</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Offline%20plotting%20with%20categorical%20data.html">Offline plotting with categorical data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Offline%20plotting%20with%20complex%20data.html">Offline plotting with complex data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Paramtypes%20explained.html">Paramtypes explained</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Pedestrian%20example%20of%20subscribing%20to%20a%20DataSet.html">Pedestrian example of subscribing to a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html">Performing measurements using QCoDeS parameters and DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Saving_data_in_the_background.html">Saving data in the background</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/The-Experiment-Container.html">The Experiment Container</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Threaded%20data%20acquisition.html">Threaded data acquisition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html">Using doNd functions in comparison to Measurement context manager for performing measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Using_register_name.html">Using the <code class="docutils literal notranslate"><span class="pre">register_name</span></code> kwarg to select how a parameter is saved to a dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Working%20with%20snapshots.html">Working with snapshots</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Working-With-Pandas-and-XArray.html">Working with Pandas and XArray</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/import-data-from-legacy-dat-files.html">Importing data from legacy .dat files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/subscriber%20json%20exporter.html">Subscriber with JSON export</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Real_instruments/Example%20Measurements%20with%20Real%20Instruments.html">Example Measurements with Real Instruments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Cache/read_data_from_cache.html">Read data from cache</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Cache/write_for_caching.html">Write data to cache</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../plotting/index.html">Plotting</a><input aria-label="Toggle navigation of Plotting" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../plotting/How-to-use-Plottr-with-QCoDeS-for-live-plotting.html">How to use Plottr with QCoDeS for live plotting?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../plotting/auto_color_scale.html">Auto Color Scale</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current has-children"><a class="reference internal" href="index.html">Drivers</a><input aria-label="Toggle navigation of Drivers" checked="" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20Example%20with%20Keysight%20E4980A%20LCR%20meter.html">QCoDeS Example with Keysight E4980A LCR meter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20Example%20with%20Yokogawa%20GS200%20and%20Keithley%207510.html">QCoDeS Example with Yokogawa GS200 and Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20Aim%20TTi%20PL601-P.html">QCoDeS example with Aim TTi PL601-P</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20CopperMountain_M5065.html">Example with Copper Mountain Model M5065 Vector Network Analyzer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20DelegateInstrument.html">Qcodes example with DelegateInstrument driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20Galil%20DMC4133%20Controller.html">QCoDeS example with Galil DMC4133 Controller</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20InstrumentGroup%20and%20DelegateInstrument.html">Qcodes example with InstrumentGroup driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20Keithley%203706A%20System%20Switch.html">QCoDeS example with Keithley 3706A System Switch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Keithley%20S46.html">QCoDeS Example with Tektronix Keithley S46</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Rigol%20DG1062.html">QCoDeS Example with the Rigol DG 1062 Instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Tektronix%20DPO%2072004C.html">QCoDeS example with Textronix DPO 7200xx scopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20AMI430.html">QCoDeS Example with AMI430</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Agilent%2034400A.html">QCoDeS Example with Agilent 34400A</a></li>
+<li class="toctree-l3 current current-page"><a class="current reference internal" href="#">QCoDeS Example with Alazar ATS 9360</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Basel%20SP983c%20Preamp.html">Qcodes example with Basel SP983c Preamp and its Remote SP983a</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Cryomagnetics%20TM-620.html">Cryomagnetics TM-620 QCoDeS Driver Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Cryomagnetics4G.html">Cryomagnetics 4G QCoDeS Driver Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20DynaCool%20PPMS.html">QCoDeS Example with DynaCool PPMS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20HP8753D.html">QCoDeS Example with HP8753D</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Ithaco.html">QCoDeS Example with Itacho</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keithley%202600.html">QCoDeS Example with with Keithley 2600 series</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keithley%207510.html">QCoDeS Example with Tektronix Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%2033500B.html">QCoDeS Example with Keysight 33500B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20344xxA.html">QCoDeS Example with Keysight 344xxA</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%2034980A%20Switch%20Mainframe%20and%20Modules.html">QCoDeS Example with Keysight 34980A Multifunction Switch / Measure Mainframe and Modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20B1500%20Parameter%20Analyzer.html">Qcodes example with Keysight B1500 Semiconductor Parameter Analyzer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20B2200%20Series%20Femto%20Leakage%20Switch%20Matrix.html">QCoDeS Example with Keysight B2200 Series Femto Leakage Switch Matrix</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20Infiniium%20Oscilloscope.html">QCoDeS Example with Keysight Infiniium Oscilloscopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20N9030B.html">Qcodes example with Keysight N9030B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20Network%20Analyzer.html">QCoDeS Example with Keysight Network Analyzers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Lakeshore%20325.html">QCoDeS Example with Lakeshore 325</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Lakeshore%20336%20or%20372%20-%20Bluefors%20T%20control.html">QCoDeS Example with the Lakeshore Model 372 to Control the Temperature of the Bluefors Fridge</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Minicircuits%20Switch%20boxes%20%28USB-XSPDT%29.html">QCoDeS Example with Minicircuits Switch Boxes Controlled via USB</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Oxford%20Mercury%20iPS.html">QCoDeS Example with Mercury iPS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Oxford%20Triton.html">QCoDeS Example with Oxford Triton</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20QDev_QDac.html">QCoDeS Example with QDac_channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rigol%20DP832.html">QCoDeS Example with Rigol DP832 Power Supply</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rigol%20DS1074Z.html">QCoDeS Example with the Rigol DS 1074 Z oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20RTO%201000%20series%20Oscilloscope.html">QCoDeS Example with Rohde Schwarz RTO 1000 Series Oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20SGS100A.html">QCoDeS Example with Rohde Schwarz SGS100A RF source</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20ZNB.html">QCoDeS Example with Rohde Schwarz ZNB20/8</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stahl.html">QCoDeS Example with the Stahl Bias Sources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stanford%20SR830.html">QCoDeS Example with Stanford SR830</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stanford%20SR86x%20with%20buffered%20readout.html">QCoDeS Example with Standford Research SR86x Lock-in Amplifier with Buffered Readout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Tektronix%20AWG5014C.html">QCoDeS Example with Tektronix AWG5014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Tektronix%20AWG70002A.html">QCoDeS Example with Tektronix AWG70002A</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Tektronix%20TPS2012.html">QCoDeS Example with Tektronix TPS2012</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Yokogawa%20GS2xx.html">QCoDeS Example with Yokogawa GS200/GS210</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20keithley%202450.html">QCoDeS Example with Tektronix Keithley 2450 Source Meter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%2Bbroadbean%20example%20with%20Tektronix%20AWG5208.html">QCoDeS+Broadbean Example with Tektronix AWG5208</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes-example-with-Signal-Hound-USB-SA124B.html">QCoDeS Example with Signal Hound USB-SA124B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes-example-with-Signal-Hound-USB-SA124B-ParameterWithSetpoints.html">QCoDeS Example with Signal Hound USB-SA124B ParameterWithSetpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../writing_drivers/index.html">Writing Drivers</a><input aria-label="Toggle navigation of Writing Drivers" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../writing_drivers/A-ParameterWithSetpoints-Example-with-Dual-Setpoints.html">A ParameterWithSetpoints Example with Dual Setpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../writing_drivers/Creating-Instrument-Drivers.html">Creating QCoDeS instrument drivers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../writing_drivers/Creating-Simulated-PyVISA-Instruments.html">Creating Simulated PyVISA Instruments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../writing_drivers/Instruments.html">Instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../writing_drivers/abstract_instruments.html">Abstract Instruments and parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../writing_drivers/abstract_instruments.html#Working-subclass">Working subclass</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../logging/index.html">Logging</a><input aria-label="Toggle navigation of Logging" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../logging/logfile_parsing.html">Logfile parsing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../logging/logging_example.html">Logging</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../community/index.html">Community Guide</a><input aria-label="Toggle navigation of Community Guide" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../community/install.html">Source Code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../community/contributing.html">Contributing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../community/related_projects.html">Related Projects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../community/objects.html">Object Hierarchy</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../dataset/index.html">DataSet</a><input aria-label="Toggle navigation of DataSet" class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../dataset/introduction.html">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dataset/spec.html">DataSet Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dataset/dataset_design.html">Dataset Design</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dataset/interdependentparams.html">Interdependent Parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../api/index.html">QCoDes API documentation</a><input aria-label="Toggle navigation of QCoDes API documentation" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../api/calibrations/index.html">qcodes.calibrations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/configuration/index.html">qcodes.configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/dataset/index.html">qcodes.dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/extensions/index.html">qcodes.extensions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/instrument/index.html">qcodes.instrument</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/interactive_widget.html">qcodes.interactive_widget</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/logger/index.html">qcodes.logger</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/math_utils/index.html">qcodes.math_utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/metadatable/index.html">qcodes.metadatable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/monitor/index.html">qcodes.monitor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/parameters/index.html">qcodes.parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/plotting/index.html">qcodes.plotting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/station.html">qcodes.station</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/utils/index.html">qcodes.utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/validators/index.html">qcodes.validators</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../drivers_api/index.html">Instrument Drivers</a><input aria-label="Toggle navigation of Instrument Drivers" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Agilent.html">Agilent Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/AimTTi.html">AimTTi Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/AlazarTech.html">Alazar Tech Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/American_magnetics.html">American Magnetics Inc Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Basel.html">Basel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/CryoMagnetics.html">Cryomagnetics Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Galil.html">Galil Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/HP.html">Hewlett Packard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Harvard.html">Harvard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Ithaco.html">Ithaco Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Keithley.html">Keithley Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Keysight.html">Keysight Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Lakeshore.html">Lakeshore Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Minicircuits.html">MiniCircuits Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Oxford.html">Oxford Instruments Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/QDev.html">QDev Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/QuantumDesign.html">Quantum Design Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Rigol.html">Rigol Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/RohdeSchwarz.html">Rohde &amp; Schwarz Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/SRS.html">Stanford Research Systems Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/SignalHound.html">Signal Hound Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Stahl.html">Stahl Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Tektronix.html">Tektronix Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Weinschel.html">Weinschel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Yokogawa.html">Yokogawa Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Zhinst.html">Zurich Instruments Drivers</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../changes/index.html">Changelogs</a><input aria-label="Toggle navigation of Changelogs" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/unreleased.html">Unreleased</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.54.4.html">0.54.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.54.3.html">0.54.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.54.1.html">0.54.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.54.0.html">0.54.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.53.0.html">0.53.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.52.0.html">0.52.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.51.0.html">0.51.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.50.1.html">0.50.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.50.0.html">0.50.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.49.0.html">0.49.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.48.0.html">0.48.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.47.0.html">0.47.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.46.0.html">0.46.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.45.0.html">0.45.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.44.1.html">0.44.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.44.0.html">0.44.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.43.0.html">0.43.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.42.1.html">0.42.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.42.0.html">0.42.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.41.1.html">0.41.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.41.0.html">0.41.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.40.0.html">0.40.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.39.1.html">0.39.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.39.0.html">0.39.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.38.1.html">0.38.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.38.0.html">0.38.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.37.0.html">0.37.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.36.1.html">0.36.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.36.0.html">0.36.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.35.2.html">0.35.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.35.1.html">0.35.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.35.0.html">0.35.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.35.0b1.html">0.35.0b1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.34.1.html">0.34.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.34.0.html">0.34.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.33.0.html">0.33.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.32.0.html">0.32.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.31.0.html">0.31.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.30.1.html">0.30.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.30.0.html">0.30.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.29.1.html">0.29.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.29.0.html">0.29.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.28.0.html">0.28.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.27.0.html">0.27.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.26.0.html">0.26.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.25.0.html">0.25.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.24.0.html">0.24.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.23.0.html">0.23.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.22.0.html">0.22.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.21.0.html">0.21.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.20.1.html">0.20.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.20.0.html">0.20.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.19.2.html">0.19.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.19.1.html">0.19.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.19.0.html">0.19.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.18.0.html">0.18.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.17.0.html">0.17.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.16.0.html">0.16.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.15.0.html">0.15.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.15.0a1.html">0.15.0a1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.14.0.html">0.14.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.13.0.html">0.13.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.12.1.html">0.12.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.12.0.html">0.12.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.11.0.html">0.11.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.10.0.html">0.10.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.9.0.html">0.9.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.8.1.html">0.8.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.8.0.html">0.8.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.7.0.html">0.7.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.6.0.html">0.6.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.5.2.html">0.5.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.5.1.html">0.5.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.5.0.html">0.5.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.4.0.html">0.4.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.3.0.html">0.3.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.2.1.html">0.2.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.2.0.html">0.2.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.11.html">0.1.11</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.10.html">0.1.10</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.9.html">0.1.9</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.7.html">0.1.7</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.6.html">0.1.6</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.5.html">0.1.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.4.html">0.1.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.3.html">0.1.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.2.html">0.1.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.0.html">0.1.0</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../help.html">Get Help</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../../_sources/examples/driver_examples/Qcodes example with Alazar ATS9360.ipynb.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <div class="admonition note">
+  <p>This page was generated from
+    <a class="reference external"
+    href="https://github.com/qcodes/qcodes/blob/main/docs/examples/driver_examples/Qcodes example with Alazar ATS9360.ipynb">docs/examples/driver_examples/Qcodes example with Alazar ATS9360.ipynb</a>.
+    Interactive online version:
+    <a href="https://mybinder.org/v2/gh/qcodes/qcodes/main?filepath=docs/examples/driver_examples/Qcodes example with Alazar ATS9360.ipynb"><img
+alt="Binder badge"
+    src="https://mybinder.org/badge_logo.svg"
+    style="vertical-align:text-bottom"></a>.
+  </p>
+  <script>
+    if (document.location.host) {
+      var p = document.currentScript.previousSibling.previousSibling;
+      var a = document.createElement('a');
+      a.innerHTML = 'View in <em>nbviewer</em>';
+      a.href = `https://nbviewer.jupyter.org/url${
+        (window.location.protocol == 'https:' ? 's/' : '/') +
+        window.location.host +
+        window.location.pathname.slice(0, -4) }ipynb`;
+      a.classList.add('reference');
+      a.classList.add('external');
+      p.appendChild(a);
+      p.appendChild(document.createTextNode('.'));
+    }
+  </script>
+</div><section id="QCoDeS-Example-with-Alazar-ATS-9360">
+<h1>QCoDeS Example with Alazar ATS 9360<a class="headerlink" href="#QCoDeS-Example-with-Alazar-ATS-9360" title="Link to this heading">¶</a></h1>
+<p>In this notebook, we want to show how to setup an Alazar ATS9360 card and its acquisition controller in qcodes to acquire data. In this example, we only demonstrate how to setup the card for an acquisition job without physically contected to any other instrument like wave form generators. Although, this notebook is aimed for ATS9360, most of its content can be useful for other models of Alazar cards having their qcodes driver.</p>
+<section id="Required-imports">
+<h2>Required imports<a class="headerlink" href="#Required-imports" title="Link to this heading">¶</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qcodes.dataset</span><span class="w"> </span><span class="kn">import</span> <span class="n">do1d</span><span class="p">,</span> <span class="n">plot_by_id</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qcodes.instrument_drivers.AlazarTech</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AlazarTechATS9360</span><span class="p">,</span>
+    <span class="n">DemodulationAcquisitionController</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qcodes.parameters</span><span class="w"> </span><span class="kn">import</span> <span class="n">ManualParameter</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Setting-up-Alazar-and-performing-an-acquisition">
+<h2>Setting up Alazar and performing an acquisition<a class="headerlink" href="#Setting-up-Alazar-and-performing-an-acquisition" title="Link to this heading">¶</a></h2>
+<p>First, lets list all the Alazar boards connected to this machine. In most cases this will probably only be a single one:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">AlazarTechATS9360</span><span class="o">.</span><span class="n">find_boards</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[{&#39;system_id&#39;: 1,
+  &#39;board_id&#39;: 1,
+  &#39;board_kind&#39;: &#39;ATS9360&#39;,
+  &#39;max_samples&#39;: 4294967294,
+  &#39;bits_per_sample&#39;: 12}]
+</pre></div></div>
+</div>
+<p>Now, we create an instance of alazar:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ats_inst</span> <span class="o">=</span> <span class="n">AlazarTechATS9360</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Alazar1&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>This prints all information about this Alazar card:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ats_inst</span><span class="o">.</span><span class="n">get_idn</span><span class="p">()</span>  <span class="c1"># or .IDN()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;firmware&#39;: &#39;21.09&#39;,
+ &#39;model&#39;: &#39;ATS9360&#39;,
+ &#39;max_samples&#39;: 4294967294,
+ &#39;bits_per_sample&#39;: 12,
+ &#39;serial&#39;: &#39;970396&#39;,
+ &#39;vendor&#39;: &#39;AlazarTech&#39;,
+ &#39;CPLD_version&#39;: &#39;25.16&#39;,
+ &#39;driver_version&#39;: &#39;6.5.1&#39;,
+ &#39;SDK_version&#39;: &#39;6.5.1&#39;,
+ &#39;latest_cal_date&#39;: &#39;25-01-17&#39;,
+ &#39;memory_size&#39;: &#39;4294967294&#39;,
+ &#39;asopc_type&#39;: 1763017568,
+ &#39;pcie_link_speed&#39;: &#39;0.5GB/s&#39;,
+ &#39;pcie_link_width&#39;: &#39;8&#39;}
+</pre></div></div>
+</div>
+<p>The parameters on the Alazar card are set in a slightly unusual way. As communicating with the card is slow, and sometimes multiple parameters have to be set with a single “command”, we use a context manager that takes care of syncing all the paramters to the card after we set them. Remember to sync parameter values to Alazar card when changing values of those parameters which correspond to Alazar card settings (for example sample_rate parameter is a global “setting” for the card, while for
+example records_per_buffer is a parameter of the acquisition process and is set to the card only when performing an acquisition):</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">ats_inst</span><span class="o">.</span><span class="n">syncing</span><span class="p">():</span>
+    <span class="n">ats_inst</span><span class="o">.</span><span class="n">clock_source</span><span class="p">(</span><span class="s2">&quot;INTERNAL_CLOCK&quot;</span><span class="p">)</span>
+    <span class="n">ats_inst</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">(</span><span class="mi">1_000_000_000</span><span class="p">)</span>
+    <span class="n">ats_inst</span><span class="o">.</span><span class="n">clock_edge</span><span class="p">(</span><span class="s2">&quot;CLOCK_EDGE_RISING&quot;</span><span class="p">)</span>
+    <span class="n">ats_inst</span><span class="o">.</span><span class="n">decimation</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">ats_inst</span><span class="o">.</span><span class="n">coupling1</span><span class="p">(</span><span class="s2">&quot;DC&quot;</span><span class="p">)</span>
+    <span class="n">ats_inst</span><span class="o">.</span><span class="n">coupling2</span><span class="p">(</span><span class="s2">&quot;DC&quot;</span><span class="p">)</span>
+    <span class="n">ats_inst</span><span class="o">.</span><span class="n">channel_range1</span><span class="p">(</span><span class="mf">0.4</span><span class="p">)</span>
+    <span class="n">ats_inst</span><span class="o">.</span><span class="n">channel_range2</span><span class="p">(</span><span class="mf">0.4</span><span class="p">)</span>
+    <span class="n">ats_inst</span><span class="o">.</span><span class="n">impedance1</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>
+    <span class="n">ats_inst</span><span class="o">.</span><span class="n">impedance2</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>
+    <span class="n">ats_inst</span><span class="o">.</span><span class="n">trigger_operation</span><span class="p">(</span><span class="s2">&quot;TRIG_ENGINE_OP_J&quot;</span><span class="p">)</span>
+    <span class="n">ats_inst</span><span class="o">.</span><span class="n">trigger_engine1</span><span class="p">(</span><span class="s2">&quot;TRIG_ENGINE_J&quot;</span><span class="p">)</span>
+    <span class="n">ats_inst</span><span class="o">.</span><span class="n">trigger_source1</span><span class="p">(</span><span class="s2">&quot;EXTERNAL&quot;</span><span class="p">)</span>
+    <span class="n">ats_inst</span><span class="o">.</span><span class="n">trigger_slope1</span><span class="p">(</span><span class="s2">&quot;TRIG_SLOPE_POSITIVE&quot;</span><span class="p">)</span>
+    <span class="n">ats_inst</span><span class="o">.</span><span class="n">trigger_level1</span><span class="p">(</span><span class="mi">160</span><span class="p">)</span>
+    <span class="n">ats_inst</span><span class="o">.</span><span class="n">trigger_engine2</span><span class="p">(</span><span class="s2">&quot;TRIG_ENGINE_K&quot;</span><span class="p">)</span>
+    <span class="n">ats_inst</span><span class="o">.</span><span class="n">trigger_source2</span><span class="p">(</span><span class="s2">&quot;DISABLE&quot;</span><span class="p">)</span>
+    <span class="n">ats_inst</span><span class="o">.</span><span class="n">trigger_slope2</span><span class="p">(</span><span class="s2">&quot;TRIG_SLOPE_POSITIVE&quot;</span><span class="p">)</span>
+    <span class="n">ats_inst</span><span class="o">.</span><span class="n">trigger_level2</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span>
+    <span class="n">ats_inst</span><span class="o">.</span><span class="n">external_trigger_coupling</span><span class="p">(</span><span class="s2">&quot;DC&quot;</span><span class="p">)</span>
+    <span class="n">ats_inst</span><span class="o">.</span><span class="n">external_trigger_range</span><span class="p">(</span><span class="s2">&quot;ETR_2V5&quot;</span><span class="p">)</span>
+    <span class="n">ats_inst</span><span class="o">.</span><span class="n">trigger_delay</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">ats_inst</span><span class="o">.</span><span class="n">aux_io_mode</span><span class="p">(</span><span class="s2">&quot;AUX_IN_AUXILIARY&quot;</span><span class="p">)</span>  <span class="c1"># AUX_IN_TRIGGER_ENABLE for seq mode on</span>
+    <span class="n">ats_inst</span><span class="o">.</span><span class="n">aux_io_param</span><span class="p">(</span><span class="s2">&quot;NONE&quot;</span><span class="p">)</span>  <span class="c1"># TRIG_SLOPE_POSITIVE for seq mode on</span>
+
+    <span class="c1"># Note that we set this parameter to a non-0 value for demonstration purposes - doing so allows</span>
+    <span class="c1"># to perform an acquisition using just the Alazar card without any additional hardware.</span>
+    <span class="c1"># Read Alazar SDK manual about `AlazarSetTriggerTimeOut` function for more information.</span>
+    <span class="n">ats_inst</span><span class="o">.</span><span class="n">timeout_ticks</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The alazar qcodes driver is only for setting and/ or getting parameters defined in the manual of the card. Other acquisition functionalities at the moment are available in the module called ATS_acquisition_controllers. So, we instantiate this module with the already instantiated Alazar driver:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">acquisition_controller</span> <span class="o">=</span> <span class="n">DemodulationAcquisitionController</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;acquisition_controller&quot;</span><span class="p">,</span> <span class="n">demodulation_frequency</span><span class="o">=</span><span class="mf">10e6</span><span class="p">,</span> <span class="n">alazar_name</span><span class="o">=</span><span class="s2">&quot;Alazar1&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>This following command is specific to this acquisition controller. The kwargs provided here are being forwarded to instrument’s acquire function (ats_inst.acquire()).</p>
+<p>This way, it becomes (arguably) easy to change acquisition specific settings from the ipython notebook.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">acquisition_controller</span><span class="o">.</span><span class="n">update_acquisitionkwargs</span><span class="p">(</span>  <span class="c1"># mode=&#39;NPT&#39;,</span>
+    <span class="n">samples_per_record</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span>
+    <span class="n">records_per_buffer</span><span class="o">=</span><span class="mi">74</span><span class="p">,</span>
+    <span class="n">buffers_per_acquisition</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="c1"># channel_selection=&#39;AB&#39;,</span>
+    <span class="c1"># transfer_offset=0,</span>
+    <span class="c1"># external_startcapture=&#39;ENABLED&#39;,</span>
+    <span class="c1"># enable_record_headers=&#39;DISABLED&#39;,</span>
+    <span class="c1"># alloc_buffers=&#39;DISABLED&#39;,</span>
+    <span class="c1"># fifo_only_streaming=&#39;DISABLED&#39;,</span>
+    <span class="c1"># interleave_samples=&#39;DISABLED&#39;,</span>
+    <span class="c1"># get_processed_data=&#39;DISABLED&#39;,</span>
+    <span class="n">allocated_buffers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="c1"># buffer_timeout=1000</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Getting the value of the parameter acquisition of the instrument acquisition_controller performes the entire acquisition protocol. The type/shape/kind of the returned value depends on the specific implementation of the acquisition controller in use. In this particular example, the output will be a single value (see the docstring of Demodulation_AcquisitionController).</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">acquisition_controller</span><span class="o">.</span><span class="n">acquisition</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+4.430443717981646
+</pre></div></div>
+</div>
+<p>Let’s have look at the snapshot of the Alazar instance:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ats_inst</span><span class="o">.</span><span class="n">snapshot</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;functions&#39;: {},
+ &#39;submodules&#39;: {},
+ &#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+ &#39;parameters&#39;: {&#39;IDN&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument.parameter.Parameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_IDN&#39;,
+   &#39;value&#39;: None,
+   &#39;raw_value&#39;: None,
+   &#39;ts&#39;: None,
+   &#39;post_delay&#39;: 0,
+   &#39;name&#39;: &#39;IDN&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;IDN&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#39;&lt;Anything&gt;&#39;},
+  &#39;clock_source&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_clock_source&#39;,
+   &#39;value&#39;: &#39;INTERNAL_CLOCK&#39;,
+   &#39;raw_value&#39;: 1,
+   &#39;ts&#39;: &#39;2020-11-26 13:53:42&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {&#39;INTERNAL_CLOCK&#39;: 1,
+    &#39;FAST_EXTERNAL_CLOCK&#39;: 2,
+    &#39;EXTERNAL_CLOCK_10MHz_REF&#39;: 7},
+   &#39;name&#39;: &#39;clock_source&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Clock Source&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;Enum: {&#39;EXTERNAL_CLOCK_10MHz_REF&#39;, &#39;FAST_EXTERNAL_CLOCK&#39;, &#39;INTERNAL_CLOCK&#39;}&gt;&#34;},
+  &#39;external_sample_rate&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_external_sample_rate&#39;,
+   &#39;value&#39;: &#39;UNDEFINED&#39;,
+   &#39;raw_value&#39;: &#39;UNDEFINED&#39;,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:50&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;name&#39;: &#39;external_sample_rate&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;S/s&#39;,
+   &#39;label&#39;: &#39;External Sample Rate&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;MultiType: Ints 300000000&lt;=v&lt;=1800000000, Enum: {&#39;UNDEFINED&#39;}&gt;&#34;},
+  &#39;sample_rate&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_sample_rate&#39;,
+   &#39;value&#39;: 1000000000,
+   &#39;raw_value&#39;: 53,
+   &#39;ts&#39;: &#39;2020-11-26 13:53:42&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {1000: 1,
+    2000: 2,
+    5000: 4,
+    10000: 8,
+    20000: 10,
+    50000: 12,
+    100000: 14,
+    200000: 16,
+    500000: 18,
+    1000000: 20,
+    2000000: 24,
+    5000000: 26,
+    10000000: 28,
+    20000000: 30,
+    50000000: 34,
+    100000000: 36,
+    200000000: 40,
+    500000000: 48,
+    800000000: 50,
+    1000000000: 53,
+    1200000000: 55,
+    1500000000: 58,
+    1800000000: 61,
+    &#39;EXTERNAL_CLOCK&#39;: 64,
+    &#39;UNDEFINED&#39;: &#39;UNDEFINED&#39;},
+   &#39;name&#39;: &#39;sample_rate&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;S/s&#39;,
+   &#39;label&#39;: &#39;Internal Sample Rate&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;Enum: {2000000, 10000000, 20000000, 50000000, 100000000, 500000000, 800000000, 200000000, 5000, 1000000000, 10000, 1800000000, 20000, 100000, 500000, &#39;UNDEFINED&#39;, 200000, 1000000, 5000000, 2000, 50000, 1200000000, 1000, &#39;EXTERNAL_CLOCK&#39;, 1500000000}&gt;&#34;},
+  &#39;clock_edge&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_clock_edge&#39;,
+   &#39;value&#39;: &#39;CLOCK_EDGE_RISING&#39;,
+   &#39;raw_value&#39;: 0,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:50&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {&#39;CLOCK_EDGE_RISING&#39;: 0, &#39;CLOCK_EDGE_FALLING&#39;: 1},
+   &#39;name&#39;: &#39;clock_edge&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Clock Edge&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;Enum: {&#39;CLOCK_EDGE_RISING&#39;, &#39;CLOCK_EDGE_FALLING&#39;}&gt;&#34;},
+  &#39;decimation&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_decimation&#39;,
+   &#39;value&#39;: 1,
+   &#39;raw_value&#39;: 1,
+   &#39;ts&#39;: &#39;2020-11-26 13:53:42&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;name&#39;: &#39;decimation&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Decimation&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#39;&lt;Ints 0&lt;=v&lt;=100000&gt;&#39;},
+  &#39;coupling1&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_coupling1&#39;,
+   &#39;value&#39;: &#39;DC&#39;,
+   &#39;raw_value&#39;: 2,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:50&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {&#39;AC&#39;: 1, &#39;DC&#39;: 2},
+   &#39;name&#39;: &#39;coupling1&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Coupling channel 1&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;Enum: {&#39;DC&#39;, &#39;AC&#39;}&gt;&#34;},
+  &#39;channel_range1&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_channel_range1&#39;,
+   &#39;value&#39;: 0.4,
+   &#39;raw_value&#39;: 7,
+   &#39;ts&#39;: &#39;2020-11-26 13:53:42&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {0.4: 7},
+   &#39;name&#39;: &#39;channel_range1&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;V&#39;,
+   &#39;label&#39;: &#39;Range channel 1&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#39;&lt;Enum: {0.4}&gt;&#39;},
+  &#39;impedance1&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_impedance1&#39;,
+   &#39;value&#39;: 50,
+   &#39;raw_value&#39;: 2,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:50&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {50: 2},
+   &#39;name&#39;: &#39;impedance1&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;Ohm&#39;,
+   &#39;label&#39;: &#39;Impedance channel 1&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#39;&lt;Enum: {50}&gt;&#39;},
+  &#39;bwlimit1&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_bwlimit1&#39;,
+   &#39;value&#39;: &#39;DISABLED&#39;,
+   &#39;raw_value&#39;: 0,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:42&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {&#39;DISABLED&#39;: 0, &#39;ENABLED&#39;: 1},
+   &#39;name&#39;: &#39;bwlimit1&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Bandwidth limit channel 1&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;Enum: {&#39;ENABLED&#39;, &#39;DISABLED&#39;}&gt;&#34;},
+  &#39;coupling2&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_coupling2&#39;,
+   &#39;value&#39;: &#39;DC&#39;,
+   &#39;raw_value&#39;: 2,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:50&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {&#39;AC&#39;: 1, &#39;DC&#39;: 2},
+   &#39;name&#39;: &#39;coupling2&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Coupling channel 2&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;Enum: {&#39;DC&#39;, &#39;AC&#39;}&gt;&#34;},
+  &#39;channel_range2&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_channel_range2&#39;,
+   &#39;value&#39;: 0.4,
+   &#39;raw_value&#39;: 7,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:50&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {0.4: 7},
+   &#39;name&#39;: &#39;channel_range2&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;V&#39;,
+   &#39;label&#39;: &#39;Range channel 2&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#39;&lt;Enum: {0.4}&gt;&#39;},
+  &#39;impedance2&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_impedance2&#39;,
+   &#39;value&#39;: 50,
+   &#39;raw_value&#39;: 2,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:50&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {50: 2},
+   &#39;name&#39;: &#39;impedance2&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;Ohm&#39;,
+   &#39;label&#39;: &#39;Impedance channel 2&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#39;&lt;Enum: {50}&gt;&#39;},
+  &#39;bwlimit2&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_bwlimit2&#39;,
+   &#39;value&#39;: &#39;DISABLED&#39;,
+   &#39;raw_value&#39;: 0,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:42&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {&#39;DISABLED&#39;: 0, &#39;ENABLED&#39;: 1},
+   &#39;name&#39;: &#39;bwlimit2&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Bandwidth limit channel 2&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;Enum: {&#39;ENABLED&#39;, &#39;DISABLED&#39;}&gt;&#34;},
+  &#39;trigger_operation&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_trigger_operation&#39;,
+   &#39;value&#39;: &#39;TRIG_ENGINE_OP_J&#39;,
+   &#39;raw_value&#39;: 0,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:50&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {&#39;TRIG_ENGINE_OP_J&#39;: 0,
+    &#39;TRIG_ENGINE_OP_K&#39;: 1,
+    &#39;TRIG_ENGINE_OP_J_OR_K&#39;: 2,
+    &#39;TRIG_ENGINE_OP_J_AND_K&#39;: 3,
+    &#39;TRIG_ENGINE_OP_J_XOR_K&#39;: 4,
+    &#39;TRIG_ENGINE_OP_J_AND_NOT_K&#39;: 5,
+    &#39;TRIG_ENGINE_OP_NOT_J_AND_K&#39;: 6},
+   &#39;name&#39;: &#39;trigger_operation&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Trigger Operation&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;Enum: {&#39;TRIG_ENGINE_OP_J&#39;, &#39;TRIG_ENGINE_OP_J_OR_K&#39;, &#39;TRIG_ENGINE_OP_J_XOR_K&#39;, &#39;TRIG_ENGINE_OP_NOT_J_AND_K&#39;, &#39;TRIG_ENGINE_OP_J_AND_K&#39;, &#39;TRIG_ENGINE_OP_J_AND_NOT_K&#39;, &#39;TRIG_ENGINE_OP_K&#39;}&gt;&#34;},
+  &#39;trigger_engine1&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_trigger_engine1&#39;,
+   &#39;value&#39;: &#39;TRIG_ENGINE_J&#39;,
+   &#39;raw_value&#39;: 0,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:50&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {&#39;TRIG_ENGINE_J&#39;: 0, &#39;TRIG_ENGINE_K&#39;: 1},
+   &#39;name&#39;: &#39;trigger_engine1&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Trigger Engine 1&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;Enum: {&#39;TRIG_ENGINE_K&#39;, &#39;TRIG_ENGINE_J&#39;}&gt;&#34;},
+  &#39;trigger_source1&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_trigger_source1&#39;,
+   &#39;value&#39;: &#39;EXTERNAL&#39;,
+   &#39;raw_value&#39;: 2,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:50&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {&#39;CHANNEL_A&#39;: 0,
+    &#39;CHANNEL_B&#39;: 1,
+    &#39;EXTERNAL&#39;: 2,
+    &#39;DISABLE&#39;: 3},
+   &#39;name&#39;: &#39;trigger_source1&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Trigger Source 1&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;Enum: {&#39;DISABLE&#39;, &#39;EXTERNAL&#39;, &#39;CHANNEL_A&#39;, &#39;CHANNEL_B&#39;}&gt;&#34;},
+  &#39;trigger_slope1&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_trigger_slope1&#39;,
+   &#39;value&#39;: &#39;TRIG_SLOPE_POSITIVE&#39;,
+   &#39;raw_value&#39;: 1,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:50&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {&#39;TRIG_SLOPE_POSITIVE&#39;: 1, &#39;TRIG_SLOPE_NEGATIVE&#39;: 2},
+   &#39;name&#39;: &#39;trigger_slope1&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Trigger Slope 1&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;Enum: {&#39;TRIG_SLOPE_NEGATIVE&#39;, &#39;TRIG_SLOPE_POSITIVE&#39;}&gt;&#34;},
+  &#39;trigger_level1&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_trigger_level1&#39;,
+   &#39;value&#39;: 160,
+   &#39;raw_value&#39;: 160,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:50&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;name&#39;: &#39;trigger_level1&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Trigger Level 1&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#39;&lt;Ints 0&lt;=v&lt;=255&gt;&#39;},
+  &#39;trigger_engine2&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_trigger_engine2&#39;,
+   &#39;value&#39;: &#39;TRIG_ENGINE_K&#39;,
+   &#39;raw_value&#39;: 1,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:50&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {&#39;TRIG_ENGINE_J&#39;: 0, &#39;TRIG_ENGINE_K&#39;: 1},
+   &#39;name&#39;: &#39;trigger_engine2&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Trigger Engine 2&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;Enum: {&#39;TRIG_ENGINE_K&#39;, &#39;TRIG_ENGINE_J&#39;}&gt;&#34;},
+  &#39;trigger_source2&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_trigger_source2&#39;,
+   &#39;value&#39;: &#39;DISABLE&#39;,
+   &#39;raw_value&#39;: 3,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:50&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {&#39;CHANNEL_A&#39;: 0,
+    &#39;CHANNEL_B&#39;: 1,
+    &#39;EXTERNAL&#39;: 2,
+    &#39;DISABLE&#39;: 3},
+   &#39;name&#39;: &#39;trigger_source2&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Trigger Source 2&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;Enum: {&#39;DISABLE&#39;, &#39;EXTERNAL&#39;, &#39;CHANNEL_A&#39;, &#39;CHANNEL_B&#39;}&gt;&#34;},
+  &#39;trigger_slope2&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_trigger_slope2&#39;,
+   &#39;value&#39;: &#39;TRIG_SLOPE_POSITIVE&#39;,
+   &#39;raw_value&#39;: 1,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:50&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {&#39;TRIG_SLOPE_POSITIVE&#39;: 1, &#39;TRIG_SLOPE_NEGATIVE&#39;: 2},
+   &#39;name&#39;: &#39;trigger_slope2&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Trigger Slope 2&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;Enum: {&#39;TRIG_SLOPE_NEGATIVE&#39;, &#39;TRIG_SLOPE_POSITIVE&#39;}&gt;&#34;},
+  &#39;trigger_level2&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_trigger_level2&#39;,
+   &#39;value&#39;: 128,
+   &#39;raw_value&#39;: 128,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:50&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;name&#39;: &#39;trigger_level2&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Trigger Level 2&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#39;&lt;Ints 0&lt;=v&lt;=255&gt;&#39;},
+  &#39;external_trigger_coupling&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_external_trigger_coupling&#39;,
+   &#39;value&#39;: &#39;DC&#39;,
+   &#39;raw_value&#39;: 2,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:50&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {&#39;AC&#39;: 1, &#39;DC&#39;: 2},
+   &#39;name&#39;: &#39;external_trigger_coupling&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;External Trigger Coupling&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;Enum: {&#39;DC&#39;, &#39;AC&#39;}&gt;&#34;},
+  &#39;external_trigger_range&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_external_trigger_range&#39;,
+   &#39;value&#39;: &#39;ETR_2V5&#39;,
+   &#39;raw_value&#39;: 3,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:50&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {&#39;ETR_TTL&#39;: 2, &#39;ETR_2V5&#39;: 3},
+   &#39;name&#39;: &#39;external_trigger_range&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;External Trigger Range&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;Enum: {&#39;ETR_TTL&#39;, &#39;ETR_2V5&#39;}&gt;&#34;},
+  &#39;trigger_delay&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_trigger_delay&#39;,
+   &#39;value&#39;: 0,
+   &#39;raw_value&#39;: 0,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:50&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;name&#39;: &#39;trigger_delay&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;Sample clock cycles&#39;,
+   &#39;label&#39;: &#39;Trigger Delay&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#39;&lt;Ints v&gt;=0, Multiples of 8&gt;&#39;},
+  &#39;timeout_ticks&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_timeout_ticks&#39;,
+   &#39;value&#39;: 0,
+   &#39;raw_value&#39;: 0,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:50&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;name&#39;: &#39;timeout_ticks&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;10 us&#39;,
+   &#39;label&#39;: &#39;Timeout Ticks&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#39;&lt;Ints v&gt;=0&gt;&#39;},
+  &#39;aux_io_mode&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_aux_io_mode&#39;,
+   &#39;value&#39;: &#39;AUX_IN_AUXILIARY&#39;,
+   &#39;raw_value&#39;: 13,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:50&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {&#39;AUX_OUT_TRIGGER&#39;: 0,
+    &#39;AUX_IN_TRIGGER_ENABLE&#39;: 1,
+    &#39;AUX_IN_AUXILIARY&#39;: 13},
+   &#39;name&#39;: &#39;aux_io_mode&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;AUX I/O Mode&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;Enum: {&#39;AUX_OUT_TRIGGER&#39;, &#39;AUX_IN_TRIGGER_ENABLE&#39;, &#39;AUX_IN_AUXILIARY&#39;}&gt;&#34;},
+  &#39;aux_io_param&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.AlazarTech.utils.TraceParameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_aux_io_param&#39;,
+   &#39;value&#39;: &#39;NONE&#39;,
+   &#39;raw_value&#39;: 0,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:50&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {&#39;NONE&#39;: 0,
+    &#39;TRIG_SLOPE_POSITIVE&#39;: 1,
+    &#39;TRIG_SLOPE_NEGATIVE&#39;: 2},
+   &#39;name&#39;: &#39;aux_io_param&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;AUX I/O Param&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;Enum: {&#39;TRIG_SLOPE_NEGATIVE&#39;, &#39;TRIG_SLOPE_POSITIVE&#39;, &#39;NONE&#39;}&gt;&#34;},
+  &#39;mode&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument.parameter.Parameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_mode&#39;,
+   &#39;value&#39;: &#39;NPT&#39;,
+   &#39;raw_value&#39;: 512,
+   &#39;ts&#39;: &#39;2020-11-26 13:53:42&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {&#39;NPT&#39;: 512, &#39;TS&#39;: 1024},
+   &#39;name&#39;: &#39;mode&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Acquisition mode&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;Enum: {&#39;TS&#39;, &#39;NPT&#39;}&gt;&#34;},
+  &#39;samples_per_record&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument.parameter.Parameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_samples_per_record&#39;,
+   &#39;value&#39;: 1024,
+   &#39;raw_value&#39;: 1024,
+   &#39;ts&#39;: &#39;2020-11-26 13:53:42&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;name&#39;: &#39;samples_per_record&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Samples per Record&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#39;&lt;Ints v&gt;=256, Multiples of 128&gt;&#39;},
+  &#39;records_per_buffer&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument.parameter.Parameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_records_per_buffer&#39;,
+   &#39;value&#39;: 74,
+   &#39;raw_value&#39;: 74,
+   &#39;ts&#39;: &#39;2020-11-26 13:53:42&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;name&#39;: &#39;records_per_buffer&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Records per Buffer&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#39;&lt;Ints v&gt;=0&gt;&#39;},
+  &#39;buffers_per_acquisition&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument.parameter.Parameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_buffers_per_acquisition&#39;,
+   &#39;value&#39;: 1,
+   &#39;raw_value&#39;: 1,
+   &#39;ts&#39;: &#39;2020-11-26 13:53:42&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;name&#39;: &#39;buffers_per_acquisition&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Buffers per Acquisition&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#39;&lt;Ints v&gt;=0&gt;&#39;},
+  &#39;channel_selection&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument.parameter.Parameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_channel_selection&#39;,
+   &#39;value&#39;: &#39;AB&#39;,
+   &#39;raw_value&#39;: 3,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:42&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {&#39;A&#39;: 1, &#39;B&#39;: 2, &#39;AB&#39;: 3},
+   &#39;name&#39;: &#39;channel_selection&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Channel Selection&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;Enum: {&#39;B&#39;, &#39;A&#39;, &#39;AB&#39;}&gt;&#34;},
+  &#39;transfer_offset&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument.parameter.Parameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_transfer_offset&#39;,
+   &#39;value&#39;: 0,
+   &#39;raw_value&#39;: 0,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:42&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;name&#39;: &#39;transfer_offset&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;Samples&#39;,
+   &#39;label&#39;: &#39;Transfer Offset&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#39;&lt;Ints v&gt;=0&gt;&#39;},
+  &#39;external_startcapture&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument.parameter.Parameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_external_startcapture&#39;,
+   &#39;value&#39;: &#39;ENABLED&#39;,
+   &#39;raw_value&#39;: 1,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:42&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {&#39;DISABLED&#39;: 0, &#39;ENABLED&#39;: 1},
+   &#39;name&#39;: &#39;external_startcapture&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;External Startcapture&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;Enum: {&#39;ENABLED&#39;, &#39;DISABLED&#39;}&gt;&#34;},
+  &#39;enable_record_headers&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument.parameter.Parameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_enable_record_headers&#39;,
+   &#39;value&#39;: &#39;DISABLED&#39;,
+   &#39;raw_value&#39;: 0,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:42&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {&#39;DISABLED&#39;: 0, &#39;ENABLED&#39;: 8},
+   &#39;name&#39;: &#39;enable_record_headers&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Enable Record Headers&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;Enum: {&#39;ENABLED&#39;, &#39;DISABLED&#39;}&gt;&#34;},
+  &#39;alloc_buffers&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument.parameter.Parameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_alloc_buffers&#39;,
+   &#39;value&#39;: &#39;DISABLED&#39;,
+   &#39;raw_value&#39;: 0,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:42&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {&#39;DISABLED&#39;: 0, &#39;ENABLED&#39;: 32},
+   &#39;name&#39;: &#39;alloc_buffers&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Alloc Buffers&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;Enum: {&#39;ENABLED&#39;, &#39;DISABLED&#39;}&gt;&#34;},
+  &#39;fifo_only_streaming&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument.parameter.Parameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_fifo_only_streaming&#39;,
+   &#39;value&#39;: &#39;DISABLED&#39;,
+   &#39;raw_value&#39;: 0,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:42&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {&#39;DISABLED&#39;: 0, &#39;ENABLED&#39;: 2048},
+   &#39;name&#39;: &#39;fifo_only_streaming&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Fifo Only Streaming&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;Enum: {&#39;ENABLED&#39;, &#39;DISABLED&#39;}&gt;&#34;},
+  &#39;interleave_samples&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument.parameter.Parameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_interleave_samples&#39;,
+   &#39;value&#39;: &#39;DISABLED&#39;,
+   &#39;raw_value&#39;: 0,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:42&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {&#39;DISABLED&#39;: 0, &#39;ENABLED&#39;: 4096},
+   &#39;name&#39;: &#39;interleave_samples&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Interleave Samples&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;Enum: {&#39;ENABLED&#39;, &#39;DISABLED&#39;}&gt;&#34;},
+  &#39;get_processed_data&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument.parameter.Parameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_get_processed_data&#39;,
+   &#39;value&#39;: &#39;DISABLED&#39;,
+   &#39;raw_value&#39;: 0,
+   &#39;ts&#39;: &#39;2020-11-26 13:52:42&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;val_mapping&#39;: {&#39;DISABLED&#39;: 0, &#39;ENABLED&#39;: 8192},
+   &#39;name&#39;: &#39;get_processed_data&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Get Processed Data&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#34;&lt;Enum: {&#39;ENABLED&#39;, &#39;DISABLED&#39;}&gt;&#34;},
+  &#39;allocated_buffers&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument.parameter.Parameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_allocated_buffers&#39;,
+   &#39;value&#39;: 1,
+   &#39;raw_value&#39;: 1,
+   &#39;ts&#39;: &#39;2020-11-26 13:53:42&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;name&#39;: &#39;allocated_buffers&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Allocated Buffers&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#39;&lt;Ints v&gt;=0&gt;&#39;},
+  &#39;buffer_timeout&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument.parameter.Parameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_buffer_timeout&#39;,
+   &#39;value&#39;: 1000,
+   &#39;raw_value&#39;: 1000,
+   &#39;ts&#39;: &#39;2020-11-26 13:53:42&#39;,
+   &#39;post_delay&#39;: 0,
+   &#39;name&#39;: &#39;buffer_timeout&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;ms&#39;,
+   &#39;label&#39;: &#39;Buffer Timeout&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#39;&lt;Ints v&gt;=0&gt;&#39;},
+  &#39;trigger_holdoff&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument.parameter.Parameter&#39;,
+   &#39;full_name&#39;: &#39;Alazar1_trigger_holdoff&#39;,
+   &#39;value&#39;: None,
+   &#39;raw_value&#39;: None,
+   &#39;ts&#39;: None,
+   &#39;post_delay&#39;: 0,
+   &#39;name&#39;: &#39;trigger_holdoff&#39;,
+   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360&#39;,
+   &#39;instrument_name&#39;: &#39;Alazar1&#39;,
+   &#39;unit&#39;: &#39;&#39;,
+   &#39;label&#39;: &#39;Trigger Holdoff&#39;,
+   &#39;inter_delay&#39;: 0,
+   &#39;vals&#39;: &#39;&lt;Boolean&gt;&#39;}},
+ &#39;name&#39;: &#39;Alazar1&#39;}
+</pre></div></div>
+</div>
+<p>Finally, the following shows that Alazar driver and its acquisition controller work well within a the QCoDeS measurement using a dummy parameter and do1d function:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dummy</span> <span class="o">=</span> <span class="n">ManualParameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;dummy&quot;</span><span class="p">)</span>
+<span class="n">do1d</span><span class="p">(</span><span class="n">dummy</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">51</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">acquisition_controller</span><span class="o">.</span><span class="n">acquisition</span><span class="p">,</span> <span class="n">do_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Starting experimental run with id: 20.
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(results #20@C:\Users\Farzad\experiments.db
+ ------------------------------------------
+ dummy - numeric
+ acquisition_controller_acquisition - numeric,
+ [None],
+ [None])
+</pre></div></div>
+</div>
+<p>Let’s have a quick look at the acquisition result:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_by_id</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+([&lt;AxesSubplot:title={&#39;center&#39;:&#39;Run #20, Experiment exp (no sample1)&#39;}, xlabel=&#39;dummy&#39;, ylabel=&#39;acquisition&#39;&gt;],
+ [None])
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_driver_examples_Qcodes_example_with_Alazar_ATS9360_23_1.png" src="../../_images/examples_driver_examples_Qcodes_example_with_Alazar_ATS9360_23_1.png" />
+</div>
+</div>
+</section>
+<section id="Looking-for-extra-functionalities?">
+<h2>Looking for extra functionalities?<a class="headerlink" href="#Looking-for-extra-functionalities?" title="Link to this heading">¶</a></h2>
+<p>It is expected that the users will implement acquisitions to fit their needs. One can visit <a class="reference external" href="https://github.com/qdev-dk/qdev-wrappers/tree/master/qdev_wrappers/alazar_controllers">this link</a>, where other controller examples for Alazar can be found. Also, it might be useful to check out <a class="reference external" href="https://github.com/qdev-dk/qdev-wrappers/blob/master/examples/Alazar/Qcodes%20example%20with%20Alazar%20ATS9360.ipynb">this notebook</a> to get to know how to use these controllers.</p>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="Qcodes%20example%20with%20Basel%20SP983c%20Preamp.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Qcodes example with Basel SP983c Preamp and its Remote SP983a</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="Qcodes%20example%20with%20Agilent%2034400A.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">QCoDeS Example with Agilent 34400A</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">QCoDeS Example with Alazar ATS 9360</a><ul>
+<li><a class="reference internal" href="#Required-imports">Required imports</a></li>
+<li><a class="reference internal" href="#Setting-up-Alazar-and-performing-an-acquisition">Setting up Alazar and performing an acquisition</a></li>
+<li><a class="reference internal" href="#Looking-for-extra-functionalities?">Looking for extra functionalities?</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../../_static/documentation_options.js?v=14f3ca12"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    </body>
+</html>

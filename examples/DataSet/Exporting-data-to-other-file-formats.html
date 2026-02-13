@@ -1,0 +1,1663 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../../_static/qcodes_favicon.png"><link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html"><link rel="next" title="Extracting runs from one DB file to another" href="Extracting-runs-from-one-DB-file-to-another.html"><link rel="prev" title="DataSet Performance" href="Dataset_Performance.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.12.19 -->
+        <title>Exporting QCoDes Datasets - QCoDeS 0.55.0.dev570 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../index.html"><div class="brand">QCoDeS 0.55.0.dev570 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
+  
+  <span class="sidebar-brand-text">QCoDeS 0.55.0.dev570 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../start/index.html">Getting Started</a><input aria-label="Toggle navigation of Getting Started" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../basic_examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../index.html">Examples of using QCoDeS</a><input aria-label="Toggle navigation of Examples of using QCoDeS" checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l2 has-children"><a class="reference internal" href="../basic_examples/index.html">Basic examples</a><input aria-label="Toggle navigation of Basic examples" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../basic_examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../basic_examples/Configuring_QCoDeS.html">QCoDeS config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../basic_examples/Station.html">Station</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../Parameters/index.html">Parameters</a><input aria-label="Toggle navigation of Parameters" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Complex_Parameters.html">Complex Numbers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Legacy_Parameters.html">Legacy parameter examples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/MultiParameter.html">MultiParameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Parameter-With-Setpoints-defined-on-a-different-instrument.html">ParameterWithSetpoints with setpoints defined on another instrument.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Parameter_defined_InterDependencies.html">Parameter-defined InterDependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Parameter_defined_InterDependencies.html#ControllingParameter-Example">ControllingParameter Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Parameters.html">Parameters in QCoDeS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Scaled_Parameter.html">ScaledParameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Simple-Example-of-ParameterWithSetpoints.html">Simple Example of ParameterWithSetpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current has-children"><a class="reference internal" href="index.html">DataSet</a><input aria-label="Toggle navigation of DataSet" checked="" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="Accessing-data-in-DataSet.html">Accessing data in a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Benchmarking.html">Dataset Benchmarking</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet-class-walkthrough.html">DataSet class walkthrough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Database.html">Databases</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Datasaver_Builder.html">Using <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> and <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> to streamline measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Dataset_Performance.html">DataSet Performance</a></li>
+<li class="toctree-l3 current current-page"><a class="current reference internal" href="#">Exporting QCoDes Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Extracting-runs-from-one-DB-file-to-another.html">Extracting runs from one DB file to another</a></li>
+<li class="toctree-l3"><a class="reference internal" href="InMemoryDataSet.html">In memory dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Linking%20to%20parent%20datasets.html">Linking to parent datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Measuring%20X%20as%20a%20function%20of%20time.html">Measuring X as a function of time</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Offline%20Plotting%20Tutorial.html">Offline Plotting Tutorial</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Offline%20plotting%20with%20categorical%20data.html">Offline plotting with categorical data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Offline%20plotting%20with%20complex%20data.html">Offline plotting with complex data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Paramtypes%20explained.html">Paramtypes explained</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Pedestrian%20example%20of%20subscribing%20to%20a%20DataSet.html">Pedestrian example of subscribing to a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Performing-measurements-using-qcodes-parameters-and-dataset.html">Performing measurements using QCoDeS parameters and DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Saving_data_in_the_background.html">Saving data in the background</a></li>
+<li class="toctree-l3"><a class="reference internal" href="The-Experiment-Container.html">The Experiment Container</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Threaded%20data%20acquisition.html">Threaded data acquisition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html">Using doNd functions in comparison to Measurement context manager for performing measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Using_register_name.html">Using the <code class="docutils literal notranslate"><span class="pre">register_name</span></code> kwarg to select how a parameter is saved to a dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Working%20with%20snapshots.html">Working with snapshots</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Working-With-Pandas-and-XArray.html">Working with Pandas and XArray</a></li>
+<li class="toctree-l3"><a class="reference internal" href="import-data-from-legacy-dat-files.html">Importing data from legacy .dat files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="subscriber%20json%20exporter.html">Subscriber with JSON export</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Real_instruments/Example%20Measurements%20with%20Real%20Instruments.html">Example Measurements with Real Instruments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Cache/read_data_from_cache.html">Read data from cache</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Cache/write_for_caching.html">Write data to cache</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../plotting/index.html">Plotting</a><input aria-label="Toggle navigation of Plotting" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../plotting/How-to-use-Plottr-with-QCoDeS-for-live-plotting.html">How to use Plottr with QCoDeS for live plotting?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../plotting/auto_color_scale.html">Auto Color Scale</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../driver_examples/index.html">Drivers</a><input aria-label="Toggle navigation of Drivers" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/QCoDeS%20Example%20with%20Keysight%20E4980A%20LCR%20meter.html">QCoDeS Example with Keysight E4980A LCR meter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/QCoDeS%20Example%20with%20Yokogawa%20GS200%20and%20Keithley%207510.html">QCoDeS Example with Yokogawa GS200 and Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/QCoDeS%20example%20with%20Aim%20TTi%20PL601-P.html">QCoDeS example with Aim TTi PL601-P</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/QCoDeS%20example%20with%20CopperMountain_M5065.html">Example with Copper Mountain Model M5065 Vector Network Analyzer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/QCoDeS%20example%20with%20DelegateInstrument.html">Qcodes example with DelegateInstrument driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/QCoDeS%20example%20with%20Galil%20DMC4133%20Controller.html">QCoDeS example with Galil DMC4133 Controller</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/QCoDeS%20example%20with%20InstrumentGroup%20and%20DelegateInstrument.html">Qcodes example with InstrumentGroup driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/QCoDeS%20example%20with%20Keithley%203706A%20System%20Switch.html">QCoDeS example with Keithley 3706A System Switch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/QCodes%20example%20with%20Keithley%20S46.html">QCoDeS Example with Tektronix Keithley S46</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/QCodes%20example%20with%20Rigol%20DG1062.html">QCoDeS Example with the Rigol DG 1062 Instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/QCodes%20example%20with%20Tektronix%20DPO%2072004C.html">QCoDeS example with Textronix DPO 7200xx scopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20AMI430.html">QCoDeS Example with AMI430</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Agilent%2034400A.html">QCoDeS Example with Agilent 34400A</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Alazar%20ATS9360.html">QCoDeS Example with Alazar ATS 9360</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Basel%20SP983c%20Preamp.html">Qcodes example with Basel SP983c Preamp and its Remote SP983a</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Cryomagnetics%20TM-620.html">Cryomagnetics TM-620 QCoDeS Driver Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Cryomagnetics4G.html">Cryomagnetics 4G QCoDeS Driver Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20DynaCool%20PPMS.html">QCoDeS Example with DynaCool PPMS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20HP8753D.html">QCoDeS Example with HP8753D</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Ithaco.html">QCoDeS Example with Itacho</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Keithley%202600.html">QCoDeS Example with with Keithley 2600 series</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Keithley%207510.html">QCoDeS Example with Tektronix Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Keysight%2033500B.html">QCoDeS Example with Keysight 33500B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Keysight%20344xxA.html">QCoDeS Example with Keysight 344xxA</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Keysight%2034980A%20Switch%20Mainframe%20and%20Modules.html">QCoDeS Example with Keysight 34980A Multifunction Switch / Measure Mainframe and Modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Keysight%20B1500%20Parameter%20Analyzer.html">Qcodes example with Keysight B1500 Semiconductor Parameter Analyzer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Keysight%20B2200%20Series%20Femto%20Leakage%20Switch%20Matrix.html">QCoDeS Example with Keysight B2200 Series Femto Leakage Switch Matrix</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Keysight%20Infiniium%20Oscilloscope.html">QCoDeS Example with Keysight Infiniium Oscilloscopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Keysight%20N9030B.html">Qcodes example with Keysight N9030B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Keysight%20Network%20Analyzer.html">QCoDeS Example with Keysight Network Analyzers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Lakeshore%20325.html">QCoDeS Example with Lakeshore 325</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Lakeshore%20336%20or%20372%20-%20Bluefors%20T%20control.html">QCoDeS Example with the Lakeshore Model 372 to Control the Temperature of the Bluefors Fridge</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Minicircuits%20Switch%20boxes%20%28USB-XSPDT%29.html">QCoDeS Example with Minicircuits Switch Boxes Controlled via USB</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Oxford%20Mercury%20iPS.html">QCoDeS Example with Mercury iPS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Oxford%20Triton.html">QCoDeS Example with Oxford Triton</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20QDev_QDac.html">QCoDeS Example with QDac_channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Rigol%20DP832.html">QCoDeS Example with Rigol DP832 Power Supply</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Rigol%20DS1074Z.html">QCoDeS Example with the Rigol DS 1074 Z oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Rohde%20Schwarz%20RTO%201000%20series%20Oscilloscope.html">QCoDeS Example with Rohde Schwarz RTO 1000 Series Oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Rohde%20Schwarz%20SGS100A.html">QCoDeS Example with Rohde Schwarz SGS100A RF source</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Rohde%20Schwarz%20ZNB.html">QCoDeS Example with Rohde Schwarz ZNB20/8</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Stahl.html">QCoDeS Example with the Stahl Bias Sources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Stanford%20SR830.html">QCoDeS Example with Stanford SR830</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Stanford%20SR86x%20with%20buffered%20readout.html">QCoDeS Example with Standford Research SR86x Lock-in Amplifier with Buffered Readout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Tektronix%20AWG5014C.html">QCoDeS Example with Tektronix AWG5014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Tektronix%20AWG70002A.html">QCoDeS Example with Tektronix AWG70002A</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Tektronix%20TPS2012.html">QCoDeS Example with Tektronix TPS2012</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Yokogawa%20GS2xx.html">QCoDeS Example with Yokogawa GS200/GS210</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20keithley%202450.html">QCoDeS Example with Tektronix Keithley 2450 Source Meter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%2Bbroadbean%20example%20with%20Tektronix%20AWG5208.html">QCoDeS+Broadbean Example with Tektronix AWG5208</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes-example-with-Signal-Hound-USB-SA124B.html">QCoDeS Example with Signal Hound USB-SA124B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes-example-with-Signal-Hound-USB-SA124B-ParameterWithSetpoints.html">QCoDeS Example with Signal Hound USB-SA124B ParameterWithSetpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../writing_drivers/index.html">Writing Drivers</a><input aria-label="Toggle navigation of Writing Drivers" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../writing_drivers/A-ParameterWithSetpoints-Example-with-Dual-Setpoints.html">A ParameterWithSetpoints Example with Dual Setpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../writing_drivers/Creating-Instrument-Drivers.html">Creating QCoDeS instrument drivers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../writing_drivers/Creating-Simulated-PyVISA-Instruments.html">Creating Simulated PyVISA Instruments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../writing_drivers/Instruments.html">Instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../writing_drivers/abstract_instruments.html">Abstract Instruments and parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../writing_drivers/abstract_instruments.html#Working-subclass">Working subclass</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../logging/index.html">Logging</a><input aria-label="Toggle navigation of Logging" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../logging/logfile_parsing.html">Logfile parsing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../logging/logging_example.html">Logging</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../community/index.html">Community Guide</a><input aria-label="Toggle navigation of Community Guide" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../community/install.html">Source Code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../community/contributing.html">Contributing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../community/related_projects.html">Related Projects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../community/objects.html">Object Hierarchy</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../dataset/index.html">DataSet</a><input aria-label="Toggle navigation of DataSet" class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../dataset/introduction.html">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dataset/spec.html">DataSet Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dataset/dataset_design.html">Dataset Design</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dataset/interdependentparams.html">Interdependent Parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../api/index.html">QCoDes API documentation</a><input aria-label="Toggle navigation of QCoDes API documentation" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../api/calibrations/index.html">qcodes.calibrations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/configuration/index.html">qcodes.configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/dataset/index.html">qcodes.dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/extensions/index.html">qcodes.extensions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/instrument/index.html">qcodes.instrument</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/interactive_widget.html">qcodes.interactive_widget</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/logger/index.html">qcodes.logger</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/math_utils/index.html">qcodes.math_utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/metadatable/index.html">qcodes.metadatable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/monitor/index.html">qcodes.monitor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/parameters/index.html">qcodes.parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/plotting/index.html">qcodes.plotting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/station.html">qcodes.station</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/utils/index.html">qcodes.utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/validators/index.html">qcodes.validators</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../drivers_api/index.html">Instrument Drivers</a><input aria-label="Toggle navigation of Instrument Drivers" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Agilent.html">Agilent Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/AimTTi.html">AimTTi Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/AlazarTech.html">Alazar Tech Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/American_magnetics.html">American Magnetics Inc Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Basel.html">Basel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/CryoMagnetics.html">Cryomagnetics Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Galil.html">Galil Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/HP.html">Hewlett Packard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Harvard.html">Harvard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Ithaco.html">Ithaco Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Keithley.html">Keithley Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Keysight.html">Keysight Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Lakeshore.html">Lakeshore Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Minicircuits.html">MiniCircuits Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Oxford.html">Oxford Instruments Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/QDev.html">QDev Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/QuantumDesign.html">Quantum Design Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Rigol.html">Rigol Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/RohdeSchwarz.html">Rohde &amp; Schwarz Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/SRS.html">Stanford Research Systems Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/SignalHound.html">Signal Hound Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Stahl.html">Stahl Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Tektronix.html">Tektronix Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Weinschel.html">Weinschel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Yokogawa.html">Yokogawa Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Zhinst.html">Zurich Instruments Drivers</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../changes/index.html">Changelogs</a><input aria-label="Toggle navigation of Changelogs" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/unreleased.html">Unreleased</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.54.4.html">0.54.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.54.3.html">0.54.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.54.1.html">0.54.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.54.0.html">0.54.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.53.0.html">0.53.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.52.0.html">0.52.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.51.0.html">0.51.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.50.1.html">0.50.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.50.0.html">0.50.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.49.0.html">0.49.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.48.0.html">0.48.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.47.0.html">0.47.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.46.0.html">0.46.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.45.0.html">0.45.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.44.1.html">0.44.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.44.0.html">0.44.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.43.0.html">0.43.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.42.1.html">0.42.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.42.0.html">0.42.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.41.1.html">0.41.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.41.0.html">0.41.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.40.0.html">0.40.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.39.1.html">0.39.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.39.0.html">0.39.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.38.1.html">0.38.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.38.0.html">0.38.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.37.0.html">0.37.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.36.1.html">0.36.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.36.0.html">0.36.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.35.2.html">0.35.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.35.1.html">0.35.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.35.0.html">0.35.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.35.0b1.html">0.35.0b1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.34.1.html">0.34.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.34.0.html">0.34.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.33.0.html">0.33.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.32.0.html">0.32.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.31.0.html">0.31.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.30.1.html">0.30.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.30.0.html">0.30.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.29.1.html">0.29.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.29.0.html">0.29.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.28.0.html">0.28.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.27.0.html">0.27.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.26.0.html">0.26.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.25.0.html">0.25.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.24.0.html">0.24.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.23.0.html">0.23.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.22.0.html">0.22.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.21.0.html">0.21.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.20.1.html">0.20.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.20.0.html">0.20.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.19.2.html">0.19.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.19.1.html">0.19.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.19.0.html">0.19.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.18.0.html">0.18.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.17.0.html">0.17.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.16.0.html">0.16.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.15.0.html">0.15.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.15.0a1.html">0.15.0a1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.14.0.html">0.14.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.13.0.html">0.13.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.12.1.html">0.12.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.12.0.html">0.12.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.11.0.html">0.11.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.10.0.html">0.10.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.9.0.html">0.9.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.8.1.html">0.8.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.8.0.html">0.8.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.7.0.html">0.7.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.6.0.html">0.6.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.5.2.html">0.5.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.5.1.html">0.5.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.5.0.html">0.5.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.4.0.html">0.4.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.3.0.html">0.3.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.2.1.html">0.2.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.2.0.html">0.2.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.11.html">0.1.11</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.10.html">0.1.10</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.9.html">0.1.9</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.7.html">0.1.7</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.6.html">0.1.6</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.5.html">0.1.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.4.html">0.1.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.3.html">0.1.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.2.html">0.1.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.0.html">0.1.0</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../help.html">Get Help</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../../_sources/examples/DataSet/Exporting-data-to-other-file-formats.ipynb.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <div class="admonition note">
+  <p>This page was generated from
+    <a class="reference external"
+    href="https://github.com/qcodes/qcodes/blob/main/docs/examples/DataSet/Exporting-data-to-other-file-formats.ipynb">docs/examples/DataSet/Exporting-data-to-other-file-formats.ipynb</a>.
+    Interactive online version:
+    <a href="https://mybinder.org/v2/gh/qcodes/qcodes/main?filepath=docs/examples/DataSet/Exporting-data-to-other-file-formats.ipynb"><img
+alt="Binder badge"
+    src="https://mybinder.org/badge_logo.svg"
+    style="vertical-align:text-bottom"></a>.
+  </p>
+  <script>
+    if (document.location.host) {
+      var p = document.currentScript.previousSibling.previousSibling;
+      var a = document.createElement('a');
+      a.innerHTML = 'View in <em>nbviewer</em>';
+      a.href = `https://nbviewer.jupyter.org/url${
+        (window.location.protocol == 'https:' ? 's/' : '/') +
+        window.location.host +
+        window.location.pathname.slice(0, -4) }ipynb`;
+      a.classList.add('reference');
+      a.classList.add('external');
+      p.appendChild(a);
+      p.appendChild(document.createTextNode('.'));
+    }
+  </script>
+</div><section id="Exporting-QCoDes-Datasets">
+<h1>Exporting QCoDes Datasets<a class="headerlink" href="#Exporting-QCoDes-Datasets" title="Link to this heading">¶</a></h1>
+<p>This notebook demonstrates how we can export QCoDeS datasets to other file formats.</p>
+<section id="Setup">
+<h2>Setup<a class="headerlink" href="#Setup" title="Link to this heading">¶</a></h2>
+<p>First, we borrow an example from the measurement notebook to have some data to work with.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">matplotlib</span> inline
+<span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">qcodes</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">qc</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qcodes.dataset</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Measurement</span><span class="p">,</span>
+    <span class="n">initialise_or_create_database_at</span><span class="p">,</span>
+    <span class="n">load_by_run_spec</span><span class="p">,</span>
+    <span class="n">load_from_netcdf</span><span class="p">,</span>
+    <span class="n">load_or_create_experiment</span><span class="p">,</span>
+    <span class="n">plot_dataset</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qcodes.instrument_drivers.mock_instruments</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DummyInstrument</span><span class="p">,</span>
+    <span class="n">DummyInstrumentWithMeasurement</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># preparatory mocking of physical setup</span>
+<span class="n">dac</span> <span class="o">=</span> <span class="n">DummyInstrument</span><span class="p">(</span><span class="s2">&quot;dac&quot;</span><span class="p">,</span> <span class="n">gates</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ch1&quot;</span><span class="p">,</span> <span class="s2">&quot;ch2&quot;</span><span class="p">])</span>
+<span class="n">dmm</span> <span class="o">=</span> <span class="n">DummyInstrumentWithMeasurement</span><span class="p">(</span><span class="s2">&quot;dmm&quot;</span><span class="p">,</span> <span class="n">setter_instr</span><span class="o">=</span><span class="n">dac</span><span class="p">)</span>
+<span class="n">station</span> <span class="o">=</span> <span class="n">qc</span><span class="o">.</span><span class="n">Station</span><span class="p">(</span><span class="n">dmm</span><span class="p">,</span> <span class="n">dac</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">initialise_or_create_database_at</span><span class="p">(</span>
+    <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;example_output&quot;</span> <span class="o">/</span> <span class="s2">&quot;export_example.db&quot;</span>
+<span class="p">)</span>
+<span class="n">exp</span> <span class="o">=</span> <span class="n">load_or_create_experiment</span><span class="p">(</span>
+    <span class="n">experiment_name</span><span class="o">=</span><span class="s2">&quot;exporting_data&quot;</span><span class="p">,</span> <span class="n">sample_name</span><span class="o">=</span><span class="s2">&quot;no sample&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">meas</span> <span class="o">=</span> <span class="n">Measurement</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">dac</span><span class="o">.</span><span class="n">ch1</span><span class="p">)</span>  <span class="c1"># register the first independent parameter</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">dac</span><span class="o">.</span><span class="n">ch2</span><span class="p">)</span>  <span class="c1"># register the second independent parameter</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span>
+    <span class="n">dmm</span><span class="o">.</span><span class="n">v2</span><span class="p">,</span> <span class="n">setpoints</span><span class="o">=</span><span class="p">(</span><span class="n">dac</span><span class="o">.</span><span class="n">ch1</span><span class="p">,</span> <span class="n">dac</span><span class="o">.</span><span class="n">ch2</span><span class="p">)</span>
+<span class="p">)</span>  <span class="c1"># register the dependent one</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;qcodes.dataset.measurements.Measurement at 0x7f1eb8f528d0&gt;
+</pre></div></div>
+</div>
+<p>We then perform two very basic measurements using dummy instruments.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># run a 2D sweep</span>
+
+<span class="k">with</span> <span class="n">meas</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="k">as</span> <span class="n">datasaver</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">v1</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">v2</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">201</span><span class="p">):</span>
+            <span class="n">dac</span><span class="o">.</span><span class="n">ch1</span><span class="p">(</span><span class="n">v1</span><span class="p">)</span>
+            <span class="n">dac</span><span class="o">.</span><span class="n">ch2</span><span class="p">(</span><span class="n">v2</span><span class="p">)</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">dmm</span><span class="o">.</span><span class="n">v2</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+            <span class="n">datasaver</span><span class="o">.</span><span class="n">add_result</span><span class="p">((</span><span class="n">dac</span><span class="o">.</span><span class="n">ch1</span><span class="p">,</span> <span class="n">v1</span><span class="p">),</span> <span class="p">(</span><span class="n">dac</span><span class="o">.</span><span class="n">ch2</span><span class="p">,</span> <span class="n">v2</span><span class="p">),</span> <span class="p">(</span><span class="n">dmm</span><span class="o">.</span><span class="n">v2</span><span class="p">,</span> <span class="n">val</span><span class="p">))</span>
+
+<span class="n">dataset1</span> <span class="o">=</span> <span class="n">datasaver</span><span class="o">.</span><span class="n">dataset</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Starting experimental run with id: 1.
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># run a 2D sweep</span>
+
+<span class="k">with</span> <span class="n">meas</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="k">as</span> <span class="n">datasaver</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">v1</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">v2</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">201</span><span class="p">):</span>
+            <span class="n">dac</span><span class="o">.</span><span class="n">ch1</span><span class="p">(</span><span class="n">v1</span><span class="p">)</span>
+            <span class="n">dac</span><span class="o">.</span><span class="n">ch2</span><span class="p">(</span><span class="n">v2</span><span class="p">)</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">dmm</span><span class="o">.</span><span class="n">v2</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+            <span class="n">datasaver</span><span class="o">.</span><span class="n">add_result</span><span class="p">((</span><span class="n">dac</span><span class="o">.</span><span class="n">ch1</span><span class="p">,</span> <span class="n">v1</span><span class="p">),</span> <span class="p">(</span><span class="n">dac</span><span class="o">.</span><span class="n">ch2</span><span class="p">,</span> <span class="n">v2</span><span class="p">),</span> <span class="p">(</span><span class="n">dmm</span><span class="o">.</span><span class="n">v2</span><span class="p">,</span> <span class="n">val</span><span class="p">))</span>
+
+<span class="n">dataset2</span> <span class="o">=</span> <span class="n">datasaver</span><span class="o">.</span><span class="n">dataset</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Starting experimental run with id: 2.
+</pre></div></div>
+</div>
+</section>
+<section id="Exporting-data-manually">
+<h2>Exporting data manually<a class="headerlink" href="#Exporting-data-manually" title="Link to this heading">¶</a></h2>
+<p>The dataset can be exported using the <code class="docutils literal notranslate"><span class="pre">export</span></code> method. Currently exporting to netcdf and csv is supported.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset2</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="s2">&quot;netcdf&quot;</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;example_output&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">export_info</span></code> attribute contains information about where the dataset has been exported to:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset2</span><span class="o">.</span><span class="n">export_info</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+ExportInfo(export_paths={&#39;nc&#39;: &#39;/home/runner/work/Qcodes/Qcodes/docs/examples/example_output/qcodes_2_d6ec63a5-0000-0000-0000-019c5692fa64.nc&#39;})
+</pre></div></div>
+</div>
+<p>Looking at the signature of export we can see that in addition to the file format we can set the <code class="docutils literal notranslate"><span class="pre">prefix</span></code> and <code class="docutils literal notranslate"><span class="pre">path</span></code> to export to.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">?</span>dataset2.export
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Export-data-automatically">
+<h2>Export data automatically<a class="headerlink" href="#Export-data-automatically" title="Link to this heading">¶</a></h2>
+<p>Datasets may also be exported automatically using the configuration options given in dataset config section. Here you can toggle if a dataset should be exported automatically using the <code class="docutils literal notranslate"><span class="pre">export_automatic</span></code> option as well as set the default type, prefix, elements in the name, and path. See <a class="reference external" href="https://microsoft.github.io/Qcodes/api/configuration/index.html#qcodes-default-configuration">the table here</a> for the relevant configuration options.</p>
+<p>For more information about how to configure QCoDeS datasets see <a class="reference external" href="https://microsoft.github.io/Qcodes/api/configuration/index.html">the page about configuration</a> in the QCoDeS docs.</p>
+<p>By default datasets are exported into a folder next to the database with the same name but <code class="docutils literal notranslate"><span class="pre">.</span></code> replaced by <code class="docutils literal notranslate"><span class="pre">_</span></code> e.g. if you store data to <code class="docutils literal notranslate"><span class="pre">~/experiments.db</span></code> the exported files will be storred in <code class="docutils literal notranslate"><span class="pre">~/experiments_db</span></code> This folder is automatically created if it does not exist.</p>
+</section>
+<section id="Automatically-post-process-exported-datasets.">
+<h2>Automatically post process exported datasets.<a class="headerlink" href="#Automatically-post-process-exported-datasets." title="Link to this heading">¶</a></h2>
+<p>QCoDeD will attempt to call any <a class="reference external" href="https://setuptools.pypa.io/en/latest/userguide/entry_point.html#entry-points-for-plugins">EntryPoint</a> registered for the group “qcodes.dataset.on_export”. This will allow a user to setup a function that can trigger post processing such as backup to cloud, external drive, plotting or post process analysis. Functions registered for this entry point group are expected to take a Path to the file as input and return None. Please consult the <a class="reference external" href="https://setuptools.pypa.io/en/latest/userguide/entry_point.html#entry-points-for-plugins">Setuptools
+docs</a> for more information on the use of EntryPoints. The entry point function must take the path to the exported file as a positional argument and take <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> for future compatibility. At the moment a single keyword argument <code class="docutils literal notranslate"><span class="pre">automatic_export</span></code> is passed to the function which indicates if the dataset was automatically or manually exported.</p>
+</section>
+<section id="Importing-exported-datasets-into-a-new-database">
+<h2>Importing exported datasets into a new database<a class="headerlink" href="#Importing-exported-datasets-into-a-new-database" title="Link to this heading">¶</a></h2>
+<p>The above dataset has been created in the following database</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qc</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">db_location</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;/home/runner/work/Qcodes/Qcodes/docs/examples/example_output/export_example.db&#39;
+</pre></div></div>
+</div>
+<p>Now lets imagine that we move the exported dataset to a different computer. To emulate this we will create a new database file and set it as the active database.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">initialise_or_create_database_at</span><span class="p">(</span>
+    <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;example_output&quot;</span> <span class="o">/</span> <span class="s2">&quot;reimport_example.db&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qc</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">db_location</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;/home/runner/work/Qcodes/Qcodes/docs/examples/example_output/reimport_example.db&#39;
+</pre></div></div>
+</div>
+<p>We can then reload the dataset from the netcdf file as a DataSetInMem. This is a class that closely matches the regular DataSet class however its metadata may or may not be written to a database file and its data is not written to a database file. See more in <a class="reference internal" href="InMemoryDataSet.html"><span class="doc">In memory dataset</span></a> . Concretely this means that the data captured in the dataset can be acceced via <code class="docutils literal notranslate"><span class="pre">dataset.cache.data</span></code> etc. and not via the methods directly on the dataset (<code class="docutils literal notranslate"><span class="pre">dataset.get_parameter_data</span></code>
+…)</p>
+<p>Note that it is currently only possible to reload a dataset from a netcdf export and not from a csv export. This is due to the fact that a csv export only contains the raw data and not the metadata needed to recreate a dataset.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">loaded_ds</span> <span class="o">=</span> <span class="n">load_from_netcdf</span><span class="p">(</span><span class="n">dataset2</span><span class="o">.</span><span class="n">export_info</span><span class="o">.</span><span class="n">export_paths</span><span class="p">[</span><span class="s2">&quot;nc&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">type</span><span class="p">(</span><span class="n">loaded_ds</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+qcodes.dataset.data_set_in_memory.DataSetInMem
+</pre></div></div>
+</div>
+<p>However, we can still export the data to Pandasa and xarray.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">loaded_ds</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">to_xarray_dataset</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div><svg style="position: absolute; width: 0; height: 0; overflow: hidden">
+<defs>
+<symbol id="icon-database" viewBox="0 0 32 32">
+<path d="M16 0c-8.837 0-16 2.239-16 5v4c0 2.761 7.163 5 16 5s16-2.239 16-5v-4c0-2.761-7.163-5-16-5z"></path>
+<path d="M16 17c-8.837 0-16-2.239-16-5v6c0 2.761 7.163 5 16 5s16-2.239 16-5v-6c0 2.761-7.163 5-16 5z"></path>
+<path d="M16 26c-8.837 0-16-2.239-16-5v6c0 2.761 7.163 5 16 5s16-2.239 16-5v-6c0 2.761-7.163 5-16 5z"></path>
+</symbol>
+<symbol id="icon-file-text2" viewBox="0 0 32 32">
+<path d="M28.681 7.159c-0.694-0.947-1.662-2.053-2.724-3.116s-2.169-2.030-3.116-2.724c-1.612-1.182-2.393-1.319-2.841-1.319h-15.5c-1.378 0-2.5 1.121-2.5 2.5v27c0 1.378 1.122 2.5 2.5 2.5h23c1.378 0 2.5-1.122 2.5-2.5v-19.5c0-0.448-0.137-1.23-1.319-2.841zM24.543 5.457c0.959 0.959 1.712 1.825 2.268 2.543h-4.811v-4.811c0.718 0.556 1.584 1.309 2.543 2.268zM28 29.5c0 0.271-0.229 0.5-0.5 0.5h-23c-0.271 0-0.5-0.229-0.5-0.5v-27c0-0.271 0.229-0.5 0.5-0.5 0 0 15.499-0 15.5 0v7c0 0.552 0.448 1 1 1h7v19.5z"></path>
+<path d="M23 26h-14c-0.552 0-1-0.448-1-1s0.448-1 1-1h14c0.552 0 1 0.448 1 1s-0.448 1-1 1z"></path>
+<path d="M23 22h-14c-0.552 0-1-0.448-1-1s0.448-1 1-1h14c0.552 0 1 0.448 1 1s-0.448 1-1 1z"></path>
+<path d="M23 18h-14c-0.552 0-1-0.448-1-1s0.448-1 1-1h14c0.552 0 1 0.448 1 1s-0.448 1-1 1z"></path>
+</symbol>
+</defs>
+</svg>
+<style>/* CSS stylesheet for displaying xarray objects in notebooks */
+
+:root {
+  --xr-font-color0: var(
+    --jp-content-font-color0,
+    var(--pst-color-text-base rgba(0, 0, 0, 1))
+  );
+  --xr-font-color2: var(
+    --jp-content-font-color2,
+    var(--pst-color-text-base, rgba(0, 0, 0, 0.54))
+  );
+  --xr-font-color3: var(
+    --jp-content-font-color3,
+    var(--pst-color-text-base, rgba(0, 0, 0, 0.38))
+  );
+  --xr-border-color: var(
+    --jp-border-color2,
+    hsl(from var(--pst-color-on-background, white) h s calc(l - 10))
+  );
+  --xr-disabled-color: var(
+    --jp-layout-color3,
+    hsl(from var(--pst-color-on-background, white) h s calc(l - 40))
+  );
+  --xr-background-color: var(
+    --jp-layout-color0,
+    var(--pst-color-on-background, white)
+  );
+  --xr-background-color-row-even: var(
+    --jp-layout-color1,
+    hsl(from var(--pst-color-on-background, white) h s calc(l - 5))
+  );
+  --xr-background-color-row-odd: var(
+    --jp-layout-color2,
+    hsl(from var(--pst-color-on-background, white) h s calc(l - 15))
+  );
+}
+
+html[theme="dark"],
+html[data-theme="dark"],
+body[data-theme="dark"],
+body.vscode-dark {
+  --xr-font-color0: var(
+    --jp-content-font-color0,
+    var(--pst-color-text-base, rgba(255, 255, 255, 1))
+  );
+  --xr-font-color2: var(
+    --jp-content-font-color2,
+    var(--pst-color-text-base, rgba(255, 255, 255, 0.54))
+  );
+  --xr-font-color3: var(
+    --jp-content-font-color3,
+    var(--pst-color-text-base, rgba(255, 255, 255, 0.38))
+  );
+  --xr-border-color: var(
+    --jp-border-color2,
+    hsl(from var(--pst-color-on-background, #111111) h s calc(l + 10))
+  );
+  --xr-disabled-color: var(
+    --jp-layout-color3,
+    hsl(from var(--pst-color-on-background, #111111) h s calc(l + 40))
+  );
+  --xr-background-color: var(
+    --jp-layout-color0,
+    var(--pst-color-on-background, #111111)
+  );
+  --xr-background-color-row-even: var(
+    --jp-layout-color1,
+    hsl(from var(--pst-color-on-background, #111111) h s calc(l + 5))
+  );
+  --xr-background-color-row-odd: var(
+    --jp-layout-color2,
+    hsl(from var(--pst-color-on-background, #111111) h s calc(l + 15))
+  );
+}
+
+.xr-wrap {
+  display: block !important;
+  min-width: 300px;
+  max-width: 700px;
+  line-height: 1.6;
+  padding-bottom: 4px;
+}
+
+.xr-text-repr-fallback {
+  /* fallback to plain text repr when CSS is not injected (untrusted notebook) */
+  display: none;
+}
+
+.xr-header {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.xr-header {
+  border-bottom: solid 1px var(--xr-border-color);
+  margin-bottom: 4px;
+}
+
+.xr-header > div,
+.xr-header > ul {
+  display: inline;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.xr-obj-type,
+.xr-obj-name {
+  margin-left: 2px;
+  margin-right: 10px;
+}
+
+.xr-obj-type,
+.xr-group-box-contents > label {
+  color: var(--xr-font-color2);
+  display: block;
+}
+
+.xr-sections {
+  padding-left: 0 !important;
+  display: grid;
+  grid-template-columns: 150px auto auto 1fr 0 20px 0 20px;
+  margin-block-start: 0;
+  margin-block-end: 0;
+}
+
+.xr-section-item {
+  display: contents;
+}
+
+.xr-section-item > input,
+.xr-group-box-contents > input,
+.xr-array-wrap > input {
+  display: block;
+  opacity: 0;
+  height: 0;
+  margin: 0;
+}
+
+.xr-section-item > input + label,
+.xr-var-item > input + label {
+  color: var(--xr-disabled-color);
+}
+
+.xr-section-item > input:enabled + label,
+.xr-var-item > input:enabled + label,
+.xr-array-wrap > input:enabled + label,
+.xr-group-box-contents > input:enabled + label {
+  cursor: pointer;
+  color: var(--xr-font-color2);
+}
+
+.xr-section-item > input:focus-visible + label,
+.xr-var-item > input:focus-visible + label,
+.xr-array-wrap > input:focus-visible + label,
+.xr-group-box-contents > input:focus-visible + label {
+  outline: auto;
+}
+
+.xr-section-item > input:enabled + label:hover,
+.xr-var-item > input:enabled + label:hover,
+.xr-array-wrap > input:enabled + label:hover,
+.xr-group-box-contents > input:enabled + label:hover {
+  color: var(--xr-font-color0);
+}
+
+.xr-section-summary {
+  grid-column: 1;
+  color: var(--xr-font-color2);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.xr-section-summary > em {
+  font-weight: normal;
+}
+
+.xr-span-grid {
+  grid-column-end: -1;
+}
+
+.xr-section-summary > span {
+  display: inline-block;
+  padding-left: 0.3em;
+}
+
+.xr-group-box-contents > input:checked + label > span {
+  display: inline-block;
+  padding-left: 0.6em;
+}
+
+.xr-section-summary-in:disabled + label {
+  color: var(--xr-font-color2);
+}
+
+.xr-section-summary-in + label:before {
+  display: inline-block;
+  content: "►";
+  font-size: 11px;
+  width: 15px;
+  text-align: center;
+}
+
+.xr-section-summary-in:disabled + label:before {
+  color: var(--xr-disabled-color);
+}
+
+.xr-section-summary-in:checked + label:before {
+  content: "▼";
+}
+
+.xr-section-summary-in:checked + label > span {
+  display: none;
+}
+
+.xr-section-summary,
+.xr-section-inline-details,
+.xr-group-box-contents > label {
+  padding-top: 4px;
+}
+
+.xr-section-inline-details {
+  grid-column: 2 / -1;
+}
+
+.xr-section-details {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  margin-bottom: 5px;
+}
+
+.xr-section-summary-in ~ .xr-section-details {
+  display: none;
+}
+
+.xr-section-summary-in:checked ~ .xr-section-details {
+  display: contents;
+}
+
+.xr-children {
+  display: inline-grid;
+  grid-template-columns: 100%;
+  grid-column: 1 / -1;
+  padding-top: 4px;
+}
+
+.xr-group-box {
+  display: inline-grid;
+  grid-template-columns: 0px 30px auto;
+}
+
+.xr-group-box-vline {
+  grid-column-start: 1;
+  border-right: 0.2em solid;
+  border-color: var(--xr-border-color);
+  width: 0px;
+}
+
+.xr-group-box-hline {
+  grid-column-start: 2;
+  grid-row-start: 1;
+  height: 1em;
+  width: 26px;
+  border-bottom: 0.2em solid;
+  border-color: var(--xr-border-color);
+}
+
+.xr-group-box-contents {
+  grid-column-start: 3;
+  padding-bottom: 4px;
+}
+
+.xr-group-box-contents > label::before {
+  content: "📂";
+  padding-right: 0.3em;
+}
+
+.xr-group-box-contents > input:checked + label::before {
+  content: "📁";
+}
+
+.xr-group-box-contents > input:checked + label {
+  padding-bottom: 0px;
+}
+
+.xr-group-box-contents > input:checked ~ .xr-sections {
+  display: none;
+}
+
+.xr-group-box-contents > input + label > span {
+  display: none;
+}
+
+.xr-group-box-ellipsis {
+  font-size: 1.4em;
+  font-weight: 900;
+  color: var(--xr-font-color2);
+  letter-spacing: 0.15em;
+  cursor: default;
+}
+
+.xr-array-wrap {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 20px auto;
+}
+
+.xr-array-wrap > label {
+  grid-column: 1;
+  vertical-align: top;
+}
+
+.xr-preview {
+  color: var(--xr-font-color3);
+}
+
+.xr-array-preview,
+.xr-array-data {
+  padding: 0 5px !important;
+  grid-column: 2;
+}
+
+.xr-array-data,
+.xr-array-in:checked ~ .xr-array-preview {
+  display: none;
+}
+
+.xr-array-in:checked ~ .xr-array-data,
+.xr-array-preview {
+  display: inline-block;
+}
+
+.xr-dim-list {
+  display: inline-block !important;
+  list-style: none;
+  padding: 0 !important;
+  margin: 0;
+}
+
+.xr-dim-list li {
+  display: inline-block;
+  padding: 0;
+  margin: 0;
+}
+
+.xr-dim-list:before {
+  content: "(";
+}
+
+.xr-dim-list:after {
+  content: ")";
+}
+
+.xr-dim-list li:not(:last-child):after {
+  content: ",";
+  padding-right: 5px;
+}
+
+.xr-has-index {
+  font-weight: bold;
+}
+
+.xr-var-list,
+.xr-var-item {
+  display: contents;
+}
+
+.xr-var-item > div,
+.xr-var-item label,
+.xr-var-item > .xr-var-name span {
+  background-color: var(--xr-background-color-row-even);
+  border-color: var(--xr-background-color-row-odd);
+  margin-bottom: 0;
+  padding-top: 2px;
+}
+
+.xr-var-item > .xr-var-name:hover span {
+  padding-right: 5px;
+}
+
+.xr-var-list > li:nth-child(odd) > div,
+.xr-var-list > li:nth-child(odd) > label,
+.xr-var-list > li:nth-child(odd) > .xr-var-name span {
+  background-color: var(--xr-background-color-row-odd);
+  border-color: var(--xr-background-color-row-even);
+}
+
+.xr-var-name {
+  grid-column: 1;
+}
+
+.xr-var-dims {
+  grid-column: 2;
+}
+
+.xr-var-dtype {
+  grid-column: 3;
+  text-align: right;
+  color: var(--xr-font-color2);
+}
+
+.xr-var-preview {
+  grid-column: 4;
+}
+
+.xr-index-preview {
+  grid-column: 2 / 5;
+  color: var(--xr-font-color2);
+}
+
+.xr-var-name,
+.xr-var-dims,
+.xr-var-dtype,
+.xr-preview,
+.xr-attrs dt {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 10px;
+}
+
+.xr-var-name:hover,
+.xr-var-dims:hover,
+.xr-var-dtype:hover,
+.xr-attrs dt:hover {
+  overflow: visible;
+  width: auto;
+  z-index: 1;
+}
+
+.xr-var-attrs,
+.xr-var-data,
+.xr-index-data {
+  display: none;
+  border-top: 2px dotted var(--xr-background-color);
+  padding-bottom: 20px !important;
+  padding-top: 10px !important;
+}
+
+.xr-var-attrs-in + label,
+.xr-var-data-in + label,
+.xr-index-data-in + label {
+  padding: 0 1px;
+}
+
+.xr-var-attrs-in:checked ~ .xr-var-attrs,
+.xr-var-data-in:checked ~ .xr-var-data,
+.xr-index-data-in:checked ~ .xr-index-data {
+  display: block;
+}
+
+.xr-var-data > table {
+  float: right;
+}
+
+.xr-var-data > pre,
+.xr-index-data > pre,
+.xr-var-data > table > tbody > tr {
+  background-color: transparent !important;
+}
+
+.xr-var-name span,
+.xr-var-data,
+.xr-index-name div,
+.xr-index-data,
+.xr-attrs {
+  padding-left: 25px !important;
+}
+
+.xr-attrs,
+.xr-var-attrs,
+.xr-var-data,
+.xr-index-data {
+  grid-column: 1 / -1;
+}
+
+dl.xr-attrs {
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 125px auto;
+}
+
+.xr-attrs dt,
+.xr-attrs dd {
+  padding: 0;
+  margin: 0;
+  float: left;
+  padding-right: 10px;
+  width: auto;
+}
+
+.xr-attrs dt {
+  font-weight: normal;
+  grid-column: 1;
+}
+
+.xr-attrs dt:hover span {
+  display: inline-block;
+  background: var(--xr-background-color);
+  padding-right: 10px;
+}
+
+.xr-attrs dd {
+  grid-column: 2;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.xr-icon-database,
+.xr-icon-file-text2,
+.xr-no-icon {
+  display: inline-block;
+  vertical-align: middle;
+  width: 1em;
+  height: 1.5em !important;
+  stroke-width: 0;
+  stroke: currentColor;
+  fill: currentColor;
+}
+
+.xr-var-attrs-in:checked + label > .xr-icon-file-text2,
+.xr-var-data-in:checked + label > .xr-icon-database,
+.xr-index-data-in:checked + label > .xr-icon-database {
+  color: var(--xr-font-color0);
+  filter: drop-shadow(1px 1px 5px var(--xr-font-color2));
+  stroke-width: 0.8px;
+}
+</style><pre class='xr-text-repr-fallback'>&lt;xarray.Dataset&gt; Size: 325kB
+Dimensions:  (dac_ch1: 200, dac_ch2: 201)
+Coordinates:
+  * dac_ch1  (dac_ch1) float64 2kB 0.0 0.005 0.01 0.015 ... 0.985 0.99 0.995
+  * dac_ch2  (dac_ch2) float64 2kB 1.0 1.005 1.01 1.015 ... 1.985 1.99 1.995 2.0
+Data variables:
+    dmm_v2   (dac_ch1, dac_ch2) float64 322kB 0.005678 0.006226 ... 0.0006774
+Attributes: (12/15)
+    ds_name:                  results
+    sample_name:              no sample
+    exp_name:                 exporting_data
+    snapshot:                 {&quot;station&quot;: {&quot;instruments&quot;: {&quot;dmm&quot;: {&quot;functions...
+    guid:                     d6ec63a5-0000-0000-0000-019c5692fa64
+    run_timestamp:            2026-02-13 10:36:38
+    ...                       ...
+    run_id:                   2
+    run_description:          {&quot;version&quot;: 3, &quot;interdependencies&quot;: {&quot;paramspec...
+    parent_dataset_links:     []
+    run_timestamp_raw:        1770978998.8911726
+    completed_timestamp_raw:  1770979004.0032358
+    export_info:              {&quot;export_paths&quot;: {&quot;nc&quot;: &quot;/home/runner/work/Qcod...</pre><div class='xr-wrap' style='display:none'><div class='xr-header'><div class='xr-obj-type'>xarray.Dataset</div></div><ul class='xr-sections'><li class='xr-section-item'><input id='section-ad68bd1d-05ab-4037-8eae-f763bb779f0a' class='xr-section-summary-in' type='checkbox' disabled /><label for='section-ad68bd1d-05ab-4037-8eae-f763bb779f0a' class='xr-section-summary'>Dimensions:</label><div class='xr-section-inline-details'><ul class='xr-dim-list'><li><span class='xr-has-index'>dac_ch1</span>: 200</li><li><span class='xr-has-index'>dac_ch2</span>: 201</li></ul></div></li><li class='xr-section-item'><input id='section-e31b2a24-8226-4c1b-801d-03d986307ed7' class='xr-section-summary-in' type='checkbox' checked /><label for='section-e31b2a24-8226-4c1b-801d-03d986307ed7' class='xr-section-summary' title='Expand/collapse section'>Coordinates: <span>(2)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-var-name'><span class='xr-has-index'>dac_ch1</span></div><div class='xr-var-dims'>(dac_ch1)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>0.0 0.005 0.01 ... 0.985 0.99 0.995</div><input id='attrs-d150248f-e253-4a33-9519-fcdbad1e6d58' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-d150248f-e253-4a33-9519-fcdbad1e6d58' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-129acaae-c4f4-4c90-a271-8f9c22a02ba2' class='xr-var-data-in' type='checkbox'><label for='data-129acaae-c4f4-4c90-a271-8f9c22a02ba2' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>name :</span></dt><dd>dac_ch1</dd><dt><span>paramtype :</span></dt><dd>numeric</dd><dt><span>label :</span></dt><dd>Gate ch1</dd><dt><span>unit :</span></dt><dd>V</dd><dt><span>inferred_from :</span></dt><dd>[]</dd><dt><span>depends_on :</span></dt><dd>[]</dd><dt><span>units :</span></dt><dd>V</dd><dt><span>long_name :</span></dt><dd>Gate ch1</dd></dl></div><div class='xr-var-data'><pre>array([0.   , 0.005, 0.01 , 0.015, 0.02 , 0.025, 0.03 , 0.035, 0.04 , 0.045,
+       0.05 , 0.055, 0.06 , 0.065, 0.07 , 0.075, 0.08 , 0.085, 0.09 , 0.095,
+       0.1  , 0.105, 0.11 , 0.115, 0.12 , 0.125, 0.13 , 0.135, 0.14 , 0.145,
+       0.15 , 0.155, 0.16 , 0.165, 0.17 , 0.175, 0.18 , 0.185, 0.19 , 0.195,
+       0.2  , 0.205, 0.21 , 0.215, 0.22 , 0.225, 0.23 , 0.235, 0.24 , 0.245,
+       0.25 , 0.255, 0.26 , 0.265, 0.27 , 0.275, 0.28 , 0.285, 0.29 , 0.295,
+       0.3  , 0.305, 0.31 , 0.315, 0.32 , 0.325, 0.33 , 0.335, 0.34 , 0.345,
+       0.35 , 0.355, 0.36 , 0.365, 0.37 , 0.375, 0.38 , 0.385, 0.39 , 0.395,
+       0.4  , 0.405, 0.41 , 0.415, 0.42 , 0.425, 0.43 , 0.435, 0.44 , 0.445,
+       0.45 , 0.455, 0.46 , 0.465, 0.47 , 0.475, 0.48 , 0.485, 0.49 , 0.495,
+       0.5  , 0.505, 0.51 , 0.515, 0.52 , 0.525, 0.53 , 0.535, 0.54 , 0.545,
+       0.55 , 0.555, 0.56 , 0.565, 0.57 , 0.575, 0.58 , 0.585, 0.59 , 0.595,
+       0.6  , 0.605, 0.61 , 0.615, 0.62 , 0.625, 0.63 , 0.635, 0.64 , 0.645,
+       0.65 , 0.655, 0.66 , 0.665, 0.67 , 0.675, 0.68 , 0.685, 0.69 , 0.695,
+       0.7  , 0.705, 0.71 , 0.715, 0.72 , 0.725, 0.73 , 0.735, 0.74 , 0.745,
+       0.75 , 0.755, 0.76 , 0.765, 0.77 , 0.775, 0.78 , 0.785, 0.79 , 0.795,
+       0.8  , 0.805, 0.81 , 0.815, 0.82 , 0.825, 0.83 , 0.835, 0.84 , 0.845,
+       0.85 , 0.855, 0.86 , 0.865, 0.87 , 0.875, 0.88 , 0.885, 0.89 , 0.895,
+       0.9  , 0.905, 0.91 , 0.915, 0.92 , 0.925, 0.93 , 0.935, 0.94 , 0.945,
+       0.95 , 0.955, 0.96 , 0.965, 0.97 , 0.975, 0.98 , 0.985, 0.99 , 0.995])</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span class='xr-has-index'>dac_ch2</span></div><div class='xr-var-dims'>(dac_ch2)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>1.0 1.005 1.01 ... 1.99 1.995 2.0</div><input id='attrs-1974d4be-02c5-4900-a01c-05200619b561' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-1974d4be-02c5-4900-a01c-05200619b561' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-ca79b608-885d-48c4-8bab-6bedf8a5c19c' class='xr-var-data-in' type='checkbox'><label for='data-ca79b608-885d-48c4-8bab-6bedf8a5c19c' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>name :</span></dt><dd>dac_ch2</dd><dt><span>paramtype :</span></dt><dd>numeric</dd><dt><span>label :</span></dt><dd>Gate ch2</dd><dt><span>unit :</span></dt><dd>V</dd><dt><span>inferred_from :</span></dt><dd>[]</dd><dt><span>depends_on :</span></dt><dd>[]</dd><dt><span>units :</span></dt><dd>V</dd><dt><span>long_name :</span></dt><dd>Gate ch2</dd></dl></div><div class='xr-var-data'><pre>array([1.   , 1.005, 1.01 , ..., 1.99 , 1.995, 2.   ], shape=(201,))</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-58c89e76-adf2-4794-adef-72cbdcaa58d1' class='xr-section-summary-in' type='checkbox' checked /><label for='section-58c89e76-adf2-4794-adef-72cbdcaa58d1' class='xr-section-summary' title='Expand/collapse section'>Data variables: <span>(1)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-var-name'><span>dmm_v2</span></div><div class='xr-var-dims'>(dac_ch1, dac_ch2)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>0.005678 0.006226 ... 0.0006774</div><input id='attrs-50f44081-2c38-420e-b6f0-522bee227375' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-50f44081-2c38-420e-b6f0-522bee227375' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-905cc1df-dd5e-4475-a342-d4e19d002e1d' class='xr-var-data-in' type='checkbox'><label for='data-905cc1df-dd5e-4475-a342-d4e19d002e1d' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>name :</span></dt><dd>dmm_v2</dd><dt><span>paramtype :</span></dt><dd>numeric</dd><dt><span>label :</span></dt><dd>Gate v2</dd><dt><span>unit :</span></dt><dd>V</dd><dt><span>inferred_from :</span></dt><dd>[]</dd><dt><span>depends_on :</span></dt><dd>[&#x27;dac_ch1&#x27;, &#x27;dac_ch2&#x27;]</dd><dt><span>units :</span></dt><dd>V</dd><dt><span>long_name :</span></dt><dd>Gate v2</dd></dl></div><div class='xr-var-data'><pre>array([[ 5.67767274e-03,  6.22581417e-03,  6.03274149e-03, ...,
+        -8.56151959e-04,  2.37586553e-04,  1.05222090e-03],
+       [ 6.86913751e-03,  5.82901020e-03,  6.57879054e-03, ...,
+         3.70164632e-04,  7.46289719e-04,  1.82670958e-04],
+       [ 6.51874621e-03,  5.80981640e-03,  5.01580347e-03, ...,
+        -2.44136229e-04, -4.01260640e-04, -7.17043304e-05],
+       ...,
+       [-4.14360169e-04, -2.80716817e-04, -7.37429044e-04, ...,
+        -4.46740034e-04, -3.13228897e-04, -1.46574582e-04],
+       [ 5.11864189e-04, -4.19134645e-04, -3.67403792e-05, ...,
+        -4.83502795e-04, -5.74500633e-05,  4.83680156e-04],
+       [ 6.50675584e-05, -1.81184218e-04, -1.81363711e-04, ...,
+        -5.08264047e-04, -1.17087802e-04,  6.77358414e-04]],
+      shape=(200, 201))</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-d048352d-c828-4664-9cbc-94019c3f580a' class='xr-section-summary-in' type='checkbox' /><label for='section-d048352d-c828-4664-9cbc-94019c3f580a' class='xr-section-summary' title='Expand/collapse section'>Attributes: <span>(15)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><dl class='xr-attrs'><dt><span>ds_name :</span></dt><dd>results</dd><dt><span>sample_name :</span></dt><dd>no sample</dd><dt><span>exp_name :</span></dt><dd>exporting_data</dd><dt><span>snapshot :</span></dt><dd>{&quot;station&quot;: {&quot;instruments&quot;: {&quot;dmm&quot;: {&quot;functions&quot;: {}, &quot;submodules&quot;: {}, &quot;parameters&quot;: {&quot;IDN&quot;: {&quot;__class__&quot;: &quot;qcodes.parameters.parameter.Parameter&quot;, &quot;full_name&quot;: &quot;dmm_IDN&quot;, &quot;value&quot;: {&quot;vendor&quot;: &quot;QCoDeS&quot;, &quot;model&quot;: &quot;&lt;class &#x27;qcodes.instrument_drivers.mock_instruments.DummyInstrumentWithMeasurement&#x27;&gt;&quot;, &quot;serial&quot;: &quot;NA&quot;, &quot;firmware&quot;: &quot;NA&quot;}, &quot;raw_value&quot;: {&quot;vendor&quot;: &quot;QCoDeS&quot;, &quot;model&quot;: &quot;&lt;class &#x27;qcodes.instrument_drivers.mock_instruments.DummyInstrumentWithMeasurement&#x27;&gt;&quot;, &quot;serial&quot;: &quot;NA&quot;, &quot;firmware&quot;: &quot;NA&quot;}, &quot;ts&quot;: &quot;2026-02-13 10:36:34&quot;, &quot;label&quot;: &quot;IDN&quot;, &quot;validators&quot;: [&quot;&lt;Anything&gt;&quot;], &quot;unit&quot;: &quot;&quot;, &quot;instrument&quot;: &quot;qcodes.instrument_drivers.mock_instruments.DummyInstrumentWithMeasurement&quot;, &quot;instrument_name&quot;: &quot;dmm&quot;, &quot;inter_delay&quot;: 0, &quot;post_delay&quot;: 0, &quot;name&quot;: &quot;IDN&quot;, &quot;vals&quot;: &quot;&lt;Anything&gt;&quot;}, &quot;v1&quot;: {&quot;__class__&quot;: &quot;qcodes.instrument_drivers.mock_instruments.DmmExponentialParameter&quot;, &quot;full_name&quot;: &quot;dmm_v1&quot;, &quot;value&quot;: 4.9352625713144604, &quot;raw_value&quot;: 4.9352625713144604, &quot;ts&quot;: &quot;2026-02-13 10:36:34&quot;, &quot;label&quot;: &quot;Gate v1&quot;, &quot;validators&quot;: [&quot;&lt;Numbers -800&lt;=v&lt;=400&gt;&quot;], &quot;unit&quot;: &quot;V&quot;, &quot;instrument&quot;: &quot;qcodes.instrument_drivers.mock_instruments.DummyInstrumentWithMeasurement&quot;, &quot;instrument_name&quot;: &quot;dmm&quot;, &quot;inter_delay&quot;: 0, &quot;post_delay&quot;: 0, &quot;name&quot;: &quot;v1&quot;, &quot;vals&quot;: &quot;&lt;Numbers -800&lt;=v&lt;=400&gt;&quot;}, &quot;v2&quot;: {&quot;__class__&quot;: &quot;qcodes.instrument_drivers.mock_instruments.DmmGaussParameter&quot;, &quot;full_name&quot;: &quot;dmm_v2&quot;, &quot;value&quot;: 0.006083308115283726, &quot;raw_value&quot;: 0.006083308115283726, &quot;ts&quot;: &quot;2026-02-13 10:36:38&quot;, &quot;label&quot;: &quot;Gate v2&quot;, &quot;validators&quot;: [&quot;&lt;Numbers -800&lt;=v&lt;=400&gt;&quot;], &quot;unit&quot;: &quot;V&quot;, &quot;instrument&quot;: &quot;qcodes.instrument_drivers.mock_instruments.DummyInstrumentWithMeasurement&quot;, &quot;instrument_name&quot;: &quot;dmm&quot;, &quot;inter_delay&quot;: 0, &quot;post_delay&quot;: 0, &quot;name&quot;: &quot;v2&quot;, &quot;vals&quot;: &quot;&lt;Numbers -800&lt;=v&lt;=400&gt;&quot;}}, &quot;__class__&quot;: &quot;qcodes.instrument_drivers.mock_instruments.DummyInstrumentWithMeasurement&quot;, &quot;label&quot;: &quot;dmm&quot;, &quot;name&quot;: &quot;dmm&quot;}, &quot;dac&quot;: {&quot;functions&quot;: {}, &quot;submodules&quot;: {}, &quot;parameters&quot;: {&quot;IDN&quot;: {&quot;__class__&quot;: &quot;qcodes.parameters.parameter.Parameter&quot;, &quot;full_name&quot;: &quot;dac_IDN&quot;, &quot;value&quot;: {&quot;vendor&quot;: &quot;QCoDeS&quot;, &quot;model&quot;: &quot;&lt;class &#x27;qcodes.instrument_drivers.mock_instruments.DummyInstrument&#x27;&gt;&quot;, &quot;serial&quot;: &quot;NA&quot;, &quot;firmware&quot;: &quot;NA&quot;}, &quot;raw_value&quot;: {&quot;vendor&quot;: &quot;QCoDeS&quot;, &quot;model&quot;: &quot;&lt;class &#x27;qcodes.instrument_drivers.mock_instruments.DummyInstrument&#x27;&gt;&quot;, &quot;serial&quot;: &quot;NA&quot;, &quot;firmware&quot;: &quot;NA&quot;}, &quot;ts&quot;: &quot;2026-02-13 10:36:34&quot;, &quot;label&quot;: &quot;IDN&quot;, &quot;validators&quot;: [&quot;&lt;Anything&gt;&quot;], &quot;unit&quot;: &quot;&quot;, &quot;instrument&quot;: &quot;qcodes.instrument_drivers.mock_instruments.DummyInstrument&quot;, &quot;instrument_name&quot;: &quot;dac&quot;, &quot;inter_delay&quot;: 0, &quot;post_delay&quot;: 0, &quot;name&quot;: &quot;IDN&quot;, &quot;vals&quot;: &quot;&lt;Anything&gt;&quot;}, &quot;ch1&quot;: {&quot;__class__&quot;: &quot;qcodes.parameters.parameter.Parameter&quot;, &quot;full_name&quot;: &quot;dac_ch1&quot;, &quot;value&quot;: -0.0050000000000000044, &quot;raw_value&quot;: -0.0050000000000000044, &quot;ts&quot;: &quot;2026-02-13 10:36:38&quot;, &quot;label&quot;: &quot;Gate ch1&quot;, &quot;validators&quot;: [&quot;&lt;Numbers -800&lt;=v&lt;=400&gt;&quot;], &quot;unit&quot;: &quot;V&quot;, &quot;instrument&quot;: &quot;qcodes.instrument_drivers.mock_instruments.DummyInstrument&quot;, &quot;instrument_name&quot;: &quot;dac&quot;, &quot;inter_delay&quot;: 0, &quot;post_delay&quot;: 0, &quot;name&quot;: &quot;ch1&quot;, &quot;vals&quot;: &quot;&lt;Numbers -800&lt;=v&lt;=400&gt;&quot;}, &quot;ch2&quot;: {&quot;__class__&quot;: &quot;qcodes.parameters.parameter.Parameter&quot;, &quot;full_name&quot;: &quot;dac_ch2&quot;, &quot;value&quot;: 1.0, &quot;raw_value&quot;: 1.0, &quot;ts&quot;: &quot;2026-02-13 10:36:38&quot;, &quot;label&quot;: &quot;Gate ch2&quot;, &quot;validators&quot;: [&quot;&lt;Numbers -800&lt;=v&lt;=400&gt;&quot;], &quot;unit&quot;: &quot;V&quot;, &quot;instrument&quot;: &quot;qcodes.instrument_drivers.mock_instruments.DummyInstrument&quot;, &quot;instrument_name&quot;: &quot;dac&quot;, &quot;inter_delay&quot;: 0, &quot;post_delay&quot;: 0, &quot;name&quot;: &quot;ch2&quot;, &quot;vals&quot;: &quot;&lt;Numbers -800&lt;=v&lt;=400&gt;&quot;}, &quot;fixed_parameter&quot;: {&quot;__class__&quot;: &quot;qcodes.parameters.parameter.Parameter&quot;, &quot;full_name&quot;: &quot;dac_fixed_parameter&quot;, &quot;value&quot;: 5, &quot;raw_value&quot;: 5, &quot;ts&quot;: &quot;2026-02-13 10:36:34&quot;, &quot;label&quot;: &quot;fixed_parameter&quot;, &quot;validators&quot;: [], &quot;unit&quot;: &quot;&quot;, &quot;instrument&quot;: &quot;qcodes.instrument_drivers.mock_instruments.DummyInstrument&quot;, &quot;instrument_name&quot;: &quot;dac&quot;, &quot;inter_delay&quot;: 0, &quot;post_delay&quot;: 0, &quot;name&quot;: &quot;fixed_parameter&quot;}}, &quot;__class__&quot;: &quot;qcodes.instrument_drivers.mock_instruments.DummyInstrument&quot;, &quot;label&quot;: &quot;dac&quot;, &quot;name&quot;: &quot;dac&quot;}}, &quot;parameters&quot;: {}, &quot;components&quot;: {}, &quot;config&quot;: null}, &quot;parameters&quot;: {&quot;ch1&quot;: {&quot;__class__&quot;: &quot;qcodes.parameters.parameter.Parameter&quot;, &quot;full_name&quot;: &quot;dac_ch1&quot;, &quot;value&quot;: -0.0050000000000000044, &quot;raw_value&quot;: -0.0050000000000000044, &quot;ts&quot;: &quot;2026-02-13 10:36:38&quot;, &quot;label&quot;: &quot;Gate ch1&quot;, &quot;validators&quot;: [&quot;&lt;Numbers -800&lt;=v&lt;=400&gt;&quot;], &quot;unit&quot;: &quot;V&quot;, &quot;instrument&quot;: &quot;qcodes.instrument_drivers.mock_instruments.DummyInstrument&quot;, &quot;instrument_name&quot;: &quot;dac&quot;, &quot;inter_delay&quot;: 0, &quot;post_delay&quot;: 0, &quot;name&quot;: &quot;ch1&quot;, &quot;vals&quot;: &quot;&lt;Numbers -800&lt;=v&lt;=400&gt;&quot;}, &quot;v2&quot;: {&quot;__class__&quot;: &quot;qcodes.instrument_drivers.mock_instruments.DmmGaussParameter&quot;, &quot;full_name&quot;: &quot;dmm_v2&quot;, &quot;value&quot;: 0.006083308115283726, &quot;raw_value&quot;: 0.006083308115283726, &quot;ts&quot;: &quot;2026-02-13 10:36:38&quot;, &quot;label&quot;: &quot;Gate v2&quot;, &quot;validators&quot;: [&quot;&lt;Numbers -800&lt;=v&lt;=400&gt;&quot;], &quot;unit&quot;: &quot;V&quot;, &quot;instrument&quot;: &quot;qcodes.instrument_drivers.mock_instruments.DummyInstrumentWithMeasurement&quot;, &quot;instrument_name&quot;: &quot;dmm&quot;, &quot;inter_delay&quot;: 0, &quot;post_delay&quot;: 0, &quot;name&quot;: &quot;v2&quot;, &quot;vals&quot;: &quot;&lt;Numbers -800&lt;=v&lt;=400&gt;&quot;}, &quot;ch2&quot;: {&quot;__class__&quot;: &quot;qcodes.parameters.parameter.Parameter&quot;, &quot;full_name&quot;: &quot;dac_ch2&quot;, &quot;value&quot;: 1.0, &quot;raw_value&quot;: 1.0, &quot;ts&quot;: &quot;2026-02-13 10:36:38&quot;, &quot;label&quot;: &quot;Gate ch2&quot;, &quot;validators&quot;: [&quot;&lt;Numbers -800&lt;=v&lt;=400&gt;&quot;], &quot;unit&quot;: &quot;V&quot;, &quot;instrument&quot;: &quot;qcodes.instrument_drivers.mock_instruments.DummyInstrument&quot;, &quot;instrument_name&quot;: &quot;dac&quot;, &quot;inter_delay&quot;: 0, &quot;post_delay&quot;: 0, &quot;name&quot;: &quot;ch2&quot;, &quot;vals&quot;: &quot;&lt;Numbers -800&lt;=v&lt;=400&gt;&quot;}, &quot;dac_ch1&quot;: {&quot;__class__&quot;: &quot;qcodes.parameters.parameter.Parameter&quot;, &quot;full_name&quot;: &quot;dac_ch1&quot;, &quot;value&quot;: -0.0050000000000000044, &quot;raw_value&quot;: -0.0050000000000000044, &quot;ts&quot;: &quot;2026-02-13 10:36:38&quot;, &quot;label&quot;: &quot;Gate ch1&quot;, &quot;validators&quot;: [&quot;&lt;Numbers -800&lt;=v&lt;=400&gt;&quot;], &quot;unit&quot;: &quot;V&quot;, &quot;instrument&quot;: &quot;qcodes.instrument_drivers.mock_instruments.DummyInstrument&quot;, &quot;instrument_name&quot;: &quot;dac&quot;, &quot;inter_delay&quot;: 0, &quot;post_delay&quot;: 0, &quot;name&quot;: &quot;ch1&quot;, &quot;vals&quot;: &quot;&lt;Numbers -800&lt;=v&lt;=400&gt;&quot;}, &quot;dmm_v2&quot;: {&quot;__class__&quot;: &quot;qcodes.instrument_drivers.mock_instruments.DmmGaussParameter&quot;, &quot;full_name&quot;: &quot;dmm_v2&quot;, &quot;value&quot;: 0.006083308115283726, &quot;raw_value&quot;: 0.006083308115283726, &quot;ts&quot;: &quot;2026-02-13 10:36:38&quot;, &quot;label&quot;: &quot;Gate v2&quot;, &quot;validators&quot;: [&quot;&lt;Numbers -800&lt;=v&lt;=400&gt;&quot;], &quot;unit&quot;: &quot;V&quot;, &quot;instrument&quot;: &quot;qcodes.instrument_drivers.mock_instruments.DummyInstrumentWithMeasurement&quot;, &quot;instrument_name&quot;: &quot;dmm&quot;, &quot;inter_delay&quot;: 0, &quot;post_delay&quot;: 0, &quot;name&quot;: &quot;v2&quot;, &quot;vals&quot;: &quot;&lt;Numbers -800&lt;=v&lt;=400&gt;&quot;}, &quot;dac_ch2&quot;: {&quot;__class__&quot;: &quot;qcodes.parameters.parameter.Parameter&quot;, &quot;full_name&quot;: &quot;dac_ch2&quot;, &quot;value&quot;: 1.0, &quot;raw_value&quot;: 1.0, &quot;ts&quot;: &quot;2026-02-13 10:36:38&quot;, &quot;label&quot;: &quot;Gate ch2&quot;, &quot;validators&quot;: [&quot;&lt;Numbers -800&lt;=v&lt;=400&gt;&quot;], &quot;unit&quot;: &quot;V&quot;, &quot;instrument&quot;: &quot;qcodes.instrument_drivers.mock_instruments.DummyInstrument&quot;, &quot;instrument_name&quot;: &quot;dac&quot;, &quot;inter_delay&quot;: 0, &quot;post_delay&quot;: 0, &quot;name&quot;: &quot;ch2&quot;, &quot;vals&quot;: &quot;&lt;Numbers -800&lt;=v&lt;=400&gt;&quot;}}}</dd><dt><span>guid :</span></dt><dd>d6ec63a5-0000-0000-0000-019c5692fa64</dd><dt><span>run_timestamp :</span></dt><dd>2026-02-13 10:36:38</dd><dt><span>completed_timestamp :</span></dt><dd>2026-02-13 10:36:44</dd><dt><span>captured_run_id :</span></dt><dd>2</dd><dt><span>captured_counter :</span></dt><dd>2</dd><dt><span>run_id :</span></dt><dd>2</dd><dt><span>run_description :</span></dt><dd>{&quot;version&quot;: 3, &quot;interdependencies&quot;: {&quot;paramspecs&quot;: [{&quot;name&quot;: &quot;dac_ch1&quot;, &quot;paramtype&quot;: &quot;numeric&quot;, &quot;label&quot;: &quot;Gate ch1&quot;, &quot;unit&quot;: &quot;V&quot;, &quot;inferred_from&quot;: [], &quot;depends_on&quot;: []}, {&quot;name&quot;: &quot;dac_ch2&quot;, &quot;paramtype&quot;: &quot;numeric&quot;, &quot;label&quot;: &quot;Gate ch2&quot;, &quot;unit&quot;: &quot;V&quot;, &quot;inferred_from&quot;: [], &quot;depends_on&quot;: []}, {&quot;name&quot;: &quot;dmm_v2&quot;, &quot;paramtype&quot;: &quot;numeric&quot;, &quot;label&quot;: &quot;Gate v2&quot;, &quot;unit&quot;: &quot;V&quot;, &quot;inferred_from&quot;: [], &quot;depends_on&quot;: [&quot;dac_ch1&quot;, &quot;dac_ch2&quot;]}]}, &quot;interdependencies_&quot;: {&quot;parameters&quot;: {&quot;dac_ch1&quot;: {&quot;name&quot;: &quot;dac_ch1&quot;, &quot;paramtype&quot;: &quot;numeric&quot;, &quot;label&quot;: &quot;Gate ch1&quot;, &quot;unit&quot;: &quot;V&quot;}, &quot;dac_ch2&quot;: {&quot;name&quot;: &quot;dac_ch2&quot;, &quot;paramtype&quot;: &quot;numeric&quot;, &quot;label&quot;: &quot;Gate ch2&quot;, &quot;unit&quot;: &quot;V&quot;}, &quot;dmm_v2&quot;: {&quot;name&quot;: &quot;dmm_v2&quot;, &quot;paramtype&quot;: &quot;numeric&quot;, &quot;label&quot;: &quot;Gate v2&quot;, &quot;unit&quot;: &quot;V&quot;}}, &quot;dependencies&quot;: {&quot;dmm_v2&quot;: [&quot;dac_ch1&quot;, &quot;dac_ch2&quot;]}, &quot;inferences&quot;: {}, &quot;standalones&quot;: []}, &quot;shapes&quot;: null}</dd><dt><span>parent_dataset_links :</span></dt><dd>[]</dd><dt><span>run_timestamp_raw :</span></dt><dd>1770978998.8911726</dd><dt><span>completed_timestamp_raw :</span></dt><dd>1770979004.0032358</dd><dt><span>export_info :</span></dt><dd>{&quot;export_paths&quot;: {&quot;nc&quot;: &quot;/home/runner/work/Qcodes/Qcodes/docs/examples/example_output/qcodes_2_d6ec63a5-0000-0000-0000-019c5692fa64.nc&quot;}}</dd></dl></div></li></ul></div></div></div>
+</div>
+<p>And plot it using <code class="docutils literal notranslate"><span class="pre">plot_dataset</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_dataset</span><span class="p">(</span><span class="n">loaded_ds</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+([&lt;Axes: title={&#39;center&#39;: &#39;Run #2, Experiment exporting_data (no sample)&#39;}, xlabel=&#39;Gate ch1 (mV)&#39;, ylabel=&#39;Gate ch2 (V)&#39;&gt;],
+ [&lt;matplotlib.colorbar.Colorbar at 0x7f1ea8fd3f50&gt;])
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_DataSet_Exporting-data-to-other-file-formats_34_1.png" src="../../_images/examples_DataSet_Exporting-data-to-other-file-formats_34_1.png" />
+</div>
+</div>
+<p>Note that the dataset will have the same <code class="docutils literal notranslate"><span class="pre">captured_run_id</span></code> and <code class="docutils literal notranslate"><span class="pre">captured_counter</span></code> as before:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">captured_run_id</span> <span class="o">=</span> <span class="n">loaded_ds</span><span class="o">.</span><span class="n">captured_run_id</span>
+<span class="n">captured_run_id</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+2
+</pre></div></div>
+</div>
+<p>But do note that the <code class="docutils literal notranslate"><span class="pre">run_id</span></code> and <code class="docutils literal notranslate"><span class="pre">counter</span></code> are in general not preserved since they represent the datasets number in a given db file.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">loaded_ds</span><span class="o">.</span><span class="n">run_id</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+2
+</pre></div></div>
+</div>
+<p>A loaded datasets metadata can be written to the current db file and subsequently the dataset including metadata and raw data reloaded from the database and netcdf file.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">loaded_ds</span><span class="o">.</span><span class="n">write_metadata_to_db</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>Now that the metadata has been written to a database the dataset can be plotted with <a class="reference external" href="https://github.com/toolsforexperiments/plottr/">plottr</a> like a regular dataset.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">del</span> <span class="n">loaded_ds</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">reloaded_ds</span> <span class="o">=</span> <span class="n">load_by_run_spec</span><span class="p">(</span><span class="n">captured_run_id</span><span class="o">=</span><span class="n">captured_run_id</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_dataset</span><span class="p">(</span><span class="n">reloaded_ds</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+([&lt;Axes: title={&#39;center&#39;: &#39;Run #2, Experiment exporting_data (no sample)&#39;}, xlabel=&#39;Gate ch1 (mV)&#39;, ylabel=&#39;Gate ch2 (V)&#39;&gt;],
+ [&lt;matplotlib.colorbar.Colorbar at 0x7f1ea908a290&gt;])
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_DataSet_Exporting-data-to-other-file-formats_44_1.png" src="../../_images/examples_DataSet_Exporting-data-to-other-file-formats_44_1.png" />
+</div>
+</div>
+<p>Note that loading a dataset from the database will also load the raw data into <code class="docutils literal notranslate"><span class="pre">dataset.cache</span></code> provided that the <code class="docutils literal notranslate"><span class="pre">netcdf</span></code> file is still in the location where file was when the metadata was written to the database. Load_by_runspec and related functions will load data into a regular <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> provided that the data can be found in the database otherwise it will be loaded into a <code class="docutils literal notranslate"><span class="pre">DataSetInMem</span></code></p>
+<p>If the netcdf file cannot be found the dataset will load with a warning and the raw data will not be accessible from the dataset.</p>
+<p>If this happens because you have moved the location of a netcdf file you can use the method <code class="docutils literal notranslate"><span class="pre">set_netcdf_location</span></code> to set a new location for the the netcdf file in the dataset and database file. Here we demonstrate this by copying the netcdf file and changing the location using this method.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">filepath</span> <span class="o">=</span> <span class="n">dataset2</span><span class="o">.</span><span class="n">export_info</span><span class="o">.</span><span class="n">export_paths</span><span class="p">[</span><span class="s2">&quot;nc&quot;</span><span class="p">]</span>
+<span class="n">new_file_path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;example_output&quot;</span> <span class="o">/</span> <span class="s2">&quot;somefile.nc&quot;</span><span class="p">)</span>
+<span class="n">new_file_path</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;/home/runner/work/Qcodes/Qcodes/docs/examples/example_output/somefile.nc&#39;
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">shutil</span><span class="o">.</span><span class="n">copyfile</span><span class="p">(</span><span class="n">dataset2</span><span class="o">.</span><span class="n">export_info</span><span class="o">.</span><span class="n">export_paths</span><span class="p">[</span><span class="s2">&quot;nc&quot;</span><span class="p">],</span> <span class="n">new_file_path</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;/home/runner/work/Qcodes/Qcodes/docs/examples/example_output/somefile.nc&#39;
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">reloaded_ds</span><span class="o">.</span><span class="n">set_netcdf_location</span><span class="p">(</span><span class="n">new_file_path</span><span class="p">)</span>
+<span class="n">reloaded_ds</span><span class="o">.</span><span class="n">export_info</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+ExportInfo(export_paths={&#39;nc&#39;: &#39;/home/runner/work/Qcodes/Qcodes/docs/examples/example_output/somefile.nc&#39;})
+</pre></div></div>
+</div>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="Extracting-runs-from-one-DB-file-to-another.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Extracting runs from one DB file to another</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="Dataset_Performance.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">DataSet Performance</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Exporting QCoDes Datasets</a><ul>
+<li><a class="reference internal" href="#Setup">Setup</a></li>
+<li><a class="reference internal" href="#Exporting-data-manually">Exporting data manually</a></li>
+<li><a class="reference internal" href="#Export-data-automatically">Export data automatically</a></li>
+<li><a class="reference internal" href="#Automatically-post-process-exported-datasets.">Automatically post process exported datasets.</a></li>
+<li><a class="reference internal" href="#Importing-exported-datasets-into-a-new-database">Importing exported datasets into a new database</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../../_static/documentation_options.js?v=14f3ca12"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    </body>
+</html>

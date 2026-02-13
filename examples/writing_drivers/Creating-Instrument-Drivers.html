@@ -1,0 +1,1342 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../../_static/qcodes_favicon.png"><link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html"><link rel="next" title="Creating Simulated PyVISA Instruments" href="Creating-Simulated-PyVISA-Instruments.html"><link rel="prev" title="A ParameterWithSetpoints Example with Dual Setpoints" href="A-ParameterWithSetpoints-Example-with-Dual-Setpoints.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.12.19 -->
+        <title>Creating QCoDeS instrument drivers - QCoDeS 0.55.0.dev570 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../index.html"><div class="brand">QCoDeS 0.55.0.dev570 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
+  
+  <span class="sidebar-brand-text">QCoDeS 0.55.0.dev570 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../start/index.html">Getting Started</a><input aria-label="Toggle navigation of Getting Started" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../basic_examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../index.html">Examples of using QCoDeS</a><input aria-label="Toggle navigation of Examples of using QCoDeS" checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l2 has-children"><a class="reference internal" href="../basic_examples/index.html">Basic examples</a><input aria-label="Toggle navigation of Basic examples" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../basic_examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../basic_examples/Configuring_QCoDeS.html">QCoDeS config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../basic_examples/Station.html">Station</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../Parameters/index.html">Parameters</a><input aria-label="Toggle navigation of Parameters" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Complex_Parameters.html">Complex Numbers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Legacy_Parameters.html">Legacy parameter examples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/MultiParameter.html">MultiParameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Parameter-With-Setpoints-defined-on-a-different-instrument.html">ParameterWithSetpoints with setpoints defined on another instrument.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Parameter_defined_InterDependencies.html">Parameter-defined InterDependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Parameter_defined_InterDependencies.html#ControllingParameter-Example">ControllingParameter Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Parameters.html">Parameters in QCoDeS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Scaled_Parameter.html">ScaledParameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Simple-Example-of-ParameterWithSetpoints.html">Simple Example of ParameterWithSetpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../DataSet/index.html">DataSet</a><input aria-label="Toggle navigation of DataSet" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Accessing-data-in-DataSet.html">Accessing data in a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Benchmarking.html">Dataset Benchmarking</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/DataSet-class-walkthrough.html">DataSet class walkthrough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Database.html">Databases</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Datasaver_Builder.html">Using <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> and <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> to streamline measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Dataset_Performance.html">DataSet Performance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Exporting-data-to-other-file-formats.html">Exporting QCoDes Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Extracting-runs-from-one-DB-file-to-another.html">Extracting runs from one DB file to another</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/InMemoryDataSet.html">In memory dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Linking%20to%20parent%20datasets.html">Linking to parent datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Measuring%20X%20as%20a%20function%20of%20time.html">Measuring X as a function of time</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Offline%20Plotting%20Tutorial.html">Offline Plotting Tutorial</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Offline%20plotting%20with%20categorical%20data.html">Offline plotting with categorical data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Offline%20plotting%20with%20complex%20data.html">Offline plotting with complex data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Paramtypes%20explained.html">Paramtypes explained</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Pedestrian%20example%20of%20subscribing%20to%20a%20DataSet.html">Pedestrian example of subscribing to a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html">Performing measurements using QCoDeS parameters and DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Saving_data_in_the_background.html">Saving data in the background</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/The-Experiment-Container.html">The Experiment Container</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Threaded%20data%20acquisition.html">Threaded data acquisition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html">Using doNd functions in comparison to Measurement context manager for performing measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Using_register_name.html">Using the <code class="docutils literal notranslate"><span class="pre">register_name</span></code> kwarg to select how a parameter is saved to a dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Working%20with%20snapshots.html">Working with snapshots</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Working-With-Pandas-and-XArray.html">Working with Pandas and XArray</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/import-data-from-legacy-dat-files.html">Importing data from legacy .dat files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/subscriber%20json%20exporter.html">Subscriber with JSON export</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Real_instruments/Example%20Measurements%20with%20Real%20Instruments.html">Example Measurements with Real Instruments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Cache/read_data_from_cache.html">Read data from cache</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Cache/write_for_caching.html">Write data to cache</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../plotting/index.html">Plotting</a><input aria-label="Toggle navigation of Plotting" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../plotting/How-to-use-Plottr-with-QCoDeS-for-live-plotting.html">How to use Plottr with QCoDeS for live plotting?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../plotting/auto_color_scale.html">Auto Color Scale</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../driver_examples/index.html">Drivers</a><input aria-label="Toggle navigation of Drivers" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/QCoDeS%20Example%20with%20Keysight%20E4980A%20LCR%20meter.html">QCoDeS Example with Keysight E4980A LCR meter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/QCoDeS%20Example%20with%20Yokogawa%20GS200%20and%20Keithley%207510.html">QCoDeS Example with Yokogawa GS200 and Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/QCoDeS%20example%20with%20Aim%20TTi%20PL601-P.html">QCoDeS example with Aim TTi PL601-P</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/QCoDeS%20example%20with%20CopperMountain_M5065.html">Example with Copper Mountain Model M5065 Vector Network Analyzer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/QCoDeS%20example%20with%20DelegateInstrument.html">Qcodes example with DelegateInstrument driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/QCoDeS%20example%20with%20Galil%20DMC4133%20Controller.html">QCoDeS example with Galil DMC4133 Controller</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/QCoDeS%20example%20with%20InstrumentGroup%20and%20DelegateInstrument.html">Qcodes example with InstrumentGroup driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/QCoDeS%20example%20with%20Keithley%203706A%20System%20Switch.html">QCoDeS example with Keithley 3706A System Switch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/QCodes%20example%20with%20Keithley%20S46.html">QCoDeS Example with Tektronix Keithley S46</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/QCodes%20example%20with%20Rigol%20DG1062.html">QCoDeS Example with the Rigol DG 1062 Instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/QCodes%20example%20with%20Tektronix%20DPO%2072004C.html">QCoDeS example with Textronix DPO 7200xx scopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20AMI430.html">QCoDeS Example with AMI430</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Agilent%2034400A.html">QCoDeS Example with Agilent 34400A</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Alazar%20ATS9360.html">QCoDeS Example with Alazar ATS 9360</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Basel%20SP983c%20Preamp.html">Qcodes example with Basel SP983c Preamp and its Remote SP983a</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Cryomagnetics%20TM-620.html">Cryomagnetics TM-620 QCoDeS Driver Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Cryomagnetics4G.html">Cryomagnetics 4G QCoDeS Driver Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20DynaCool%20PPMS.html">QCoDeS Example with DynaCool PPMS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20HP8753D.html">QCoDeS Example with HP8753D</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Ithaco.html">QCoDeS Example with Itacho</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Keithley%202600.html">QCoDeS Example with with Keithley 2600 series</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Keithley%207510.html">QCoDeS Example with Tektronix Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Keysight%2033500B.html">QCoDeS Example with Keysight 33500B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Keysight%20344xxA.html">QCoDeS Example with Keysight 344xxA</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Keysight%2034980A%20Switch%20Mainframe%20and%20Modules.html">QCoDeS Example with Keysight 34980A Multifunction Switch / Measure Mainframe and Modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Keysight%20B1500%20Parameter%20Analyzer.html">Qcodes example with Keysight B1500 Semiconductor Parameter Analyzer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Keysight%20B2200%20Series%20Femto%20Leakage%20Switch%20Matrix.html">QCoDeS Example with Keysight B2200 Series Femto Leakage Switch Matrix</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Keysight%20Infiniium%20Oscilloscope.html">QCoDeS Example with Keysight Infiniium Oscilloscopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Keysight%20N9030B.html">Qcodes example with Keysight N9030B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Keysight%20Network%20Analyzer.html">QCoDeS Example with Keysight Network Analyzers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Lakeshore%20325.html">QCoDeS Example with Lakeshore 325</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Lakeshore%20336%20or%20372%20-%20Bluefors%20T%20control.html">QCoDeS Example with the Lakeshore Model 372 to Control the Temperature of the Bluefors Fridge</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Minicircuits%20Switch%20boxes%20%28USB-XSPDT%29.html">QCoDeS Example with Minicircuits Switch Boxes Controlled via USB</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Oxford%20Mercury%20iPS.html">QCoDeS Example with Mercury iPS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Oxford%20Triton.html">QCoDeS Example with Oxford Triton</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20QDev_QDac.html">QCoDeS Example with QDac_channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Rigol%20DP832.html">QCoDeS Example with Rigol DP832 Power Supply</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Rigol%20DS1074Z.html">QCoDeS Example with the Rigol DS 1074 Z oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Rohde%20Schwarz%20RTO%201000%20series%20Oscilloscope.html">QCoDeS Example with Rohde Schwarz RTO 1000 Series Oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Rohde%20Schwarz%20SGS100A.html">QCoDeS Example with Rohde Schwarz SGS100A RF source</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Rohde%20Schwarz%20ZNB.html">QCoDeS Example with Rohde Schwarz ZNB20/8</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Stahl.html">QCoDeS Example with the Stahl Bias Sources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Stanford%20SR830.html">QCoDeS Example with Stanford SR830</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Stanford%20SR86x%20with%20buffered%20readout.html">QCoDeS Example with Standford Research SR86x Lock-in Amplifier with Buffered Readout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Tektronix%20AWG5014C.html">QCoDeS Example with Tektronix AWG5014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Tektronix%20AWG70002A.html">QCoDeS Example with Tektronix AWG70002A</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Tektronix%20TPS2012.html">QCoDeS Example with Tektronix TPS2012</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20Yokogawa%20GS2xx.html">QCoDeS Example with Yokogawa GS200/GS210</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%20example%20with%20keithley%202450.html">QCoDeS Example with Tektronix Keithley 2450 Source Meter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes%2Bbroadbean%20example%20with%20Tektronix%20AWG5208.html">QCoDeS+Broadbean Example with Tektronix AWG5208</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes-example-with-Signal-Hound-USB-SA124B.html">QCoDeS Example with Signal Hound USB-SA124B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../driver_examples/Qcodes-example-with-Signal-Hound-USB-SA124B-ParameterWithSetpoints.html">QCoDeS Example with Signal Hound USB-SA124B ParameterWithSetpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current has-children"><a class="reference internal" href="index.html">Writing Drivers</a><input aria-label="Toggle navigation of Writing Drivers" checked="" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="A-ParameterWithSetpoints-Example-with-Dual-Setpoints.html">A ParameterWithSetpoints Example with Dual Setpoints</a></li>
+<li class="toctree-l3 current current-page"><a class="current reference internal" href="#">Creating QCoDeS instrument drivers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Creating-Simulated-PyVISA-Instruments.html">Creating Simulated PyVISA Instruments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Instruments.html">Instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="abstract_instruments.html">Abstract Instruments and parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="abstract_instruments.html#Working-subclass">Working subclass</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../logging/index.html">Logging</a><input aria-label="Toggle navigation of Logging" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../logging/logfile_parsing.html">Logfile parsing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../logging/logging_example.html">Logging</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../community/index.html">Community Guide</a><input aria-label="Toggle navigation of Community Guide" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../community/install.html">Source Code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../community/contributing.html">Contributing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../community/related_projects.html">Related Projects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../community/objects.html">Object Hierarchy</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../dataset/index.html">DataSet</a><input aria-label="Toggle navigation of DataSet" class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../dataset/introduction.html">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dataset/spec.html">DataSet Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dataset/dataset_design.html">Dataset Design</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dataset/interdependentparams.html">Interdependent Parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../api/index.html">QCoDes API documentation</a><input aria-label="Toggle navigation of QCoDes API documentation" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../api/calibrations/index.html">qcodes.calibrations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/configuration/index.html">qcodes.configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/dataset/index.html">qcodes.dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/extensions/index.html">qcodes.extensions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/instrument/index.html">qcodes.instrument</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/interactive_widget.html">qcodes.interactive_widget</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/logger/index.html">qcodes.logger</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/math_utils/index.html">qcodes.math_utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/metadatable/index.html">qcodes.metadatable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/monitor/index.html">qcodes.monitor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/parameters/index.html">qcodes.parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/plotting/index.html">qcodes.plotting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/station.html">qcodes.station</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/utils/index.html">qcodes.utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/validators/index.html">qcodes.validators</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../drivers_api/index.html">Instrument Drivers</a><input aria-label="Toggle navigation of Instrument Drivers" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Agilent.html">Agilent Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/AimTTi.html">AimTTi Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/AlazarTech.html">Alazar Tech Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/American_magnetics.html">American Magnetics Inc Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Basel.html">Basel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/CryoMagnetics.html">Cryomagnetics Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Galil.html">Galil Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/HP.html">Hewlett Packard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Harvard.html">Harvard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Ithaco.html">Ithaco Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Keithley.html">Keithley Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Keysight.html">Keysight Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Lakeshore.html">Lakeshore Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Minicircuits.html">MiniCircuits Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Oxford.html">Oxford Instruments Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/QDev.html">QDev Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/QuantumDesign.html">Quantum Design Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Rigol.html">Rigol Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/RohdeSchwarz.html">Rohde &amp; Schwarz Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/SRS.html">Stanford Research Systems Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/SignalHound.html">Signal Hound Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Stahl.html">Stahl Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Tektronix.html">Tektronix Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Weinschel.html">Weinschel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Yokogawa.html">Yokogawa Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Zhinst.html">Zurich Instruments Drivers</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../changes/index.html">Changelogs</a><input aria-label="Toggle navigation of Changelogs" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/unreleased.html">Unreleased</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.54.4.html">0.54.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.54.3.html">0.54.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.54.1.html">0.54.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.54.0.html">0.54.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.53.0.html">0.53.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.52.0.html">0.52.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.51.0.html">0.51.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.50.1.html">0.50.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.50.0.html">0.50.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.49.0.html">0.49.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.48.0.html">0.48.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.47.0.html">0.47.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.46.0.html">0.46.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.45.0.html">0.45.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.44.1.html">0.44.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.44.0.html">0.44.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.43.0.html">0.43.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.42.1.html">0.42.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.42.0.html">0.42.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.41.1.html">0.41.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.41.0.html">0.41.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.40.0.html">0.40.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.39.1.html">0.39.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.39.0.html">0.39.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.38.1.html">0.38.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.38.0.html">0.38.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.37.0.html">0.37.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.36.1.html">0.36.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.36.0.html">0.36.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.35.2.html">0.35.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.35.1.html">0.35.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.35.0.html">0.35.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.35.0b1.html">0.35.0b1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.34.1.html">0.34.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.34.0.html">0.34.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.33.0.html">0.33.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.32.0.html">0.32.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.31.0.html">0.31.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.30.1.html">0.30.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.30.0.html">0.30.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.29.1.html">0.29.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.29.0.html">0.29.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.28.0.html">0.28.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.27.0.html">0.27.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.26.0.html">0.26.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.25.0.html">0.25.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.24.0.html">0.24.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.23.0.html">0.23.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.22.0.html">0.22.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.21.0.html">0.21.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.20.1.html">0.20.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.20.0.html">0.20.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.19.2.html">0.19.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.19.1.html">0.19.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.19.0.html">0.19.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.18.0.html">0.18.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.17.0.html">0.17.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.16.0.html">0.16.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.15.0.html">0.15.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.15.0a1.html">0.15.0a1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.14.0.html">0.14.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.13.0.html">0.13.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.12.1.html">0.12.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.12.0.html">0.12.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.11.0.html">0.11.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.10.0.html">0.10.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.9.0.html">0.9.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.8.1.html">0.8.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.8.0.html">0.8.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.7.0.html">0.7.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.6.0.html">0.6.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.5.2.html">0.5.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.5.1.html">0.5.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.5.0.html">0.5.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.4.0.html">0.4.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.3.0.html">0.3.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.2.1.html">0.2.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.2.0.html">0.2.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.11.html">0.1.11</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.10.html">0.1.10</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.9.html">0.1.9</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.7.html">0.1.7</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.6.html">0.1.6</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.5.html">0.1.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.4.html">0.1.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.3.html">0.1.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.2.html">0.1.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.0.html">0.1.0</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../help.html">Get Help</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../../_sources/examples/writing_drivers/Creating-Instrument-Drivers.ipynb.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <div class="admonition note">
+  <p>This page was generated from
+    <a class="reference external"
+    href="https://github.com/qcodes/qcodes/blob/main/docs/examples/writing_drivers/Creating-Instrument-Drivers.ipynb">docs/examples/writing_drivers/Creating-Instrument-Drivers.ipynb</a>.
+    Interactive online version:
+    <a href="https://mybinder.org/v2/gh/qcodes/qcodes/main?filepath=docs/examples/writing_drivers/Creating-Instrument-Drivers.ipynb"><img
+alt="Binder badge"
+    src="https://mybinder.org/badge_logo.svg"
+    style="vertical-align:text-bottom"></a>.
+  </p>
+  <script>
+    if (document.location.host) {
+      var p = document.currentScript.previousSibling.previousSibling;
+      var a = document.createElement('a');
+      a.innerHTML = 'View in <em>nbviewer</em>';
+      a.href = `https://nbviewer.jupyter.org/url${
+        (window.location.protocol == 'https:' ? 's/' : '/') +
+        window.location.host +
+        window.location.pathname.slice(0, -4) }ipynb`;
+      a.classList.add('reference');
+      a.classList.add('external');
+      p.appendChild(a);
+      p.appendChild(document.createTextNode('.'));
+    }
+  </script>
+</div><section id="Creating-QCoDeS-instrument-drivers">
+<h1>Creating QCoDeS instrument drivers<a class="headerlink" href="#Creating-QCoDeS-instrument-drivers" title="Link to this heading">¶</a></h1>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># most of the drivers only need a couple of these... moved all up here for clarity below</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">ctypes</span>  <span class="c1"># only for DLL-based instrument</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+        <span class="n">Unpack</span><span class="p">,</span>  <span class="c1"># can be imported from typing if python &gt;= 3.12</span>
+    <span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">qcodes</span><span class="w"> </span><span class="kn">import</span> <span class="n">validators</span> <span class="k">as</span> <span class="n">vals</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qcodes.instrument</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Instrument</span><span class="p">,</span>
+    <span class="n">InstrumentBaseKWArgs</span><span class="p">,</span>
+    <span class="n">InstrumentChannel</span><span class="p">,</span>
+    <span class="n">VisaInstrument</span><span class="p">,</span>
+    <span class="n">VisaInstrumentKWArgs</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qcodes.instrument_drivers.AlazarTech.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">TraceParameter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qcodes.parameters</span><span class="w"> </span><span class="kn">import</span> <span class="n">ManualParameter</span><span class="p">,</span> <span class="n">MultiParameter</span><span class="p">,</span> <span class="n">Parameter</span>
+</pre></div>
+</div>
+</div>
+<section id="Base-Classes">
+<h2>Base Classes<a class="headerlink" href="#Base-Classes" title="Link to this heading">¶</a></h2>
+<p>There are 3 available:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">VisaInstrument</span></code> - for most instruments that communicate over a text channel (ethernet, GPIB, serial, USB…) that do not have a custom DLL or other driver to manage low-level commands.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IPInstrument</span></code> - a deprecated driver just for ethernet connections. Do not use this; use <code class="docutils literal notranslate"><span class="pre">VisaInstrument</span></code> instead.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Instrument</span></code> - superclass of both <code class="docutils literal notranslate"><span class="pre">VisaInstrument</span></code> and <code class="docutils literal notranslate"><span class="pre">IPInstrument</span></code>, use this if you do not communicate over a text channel, for example:</p>
+<ul>
+<li><p>PCI cards with their own DLLs</p></li>
+<li><p>Instruments with only manual controls.</p></li>
+</ul>
+</li>
+</ul>
+<p>If possible, please use a <code class="docutils literal notranslate"><span class="pre">VisaInstrument</span></code>, as this allows for the creation of a simulated instrument. (See the <a class="reference internal" href="Creating-Simulated-PyVISA-Instruments.html"><span class="doc">Creating Simulated PyVISA Instruments</span></a> notebook)</p>
+</section>
+<section id="Parameters-and-Channels">
+<h2>Parameters and Channels<a class="headerlink" href="#Parameters-and-Channels" title="Link to this heading">¶</a></h2>
+<p>Broadly speaking, a QCoDeS instrument driver is nothing but an object that holds a connection handle to the physical instrument and has some sub-objects that represent the state of the physical instrument. These sub-objects are the <code class="docutils literal notranslate"><span class="pre">Parameters</span></code>. Writing a driver basically boils down to adding a ton of <code class="docutils literal notranslate"><span class="pre">Parameters</span></code>.</p>
+<section id="What's-a-Parameter?">
+<h3>What’s a Parameter?<a class="headerlink" href="#What's-a-Parameter?" title="Link to this heading">¶</a></h3>
+<p>A parameter represents a single value of a single feature of an instrument, e.g. the frequency of a function generator, the mode of a multimeter (resistance, current, or voltage), or the input impedance of an oscilloscope channel. Each <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> can have the following attributes:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">name</span></code>, the name used internally by QCoDeS, e.g. ‘input_impedance’</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">instrument</span></code>, the instrument this parameter belongs to, if any.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">label</span></code>, the label to use for plotting this parameter</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">unit</span></code>, the physical unit. ALWAYS use SI units if a unit is applicable</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">set_cmd</span></code>, the command to set the parameter. Either a SCPI string with a single ‘{}’, or a function taking one argument (see examples below)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">get_cmd</span></code>, the command to get the parameter. Follows the same scheme as <code class="docutils literal notranslate"><span class="pre">set_cmd</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">vals</span></code>, a validator (from <code class="docutils literal notranslate"><span class="pre">qcodes.utils.validators</span></code>) to reject invalid values before they are sent to the instrument. Since there is no standard for how an instrument responds to an out-of-bound value (e.g. a 10 kHz function generator receiving 12e9 for its frequency), meaning that the user can expect anything from silent failure to the instrument breaking or suddenly outputting random noise, it is MUCH better to catch invalid values in software. Therefore, please provide a validator if
+at all possible.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">val_mapping</span></code>, a dictionary mapping human-readable values like ‘High Impedance’ to the instrument’s internal representation like ‘372’. Not always needed. If supplied, a validator is automatically constructed.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_val_age</span></code>: Max time (in seconds) to trust a value stored in cache. If the parameter has not been set or measured more recently than this, an additional measurement will be performed in order to update the cached value. If it is <code class="docutils literal notranslate"><span class="pre">None</span></code>, this behavior is disabled. <code class="docutils literal notranslate"><span class="pre">max_val_age</span></code> should not be used for a parameter that does not have a get function.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">get_parser</span></code>, a parser of the raw return value. Since all VISA instruments return strings, but users usually want numbers, <code class="docutils literal notranslate"><span class="pre">int</span></code> and <code class="docutils literal notranslate"><span class="pre">float</span></code> are popular <code class="docutils literal notranslate"><span class="pre">get_parsers</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">docstring</span></code> A short string describing the function of the parameter</p></li>
+</ul>
+<p>Golden rule: if a <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> is settable, it must always accept its own output as input.</p>
+</section>
+<section id="Adding-a-Parameter-to-an-instrument.">
+<h3>Adding a Parameter to an instrument.<a class="headerlink" href="#Adding-a-Parameter-to-an-instrument." title="Link to this heading">¶</a></h3>
+<p>There are two different ways of adding parameters to instruments. They are almost equivalent but comes with some trade-offs. We will show both below. Parameters are declared using the <code class="docutils literal notranslate"><span class="pre">add_parameter</span></code> method on the instrument class which takes care of creating the parameter and registering it as a member of the instrument. The output of this method call is the newly created Parameter. When possible we strongly encourage that this is assigned to an attribute of the same name on the instrument
+class as shown below.</p>
+<p>Explicitly assigning a parameter as an attribute on the instrument enables Sphinx, IDEs such as VSCode and static tools such as Mypy to detect the existence and type of the parameter. However if you parameter is created dynamically with a name that is not a string this may not be possible. E.g. if your parameters are created based on named defined in an external config file. In this case, it is acceptable to not assign the output of <code class="docutils literal notranslate"><span class="pre">add_parameter</span></code> to an attribute. To include the parameter in
+Sphinx documentation, you must also provide a docstring in the form <code class="docutils literal notranslate"><span class="pre">&quot;&quot;&quot;Docstring</span> <span class="pre">here&quot;&quot;&quot;</span></code> just below the call to <code class="docutils literal notranslate"><span class="pre">add_parameter</span></code></p>
+<p>For historical reasons many instruments currently use <code class="docutils literal notranslate"><span class="pre">add_parameter</span></code> without assigning the output. QCoDeS provides a CLI tool <code class="docutils literal notranslate"><span class="pre">qcodes-refactor</span></code> to update such code automatically. The tool should be executed as <code class="docutils literal notranslate"><span class="pre">qcodes-refactor</span> <span class="pre">parameter_refactor</span> <span class="pre">path_to_folder_with_instrument_drivers_to_update</span></code>. You should carefully review the output of this tool and you may be required to add additional imports to make the code work correctly. To use this tool qcodes should be installed with the refactor
+option e.g. <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">qcodes[refactor]</span></code>.</p>
+<p>Note that it is also possible to directly create a parameter and assign it as an attribute. We do not recommend this, since you can easily forget that you are required to pass <code class="docutils literal notranslate"><span class="pre">instrument=self</span></code> to the parameter for the parameter to work correctly.</p>
+</section>
+<section id="Functions">
+<h3>Functions<a class="headerlink" href="#Functions" title="Link to this heading">¶</a></h3>
+<p>Similar to parameters QCoDeS instruments implement the concept of functions that can be added to the instrument via <code class="docutils literal notranslate"><span class="pre">add_function</span></code>. They are meant to implement simple actions on the instrument such as resetting it. However, the functions do not add any value over normal python methods in the driver Class and we are planning to eventually remove them from QCoDeS. <strong>We therefore encourage any driver developer to not use function in any new driver</strong>.</p>
+</section>
+<section id="What's-an-InstrumentModule,-then?">
+<h3>What’s an InstrumentModule, then?<a class="headerlink" href="#What's-an-InstrumentModule,-then?" title="Link to this heading">¶</a></h3>
+<p>An <code class="docutils literal notranslate"><span class="pre">InstrumentModule</span></code> is a submodule of the instrument holding <code class="docutils literal notranslate"><span class="pre">Parameter</span></code>s. It sometimes makes sense to group <code class="docutils literal notranslate"><span class="pre">Parameter</span></code>s, for instance when an oscilloscope has four identical input channels (see Keithley example below) or when it makes sense to group a particular set of parameters into their own module (such as a trigger module containing trigger related settings)</p>
+<p><code class="docutils literal notranslate"><span class="pre">InstrumentChannel</span></code> is a subclass of <code class="docutils literal notranslate"><span class="pre">InstrumentModule</span></code> which behaves identically to <code class="docutils literal notranslate"><span class="pre">InstrumentModule</span></code> you should chose either one depending on if you are implementing a module or a channel. As a rule of thumb you should use <code class="docutils literal notranslate"><span class="pre">InstrumentChannel</span></code> for something that the instrument has more than one of.</p>
+</section>
+</section>
+<section id="Naming-Instruments">
+<h2>Naming Instruments<a class="headerlink" href="#Naming-Instruments" title="Link to this heading">¶</a></h2>
+<p>We are aiming to organize drivers in QCoDeS in a consistent way for easy discovery. Note that not all drivers in QCoDeS are currently named consistently. However, we aim to gradually update all drivers to be named as outlined above and any new driver should be named in the way outlined below.</p>
+<p>The same rules should apply for QCoDeS-contrib-drivers with the exception that all drivers are stored in subfolders of the drivers folder.</p>
+<section id="Naming-the-Instrument-class">
+<h3>Naming the Instrument class<a class="headerlink" href="#Naming-the-Instrument-class" title="Link to this heading">¶</a></h3>
+<p>A driver for an instrument with model <code class="docutils literal notranslate"><span class="pre">Model</span></code> and from the vendor <code class="docutils literal notranslate"><span class="pre">Vendor</span></code> should be stored in the file:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>qcodes\instrument_drivers\{Vendor}\{Vendor}_{Model}.py
+</pre></div>
+</div>
+<p>using snake case with an underscore between the vendor and model name but starting the vendor name with upper case.</p>
+<p>The primary instrument class should be named as follows:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>class {Vendor}{Model}
+     ...
+</pre></div>
+</div>
+<p>E.g Vendor followed by Model number in CamelCase.</p>
+<p>Note that we use vendor names starting with upper case for both folders and file names.</p>
+<p>It is also fine to use an acronym for instrument vendors when there are well established. E.g. drivers for <code class="docutils literal notranslate"><span class="pre">American</span> <span class="pre">Magnetics</span> <span class="pre">Inc.</span></code> instruments may use the acronym <code class="docutils literal notranslate"><span class="pre">AMI</span></code> to refer to the vendor.</p>
+<p>As an example the driver for the Weinschel 8320 should be stored in the file <code class="docutils literal notranslate"><span class="pre">qcodes\instrument_drivers\Weinschel\Weinschel_8320.py</span></code> and the class named <code class="docutils literal notranslate"><span class="pre">Weinschel8320</span></code></p>
+</section>
+<section id="Naming-InstrumentModule-classes">
+<h3>Naming InstrumentModule classes<a class="headerlink" href="#Naming-InstrumentModule-classes" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">InstrumentModule</span></code>s and <code class="docutils literal notranslate"><span class="pre">InstrumentChannel</span></code>s should be defined in the same file as the driver that they are part of. The classes should preferable be named such that it is clear from the name which instrument it belongs to. E.g a hypothetical <code class="docutils literal notranslate"><span class="pre">InstrumentChannel</span></code> belonging to a Weinschel 8320 should be named <code class="docutils literal notranslate"><span class="pre">Weinschel8320Channel</span></code> or similar.</p>
+</section>
+<section id="Driver-supporting-multiple-models.">
+<h3>Driver supporting multiple models.<a class="headerlink" href="#Driver-supporting-multiple-models." title="Link to this heading">¶</a></h3>
+<p>Often instrument vendors supply multiple instruments in a family with very similar specs only different in limits such as voltage ranges or highest supported frequency.</p>
+<p>As an example have a look at the Keysight 344xxA series of digital multi meters. To implement drivers for such instruments it is preferable to implement a private base class such as <code class="docutils literal notranslate"><span class="pre">_Keysight344xxA</span></code>. This class should be stored either in a <code class="docutils literal notranslate"><span class="pre">private</span></code> subfolder of the Vendor folder or in a file starting with an underscore i.e. <code class="docutils literal notranslate"><span class="pre">_Keysight344xxA.py</span></code>. If possible, we prefer a format where <code class="docutils literal notranslate"><span class="pre">x</span></code> is used to signal the parts of the model numbers that may change. Along with this class subclasses
+for each of the supported models should be implemented. These may either make small modifications to the baseclass as needed or be empty subclasses if no modifications are needed.</p>
+<p>E.g. subclasses of the Keysight 344xxA driver for the specific model <code class="docutils literal notranslate"><span class="pre">34410A</span></code> should be named as <code class="docutils literal notranslate"><span class="pre">Keysight34410A</span></code> and stored in <code class="docutils literal notranslate"><span class="pre">Keysight34410A.py</span></code>.</p>
+</section>
+</section>
+<section id="Logging">
+<h2>Logging<a class="headerlink" href="#Logging" title="Link to this heading">¶</a></h2>
+<p>Every QCoDeS module should have its own logger that is named with the name of the module. So to create a logger put a line at the top of the module like this:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>log = logging.getLogger(__name__)
+</pre></div>
+</div>
+<p>Use this logger only to log messages that are not originating from an <code class="docutils literal notranslate"><span class="pre">Instrument</span></code> instance. For messages from within an instrument instance use the <code class="docutils literal notranslate"><span class="pre">log</span></code> member of the <code class="docutils literal notranslate"><span class="pre">Instrument</span></code> class, e.g</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>self.log.info(f&quot;Could not connect at %s&quot;, address)
+</pre></div>
+</div>
+<p>This way the instrument name will be prepended to the log message and the log messages can be filtered according to the instrument they originate from. See the <a class="reference internal" href="../logging/logging_example.html"><span class="doc">example</span></a> notebook of the logger module for more info.</p>
+<p>When creating a nested <code class="docutils literal notranslate"><span class="pre">Instrument</span></code>, like e.g. something like the <code class="docutils literal notranslate"><span class="pre">InstrumentChannel</span></code> class, that has a <code class="docutils literal notranslate"><span class="pre">_parent</span></code> property, make sure that this property gets set before calling the <code class="docutils literal notranslate"><span class="pre">super().__init__</span></code> method, so that the full name of the instrument gets resolved correctly for the logging.</p>
+</section>
+<section id="VisaInstrument:-Simple-example">
+<h2>VisaInstrument: Simple example<a class="headerlink" href="#VisaInstrument:-Simple-example" title="Link to this heading">¶</a></h2>
+<p>The Weinschel 8320 driver is about as basic a driver as you can get. It only defines one parameter, “attenuation”. All the comments here are my additions to describe what’s happening.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Weinschel8320</span><span class="p">(</span><span class="n">VisaInstrument</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    QCoDeS driver for the stepped attenuator</span>
+<span class="sd">    Weinschel is formerly known as Aeroflex/Weinschel</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># all instrument constructors should accept **kwargs and pass them on to</span>
+    <span class="c1"># super().__init__ By using Unpack[VisaKWArgs] we ensure that the instrument class takes exactly the same keyword args as the base class</span>
+    <span class="c1"># Visa instruments are also required to take name, address and terminator as arguments.</span>
+    <span class="c1"># name and address should be positional arguments. To overwrite the default terminator or timeout</span>
+    <span class="c1"># the attribute default_terminator or default_timeout should be defined as a class attribute in the instrument class</span>
+    <span class="c1"># as shown below for the default_terminator</span>
+    <span class="n">default_terminator</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\r</span><span class="s2">&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">address</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="s2">&quot;Unpack[VisaInstrumentKWArgs]&quot;</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">attenuation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;attenuation&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;dB&quot;</span><span class="p">,</span>
+            <span class="c1"># the value you set will be inserted in this command with</span>
+            <span class="c1"># regular python string substitution. This instrument wants</span>
+            <span class="c1"># an integer zero-padded to 2 digits. For robustness, don&#39;t</span>
+            <span class="c1"># assume you&#39;ll get an integer input though - try to allow</span>
+            <span class="c1"># floats (as opposed to {:0=2d})</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;ATTN ALL </span><span class="si">{:02.0f}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;ATTN? 1&quot;</span><span class="p">,</span>
+            <span class="c1"># setting any attenuation other than 0, 2, ... 60 will error.</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Enum</span><span class="p">(</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">60.1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()),</span>
+            <span class="c1"># the return value of get() is a string, but we want to</span>
+            <span class="c1"># turn it into a (float) number</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Control the attenuation&quot;&quot;&quot;</span>
+        <span class="c1"># The docstring below the Parameter declaration makes Sphinx document the attribute and it is therefore</span>
+        <span class="c1"># possible to see from the documentation that the instrument has this parameter. It is strongly encouraged to</span>
+        <span class="c1"># add a short docstring like this.</span>
+
+        <span class="c1"># it&#39;s a good idea to call connect_message at the end of your constructor.</span>
+        <span class="c1"># this calls the &#39;IDN&#39; parameter that the base Instrument class creates for</span>
+        <span class="c1"># every instrument (you can override the `get_idn` method if it doesn&#39;t work</span>
+        <span class="c1"># in the standard VISA form for your instrument) which serves two purposes:</span>
+        <span class="c1"># 1) verifies that you are connected to the instrument</span>
+        <span class="c1"># 2) gets the ID info so it will be included with metadata snapshots later.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect_message</span><span class="p">()</span>
+
+
+<span class="c1"># instantiating and using this instrument (commented out because I can&#39;t actually do it!)</span>
+<span class="c1">#</span>
+<span class="c1"># from qcodes.instrument_drivers.weinschel.Weinschel_8320 import Weinschel8320</span>
+<span class="c1"># weinschel = Weinschel8320(&#39;w8320_1&#39;, &#39;TCPIP0::172.20.2.212::inst0::INSTR&#39;)</span>
+<span class="c1"># weinschel.attenuation(40)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="VisaInstrument:-a-more-involved-example">
+<h2>VisaInstrument: a more involved example<a class="headerlink" href="#VisaInstrument:-a-more-involved-example" title="Link to this heading">¶</a></h2>
+<p>The Keithley 2600 sourcemeter driver uses two channels. The actual driver is quite long, so here we show an abridged version that has:</p>
+<ul class="simple">
+<li><p>A class defining a <code class="docutils literal notranslate"><span class="pre">Channel</span></code>. All the <code class="docutils literal notranslate"><span class="pre">Parameter</span></code>s of the <code class="docutils literal notranslate"><span class="pre">Channel</span></code> go here.</p></li>
+<li><p>A nifty way to look up the model number, allowing it to be a driver for many different Keithley models</p></li>
+</ul>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">KeithleyChannel</span><span class="p">(</span><span class="n">InstrumentChannel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class to hold the two Keithley channels, i.e.</span>
+<span class="sd">    SMUA and SMUB.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">parent</span><span class="p">:</span> <span class="n">Instrument</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">channel</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="s2">&quot;Unpack[InstrumentBaseKWArgs]&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            parent: The Instrument instance to which the channel is</span>
+<span class="sd">                to be attached.</span>
+<span class="sd">            name: The &#39;colloquial&#39; name of the channel</span>
+<span class="sd">            channel: The name used by the Keithley, i.e. either</span>
+<span class="sd">                &#39;smua&#39; or &#39;smub&#39;</span>
+<span class="sd">            **kwargs: Forwarded to base class.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">channel</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;smua&quot;</span><span class="p">,</span> <span class="s2">&quot;smub&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;channel must be either &quot;smub&quot; or &quot;smua&quot;&#39;</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">model</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">volt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;volt&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.measure.v()&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.source.levelv=</span><span class="se">{{</span><span class="s2">:.12f</span><span class="se">}}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="c1"># note that the set_cmd is either the following format string</span>
+            <span class="c1">#&#39;smua.source.levelv={:.12f}&#39; or &#39;smub.source.levelv={:.12f}&#39;</span>
+            <span class="c1"># depending on the value of `channel`</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Voltage&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;V&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter volt&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">curr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;curr&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.measure.i()&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.source.leveli=</span><span class="se">{{</span><span class="s2">:.12f</span><span class="se">}}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Current&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;A&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter curr&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;mode&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.source.func&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.source.func=</span><span class="se">{{</span><span class="s2">:d</span><span class="se">}}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;current&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;voltage&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Selects the output source.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter mode&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;output&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.source.output&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.source.output=</span><span class="se">{{</span><span class="s2">:d</span><span class="se">}}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;on&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;off&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter output&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">nplc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;nplc&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Number of power line cycles&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.measure.nplc=</span><span class="se">{{</span><span class="s2">:.4f</span><span class="se">}}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.measure.nplc&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Numbers</span><span class="p">(</span><span class="mf">0.001</span><span class="p">,</span> <span class="mi">25</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter nplc&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">channel</span> <span class="o">=</span> <span class="n">channel</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Keithley2600</span><span class="p">(</span><span class="n">VisaInstrument</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is the qcodes driver for the Keithley2600 Source-Meter series,</span>
+<span class="sd">    tested with Keithley2614B</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">default_terminator</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">address</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="s2">&quot;Unpack[VisaInstrumentKWArgs]&quot;</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            name: Name to use internally in QCoDeS</span>
+<span class="sd">            address: VISA ressource address</span>
+<span class="sd">            **kwargs: kwargs are forwarded to the base class.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="s2">&quot;localnode.model&quot;</span><span class="p">)</span>
+
+        <span class="n">knownmodels</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;2601B&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;2602B&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;2604B&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;2611B&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;2612B&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;2614B&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;2635B&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;2636B&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">model</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">knownmodels</span><span class="p">:</span>
+            <span class="n">kmstring</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">, &quot;</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">knownmodels</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">*</span><span class="n">knownmodels</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">kmstring</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;and </span><span class="si">{</span><span class="n">knownmodels</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unknown model. Known model are: &quot;</span> <span class="o">+</span> <span class="n">kmstring</span><span class="p">)</span>
+
+        <span class="c1"># Add the channel to the instrument</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smua</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_submodule</span><span class="p">(</span><span class="s2">&quot;smua&quot;</span><span class="p">,</span> <span class="n">KeithleyChannel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;smua&quot;</span><span class="p">,</span> <span class="s2">&quot;smua&quot;</span><span class="p">))</span>
+        <span class="s2">&quot;smua channel of the instrument&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smub</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_submodule</span><span class="p">(</span><span class="s2">&quot;smub&quot;</span><span class="p">,</span> <span class="n">KeithleyChannel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;smub&quot;</span><span class="p">,</span> <span class="s2">&quot;smub&quot;</span><span class="p">))</span>
+        <span class="s2">&quot;smub channel of the instrument&quot;</span>
+
+        <span class="c1"># display parameter</span>
+        <span class="c1"># Parameters NOT specific to a channel still belong on the Instrument object</span>
+        <span class="c1"># In this case, the Parameter controls the text on the display</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">display_settext</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="s2">&quot;display_settext&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_display_settext</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Strings</span><span class="p">(),</span>
+            <span class="n">instrument</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect_message</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="VisaInstruments:-Simulating-the-instrument">
+<h2>VisaInstruments: Simulating the instrument<a class="headerlink" href="#VisaInstruments:-Simulating-the-instrument" title="Link to this heading">¶</a></h2>
+<p>As mentioned above, drivers subclassing <code class="docutils literal notranslate"><span class="pre">VisaInstrument</span></code> have the nice property that they may be connected to a simulated version of the physical instrument. See the <a class="reference internal" href="Creating-Simulated-PyVISA-Instruments.html"><span class="doc">Creating Simulated PyVISA Instruments</span></a> notebook for more information. If you are writing a <code class="docutils literal notranslate"><span class="pre">VisaInstrument</span></code> driver, please consider spending 20 minutes to also add a simulated instrument and a test.</p>
+</section>
+<section id="DLL-based-instruments">
+<h2>DLL-based instruments<a class="headerlink" href="#DLL-based-instruments" title="Link to this heading">¶</a></h2>
+<p>The Alazar cards use their own DLL. C interfaces tend to need a lot of boilerplate, so I’m not going to include it all. The key is: use <code class="docutils literal notranslate"><span class="pre">Instrument</span></code> directly, load the DLL, and have parameters interact with it.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">AlazarTechATS</span><span class="p">(</span><span class="n">Instrument</span><span class="p">):</span>
+    <span class="n">dll_path</span> <span class="o">=</span> <span class="s2">&quot;C:</span><span class="se">\\</span><span class="s2">WINDOWS</span><span class="se">\\</span><span class="s2">System32</span><span class="se">\\</span><span class="s2">ATSApi&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">,</span>
+        <span class="n">system_id</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">board_id</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">dll_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="s2">&quot;Unpack[InstrumentBaseKWArgs]&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># connect to the DLL</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ATS_dll</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">cdll</span><span class="o">.</span><span class="n">LoadLibrary</span><span class="p">(</span><span class="n">dll_path</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">dll_path</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ATS_dll</span><span class="o">.</span><span class="n">AlazarGetBoardBySystemID</span><span class="p">(</span><span class="n">system_id</span><span class="p">,</span> <span class="n">board_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;AlazarTech_ATS not found at system </span><span class="si">{</span><span class="n">system_id</span><span class="si">}</span><span class="s2">, board </span><span class="si">{</span><span class="n">board_id</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">buffer_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># the Alazar driver includes its own parameter class to hold values</span>
+        <span class="c1"># until later config is called, and warn if you try to read a value</span>
+        <span class="c1"># that hasn&#39;t been sent to config.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clock_source</span><span class="p">:</span> <span class="n">TraceParameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;clock_source&quot;</span><span class="p">,</span>
+            <span class="n">parameter_class</span><span class="o">=</span><span class="n">TraceParameter</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Clock Source&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">value</span><span class="o">=</span><span class="s2">&quot;INTERNAL_CLOCK&quot;</span><span class="p">,</span>
+            <span class="n">byte_to_value_dict</span><span class="o">=</span><span class="p">{</span>
+                <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;INTERNAL_CLOCK&quot;</span><span class="p">,</span>
+                <span class="mi">4</span><span class="p">:</span> <span class="s2">&quot;SLOW_EXTERNAL_CLOCK&quot;</span><span class="p">,</span>
+                <span class="mi">5</span><span class="p">:</span> <span class="s2">&quot;EXTERNAL_CLOCK_AC&quot;</span><span class="p">,</span>
+                <span class="mi">7</span><span class="p">:</span> <span class="s2">&quot;EXTERNAL_CLOCK_10MHz_REF&quot;</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">)</span>
+
+        <span class="c1"># etc...</span>
+</pre></div>
+</div>
+</div>
+<p>It’s very typical for DLL based instruments to only be supported on Windows. In such a driver care should be taken to ensure that the driver raises a clear error message if it is initialized on a different platform. This is typically best done by by checking <code class="docutils literal notranslate"><span class="pre">sys.platform</span></code> as below. In this example we are using <code class="docutils literal notranslate"><span class="pre">ctypes.windll</span></code> to interact with the DLL. <code class="docutils literal notranslate"><span class="pre">windll</span></code> is only defined on on Windows.</p>
+<p>QCoDeS is automatically typechecked with MyPy, this may give some complications for drivers that are not compatible with multiple OSes as there is no supported way to disabling the typecheck on a per platform basis for a specific submodule. Specifically MyPy will correctly notice that <code class="docutils literal notranslate"><span class="pre">self.dll</span></code> does not exist on non Windows platforms unless we add the line <code class="docutils literal notranslate"><span class="pre">self.dll:</span> <span class="pre">Any</span> <span class="pre">=</span> <span class="pre">None</span></code> to the example below. By giving <code class="docutils literal notranslate"><span class="pre">self.dll</span></code> the type <code class="docutils literal notranslate"><span class="pre">Any</span></code> we effectively disable any typecheck related to
+<code class="docutils literal notranslate"><span class="pre">self.dll</span></code> on non Windows platforms which is exactly what we want. This works because MyPy knows how to interprete the <code class="docutils literal notranslate"><span class="pre">sys.platform</span></code> check and allows <code class="docutils literal notranslate"><span class="pre">self.dll</span></code> to have different types on different OSes.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">SomeDLLInstrument</span><span class="p">(</span><span class="n">Instrument</span><span class="p">):</span>
+    <span class="n">dll_path</span> <span class="o">=</span> <span class="s2">&quot;C:</span><span class="se">\\</span><span class="s2">WINDOWS</span><span class="se">\\</span><span class="s2">System32</span><span class="se">\\</span><span class="s2">ATSApi&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">dll_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="s2">&quot;Unpack[InstrumentBaseKWArgs]&quot;</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span> <span class="o">!=</span> <span class="s2">&quot;win32&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dll</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">raise</span> <span class="ne">OSError</span><span class="p">(</span><span class="s2">&quot;SomeDLLInsrument only works on Windows&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dll</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">windll</span><span class="o">.</span><span class="n">LoadLibrary</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dll_path</span><span class="p">)</span>
+
+        <span class="c1"># etc...</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Manual-instruments">
+<h2>Manual instruments<a class="headerlink" href="#Manual-instruments" title="Link to this heading">¶</a></h2>
+<p>A totally manual instrument (like the ithaco 1211) will contain only <code class="docutils literal notranslate"><span class="pre">ManualParameter</span></code>s. Some instruments may have a mix of manual and standard parameters. Here we also define a new <code class="docutils literal notranslate"><span class="pre">CurrentParameter</span></code> class that uses the ithaco parameters to convert a measured voltage to a current. When subclassing a parameter class (<code class="docutils literal notranslate"><span class="pre">Parameter</span></code>, <code class="docutils literal notranslate"><span class="pre">MultiParameter</span></code>, …), the functions for setting and getting should be called <code class="docutils literal notranslate"><span class="pre">get_raw</span></code> and <code class="docutils literal notranslate"><span class="pre">set_raw</span></code>, respectively.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">CurrentParameter</span><span class="p">(</span><span class="n">MultiParameter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Current measurement via an Ithaco preamp and a measured voltage.</span>
+
+<span class="sd">    To be used when you feed a current into the Ithaco, send the Ithaco&#39;s</span>
+<span class="sd">    output voltage to a lockin or other voltage amplifier, and you have</span>
+<span class="sd">    the voltage reading from that amplifier as a qcodes parameter.</span>
+
+<span class="sd">    ``CurrentParameter.get()`` returns ``(voltage_raw, current)``</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        measured_param: a gettable parameter returning the</span>
+<span class="sd">            voltage read from the Ithaco output.</span>
+<span class="sd">        c_amp_ins: an Ithaco instance where you manually</span>
+<span class="sd">            maintain the present settings of the real Ithaco amp.</span>
+<span class="sd">        name: the name of the current output. Default &#39;curr&#39;.</span>
+<span class="sd">            Also used as the name of the whole parameter.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">measured_param</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">,</span>
+        <span class="n">c_amp_ins</span><span class="p">:</span> <span class="s2">&quot;Ithaco1211&quot;</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;curr&quot;</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">p_name</span> <span class="o">=</span> <span class="n">measured_param</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="n">p_label</span> <span class="o">=</span> <span class="n">measured_param</span><span class="o">.</span><span class="n">label</span>
+        <span class="n">p_unit</span> <span class="o">=</span> <span class="n">measured_param</span><span class="o">.</span><span class="n">unit</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">names</span><span class="o">=</span><span class="p">(</span><span class="n">p_name</span> <span class="o">+</span> <span class="s2">&quot;_raw&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">),</span>
+            <span class="n">shapes</span><span class="o">=</span><span class="p">((),</span> <span class="p">()),</span>
+            <span class="n">labels</span><span class="o">=</span><span class="p">(</span><span class="n">p_label</span><span class="p">,</span> <span class="s2">&quot;Current&quot;</span><span class="p">),</span>
+            <span class="n">units</span><span class="o">=</span><span class="p">(</span><span class="n">p_unit</span><span class="p">,</span> <span class="s2">&quot;A&quot;</span><span class="p">),</span>
+            <span class="n">instrument</span><span class="o">=</span><span class="n">c_amp_ins</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_measured_param</span> <span class="o">=</span> <span class="n">measured_param</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">volt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_measured_param</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="p">,</span> <span class="n">Ithaco1211</span><span class="p">)</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">sens</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">sens_factor</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="p">)</span> <span class="o">*</span> <span class="n">volt</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">invert</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
+            <span class="n">current</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="n">value</span> <span class="o">=</span> <span class="p">(</span><span class="n">volt</span><span class="p">,</span> <span class="n">current</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Ithaco1211</span><span class="p">(</span><span class="n">Instrument</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is the qcodes driver for the Ithaco 1211 Current-preamplifier.</span>
+
+<span class="sd">    This is a virtual driver only and will not talk to your instrument.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="s2">&quot;Unpack[InstrumentBaseKWArgs]&quot;</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># ManualParameter has an &quot;initial_value&quot; kwarg, but if you use this</span>
+        <span class="c1"># you must be careful to check that it&#39;s correct before relying on it.</span>
+        <span class="c1"># if you don&#39;t set initial_value, it will start out as None.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sens</span><span class="p">:</span> <span class="n">ManualParameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;sens&quot;</span><span class="p">,</span>
+            <span class="n">parameter_class</span><span class="o">=</span><span class="n">ManualParameter</span><span class="p">,</span>
+            <span class="n">initial_value</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Sensitivity&quot;</span><span class="p">,</span>
+            <span class="n">units</span><span class="o">=</span><span class="s2">&quot;A/V&quot;</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Enum</span><span class="p">(</span><span class="mf">1e-11</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">,</span> <span class="mf">1e-09</span><span class="p">,</span> <span class="mf">1e-08</span><span class="p">,</span> <span class="mf">1e-07</span><span class="p">,</span> <span class="mf">1e-06</span><span class="p">,</span> <span class="mf">1e-05</span><span class="p">,</span> <span class="mf">1e-4</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="s2">&quot;Parameter sense&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">invert</span><span class="p">:</span> <span class="n">ManualParameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;invert&quot;</span><span class="p">,</span>
+            <span class="n">parameter_class</span><span class="o">=</span><span class="n">ManualParameter</span><span class="p">,</span>
+            <span class="n">initial_value</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Inverted output&quot;</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Bool</span><span class="p">(),</span>
+        <span class="p">)</span>
+        <span class="s2">&quot;Parameter invert&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">sens_factor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;sens_factor&quot;</span><span class="p">,</span>
+            <span class="n">parameter_class</span><span class="o">=</span><span class="n">ManualParameter</span><span class="p">,</span>
+            <span class="n">initial_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Sensitivity factor&quot;</span><span class="p">,</span>
+            <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Enum</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter sens_factor&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">suppression</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;suppression&quot;</span><span class="p">,</span>
+            <span class="n">parameter_class</span><span class="o">=</span><span class="n">ManualParameter</span><span class="p">,</span>
+            <span class="n">initial_value</span><span class="o">=</span><span class="mf">1e-7</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Suppression&quot;</span><span class="p">,</span>
+            <span class="n">units</span><span class="o">=</span><span class="s2">&quot;A&quot;</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Enum</span><span class="p">(</span><span class="mf">1e-10</span><span class="p">,</span> <span class="mf">1e-09</span><span class="p">,</span> <span class="mf">1e-08</span><span class="p">,</span> <span class="mf">1e-07</span><span class="p">,</span> <span class="mf">1e-06</span><span class="p">,</span> <span class="mf">1e-05</span><span class="p">,</span> <span class="mf">1e-4</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter suppression&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">risetime</span><span class="p">:</span> <span class="n">ManualParameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;risetime&quot;</span><span class="p">,</span>
+            <span class="n">parameter_class</span><span class="o">=</span><span class="n">ManualParameter</span><span class="p">,</span>
+            <span class="n">initial_value</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Rise Time&quot;</span><span class="p">,</span>
+            <span class="n">units</span><span class="o">=</span><span class="s2">&quot;msec&quot;</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Enum</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.03</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">1000</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter risetime&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_idn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;vendor&quot;</span><span class="p">:</span> <span class="s2">&quot;Ithaco (DL Instruments)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="s2">&quot;1211&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;serial&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;firmware&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Custom-Parameter-classes">
+<h2>Custom Parameter classes<a class="headerlink" href="#Custom-Parameter-classes" title="Link to this heading">¶</a></h2>
+<p>When you call:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>self.add_parameter(name, **kwargs)
+</pre></div>
+</div>
+<p>you create a <code class="docutils literal notranslate"><span class="pre">Parameter</span></code>. But with the <code class="docutils literal notranslate"><span class="pre">parameter_class</span></code> kwarg you can invoke any class you want:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>self.add_parameter(name, parameter_class=OtherClass, **kwargs)
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Parameter</span></code> handles most common instrument settings and measurements.</p>
+<ul>
+<li><p>Accepts get and/or set commands as either strings for the instrument’s <code class="docutils literal notranslate"><span class="pre">ask</span></code> and <code class="docutils literal notranslate"><span class="pre">write</span></code> methods, or functions/methods. The set and get commands may also be set to <code class="docutils literal notranslate"><span class="pre">False</span></code> and <code class="docutils literal notranslate"><span class="pre">None</span></code>. <code class="docutils literal notranslate"><span class="pre">False</span></code> corresponds to “no get/set method available” (example: the reading of a voltmeter is not settable, so we set <code class="docutils literal notranslate"><span class="pre">set_cmd=False</span></code>). <code class="docutils literal notranslate"><span class="pre">None</span></code> corresponds to a manually updated parameter (example: an instrument with no remote interface).</p></li>
+<li><p>Has options for translating between instrument codes and more meaningful data values</p></li>
+<li><p>Supports software-controlled ramping</p></li>
+</ul>
+</li>
+<li><p>Any other parameter class may be used in <code class="docutils literal notranslate"><span class="pre">add_parameter</span></code>, if it accepts <code class="docutils literal notranslate"><span class="pre">name</span></code> and <code class="docutils literal notranslate"><span class="pre">instrument</span></code> as constructor kwargs. Generally these should subclasses of <code class="docutils literal notranslate"><span class="pre">Parameter</span></code>, <code class="docutils literal notranslate"><span class="pre">ParameterWithSetpoints</span></code>, <code class="docutils literal notranslate"><span class="pre">ArrayParameter</span></code>, or <code class="docutils literal notranslate"><span class="pre">MultiParameter</span></code>.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">ParameterWithSetpoints</span></code> is specifically designed to handle the situations where the instrument returns an array of data with assosiated setpoints. An example of how to use it can be found in the notebook <a class="reference internal" href="../Parameters/Simple-Example-of-ParameterWithSetpoints.html"><span class="doc">Simple Example of ParameterWithSetpoints</span></a></p>
+<p><code class="docutils literal notranslate"><span class="pre">ArrayParameter</span></code> is an older alternative that does the same thing. However, it is significantly less flexible and much harder to use correct but used in a significant number of drivers. <strong>It is not recommended for any new driver.</strong></p>
+<p><code class="docutils literal notranslate"><span class="pre">MultiParameter</span></code> is designed to for the situation where multiple different types of data is captured from the same instrument command.</p>
+<p>It is important that parameters subclass forwards the <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">label(s)</span></code>, <code class="docutils literal notranslate"><span class="pre">unit(s)</span></code> and <code class="docutils literal notranslate"><span class="pre">instrument</span></code> along with any unknown <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> to the superclasss.</p>
+<section id="On/Off-parameters">
+<h3>On/Off parameters<a class="headerlink" href="#On/Off-parameters" title="Link to this heading">¶</a></h3>
+<p>Frequently, an instrument has parameters which can be expressed in terms of “something is on or off”. Moreover, usually it is not easy to translate the lingo of the instrument to something that can have simply the value of <code class="docutils literal notranslate"><span class="pre">True</span></code> or <code class="docutils literal notranslate"><span class="pre">False</span></code> (which are typical in software). Even further, it may be difficult to find consensus between users on a convention: is it <code class="docutils literal notranslate"><span class="pre">on</span></code>/<code class="docutils literal notranslate"><span class="pre">off</span></code>, or <code class="docutils literal notranslate"><span class="pre">ON</span></code>/<code class="docutils literal notranslate"><span class="pre">OFF</span></code>, or python <code class="docutils literal notranslate"><span class="pre">True</span></code>/<code class="docutils literal notranslate"><span class="pre">False</span></code>, or <code class="docutils literal notranslate"><span class="pre">1</span></code>/<code class="docutils literal notranslate"><span class="pre">0</span></code>, or else?</p>
+<p>This case becomes even more complex if the instrument’s API (say, corresponding VISA command) uses unexpected values for such a parameter, for example, turning an output “on” corresponds to a VISA command <code class="docutils literal notranslate"><span class="pre">DEV:CH:BLOCK</span> <span class="pre">0</span></code> which means “set blocking of the channel to 0 where 0 has the meaning of the boolean value False, and alltogether this command actually enables the output on this channel”.</p>
+<p>This results in inconsistency among instrument drivers where for some instrument, say, a <code class="docutils literal notranslate"><span class="pre">display</span></code> parameter has ‘on’/’off’ values for input, while for a different instrument a similar <code class="docutils literal notranslate"><span class="pre">display</span></code> parameter has <code class="docutils literal notranslate"><span class="pre">'ON'</span></code>/<code class="docutils literal notranslate"><span class="pre">'OFF'</span></code> values or <code class="docutils literal notranslate"><span class="pre">1</span></code>/<code class="docutils literal notranslate"><span class="pre">0</span></code>.</p>
+<p>Note that this particular example of a <code class="docutils literal notranslate"><span class="pre">display</span></code> parameter is trivial because the ambiguity and inconsistency for “this kind” of parameters can be solved by having the name of the parameter be <code class="docutils literal notranslate"><span class="pre">display_enabled</span></code> and the allowed input values to be python <code class="docutils literal notranslate"><span class="pre">bool</span></code> <code class="docutils literal notranslate"><span class="pre">True</span></code>/<code class="docutils literal notranslate"><span class="pre">False</span></code>.</p>
+<p>Anyway, when defining parameters where the solution does not come trivially, please, consider setting <code class="docutils literal notranslate"><span class="pre">val_mapping</span></code> of a parameter to the output of <code class="docutils literal notranslate"><span class="pre">create_on_off_val_mapping(on_val=&lt;&gt;,</span> <span class="pre">off_val=&lt;&gt;)</span></code> function from <code class="docutils literal notranslate"><span class="pre">qcodes.parameters</span></code> package. The function takes care of creating a <code class="docutils literal notranslate"><span class="pre">val_mapping</span></code> dictionary that maps given instrument-side values of <code class="docutils literal notranslate"><span class="pre">on_val</span></code> and <code class="docutils literal notranslate"><span class="pre">off_val</span></code> to <code class="docutils literal notranslate"><span class="pre">True</span></code>/<code class="docutils literal notranslate"><span class="pre">False</span></code>, <code class="docutils literal notranslate"><span class="pre">'ON'</span></code>/<code class="docutils literal notranslate"><span class="pre">'OFF'</span></code>, <code class="docutils literal notranslate"><span class="pre">'on'</span></code>/<code class="docutils literal notranslate"><span class="pre">'off'</span></code>, and other commonly used ones. Note that when getting a
+value of such a parameter, the user will not get <code class="docutils literal notranslate"><span class="pre">'ON'</span></code> or <code class="docutils literal notranslate"><span class="pre">'off'</span></code> or <code class="docutils literal notranslate"><span class="pre">'oFF'</span></code> - instead, <code class="docutils literal notranslate"><span class="pre">True</span></code>/<code class="docutils literal notranslate"><span class="pre">False</span></code> will be returned.</p>
+</section>
+</section>
+<section id="Dynamically-adding-and-removing-parameters">
+<h2>Dynamically adding and removing parameters<a class="headerlink" href="#Dynamically-adding-and-removing-parameters" title="Link to this heading">¶</a></h2>
+<p>Sometimes when conditions change (for example, the mode of operation of the instrument is changed from current to voltage measurement) you want different parameters to be available.</p>
+<p>To delete existing parameters:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>del self.parameters[name_to_delete]
+</pre></div>
+</div>
+<p>And to add more, do the same thing as you did initially:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>self.add_parameter(new_name, **kwargs)
+</pre></div>
+</div>
+</section>
+<section id="Handling-interruption-of-measurements">
+<h2>Handling interruption of measurements<a class="headerlink" href="#Handling-interruption-of-measurements" title="Link to this heading">¶</a></h2>
+<p>A QCoDeS driver should be prepared for interruptions of the measurement triggered by a KeyboardInterrupt from the enduser. If an interrupt happens at an unfortunate time i.e. while communicating with the instrument or writing results of a measurement this may leave the program in an inconsistent state e.g. with a command in the output buffer of a VISA instrument. To protect against this QCoDeS ships with a context manager that intercepts KeyBoardInterrupts and delays them until it is safe to
+stop the program. By default QCoDeS protects writing to the database and communicating with VISA instruments in this way.</p>
+<p>However, there may be situations where a driver needs additional protection around a critical piece of code. The following example shows how a critical piece of code can be protected. The reader is encouraged to experiment with this using the <code class="docutils literal notranslate"><span class="pre">interrupt</span> <span class="pre">the</span> <span class="pre">kernel</span></code> button in this notebook. Note how the first KeyBoardInterrupt triggers a message to the screen and then executes the code within the context manager but not the code outside. Furthermore 2 KeyBoardInterrupts rapidly after each other
+will trigger an immediate interrupt that does not complete the code within the context manager. The context manager can therefore be wrapped around any piece of code that the end user should not normally be allowed to interrupt.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qcodes.utils.delaykeyboardinterrupt</span><span class="w"> </span><span class="kn">import</span> <span class="n">DelayedKeyboardInterrupt</span>
+
+<span class="k">with</span> <span class="n">DelayedKeyboardInterrupt</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.2</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Loop completed&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Executing code after context manager&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+Loop completed
+Executing code after context manager
+</pre></div></div>
+</div>
+</section>
+<section id="Organization">
+<h2>Organization<a class="headerlink" href="#Organization" title="Link to this heading">¶</a></h2>
+<p>Your drivers do not need to be part of QCoDeS in order to use them with QCoDeS, but we strongly encourage you to contribute them to the <a class="reference external" href="https://github.com/QCoDeS/Qcodes_contrib_drivers">qcodes contrib drivers</a> project. That way we prevent duplication of effort, and you will likely get help making the driver better, with more features and better code.</p>
+<p>Make one driver per module, inside a directory named for the company (or institution), within the <code class="docutils literal notranslate"><span class="pre">instrument_drivers</span></code> directory, following the convention:</p>
+<p><code class="docutils literal notranslate"><span class="pre">instrument_drivers.&lt;company&gt;.&lt;model&gt;.&lt;company&gt;_&lt;model&gt;</span></code></p>
+<ul class="simple">
+<li><p>example: <code class="docutils literal notranslate"><span class="pre">instrument_drivers.AlazarTech.ATS9870.AlazarTech_ATS9870</span></code></p></li>
+</ul>
+<p>Although the class name can be just the model if it is globally unambiguous. For example:</p>
+<ul class="simple">
+<li><p>example: <code class="docutils literal notranslate"><span class="pre">instrument_drivers.stanford_research.SR560.SR560</span></code></p></li>
+</ul>
+<p>And note that due to mergers, some drivers may not be in the folder you expect:</p>
+<ul class="simple">
+<li><p>example: <code class="docutils literal notranslate"><span class="pre">instrument_drivers.tektronix.Keithley_2600.Keithley_2600_Channels</span></code></p></li>
+</ul>
+</section>
+<section id="Documentation">
+<h2>Documentation<a class="headerlink" href="#Documentation" title="Link to this heading">¶</a></h2>
+<p>A driver should be documented in the following ways.</p>
+<ul class="simple">
+<li><p>All methods of the driver class should be documented including the arguments and return type of the function. QCoDeS docstrings uses the <a class="reference external" href="https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html">Google style</a></p></li>
+<li><p>Parameters should have a meaningful docstring if the usage of the parameter is not obvious.</p></li>
+<li><p>An IPython notebook that documents the usage of the instrument should be added to <code class="docutils literal notranslate"><span class="pre">docs/example/driver_examples/Qcodes</span> <span class="pre">example</span> <span class="pre">with</span> <span class="pre">&lt;company&gt;</span> <span class="pre">&lt;model&gt;.ipynb</span></code> Note that we execute notebooks by default as part of the docs build. That is usually not possible for instrument examples so we want to disable the execution. This can be done as described <a class="reference external" href="https://nbsphinx.readthedocs.io/en/latest/never-execute.html">here</a> editing the notebooks metadata accessible via <code class="docutils literal notranslate"><span class="pre">Edit/Edit</span> <span class="pre">Notebook</span> <span class="pre">Metadata</span></code>
+from the notebook interface.</p></li>
+</ul>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+<script type="application/vnd.jupyter.widget-state+json">
+{"state": {}, "version_major": 2, "version_minor": 0}
+</script></section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="Creating-Simulated-PyVISA-Instruments.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Creating Simulated PyVISA Instruments</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="A-ParameterWithSetpoints-Example-with-Dual-Setpoints.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">A ParameterWithSetpoints Example with Dual Setpoints</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Creating QCoDeS instrument drivers</a><ul>
+<li><a class="reference internal" href="#Base-Classes">Base Classes</a></li>
+<li><a class="reference internal" href="#Parameters-and-Channels">Parameters and Channels</a><ul>
+<li><a class="reference internal" href="#What's-a-Parameter?">What’s a Parameter?</a></li>
+<li><a class="reference internal" href="#Adding-a-Parameter-to-an-instrument.">Adding a Parameter to an instrument.</a></li>
+<li><a class="reference internal" href="#Functions">Functions</a></li>
+<li><a class="reference internal" href="#What's-an-InstrumentModule,-then?">What’s an InstrumentModule, then?</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#Naming-Instruments">Naming Instruments</a><ul>
+<li><a class="reference internal" href="#Naming-the-Instrument-class">Naming the Instrument class</a></li>
+<li><a class="reference internal" href="#Naming-InstrumentModule-classes">Naming InstrumentModule classes</a></li>
+<li><a class="reference internal" href="#Driver-supporting-multiple-models.">Driver supporting multiple models.</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#Logging">Logging</a></li>
+<li><a class="reference internal" href="#VisaInstrument:-Simple-example">VisaInstrument: Simple example</a></li>
+<li><a class="reference internal" href="#VisaInstrument:-a-more-involved-example">VisaInstrument: a more involved example</a></li>
+<li><a class="reference internal" href="#VisaInstruments:-Simulating-the-instrument">VisaInstruments: Simulating the instrument</a></li>
+<li><a class="reference internal" href="#DLL-based-instruments">DLL-based instruments</a></li>
+<li><a class="reference internal" href="#Manual-instruments">Manual instruments</a></li>
+<li><a class="reference internal" href="#Custom-Parameter-classes">Custom Parameter classes</a><ul>
+<li><a class="reference internal" href="#On/Off-parameters">On/Off parameters</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#Dynamically-adding-and-removing-parameters">Dynamically adding and removing parameters</a></li>
+<li><a class="reference internal" href="#Handling-interruption-of-measurements">Handling interruption of measurements</a></li>
+<li><a class="reference internal" href="#Organization">Organization</a></li>
+<li><a class="reference internal" href="#Documentation">Documentation</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../../_static/documentation_options.js?v=14f3ca12"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    </body>
+</html>

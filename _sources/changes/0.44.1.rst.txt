@@ -1,0 +1,7 @@
+QCoDeS 0.44.1 (2024-02-01)
+==========================
+
+Improved:
+---------
+
+- As an extension to the feature added in #5627 datasets are also no longer converted into QCoDeS format when loaded from netcdf using ``load_by_guid``, ``load_by_id``, ``load_by_run_spec``, ``load_by_counter`` (:pr:`5711`)

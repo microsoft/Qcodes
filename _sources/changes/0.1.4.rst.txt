@@ -1,0 +1,52 @@
+Changelog for QCoDeS 0.1.4
+==========================
+
+Breaking Changes
+----------------
+
+- Multiprocessing removed (:pr:`510`)
+
+
+New & Improved
+--------------
+
+- Devices:
+
+    - Voltage Divider: (:pr:`492`)
+
+- New Drivers:
+
+    - Keithley 2400 Sourcemeter (:pr:`488`)
+    - HP 83650A Synthesized Sweeper (:pr:`516`)
+    - HP 8133A Pulse Generator (:pr:`581`)
+    - ZI UFH-LI (:pr:`466`)
+    - Keysight 33500B Waveform Generator (:pr:`535`)
+    - Keysight 34465A Digital Multimeter (:pr:`556`)
+    - Alazar (:pr:`491`)
+    - AMI430 Magnet power supply (:pr:`255`)
+    - Keysight M3300A card (:pr:`575`)
+    - Cryo-con temperature controller (:pr:`462`)
+    - SRS SIM928 (:pr:`566`)
+    - Advantech PCIE-1751 (:pr:`566`)
+    - Tektronix TPS 2012 (:pr:`603`)
+    - Agilent E8267C Signal Generator (:pr:`597`)
+
+- Improved drivers:
+
+    - QDAC (:pr:`554`, :pr:`557`, :pr:`558`)
+    - Spectrum M4i (:pr:`544`)
+    - Mercury iPS (:pr:`460`, :pr:`573`, :pr:`585`)
+    - Oxford Triton (:pr:`576`, :pr:`589`, :pr:`587`)
+    - IVVI (:pr:`541`, :pr:`553`, :pr:`529`)
+
+- Features:
+
+    - List validators (:pr:`542`)
+    - Example notebooks are now build as part of the documentation (:pr:`569`)
+    - Hdf5 formatter with JSON metadata (:pr:`445`)
+
+Fixed
+-----
+
+- Setpoint units
+- Setpoints for Multiparameter

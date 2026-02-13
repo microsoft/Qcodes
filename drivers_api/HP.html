@@ -1,0 +1,1298 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../_static/qcodes_favicon.png"><link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="Harvard Drivers" href="Harvard.html"><link rel="prev" title="Galil Drivers" href="Galil.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.12.19 -->
+        <title>Hewlett Packard Drivers - QCoDeS 0.55.0.dev570 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">QCoDeS 0.55.0.dev570 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  
+  <span class="sidebar-brand-text">QCoDeS 0.55.0.dev570 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../start/index.html">Getting Started</a><input aria-label="Toggle navigation of Getting Started" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/basic_examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../examples/index.html">Examples of using QCoDeS</a><input aria-label="Toggle navigation of Examples of using QCoDeS" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../examples/basic_examples/index.html">Basic examples</a><input aria-label="Toggle navigation of Basic examples" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../examples/basic_examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/basic_examples/Configuring_QCoDeS.html">QCoDeS config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/basic_examples/Station.html">Station</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../examples/Parameters/index.html">Parameters</a><input aria-label="Toggle navigation of Parameters" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../examples/Parameters/Complex_Parameters.html">Complex Numbers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/Parameters/Legacy_Parameters.html">Legacy parameter examples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/Parameters/MultiParameter.html">MultiParameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/Parameters/Parameter-With-Setpoints-defined-on-a-different-instrument.html">ParameterWithSetpoints with setpoints defined on another instrument.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/Parameters/Parameter_defined_InterDependencies.html">Parameter-defined InterDependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/Parameters/Parameter_defined_InterDependencies.html#ControllingParameter-Example">ControllingParameter Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/Parameters/Parameters.html">Parameters in QCoDeS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/Parameters/Scaled_Parameter.html">ScaledParameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/Parameters/Simple-Example-of-ParameterWithSetpoints.html">Simple Example of ParameterWithSetpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../examples/DataSet/index.html">DataSet</a><input aria-label="Toggle navigation of DataSet" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/Accessing-data-in-DataSet.html">Accessing data in a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/Benchmarking.html">Dataset Benchmarking</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/DataSet-class-walkthrough.html">DataSet class walkthrough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/Database.html">Databases</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/Datasaver_Builder.html">Using <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> and <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> to streamline measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/Dataset_Performance.html">DataSet Performance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/Exporting-data-to-other-file-formats.html">Exporting QCoDes Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/Extracting-runs-from-one-DB-file-to-another.html">Extracting runs from one DB file to another</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/InMemoryDataSet.html">In memory dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/Linking%20to%20parent%20datasets.html">Linking to parent datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/Measuring%20X%20as%20a%20function%20of%20time.html">Measuring X as a function of time</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/Offline%20Plotting%20Tutorial.html">Offline Plotting Tutorial</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/Offline%20plotting%20with%20categorical%20data.html">Offline plotting with categorical data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/Offline%20plotting%20with%20complex%20data.html">Offline plotting with complex data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/Paramtypes%20explained.html">Paramtypes explained</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/Pedestrian%20example%20of%20subscribing%20to%20a%20DataSet.html">Pedestrian example of subscribing to a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html">Performing measurements using QCoDeS parameters and DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/Saving_data_in_the_background.html">Saving data in the background</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/The-Experiment-Container.html">The Experiment Container</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/Threaded%20data%20acquisition.html">Threaded data acquisition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html">Using doNd functions in comparison to Measurement context manager for performing measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/Using_register_name.html">Using the <code class="docutils literal notranslate"><span class="pre">register_name</span></code> kwarg to select how a parameter is saved to a dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/Working%20with%20snapshots.html">Working with snapshots</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/Working-With-Pandas-and-XArray.html">Working with Pandas and XArray</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/import-data-from-legacy-dat-files.html">Importing data from legacy .dat files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/subscriber%20json%20exporter.html">Subscriber with JSON export</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/Real_instruments/Example%20Measurements%20with%20Real%20Instruments.html">Example Measurements with Real Instruments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/Cache/read_data_from_cache.html">Read data from cache</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/DataSet/Cache/write_for_caching.html">Write data to cache</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../examples/plotting/index.html">Plotting</a><input aria-label="Toggle navigation of Plotting" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../examples/plotting/How-to-use-Plottr-with-QCoDeS-for-live-plotting.html">How to use Plottr with QCoDeS for live plotting?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/plotting/auto_color_scale.html">Auto Color Scale</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../examples/driver_examples/index.html">Drivers</a><input aria-label="Toggle navigation of Drivers" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/QCoDeS%20Example%20with%20Keysight%20E4980A%20LCR%20meter.html">QCoDeS Example with Keysight E4980A LCR meter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/QCoDeS%20Example%20with%20Yokogawa%20GS200%20and%20Keithley%207510.html">QCoDeS Example with Yokogawa GS200 and Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/QCoDeS%20example%20with%20Aim%20TTi%20PL601-P.html">QCoDeS example with Aim TTi PL601-P</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/QCoDeS%20example%20with%20CopperMountain_M5065.html">Example with Copper Mountain Model M5065 Vector Network Analyzer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/QCoDeS%20example%20with%20DelegateInstrument.html">Qcodes example with DelegateInstrument driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/QCoDeS%20example%20with%20Galil%20DMC4133%20Controller.html">QCoDeS example with Galil DMC4133 Controller</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/QCoDeS%20example%20with%20InstrumentGroup%20and%20DelegateInstrument.html">Qcodes example with InstrumentGroup driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/QCoDeS%20example%20with%20Keithley%203706A%20System%20Switch.html">QCoDeS example with Keithley 3706A System Switch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/QCodes%20example%20with%20Keithley%20S46.html">QCoDeS Example with Tektronix Keithley S46</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/QCodes%20example%20with%20Rigol%20DG1062.html">QCoDeS Example with the Rigol DG 1062 Instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/QCodes%20example%20with%20Tektronix%20DPO%2072004C.html">QCoDeS example with Textronix DPO 7200xx scopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20AMI430.html">QCoDeS Example with AMI430</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Agilent%2034400A.html">QCoDeS Example with Agilent 34400A</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Alazar%20ATS9360.html">QCoDeS Example with Alazar ATS 9360</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Basel%20SP983c%20Preamp.html">Qcodes example with Basel SP983c Preamp and its Remote SP983a</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Cryomagnetics%20TM-620.html">Cryomagnetics TM-620 QCoDeS Driver Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Cryomagnetics4G.html">Cryomagnetics 4G QCoDeS Driver Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20DynaCool%20PPMS.html">QCoDeS Example with DynaCool PPMS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20HP8753D.html">QCoDeS Example with HP8753D</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Ithaco.html">QCoDeS Example with Itacho</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Keithley%202600.html">QCoDeS Example with with Keithley 2600 series</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Keithley%207510.html">QCoDeS Example with Tektronix Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Keysight%2033500B.html">QCoDeS Example with Keysight 33500B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Keysight%20344xxA.html">QCoDeS Example with Keysight 344xxA</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Keysight%2034980A%20Switch%20Mainframe%20and%20Modules.html">QCoDeS Example with Keysight 34980A Multifunction Switch / Measure Mainframe and Modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Keysight%20B1500%20Parameter%20Analyzer.html">Qcodes example with Keysight B1500 Semiconductor Parameter Analyzer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Keysight%20B2200%20Series%20Femto%20Leakage%20Switch%20Matrix.html">QCoDeS Example with Keysight B2200 Series Femto Leakage Switch Matrix</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Keysight%20Infiniium%20Oscilloscope.html">QCoDeS Example with Keysight Infiniium Oscilloscopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Keysight%20N9030B.html">Qcodes example with Keysight N9030B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Keysight%20Network%20Analyzer.html">QCoDeS Example with Keysight Network Analyzers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Lakeshore%20325.html">QCoDeS Example with Lakeshore 325</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Lakeshore%20336%20or%20372%20-%20Bluefors%20T%20control.html">QCoDeS Example with the Lakeshore Model 372 to Control the Temperature of the Bluefors Fridge</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Minicircuits%20Switch%20boxes%20%28USB-XSPDT%29.html">QCoDeS Example with Minicircuits Switch Boxes Controlled via USB</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Oxford%20Mercury%20iPS.html">QCoDeS Example with Mercury iPS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Oxford%20Triton.html">QCoDeS Example with Oxford Triton</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20QDev_QDac.html">QCoDeS Example with QDac_channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Rigol%20DP832.html">QCoDeS Example with Rigol DP832 Power Supply</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Rigol%20DS1074Z.html">QCoDeS Example with the Rigol DS 1074 Z oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Rohde%20Schwarz%20RTO%201000%20series%20Oscilloscope.html">QCoDeS Example with Rohde Schwarz RTO 1000 Series Oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Rohde%20Schwarz%20SGS100A.html">QCoDeS Example with Rohde Schwarz SGS100A RF source</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Rohde%20Schwarz%20ZNB.html">QCoDeS Example with Rohde Schwarz ZNB20/8</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Stahl.html">QCoDeS Example with the Stahl Bias Sources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Stanford%20SR830.html">QCoDeS Example with Stanford SR830</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Stanford%20SR86x%20with%20buffered%20readout.html">QCoDeS Example with Standford Research SR86x Lock-in Amplifier with Buffered Readout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Tektronix%20AWG5014C.html">QCoDeS Example with Tektronix AWG5014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Tektronix%20AWG70002A.html">QCoDeS Example with Tektronix AWG70002A</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Tektronix%20TPS2012.html">QCoDeS Example with Tektronix TPS2012</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20Yokogawa%20GS2xx.html">QCoDeS Example with Yokogawa GS200/GS210</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%20example%20with%20keithley%202450.html">QCoDeS Example with Tektronix Keithley 2450 Source Meter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes%2Bbroadbean%20example%20with%20Tektronix%20AWG5208.html">QCoDeS+Broadbean Example with Tektronix AWG5208</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes-example-with-Signal-Hound-USB-SA124B.html">QCoDeS Example with Signal Hound USB-SA124B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/driver_examples/Qcodes-example-with-Signal-Hound-USB-SA124B-ParameterWithSetpoints.html">QCoDeS Example with Signal Hound USB-SA124B ParameterWithSetpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../examples/writing_drivers/index.html">Writing Drivers</a><input aria-label="Toggle navigation of Writing Drivers" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../examples/writing_drivers/A-ParameterWithSetpoints-Example-with-Dual-Setpoints.html">A ParameterWithSetpoints Example with Dual Setpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/writing_drivers/Creating-Instrument-Drivers.html">Creating QCoDeS instrument drivers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/writing_drivers/Creating-Simulated-PyVISA-Instruments.html">Creating Simulated PyVISA Instruments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/writing_drivers/Instruments.html">Instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/writing_drivers/abstract_instruments.html">Abstract Instruments and parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/writing_drivers/abstract_instruments.html#Working-subclass">Working subclass</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../examples/logging/index.html">Logging</a><input aria-label="Toggle navigation of Logging" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../examples/logging/logfile_parsing.html">Logfile parsing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples/logging/logging_example.html">Logging</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../community/index.html">Community Guide</a><input aria-label="Toggle navigation of Community Guide" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../community/install.html">Source Code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../community/contributing.html">Contributing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../community/related_projects.html">Related Projects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../community/objects.html">Object Hierarchy</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../dataset/index.html">DataSet</a><input aria-label="Toggle navigation of DataSet" class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../dataset/introduction.html">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dataset/spec.html">DataSet Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dataset/dataset_design.html">Dataset Design</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dataset/interdependentparams.html">Interdependent Parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api/index.html">QCoDes API documentation</a><input aria-label="Toggle navigation of QCoDes API documentation" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/calibrations/index.html">qcodes.calibrations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/configuration/index.html">qcodes.configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/dataset/index.html">qcodes.dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/extensions/index.html">qcodes.extensions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/instrument/index.html">qcodes.instrument</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/interactive_widget.html">qcodes.interactive_widget</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/logger/index.html">qcodes.logger</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/math_utils/index.html">qcodes.math_utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/metadatable/index.html">qcodes.metadatable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/monitor/index.html">qcodes.monitor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/parameters/index.html">qcodes.parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/plotting/index.html">qcodes.plotting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/station.html">qcodes.station</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/utils/index.html">qcodes.utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/validators/index.html">qcodes.validators</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Instrument Drivers</a><input aria-label="Toggle navigation of Instrument Drivers" checked="" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Agilent.html">Agilent Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AimTTi.html">AimTTi Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AlazarTech.html">Alazar Tech Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="American_magnetics.html">American Magnetics Inc Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Basel.html">Basel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CryoMagnetics.html">Cryomagnetics Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Galil.html">Galil Drivers</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Hewlett Packard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Harvard.html">Harvard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Ithaco.html">Ithaco Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Keithley.html">Keithley Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Keysight.html">Keysight Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Lakeshore.html">Lakeshore Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Minicircuits.html">MiniCircuits Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Oxford.html">Oxford Instruments Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QDev.html">QDev Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QuantumDesign.html">Quantum Design Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Rigol.html">Rigol Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RohdeSchwarz.html">Rohde &amp; Schwarz Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SRS.html">Stanford Research Systems Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SignalHound.html">Signal Hound Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Stahl.html">Stahl Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Tektronix.html">Tektronix Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Weinschel.html">Weinschel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Yokogawa.html">Yokogawa Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Zhinst.html">Zurich Instruments Drivers</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../changes/index.html">Changelogs</a><input aria-label="Toggle navigation of Changelogs" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../changes/unreleased.html">Unreleased</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.54.4.html">0.54.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.54.3.html">0.54.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.54.1.html">0.54.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.54.0.html">0.54.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.53.0.html">0.53.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.52.0.html">0.52.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.51.0.html">0.51.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.50.1.html">0.50.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.50.0.html">0.50.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.49.0.html">0.49.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.48.0.html">0.48.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.47.0.html">0.47.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.46.0.html">0.46.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.45.0.html">0.45.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.44.1.html">0.44.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.44.0.html">0.44.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.43.0.html">0.43.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.42.1.html">0.42.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.42.0.html">0.42.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.41.1.html">0.41.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.41.0.html">0.41.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.40.0.html">0.40.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.39.1.html">0.39.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.39.0.html">0.39.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.38.1.html">0.38.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.38.0.html">0.38.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.37.0.html">0.37.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.36.1.html">0.36.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.36.0.html">0.36.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.35.2.html">0.35.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.35.1.html">0.35.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.35.0.html">0.35.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.35.0b1.html">0.35.0b1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.34.1.html">0.34.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.34.0.html">0.34.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.33.0.html">0.33.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.32.0.html">0.32.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.31.0.html">0.31.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.30.1.html">0.30.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.30.0.html">0.30.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.29.1.html">0.29.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.29.0.html">0.29.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.28.0.html">0.28.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.27.0.html">0.27.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.26.0.html">0.26.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.25.0.html">0.25.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.24.0.html">0.24.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.23.0.html">0.23.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.22.0.html">0.22.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.21.0.html">0.21.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.20.1.html">0.20.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.20.0.html">0.20.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.19.2.html">0.19.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.19.1.html">0.19.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.19.0.html">0.19.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.18.0.html">0.18.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.17.0.html">0.17.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.16.0.html">0.16.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.15.0.html">0.15.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.15.0a1.html">0.15.0a1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.14.0.html">0.14.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.13.0.html">0.13.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.12.1.html">0.12.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.12.0.html">0.12.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.11.0.html">0.11.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.10.0.html">0.10.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.9.0.html">0.9.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.8.1.html">0.8.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.8.0.html">0.8.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.7.0.html">0.7.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.6.0.html">0.6.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.5.2.html">0.5.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.5.1.html">0.5.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.5.0.html">0.5.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.4.0.html">0.4.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.3.0.html">0.3.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.2.1.html">0.2.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.2.0.html">0.2.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.1.11.html">0.1.11</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.1.10.html">0.1.10</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.1.9.html">0.1.9</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.1.7.html">0.1.7</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.1.6.html">0.1.6</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.1.5.html">0.1.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.1.4.html">0.1.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.1.3.html">0.1.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.1.2.html">0.1.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../changes/0.1.0.html">0.1.0</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../help.html">Get Help</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../_sources/drivers_api/HP.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="module-qcodes.instrument_drivers.HP">
+<span id="hewlett-packard-drivers"></span><span id="hp-api"></span><h1>Hewlett Packard Drivers<a class="headerlink" href="#module-qcodes.instrument_drivers.HP" title="Link to this heading">¶</a></h1>
+<p><strong>Classes:</strong></p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8133A" title="qcodes.instrument_drivers.HP.HP8133A"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HP8133A</span></code></a>(name, address[, reset])</p></td>
+<td><p>QCoDeS driver for Hewlett Packard 8133A Pulse Generator.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D" title="qcodes.instrument_drivers.HP.HP8753D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HP8753D</span></code></a>(name, address, **kwargs)</p></td>
+<td><p>QCoDeS driver for the Hewlett Packard 8753D Network Analyzer.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A" title="qcodes.instrument_drivers.HP.HP83650A"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HP83650A</span></code></a>(name, address[, verbose, reset, ...])</p></td>
+<td><p>QCoDeS driver for HP 83650A</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Exceptions:</strong></p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.HP.TraceNotReady" title="qcodes.instrument_drivers.HP.TraceNotReady"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TraceNotReady</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8133A">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.HP.</span></span><span class="sig-name descname"><span class="pre">HP8133A</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrumentKWArgs" title="qcodes.instrument.VisaInstrumentKWArgs"><span class="pre">VisaInstrumentKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8133A" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrument" title="qcodes.instrument.visa.VisaInstrument"><code class="xref py py-class docutils literal notranslate"><span class="pre">VisaInstrument</span></code></a></p>
+<p>QCoDeS driver for Hewlett Packard 8133A Pulse Generator.</p>
+<p><strong>Attributes:</strong></p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">default_terminator</span></code></p></td>
+<td><p>The default terminator to use if the terminator is not specified when creating the instrument.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">frequency</span></code></p></td>
+<td><p>Parameter frequency</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">period</span></code></p></td>
+<td><p>Parameter period</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">phase</span></code></p></td>
+<td><p>Parameter phase</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">duty_cycle</span></code></p></td>
+<td><p>Parameter duty_cycle</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">delay</span></code></p></td>
+<td><p>Parameter delay</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">width</span></code></p></td>
+<td><p>Parameter width</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">amplitude</span></code></p></td>
+<td><p>Parameter amplitude</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">amplitude_offset</span></code></p></td>
+<td><p>Parameter amplitude_offset</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">output</span></code></p></td>
+<td><p>Parameter output</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8133A.default_terminator">
+<span class="sig-name descname"><span class="pre">default_terminator</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'\n'</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8133A.default_terminator" title="Link to this definition">¶</a></dt>
+<dd><p>The default terminator to use if the terminator is not specified when creating the instrument.
+None means use the default terminator from PyVisa.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8133A.frequency">
+<span class="sig-name descname"><span class="pre">frequency</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;frequency&quot;,</span> <span class="pre">label=&quot;Frequency&quot;,</span> <span class="pre">unit=&quot;Hz&quot;,</span> <span class="pre">get_cmd=&quot;FREQ?&quot;,</span> <span class="pre">set_cmd=&quot;FREQ</span> <span class="pre">{}&quot;,</span> <span class="pre">get_parser=float,</span> <span class="pre">vals=Numbers(min_value=31.3e6,</span> <span class="pre">max_value=3.5e9),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8133A.frequency" title="Link to this definition">¶</a></dt>
+<dd><p>Parameter frequency</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8133A.period">
+<span class="sig-name descname"><span class="pre">period</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;period&quot;,</span> <span class="pre">label=&quot;Period&quot;,</span> <span class="pre">unit=&quot;s&quot;,</span> <span class="pre">get_cmd=&quot;PER?&quot;,</span> <span class="pre">set_cmd=&quot;PER</span> <span class="pre">{}&quot;,</span> <span class="pre">get_parser=float,</span> <span class="pre">vals=Numbers(min_value=286e-12,</span> <span class="pre">max_value=31.949e-9),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8133A.period" title="Link to this definition">¶</a></dt>
+<dd><p>Parameter period</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8133A.phase">
+<span class="sig-name descname"><span class="pre">phase</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;phase&quot;,</span> <span class="pre">label=&quot;Phase&quot;,</span> <span class="pre">unit=&quot;deg&quot;,</span> <span class="pre">get_cmd=&quot;PHAS?&quot;,</span> <span class="pre">set_cmd=&quot;PHAS</span> <span class="pre">{}&quot;,</span> <span class="pre">get_parser=float,</span> <span class="pre">vals=Numbers(min_value=-3.6e3,</span> <span class="pre">max_value=3.6e3),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8133A.phase" title="Link to this definition">¶</a></dt>
+<dd><p>Parameter phase</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8133A.duty_cycle">
+<span class="sig-name descname"><span class="pre">duty_cycle</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;duty_cycle&quot;,</span> <span class="pre">label=&quot;Duty</span> <span class="pre">cycle&quot;,</span> <span class="pre">unit=&quot;%&quot;,</span> <span class="pre">get_cmd=&quot;DCYC?&quot;,</span> <span class="pre">set_cmd=&quot;DCYC</span> <span class="pre">{}&quot;,</span> <span class="pre">get_parser=float,</span> <span class="pre">vals=Numbers(min_value=0,</span> <span class="pre">max_value=100),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8133A.duty_cycle" title="Link to this definition">¶</a></dt>
+<dd><p>Parameter duty_cycle</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8133A.delay">
+<span class="sig-name descname"><span class="pre">delay</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;delay&quot;,</span> <span class="pre">label=&quot;Delay&quot;,</span> <span class="pre">unit=&quot;s&quot;,</span> <span class="pre">get_cmd=&quot;DEL?&quot;,</span> <span class="pre">set_cmd=&quot;DEL</span> <span class="pre">{}&quot;,</span> <span class="pre">get_parser=float,</span> <span class="pre">vals=Numbers(min_value=-5e-9,</span> <span class="pre">max_value=5e-9),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8133A.delay" title="Link to this definition">¶</a></dt>
+<dd><p>Parameter delay</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8133A.timeout">
+<span class="sig-name descname"><span class="pre">timeout</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Self</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;timeout&quot;,</span> <span class="pre">get_cmd=self._get_visa_timeout,</span> <span class="pre">set_cmd=self._set_visa_timeout,</span> <span class="pre">unit=&quot;s&quot;,</span> <span class="pre">vals=vals.MultiType(vals.Numbers(min_value=0),</span> <span class="pre">vals.Enum(None)),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8133A.timeout" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8133A.visabackend">
+<span class="sig-name descname"><span class="pre">visabackend</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">visabackend</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8133A.visabackend" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8133A.visa_handle">
+<span class="sig-name descname"><span class="pre">visa_handle</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://pyvisa.readthedocs.io/en/stable/api/resources.html#pyvisa.resources.MessageBasedResource" title="(in PyVISA v1.16.1)"><span class="pre">pyvisa.resources.MessageBasedResource</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">visa_handle</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8133A.visa_handle" title="Link to this definition">¶</a></dt>
+<dd><p>The VISA resource used by this instrument.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8133A.visalib">
+<span class="sig-name descname"><span class="pre">visalib</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">visalib</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8133A.visalib" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8133A.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8133A.parameters" title="Link to this definition">¶</a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8133A.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8133A.functions" title="Link to this definition">¶</a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8133A.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8133A.submodules" title="Link to this definition">¶</a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8133A.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8133A.instrument_modules" title="Link to this definition">¶</a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8133A.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8133A.log" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8133A.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8133A.metadata" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8133A.width">
+<span class="sig-name descname"><span class="pre">width</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;width&quot;,</span> <span class="pre">label=&quot;Width&quot;,</span> <span class="pre">unit=&quot;s&quot;,</span> <span class="pre">get_cmd=&quot;WIDT?&quot;,</span> <span class="pre">set_cmd=&quot;WIDT</span> <span class="pre">{}&quot;,</span> <span class="pre">get_parser=float,</span> <span class="pre">vals=Numbers(min_value=1e-12,</span> <span class="pre">max_value=10.5e-9),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8133A.width" title="Link to this definition">¶</a></dt>
+<dd><p>Parameter width</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8133A.amplitude">
+<span class="sig-name descname"><span class="pre">amplitude</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;amplitude&quot;,</span> <span class="pre">label=&quot;Amplitude&quot;,</span> <span class="pre">unit=&quot;V&quot;,</span> <span class="pre">get_cmd=&quot;VOLT?&quot;,</span> <span class="pre">set_cmd=&quot;VOLT</span> <span class="pre">{}&quot;,</span> <span class="pre">get_parser=float,</span> <span class="pre">vals=Numbers(min_value=0.1,</span> <span class="pre">max_value=3.3),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8133A.amplitude" title="Link to this definition">¶</a></dt>
+<dd><p>Parameter amplitude</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8133A.amplitude_offset">
+<span class="sig-name descname"><span class="pre">amplitude_offset</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;amplitude_offset&quot;,</span> <span class="pre">label=&quot;Offset&quot;,</span> <span class="pre">unit=&quot;V&quot;,</span> <span class="pre">get_cmd=&quot;VOLT:OFFS?&quot;,</span> <span class="pre">set_cmd=&quot;VOLT:OFFS</span> <span class="pre">{}&quot;,</span> <span class="pre">get_parser=float,</span> <span class="pre">vals=Numbers(min_value=-2.95,</span> <span class="pre">max_value=3.95),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8133A.amplitude_offset" title="Link to this definition">¶</a></dt>
+<dd><p>Parameter amplitude_offset</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8133A.output">
+<span class="sig-name descname"><span class="pre">output</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;output&quot;,</span> <span class="pre">label=&quot;Output&quot;,</span> <span class="pre">get_cmd=&quot;OUTP?&quot;,</span> <span class="pre">set_cmd=&quot;OUTP</span> <span class="pre">{}&quot;,</span> <span class="pre">val_mapping={&quot;OFF&quot;:</span> <span class="pre">0,</span> <span class="pre">&quot;ON&quot;:</span> <span class="pre">1},</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8133A.output" title="Link to this definition">¶</a></dt>
+<dd><p>Parameter output</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.HP.</span></span><span class="sig-name descname"><span class="pre">HP8753D</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrumentKWArgs" title="qcodes.instrument.VisaInstrumentKWArgs"><span class="pre">VisaInstrumentKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrument" title="qcodes.instrument.visa.VisaInstrument"><code class="xref py py-class docutils literal notranslate"><span class="pre">VisaInstrument</span></code></a></p>
+<p>QCoDeS driver for the Hewlett Packard 8753D Network Analyzer.</p>
+<p><strong>Attributes:</strong></p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">default_terminator</span></code></p></td>
+<td><p>The default terminator to use if the terminator is not specified when creating the instrument.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">start_freq</span></code></p></td>
+<td><p>Parameter start_freq</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">stop_freq</span></code></p></td>
+<td><p>Parameter stop_freq</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">averaging</span></code></p></td>
+<td><p>Parameter averaging</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">number_of_averages</span></code></p></td>
+<td><p>Parameter number_of_averages</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">trace_points</span></code></p></td>
+<td><p>Parameter trace_points</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">sweep_time</span></code></p></td>
+<td><p>Parameter sweep_time</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">output_power</span></code></p></td>
+<td><p>Parameter output_power</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">s_parameter</span></code></p></td>
+<td><p>Parameter s_parameter</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">display_format</span></code></p></td>
+<td><p>Parameter display_format</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">display_reference</span></code></p></td>
+<td><p>Parameter display_reference</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">display_scale</span></code></p></td>
+<td><p>Parameter display_scale</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">trace</span></code></p></td>
+<td><p>Parameter trace</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Methods:</strong></p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reset</span></code>()</p></td>
+<td><p>Resets the instrument to factory default state</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_continously</span></code>()</p></td>
+<td><p>Set the instrument in run continously mode</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_N_times</span></code>(N)</p></td>
+<td><p>Run N sweeps and then hold.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">invalidate_trace</span></code>(cmd, value)</p></td>
+<td><p>Wrapper for set_cmds that make the trace not ready</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">startup</span></code>()</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.default_terminator">
+<span class="sig-name descname"><span class="pre">default_terminator</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'\n'</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.default_terminator" title="Link to this definition">¶</a></dt>
+<dd><p>The default terminator to use if the terminator is not specified when creating the instrument.
+None means use the default terminator from PyVisa.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.start_freq">
+<span class="sig-name descname"><span class="pre">start_freq</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;start_freq&quot;,</span> <span class="pre">label=&quot;Sweep</span> <span class="pre">start</span> <span class="pre">frequency&quot;,</span> <span class="pre">unit=&quot;Hz&quot;,</span> <span class="pre">set_cmd=partial(self.invalidate_trace,</span> <span class="pre">&quot;STAR</span> <span class="pre">{}</span> <span class="pre">HZ&quot;),</span> <span class="pre">get_cmd=&quot;STAR?&quot;,</span> <span class="pre">get_parser=float,</span> <span class="pre">vals=vals.Numbers(30000,</span> <span class="pre">6000000000),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.start_freq" title="Link to this definition">¶</a></dt>
+<dd><p>Parameter start_freq</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.stop_freq">
+<span class="sig-name descname"><span class="pre">stop_freq</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;stop_freq&quot;,</span> <span class="pre">label=&quot;Sweep</span> <span class="pre">stop</span> <span class="pre">frequency&quot;,</span> <span class="pre">unit=&quot;Hz&quot;,</span> <span class="pre">set_cmd=partial(self.invalidate_trace,</span> <span class="pre">&quot;STOP</span> <span class="pre">{}</span> <span class="pre">HZ&quot;),</span> <span class="pre">get_cmd=&quot;STOP?&quot;,</span> <span class="pre">get_parser=float,</span> <span class="pre">vals=vals.Numbers(30000,</span> <span class="pre">6000000000),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.stop_freq" title="Link to this definition">¶</a></dt>
+<dd><p>Parameter stop_freq</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.averaging">
+<span class="sig-name descname"><span class="pre">averaging</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;averaging&quot;,</span> <span class="pre">label=&quot;Averaging</span> <span class="pre">state&quot;,</span> <span class="pre">set_cmd=&quot;AVERO{}&quot;,</span> <span class="pre">get_cmd=&quot;AVERO?&quot;,</span> <span class="pre">val_mapping={&quot;ON&quot;:</span> <span class="pre">1,</span> <span class="pre">&quot;OFF&quot;:</span> <span class="pre">0},</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.averaging" title="Link to this definition">¶</a></dt>
+<dd><p>Parameter averaging</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.number_of_averages">
+<span class="sig-name descname"><span class="pre">number_of_averages</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;number_of_averages&quot;,</span> <span class="pre">label=&quot;Number</span> <span class="pre">of</span> <span class="pre">averages&quot;,</span> <span class="pre">set_cmd=&quot;AVERFACT{}&quot;,</span> <span class="pre">get_cmd=&quot;AVERFACT?&quot;,</span> <span class="pre">get_parser=HPIntParser,</span> <span class="pre">vals=vals.Ints(0,</span> <span class="pre">999),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.number_of_averages" title="Link to this definition">¶</a></dt>
+<dd><p>Parameter number_of_averages</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.trace_points">
+<span class="sig-name descname"><span class="pre">trace_points</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;trace_points&quot;,</span> <span class="pre">label=&quot;Number</span> <span class="pre">of</span> <span class="pre">points</span> <span class="pre">in</span> <span class="pre">trace&quot;,</span> <span class="pre">set_cmd=partial(self.invalidate_trace,</span> <span class="pre">&quot;POIN{}&quot;),</span> <span class="pre">get_cmd=&quot;POIN?&quot;,</span> <span class="pre">get_parser=HPIntParser,</span> <span class="pre">vals=vals.Enum(3,</span> <span class="pre">11,</span> <span class="pre">26,</span> <span class="pre">51,</span> <span class="pre">101,</span> <span class="pre">201,</span> <span class="pre">401,</span> <span class="pre">801,</span> <span class="pre">1601),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.trace_points" title="Link to this definition">¶</a></dt>
+<dd><p>Parameter trace_points</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.sweep_time">
+<span class="sig-name descname"><span class="pre">sweep_time</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;sweep_time&quot;,</span> <span class="pre">label=&quot;Sweep</span> <span class="pre">time&quot;,</span> <span class="pre">set_cmd=&quot;SWET{}&quot;,</span> <span class="pre">get_cmd=&quot;SWET?&quot;,</span> <span class="pre">unit=&quot;s&quot;,</span> <span class="pre">get_parser=float,</span> <span class="pre">vals=vals.Numbers(0.01,</span> <span class="pre">86400),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.sweep_time" title="Link to this definition">¶</a></dt>
+<dd><p>Parameter sweep_time</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.output_power">
+<span class="sig-name descname"><span class="pre">output_power</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;output_power&quot;,</span> <span class="pre">label=&quot;Output</span> <span class="pre">power&quot;,</span> <span class="pre">unit=&quot;dBm&quot;,</span> <span class="pre">set_cmd=&quot;POWE{}&quot;,</span> <span class="pre">get_cmd=&quot;POWE?&quot;,</span> <span class="pre">get_parser=float,</span> <span class="pre">vals=vals.Numbers(-85,</span> <span class="pre">20),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.output_power" title="Link to this definition">¶</a></dt>
+<dd><p>Parameter output_power</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.s_parameter">
+<span class="sig-name descname"><span class="pre">s_parameter</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;s_parameter&quot;,</span> <span class="pre">label=&quot;S-parameter&quot;,</span> <span class="pre">set_cmd=self._s_parameter_setter,</span> <span class="pre">get_cmd=self._s_parameter_getter,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.s_parameter" title="Link to this definition">¶</a></dt>
+<dd><p>Parameter s_parameter</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.display_format">
+<span class="sig-name descname"><span class="pre">display_format</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;display_format&quot;,</span> <span class="pre">label=&quot;Display</span> <span class="pre">format&quot;,</span> <span class="pre">set_cmd=self._display_format_setter,</span> <span class="pre">get_cmd=self._display_format_getter,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.display_format" title="Link to this definition">¶</a></dt>
+<dd><p>Parameter display_format</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.display_reference">
+<span class="sig-name descname"><span class="pre">display_reference</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;display_reference&quot;,</span> <span class="pre">label=&quot;Display</span> <span class="pre">reference</span> <span class="pre">level&quot;,</span> <span class="pre">unit=None,</span> <span class="pre">#</span> <span class="pre">will</span> <span class="pre">be</span> <span class="pre">set</span> <span class="pre">by</span> <span class="pre">display_format</span> <span class="pre">get_cmd=&quot;REFV?&quot;,</span> <span class="pre">set_cmd=&quot;REFV{}&quot;,</span> <span class="pre">get_parser=float,</span> <span class="pre">vals=vals.Numbers(-500,</span> <span class="pre">500),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.display_reference" title="Link to this definition">¶</a></dt>
+<dd><p>Parameter display_reference</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.display_scale">
+<span class="sig-name descname"><span class="pre">display_scale</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;display_scale&quot;,</span> <span class="pre">label=&quot;Display</span> <span class="pre">scale&quot;,</span> <span class="pre">unit=None,</span> <span class="pre">#</span> <span class="pre">will</span> <span class="pre">be</span> <span class="pre">set</span> <span class="pre">by</span> <span class="pre">display_format</span> <span class="pre">get_cmd=&quot;SCAL?&quot;,</span> <span class="pre">set_cmd=&quot;SCAL{}&quot;,</span> <span class="pre">get_parser=float,</span> <span class="pre">vals=vals.Numbers(-500,</span> <span class="pre">500),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.display_scale" title="Link to this definition">¶</a></dt>
+<dd><p>Parameter display_scale</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.timeout">
+<span class="sig-name descname"><span class="pre">timeout</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Self</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;timeout&quot;,</span> <span class="pre">get_cmd=self._get_visa_timeout,</span> <span class="pre">set_cmd=self._set_visa_timeout,</span> <span class="pre">unit=&quot;s&quot;,</span> <span class="pre">vals=vals.MultiType(vals.Numbers(min_value=0),</span> <span class="pre">vals.Enum(None)),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.timeout" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.visabackend">
+<span class="sig-name descname"><span class="pre">visabackend</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">visabackend</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.visabackend" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.visa_handle">
+<span class="sig-name descname"><span class="pre">visa_handle</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://pyvisa.readthedocs.io/en/stable/api/resources.html#pyvisa.resources.MessageBasedResource" title="(in PyVISA v1.16.1)"><span class="pre">pyvisa.resources.MessageBasedResource</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">visa_handle</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.visa_handle" title="Link to this definition">¶</a></dt>
+<dd><p>The VISA resource used by this instrument.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.visalib">
+<span class="sig-name descname"><span class="pre">visalib</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">visalib</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.visalib" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.parameters" title="Link to this definition">¶</a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.functions" title="Link to this definition">¶</a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.submodules" title="Link to this definition">¶</a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.instrument_modules" title="Link to this definition">¶</a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.log" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.metadata" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.trace">
+<span class="sig-name descname"><span class="pre">trace</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">HP8753DTrace</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;trace&quot;,</span> <span class="pre">parameter_class=HP8753DTrace</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.trace" title="Link to this definition">¶</a></dt>
+<dd><p>Parameter trace</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.reset" title="Link to this definition">¶</a></dt>
+<dd><p>Resets the instrument to factory default state</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.run_continously">
+<span class="sig-name descname"><span class="pre">run_continously</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.run_continously" title="Link to this definition">¶</a></dt>
+<dd><p>Set the instrument in run continously mode</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.run_N_times">
+<span class="sig-name descname"><span class="pre">run_N_times</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.run_N_times" title="Link to this definition">¶</a></dt>
+<dd><p>Run N sweeps and then hold. We wait for a response before returning</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.invalidate_trace">
+<span class="sig-name descname"><span class="pre">invalidate_trace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.invalidate_trace" title="Link to this definition">¶</a></dt>
+<dd><p>Wrapper for set_cmds that make the trace not ready</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP8753D.startup">
+<span class="sig-name descname"><span class="pre">startup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP8753D.startup" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP83650A">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.HP.</span></span><span class="sig-name descname"><span class="pre">HP83650A</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">server_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrumentKWArgs" title="qcodes.instrument.VisaInstrumentKWArgs"><span class="pre">VisaInstrumentKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/HP/HP_83650A.html#HP83650A"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP83650A" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrument" title="qcodes.instrument.visa.VisaInstrument"><code class="xref py py-class docutils literal notranslate"><span class="pre">VisaInstrument</span></code></a></p>
+<p>QCoDeS driver for HP 83650A</p>
+<p><strong>Attributes:</strong></p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.frequency" title="qcodes.instrument_drivers.HP.HP83650A.frequency"><code class="xref py py-obj docutils literal notranslate"><span class="pre">frequency</span></code></a></p></td>
+<td><p>Microwave frequency, ....</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.freqmode" title="qcodes.instrument_drivers.HP.HP83650A.freqmode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">freqmode</span></code></a></p></td>
+<td><p>Microwave frequency mode, ....</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.power" title="qcodes.instrument_drivers.HP.HP83650A.power"><code class="xref py py-obj docutils literal notranslate"><span class="pre">power</span></code></a></p></td>
+<td><p>Microwave power, ....</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.rfstatus" title="qcodes.instrument_drivers.HP.HP83650A.rfstatus"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rfstatus</span></code></a></p></td>
+<td><p>Status, ....</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.fmstatus" title="qcodes.instrument_drivers.HP.HP83650A.fmstatus"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fmstatus</span></code></a></p></td>
+<td><p>FM status, ....</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.fmcoup" title="qcodes.instrument_drivers.HP.HP83650A.fmcoup"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fmcoup</span></code></a></p></td>
+<td><p>FM coupling, ....</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.amstatus" title="qcodes.instrument_drivers.HP.HP83650A.amstatus"><code class="xref py py-obj docutils literal notranslate"><span class="pre">amstatus</span></code></a></p></td>
+<td><p>AM status, ....</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.pulsestatus" title="qcodes.instrument_drivers.HP.HP83650A.pulsestatus"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pulsestatus</span></code></a></p></td>
+<td><p>Pulse status, ....</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.pulsesource" title="qcodes.instrument_drivers.HP.HP83650A.pulsesource"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pulsesource</span></code></a></p></td>
+<td><p>Pulse source, ....</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Methods:</strong></p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.reset" title="qcodes.instrument_drivers.HP.HP83650A.reset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reset</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.print_all" title="qcodes.instrument_drivers.HP.HP83650A.print_all"><code class="xref py py-obj docutils literal notranslate"><span class="pre">print_all</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.print_modstatus" title="qcodes.instrument_drivers.HP.HP83650A.print_modstatus"><code class="xref py py-obj docutils literal notranslate"><span class="pre">print_modstatus</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP83650A.frequency">
+<span class="sig-name descname"><span class="pre">frequency</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;frequency&quot;,</span> <span class="pre">label=&quot;Frequency&quot;,</span> <span class="pre">get_cmd=&quot;FREQ:CW?&quot;,</span> <span class="pre">set_cmd=&quot;FREQ:CW</span> <span class="pre">{}&quot;,</span> <span class="pre">vals=vals.Numbers(10e6,</span> <span class="pre">40e9),</span> <span class="pre">docstring=&quot;Microwave</span> <span class="pre">frequency,</span> <span class="pre">....&quot;,</span> <span class="pre">get_parser=float,</span> <span class="pre">unit=&quot;Hz&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP83650A.frequency" title="Link to this definition">¶</a></dt>
+<dd><p>Microwave frequency, ….</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP83650A.freqmode">
+<span class="sig-name descname"><span class="pre">freqmode</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;freqmode&quot;,</span> <span class="pre">label=&quot;Frequency</span> <span class="pre">mode&quot;,</span> <span class="pre">get_cmd=&quot;FREQ:MODE?&quot;,</span> <span class="pre">set_cmd=&quot;FREQ:MODE</span> <span class="pre">{}&quot;,</span> <span class="pre">vals=vals.Strings(),</span> <span class="pre">get_parser=parsestr,</span> <span class="pre">docstring=&quot;Microwave</span> <span class="pre">frequency</span> <span class="pre">mode,</span> <span class="pre">....&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP83650A.freqmode" title="Link to this definition">¶</a></dt>
+<dd><p>Microwave frequency mode, ….</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP83650A.power">
+<span class="sig-name descname"><span class="pre">power</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;power&quot;,</span> <span class="pre">label=&quot;Power&quot;,</span> <span class="pre">get_cmd=&quot;SOUR:POW?&quot;,</span> <span class="pre">set_cmd=&quot;SOUR:POW</span> <span class="pre">{}&quot;,</span> <span class="pre">vals=vals.Numbers(-20,</span> <span class="pre">20),</span> <span class="pre">get_parser=float,</span> <span class="pre">unit=&quot;dBm&quot;,</span> <span class="pre">docstring=&quot;Microwave</span> <span class="pre">power,</span> <span class="pre">....&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP83650A.power" title="Link to this definition">¶</a></dt>
+<dd><p>Microwave power, ….</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP83650A.rfstatus">
+<span class="sig-name descname"><span class="pre">rfstatus</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;rfstatus&quot;,</span> <span class="pre">label=&quot;RF</span> <span class="pre">status&quot;,</span> <span class="pre">get_cmd=&quot;:POW:STAT?&quot;,</span> <span class="pre">set_cmd=&quot;:POW:STAT</span> <span class="pre">{}&quot;,</span> <span class="pre">val_mapping={&quot;on&quot;:</span> <span class="pre">&quot;1&quot;,</span> <span class="pre">&quot;off&quot;:</span> <span class="pre">&quot;0&quot;},</span> <span class="pre">vals=vals.Strings(),</span> <span class="pre">get_parser=parsestr,</span> <span class="pre">docstring=&quot;Status,</span> <span class="pre">....&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP83650A.rfstatus" title="Link to this definition">¶</a></dt>
+<dd><p>Status, ….</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP83650A.fmstatus">
+<span class="sig-name descname"><span class="pre">fmstatus</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;fmstatus&quot;,</span> <span class="pre">label=&quot;FM</span> <span class="pre">status&quot;,</span> <span class="pre">get_cmd=&quot;:FM:STAT?&quot;,</span> <span class="pre">set_cmd=&quot;:FM:STAT</span> <span class="pre">{}&quot;,</span> <span class="pre">val_mapping={&quot;on&quot;:</span> <span class="pre">&quot;1&quot;,</span> <span class="pre">&quot;off&quot;:</span> <span class="pre">&quot;0&quot;},</span> <span class="pre">vals=vals.Strings(),</span> <span class="pre">get_parser=parsestr,</span> <span class="pre">docstring=&quot;FM</span> <span class="pre">status,</span> <span class="pre">....&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP83650A.fmstatus" title="Link to this definition">¶</a></dt>
+<dd><p>FM status, ….</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP83650A.fmcoup">
+<span class="sig-name descname"><span class="pre">fmcoup</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;fmcoup&quot;,</span> <span class="pre">label=&quot;FM</span> <span class="pre">coupling&quot;,</span> <span class="pre">get_cmd=&quot;:FM:COUP?&quot;,</span> <span class="pre">set_cmd=&quot;:FM:COUP</span> <span class="pre">{}&quot;,</span> <span class="pre">vals=vals.Strings(),</span> <span class="pre">get_parser=parsestr,</span> <span class="pre">docstring=&quot;FM</span> <span class="pre">coupling,</span> <span class="pre">....&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP83650A.fmcoup" title="Link to this definition">¶</a></dt>
+<dd><p>FM coupling, ….</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP83650A.amstatus">
+<span class="sig-name descname"><span class="pre">amstatus</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;amstatus&quot;,</span> <span class="pre">label=&quot;AM</span> <span class="pre">status&quot;,</span> <span class="pre">get_cmd=&quot;:AM:STAT?&quot;,</span> <span class="pre">set_cmd=&quot;:AM:STAT</span> <span class="pre">{}&quot;,</span> <span class="pre">val_mapping={&quot;on&quot;:</span> <span class="pre">&quot;1&quot;,</span> <span class="pre">&quot;off&quot;:</span> <span class="pre">&quot;0&quot;},</span> <span class="pre">vals=vals.Strings(),</span> <span class="pre">get_parser=parsestr,</span> <span class="pre">docstring=&quot;AM</span> <span class="pre">status,</span> <span class="pre">....&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP83650A.amstatus" title="Link to this definition">¶</a></dt>
+<dd><p>AM status, ….</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP83650A.timeout">
+<span class="sig-name descname"><span class="pre">timeout</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Self</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;timeout&quot;,</span> <span class="pre">get_cmd=self._get_visa_timeout,</span> <span class="pre">set_cmd=self._set_visa_timeout,</span> <span class="pre">unit=&quot;s&quot;,</span> <span class="pre">vals=vals.MultiType(vals.Numbers(min_value=0),</span> <span class="pre">vals.Enum(None)),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP83650A.timeout" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP83650A.visabackend">
+<span class="sig-name descname"><span class="pre">visabackend</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">visabackend</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP83650A.visabackend" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP83650A.visa_handle">
+<span class="sig-name descname"><span class="pre">visa_handle</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://pyvisa.readthedocs.io/en/stable/api/resources.html#pyvisa.resources.MessageBasedResource" title="(in PyVISA v1.16.1)"><span class="pre">pyvisa.resources.MessageBasedResource</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">visa_handle</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP83650A.visa_handle" title="Link to this definition">¶</a></dt>
+<dd><p>The VISA resource used by this instrument.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP83650A.visalib">
+<span class="sig-name descname"><span class="pre">visalib</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">visalib</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP83650A.visalib" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP83650A.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP83650A.parameters" title="Link to this definition">¶</a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP83650A.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP83650A.functions" title="Link to this definition">¶</a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP83650A.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP83650A.submodules" title="Link to this definition">¶</a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP83650A.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP83650A.instrument_modules" title="Link to this definition">¶</a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP83650A.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP83650A.log" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP83650A.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP83650A.metadata" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP83650A.pulsestatus">
+<span class="sig-name descname"><span class="pre">pulsestatus</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;pulsestatus&quot;,</span> <span class="pre">label=&quot;Pulse</span> <span class="pre">status&quot;,</span> <span class="pre">get_cmd=&quot;:PULS:STAT?&quot;,</span> <span class="pre">set_cmd=&quot;:PULS:STAT</span> <span class="pre">{}&quot;,</span> <span class="pre">val_mapping={&quot;on&quot;:</span> <span class="pre">&quot;1&quot;,</span> <span class="pre">&quot;off&quot;:</span> <span class="pre">&quot;0&quot;},</span> <span class="pre">vals=vals.Strings(),</span> <span class="pre">get_parser=parsestr,</span> <span class="pre">docstring=&quot;Pulse</span> <span class="pre">status,</span> <span class="pre">....&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP83650A.pulsestatus" title="Link to this definition">¶</a></dt>
+<dd><p>Pulse status, ….</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP83650A.pulsesource">
+<span class="sig-name descname"><span class="pre">pulsesource</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;pulsesource&quot;,</span> <span class="pre">label=&quot;Pulse</span> <span class="pre">source&quot;,</span> <span class="pre">get_cmd=&quot;:PULS:SOUR?&quot;,</span> <span class="pre">set_cmd=&quot;:PULS:SOUR</span> <span class="pre">{}&quot;,</span> <span class="pre">vals=vals.Strings(),</span> <span class="pre">get_parser=parsestr,</span> <span class="pre">docstring=&quot;Pulse</span> <span class="pre">source,</span> <span class="pre">....&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP83650A.pulsesource" title="Link to this definition">¶</a></dt>
+<dd><p>Pulse source, ….</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP83650A.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/HP/HP_83650A.html#HP83650A.reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP83650A.reset" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP83650A.print_all">
+<span class="sig-name descname"><span class="pre">print_all</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/HP/HP_83650A.html#HP83650A.print_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP83650A.print_all" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.HP83650A.print_modstatus">
+<span class="sig-name descname"><span class="pre">print_modstatus</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/HP/HP_83650A.html#HP83650A.print_modstatus"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.HP.HP83650A.print_modstatus" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.HP.TraceNotReady">
+<em class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.HP.</span></span><span class="sig-name descname"><span class="pre">TraceNotReady</span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/HP/HP_8753D.html#TraceNotReady"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.HP.TraceNotReady" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
+</dd></dl>
+
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="Harvard.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Harvard Drivers</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="Galil.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Galil Drivers</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Hewlett Packard Drivers</a><ul>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8133A"><code class="docutils literal notranslate"><span class="pre">HP8133A</span></code></a><ul>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8133A.default_terminator"><code class="docutils literal notranslate"><span class="pre">HP8133A.default_terminator</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8133A.frequency"><code class="docutils literal notranslate"><span class="pre">HP8133A.frequency</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8133A.period"><code class="docutils literal notranslate"><span class="pre">HP8133A.period</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8133A.phase"><code class="docutils literal notranslate"><span class="pre">HP8133A.phase</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8133A.duty_cycle"><code class="docutils literal notranslate"><span class="pre">HP8133A.duty_cycle</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8133A.delay"><code class="docutils literal notranslate"><span class="pre">HP8133A.delay</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8133A.timeout"><code class="docutils literal notranslate"><span class="pre">HP8133A.timeout</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8133A.visabackend"><code class="docutils literal notranslate"><span class="pre">HP8133A.visabackend</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8133A.visa_handle"><code class="docutils literal notranslate"><span class="pre">HP8133A.visa_handle</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8133A.visalib"><code class="docutils literal notranslate"><span class="pre">HP8133A.visalib</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8133A.parameters"><code class="docutils literal notranslate"><span class="pre">HP8133A.parameters</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8133A.functions"><code class="docutils literal notranslate"><span class="pre">HP8133A.functions</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8133A.submodules"><code class="docutils literal notranslate"><span class="pre">HP8133A.submodules</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8133A.instrument_modules"><code class="docutils literal notranslate"><span class="pre">HP8133A.instrument_modules</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8133A.log"><code class="docutils literal notranslate"><span class="pre">HP8133A.log</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8133A.metadata"><code class="docutils literal notranslate"><span class="pre">HP8133A.metadata</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8133A.width"><code class="docutils literal notranslate"><span class="pre">HP8133A.width</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8133A.amplitude"><code class="docutils literal notranslate"><span class="pre">HP8133A.amplitude</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8133A.amplitude_offset"><code class="docutils literal notranslate"><span class="pre">HP8133A.amplitude_offset</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8133A.output"><code class="docutils literal notranslate"><span class="pre">HP8133A.output</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D"><code class="docutils literal notranslate"><span class="pre">HP8753D</span></code></a><ul>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.default_terminator"><code class="docutils literal notranslate"><span class="pre">HP8753D.default_terminator</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.start_freq"><code class="docutils literal notranslate"><span class="pre">HP8753D.start_freq</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.stop_freq"><code class="docutils literal notranslate"><span class="pre">HP8753D.stop_freq</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.averaging"><code class="docutils literal notranslate"><span class="pre">HP8753D.averaging</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.number_of_averages"><code class="docutils literal notranslate"><span class="pre">HP8753D.number_of_averages</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.trace_points"><code class="docutils literal notranslate"><span class="pre">HP8753D.trace_points</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.sweep_time"><code class="docutils literal notranslate"><span class="pre">HP8753D.sweep_time</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.output_power"><code class="docutils literal notranslate"><span class="pre">HP8753D.output_power</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.s_parameter"><code class="docutils literal notranslate"><span class="pre">HP8753D.s_parameter</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.display_format"><code class="docutils literal notranslate"><span class="pre">HP8753D.display_format</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.display_reference"><code class="docutils literal notranslate"><span class="pre">HP8753D.display_reference</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.display_scale"><code class="docutils literal notranslate"><span class="pre">HP8753D.display_scale</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.timeout"><code class="docutils literal notranslate"><span class="pre">HP8753D.timeout</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.visabackend"><code class="docutils literal notranslate"><span class="pre">HP8753D.visabackend</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.visa_handle"><code class="docutils literal notranslate"><span class="pre">HP8753D.visa_handle</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.visalib"><code class="docutils literal notranslate"><span class="pre">HP8753D.visalib</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.parameters"><code class="docutils literal notranslate"><span class="pre">HP8753D.parameters</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.functions"><code class="docutils literal notranslate"><span class="pre">HP8753D.functions</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.submodules"><code class="docutils literal notranslate"><span class="pre">HP8753D.submodules</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.instrument_modules"><code class="docutils literal notranslate"><span class="pre">HP8753D.instrument_modules</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.log"><code class="docutils literal notranslate"><span class="pre">HP8753D.log</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.metadata"><code class="docutils literal notranslate"><span class="pre">HP8753D.metadata</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.trace"><code class="docutils literal notranslate"><span class="pre">HP8753D.trace</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.reset"><code class="docutils literal notranslate"><span class="pre">HP8753D.reset()</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.run_continously"><code class="docutils literal notranslate"><span class="pre">HP8753D.run_continously()</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.run_N_times"><code class="docutils literal notranslate"><span class="pre">HP8753D.run_N_times()</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.invalidate_trace"><code class="docutils literal notranslate"><span class="pre">HP8753D.invalidate_trace()</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP8753D.startup"><code class="docutils literal notranslate"><span class="pre">HP8753D.startup()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A"><code class="docutils literal notranslate"><span class="pre">HP83650A</span></code></a><ul>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.frequency"><code class="docutils literal notranslate"><span class="pre">HP83650A.frequency</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.freqmode"><code class="docutils literal notranslate"><span class="pre">HP83650A.freqmode</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.power"><code class="docutils literal notranslate"><span class="pre">HP83650A.power</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.rfstatus"><code class="docutils literal notranslate"><span class="pre">HP83650A.rfstatus</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.fmstatus"><code class="docutils literal notranslate"><span class="pre">HP83650A.fmstatus</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.fmcoup"><code class="docutils literal notranslate"><span class="pre">HP83650A.fmcoup</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.amstatus"><code class="docutils literal notranslate"><span class="pre">HP83650A.amstatus</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.timeout"><code class="docutils literal notranslate"><span class="pre">HP83650A.timeout</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.visabackend"><code class="docutils literal notranslate"><span class="pre">HP83650A.visabackend</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.visa_handle"><code class="docutils literal notranslate"><span class="pre">HP83650A.visa_handle</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.visalib"><code class="docutils literal notranslate"><span class="pre">HP83650A.visalib</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.parameters"><code class="docutils literal notranslate"><span class="pre">HP83650A.parameters</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.functions"><code class="docutils literal notranslate"><span class="pre">HP83650A.functions</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.submodules"><code class="docutils literal notranslate"><span class="pre">HP83650A.submodules</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.instrument_modules"><code class="docutils literal notranslate"><span class="pre">HP83650A.instrument_modules</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.log"><code class="docutils literal notranslate"><span class="pre">HP83650A.log</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.metadata"><code class="docutils literal notranslate"><span class="pre">HP83650A.metadata</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.pulsestatus"><code class="docutils literal notranslate"><span class="pre">HP83650A.pulsestatus</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.pulsesource"><code class="docutils literal notranslate"><span class="pre">HP83650A.pulsesource</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.reset"><code class="docutils literal notranslate"><span class="pre">HP83650A.reset()</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.print_all"><code class="docutils literal notranslate"><span class="pre">HP83650A.print_all()</span></code></a></li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.HP83650A.print_modstatus"><code class="docutils literal notranslate"><span class="pre">HP83650A.print_modstatus()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#qcodes.instrument_drivers.HP.TraceNotReady"><code class="docutils literal notranslate"><span class="pre">TraceNotReady</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=14f3ca12"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    </body>
+</html>

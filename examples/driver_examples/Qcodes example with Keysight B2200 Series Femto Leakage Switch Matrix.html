@@ -1,0 +1,2093 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../../_static/qcodes_favicon.png"><link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html"><link rel="next" title="QCoDeS Example with Keysight Infiniium Oscilloscopes" href="Qcodes%20example%20with%20Keysight%20Infiniium%20Oscilloscope.html"><link rel="prev" title="Qcodes example with Keysight B1500 Semiconductor Parameter Analyzer" href="Qcodes%20example%20with%20Keysight%20B1500%20Parameter%20Analyzer.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.12.19 -->
+        <title>QCoDeS Example with Keysight B2200 Series Femto Leakage Switch Matrix - QCoDeS 0.55.0.dev570 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../index.html"><div class="brand">QCoDeS 0.55.0.dev570 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
+  
+  <span class="sidebar-brand-text">QCoDeS 0.55.0.dev570 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../start/index.html">Getting Started</a><input aria-label="Toggle navigation of Getting Started" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../basic_examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../index.html">Examples of using QCoDeS</a><input aria-label="Toggle navigation of Examples of using QCoDeS" checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l2 has-children"><a class="reference internal" href="../basic_examples/index.html">Basic examples</a><input aria-label="Toggle navigation of Basic examples" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../basic_examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../basic_examples/Configuring_QCoDeS.html">QCoDeS config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../basic_examples/Station.html">Station</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../Parameters/index.html">Parameters</a><input aria-label="Toggle navigation of Parameters" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Complex_Parameters.html">Complex Numbers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Legacy_Parameters.html">Legacy parameter examples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/MultiParameter.html">MultiParameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Parameter-With-Setpoints-defined-on-a-different-instrument.html">ParameterWithSetpoints with setpoints defined on another instrument.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Parameter_defined_InterDependencies.html">Parameter-defined InterDependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Parameter_defined_InterDependencies.html#ControllingParameter-Example">ControllingParameter Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Parameters.html">Parameters in QCoDeS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Scaled_Parameter.html">ScaledParameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Simple-Example-of-ParameterWithSetpoints.html">Simple Example of ParameterWithSetpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../DataSet/index.html">DataSet</a><input aria-label="Toggle navigation of DataSet" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Accessing-data-in-DataSet.html">Accessing data in a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Benchmarking.html">Dataset Benchmarking</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/DataSet-class-walkthrough.html">DataSet class walkthrough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Database.html">Databases</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Datasaver_Builder.html">Using <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> and <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> to streamline measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Dataset_Performance.html">DataSet Performance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Exporting-data-to-other-file-formats.html">Exporting QCoDes Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Extracting-runs-from-one-DB-file-to-another.html">Extracting runs from one DB file to another</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/InMemoryDataSet.html">In memory dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Linking%20to%20parent%20datasets.html">Linking to parent datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Measuring%20X%20as%20a%20function%20of%20time.html">Measuring X as a function of time</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Offline%20Plotting%20Tutorial.html">Offline Plotting Tutorial</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Offline%20plotting%20with%20categorical%20data.html">Offline plotting with categorical data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Offline%20plotting%20with%20complex%20data.html">Offline plotting with complex data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Paramtypes%20explained.html">Paramtypes explained</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Pedestrian%20example%20of%20subscribing%20to%20a%20DataSet.html">Pedestrian example of subscribing to a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html">Performing measurements using QCoDeS parameters and DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Saving_data_in_the_background.html">Saving data in the background</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/The-Experiment-Container.html">The Experiment Container</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Threaded%20data%20acquisition.html">Threaded data acquisition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html">Using doNd functions in comparison to Measurement context manager for performing measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Using_register_name.html">Using the <code class="docutils literal notranslate"><span class="pre">register_name</span></code> kwarg to select how a parameter is saved to a dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Working%20with%20snapshots.html">Working with snapshots</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Working-With-Pandas-and-XArray.html">Working with Pandas and XArray</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/import-data-from-legacy-dat-files.html">Importing data from legacy .dat files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/subscriber%20json%20exporter.html">Subscriber with JSON export</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Real_instruments/Example%20Measurements%20with%20Real%20Instruments.html">Example Measurements with Real Instruments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Cache/read_data_from_cache.html">Read data from cache</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Cache/write_for_caching.html">Write data to cache</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../plotting/index.html">Plotting</a><input aria-label="Toggle navigation of Plotting" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../plotting/How-to-use-Plottr-with-QCoDeS-for-live-plotting.html">How to use Plottr with QCoDeS for live plotting?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../plotting/auto_color_scale.html">Auto Color Scale</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current has-children"><a class="reference internal" href="index.html">Drivers</a><input aria-label="Toggle navigation of Drivers" checked="" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20Example%20with%20Keysight%20E4980A%20LCR%20meter.html">QCoDeS Example with Keysight E4980A LCR meter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20Example%20with%20Yokogawa%20GS200%20and%20Keithley%207510.html">QCoDeS Example with Yokogawa GS200 and Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20Aim%20TTi%20PL601-P.html">QCoDeS example with Aim TTi PL601-P</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20CopperMountain_M5065.html">Example with Copper Mountain Model M5065 Vector Network Analyzer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20DelegateInstrument.html">Qcodes example with DelegateInstrument driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20Galil%20DMC4133%20Controller.html">QCoDeS example with Galil DMC4133 Controller</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20InstrumentGroup%20and%20DelegateInstrument.html">Qcodes example with InstrumentGroup driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20Keithley%203706A%20System%20Switch.html">QCoDeS example with Keithley 3706A System Switch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Keithley%20S46.html">QCoDeS Example with Tektronix Keithley S46</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Rigol%20DG1062.html">QCoDeS Example with the Rigol DG 1062 Instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Tektronix%20DPO%2072004C.html">QCoDeS example with Textronix DPO 7200xx scopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20AMI430.html">QCoDeS Example with AMI430</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Agilent%2034400A.html">QCoDeS Example with Agilent 34400A</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Alazar%20ATS9360.html">QCoDeS Example with Alazar ATS 9360</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Basel%20SP983c%20Preamp.html">Qcodes example with Basel SP983c Preamp and its Remote SP983a</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Cryomagnetics%20TM-620.html">Cryomagnetics TM-620 QCoDeS Driver Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Cryomagnetics4G.html">Cryomagnetics 4G QCoDeS Driver Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20DynaCool%20PPMS.html">QCoDeS Example with DynaCool PPMS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20HP8753D.html">QCoDeS Example with HP8753D</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Ithaco.html">QCoDeS Example with Itacho</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keithley%202600.html">QCoDeS Example with with Keithley 2600 series</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keithley%207510.html">QCoDeS Example with Tektronix Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%2033500B.html">QCoDeS Example with Keysight 33500B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20344xxA.html">QCoDeS Example with Keysight 344xxA</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%2034980A%20Switch%20Mainframe%20and%20Modules.html">QCoDeS Example with Keysight 34980A Multifunction Switch / Measure Mainframe and Modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20B1500%20Parameter%20Analyzer.html">Qcodes example with Keysight B1500 Semiconductor Parameter Analyzer</a></li>
+<li class="toctree-l3 current current-page"><a class="current reference internal" href="#">QCoDeS Example with Keysight B2200 Series Femto Leakage Switch Matrix</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20Infiniium%20Oscilloscope.html">QCoDeS Example with Keysight Infiniium Oscilloscopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20N9030B.html">Qcodes example with Keysight N9030B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20Network%20Analyzer.html">QCoDeS Example with Keysight Network Analyzers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Lakeshore%20325.html">QCoDeS Example with Lakeshore 325</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Lakeshore%20336%20or%20372%20-%20Bluefors%20T%20control.html">QCoDeS Example with the Lakeshore Model 372 to Control the Temperature of the Bluefors Fridge</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Minicircuits%20Switch%20boxes%20%28USB-XSPDT%29.html">QCoDeS Example with Minicircuits Switch Boxes Controlled via USB</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Oxford%20Mercury%20iPS.html">QCoDeS Example with Mercury iPS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Oxford%20Triton.html">QCoDeS Example with Oxford Triton</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20QDev_QDac.html">QCoDeS Example with QDac_channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rigol%20DP832.html">QCoDeS Example with Rigol DP832 Power Supply</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rigol%20DS1074Z.html">QCoDeS Example with the Rigol DS 1074 Z oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20RTO%201000%20series%20Oscilloscope.html">QCoDeS Example with Rohde Schwarz RTO 1000 Series Oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20SGS100A.html">QCoDeS Example with Rohde Schwarz SGS100A RF source</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20ZNB.html">QCoDeS Example with Rohde Schwarz ZNB20/8</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stahl.html">QCoDeS Example with the Stahl Bias Sources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stanford%20SR830.html">QCoDeS Example with Stanford SR830</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stanford%20SR86x%20with%20buffered%20readout.html">QCoDeS Example with Standford Research SR86x Lock-in Amplifier with Buffered Readout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Tektronix%20AWG5014C.html">QCoDeS Example with Tektronix AWG5014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Tektronix%20AWG70002A.html">QCoDeS Example with Tektronix AWG70002A</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Tektronix%20TPS2012.html">QCoDeS Example with Tektronix TPS2012</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Yokogawa%20GS2xx.html">QCoDeS Example with Yokogawa GS200/GS210</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20keithley%202450.html">QCoDeS Example with Tektronix Keithley 2450 Source Meter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%2Bbroadbean%20example%20with%20Tektronix%20AWG5208.html">QCoDeS+Broadbean Example with Tektronix AWG5208</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes-example-with-Signal-Hound-USB-SA124B.html">QCoDeS Example with Signal Hound USB-SA124B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes-example-with-Signal-Hound-USB-SA124B-ParameterWithSetpoints.html">QCoDeS Example with Signal Hound USB-SA124B ParameterWithSetpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../writing_drivers/index.html">Writing Drivers</a><input aria-label="Toggle navigation of Writing Drivers" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../writing_drivers/A-ParameterWithSetpoints-Example-with-Dual-Setpoints.html">A ParameterWithSetpoints Example with Dual Setpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../writing_drivers/Creating-Instrument-Drivers.html">Creating QCoDeS instrument drivers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../writing_drivers/Creating-Simulated-PyVISA-Instruments.html">Creating Simulated PyVISA Instruments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../writing_drivers/Instruments.html">Instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../writing_drivers/abstract_instruments.html">Abstract Instruments and parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../writing_drivers/abstract_instruments.html#Working-subclass">Working subclass</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../logging/index.html">Logging</a><input aria-label="Toggle navigation of Logging" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../logging/logfile_parsing.html">Logfile parsing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../logging/logging_example.html">Logging</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../community/index.html">Community Guide</a><input aria-label="Toggle navigation of Community Guide" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../community/install.html">Source Code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../community/contributing.html">Contributing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../community/related_projects.html">Related Projects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../community/objects.html">Object Hierarchy</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../dataset/index.html">DataSet</a><input aria-label="Toggle navigation of DataSet" class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../dataset/introduction.html">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dataset/spec.html">DataSet Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dataset/dataset_design.html">Dataset Design</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dataset/interdependentparams.html">Interdependent Parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../api/index.html">QCoDes API documentation</a><input aria-label="Toggle navigation of QCoDes API documentation" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../api/calibrations/index.html">qcodes.calibrations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/configuration/index.html">qcodes.configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/dataset/index.html">qcodes.dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/extensions/index.html">qcodes.extensions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/instrument/index.html">qcodes.instrument</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/interactive_widget.html">qcodes.interactive_widget</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/logger/index.html">qcodes.logger</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/math_utils/index.html">qcodes.math_utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/metadatable/index.html">qcodes.metadatable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/monitor/index.html">qcodes.monitor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/parameters/index.html">qcodes.parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/plotting/index.html">qcodes.plotting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/station.html">qcodes.station</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/utils/index.html">qcodes.utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/validators/index.html">qcodes.validators</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../drivers_api/index.html">Instrument Drivers</a><input aria-label="Toggle navigation of Instrument Drivers" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Agilent.html">Agilent Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/AimTTi.html">AimTTi Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/AlazarTech.html">Alazar Tech Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/American_magnetics.html">American Magnetics Inc Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Basel.html">Basel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/CryoMagnetics.html">Cryomagnetics Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Galil.html">Galil Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/HP.html">Hewlett Packard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Harvard.html">Harvard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Ithaco.html">Ithaco Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Keithley.html">Keithley Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Keysight.html">Keysight Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Lakeshore.html">Lakeshore Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Minicircuits.html">MiniCircuits Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Oxford.html">Oxford Instruments Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/QDev.html">QDev Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/QuantumDesign.html">Quantum Design Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Rigol.html">Rigol Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/RohdeSchwarz.html">Rohde &amp; Schwarz Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/SRS.html">Stanford Research Systems Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/SignalHound.html">Signal Hound Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Stahl.html">Stahl Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Tektronix.html">Tektronix Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Weinschel.html">Weinschel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Yokogawa.html">Yokogawa Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Zhinst.html">Zurich Instruments Drivers</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../changes/index.html">Changelogs</a><input aria-label="Toggle navigation of Changelogs" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/unreleased.html">Unreleased</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.54.4.html">0.54.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.54.3.html">0.54.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.54.1.html">0.54.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.54.0.html">0.54.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.53.0.html">0.53.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.52.0.html">0.52.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.51.0.html">0.51.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.50.1.html">0.50.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.50.0.html">0.50.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.49.0.html">0.49.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.48.0.html">0.48.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.47.0.html">0.47.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.46.0.html">0.46.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.45.0.html">0.45.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.44.1.html">0.44.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.44.0.html">0.44.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.43.0.html">0.43.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.42.1.html">0.42.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.42.0.html">0.42.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.41.1.html">0.41.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.41.0.html">0.41.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.40.0.html">0.40.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.39.1.html">0.39.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.39.0.html">0.39.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.38.1.html">0.38.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.38.0.html">0.38.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.37.0.html">0.37.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.36.1.html">0.36.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.36.0.html">0.36.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.35.2.html">0.35.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.35.1.html">0.35.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.35.0.html">0.35.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.35.0b1.html">0.35.0b1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.34.1.html">0.34.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.34.0.html">0.34.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.33.0.html">0.33.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.32.0.html">0.32.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.31.0.html">0.31.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.30.1.html">0.30.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.30.0.html">0.30.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.29.1.html">0.29.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.29.0.html">0.29.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.28.0.html">0.28.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.27.0.html">0.27.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.26.0.html">0.26.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.25.0.html">0.25.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.24.0.html">0.24.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.23.0.html">0.23.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.22.0.html">0.22.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.21.0.html">0.21.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.20.1.html">0.20.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.20.0.html">0.20.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.19.2.html">0.19.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.19.1.html">0.19.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.19.0.html">0.19.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.18.0.html">0.18.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.17.0.html">0.17.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.16.0.html">0.16.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.15.0.html">0.15.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.15.0a1.html">0.15.0a1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.14.0.html">0.14.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.13.0.html">0.13.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.12.1.html">0.12.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.12.0.html">0.12.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.11.0.html">0.11.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.10.0.html">0.10.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.9.0.html">0.9.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.8.1.html">0.8.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.8.0.html">0.8.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.7.0.html">0.7.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.6.0.html">0.6.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.5.2.html">0.5.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.5.1.html">0.5.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.5.0.html">0.5.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.4.0.html">0.4.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.3.0.html">0.3.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.2.1.html">0.2.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.2.0.html">0.2.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.11.html">0.1.11</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.10.html">0.1.10</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.9.html">0.1.9</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.7.html">0.1.7</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.6.html">0.1.6</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.5.html">0.1.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.4.html">0.1.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.3.html">0.1.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.2.html">0.1.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.0.html">0.1.0</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../help.html">Get Help</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../../_sources/examples/driver_examples/Qcodes example with Keysight B2200 Series Femto Leakage Switch Matrix.ipynb.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <div class="admonition note">
+  <p>This page was generated from
+    <a class="reference external"
+    href="https://github.com/qcodes/qcodes/blob/main/docs/examples/driver_examples/Qcodes example with Keysight B2200 Series Femto Leakage Switch Matrix.ipynb">docs/examples/driver_examples/Qcodes example with Keysight B2200 Series Femto Leakage Switch Matrix.ipynb</a>.
+    Interactive online version:
+    <a href="https://mybinder.org/v2/gh/qcodes/qcodes/main?filepath=docs/examples/driver_examples/Qcodes example with Keysight B2200 Series Femto Leakage Switch Matrix.ipynb"><img
+alt="Binder badge"
+    src="https://mybinder.org/badge_logo.svg"
+    style="vertical-align:text-bottom"></a>.
+  </p>
+  <script>
+    if (document.location.host) {
+      var p = document.currentScript.previousSibling.previousSibling;
+      var a = document.createElement('a');
+      a.innerHTML = 'View in <em>nbviewer</em>';
+      a.href = `https://nbviewer.jupyter.org/url${
+        (window.location.protocol == 'https:' ? 's/' : '/') +
+        window.location.host +
+        window.location.pathname.slice(0, -4) }ipynb`;
+      a.classList.add('reference');
+      a.classList.add('external');
+      p.appendChild(a);
+      p.appendChild(document.createTextNode('.'));
+    }
+  </script>
+</div><section id="QCoDeS-Example-with-Keysight-B2200-Series-Femto-Leakage-Switch-Matrix">
+<h1>QCoDeS Example with Keysight B2200 Series Femto Leakage Switch Matrix<a class="headerlink" href="#QCoDeS-Example-with-Keysight-B2200-Series-Femto-Leakage-Switch-Matrix" title="Link to this heading">¶</a></h1>
+<section id="Instrument-Short-info">
+<h2>Instrument Short info<a class="headerlink" href="#Instrument-Short-info" title="Link to this heading">¶</a></h2>
+<p>The Keysight B2200 Switch Matrix has 14 rows and up to 48 columns. In the terminology of the Keysight B2200, the <em>Rows</em> are called <em>Inputs</em> and the <em>Columns</em> are called <em>Outputs</em>. In this example Notebook I will use the <em>Input/Output</em> terminology.</p>
+<p><strong>Note: Technically the Inputs could also be used as Outputs and vice versa.</strong></p>
+<p>The inputs are subdivided into</p>
+<ul class="simple">
+<li><p>8 triaxial BNC input ports labeled “SMU Input” with number 1 to 8</p></li>
+<li><p>6 normal BNC input ports labeled “AUX Input” with number 9 to 14</p></li>
+</ul>
+<p>The output ports are split into 4 modules with 12 ports each, hence a Switch matrix can support 12, 24, 36 or 48 output ports. The Instrument can either address the Modules individually (<em>Normal Config Mode</em>) or treat all installed modules as one (<em>Auto Config Mode</em>). In <em>Auto Config Mode</em> the output channels are numbered 1 to 48 (or whatever the maximum number of channels is if not all 4 modules are installed).</p>
+<p><strong>Note: The Qcodes driver only suports Auto Config Mode</strong></p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">Markdown</span><span class="p">,</span> <span class="n">display</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyvisa.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">VisaIOError</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">qcodes</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">qc</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qcodes.instrument_drivers.Keysight</span><span class="w"> </span><span class="kn">import</span> <span class="n">KeysightB2201</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a station to hold all the instruments</span>
+
+<span class="n">station</span> <span class="o">=</span> <span class="n">qc</span><span class="o">.</span><span class="n">Station</span><span class="p">()</span>
+
+<span class="c1"># instantiate the Switch Matrix and add it to the station</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">switch_matrix</span> <span class="o">=</span> <span class="n">KeysightB2201</span><span class="p">(</span>
+        <span class="s2">&quot;switch_matrix&quot;</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="s2">&quot;TCPIP::192.168.111.100::gpib0,22::INSTR&quot;</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;using physical instrument&quot;</span><span class="p">)</span>
+<span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">VisaIOError</span><span class="p">):</span>
+    <span class="c1"># Either there is no VISA lib installed or there was no real instrument found at the</span>
+    <span class="c1"># specified address =&gt; use simulated instrument</span>
+
+    <span class="n">switch_matrix</span> <span class="o">=</span> <span class="n">KeysightB2201</span><span class="p">(</span>
+        <span class="s2">&quot;switch_matrix&quot;</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="s2">&quot;GPIB::1::INSTR&quot;</span><span class="p">,</span> <span class="n">pyvisa_sim_file</span><span class="o">=</span><span class="s2">&quot;keysight_b220x.yaml&quot;</span>
+    <span class="p">)</span>
+    <span class="n">display</span><span class="p">(</span>
+        <span class="n">Markdown</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;**Note: using simulated instrument.**</span>
+
+<span class="s2">Due to limitations in pyvisa-sim the behavior will be different. Especially</span>
+<span class="s2">  - the default values are not recovered when calling `switch_matrix.reset()` method</span>
+<span class="s2">  - commands will simply overwrite the current state (e.g. when calling `switch_matrix.gnd_enabled_inputs([3, 4])` and after that `switch_matrix.gnd_enabled_inputs([5, 6])`, the real instrument would return `[3,4,5,6]` when calling `switch_matrix.gnd_enabled_inputs()`, but the simulated instrument will only return `[5,6]`)&quot;&quot;&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+
+<span class="n">station</span><span class="o">.</span><span class="n">add_component</span><span class="p">(</span><span class="n">switch_matrix</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+[switch_matrix(KeysightB2201)] Could not connect at TCPIP::192.168.111.100::gpib0,22::INSTR
+Traceback (most recent call last):
+  File &#34;/opt/hostedtoolcache/Python/3.11.14/x64/lib/python3.11/site-packages/qcodes/instrument/visa.py&#34;, line 218, in _connect_and_handle_error
+    visa_handle, visabackend, resource_manager = self._open_resource(
+                                                 ^^^^^^^^^^^^^^^^^^^^
+  File &#34;/opt/hostedtoolcache/Python/3.11.14/x64/lib/python3.11/site-packages/qcodes/instrument/visa.py&#34;, line 242, in _open_resource
+    resource_manager = pyvisa.ResourceManager()
+                       ^^^^^^^^^^^^^^^^^^^^^^^^
+  File &#34;/opt/hostedtoolcache/Python/3.11.14/x64/lib/python3.11/site-packages/pyvisa/highlevel.py&#34;, line 2993, in __new__
+    visa_library = open_visa_library(visa_library)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &#34;/opt/hostedtoolcache/Python/3.11.14/x64/lib/python3.11/site-packages/pyvisa/highlevel.py&#34;, line 2900, in open_visa_library
+    wrapper = _get_default_wrapper()
+              ^^^^^^^^^^^^^^^^^^^^^^
+  File &#34;/opt/hostedtoolcache/Python/3.11.14/x64/lib/python3.11/site-packages/pyvisa/highlevel.py&#34;, line 2859, in _get_default_wrapper
+    raise ValueError(
+ValueError: Could not locate a VISA implementation. Install either the IVI binary or pyvisa-py.
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Connected to: AGILENT TECHNOLOGIES B2200A (serial:0, firmware:A.01.00) in 0.06s
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<p><strong>Note: using simulated instrument.</strong></p>
+<p>Due to limitations in pyvisa-sim the behavior will be different. Especially</p>
+<ul class="simple">
+<li><p>the default values are not recovered when calling <code class="docutils literal notranslate"><span class="pre">switch_matrix.reset()</span></code> method</p></li>
+<li><p>commands will simply overwrite the current state (e.g. when calling <code class="docutils literal notranslate"><span class="pre">switch_matrix.gnd_enabled_inputs([3,</span> <span class="pre">4])</span></code> and after that <code class="docutils literal notranslate"><span class="pre">switch_matrix.gnd_enabled_inputs([5,</span> <span class="pre">6])</span></code>, the real instrument would return <code class="docutils literal notranslate"><span class="pre">[3,4,5,6]</span></code> when calling <code class="docutils literal notranslate"><span class="pre">switch_matrix.gnd_enabled_inputs()</span></code>, but the simulated instrument will only return <code class="docutils literal notranslate"><span class="pre">[5,6]</span></code>)</p></li>
+</ul>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;switch_matrix&#39;
+</pre></div></div>
+</div>
+</section>
+<section id="Basic-Switch-control">
+<h2>Basic Switch control<a class="headerlink" href="#Basic-Switch-control" title="Link to this heading">¶</a></h2>
+<p>Any of the 14 Input ports can be connected to any of the 48 output ports</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># {None}</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{(2, 48), (10, 12)}
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">48</span><span class="p">)</span>  <span class="c1"># connect input 2 to output 48</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># {(2, 48)}</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{(2, 48), (10, 12)}
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>  <span class="c1"># connect input 14 to output 3</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># {(2, 48), (14, 3)}</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{(2, 48), (10, 12)}
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/tmp/ipykernel_4847/2196576615.py:1: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.connect(14, 3)  # connect input 14 to output 3
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>  <span class="c1"># disconnect input 14 from output 3</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># {(2, 48)}</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{(2, 48), (10, 12)}
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/tmp/ipykernel_4847/1961035810.py:1: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.disconnect(14, 3)  # disconnect input 14 from output 3
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">disconnect_all</span><span class="p">()</span>  <span class="c1"># opens all switches</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># {None}</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{(2, 48), (10, 12)}
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># To connect multiple input-&gt;output pairs it is faster</span>
+<span class="c1"># to use the connect_paths method instead of calling connect in a loop</span>
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">connect_paths</span><span class="p">({(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">45</span><span class="p">),</span> <span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">9</span><span class="p">)})</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># {(11, 9), (3, 45)}</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{(2, 48), (10, 12)}
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/tmp/ipykernel_4847/4290368625.py:3: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.connect_paths({(3, 45), (11, 9)})
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Multiple switches can be disconnected with the disconnect_paths method</span>
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">disconnect_paths</span><span class="p">({(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">45</span><span class="p">),</span> <span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">9</span><span class="p">)})</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># {None}</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{(2, 48), (10, 12)}
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/tmp/ipykernel_4847/163892451.py:2: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.disconnect_paths({(3, 45), (11, 9)})
+</pre></div></div>
+</div>
+</section>
+<section id="##-Advanced-Switch-Control">
+<h2>## Advanced Switch Control<a class="headerlink" href="###-Advanced-Switch-Control" title="Link to this heading">¶</a></h2>
+<section id="Connection-Rule">
+<h3>Connection Rule<a class="headerlink" href="#Connection-Rule" title="Link to this heading">¶</a></h3>
+<p>The Switch matrix has two <em>connection rules</em>:</p>
+<ul class="simple">
+<li><p>in <em>free route</em> mode (<strong>Default</strong> after reset):</p>
+<ul>
+<li><p>each input port can be connected to multiple output ports</p></li>
+<li><p>and each output port can be connected to multiple input ports.</p></li>
+<li><p><strong>Caution: If the Free connection rule has been specified, ensure multiple input ports are not connected to the same output port. Such configurations can cause damage</strong></p></li>
+</ul>
+</li>
+<li><p>in <em>single route</em> mode:</p>
+<ul>
+<li><p>each input port can be connected to only one output port</p></li>
+<li><p>and each output port can be connected to only one input port.</p></li>
+<li><p>existing connection to a port will be disconnected when a new connection is made.</p></li>
+</ul>
+</li>
+</ul>
+<p><strong>Note: when switching from free to single mode, 1-to-multiple connections will not be changed until the connection is changed!!</strong></p>
+<section id="Free-Route-Mode">
+<h4>Free Route Mode<a class="headerlink" href="#Free-Route-Mode" title="Link to this heading">¶</a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># {None}</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{(2, 48), (10, 12)}
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">33</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># {(2, 33)}</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{(2, 48), (10, 12)}
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/tmp/ipykernel_4847/1086839813.py:1: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.connect(2, 33)
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span>  <span class="c1"># Input 2 is connected to multiple outputs</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># {(2, 33), (2, 12)}</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{(2, 48), (10, 12)}
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/tmp/ipykernel_4847/3406178930.py:1: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.connect(2, 12)  # Input 2 is connected to multiple outputs
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ! DANGER ZONE !</span>
+<span class="c1"># Connecting multiple inputs to the same output: This can cause damage if there</span>
+<span class="c1"># two sources on the input pins as they will be short circuited</span>
+<span class="c1">#</span>
+<span class="c1">#  set to `True` if you know what you&#39;re doing:</span>
+<span class="n">I_know_what_I_am_doing</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">I_have_checked_there_are_no_two_sources_on_Input_5_and_6</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># {None}</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">I_know_what_I_am_doing</span>
+    <span class="k">assert</span> <span class="n">I_have_checked_there_are_no_two_sources_on_Input_5_and_6</span>
+
+    <span class="n">switch_matrix</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">14</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># {(5, 14)}</span>
+
+    <span class="n">switch_matrix</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">14</span><span class="p">)</span>  <span class="c1"># Input 5 and 6 are now both connected to Output 14</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># {(5, 14), (6, 14)}</span>
+
+<span class="k">except</span> <span class="p">(</span><span class="ne">AssertionError</span><span class="p">,</span> <span class="ne">NameError</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Skipped `Connecting multiple inputs to the same output` example.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{(2, 48), (10, 12)}
+Skipped `Connecting multiple inputs to the same output` example.
+</pre></div></div>
+</div>
+</section>
+<section id="Single-Route-mode">
+<h4>Single Route mode<a class="headerlink" href="#Single-Route-mode" title="Link to this heading">¶</a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">disconnect_all</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># {None}</span>
+
+<span class="c1"># Single route mode is activated like so:</span>
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">connection_rule</span><span class="p">(</span><span class="s2">&quot;single&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{(2, 48), (10, 12)}
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/opt/hostedtoolcache/Python/3.11.14/x64/lib/python3.11/site-packages/qcodes/instrument_drivers/Keysight/keysight_b220x.py:412: UserWarning: When going from *free* to *single* mode existing connections are not released.
+  warnings.warn(
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">48</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># {(2, 48)}</span>
+
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">9</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># {(2, 48), (5, 9)}</span>
+
+<span class="c1"># The following command will implicitly release the 2-&gt;48 connection because</span>
+<span class="c1"># input 2 will be used to connect to output 48</span>
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># {(2, 12), (5, 9)}</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{(2, 48), (10, 12)}
+{(2, 48), (10, 12)}
+{(2, 48), (10, 12)}
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/tmp/ipykernel_4847/1594875931.py:4: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.connect(5, 9)
+/tmp/ipykernel_4847/1594875931.py:9: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.connect(2, 12)
+</pre></div></div>
+</div>
+<p><strong>Note that even though a connection like {2-&gt;33, 2-&gt;12} or {5-&gt;14, 6-&gt;14} would be impossible to create in Single Route Mode it can still exist if it was created previously in Free Route mode!</strong></p>
+<p>The reason is if the connection was made in <em>Free Route</em> mode and after that <em>Single Route</em> was activated the connections will <strong>persist</strong>. The following example illustrates this:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Example:</span>
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>  <span class="c1"># After reset *free route* mode is active</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># {None}</span>
+
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">18</span><span class="p">)</span>  <span class="c1"># Connections: {(2, 18)}</span>
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">44</span><span class="p">)</span>  <span class="c1"># Connections: {(2, 18), (2, 44)}</span>
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">45</span><span class="p">)</span>  <span class="c1"># Connections: {(2, 18), (2, 44), (2, 45)}</span>
+
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">connection_rule</span><span class="p">(</span><span class="s2">&quot;single&quot;</span><span class="p">)</span>  <span class="c1"># *Single Route* Mode is activated</span>
+<span class="c1"># Still multiple Outputs connected to Input 2!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># Connections: {(2, 18), (2, 44), (2, 45)}</span>
+
+<span class="c1"># The following command will only implcitly release the 2-&gt;45 connection:</span>
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">45</span><span class="p">)</span>  <span class="c1"># Still multiple Outputs connected to Input 2!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># Connections: {(2, 18), (2, 44), (5, 45)}</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{(2, 48), (10, 12)}
+{(2, 48), (10, 12)}
+{(2, 48), (10, 12)}
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/tmp/ipykernel_4847/4199247251.py:5: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.connect(2, 18)  # Connections: {(2, 18)}
+/tmp/ipykernel_4847/4199247251.py:6: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.connect(2, 44)  # Connections: {(2, 18), (2, 44)}
+/tmp/ipykernel_4847/4199247251.py:7: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.connect(2, 45)  # Connections: {(2, 18), (2, 44), (2, 45)}
+/tmp/ipykernel_4847/4199247251.py:14: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.connect(5, 45)  # Still multiple Outputs connected to Input 2!
+</pre></div></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="Connection-Sequence">
+<h3>Connection Sequence<a class="headerlink" href="#Connection-Sequence" title="Link to this heading">¶</a></h3>
+<p>As explained above in <strong>Single Route</strong> Mode the switch matrix implicitly disconnects the previous path when a new connection is made.</p>
+<p>There are options for how exactly this is done:</p>
+<ul class="simple">
+<li><p>Break Before Make (<code class="docutils literal notranslate"><span class="pre">'bbm'</span></code>) (<strong>Default</strong> after reset):</p>
+<ol class="arabic simple">
+<li><p>Disconnect previous route.</p></li>
+<li><p>Wait for relays to open.</p></li>
+<li><p>Connect new route.</p></li>
+</ol>
+</li>
+<li><p>Make Before Break (<code class="docutils literal notranslate"><span class="pre">'mbb'</span></code>):</p>
+<ol class="arabic simple">
+<li><p>Connect new route.</p></li>
+<li><p>Wait for relays to close.</p></li>
+<li><p>Disconnect previous route.</p></li>
+</ol>
+</li>
+<li><p>No Sequence (<code class="docutils literal notranslate"><span class="pre">'none'</span></code>)</p>
+<ol class="arabic simple">
+<li><p>Disconnect previous route.</p></li>
+<li><p>Connect new route.</p></li>
+</ol>
+</li>
+</ul>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+<span class="c1"># After Reset the switch matrix is in *Free Route* Mode</span>
+<span class="c1"># Although setting a Connection Sequence can also be done in *Free Route* mode,</span>
+<span class="c1"># it **only has effect in Single Route Mode** (because in Free Route mode no connections are implicitely opened)</span>
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">connection_rule</span><span class="p">(</span><span class="s2">&quot;single&quot;</span><span class="p">)</span>
+
+<span class="c1"># *Break Before Make* is Default after Reset</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Connection Sequence after Reset: &quot;</span><span class="p">,</span> <span class="n">switch_matrix</span><span class="o">.</span><span class="n">connection_sequence</span><span class="p">())</span>
+
+<span class="c1"># Change connection sequence to *Make Before Break*</span>
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">connection_sequence</span><span class="p">(</span><span class="s2">&quot;mbb&quot;</span><span class="p">)</span>
+
+<span class="c1"># Change connection sequence to *No Sequence*</span>
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">connection_sequence</span><span class="p">(</span><span class="s2">&quot;none&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Connection Sequence after Reset:  bbm
+</pre></div></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="Ground-Mode">
+<h3>Ground Mode<a class="headerlink" href="#Ground-Mode" title="Link to this heading">¶</a></h3>
+<p>The Switch Matrix can automatically connect unused inputs and/or outputs to a designated Ground input. When the ground mode is <em>ON</em>, the input ground port is connected to</p>
+<ul class="simple">
+<li><p>to <em>ground enabled</em> output ports that are not connected to any other input ports.</p></li>
+<li><p>all inputs that are specified as <em>unused</em></p></li>
+</ul>
+<p><strong>Note: Connection sequence (to connect input ground port to output ports) is always Break-Before-Make.</strong></p>
+<p>In principle the Ground Input Port can be chosen freely, however it is advisable to use the default ground input (AUX 12) as I will explain below.</p>
+<p><strong>Note: The port that is selected as Ground Input Port cannot be used in normal ``connect``/``disconnect`` commands</strong></p>
+<p><strong>Note: Ground mode cannot be set to ON when the bias mode is ON</strong></p>
+<p>To make use of the Ground mode several things have to be done:</p>
+<ul class="simple">
+<li><p>specify which <em>outputs</em> should be <em>ground enabled</em></p></li>
+<li><p>specify which <em>inputs</em> will be unused and should be <em>ground enabled</em></p></li>
+<li><p>(most often not necessary (see above)) specify which input port should be the ground input</p></li>
+<li><p>Set Ground mode <em>ON</em></p></li>
+</ul>
+<p>The following will explain these steps</p>
+<section id="Specifying-which-outputs-should-be-ground-enabled">
+<h4>Specifying which outputs should be <em>ground enabled</em><a class="headerlink" href="#Specifying-which-outputs-should-be-ground-enabled" title="Link to this heading">¶</a></h4>
+<p>There are two possibilities to specify which <em>outputs</em> should be <em>ground enabled</em>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Either only enable specific output ports</span>
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">gnd_enable_output</span><span class="p">(</span><span class="mi">33</span><span class="p">)</span>
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">gnd_enable_output</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
+
+<span class="c1"># Or Ground enable all output ports:</span>
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">gnd_enable_all_outputs</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/tmp/ipykernel_4847/3621295726.py:2: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.gnd_enable_output(33)
+/tmp/ipykernel_4847/3621295726.py:3: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.gnd_enable_output(11)
+</pre></div></div>
+</div>
+</section>
+<section id="Specifying-which-inputs-are-unused">
+<h4>Specifying which inputs are unused<a class="headerlink" href="#Specifying-which-inputs-are-unused" title="Link to this heading">¶</a></h4>
+<p>Input ports that are marked as <em>unused</em> cannot be used in <code class="docutils literal notranslate"><span class="pre">connect</span></code>/<code class="docutils literal notranslate"><span class="pre">disconnect</span></code> commands</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Specify unused inputs with a list</span>
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">unused_inputs</span><span class="p">([</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">])</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Ground enabled inputs: &quot;</span><span class="p">,</span> <span class="n">switch_matrix</span><span class="o">.</span><span class="n">unused_inputs</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Ground enabled inputs:  [5, 6, 7, 8]
+</pre></div></div>
+</div>
+<p><strong>Note: Everytime ``unused_inputs(&lt;list of unused inputs&gt;)`` is called, the previous setting is overwritten!</strong></p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Before: &quot;</span><span class="p">,</span> <span class="n">switch_matrix</span><span class="o">.</span><span class="n">unused_inputs</span><span class="p">())</span>
+
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">unused_inputs</span><span class="p">(</span>
+    <span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+<span class="p">)</span>  <span class="c1"># when marking single inputs as unused they must also be wrapped in a list!</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;After: &quot;</span><span class="p">,</span> <span class="n">switch_matrix</span><span class="o">.</span><span class="n">unused_inputs</span><span class="p">())</span>
+
+<span class="c1"># Calling `set_unused_input([3])` overwrote the previous setting ([5,6,7,8])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Before:  [5, 6, 7, 8]
+After:  [3]
+</pre></div></div>
+</div>
+<p>This means if you want to use all inputs again, simply call <code class="docutils literal notranslate"><span class="pre">unused_inputs()</span></code> with an empty list</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">unused_inputs</span><span class="p">([])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Ground enabled inputs: &quot;</span><span class="p">,</span> <span class="n">switch_matrix</span><span class="o">.</span><span class="n">unused_inputs</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Ground enabled inputs:  []
+</pre></div></div>
+</div>
+</section>
+<section id="(Optional)-Specifying-which-input-port-should-be-the-ground-input">
+<h4>(Optional) Specifying which <em>input port</em> should be the <em>ground input</em><a class="headerlink" href="#(Optional)-Specifying-which-input-port-should-be-the-ground-input" title="Link to this heading">¶</a></h4>
+<p>In general designating an input port as <em>ground input</em> <strong>does not automatically connect the inner conductor to GND</strong>! So typically a BNC Short Circuit Connector Cap is required to connect the port to GND.</p>
+<p>The <strong>exception to this are input 12 and 13</strong>, both have special internal circuitry. If <em>ground mode</em> is set to <em>ON</em> and</p>
+<ul class="simple">
+<li><p>If Input 12 is selected as <em>ground input</em>, then the inner conductor of the BNC connector is <strong>left floating</strong> and the <strong>internal inner conductor is connected to GND</strong></p></li>
+<li><p>If Input 13 is selected as <em>ground input</em>, then the <strong>inner conductor of the BNC connector AND the internal inner conductor is connected to GND</strong></p></li>
+</ul>
+<p>So for both Input 12 and 13 no external Short Circuit Connector Cap is required.</p>
+<p><strong>Note: For Input 13 care must be taken that no source is connected to the input as otherwise it will be shorted to GND which might cause damage</strong>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># The default *ground input* port is input AUX 12.</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The Ground Input Port is: &quot;</span><span class="p">,</span> <span class="n">switch_matrix</span><span class="o">.</span><span class="n">gnd_input_port</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+The Ground Input Port is:  12
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">I_have_made_sure_that_there_is_no_source_connected_to_input_13</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">I_have_made_sure_that_there_is_no_source_connected_to_input_13</span>
+
+    <span class="c1"># Changing the ground input port can be done so:</span>
+    <span class="n">switch_matrix</span><span class="o">.</span><span class="n">gnd_input_port</span><span class="p">(</span><span class="mi">13</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="s2">&quot;Before executing this make sure that there is no source connected to input 13&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;as otherwise it will be grounded.</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Then set I_have_made_sure_that_there_is_no_source_connected_to_input_13 = True&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Before executing this make sure that there is no source connected to input 13 as otherwise it will be grounded.
+
+ Then set I_have_made_sure_that_there_is_no_source_connected_to_input_13 = True
+</pre></div></div>
+</div>
+</section>
+<section id="Set-Ground-mode-ON">
+<h4>Set Ground mode ON<a class="headerlink" href="#Set-Ground-mode-ON" title="Link to this heading">¶</a></h4>
+<p>The last step to use Ground Mode is to switch it on</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">gnd_mode</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Caveats">
+<h4>Caveats<a class="headerlink" href="#Caveats" title="Link to this heading">¶</a></h4>
+<p>The port that is selected as <em>Ground Input Port</em> cannot be used in normal <code class="docutils literal notranslate"><span class="pre">connect</span></code>/<code class="docutils literal notranslate"><span class="pre">disconnect</span></code> commands</p>
+<p>Note: Using the port anyway <strong>will fail</strong> and simply not make the connection. The (dis)connect commands and most (but not all) automatically try to query the status byte and will warn the user if an error occured.</p>
+<p>Example:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">gnd_mode</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">22</span><span class="p">)</span>  <span class="c1"># 12 is the gnd input port</span>
+<span class="c1"># A warning should be printed below notifying the user that an error occured</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/tmp/ipykernel_4847/1116789878.py:1: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.connect(12, 22)  # 12 is the gnd input port
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># The detailed error message can be retrieved using the `get_error` method:</span>
+
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">switch_matrix</span><span class="o">.</span><span class="n">get_error</span><span class="p">()</span>
+<span class="p">)</span>  <span class="c1"># +3022,&quot;Cannot directory specify Auto Ground Port channel&quot;</span>
+
+<span class="c1"># Fun fact: `directory` is a typo in the instrument firmware. It should be &quot;Cannot *directly* ...&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1, Command error
+</pre></div></div>
+</div>
+</section>
+<section id="Ground-Mode-complete-example">
+<h4>Ground Mode complete example<a class="headerlink" href="#Ground-Mode-complete-example" title="Link to this heading">¶</a></h4>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+<span class="c1"># After reset:</span>
+<span class="c1"># - All connections are disconnected,</span>
+<span class="c1"># - Ground input port is port AUX 12.</span>
+<span class="c1"># - No inputs or outputs are ground enabled</span>
+<span class="c1"># - Ground mode is off</span>
+<span class="c1"># The last two points mean that all inputs and outputs are floating!</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">unused_inputs</span><span class="p">([</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">])</span>
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">gnd_enable_output</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">gnd_enable_output</span><span class="p">(</span><span class="mi">33</span><span class="p">)</span>
+<span class="c1"># Now</span>
+<span class="c1">#  - Ground enabled inputs are [5,6,7,8]</span>
+<span class="c1">#  - Ground enabled Outputs are [12, 33]</span>
+<span class="c1">#</span>
+<span class="c1"># They are not connected to ground yet because Ground Mode is still OFF!</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/tmp/ipykernel_4847/1409058756.py:2: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.gnd_enable_output(12)
+/tmp/ipykernel_4847/1409058756.py:3: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.gnd_enable_output(33)
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">gnd_mode</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Now Inputs [5,6,7,8], and Outputs [12, 13] are connected to ground</span>
+<span class="c1"># (because they are not connected to anything else)</span>
+<span class="c1">#</span>
+<span class="c1"># All other inputs and outputs are still floating</span>
+
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">()</span>
+<span class="p">)</span>  <span class="c1"># {(12, 12), (12, 33)} # (Only lists connections of output ports!)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{(2, 48), (10, 12)}
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+    <span class="mi">4</span><span class="p">,</span> <span class="mi">33</span>
+<span class="p">)</span>  <span class="c1"># Now Output 33 is connected to Input 4 =&gt; Output 33 *not* connected to GND</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># {(12, 12), (4, 33)}</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{(2, 48), (10, 12)}
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/tmp/ipykernel_4847/1173055097.py:1: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.connect(
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">33</span><span class="p">)</span>
+<span class="c1"># Output 33 is automatically connected to GND again when the connection is opened again!</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># {(12, 12), (12, 33)}</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{(2, 48), (10, 12)}
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/tmp/ipykernel_4847/1682570505.py:1: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.disconnect(4, 33)
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Ground enabled output ports can also be *Ground disabled* again</span>
+<span class="c1"># This will disconnect them from GND if they were connected to GND</span>
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">gnd_disable_output</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># {(12, 33)}</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{(2, 48), (10, 12)}
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/tmp/ipykernel_4847/4110039421.py:3: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.gnd_disable_output(12)
+</pre></div></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="Bias-Mode">
+<h3>Bias Mode<a class="headerlink" href="#Bias-Mode" title="Link to this heading">¶</a></h3>
+<p>The Bias Mode is very similar to the previously described Ground Mode, so make sure to read the Ground Mode description above.</p>
+<p>The main difference to Ground Mode is that</p>
+<ul class="simple">
+<li><p>instead of connecting ports to GND potential, in Bias Mode unused Outputs are connected to a Bias Potential which is supplied to the designated <em>Bias Input Port</em>.</p></li>
+<li><p>The <strong>default Bias input Port is AUX 10</strong></p></li>
+<li><p><strong>By default all output ports are Bias enabled</strong></p></li>
+</ul>
+<p>Other differences compared to GND mode are:</p>
+<ul class="simple">
+<li><p>Bias Mode <strong>always requires an external source</strong> to supply the Bias potential (there is no internal circuitry)</p></li>
+<li><p>Only <em>Output</em> Ports can be <em>Bias Enabled</em> (In Ground mode also Inputs could be <em>Ground enabled</em>)</p></li>
+</ul>
+<p><strong>Note: Bias mode cannot be set to ON when the ground mode is ON.</strong></p>
+<p><strong>Note: You cannot use the Bias port in ``connect``/``disconnect`` commands to make explicit connections to the Bias port.</strong></p>
+<p>The other steps are similar to Ground mode so I will jump directly to the complete example:</p>
+<section id="Bias-Mode-complete-Example">
+<h4>Bias Mode complete Example<a class="headerlink" href="#Bias-Mode-complete-Example" title="Link to this heading">¶</a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[34]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+<span class="c1"># After reset:</span>
+<span class="c1"># - All connections are disconnected,</span>
+<span class="c1"># - Bias input port is port AUX 10.</span>
+<span class="c1"># - No inputs or outputs are Bias enabled</span>
+<span class="c1"># - Bias mode is off</span>
+<span class="c1"># The last two points mean that all inputs and outputs are floating!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># {None}</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{(2, 48), (10, 12)}
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[35]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># By default all ports are bias enabled!</span>
+<span class="c1"># For demonstration we&#39;ll bias-disable two ports:</span>
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">bias_disable_output</span><span class="p">(</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">bias_disable_output</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
+<span class="c1">#  - Bias disabled Outputs are [15, 17]</span>
+<span class="c1"># They are not connected to bias input yet because bias Mode is still OFF!</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/tmp/ipykernel_4847/3661488296.py:3: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.bias_disable_output(15)
+/tmp/ipykernel_4847/3661488296.py:4: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.bias_disable_output(17)
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[36]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{(2, 48), (10, 12)}
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[37]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">bias_mode</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+<span class="c1"># Now all outputs besides Outputs [15, 17] are connected to bias input port (Port 10 by default)</span>
+<span class="c1">#</span>
+<span class="c1"># Only Outputs [15, 17] will be left floating</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">()</span>
+<span class="p">)</span>  <span class="c1"># {(10, 37), (10, 11), (10, 42), (10, 48), (10, 6), (10, 21), (10, 46), (10, 26), (10, 3), (10, 34), (10, 8), (10, 30), (10, 43), (10, 7), (10, 38), (10, 12), (10, 18), (10, 47), (10, 27), (10, 22), (10, 35), (10, 9), (10, 31), (10, 40), (10, 4), (10, 39), (10, 13), (10, 19), (10, 44), (10, 24), (10, 1), (10, 23), (10, 32), (10, 28), (10, 41), (10, 5), (10, 36), (10, 10), (10, 16), (10, 45), (10, 25), (10, 14), (10, 20), (10, 33), (10, 29), (10, 2)}</span>
+
+<span class="nb">print</span><span class="p">(</span>
+    <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">15</span><span class="p">)</span> <span class="ow">in</span> <span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">()</span>
+<span class="p">)</span>  <span class="c1"># bias-disabled output 15 was not connected to bias port 10</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">17</span><span class="p">)</span> <span class="ow">in</span> <span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">()</span>
+<span class="p">)</span>  <span class="c1"># bias-disabled output 17 was not connected to bias port 10</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{(2, 48), (10, 12)}
+False
+False
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[38]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+    <span class="mi">4</span><span class="p">,</span> <span class="mi">11</span>
+<span class="p">)</span>  <span class="c1"># Now Output 11 is connected to Input 4 =&gt; Output 11 *not* connected to Bias Input</span>
+
+<span class="nb">print</span><span class="p">(</span>
+    <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">)</span> <span class="ow">in</span> <span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">()</span>
+<span class="p">)</span>  <span class="c1"># False =&gt; bias port connection (10, 11) was implicitly opened</span>
+<span class="nb">print</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">11</span><span class="p">)</span> <span class="ow">in</span> <span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># True =&gt; connection (4, 11) was made</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+False
+False
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/tmp/ipykernel_4847/3287543777.py:1: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.connect(
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[39]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">11</span><span class="p">)</span>
+<span class="c1"># Output 11 is automatically connected to Bias Input Port again when the connection is opened again!</span>
+<span class="c1"># Input 4 is floating</span>
+
+<span class="nb">print</span><span class="p">(</span>
+    <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">)</span> <span class="ow">in</span> <span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">()</span>
+<span class="p">)</span>  <span class="c1"># True =&gt; bias port connection (10, 11) was implicitly closed</span>
+<span class="nb">print</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">11</span><span class="p">)</span> <span class="ow">in</span> <span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># False =&gt; connection (4, 11) was opened</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+False
+False
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/tmp/ipykernel_4847/3502175740.py:1: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.disconnect(4, 11)
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[40]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># JUst as with GND mode, in bias mode you cannot use the bias input port in the</span>
+<span class="c1"># `connect`and `disconnect` commandsto make an explicit connection manually to the bias input:</span>
+
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+    <span class="mi">10</span><span class="p">,</span> <span class="mi">17</span>
+<span class="p">)</span>  <span class="c1"># Try to make an connection to input port 10 with bias-disabled port 17</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">get_error</span><span class="p">())</span>  <span class="c1"># +3014,&quot;Cannot directly specify Bias Port channel&quot;</span>
+
+<span class="nb">print</span><span class="p">((</span><span class="mi">10</span><span class="p">,</span> <span class="mi">17</span><span class="p">)</span> <span class="ow">in</span> <span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># False</span>
+
+
+<span class="c1"># This statement is also valid for bias-enabled ports</span>
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+    <span class="mi">10</span><span class="p">,</span> <span class="mi">23</span>
+<span class="p">)</span>  <span class="c1"># Try to make an connection to input port 10 with bias-enabled port 23</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">get_error</span><span class="p">())</span>  <span class="c1"># +3014,&quot;Cannot directly specify Bias Port channel&quot;</span>
+
+<span class="nb">print</span><span class="p">((</span><span class="mi">10</span><span class="p">,</span> <span class="mi">17</span><span class="p">)</span> <span class="ow">in</span> <span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># False</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1, Command error
+False
+1, Command error
+False
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/tmp/ipykernel_4847/3378567257.py:4: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.connect(
+/tmp/ipykernel_4847/3378567257.py:14: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.connect(
+</pre></div></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="Couple-Mode">
+<h3>Couple Mode<a class="headerlink" href="#Couple-Mode" title="Link to this heading">¶</a></h3>
+<p>In <em>Couple Mode</em>, pairs of input ports can be treated as one port. This is especially handy for Kelvin Measurement setups (=&gt; <em>Force</em> and <em>Sense</em> lines), where you connect/disconnect <em>Force</em> and <em>Sense</em> at the same time from one output to the next.</p>
+<p>Couple mode will group subsequent channel numbers in pairs of two:</p>
+<p><code class="docutils literal notranslate"><span class="pre">{(1,2),</span> <span class="pre">(3,4),</span> <span class="pre">(5,6),</span> <span class="pre">(7,8),</span> <span class="pre">(9,10),</span> <span class="pre">(11,12),</span> <span class="pre">(12,13)}</span></code></p>
+<p>When making the connections always keep these rule in mind:</p>
+<ul class="simple">
+<li><p><strong>Odd</strong> <em>Input Ports</em> always connect to an <strong>odd</strong> <em>Output port</em>.</p>
+<ul>
+<li><p>e.g. Input <code class="docutils literal notranslate"><span class="pre">3</span></code> will connect to <code class="docutils literal notranslate"><span class="pre">1</span></code>, <code class="docutils literal notranslate"><span class="pre">3</span></code>, or <code class="docutils literal notranslate"><span class="pre">17</span></code> and so on</p></li>
+<li><p>Input <code class="docutils literal notranslate"><span class="pre">3</span></code> will never connect to <code class="docutils literal notranslate"><span class="pre">2</span></code>, <code class="docutils literal notranslate"><span class="pre">6</span></code>, <code class="docutils literal notranslate"><span class="pre">24</span></code> and so on</p></li>
+</ul>
+</li>
+<li><p><strong>Even</strong> <em>Input Ports</em> always connect to an <strong>even</strong> <em>Output port</em>.</p>
+<ul>
+<li><p>e.g. Input <code class="docutils literal notranslate"><span class="pre">6</span></code> will connect to <code class="docutils literal notranslate"><span class="pre">2</span></code>, <code class="docutils literal notranslate"><span class="pre">6</span></code>, or <code class="docutils literal notranslate"><span class="pre">34</span></code></p></li>
+<li><p>Input <code class="docutils literal notranslate"><span class="pre">6</span></code> will never connect to <code class="docutils literal notranslate"><span class="pre">1</span></code>, <code class="docutils literal notranslate"><span class="pre">9</span></code>, <code class="docutils literal notranslate"><span class="pre">21</span></code></p></li>
+</ul>
+</li>
+<li><p>In a pair the <strong>odd</strong> port is always the lower port number.</p>
+<ul>
+<li><p>When <code class="docutils literal notranslate"><span class="pre">(7,8)</span></code> are coupled and sending the command <code class="docutils literal notranslate"><span class="pre">switch_matrix.connect(7,</span> <span class="pre">24)</span></code> the switch matrix</p>
+<ul>
+<li><p>will make the following connection: <code class="docutils literal notranslate"><span class="pre">7-&gt;23</span></code>, <code class="docutils literal notranslate"><span class="pre">8-&gt;24</span></code></p></li>
+<li><p>It will <strong>NOT</strong> make <code class="docutils literal notranslate"><span class="pre">7-&gt;24</span></code>, <code class="docutils literal notranslate"><span class="pre">8-&gt;25</span></code> or <code class="docutils literal notranslate"><span class="pre">7-&gt;24</span></code>, <code class="docutils literal notranslate"><span class="pre">8-&gt;23</span></code> or</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>Because of the above rules it us usually easiest if you always work with the <strong>lower, odd number</strong> in the commands. So for pair <code class="docutils literal notranslate"><span class="pre">(3,4)</span></code> use <code class="docutils literal notranslate"><span class="pre">3</span></code> in the commands.</p>
+<p><strong>Note: There are some limitations on using couple mode together with either Bias or GND mode. Refer to the manual for further information.</strong></p>
+<p><strong>Note: Couple Ports can also be automagically detected (see examples below)</strong></p>
+<p><strong>Note: Everytime ``couple_ports`` is called, the previous setting is overwritten!</strong></p>
+</section>
+<section id="Enabling-couple-mode">
+<h3>Enabling couple mode<a class="headerlink" href="#Enabling-couple-mode" title="Link to this heading">¶</a></h3>
+<p>There are two steps to enabling couple mode:</p>
+<ul class="simple">
+<li><p><em>couple enabled</em> input ports have to be selected</p></li>
+<li><p><em>couple mode</em> has to be enabled</p></li>
+</ul>
+<p>You can also first enable couple mode and then select couple enabled ports</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[41]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">couple_mode</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># Enable couple mode</span>
+
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">couple_ports</span><span class="p">([</span><span class="mi">1</span><span class="p">])</span>  <span class="c1"># Enables couple mode for input pair (1,2)</span>
+
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">couple_ports</span><span class="p">(</span>
+    <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>
+<span class="p">)</span>  <span class="c1"># Enables couple mode for input pairs {(1,2), (3,4), (5,6)}</span>
+</pre></div>
+</div>
+</div>
+<p>Everytime couple_ports is called, the previous setting is overwritten!</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[42]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">couple_ports</span><span class="p">([</span><span class="mi">5</span><span class="p">])</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;before: &quot;</span><span class="p">,</span> <span class="n">switch_matrix</span><span class="o">.</span><span class="n">couple_ports</span><span class="p">())</span>
+
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">couple_ports</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;after: &quot;</span><span class="p">,</span> <span class="n">switch_matrix</span><span class="o">.</span><span class="n">couple_ports</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+before:  [1, 3, 5]
+after:  [1, 3, 5]
+</pre></div></div>
+</div>
+<section id="Making-connections-in-couple-mode">
+<h4>Making connections in couple mode<a class="headerlink" href="#Making-connections-in-couple-mode" title="Link to this heading">¶</a></h4>
+<p>Connections in couple mode are made just like in <em>non-couple</em> mode, by specifyin <strong>one</strong> input port and <strong>one</strong> output port to connect.</p>
+<p>The following examples assume couple mode is enabled for inputs <code class="docutils literal notranslate"><span class="pre">1</span></code>, <code class="docutils literal notranslate"><span class="pre">3</span></code> and <code class="docutils literal notranslate"><span class="pre">5</span></code></p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[43]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;before: &quot;</span><span class="p">,</span> <span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>  <span class="c1"># before: {None}</span>
+
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">17</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="s2">&quot;after connecting: &quot;</span><span class="p">,</span> <span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">()</span>
+<span class="p">)</span>  <span class="c1"># after connecting:  {(4, 18), (3, 17)}</span>
+
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">17</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="s2">&quot;after disconnecting: &quot;</span><span class="p">,</span> <span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">()</span>
+<span class="p">)</span>  <span class="c1"># after disconnecting:  {None}</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+before:  {(2, 48), (10, 12)}
+after connecting:  {(2, 48), (10, 12)}
+after disconnecting:  {(2, 48), (10, 12)}
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/tmp/ipykernel_4847/3920106770.py:3: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.connect(3, 17)
+/tmp/ipykernel_4847/3920106770.py:8: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.disconnect(3, 17)
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[44]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Watch out for the rules mentioned in the introduction to Couple mode above!</span>
+
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+    <span class="mi">2</span><span class="p">,</span> <span class="mi">11</span>
+<span class="p">)</span>  <span class="c1"># Connections: {(1, 11), (2, 12)} and *NOT* {(2, 11), (1, 12)} or {(2, 11), (1, 10)}</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;after connecting: &quot;</span><span class="p">,</span> <span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>
+
+<span class="n">switch_matrix</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+    <span class="mi">1</span><span class="p">,</span> <span class="mi">12</span>
+<span class="p">)</span>  <span class="c1"># Connections: {(1, 11), (2, 12)} and *NOT* {(1, 12), (2, 11)} or {(1, 12), (2, 13)}</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;after connecting: &quot;</span><span class="p">,</span> <span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+after connecting:  {(2, 48), (10, 12)}
+after connecting:  {(2, 48), (10, 12)}
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/tmp/ipykernel_4847/2992650244.py:3: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.connect(
+/tmp/ipykernel_4847/2992650244.py:8: UserWarning: Instrument status byte indicates an error occurred (value of STB was: 32)! Use `get_error` method to poll error message.
+  switch_matrix.connect(
+</pre></div></div>
+</div>
+</section>
+<section id="Autodetecting-Couple-Ports">
+<h4>Autodetecting Couple Ports<a class="headerlink" href="#Autodetecting-Couple-Ports" title="Link to this heading">¶</a></h4>
+<p>A very nice feature is that couple ports can also be autodetected. This assumes that an instrument with Kelvin connections is connected to the input ports.</p>
+<p>Setup: connect</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">SMU</span> <span class="pre">+F</span></code> to input 3</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SMU</span> <span class="pre">+S</span></code> to input 4</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SMU</span> <span class="pre">-F</span></code> to input 7</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SMU</span> <span class="pre">-S</span></code> to input 8</p></li>
+</ul>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[45]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">couple_port_autodetect</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;after autodetecting couple ports: &quot;</span><span class="p">,</span> <span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>
+<span class="c1"># Will recognize SMU Kelvin connection on Port pairs (3,4) and  (7,8) and enable couple mode for these ports.</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+after autodetecting couple ports:  {(2, 48), (10, 12)}
+</pre></div></div>
+</div>
+<p>When using Autodetection, watch out to make the connections correctly according to the <em>legal</em> pair numbers <code class="docutils literal notranslate"><span class="pre">(3,4)</span></code> is allowed, <code class="docutils literal notranslate"><span class="pre">(4,5)</span></code> not.</p>
+<p>Just for illustration a <strong>bad example</strong>: Connect the SMU as follows:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">SMU</span> <span class="pre">+F</span></code> to input 4 - <strong>Switch matrix will not detect this</strong></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SMU</span> <span class="pre">+S</span></code> to input 5 - <strong>Switch matrix will not detect this</strong></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SMU</span> <span class="pre">-F</span></code> to input 1 - <strong>Switch matrix will not detect this</strong></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SMU</span> <span class="pre">-S</span></code> to input 8 - <strong>Switch matrix will not detect this</strong></p></li>
+</ul>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[46]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">switch_matrix</span><span class="o">.</span><span class="n">couple_port_autodetect</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;after autodetecting couple ports: &quot;</span><span class="p">,</span> <span class="n">switch_matrix</span><span class="o">.</span><span class="n">connections</span><span class="p">())</span>
+
+<span class="c1"># Since the Kelvin pairs are not connected to pairs of couple ports, the Switch</span>
+<span class="c1"># matrix will not *couple enable* these inputs.</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+after autodetecting couple ports:  {(2, 48), (10, 12)}
+</pre></div></div>
+</div>
+<script type="application/vnd.jupyter.widget-state+json">
+{"state": {}, "version_major": 2, "version_minor": 0}
+</script></section>
+</section>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="Qcodes%20example%20with%20Keysight%20Infiniium%20Oscilloscope.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">QCoDeS Example with Keysight Infiniium Oscilloscopes</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="Qcodes%20example%20with%20Keysight%20B1500%20Parameter%20Analyzer.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Qcodes example with Keysight B1500 Semiconductor Parameter Analyzer</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">QCoDeS Example with Keysight B2200 Series Femto Leakage Switch Matrix</a><ul>
+<li><a class="reference internal" href="#Instrument-Short-info">Instrument Short info</a></li>
+<li><a class="reference internal" href="#Basic-Switch-control">Basic Switch control</a></li>
+<li><a class="reference internal" href="###-Advanced-Switch-Control">## Advanced Switch Control</a><ul>
+<li><a class="reference internal" href="#Connection-Rule">Connection Rule</a><ul>
+<li><a class="reference internal" href="#Free-Route-Mode">Free Route Mode</a></li>
+<li><a class="reference internal" href="#Single-Route-mode">Single Route mode</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#Connection-Sequence">Connection Sequence</a></li>
+<li><a class="reference internal" href="#Ground-Mode">Ground Mode</a><ul>
+<li><a class="reference internal" href="#Specifying-which-outputs-should-be-ground-enabled">Specifying which outputs should be <em>ground enabled</em></a></li>
+<li><a class="reference internal" href="#Specifying-which-inputs-are-unused">Specifying which inputs are unused</a></li>
+<li><a class="reference internal" href="#(Optional)-Specifying-which-input-port-should-be-the-ground-input">(Optional) Specifying which <em>input port</em> should be the <em>ground input</em></a></li>
+<li><a class="reference internal" href="#Set-Ground-mode-ON">Set Ground mode ON</a></li>
+<li><a class="reference internal" href="#Caveats">Caveats</a></li>
+<li><a class="reference internal" href="#Ground-Mode-complete-example">Ground Mode complete example</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#Bias-Mode">Bias Mode</a><ul>
+<li><a class="reference internal" href="#Bias-Mode-complete-Example">Bias Mode complete Example</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#Couple-Mode">Couple Mode</a></li>
+<li><a class="reference internal" href="#Enabling-couple-mode">Enabling couple mode</a><ul>
+<li><a class="reference internal" href="#Making-connections-in-couple-mode">Making connections in couple mode</a></li>
+<li><a class="reference internal" href="#Autodetecting-Couple-Ports">Autodetecting Couple Ports</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../../_static/documentation_options.js?v=14f3ca12"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    </body>
+</html>

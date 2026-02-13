@@ -1,0 +1,1710 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../../_static/qcodes_favicon.png"><link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html"><link rel="next" title="QCoDeS Example with HP8753D" href="Qcodes%20example%20with%20HP8753D.html"><link rel="prev" title="Cryomagnetics 4G QCoDeS Driver Example" href="Qcodes%20example%20with%20Cryomagnetics4G.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.12.19 -->
+        <title>QCoDeS Example with DynaCool PPMS - QCoDeS 0.55.0.dev570 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../index.html"><div class="brand">QCoDeS 0.55.0.dev570 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
+  
+  <span class="sidebar-brand-text">QCoDeS 0.55.0.dev570 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../start/index.html">Getting Started</a><input aria-label="Toggle navigation of Getting Started" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../basic_examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../index.html">Examples of using QCoDeS</a><input aria-label="Toggle navigation of Examples of using QCoDeS" checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l2 has-children"><a class="reference internal" href="../basic_examples/index.html">Basic examples</a><input aria-label="Toggle navigation of Basic examples" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../basic_examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../basic_examples/Configuring_QCoDeS.html">QCoDeS config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../basic_examples/Station.html">Station</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../Parameters/index.html">Parameters</a><input aria-label="Toggle navigation of Parameters" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Complex_Parameters.html">Complex Numbers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Legacy_Parameters.html">Legacy parameter examples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/MultiParameter.html">MultiParameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Parameter-With-Setpoints-defined-on-a-different-instrument.html">ParameterWithSetpoints with setpoints defined on another instrument.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Parameter_defined_InterDependencies.html">Parameter-defined InterDependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Parameter_defined_InterDependencies.html#ControllingParameter-Example">ControllingParameter Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Parameters.html">Parameters in QCoDeS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Scaled_Parameter.html">ScaledParameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Parameters/Simple-Example-of-ParameterWithSetpoints.html">Simple Example of ParameterWithSetpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../DataSet/index.html">DataSet</a><input aria-label="Toggle navigation of DataSet" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Accessing-data-in-DataSet.html">Accessing data in a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Benchmarking.html">Dataset Benchmarking</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/DataSet-class-walkthrough.html">DataSet class walkthrough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Database.html">Databases</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Datasaver_Builder.html">Using <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> and <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> to streamline measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Dataset_Performance.html">DataSet Performance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Exporting-data-to-other-file-formats.html">Exporting QCoDes Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Extracting-runs-from-one-DB-file-to-another.html">Extracting runs from one DB file to another</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/InMemoryDataSet.html">In memory dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Linking%20to%20parent%20datasets.html">Linking to parent datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Measuring%20X%20as%20a%20function%20of%20time.html">Measuring X as a function of time</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Offline%20Plotting%20Tutorial.html">Offline Plotting Tutorial</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Offline%20plotting%20with%20categorical%20data.html">Offline plotting with categorical data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Offline%20plotting%20with%20complex%20data.html">Offline plotting with complex data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Paramtypes%20explained.html">Paramtypes explained</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Pedestrian%20example%20of%20subscribing%20to%20a%20DataSet.html">Pedestrian example of subscribing to a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html">Performing measurements using QCoDeS parameters and DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Saving_data_in_the_background.html">Saving data in the background</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/The-Experiment-Container.html">The Experiment Container</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Threaded%20data%20acquisition.html">Threaded data acquisition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html">Using doNd functions in comparison to Measurement context manager for performing measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Using_register_name.html">Using the <code class="docutils literal notranslate"><span class="pre">register_name</span></code> kwarg to select how a parameter is saved to a dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Working%20with%20snapshots.html">Working with snapshots</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Working-With-Pandas-and-XArray.html">Working with Pandas and XArray</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/import-data-from-legacy-dat-files.html">Importing data from legacy .dat files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/subscriber%20json%20exporter.html">Subscriber with JSON export</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Real_instruments/Example%20Measurements%20with%20Real%20Instruments.html">Example Measurements with Real Instruments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Cache/read_data_from_cache.html">Read data from cache</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet/Cache/write_for_caching.html">Write data to cache</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../plotting/index.html">Plotting</a><input aria-label="Toggle navigation of Plotting" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../plotting/How-to-use-Plottr-with-QCoDeS-for-live-plotting.html">How to use Plottr with QCoDeS for live plotting?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../plotting/auto_color_scale.html">Auto Color Scale</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current has-children"><a class="reference internal" href="index.html">Drivers</a><input aria-label="Toggle navigation of Drivers" checked="" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20Example%20with%20Keysight%20E4980A%20LCR%20meter.html">QCoDeS Example with Keysight E4980A LCR meter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20Example%20with%20Yokogawa%20GS200%20and%20Keithley%207510.html">QCoDeS Example with Yokogawa GS200 and Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20Aim%20TTi%20PL601-P.html">QCoDeS example with Aim TTi PL601-P</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20CopperMountain_M5065.html">Example with Copper Mountain Model M5065 Vector Network Analyzer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20DelegateInstrument.html">Qcodes example with DelegateInstrument driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20Galil%20DMC4133%20Controller.html">QCoDeS example with Galil DMC4133 Controller</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20InstrumentGroup%20and%20DelegateInstrument.html">Qcodes example with InstrumentGroup driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20Keithley%203706A%20System%20Switch.html">QCoDeS example with Keithley 3706A System Switch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Keithley%20S46.html">QCoDeS Example with Tektronix Keithley S46</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Rigol%20DG1062.html">QCoDeS Example with the Rigol DG 1062 Instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Tektronix%20DPO%2072004C.html">QCoDeS example with Textronix DPO 7200xx scopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20AMI430.html">QCoDeS Example with AMI430</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Agilent%2034400A.html">QCoDeS Example with Agilent 34400A</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Alazar%20ATS9360.html">QCoDeS Example with Alazar ATS 9360</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Basel%20SP983c%20Preamp.html">Qcodes example with Basel SP983c Preamp and its Remote SP983a</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Cryomagnetics%20TM-620.html">Cryomagnetics TM-620 QCoDeS Driver Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Cryomagnetics4G.html">Cryomagnetics 4G QCoDeS Driver Example</a></li>
+<li class="toctree-l3 current current-page"><a class="current reference internal" href="#">QCoDeS Example with DynaCool PPMS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20HP8753D.html">QCoDeS Example with HP8753D</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Ithaco.html">QCoDeS Example with Itacho</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keithley%202600.html">QCoDeS Example with with Keithley 2600 series</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keithley%207510.html">QCoDeS Example with Tektronix Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%2033500B.html">QCoDeS Example with Keysight 33500B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20344xxA.html">QCoDeS Example with Keysight 344xxA</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%2034980A%20Switch%20Mainframe%20and%20Modules.html">QCoDeS Example with Keysight 34980A Multifunction Switch / Measure Mainframe and Modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20B1500%20Parameter%20Analyzer.html">Qcodes example with Keysight B1500 Semiconductor Parameter Analyzer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20B2200%20Series%20Femto%20Leakage%20Switch%20Matrix.html">QCoDeS Example with Keysight B2200 Series Femto Leakage Switch Matrix</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20Infiniium%20Oscilloscope.html">QCoDeS Example with Keysight Infiniium Oscilloscopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20N9030B.html">Qcodes example with Keysight N9030B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20Network%20Analyzer.html">QCoDeS Example with Keysight Network Analyzers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Lakeshore%20325.html">QCoDeS Example with Lakeshore 325</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Lakeshore%20336%20or%20372%20-%20Bluefors%20T%20control.html">QCoDeS Example with the Lakeshore Model 372 to Control the Temperature of the Bluefors Fridge</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Minicircuits%20Switch%20boxes%20%28USB-XSPDT%29.html">QCoDeS Example with Minicircuits Switch Boxes Controlled via USB</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Oxford%20Mercury%20iPS.html">QCoDeS Example with Mercury iPS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Oxford%20Triton.html">QCoDeS Example with Oxford Triton</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20QDev_QDac.html">QCoDeS Example with QDac_channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rigol%20DP832.html">QCoDeS Example with Rigol DP832 Power Supply</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rigol%20DS1074Z.html">QCoDeS Example with the Rigol DS 1074 Z oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20RTO%201000%20series%20Oscilloscope.html">QCoDeS Example with Rohde Schwarz RTO 1000 Series Oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20SGS100A.html">QCoDeS Example with Rohde Schwarz SGS100A RF source</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20ZNB.html">QCoDeS Example with Rohde Schwarz ZNB20/8</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stahl.html">QCoDeS Example with the Stahl Bias Sources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stanford%20SR830.html">QCoDeS Example with Stanford SR830</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stanford%20SR86x%20with%20buffered%20readout.html">QCoDeS Example with Standford Research SR86x Lock-in Amplifier with Buffered Readout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Tektronix%20AWG5014C.html">QCoDeS Example with Tektronix AWG5014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Tektronix%20AWG70002A.html">QCoDeS Example with Tektronix AWG70002A</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Tektronix%20TPS2012.html">QCoDeS Example with Tektronix TPS2012</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Yokogawa%20GS2xx.html">QCoDeS Example with Yokogawa GS200/GS210</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20keithley%202450.html">QCoDeS Example with Tektronix Keithley 2450 Source Meter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%2Bbroadbean%20example%20with%20Tektronix%20AWG5208.html">QCoDeS+Broadbean Example with Tektronix AWG5208</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes-example-with-Signal-Hound-USB-SA124B.html">QCoDeS Example with Signal Hound USB-SA124B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes-example-with-Signal-Hound-USB-SA124B-ParameterWithSetpoints.html">QCoDeS Example with Signal Hound USB-SA124B ParameterWithSetpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../writing_drivers/index.html">Writing Drivers</a><input aria-label="Toggle navigation of Writing Drivers" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../writing_drivers/A-ParameterWithSetpoints-Example-with-Dual-Setpoints.html">A ParameterWithSetpoints Example with Dual Setpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../writing_drivers/Creating-Instrument-Drivers.html">Creating QCoDeS instrument drivers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../writing_drivers/Creating-Simulated-PyVISA-Instruments.html">Creating Simulated PyVISA Instruments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../writing_drivers/Instruments.html">Instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../writing_drivers/abstract_instruments.html">Abstract Instruments and parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../writing_drivers/abstract_instruments.html#Working-subclass">Working subclass</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../logging/index.html">Logging</a><input aria-label="Toggle navigation of Logging" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../logging/logfile_parsing.html">Logfile parsing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../logging/logging_example.html">Logging</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../community/index.html">Community Guide</a><input aria-label="Toggle navigation of Community Guide" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../community/install.html">Source Code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../community/contributing.html">Contributing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../community/related_projects.html">Related Projects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../community/objects.html">Object Hierarchy</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../dataset/index.html">DataSet</a><input aria-label="Toggle navigation of DataSet" class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../dataset/introduction.html">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dataset/spec.html">DataSet Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dataset/dataset_design.html">Dataset Design</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dataset/interdependentparams.html">Interdependent Parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../api/index.html">QCoDes API documentation</a><input aria-label="Toggle navigation of QCoDes API documentation" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../api/calibrations/index.html">qcodes.calibrations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/configuration/index.html">qcodes.configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/dataset/index.html">qcodes.dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/extensions/index.html">qcodes.extensions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/instrument/index.html">qcodes.instrument</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/interactive_widget.html">qcodes.interactive_widget</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/logger/index.html">qcodes.logger</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/math_utils/index.html">qcodes.math_utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/metadatable/index.html">qcodes.metadatable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/monitor/index.html">qcodes.monitor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/parameters/index.html">qcodes.parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/plotting/index.html">qcodes.plotting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/station.html">qcodes.station</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/utils/index.html">qcodes.utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/validators/index.html">qcodes.validators</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../drivers_api/index.html">Instrument Drivers</a><input aria-label="Toggle navigation of Instrument Drivers" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Agilent.html">Agilent Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/AimTTi.html">AimTTi Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/AlazarTech.html">Alazar Tech Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/American_magnetics.html">American Magnetics Inc Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Basel.html">Basel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/CryoMagnetics.html">Cryomagnetics Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Galil.html">Galil Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/HP.html">Hewlett Packard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Harvard.html">Harvard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Ithaco.html">Ithaco Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Keithley.html">Keithley Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Keysight.html">Keysight Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Lakeshore.html">Lakeshore Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Minicircuits.html">MiniCircuits Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Oxford.html">Oxford Instruments Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/QDev.html">QDev Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/QuantumDesign.html">Quantum Design Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Rigol.html">Rigol Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/RohdeSchwarz.html">Rohde &amp; Schwarz Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/SRS.html">Stanford Research Systems Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/SignalHound.html">Signal Hound Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Stahl.html">Stahl Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Tektronix.html">Tektronix Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Weinschel.html">Weinschel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Yokogawa.html">Yokogawa Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../drivers_api/Zhinst.html">Zurich Instruments Drivers</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../changes/index.html">Changelogs</a><input aria-label="Toggle navigation of Changelogs" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/unreleased.html">Unreleased</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.54.4.html">0.54.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.54.3.html">0.54.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.54.1.html">0.54.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.54.0.html">0.54.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.53.0.html">0.53.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.52.0.html">0.52.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.51.0.html">0.51.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.50.1.html">0.50.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.50.0.html">0.50.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.49.0.html">0.49.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.48.0.html">0.48.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.47.0.html">0.47.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.46.0.html">0.46.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.45.0.html">0.45.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.44.1.html">0.44.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.44.0.html">0.44.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.43.0.html">0.43.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.42.1.html">0.42.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.42.0.html">0.42.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.41.1.html">0.41.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.41.0.html">0.41.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.40.0.html">0.40.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.39.1.html">0.39.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.39.0.html">0.39.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.38.1.html">0.38.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.38.0.html">0.38.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.37.0.html">0.37.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.36.1.html">0.36.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.36.0.html">0.36.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.35.2.html">0.35.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.35.1.html">0.35.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.35.0.html">0.35.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.35.0b1.html">0.35.0b1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.34.1.html">0.34.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.34.0.html">0.34.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.33.0.html">0.33.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.32.0.html">0.32.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.31.0.html">0.31.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.30.1.html">0.30.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.30.0.html">0.30.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.29.1.html">0.29.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.29.0.html">0.29.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.28.0.html">0.28.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.27.0.html">0.27.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.26.0.html">0.26.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.25.0.html">0.25.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.24.0.html">0.24.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.23.0.html">0.23.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.22.0.html">0.22.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.21.0.html">0.21.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.20.1.html">0.20.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.20.0.html">0.20.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.19.2.html">0.19.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.19.1.html">0.19.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.19.0.html">0.19.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.18.0.html">0.18.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.17.0.html">0.17.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.16.0.html">0.16.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.15.0.html">0.15.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.15.0a1.html">0.15.0a1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.14.0.html">0.14.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.13.0.html">0.13.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.12.1.html">0.12.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.12.0.html">0.12.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.11.0.html">0.11.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.10.0.html">0.10.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.9.0.html">0.9.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.8.1.html">0.8.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.8.0.html">0.8.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.7.0.html">0.7.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.6.0.html">0.6.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.5.2.html">0.5.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.5.1.html">0.5.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.5.0.html">0.5.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.4.0.html">0.4.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.3.0.html">0.3.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.2.1.html">0.2.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.2.0.html">0.2.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.11.html">0.1.11</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.10.html">0.1.10</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.9.html">0.1.9</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.7.html">0.1.7</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.6.html">0.1.6</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.5.html">0.1.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.4.html">0.1.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.3.html">0.1.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.2.html">0.1.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../changes/0.1.0.html">0.1.0</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../help.html">Get Help</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../../_sources/examples/driver_examples/Qcodes example with DynaCool PPMS.ipynb.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <div class="admonition note">
+  <p>This page was generated from
+    <a class="reference external"
+    href="https://github.com/qcodes/qcodes/blob/main/docs/examples/driver_examples/Qcodes example with DynaCool PPMS.ipynb">docs/examples/driver_examples/Qcodes example with DynaCool PPMS.ipynb</a>.
+    Interactive online version:
+    <a href="https://mybinder.org/v2/gh/qcodes/qcodes/main?filepath=docs/examples/driver_examples/Qcodes example with DynaCool PPMS.ipynb"><img
+alt="Binder badge"
+    src="https://mybinder.org/badge_logo.svg"
+    style="vertical-align:text-bottom"></a>.
+  </p>
+  <script>
+    if (document.location.host) {
+      var p = document.currentScript.previousSibling.previousSibling;
+      var a = document.createElement('a');
+      a.innerHTML = 'View in <em>nbviewer</em>';
+      a.href = `https://nbviewer.jupyter.org/url${
+        (window.location.protocol == 'https:' ? 's/' : '/') +
+        window.location.host +
+        window.location.pathname.slice(0, -4) }ipynb`;
+      a.classList.add('reference');
+      a.classList.add('external');
+      p.appendChild(a);
+      p.appendChild(document.createTextNode('.'));
+    }
+  </script>
+</div><section id="QCoDeS-Example-with-DynaCool-PPMS">
+<h1>QCoDeS Example with DynaCool PPMS<a class="headerlink" href="#QCoDeS-Example-with-DynaCool-PPMS" title="Link to this heading">¶</a></h1>
+<p>This notebook explains how to control the DynaCool PPMS from QCoDeS.</p>
+<p>For this setup to work, the proprietary <code class="docutils literal notranslate"><span class="pre">PPMS</span> <span class="pre">Dynacool</span></code> application (or, alternatively <code class="docutils literal notranslate"><span class="pre">Simulate</span> <span class="pre">PPMS</span> <span class="pre">Dynacool</span></code>) must be running on some PC. On that same PC, the <code class="docutils literal notranslate"><span class="pre">server.py</span></code> script (found in <code class="docutils literal notranslate"><span class="pre">qcodes/instrument_drivers/QuantumDesign/DynaCoolPPMS/private</span></code>) must be running. The script can be run from the command line with no arguments and will run under python 3.6+.</p>
+<p>The architecture is as follows:</p>
+<p>The QCoDeS driver sends strings via VISA to the server who passes those same strings on to the <code class="docutils literal notranslate"><span class="pre">CommandHandler</span></code> (found in <code class="docutils literal notranslate"><span class="pre">qcodes/instrument_drivers/QuantumDesign/DynaCoolPPMS/commandhandler</span></code>). The <code class="docutils literal notranslate"><span class="pre">CommandHandler</span></code> makes the calls into the proprietary API. The QCoDeS driver can thus be called on any machine that can communicate with the machine hosting the server.</p>
+<p>Apart from that, the driver is really simple. For this notebook, we used the <code class="docutils literal notranslate"><span class="pre">Simulate</span> <span class="pre">PPMS</span> <span class="pre">Dynacool</span></code> application running on the same machine as QCoDeS.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">matplotlib</span> notebook
+<span class="kn">from</span><span class="w"> </span><span class="nn">qcodes.instrument_drivers.QuantumDesign</span><span class="w"> </span><span class="kn">import</span> <span class="n">DynaCool</span>
+</pre></div>
+</div>
+</div>
+<p>To instantiate the driver, simply provide the address and port in the standard VISA format. The connect message is not too pretty, but there does not seem to be a way to query serial and firmware versions.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dynacool</span> <span class="o">=</span> <span class="n">DynaCool</span><span class="p">(</span><span class="s2">&quot;dynacool&quot;</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="s2">&quot;TCPIP0::127.0.0.1::5000::SOCKET&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Connected to:  QuantumDesign dynacool (serial:N/A, firmware:N/A) in 0.13s
+</pre></div></div>
+</div>
+<p>To get an overview over all available parameters, use <code class="docutils literal notranslate"><span class="pre">print_readable_snapshot</span></code>.</p>
+<p>A value of “Not available” means (for this driver) that the parameter has been deprecated.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dynacool</span><span class="o">.</span><span class="n">print_readable_snapshot</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+dynacool:
+        parameter           value
+--------------------------------------------------------------------------------
+IDN                  :  {&#39;vendor&#39;: &#39; QuantumDesign&#39;, &#39;model&#39;: &#39;dynacool&#39;, &#39;ser...
+chamber_state        :  sealed
+chamber_temperature  :  298.7 (K)
+field                :  Not available (T)
+field_approach       :  linear
+field_measured       :  1 (T)
+field_ramp           :  None (T)
+field_rate           :  0 (T/s)
+field_setpoint       :  Not available (T)
+field_target         :  1 (T)
+magnet_state         :  holding
+temperature          :  298.7 (K)
+temperature_rate     :  0 (K/s)
+temperature_setpoint :  298.7 (K)
+temperature_settling :  fast settle
+temperature_state    :  near
+timeout              :  5 (s)
+</pre></div></div>
+</div>
+<section id="Temperature-Control">
+<h2>Temperature Control<a class="headerlink" href="#Temperature-Control" title="Link to this heading">¶</a></h2>
+<p>As soon as ANY of the temperature rate, the temperature setpoint, or the temperature settling mode parameters has been set, the system will start moving to the given temperature setpoint at the given rate using the given settling mode.</p>
+<p>The system can continuously be queried for its temperature.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">time</span><span class="w"> </span><span class="kn">import</span> <span class="n">sleep</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="c1"># example 1</span>
+
+<span class="n">dynacool</span><span class="o">.</span><span class="n">temperature_rate</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+<span class="n">dynacool</span><span class="o">.</span><span class="n">temperature_setpoint</span><span class="p">(</span><span class="n">dynacool</span><span class="o">.</span><span class="n">temperature</span><span class="p">()</span> <span class="o">-</span> <span class="mf">1.3</span><span class="p">)</span>
+
+<span class="n">temps</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">while</span> <span class="n">dynacool</span><span class="o">.</span><span class="n">temperature_state</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;tracking&quot;</span><span class="p">:</span>
+    <span class="n">temp</span> <span class="o">=</span> <span class="n">dynacool</span><span class="o">.</span><span class="n">temperature</span><span class="p">()</span>
+    <span class="n">temps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp</span><span class="p">)</span>
+    <span class="n">sleep</span><span class="p">(</span><span class="mf">0.75</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Temperature is now </span><span class="si">{</span><span class="n">temp</span><span class="si">}</span><span class="s2"> K&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Temperature is now 298.70001220703125 K
+Temperature is now 298.6000061035156 K
+Temperature is now 298.5 K
+Temperature is now 298.5 K
+Temperature is now 298.3999938964844 K
+Temperature is now 298.29998779296875 K
+Temperature is now 298.1999816894531 K
+Temperature is now 298.1999816894531 K
+Temperature is now 298.0999755859375 K
+Temperature is now 297.9999694824219 K
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">timeax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">temps</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">temps</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">timeax</span><span class="p">,</span> <span class="n">temps</span><span class="p">,</span> <span class="s2">&quot;-o&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Time (s)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Temperature (K)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="output_javascript"></div>
+<script type="text/javascript">
+var element = document.currentScript.previousSibling.previousSibling;
+/* Put everything inside the global mpl namespace */
+window.mpl = {};
+
+
+mpl.get_websocket_type = function() {
+    if (typeof(WebSocket) !== 'undefined') {
+        return WebSocket;
+    } else if (typeof(MozWebSocket) !== 'undefined') {
+        return MozWebSocket;
+    } else {
+        alert('Your browser does not have WebSocket support.' +
+              'Please try Chrome, Safari or Firefox ≥ 6. ' +
+              'Firefox 4 and 5 are also supported but you ' +
+              'have to enable WebSockets in about:config.');
+    };
+}
+
+mpl.figure = function(figure_id, websocket, ondownload, parent_element) {
+    this.id = figure_id;
+
+    this.ws = websocket;
+
+    this.supports_binary = (this.ws.binaryType != undefined);
+
+    if (!this.supports_binary) {
+        var warnings = document.getElementById("mpl-warnings");
+        if (warnings) {
+            warnings.style.display = 'block';
+            warnings.textContent = (
+                "This browser does not support binary websocket messages. " +
+                    "Performance may be slow.");
+        }
+    }
+
+    this.imageObj = new Image();
+
+    this.context = undefined;
+    this.message = undefined;
+    this.canvas = undefined;
+    this.rubberband_canvas = undefined;
+    this.rubberband_context = undefined;
+    this.format_dropdown = undefined;
+
+    this.image_mode = 'full';
+
+    this.root = $('<div/>');
+    this._root_extra_style(this.root)
+    this.root.attr('style', 'display: inline-block');
+
+    $(parent_element).append(this.root);
+
+    this._init_header(this);
+    this._init_canvas(this);
+    this._init_toolbar(this);
+
+    var fig = this;
+
+    this.waiting = false;
+
+    this.ws.onopen =  function () {
+            fig.send_message("supports_binary", {value: fig.supports_binary});
+            fig.send_message("send_image_mode", {});
+            if (mpl.ratio != 1) {
+                fig.send_message("set_dpi_ratio", {'dpi_ratio': mpl.ratio});
+            }
+            fig.send_message("refresh", {});
+        }
+
+    this.imageObj.onload = function() {
+            if (fig.image_mode == 'full') {
+                // Full images could contain transparency (where diff images
+                // almost always do), so we need to clear the canvas so that
+                // there is no ghosting.
+                fig.context.clearRect(0, 0, fig.canvas.width, fig.canvas.height);
+            }
+            fig.context.drawImage(fig.imageObj, 0, 0);
+        };
+
+    this.imageObj.onunload = function() {
+        fig.ws.close();
+    }
+
+    this.ws.onmessage = this._make_on_message_function(this);
+
+    this.ondownload = ondownload;
+}
+
+mpl.figure.prototype._init_header = function() {
+    var titlebar = $(
+        '<div class="ui-dialog-titlebar ui-widget-header ui-corner-all ' +
+        'ui-helper-clearfix"/>');
+    var titletext = $(
+        '<div class="ui-dialog-title" style="width: 100%; ' +
+        'text-align: center; padding: 3px;"/>');
+    titlebar.append(titletext)
+    this.root.append(titlebar);
+    this.header = titletext[0];
+}
+
+
+
+mpl.figure.prototype._canvas_extra_style = function(canvas_div) {
+
+}
+
+
+mpl.figure.prototype._root_extra_style = function(canvas_div) {
+
+}
+
+mpl.figure.prototype._init_canvas = function() {
+    var fig = this;
+
+    var canvas_div = $('<div/>');
+
+    canvas_div.attr('style', 'position: relative; clear: both; outline: 0');
+
+    function canvas_keyboard_event(event) {
+        return fig.key_event(event, event['data']);
+    }
+
+    canvas_div.keydown('key_press', canvas_keyboard_event);
+    canvas_div.keyup('key_release', canvas_keyboard_event);
+    this.canvas_div = canvas_div
+    this._canvas_extra_style(canvas_div)
+    this.root.append(canvas_div);
+
+    var canvas = $('<canvas/>');
+    canvas.addClass('mpl-canvas');
+    canvas.attr('style', "left: 0; top: 0; z-index: 0; outline: 0")
+
+    this.canvas = canvas[0];
+    this.context = canvas[0].getContext("2d");
+
+    var backingStore = this.context.backingStorePixelRatio ||
+    this.context.webkitBackingStorePixelRatio ||
+    this.context.mozBackingStorePixelRatio ||
+    this.context.msBackingStorePixelRatio ||
+    this.context.oBackingStorePixelRatio ||
+    this.context.backingStorePixelRatio || 1;
+
+    mpl.ratio = (window.devicePixelRatio || 1) / backingStore;
+
+    var rubberband = $('<canvas/>');
+    rubberband.attr('style', "position: absolute; left: 0; top: 0; z-index: 1;")
+
+    var pass_mouse_events = true;
+
+    canvas_div.resizable({
+        start: function(event, ui) {
+            pass_mouse_events = false;
+        },
+        resize: function(event, ui) {
+            fig.request_resize(ui.size.width, ui.size.height);
+        },
+        stop: function(event, ui) {
+            pass_mouse_events = true;
+            fig.request_resize(ui.size.width, ui.size.height);
+        },
+    });
+
+    function mouse_event_fn(event) {
+        if (pass_mouse_events)
+            return fig.mouse_event(event, event['data']);
+    }
+
+    rubberband.mousedown('button_press', mouse_event_fn);
+    rubberband.mouseup('button_release', mouse_event_fn);
+    // Throttle sequential mouse events to 1 every 20ms.
+    rubberband.mousemove('motion_notify', mouse_event_fn);
+
+    rubberband.mouseenter('figure_enter', mouse_event_fn);
+    rubberband.mouseleave('figure_leave', mouse_event_fn);
+
+    canvas_div.on("wheel", function (event) {
+        event = event.originalEvent;
+        event['data'] = 'scroll'
+        if (event.deltaY < 0) {
+            event.step = 1;
+        } else {
+            event.step = -1;
+        }
+        mouse_event_fn(event);
+    });
+
+    canvas_div.append(canvas);
+    canvas_div.append(rubberband);
+
+    this.rubberband = rubberband;
+    this.rubberband_canvas = rubberband[0];
+    this.rubberband_context = rubberband[0].getContext("2d");
+    this.rubberband_context.strokeStyle = "#000000";
+
+    this._resize_canvas = function(width, height) {
+        // Keep the size of the canvas, canvas container, and rubber band
+        // canvas in synch.
+        canvas_div.css('width', width)
+        canvas_div.css('height', height)
+
+        canvas.attr('width', width * mpl.ratio);
+        canvas.attr('height', height * mpl.ratio);
+        canvas.attr('style', 'width: ' + width + 'px; height: ' + height + 'px;');
+
+        rubberband.attr('width', width);
+        rubberband.attr('height', height);
+    }
+
+    // Set the figure to an initial 600x600px, this will subsequently be updated
+    // upon first draw.
+    this._resize_canvas(600, 600);
+
+    // Disable right mouse context menu.
+    $(this.rubberband_canvas).bind("contextmenu",function(e){
+        return false;
+    });
+
+    function set_focus () {
+        canvas.focus();
+        canvas_div.focus();
+    }
+
+    window.setTimeout(set_focus, 100);
+}
+
+mpl.figure.prototype._init_toolbar = function() {
+    var fig = this;
+
+    var nav_element = $('<div/>')
+    nav_element.attr('style', 'width: 100%');
+    this.root.append(nav_element);
+
+    // Define a callback function for later on.
+    function toolbar_event(event) {
+        return fig.toolbar_button_onclick(event['data']);
+    }
+    function toolbar_mouse_event(event) {
+        return fig.toolbar_button_onmouseover(event['data']);
+    }
+
+    for(var toolbar_ind in mpl.toolbar_items) {
+        var name = mpl.toolbar_items[toolbar_ind][0];
+        var tooltip = mpl.toolbar_items[toolbar_ind][1];
+        var image = mpl.toolbar_items[toolbar_ind][2];
+        var method_name = mpl.toolbar_items[toolbar_ind][3];
+
+        if (!name) {
+            // put a spacer in here.
+            continue;
+        }
+        var button = $('<button/>');
+        button.addClass('ui-button ui-widget ui-state-default ui-corner-all ' +
+                        'ui-button-icon-only');
+        button.attr('role', 'button');
+        button.attr('aria-disabled', 'false');
+        button.click(method_name, toolbar_event);
+        button.mouseover(tooltip, toolbar_mouse_event);
+
+        var icon_img = $('<span/>');
+        icon_img.addClass('ui-button-icon-primary ui-icon');
+        icon_img.addClass(image);
+        icon_img.addClass('ui-corner-all');
+
+        var tooltip_span = $('<span/>');
+        tooltip_span.addClass('ui-button-text');
+        tooltip_span.html(tooltip);
+
+        button.append(icon_img);
+        button.append(tooltip_span);
+
+        nav_element.append(button);
+    }
+
+    var fmt_picker_span = $('<span/>');
+
+    var fmt_picker = $('<select/>');
+    fmt_picker.addClass('mpl-toolbar-option ui-widget ui-widget-content');
+    fmt_picker_span.append(fmt_picker);
+    nav_element.append(fmt_picker_span);
+    this.format_dropdown = fmt_picker[0];
+
+    for (var ind in mpl.extensions) {
+        var fmt = mpl.extensions[ind];
+        var option = $(
+            '<option/>', {selected: fmt === mpl.default_extension}).html(fmt);
+        fmt_picker.append(option)
+    }
+
+    // Add hover states to the ui-buttons
+    $( ".ui-button" ).hover(
+        function() { $(this).addClass("ui-state-hover");},
+        function() { $(this).removeClass("ui-state-hover");}
+    );
+
+    var status_bar = $('<span class="mpl-message"/>');
+    nav_element.append(status_bar);
+    this.message = status_bar[0];
+}
+
+mpl.figure.prototype.request_resize = function(x_pixels, y_pixels) {
+    // Request matplotlib to resize the figure. Matplotlib will then trigger a resize in the client,
+    // which will in turn request a refresh of the image.
+    this.send_message('resize', {'width': x_pixels, 'height': y_pixels});
+}
+
+mpl.figure.prototype.send_message = function(type, properties) {
+    properties['type'] = type;
+    properties['figure_id'] = this.id;
+    this.ws.send(JSON.stringify(properties));
+}
+
+mpl.figure.prototype.send_draw_message = function() {
+    if (!this.waiting) {
+        this.waiting = true;
+        this.ws.send(JSON.stringify({type: "draw", figure_id: this.id}));
+    }
+}
+
+
+mpl.figure.prototype.handle_save = function(fig, msg) {
+    var format_dropdown = fig.format_dropdown;
+    var format = format_dropdown.options[format_dropdown.selectedIndex].value;
+    fig.ondownload(fig, format);
+}
+
+
+mpl.figure.prototype.handle_resize = function(fig, msg) {
+    var size = msg['size'];
+    if (size[0] != fig.canvas.width || size[1] != fig.canvas.height) {
+        fig._resize_canvas(size[0], size[1]);
+        fig.send_message("refresh", {});
+    };
+}
+
+mpl.figure.prototype.handle_rubberband = function(fig, msg) {
+    var x0 = msg['x0'] / mpl.ratio;
+    var y0 = (fig.canvas.height - msg['y0']) / mpl.ratio;
+    var x1 = msg['x1'] / mpl.ratio;
+    var y1 = (fig.canvas.height - msg['y1']) / mpl.ratio;
+    x0 = Math.floor(x0) + 0.5;
+    y0 = Math.floor(y0) + 0.5;
+    x1 = Math.floor(x1) + 0.5;
+    y1 = Math.floor(y1) + 0.5;
+    var min_x = Math.min(x0, x1);
+    var min_y = Math.min(y0, y1);
+    var width = Math.abs(x1 - x0);
+    var height = Math.abs(y1 - y0);
+
+    fig.rubberband_context.clearRect(
+        0, 0, fig.canvas.width, fig.canvas.height);
+
+    fig.rubberband_context.strokeRect(min_x, min_y, width, height);
+}
+
+mpl.figure.prototype.handle_figure_label = function(fig, msg) {
+    // Updates the figure title.
+    fig.header.textContent = msg['label'];
+}
+
+mpl.figure.prototype.handle_cursor = function(fig, msg) {
+    var cursor = msg['cursor'];
+    switch(cursor)
+    {
+    case 0:
+        cursor = 'pointer';
+        break;
+    case 1:
+        cursor = 'default';
+        break;
+    case 2:
+        cursor = 'crosshair';
+        break;
+    case 3:
+        cursor = 'move';
+        break;
+    }
+    fig.rubberband_canvas.style.cursor = cursor;
+}
+
+mpl.figure.prototype.handle_message = function(fig, msg) {
+    fig.message.textContent = msg['message'];
+}
+
+mpl.figure.prototype.handle_draw = function(fig, msg) {
+    // Request the server to send over a new figure.
+    fig.send_draw_message();
+}
+
+mpl.figure.prototype.handle_image_mode = function(fig, msg) {
+    fig.image_mode = msg['mode'];
+}
+
+mpl.figure.prototype.updated_canvas_event = function() {
+    // Called whenever the canvas gets updated.
+    this.send_message("ack", {});
+}
+
+// A function to construct a web socket function for onmessage handling.
+// Called in the figure constructor.
+mpl.figure.prototype._make_on_message_function = function(fig) {
+    return function socket_on_message(evt) {
+        if (evt.data instanceof Blob) {
+            /* FIXME: We get "Resource interpreted as Image but
+             * transferred with MIME type text/plain:" errors on
+             * Chrome.  But how to set the MIME type?  It doesn't seem
+             * to be part of the websocket stream */
+            evt.data.type = "image/png";
+
+            /* Free the memory for the previous frames */
+            if (fig.imageObj.src) {
+                (window.URL || window.webkitURL).revokeObjectURL(
+                    fig.imageObj.src);
+            }
+
+            fig.imageObj.src = (window.URL || window.webkitURL).createObjectURL(
+                evt.data);
+            fig.updated_canvas_event();
+            fig.waiting = false;
+            return;
+        }
+        else if (typeof evt.data === 'string' && evt.data.slice(0, 21) == "data:image/png;base64") {
+            fig.imageObj.src = evt.data;
+            fig.updated_canvas_event();
+            fig.waiting = false;
+            return;
+        }
+
+        var msg = JSON.parse(evt.data);
+        var msg_type = msg['type'];
+
+        // Call the  "handle_{type}" callback, which takes
+        // the figure and JSON message as its only arguments.
+        try {
+            var callback = fig["handle_" + msg_type];
+        } catch (e) {
+            console.log("No handler for the '" + msg_type + "' message type: ", msg);
+            return;
+        }
+
+        if (callback) {
+            try {
+                // console.log("Handling '" + msg_type + "' message: ", msg);
+                callback(fig, msg);
+            } catch (e) {
+                console.log("Exception inside the 'handler_" + msg_type + "' callback:", e, e.stack, msg);
+            }
+        }
+    };
+}
+
+// from http://stackoverflow.com/questions/1114465/getting-mouse-location-in-canvas
+mpl.findpos = function(e) {
+    //this section is from http://www.quirksmode.org/js/events_properties.html
+    var targ;
+    if (!e)
+        e = window.event;
+    if (e.target)
+        targ = e.target;
+    else if (e.srcElement)
+        targ = e.srcElement;
+    if (targ.nodeType == 3) // defeat Safari bug
+        targ = targ.parentNode;
+
+    // jQuery normalizes the pageX and pageY
+    // pageX,Y are the mouse positions relative to the document
+    // offset() returns the position of the element relative to the document
+    var x = e.pageX - $(targ).offset().left;
+    var y = e.pageY - $(targ).offset().top;
+
+    return {"x": x, "y": y};
+};
+
+/*
+ * return a copy of an object with only non-object keys
+ * we need this to avoid circular references
+ * http://stackoverflow.com/a/24161582/3208463
+ */
+function simpleKeys (original) {
+  return Object.keys(original).reduce(function (obj, key) {
+    if (typeof original[key] !== 'object')
+        obj[key] = original[key]
+    return obj;
+  }, {});
+}
+
+mpl.figure.prototype.mouse_event = function(event, name) {
+    var canvas_pos = mpl.findpos(event)
+
+    if (name === 'button_press')
+    {
+        this.canvas.focus();
+        this.canvas_div.focus();
+    }
+
+    var x = canvas_pos.x * mpl.ratio;
+    var y = canvas_pos.y * mpl.ratio;
+
+    this.send_message(name, {x: x, y: y, button: event.button,
+                             step: event.step,
+                             guiEvent: simpleKeys(event)});
+
+    /* This prevents the web browser from automatically changing to
+     * the text insertion cursor when the button is pressed.  We want
+     * to control all of the cursor setting manually through the
+     * 'cursor' event from matplotlib */
+    event.preventDefault();
+    return false;
+}
+
+mpl.figure.prototype._key_event_extra = function(event, name) {
+    // Handle any extra behaviour associated with a key event
+}
+
+mpl.figure.prototype.key_event = function(event, name) {
+
+    // Prevent repeat events
+    if (name == 'key_press')
+    {
+        if (event.which === this._key)
+            return;
+        else
+            this._key = event.which;
+    }
+    if (name == 'key_release')
+        this._key = null;
+
+    var value = '';
+    if (event.ctrlKey && event.which != 17)
+        value += "ctrl+";
+    if (event.altKey && event.which != 18)
+        value += "alt+";
+    if (event.shiftKey && event.which != 16)
+        value += "shift+";
+
+    value += 'k';
+    value += event.which.toString();
+
+    this._key_event_extra(event, name);
+
+    this.send_message(name, {key: value,
+                             guiEvent: simpleKeys(event)});
+    return false;
+}
+
+mpl.figure.prototype.toolbar_button_onclick = function(name) {
+    if (name == 'download') {
+        this.handle_save(this, null);
+    } else {
+        this.send_message("toolbar_button", {name: name});
+    }
+};
+
+mpl.figure.prototype.toolbar_button_onmouseover = function(tooltip) {
+    this.message.textContent = tooltip;
+};
+mpl.toolbar_items = [["Home", "Reset original view", "fa fa-home icon-home", "home"], ["Back", "Back to previous view", "fa fa-arrow-left icon-arrow-left", "back"], ["Forward", "Forward to next view", "fa fa-arrow-right icon-arrow-right", "forward"], ["", "", "", ""], ["Pan", "Pan axes with left mouse, zoom with right", "fa fa-arrows icon-move", "pan"], ["Zoom", "Zoom to rectangle", "fa fa-square-o icon-check-empty", "zoom"], ["", "", "", ""], ["Download", "Download plot", "fa fa-floppy-o icon-save", "download"]];
+
+mpl.extensions = ["eps", "pdf", "png", "ps", "raw", "svg"];
+
+mpl.default_extension = "png";var comm_websocket_adapter = function(comm) {
+    // Create a "websocket"-like object which calls the given IPython comm
+    // object with the appropriate methods. Currently this is a non binary
+    // socket, so there is still some room for performance tuning.
+    var ws = {};
+
+    ws.close = function() {
+        comm.close()
+    };
+    ws.send = function(m) {
+        //console.log('sending', m);
+        comm.send(m);
+    };
+    // Register the callback with on_msg.
+    comm.on_msg(function(msg) {
+        //console.log('receiving', msg['content']['data'], msg);
+        // Pass the mpl event to the overridden (by mpl) onmessage function.
+        ws.onmessage(msg['content']['data'])
+    });
+    return ws;
+}
+
+mpl.mpl_figure_comm = function(comm, msg) {
+    // This is the function which gets called when the mpl process
+    // starts-up an IPython Comm through the "matplotlib" channel.
+
+    var id = msg.content.data.id;
+    // Get hold of the div created by the display call when the Comm
+    // socket was opened in Python.
+    var element = $("#" + id);
+    var ws_proxy = comm_websocket_adapter(comm)
+
+    function ondownload(figure, format) {
+        window.open(figure.imageObj.src);
+    }
+
+    var fig = new mpl.figure(id, ws_proxy,
+                           ondownload,
+                           element.get(0));
+
+    // Call onopen now - mpl needs it, as it is assuming we've passed it a real
+    // web socket which is closed, not our websocket->open comm proxy.
+    ws_proxy.onopen();
+
+    fig.parent_element = element.get(0);
+    fig.cell_info = mpl.find_output_cell("<div id='" + id + "'></div>");
+    if (!fig.cell_info) {
+        console.error("Failed to find cell for figure", id, fig);
+        return;
+    }
+
+    var output_index = fig.cell_info[2]
+    var cell = fig.cell_info[0];
+
+};
+
+mpl.figure.prototype.handle_close = function(fig, msg) {
+    var width = fig.canvas.width/mpl.ratio
+    fig.root.unbind('remove')
+
+    // Update the output cell to use the data from the current canvas.
+    fig.push_to_output();
+    var dataURL = fig.canvas.toDataURL();
+    // Re-enable the keyboard manager in IPython - without this line, in FF,
+    // the notebook keyboard shortcuts fail.
+    IPython.keyboard_manager.enable()
+    $(fig.parent_element).html('<img src="' + dataURL + '" width="' + width + '">');
+    fig.close_ws(fig, msg);
+}
+
+mpl.figure.prototype.close_ws = function(fig, msg){
+    fig.send_message('closing', msg);
+    // fig.ws.close()
+}
+
+mpl.figure.prototype.push_to_output = function(remove_interactive) {
+    // Turn the data on the canvas into data in the output cell.
+    var width = this.canvas.width/mpl.ratio
+    var dataURL = this.canvas.toDataURL();
+    this.cell_info[1]['text/html'] = '<img src="' + dataURL + '" width="' + width + '">';
+}
+
+mpl.figure.prototype.updated_canvas_event = function() {
+    // Tell IPython that the notebook contents must change.
+    IPython.notebook.set_dirty(true);
+    this.send_message("ack", {});
+    var fig = this;
+    // Wait a second, then push the new image to the DOM so
+    // that it is saved nicely (might be nice to debounce this).
+    setTimeout(function () { fig.push_to_output() }, 1000);
+}
+
+mpl.figure.prototype._init_toolbar = function() {
+    var fig = this;
+
+    var nav_element = $('<div/>')
+    nav_element.attr('style', 'width: 100%');
+    this.root.append(nav_element);
+
+    // Define a callback function for later on.
+    function toolbar_event(event) {
+        return fig.toolbar_button_onclick(event['data']);
+    }
+    function toolbar_mouse_event(event) {
+        return fig.toolbar_button_onmouseover(event['data']);
+    }
+
+    for(var toolbar_ind in mpl.toolbar_items){
+        var name = mpl.toolbar_items[toolbar_ind][0];
+        var tooltip = mpl.toolbar_items[toolbar_ind][1];
+        var image = mpl.toolbar_items[toolbar_ind][2];
+        var method_name = mpl.toolbar_items[toolbar_ind][3];
+
+        if (!name) { continue; };
+
+        var button = $('<button class="btn btn-default" href="#" title="' + name + '"><i class="fa ' + image + ' fa-lg"></i></button>');
+        button.click(method_name, toolbar_event);
+        button.mouseover(tooltip, toolbar_mouse_event);
+        nav_element.append(button);
+    }
+
+    // Add the status bar.
+    var status_bar = $('<span class="mpl-message" style="text-align:right; float: right;"/>');
+    nav_element.append(status_bar);
+    this.message = status_bar[0];
+
+    // Add the close button to the window.
+    var buttongrp = $('<div class="btn-group inline pull-right"></div>');
+    var button = $('<button class="btn btn-mini btn-primary" href="#" title="Stop Interaction"><i class="fa fa-power-off icon-remove icon-large"></i></button>');
+    button.click(function (evt) { fig.handle_close(fig, {}); } );
+    button.mouseover('Stop Interaction', toolbar_mouse_event);
+    buttongrp.append(button);
+    var titlebar = this.root.find($('.ui-dialog-titlebar'));
+    titlebar.prepend(buttongrp);
+}
+
+mpl.figure.prototype._root_extra_style = function(el){
+    var fig = this
+    el.on("remove", function(){
+    fig.close_ws(fig, {});
+    });
+}
+
+mpl.figure.prototype._canvas_extra_style = function(el){
+    // this is important to make the div 'focusable
+    el.attr('tabindex', 0)
+    // reach out to IPython and tell the keyboard manager to turn it's self
+    // off when our div gets focus
+
+    // location in version 3
+    if (IPython.notebook.keyboard_manager) {
+        IPython.notebook.keyboard_manager.register_events(el);
+    }
+    else {
+        // location in version 2
+        IPython.keyboard_manager.register_events(el);
+    }
+
+}
+
+mpl.figure.prototype._key_event_extra = function(event, name) {
+    var manager = IPython.notebook.keyboard_manager;
+    if (!manager)
+        manager = IPython.keyboard_manager;
+
+    // Check for shift+enter
+    if (event.shiftKey && event.which == 13) {
+        this.canvas_div.blur();
+        event.shiftKey = false;
+        // Send a "J" for go to next cell
+        event.which = 74;
+        event.keyCode = 74;
+        manager.command_mode();
+        manager.handle_keydown(event);
+    }
+}
+
+mpl.figure.prototype.handle_save = function(fig, msg) {
+    fig.ondownload(fig, null);
+}
+
+
+mpl.find_output_cell = function(html_output) {
+    // Return the cell and output element which can be found *uniquely* in the notebook.
+    // Note - this is a bit hacky, but it is done because the "notebook_saving.Notebook"
+    // IPython event is triggered only after the cells have been serialised, which for
+    // our purposes (turning an active figure into a static one), is too late.
+    var cells = IPython.notebook.get_cells();
+    var ncells = cells.length;
+    for (var i=0; i<ncells; i++) {
+        var cell = cells[i];
+        if (cell.cell_type === 'code'){
+            for (var j=0; j<cell.output_area.outputs.length; j++) {
+                var data = cell.output_area.outputs[j];
+                if (data.data) {
+                    // IPython >= 3 moved mimebundle to data attribute of output
+                    data = data.data;
+                }
+                if (data['text/html'] == html_output) {
+                    return [cell, data, j];
+                }
+            }
+        }
+    }
+}
+
+// Register the function which deals with the matplotlib target/channel.
+// The kernel may be null if the page has been refreshed.
+if (IPython.notebook.kernel != null) {
+    IPython.notebook.kernel.comm_manager.register_target('matplotlib', mpl.mpl_figure_comm);
+}
+
+</script></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<img src="data:image/png;base64,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" width="639.8333333333334"></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0, 0.5, &#39;Temperature (K)&#39;)
+</pre></div></div>
+</div>
+<p>Alternatively, you can use the <code class="docutils literal notranslate"><span class="pre">block_while_ramping_temperature</span></code> parameter to prevent users from taking any action until the setpoint is reached. This may be useful for measurements where you are sweeping temperature and want to ensure the temperature is stable before taking a measurement.</p>
+<p>The interval at which <code class="docutils literal notranslate"><span class="pre">temperature_setpoint</span></code> checks for temperature stability when <code class="docutils literal notranslate"><span class="pre">block_while_ramping_temperature</span></code> is True can be modified through the parameter <code class="docutils literal notranslate"><span class="pre">blocking_t_state_check_interval</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dynacool</span><span class="o">.</span><span class="n">blocking_t_state_check_interval</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">dynacool</span><span class="o">.</span><span class="n">block_while_ramping_temperature</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">dynacool</span><span class="o">.</span><span class="n">temperature_setpoint</span><span class="p">(</span><span class="n">dynacool</span><span class="o">.</span><span class="n">temperature</span><span class="p">()</span> <span class="o">+</span> <span class="mf">1.3</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Field-Control">
+<h2>Field Control<a class="headerlink" href="#Field-Control" title="Link to this heading">¶</a></h2>
+<p>The field has <strong>five</strong> related parameters:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">field_measured</span></code>: The (read-only) field strength right now.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">field_target</span></code>: The target field that the <code class="docutils literal notranslate"><span class="pre">ramp</span></code> method will ramp to when called. Setting this parameter does <strong>not</strong> trigger a ramp</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">field_rate</span></code>: The field ramp rate with initial value of <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">field_approach</span></code>: The approach that the system should use to ramp. By default it is set to <code class="docutils literal notranslate"><span class="pre">linear</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">field_ramp</span></code>: This is a convenience parameter that sets the target field and then triggers a blocking ramp.</p></li>
+</ul>
+<p>The idea is that the user first sets the <code class="docutils literal notranslate"><span class="pre">field_target</span></code> and then ramps the field to that target using the <code class="docutils literal notranslate"><span class="pre">ramp</span></code> method. The ramp method takes a <code class="docutils literal notranslate"><span class="pre">mode</span></code> argument that controls whether the ramp is blocking or non-blocking.</p>
+<p>Using the simulation software, the field change is instanteneous irrespective of rate. We nevertheless include two examples of ramping here.</p>
+<section id="A-blocking-ramp">
+<h3>A blocking ramp<a class="headerlink" href="#A-blocking-ramp" title="Link to this heading">¶</a></h3>
+<p>First, we set a field target:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">field_now</span> <span class="o">=</span> <span class="n">dynacool</span><span class="o">.</span><span class="n">field_measured</span><span class="p">()</span>
+<span class="n">target</span> <span class="o">=</span> <span class="n">field_now</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="n">dynacool</span><span class="o">.</span><span class="n">field_target</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Note that the field has not changed yet:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">assert</span> <span class="n">dynacool</span><span class="o">.</span><span class="n">field_measured</span><span class="p">()</span> <span class="o">==</span> <span class="n">field_now</span>
+</pre></div>
+</div>
+</div>
+<p>And now we ramp:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dynacool</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;blocking&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The ramping will take some finite time on a real instrument. The field value is now at the target field:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Field value: </span><span class="si">{</span><span class="n">dynacool</span><span class="o">.</span><span class="n">field_measured</span><span class="p">()</span><span class="si">}</span><span class="s2"> T&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Field target: </span><span class="si">{</span><span class="n">dynacool</span><span class="o">.</span><span class="n">field_target</span><span class="p">()</span><span class="si">}</span><span class="s2"> T&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Field value: 2.0 T
+Field target: 2.0 T
+</pre></div></div>
+</div>
+</section>
+<section id="A-non-blocking-ramp">
+<h3>A non-blocking ramp<a class="headerlink" href="#A-non-blocking-ramp" title="Link to this heading">¶</a></h3>
+<p>The non-blocking ramp is very similar to the the blocking ramp.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">field_now</span> <span class="o">=</span> <span class="n">dynacool</span><span class="o">.</span><span class="n">field_measured</span><span class="p">()</span>
+<span class="n">target</span> <span class="o">=</span> <span class="n">field_now</span> <span class="o">-</span> <span class="mf">0.5</span>
+<span class="n">dynacool</span><span class="o">.</span><span class="n">field_target</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+
+<span class="k">assert</span> <span class="n">dynacool</span><span class="o">.</span><span class="n">field_measured</span><span class="p">()</span> <span class="o">==</span> <span class="n">field_now</span>
+
+<span class="n">dynacool</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;non-blocking&quot;</span><span class="p">)</span>
+<span class="c1"># Here you can do stuff while the magnet ramps</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Field value: </span><span class="si">{</span><span class="n">dynacool</span><span class="o">.</span><span class="n">field_measured</span><span class="p">()</span><span class="si">}</span><span class="s2"> T&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Field target: </span><span class="si">{</span><span class="n">dynacool</span><span class="o">.</span><span class="n">field_target</span><span class="p">()</span><span class="si">}</span><span class="s2"> T&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Field value: 1.5 T
+Field target: 1.5 T
+</pre></div></div>
+</div>
+</section>
+<section id="Using-the-field_ramp-parameter">
+<h3>Using the <code class="docutils literal notranslate"><span class="pre">field_ramp</span></code> parameter<a class="headerlink" href="#Using-the-field_ramp-parameter" title="Link to this heading">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">field_ramp</span></code> parameter sets the target field and ramp when being set.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Now the field is </span><span class="si">{</span><span class="n">dynacool</span><span class="o">.</span><span class="n">field_measured</span><span class="p">()</span><span class="si">}</span><span class="s2"> T...&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;...and the field target is </span><span class="si">{</span><span class="n">dynacool</span><span class="o">.</span><span class="n">field_target</span><span class="p">()</span><span class="si">}</span><span class="s2"> T.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Now the field is 1.5 T...
+...and the field target is 1.5 T.
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dynacool</span><span class="o">.</span><span class="n">field_ramp</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Now the field is </span><span class="si">{</span><span class="n">dynacool</span><span class="o">.</span><span class="n">field_measured</span><span class="p">()</span><span class="si">}</span><span class="s2"> T...&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;...and the field target is </span><span class="si">{</span><span class="n">dynacool</span><span class="o">.</span><span class="n">field_target</span><span class="p">()</span><span class="si">}</span><span class="s2"> T.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Now the field is 1.0 T...
+...and the field target is 1 T.
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="Qcodes%20example%20with%20HP8753D.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">QCoDeS Example with HP8753D</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="Qcodes%20example%20with%20Cryomagnetics4G.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Cryomagnetics 4G QCoDeS Driver Example</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">QCoDeS Example with DynaCool PPMS</a><ul>
+<li><a class="reference internal" href="#Temperature-Control">Temperature Control</a></li>
+<li><a class="reference internal" href="#Field-Control">Field Control</a><ul>
+<li><a class="reference internal" href="#A-blocking-ramp">A blocking ramp</a></li>
+<li><a class="reference internal" href="#A-non-blocking-ramp">A non-blocking ramp</a></li>
+<li><a class="reference internal" href="#Using-the-field_ramp-parameter">Using the <code class="docutils literal notranslate"><span class="pre">field_ramp</span></code> parameter</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../../_static/documentation_options.js?v=14f3ca12"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    </body>
+</html>
