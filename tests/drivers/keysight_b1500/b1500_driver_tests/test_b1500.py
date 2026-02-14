@@ -98,7 +98,7 @@ def test_submodule_access_by_channel(b1500: KeysightB1500) -> None:
 
 def test_enable_multiple_channels(b1500: KeysightB1500) -> None:
     mock_write = MagicMock()
-    b1500.write = mock_write
+    b1500.write: MagicMock = mock_write
 
     b1500.enable_channels([1, 2, 3])
 
@@ -107,7 +107,7 @@ def test_enable_multiple_channels(b1500: KeysightB1500) -> None:
 
 def test_disable_multiple_channels(b1500: KeysightB1500) -> None:
     mock_write = MagicMock()
-    b1500.write = mock_write
+    b1500.write: MagicMock = mock_write
 
     b1500.disable_channels([1, 2, 3])
 
@@ -116,7 +116,7 @@ def test_disable_multiple_channels(b1500: KeysightB1500) -> None:
 
 def test_use_nplc_for_high_speed_adc(b1500: KeysightB1500) -> None:
     mock_write = MagicMock()
-    b1500.write = mock_write
+    b1500.write: MagicMock = mock_write
 
     b1500.use_nplc_for_high_speed_adc()
     mock_write.assert_called_once_with("AIT 0,2")
@@ -129,7 +129,7 @@ def test_use_nplc_for_high_speed_adc(b1500: KeysightB1500) -> None:
 
 def test_use_nplc_for_high_resolution_adc(b1500: KeysightB1500) -> None:
     mock_write = MagicMock()
-    b1500.write = mock_write
+    b1500.write: MagicMock = mock_write
 
     b1500.use_nplc_for_high_resolution_adc()
     mock_write.assert_called_once_with("AIT 1,2")
@@ -142,7 +142,7 @@ def test_use_nplc_for_high_resolution_adc(b1500: KeysightB1500) -> None:
 
 def test_autozero_enabled(b1500: KeysightB1500) -> None:
     mock_write = MagicMock()
-    b1500.write = mock_write
+    b1500.write: MagicMock = mock_write
 
     assert b1500.autozero_enabled() is False
 
@@ -159,7 +159,7 @@ def test_autozero_enabled(b1500: KeysightB1500) -> None:
 
 def test_use_manual_mode_for_high_speed_adc(b1500: KeysightB1500) -> None:
     mock_write = MagicMock()
-    b1500.write = mock_write
+    b1500.write: MagicMock = mock_write
 
     b1500.use_manual_mode_for_high_speed_adc()
     mock_write.assert_called_once_with("AIT 0,1")
@@ -177,7 +177,7 @@ def test_use_manual_mode_for_high_speed_adc(b1500: KeysightB1500) -> None:
 
 def test_self_calibration_successful(b1500: KeysightB1500) -> None:
     mock_ask = MagicMock()
-    b1500.ask = mock_ask
+    b1500.ask: MagicMock = mock_ask
 
     mock_ask.return_value = "0"
 
@@ -189,7 +189,7 @@ def test_self_calibration_successful(b1500: KeysightB1500) -> None:
 
 def test_self_calibration_failed(b1500: KeysightB1500) -> None:
     mock_ask = MagicMock()
-    b1500.ask = mock_ask
+    b1500.ask: MagicMock = mock_ask
 
     expected_response = CALResponse(1) + CALResponse(64)
     mock_ask.return_value = "65"
@@ -207,7 +207,7 @@ def test_error_message(b1500: KeysightB1500) -> None:
 
 def test_clear_timer_count(b1500: KeysightB1500) -> None:
     mock_write = MagicMock()
-    b1500.write = mock_write
+    b1500.write: MagicMock = mock_write
 
     b1500.clear_timer_count()
     mock_write.assert_called_once_with("TSR")
@@ -220,7 +220,7 @@ def test_clear_timer_count(b1500: KeysightB1500) -> None:
 
 def test_set_measuremet_mode(b1500: KeysightB1500) -> None:
     mock_write = MagicMock()
-    b1500.write = mock_write
+    b1500.write: MagicMock = mock_write
 
     b1500.set_measurement_mode(mode=constants.MM.Mode.SPOT, channels=[1, 2])
     mock_write.assert_called_once_with("MM 1,1,2")
@@ -228,7 +228,7 @@ def test_set_measuremet_mode(b1500: KeysightB1500) -> None:
 
 def test_get_measurement_mode(b1500: KeysightB1500) -> None:
     mock_ask = MagicMock()
-    b1500.ask = mock_ask
+    b1500.ask: MagicMock = mock_ask
 
     mock_ask.return_value = "MM 1,1,2"
     measurement_mode = b1500.get_measurement_mode()
@@ -238,7 +238,7 @@ def test_get_measurement_mode(b1500: KeysightB1500) -> None:
 
 def test_get_response_format_and_mode(b1500: KeysightB1500) -> None:
     mock_ask = MagicMock()
-    b1500.ask = mock_ask
+    b1500.ask: MagicMock = mock_ask
 
     mock_ask.return_value = "FMT 1,1"
     measurement_mode = b1500.get_response_format_and_mode()
@@ -248,7 +248,7 @@ def test_get_response_format_and_mode(b1500: KeysightB1500) -> None:
 
 def test_enable_smu_filters(b1500: KeysightB1500) -> None:
     mock_write = MagicMock()
-    b1500.write = mock_write
+    b1500.write: MagicMock = mock_write
 
     b1500.enable_smu_filters(True)
     mock_write.assert_called_once_with("FL 1")
@@ -282,7 +282,7 @@ def test_error_message_is_called_after_setting_a_parameter(
     b1500: KeysightB1500,
 ) -> None:
     mock_ask = MagicMock()
-    b1500.ask = mock_ask
+    b1500.ask: MagicMock = mock_ask
     mock_ask.return_value = '+0,"No Error."'
 
     b1500.enable_smu_filters(True)
