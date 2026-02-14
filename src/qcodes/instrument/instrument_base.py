@@ -5,6 +5,7 @@ from __future__ import annotations
 import collections.abc
 import logging
 import warnings
+from abc import abstractmethod
 from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
     from typing import NotRequired
 
+    from qcodes.instrument import Instrument
     from qcodes.instrument.channel import ChannelTuple, InstrumentModule
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 
@@ -579,14 +581,8 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
             return (self,)
 
     @property
-    def root_instrument(self) -> InstrumentBase:
-        """
-        The topmost parent of this module.
-
-        For the ``root_instrument`` this is ``self``.
-        """
-
-        return self
+    @abstractmethod
+    def root_instrument(self) -> Instrument: ...
 
     @property
     def name_parts(self) -> list[str]:
