@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 
     from typing_extensions import Unpack
 
+    from .instrument import Instrument
     from .instrument_base import InstrumentBaseKWArgs
 
 
@@ -87,8 +88,8 @@ class InstrumentModule(InstrumentBase, Generic[_TIB_co]):
         return self._parent
 
     @property
-    def root_instrument(self) -> InstrumentBase:
-        return self._parent.root_instrument
+    def root_instrument(self) -> Instrument:
+        return self.parent.root_instrument
 
     @property
     def name_parts(self) -> list[str]:
