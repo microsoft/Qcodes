@@ -84,7 +84,7 @@ class GeneratedSetPoints(Parameter):
         return np.linspace(start, stop, n_points)
 
 
-class Keithley7510Buffer(InstrumentChannel):
+class Keithley7510Buffer(InstrumentChannel["Keithley7510"]):
     """
     Treat the reading buffer as a submodule, similar to Sense.
     """
@@ -419,7 +419,7 @@ class _FunctionMode(TypedDict):
     range_vals: Numbers | None
 
 
-class Keithley7510Sense(InstrumentChannel):
+class Keithley7510Sense(InstrumentChannel["Keithley7510"]):
     function_modes: ClassVar[dict[str, _FunctionMode]] = {
         "voltage": {
             "name": '"VOLT:DC"',
@@ -455,7 +455,7 @@ class Keithley7510Sense(InstrumentChannel):
 
     def __init__(
         self,
-        parent: VisaInstrument,
+        parent: "Keithley7510",
         name: str,
         proper_function: str,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
@@ -630,7 +630,7 @@ class Keithley7510Sense(InstrumentChannel):
         self.write(f":TRACe:CLEar '{buffer_name}'")
 
 
-class Keithley7510DigitizeSense(InstrumentChannel):
+class Keithley7510DigitizeSense(InstrumentChannel["Keithley7510"]):
     """
     The Digitize sense module of the Keithley 7510 DMM.
     """
@@ -649,7 +649,7 @@ class Keithley7510DigitizeSense(InstrumentChannel):
         },
     }
 
-    def __init__(self, parent: VisaInstrument, name: str, proper_function: str) -> None:
+    def __init__(self, parent: "Keithley7510", name: str, proper_function: str) -> None:
         super().__init__(parent, name)
 
         self._proper_function = proper_function

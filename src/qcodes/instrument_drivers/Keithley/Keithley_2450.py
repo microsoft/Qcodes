@@ -45,7 +45,7 @@ class ParameterWithSetpointsCustomized(ParameterWithSetpoints):
         return self._user_selected_data
 
 
-class Keithley2450Buffer(InstrumentChannel):
+class Keithley2450Buffer(InstrumentChannel["Keithley2450"]):
     """
     Treat the reading buffer as a submodule, similar to Sense and Source
     """
@@ -379,7 +379,7 @@ class Keithley2450Sense(InstrumentChannel["Keithley2450"]):
         self.write(set_cmd)
 
 
-class Keithley2450Source(InstrumentChannel):
+class Keithley2450Source(InstrumentChannel["Keithley2450"]):
     """
     The source module of the Keithley 2450 SMU.
 
