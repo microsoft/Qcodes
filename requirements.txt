@@ -252,7 +252,7 @@ packaging==26.0
     #   sphinx
     #   versioningit
     #   xarray
-pandas==3.0.0
+pandas==3.0.1
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
