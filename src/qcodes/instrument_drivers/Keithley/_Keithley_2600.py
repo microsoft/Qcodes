@@ -116,9 +116,9 @@ class LuaSweepParameter(ParameterWithSetpoints[npt.NDArray, "Keithley2600Channel
         ]
 
         # Only add delay code to lua script if greater than 0
-        inter_delay = self.instrument.fastsweep_inter_delay.get_latest()
-        if inter_delay > 0:
-            script.append(f"  delay({inter_delay})")
+        settle_delay = self.instrument.fastsweep_settle_delay.get_latest()
+        if settle_delay > 0:
+            script.append(f"  delay({settle_delay})")
 
         script.extend(
             [
@@ -641,7 +641,7 @@ class Keithley2600Channel(InstrumentChannel):
         )
         """Stopping value of fastsweep. Can be current or voltage."""
 
-        self.fastsweep_inter_delay: Parameter[float, Self] = self.add_parameter(
+        self.fastsweep_settle_delay: Parameter[float, Self] = self.add_parameter(
             name="fastsweep_inter_delay",
             label="Fastsweep Inter Delay",
             initial_value=0,
