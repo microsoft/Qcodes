@@ -35,7 +35,20 @@ log = logging.getLogger(__name__)
 
 
 class _LinSweepLike(Protocol):
-    """Protocol for LinSweep-like objects."""
+    """
+    Protocol for sweep objects that can be used with ``setup_fastsweep``.
+
+    Any object implementing this protocol can be used to configure fast sweeps.
+    The canonical example is :class:`qcodes.dataset.LinSweep`.
+
+    Required attributes:
+        param: The parameter being swept (e.g., ``keith.smua.volt``).
+        delay: Time in seconds to wait after setting each point before measuring.
+        num_points: Number of sweep points.
+
+    Required methods:
+        get_setpoints: Returns the array of setpoint values for the sweep.
+    """
 
     @property
     def param(self) -> ParameterBase: ...
@@ -145,7 +158,8 @@ class LuaSweepParameter(ParameterWithSetpoints[npt.NDArray, "Keithley2600Channel
     Parameter class to perform fast sweeps using Lua scripts on the Keithley 2600.
 
     Supports both 1D and 2D sweeps. Configure using the channel's
-    ``setup_fastsweep`` method with LinSweep objects.
+    ``setup_fastsweep`` method with sweep objects that implement the
+    ``_LinSweepLike`` protocol (e.g., :class:`qcodes.dataset.LinSweep`).
 
     For 1D sweeps, returns a 1D array. For 2D sweeps, returns a 2D array
     with shape (outer_npts, inner_npts).
@@ -945,7 +959,10 @@ class Keithley2600Channel(InstrumentChannel):
         mode: Literal["IV", "VI", "VIfourprobe"] = "IV",
     ) -> None:
         """
-        Configure a 1D or 2D fastsweep using LinSweep objects.
+        Configure a 1D or 2D fastsweep using sweep objects.
+
+        Accepts any object implementing the ``_LinSweepLike`` protocol.
+        The canonical example is :class:`qcodes.dataset.LinSweep`.
 
         Both 1D and 2D sweeps execute entirely on the instrument via Lua scripts,
         minimizing communication overhead.
@@ -954,18 +971,18 @@ class Keithley2600Channel(InstrumentChannel):
         For 2D sweeps, provide both inner and outer sweeps. The inner sweep
         runs to completion for each step of the outer sweep.
 
-        The channels are determined by the LinSweep parameters you provide.
-        After calling setup_fastsweep, call `fastsweep` on the **inner** channel
-        (the channel from the first LinSweep) to execute the measurement.
+        The channels are determined by the sweep parameters you provide.
+        After calling setup_fastsweep, call ``fastsweep`` on the **inner** channel
+        (the channel from the first sweep object) to execute the measurement.
 
         Args:
-            inner: LinSweep-like object for the inner sweep axis. The channel is
-                   determined from the parameter (e.g., keith.smua.volt → smua).
-                   Measurement is performed on this channel. The delay is
-                   extracted from the LinSweep object.
-            outer: Optional LinSweepLike object for the outer sweep axis.
-                   If provided, performs a 2D sweep. The channel and delay are
-                   determined from the LinSweep object.
+            inner: Sweep object for the inner (fast) axis. Must have ``param``,
+                   ``delay``, ``num_points`` attributes and a ``get_setpoints()``
+                   method. See :class:`qcodes.dataset.LinSweep` for an example.
+                   The channel is determined from ``param.instrument.channel``.
+                   Measurement is performed on this channel.
+            outer: Optional sweep object for the outer (slow) axis.
+                   If provided, performs a 2D sweep.
             mode: Sweep mode - 'IV' (sweep voltage, measure current),
                   'VI' (sweep current, measure voltage), or
                   'VIfourprobe' (four-probe VI measurement).
