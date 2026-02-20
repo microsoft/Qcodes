@@ -5,7 +5,7 @@ import struct
 import warnings
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, Literal, Protocol
+from typing import TYPE_CHECKING, Any, Literal, Protocol, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -36,7 +36,7 @@ log = logging.getLogger(__name__)
 
 class _LinSweepLike(Protocol):
     """
-    Protocol for sweep objects that can be used with ``setup_fastsweep``.
+    Protocol for linear sweep objects that can be used with ``setup_fastsweep``.
 
     Any object implementing this protocol can be used to configure fast sweeps.
     The canonical example is :class:`qcodes.dataset.LinSweep`.
@@ -1014,24 +1014,21 @@ class Keithley2600Channel(InstrumentChannel):
         # Helper to extract channel name from parameter
         def get_channel(param: ParameterBase) -> str:
             """Extract Lua channel name (smua/smub) from parameter."""
-            # Check if parameter's instrument has a channel attribute
-            inst = getattr(param, "instrument", None)
-            if inst is not None and hasattr(inst, "channel"):
-                return inst.channel
-            # Fallback: try to detect from full_name
-            full_name = getattr(param, "full_name", "")
-            if "smub" in full_name.lower():
-                return "smub"
-            return "smua"  # Default
+            inst = param.instrument
+
+            if not isinstance(inst, Keithley2600Channel):
+                raise ValueError(
+                    f"Parameter '{param.name}' must belong to a Keithley2600Channel. "
+                    f"Got instrument of type {type(inst).__name__}."
+                )
+
+            return inst.channel
 
         # Get setpoints from inner sweep to derive start/stop
         inner_setpoints = inner.get_setpoints()
         inner_start = float(inner_setpoints[0])
         inner_stop = float(inner_setpoints[-1])
-        inner_param = inner.param
-        inner_name = getattr(inner_param, "label", None) or inner_param.name
-        inner_unit = getattr(inner_param, "unit", "") or ""
-        inner_full_name = getattr(inner_param, "full_name", inner_param.name)
+        inner_param = cast("Parameter", inner.param)
         inner_channel = get_channel(inner_param)
 
         # Build the configuration
@@ -1040,9 +1037,9 @@ class Keithley2600Channel(InstrumentChannel):
             inner_stop=inner_stop,
             inner_npts=inner.num_points,
             inner_delay=inner.delay,
-            inner_param_name=inner_name,
-            inner_param_unit=inner_unit,
-            inner_param_full_name=inner_full_name,
+            inner_param_name=inner_param.label,
+            inner_param_unit=inner_param.unit,
+            inner_param_full_name=inner_param.full_name,
             inner_channel=inner_channel,
             mode=mode,
         )
@@ -1052,19 +1049,16 @@ class Keithley2600Channel(InstrumentChannel):
             outer_setpoints = outer.get_setpoints()
             outer_start = float(outer_setpoints[0])
             outer_stop = float(outer_setpoints[-1])
-            outer_param = outer.param
-            outer_name = getattr(outer_param, "label", None) or outer_param.name
-            outer_unit = getattr(outer_param, "unit", "") or ""
-            outer_full_name = getattr(outer_param, "full_name", outer_param.name)
+            outer_param = cast("Parameter", outer.param)
             outer_channel = get_channel(outer_param)
 
             config.outer_start = outer_start
             config.outer_stop = outer_stop
             config.outer_npts = outer.num_points
             config.outer_delay = outer.delay
-            config.outer_param_name = outer_name
-            config.outer_param_unit = outer_unit
-            config.outer_param_full_name = outer_full_name
+            config.outer_param_name = outer_param.label
+            config.outer_param_unit = outer_param.unit
+            config.outer_param_full_name = outer_param.full_name
             config.outer_channel = outer_channel
 
         # Get the inner channel object where fastsweep should be called from
