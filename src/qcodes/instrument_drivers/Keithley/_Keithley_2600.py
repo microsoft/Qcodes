@@ -34,11 +34,15 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-class _SweepLike(Protocol):
+class _LinSweepLike(Protocol):
     """Protocol for LinSweep-like objects."""
 
     @property
     def param(self) -> ParameterBase: ...
+
+    @property
+    def delay(self) -> float: ...
+
     @property
     def num_points(self) -> int: ...
 
@@ -849,7 +853,7 @@ class Keithley2600Channel(InstrumentChannel):
             setpoints=(self.fastsweep_inner_setpoints,),  # Updated by setup_fastsweep
             parameter_class=LuaSweepParameter,
             docstring="Performs a fast sweep using on-instrument Lua scripts. "
-            "Configure using setup_fastsweep() with LinSweep object(s). "
+            "Configure using setup_fastsweep() with LinSweep-like object(s). "
             "For 1D sweeps, returns a 1D array. "
             "For 2D sweeps, returns a 2D array with shape (outer_npts, inner_npts).",
         )
@@ -936,11 +940,9 @@ class Keithley2600Channel(InstrumentChannel):
 
     def setup_fastsweep(
         self,
-        inner: _SweepLike,
-        outer: _SweepLike | None = None,
+        inner: _LinSweepLike,
+        outer: _LinSweepLike | None = None,
         mode: Literal["IV", "VI", "VIfourprobe"] = "IV",
-        inner_delay: float = 0.0,
-        outer_delay: float = 0.0,
     ) -> None:
         """
         Configure a 1D or 2D fastsweep using LinSweep objects.
@@ -957,19 +959,16 @@ class Keithley2600Channel(InstrumentChannel):
         (the channel from the first LinSweep) to execute the measurement.
 
         Args:
-            inner: LinSweep object for the inner sweep axis. The channel is
+            inner: LinSweep-like object for the inner sweep axis. The channel is
                    determined from the parameter (e.g., keith.smua.volt → smua).
-                   Measurement is performed on this channel.
-            outer: Optional LinSweep object for the outer sweep axis.
-                   If provided, performs a 2D sweep. The channel is determined
-                   from the parameter.
+                   Measurement is performed on this channel. The delay is
+                   extracted from the LinSweep object.
+            outer: Optional LinSweepLike object for the outer sweep axis.
+                   If provided, performs a 2D sweep. The channel and delay are
+                   determined from the LinSweep object.
             mode: Sweep mode - 'IV' (sweep voltage, measure current),
                   'VI' (sweep current, measure voltage), or
                   'VIfourprobe' (four-probe VI measurement).
-            inner_delay: Time in seconds to wait after setting each inner point
-                        before measuring.
-            outer_delay: Time in seconds to wait after setting each outer point
-                        before starting the inner sweep.
 
         Example 1D:
 
@@ -1023,7 +1022,7 @@ class Keithley2600Channel(InstrumentChannel):
             inner_start=inner_start,
             inner_stop=inner_stop,
             inner_npts=inner.num_points,
-            inner_delay=inner_delay,
+            inner_delay=inner.delay,
             inner_param_name=inner_name,
             inner_param_unit=inner_unit,
             inner_param_full_name=inner_full_name,
@@ -1045,7 +1044,7 @@ class Keithley2600Channel(InstrumentChannel):
             config.outer_start = outer_start
             config.outer_stop = outer_stop
             config.outer_npts = outer.num_points
-            config.outer_delay = outer_delay
+            config.outer_delay = outer.delay
             config.outer_param_name = outer_name
             config.outer_param_unit = outer_unit
             config.outer_param_full_name = outer_full_name
