@@ -1017,7 +1017,7 @@ class Keithley2600Channel(InstrumentChannel):
             inst = param.instrument
 
             if not isinstance(inst, Keithley2600Channel):
-                raise ValueError(
+                raise TypeError(
                     f"Parameter '{param.name}' must belong to a Keithley2600Channel. "
                     f"Got instrument of type {type(inst).__name__}."
                 )
