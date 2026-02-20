@@ -224,8 +224,8 @@ class LuaSweepParameter(ParameterWithSetpoints[npt.NDArray, "Keithley2600Channel
                 self.vals = vals.Arrays(shape=(config.outer_npts, config.inner_npts))
             else:
                 self.setpoints = (self.instrument.fastsweep_inner_setpoints,)
-                self.setpoint_names = (inner_full_label,)
-                self.setpoint_units = (config.inner_param_unit,)
+                self.setpoint_names = (inner_full_label,)  # type: ignore[assignment]
+                self.setpoint_units = (config.inner_param_unit,)  # type: ignore[assignment]
                 self.vals = vals.Arrays(shape=(config.inner_npts,))
 
     def _build_1d_script(self, config: _FastSweepConfig) -> list[str]:
