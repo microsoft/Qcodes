@@ -276,6 +276,7 @@ class ParameterBase(
         | None = None,
     ) -> None:
         if args:
+            # TODO: After QCoDeS 0.56 remove the args argument and delete this code block.
             positional_names = self._DEPRECATED_POSITIONAL_ARGS
             if len(args) > len(positional_names):
                 raise TypeError(
@@ -334,7 +335,7 @@ class ParameterBase(
             # as keyword). We detect this by checking whether the keyword
             # value differs from its default for each positionally-supplied
             # argument.
-            for i, value in enumerate(args):
+            for i in range(len(args)):
                 arg_name = positional_names[i]
                 if _kwarg_vals[arg_name] is not _defaults[arg_name]:
                     raise TypeError(
