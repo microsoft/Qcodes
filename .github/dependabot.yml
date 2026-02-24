@@ -1,4 +1,5 @@
 version: 2
+enable-beta-ecosystems: true
 updates:
 - package-ecosystem: pip
   directory: "/"
@@ -34,5 +35,10 @@ updates:
 
 - package-ecosystem: npm
   directory: /.github
+  schedule:
+    interval: daily
+
+- package-ecosystem: "pre-commit"
+  directory: "/"
   schedule:
     interval: daily

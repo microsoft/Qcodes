@@ -253,8 +253,8 @@ class ParameterBase(
         super().__init__(metadata)
         if not str(name).isidentifier():
             raise ValueError(
-                f"Parameter name must be a valid identifier "
-                f"got {name} which is not. Parameter names "
+                f"Parameter name must be a valid identifier, which "
+                f"'{name}' is not. Parameter names "
                 f"cannot start with a number and "
                 f"must not contain spaces or special characters"
             )

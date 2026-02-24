@@ -102,7 +102,7 @@ h5py==3.15.1
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.151.6
+hypothesis==6.151.9
     # via qcodes (pyproject.toml)
 idna==3.11
     # via requests
@@ -252,7 +252,7 @@ packaging==26.0
     #   sphinx
     #   versioningit
     #   xarray
-pandas==3.0.0
+pandas==3.0.1
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -273,7 +273,7 @@ pillow==12.1.1
     #   qcodes (pyproject.toml)
     #   matplotlib
     #   qcodes
-platformdirs==4.5.1
+platformdirs==4.9.2
     # via jupyter-core
 pluggy==1.6.0
     # via
@@ -285,7 +285,7 @@ psutil==7.2.2
     # via ipykernel
 pure-eval==0.2.3
     # via stack-data
-pyarrow==23.0.0
+pyarrow==23.0.1
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -371,7 +371,7 @@ ruamel-yaml-clib==0.2.15
     # via ruamel-yaml
 schema==0.7.8
     # via broadbean
-scipy==1.17.0
+scipy==1.17.1
     # via qcodes (pyproject.toml)
 six==1.17.0
     # via python-dateutil
@@ -393,7 +393,7 @@ sphinx==8.2.3
     #   sphinxcontrib-towncrier
 sphinx-basic-ng==1.0.0b2
     # via furo
-sphinx-favicon==1.0.1
+sphinx-favicon==1.1.0
     # via qcodes (pyproject.toml)
 sphinx-issues==5.0.1
     # via qcodes (pyproject.toml)
@@ -508,7 +508,7 @@ websockets==16.0
     #   qcodes
 widgetsnbextension==4.0.15
     # via ipywidgets
-xarray==2026.1.0
+xarray==2026.2.0
     # via
     #   qcodes (pyproject.toml)
     #   cf-xarray
