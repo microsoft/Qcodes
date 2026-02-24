@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING, Any, Generic
 
 from typing_extensions import TypeVar
 
+from qcodes.utils import QCoDeSDeprecationWarning
+
 from .parameter import Parameter
 from .parameter_base import InstrumentTypeVar_co, ParameterDataTypeVar
 
@@ -187,7 +189,7 @@ class DelegateParameter(
                 "Passing extra positional arguments to "
                 f"{type(self).__name__} is deprecated. "
                 "Please pass them as keyword arguments.",
-                FutureWarning,
+                QCoDeSDeprecationWarning,
                 stacklevel=2,
             )
         if "bind_to_instrument" not in kwargs.keys():

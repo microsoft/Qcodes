@@ -9,6 +9,8 @@ import warnings
 from types import MethodType
 from typing import TYPE_CHECKING, Any, ClassVar, Generic, Literal
 
+from qcodes.utils import QCoDeSDeprecationWarning
+
 from .command import Command
 from .parameter_base import (
     InstrumentTypeVar_co,
@@ -272,7 +274,7 @@ class Parameter(
                 f"Passing {names_str} as positional argument(s) to "
                 f"{type(self).__name__} is deprecated. "
                 f"Please pass them as keyword arguments.",
-                FutureWarning,
+                QCoDeSDeprecationWarning,
                 stacklevel=2,
             )
 

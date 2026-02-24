@@ -15,7 +15,12 @@ from typing_extensions import TypeVar
 
 from qcodes.metadatable import Metadatable, MetadatableWithName
 from qcodes.parameters import ParamSpecBase
-from qcodes.utils import DelegateAttributes, full_class, qcodes_abstractmethod
+from qcodes.utils import (
+    DelegateAttributes,
+    QCoDeSDeprecationWarning,
+    full_class,
+    qcodes_abstractmethod,
+)
 from qcodes.validators import (
     Arrays,
     ComplexNumbers,
@@ -352,7 +357,7 @@ class ParameterBase(
                 f"Passing {names_str} as positional argument(s) to "
                 f"{type(self).__name__} is deprecated. "
                 f"Please pass them as keyword arguments.",
-                FutureWarning,
+                QCoDeSDeprecationWarning,
                 stacklevel=2,
             )
 
