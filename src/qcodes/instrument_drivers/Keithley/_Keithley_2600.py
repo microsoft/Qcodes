@@ -83,6 +83,7 @@ class _FastSweepConfig:
     outer_param_full_name: str | None = None  # Original parameter's full_name
     outer_channel: str = "smub"  # Lua channel name for outer sweep
     mode: Literal["IV", "VI", "VIfourprobe"] = "IV"
+    measurement_channel: str = "smua"
 
     @property
     def is_2d(self) -> bool:
@@ -233,7 +234,8 @@ class LuaSweepParameter(ParameterWithSetpoints[npt.NDArray, "Keithley2600Channel
         if self.instrument is None:
             raise RuntimeError("No instrument attached to Parameter.")
 
-        channel = config.inner_channel
+        sweep_channel = config.inner_channel
+        meas_channel = config.measurement_channel
         nplc = self.instrument.nplc()
 
         dX = (config.inner_stop - config.inner_start) / (config.inner_npts - 1)
@@ -247,18 +249,23 @@ class LuaSweepParameter(ParameterWithSetpoints[npt.NDArray, "Keithley2600Channel
                 meas, source, func, sense_mode = "v", "i", "0", "1"
 
         script = [
-            f"{channel}.measure.nplc = {nplc:.12f}",
-            f"{channel}.sense = {sense_mode}",
-            f"{channel}.source.func = {func}",
-            f"{channel}.source.output = 1",
-            f"{channel}.measure.count = 1",
+            # Configure measurement channel
+            f"{meas_channel}.measure.nplc = {nplc:.12f}",
+            f"{meas_channel}.sense = {sense_mode}",
+            f"{meas_channel}.measure.count = 1",
+            # Configure sweep/source channel
+            f"{sweep_channel}.source.func = {func}",
+            f"{sweep_channel}.source.output = 1",
+            # Initialize sweep variables
             f"startX = {config.inner_start:.12f}",
             f"dX = {dX:.12f}",
-            f"{channel}.nvbuffer1.clear()",
-            f"{channel}.nvbuffer1.appendmode = 1",
+            # Clear measurement buffer
+            f"{meas_channel}.nvbuffer1.clear()",
+            f"{meas_channel}.nvbuffer1.appendmode = 1",
+            # Sweep loop
             f"for index = 1, {config.inner_npts} do",
             "  target = startX + (index-1)*dX",
-            f"  {channel}.source.level{source} = target",
+            f"  {sweep_channel}.source.level{source} = target",
         ]
 
         if config.inner_delay > 0:
@@ -266,11 +273,11 @@ class LuaSweepParameter(ParameterWithSetpoints[npt.NDArray, "Keithley2600Channel
 
         script.extend(
             [
-                f"  {channel}.measure.{meas}({channel}.nvbuffer1)",
+                f"  {meas_channel}.measure.{meas}({meas_channel}.nvbuffer1)",
                 "end",
                 "format.data = format.REAL32",
                 "format.byteorder = format.LITTLEENDIAN",
-                f"printbuffer(1, {config.inner_npts}, {channel}.nvbuffer1.readings)",
+                f"printbuffer(1, {config.inner_npts}, {meas_channel}.nvbuffer1.readings)",
             ]
         )
         return script
@@ -282,6 +289,7 @@ class LuaSweepParameter(ParameterWithSetpoints[npt.NDArray, "Keithley2600Channel
 
         inner_channel = config.inner_channel
         outer_channel = config.outer_channel
+        meas_channel = config.measurement_channel
         nplc = self.instrument.nplc()
 
         assert config.outer_start is not None
@@ -303,24 +311,25 @@ class LuaSweepParameter(ParameterWithSetpoints[npt.NDArray, "Keithley2600Channel
                 outer_source, outer_func = "i", "0"
 
         script = [
+            # Configure measurement channel
+            f"{meas_channel}.measure.nplc = {nplc:.12f}",
+            f"{meas_channel}.sense = {sense_mode}",
+            f"{meas_channel}.measure.count = 1",
             # Set up inner channel (fast sweep)
-            f"{inner_channel}.measure.nplc = {nplc:.12f}",
-            f"{inner_channel}.sense = {sense_mode}",
             f"{inner_channel}.source.func = {func}",
             f"{inner_channel}.source.output = 1",
-            f"{inner_channel}.measure.count = 1",
-            # Set up outer channel
+            # Set up outer channel (slow sweep)
             f"{outer_channel}.source.func = {outer_func}",
             f"{outer_channel}.source.output = 1",
-            # Initialize variables
+            # Initialize sweep variables
             f"startX_inner = {config.inner_start:.12f}",
             f"dX_inner = {dX_inner:.12f}",
             f"startX_outer = {config.outer_start:.12f}",
             f"dX_outer = {dX_outer:.12f}",
-            # Clear buffer
-            f"{inner_channel}.nvbuffer1.clear()",
-            f"{inner_channel}.nvbuffer1.appendmode = 1",
-            # Outer loop (slow axis on other channel)
+            # Clear measurement buffer
+            f"{meas_channel}.nvbuffer1.clear()",
+            f"{meas_channel}.nvbuffer1.appendmode = 1",
+            # Outer loop (slow axis)
             f"for outer_idx = 1, {config.outer_npts} do",
             "  outer_target = startX_outer + (outer_idx-1)*dX_outer",
             f"  {outer_channel}.source.level{outer_source} = outer_target",
@@ -342,12 +351,12 @@ class LuaSweepParameter(ParameterWithSetpoints[npt.NDArray, "Keithley2600Channel
 
         script.extend(
             [
-                f"    {inner_channel}.measure.{meas}({inner_channel}.nvbuffer1)",
+                f"    {meas_channel}.measure.{meas}({meas_channel}.nvbuffer1)",
                 "  end",
                 "end",
                 "format.data = format.REAL32",
                 "format.byteorder = format.LITTLEENDIAN",
-                f"printbuffer(1, {config.total_points}, {inner_channel}.nvbuffer1.readings)",
+                f"printbuffer(1, {config.total_points}, {meas_channel}.nvbuffer1.readings)",
             ]
         )
         return script
@@ -957,6 +966,7 @@ class Keithley2600Channel(InstrumentChannel):
         inner: _LinSweepLike,
         outer: _LinSweepLike | None = None,
         mode: Literal["IV", "VI", "VIfourprobe"] = "IV",
+        measure_inner_channel: bool = False,
     ) -> None:
         """
         Configure a 1D or 2D fastsweep using sweep objects.
@@ -980,12 +990,16 @@ class Keithley2600Channel(InstrumentChannel):
                    ``delay``, ``num_points`` attributes and a ``get_setpoints()``
                    method. See :class:`qcodes.dataset.LinSweep` for an example.
                    The channel is determined from ``param.instrument.channel``.
-                   Measurement is performed on this channel.
             outer: Optional sweep object for the outer (slow) axis.
                    If provided, performs a 2D sweep.
             mode: Sweep mode - 'IV' (sweep voltage, measure current),
                   'VI' (sweep current, measure voltage), or
                   'VIfourprobe' (four-probe VI measurement).
+            measure_inner_channel: If True, measure on the inner sweep channel.
+                   If False (default), measure on the opposite sweep channel as inner.
+                   This allows measuring a response on a different channel than
+                   the one being swept. For example, sweep voltage on smua while
+                   measuring current on smub.
 
         Example 1D:
 
@@ -1031,6 +1045,14 @@ class Keithley2600Channel(InstrumentChannel):
         inner_param = cast("Parameter", inner.param)
         inner_channel = get_channel(inner_param)
 
+        channel_to_measure = inner_channel
+
+        if not measure_inner_channel:
+            channels = ["smua", "smub"]
+            channel_to_measure = next(
+                channel for channel in channels if channel != inner_channel
+            )
+
         # Build the configuration
         config = _FastSweepConfig(
             inner_start=inner_start,
@@ -1042,6 +1064,7 @@ class Keithley2600Channel(InstrumentChannel):
             inner_param_full_name=inner_param.full_name,
             inner_channel=inner_channel,
             mode=mode,
+            measurement_channel=channel_to_measure,
         )
 
         # Add outer sweep configuration if provided
