@@ -228,6 +228,7 @@ class ParameterBase(
 
     # Ordered list of keyword argument names (after 'name') for
     # backwards-compatible positional argument handling.
+    # TODO: remove with handling of args below after QCoDeS 0.57
     _DEPRECATED_POSITIONAL_ARGS: ClassVar[tuple[str, ...]] = (
         "instrument",
         "snapshot_get",
@@ -254,6 +255,8 @@ class ParameterBase(
         self,
         name: str,
         *args: Any,
+        # mypy seems to be confused here. The bound and default for InstrumentTypeVar_co
+        # contains None but mypy will not allow None as a default as of v 1.19.0
         instrument: InstrumentTypeVar_co = None,  # type: ignore[assignment]
         snapshot_get: bool = True,
         metadata: Mapping[Any, Any] | None = None,
@@ -276,7 +279,7 @@ class ParameterBase(
         | None = None,
     ) -> None:
         if args:
-            # TODO: After QCoDeS 0.56 remove the args argument and delete this code block.
+            # TODO: After QCoDeS 0.57 remove the args argument and delete this code block.
             positional_names = self._DEPRECATED_POSITIONAL_ARGS
             if len(args) > len(positional_names):
                 raise TypeError(
@@ -355,7 +358,7 @@ class ParameterBase(
 
             # Apply positional values to the keyword parameter variables.
             _pos = dict(zip(positional_names, args))
-            instrument = _pos.get("instrument", instrument)  # type: ignore[assignment]
+            instrument = _pos.get("instrument", instrument)
             snapshot_get = _pos.get("snapshot_get", snapshot_get)
             metadata = _pos.get("metadata", metadata)
             step = _pos.get("step", step)
