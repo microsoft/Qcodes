@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING, Any, Generic
 
 from typing_extensions import TypeVar
@@ -179,6 +180,16 @@ class DelegateParameter(
         *args: Any,
         **kwargs: Any,
     ):
+        if args:
+            # TODO: After QCoDeS 0.57 remove the args argument
+            # and delete this code block.
+            warnings.warn(
+                "Passing extra positional arguments to "
+                f"{type(self).__name__} is deprecated. "
+                "Please pass them as keyword arguments.",
+                FutureWarning,
+                stacklevel=2,
+            )
         if "bind_to_instrument" not in kwargs.keys():
             kwargs["bind_to_instrument"] = False
 
