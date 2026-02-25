@@ -1,3 +1,0 @@
-Added blocking function to DynaCool PPMS driver that waits for temperature
-state to be stable before allowing other functions to be called when
-setting the temperature.
