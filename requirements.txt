@@ -514,7 +514,7 @@ xarray==2026.2.0
     #   cf-xarray
     #   qcodes
     #   qcodes-loop
-zhinst-core==26.1.0.361
+zhinst-core==26.1.1.16
     # via
     #   zhinst-toolkit
     #   zhinst-utils
