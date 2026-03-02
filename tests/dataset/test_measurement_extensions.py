@@ -607,9 +607,7 @@ def test_setup_measurement_instances_no_shapes(
     assert measurements[0]._shapes is None
 
 
-def test_shapes_with_multiple_datasets(
-    default_params, default_database_and_experiment
-):
+def test_shapes_with_multiple_datasets(default_params, default_database_and_experiment):
     """Test shapes are correctly applied to multiple datasets independently."""
     _ = default_database_and_experiment
     set1, set2, set3, meas1, _, meas3 = default_params

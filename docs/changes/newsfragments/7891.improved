@@ -1,0 +1,1 @@
+Enabled setting shape of Measurement in measurement_extensions.py. Added `shapes` to DataSetDefinition and use it in setup_measurement_isntances to set shape of measurement. Added new tests for new use cases.
