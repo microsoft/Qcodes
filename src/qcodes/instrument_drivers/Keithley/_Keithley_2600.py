@@ -966,7 +966,7 @@ class Keithley2600Channel(InstrumentChannel):
         inner: _LinSweepLike,
         outer: _LinSweepLike | None = None,
         mode: Literal["IV", "VI", "VIfourprobe"] = "IV",
-        measure_inner_channel: bool = False,
+        measure_inner_channel: bool = True,
     ) -> None:
         """
         Configure a 1D or 2D fastsweep using sweep objects.
@@ -995,8 +995,8 @@ class Keithley2600Channel(InstrumentChannel):
             mode: Sweep mode - 'IV' (sweep voltage, measure current),
                   'VI' (sweep current, measure voltage), or
                   'VIfourprobe' (four-probe VI measurement).
-            measure_inner_channel: If True, measure on the inner sweep channel.
-                   If False (default), measure on the opposite sweep channel as inner.
+            measure_inner_channel: If True (default), measure on the inner sweep channel.
+                   If False, measure on the opposite sweep channel as inner.
                    This allows measuring a response on a different channel than
                    the one being swept. For example, sweep voltage on smua while
                    measuring current on smub.
