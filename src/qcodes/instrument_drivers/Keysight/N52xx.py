@@ -137,12 +137,12 @@ class FormattedSweep(ParameterWithSetpoints[npt.NDArray, "KeysightPNATrace"]):
         data = root_instr.visa_handle.query_binary_values(
             "CALC:DATA? FDATA", datatype="f", is_big_endian=True
         )
-        data = np.array(data)
+        data_array = np.array(data)
         # Restore previous state if it was changed
         if auto_sweep:
             root_instr.sweep_mode(prev_mode)
 
-        return data
+        return data_array
 
 
 class KeysightPNAPort(InstrumentChannel):

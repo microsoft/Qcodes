@@ -686,11 +686,11 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel["KeysightN9030B"]):
                 datatype="d",
                 is_big_endian=False,
             )
-            data = np.array(data).reshape((-1, 2))
+            data_array = np.array(data).reshape((-1, 2))
         except TimeoutError as e:
             raise TimeoutError("Couldn't receive any data. Command timed out.") from e
 
-        return data[:, 1]
+        return data_array[:, 1]
 
     def setup_log_plot_sweep(
         self, start_offset: float, stop_offset: float, npts: int
