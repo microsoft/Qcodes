@@ -608,7 +608,7 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
         else:
             shapes = tuple(() for _ in self._channels)
         param = self._paramclass(
-            self._channels,
+            channels=self._channels,
             param_name=name,
             name=f"Multi_{name}",
             names=names,

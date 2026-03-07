@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+import warnings
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, TypeVar
+
+from qcodes.utils import QCoDeSDeprecationWarning
 
 from .multi_parameter import MultiParameter
 
@@ -30,14 +33,75 @@ class MultiChannelInstrumentParameter(MultiParameter, Generic[InstrumentModuleTy
 
     """
 
+    _DEPRECATED_POSITIONAL_ARGS: ClassVar[tuple[str, ...]] = (
+        "channels",
+        "param_name",
+    )
+
+    _CHANNELS_UNSET: Any = object()
+    _PARAM_NAME_UNSET: Any = object()
+
     def __init__(
         self,
-        channels: Sequence[InstrumentModuleType],
-        param_name: str,
         *args: Any,
+        channels: Sequence[InstrumentModuleType] = _CHANNELS_UNSET,  # type: ignore[assignment]
+        param_name: str = _PARAM_NAME_UNSET,  # type: ignore[assignment]
         **kwargs: Any,
     ) -> None:
-        super().__init__(*args, **kwargs)
+        if args:
+            # TODO: After QCoDeS 0.57 remove the args argument and delete this code block.
+            positional_names = self._DEPRECATED_POSITIONAL_ARGS
+            if len(args) > len(positional_names):
+                raise TypeError(
+                    f"{type(self).__name__}.__init__() takes at most "
+                    f"{len(positional_names) + 1} positional arguments "
+                    f"({len(args) + 1} given)"
+                )
+
+            _defaults: dict[str, Any] = {
+                "channels": self._CHANNELS_UNSET,
+                "param_name": self._PARAM_NAME_UNSET,
+            }
+
+            _kwarg_vals: dict[str, Any] = {
+                "channels": channels,
+                "param_name": param_name,
+            }
+
+            for i in range(len(args)):
+                arg_name = positional_names[i]
+                if _kwarg_vals[arg_name] is not _defaults[arg_name]:
+                    raise TypeError(
+                        f"{type(self).__name__}.__init__() got multiple "
+                        f"values for argument '{arg_name}'"
+                    )
+
+            positional_arg_names = positional_names[: len(args)]
+            names_str = ", ".join(f"'{n}'" for n in positional_arg_names)
+            warnings.warn(
+                f"Passing {names_str} as positional argument(s) to "
+                f"{type(self).__name__} is deprecated. "
+                f"Please pass them as keyword arguments.",
+                QCoDeSDeprecationWarning,
+                stacklevel=2,
+            )
+
+            _pos = dict(zip(positional_names, args))
+            channels = _pos.get("channels", channels)
+            param_name = _pos.get("param_name", param_name)
+
+        if channels is self._CHANNELS_UNSET:
+            raise TypeError(
+                f"{type(self).__name__}.__init__() missing required "
+                f"keyword argument: 'channels'"
+            )
+        if param_name is self._PARAM_NAME_UNSET:
+            raise TypeError(
+                f"{type(self).__name__}.__init__() missing required "
+                f"keyword argument: 'param_name'"
+            )
+
+        super().__init__(**kwargs)
         self._channels = channels
         self._param_name = param_name
 

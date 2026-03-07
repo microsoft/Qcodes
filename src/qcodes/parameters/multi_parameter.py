@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import os
+import warnings
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, Generic
+from typing import Any, ClassVar, Generic
 
 import numpy as np
+
+from qcodes.utils import QCoDeSDeprecationWarning
 
 from .parameter_base import InstrumentTypeVar_co, ParameterBase, ParameterDataTypeVar
 from .sequence_helpers import is_sequence_of
@@ -136,11 +139,32 @@ class MultiParameter(
 
     """
 
+    _NAMES_UNSET: Any = object()
+    _SHAPES_UNSET: Any = object()
+
+    _DEPRECATED_POSITIONAL_ARGS: ClassVar[tuple[str, ...]] = (
+        "names",
+        "shapes",
+        "instrument",
+        "labels",
+        "units",
+        "setpoints",
+        "setpoint_names",
+        "setpoint_labels",
+        "setpoint_units",
+        "docstring",
+        "snapshot_get",
+        "snapshot_value",
+        "snapshot_exclude",
+        "metadata",
+    )
+
     def __init__(
         self,
         name: str,
-        names: Sequence[str],
-        shapes: Sequence[Sequence[int]],
+        *args: Any,
+        names: Sequence[str] = _NAMES_UNSET,  # type: ignore[assignment]
+        shapes: Sequence[Sequence[int]] = _SHAPES_UNSET,  # type: ignore[assignment]
         # mypy seems to be confused here. The bound and default for InstrumentTypeVar_co
         # contains None but mypy will not allow it as a default as of v 1.19.0
         instrument: InstrumentTypeVar_co = None,  # type: ignore[assignment]
@@ -157,6 +181,95 @@ class MultiParameter(
         metadata: Mapping[Any, Any] | None = None,
         **kwargs: Any,
     ) -> None:
+        if args:
+            # TODO: After QCoDeS 0.57 remove the args argument and delete this code block.
+            positional_names = self._DEPRECATED_POSITIONAL_ARGS
+            if len(args) > len(positional_names):
+                raise TypeError(
+                    f"{type(self).__name__}.__init__() takes at most "
+                    f"{len(positional_names) + 2} positional arguments "
+                    f"({len(args) + 2} given)"
+                )
+
+            _defaults: dict[str, Any] = {
+                "names": self._NAMES_UNSET,
+                "shapes": self._SHAPES_UNSET,
+                "instrument": None,
+                "labels": None,
+                "units": None,
+                "setpoints": None,
+                "setpoint_names": None,
+                "setpoint_labels": None,
+                "setpoint_units": None,
+                "docstring": None,
+                "snapshot_get": True,
+                "snapshot_value": False,
+                "snapshot_exclude": False,
+                "metadata": None,
+            }
+
+            _kwarg_vals: dict[str, Any] = {
+                "names": names,
+                "shapes": shapes,
+                "instrument": instrument,
+                "labels": labels,
+                "units": units,
+                "setpoints": setpoints,
+                "setpoint_names": setpoint_names,
+                "setpoint_labels": setpoint_labels,
+                "setpoint_units": setpoint_units,
+                "docstring": docstring,
+                "snapshot_get": snapshot_get,
+                "snapshot_value": snapshot_value,
+                "snapshot_exclude": snapshot_exclude,
+                "metadata": metadata,
+            }
+
+            for i in range(len(args)):
+                arg_name = positional_names[i]
+                if _kwarg_vals[arg_name] is not _defaults[arg_name]:
+                    raise TypeError(
+                        f"{type(self).__name__}.__init__() got multiple "
+                        f"values for argument '{arg_name}'"
+                    )
+
+            positional_arg_names = positional_names[: len(args)]
+            names_str = ", ".join(f"'{n}'" for n in positional_arg_names)
+            warnings.warn(
+                f"Passing {names_str} as positional argument(s) to "
+                f"{type(self).__name__} is deprecated. "
+                f"Please pass them as keyword arguments.",
+                QCoDeSDeprecationWarning,
+                stacklevel=2,
+            )
+
+            _pos = dict(zip(positional_names, args))
+            names = _pos.get("names", names)
+            shapes = _pos.get("shapes", shapes)
+            instrument = _pos.get("instrument", instrument)
+            labels = _pos.get("labels", labels)
+            units = _pos.get("units", units)
+            setpoints = _pos.get("setpoints", setpoints)
+            setpoint_names = _pos.get("setpoint_names", setpoint_names)
+            setpoint_labels = _pos.get("setpoint_labels", setpoint_labels)
+            setpoint_units = _pos.get("setpoint_units", setpoint_units)
+            docstring = _pos.get("docstring", docstring)
+            snapshot_get = _pos.get("snapshot_get", snapshot_get)
+            snapshot_value = _pos.get("snapshot_value", snapshot_value)
+            snapshot_exclude = _pos.get("snapshot_exclude", snapshot_exclude)
+            metadata = _pos.get("metadata", metadata)
+
+        if names is self._NAMES_UNSET:
+            raise TypeError(
+                f"{type(self).__name__}.__init__() missing required "
+                f"keyword argument: 'names'"
+            )
+        if shapes is self._SHAPES_UNSET:
+            raise TypeError(
+                f"{type(self).__name__}.__init__() missing required "
+                f"keyword argument: 'shapes'"
+            )
+
         super().__init__(
             name,
             instrument=instrument,

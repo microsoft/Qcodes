@@ -14,6 +14,7 @@ from qcodes.parameters import (
     ArrayParameter,
     DelegateParameter,
     GroupParameter,
+    MultiParameter,
     Parameter,
     ParameterBase,
 )
@@ -21,6 +22,9 @@ from qcodes.parameters.grouped_parameter import (
     DelegateGroup,
     DelegateGroupParameter,
     GroupedParameter,
+)
+from qcodes.parameters.multi_channel_instrument_parameter import (
+    MultiChannelInstrumentParameter,
 )
 from qcodes.utils import QCoDeSDeprecationWarning
 
@@ -269,3 +273,118 @@ class TestGroupedParameterPositionalArgs:
             match="missing required keyword argument: 'group'",
         ):
             GroupedParameter("test")
+
+
+# Minimal concrete subclass of MultiParameter for testing
+class _ConcreteMultiParameter(MultiParameter):
+    def get_raw(self) -> Any:
+        return (0,)
+
+
+class TestMultiParameterPositionalArgs:
+    """MultiParameter should warn when arguments after ``name`` are positional."""
+
+    def test_single_positional_arg_warns(self) -> None:
+        with pytest.warns(
+            QCoDeSDeprecationWarning,
+            match="Passing 'names' as positional argument",
+        ):
+            _ConcreteMultiParameter("test", ("a",), shapes=((),))
+
+    def test_multiple_positional_args_warn(self) -> None:
+        with pytest.warns(
+            QCoDeSDeprecationWarning,
+            match="'names', 'shapes'",
+        ):
+            _ConcreteMultiParameter("test", ("a",), ((),))
+
+    def test_keyword_args_do_not_warn(self) -> None:
+        p = _ConcreteMultiParameter("test", names=("a",), shapes=((),))
+        assert p.name == "test"
+        assert p.names == ("a",)
+
+    def test_duplicate_positional_and_keyword_raises(self) -> None:
+        with pytest.raises(
+            TypeError,
+            match="got multiple values for argument 'names'",
+        ):
+            _ConcreteMultiParameter("test", ("a",), names=("a",))
+
+    def test_too_many_positional_args_raises(self) -> None:
+        too_many = (None,) * 20
+        with pytest.raises(TypeError, match="takes at most"):
+            _ConcreteMultiParameter("test", *too_many)
+
+    def test_missing_names_raises(self) -> None:
+        with pytest.raises(
+            TypeError,
+            match="missing required keyword argument: 'names'",
+        ):
+            _ConcreteMultiParameter("test", shapes=((),))
+
+    def test_missing_shapes_raises(self) -> None:
+        with pytest.raises(
+            TypeError,
+            match="missing required keyword argument: 'shapes'",
+        ):
+            _ConcreteMultiParameter("test", names=("a",))
+
+
+class TestMultiChannelInstrumentParameterPositionalArgs:
+    """MultiChannelInstrumentParameter should warn when args are positional."""
+
+    def test_single_positional_arg_warns(self) -> None:
+        with pytest.warns(
+            QCoDeSDeprecationWarning,
+            match="Passing 'channels' as positional argument",
+        ):
+            MultiChannelInstrumentParameter(
+                [], param_name="x", name="test", names=("a",), shapes=((),)
+            )
+
+    def test_multiple_positional_args_warn(self) -> None:
+        with pytest.warns(
+            QCoDeSDeprecationWarning,
+            match="'channels', 'param_name'",
+        ):
+            MultiChannelInstrumentParameter(
+                [], "x", name="test", names=("a",), shapes=((),)
+            )
+
+    def test_keyword_args_do_not_warn(self) -> None:
+        p = MultiChannelInstrumentParameter(
+            channels=[], param_name="x", name="test", names=("a",), shapes=((),)
+        )
+        assert p.name == "test"
+
+    def test_duplicate_positional_and_keyword_raises(self) -> None:
+        with pytest.raises(
+            TypeError,
+            match="got multiple values for argument 'channels'",
+        ):
+            MultiChannelInstrumentParameter(
+                [], channels=[], param_name="x", name="test", names=("a",), shapes=((),)
+            )
+
+    def test_too_many_positional_args_raises(self) -> None:
+        too_many = (None,) * 5
+        with pytest.raises(TypeError, match="takes at most"):
+            MultiChannelInstrumentParameter(*too_many)
+
+    def test_missing_channels_raises(self) -> None:
+        with pytest.raises(
+            TypeError,
+            match="missing required keyword argument: 'channels'",
+        ):
+            MultiChannelInstrumentParameter(
+                param_name="x", name="test", names=("a",), shapes=((),)
+            )
+
+    def test_missing_param_name_raises(self) -> None:
+        with pytest.raises(
+            TypeError,
+            match="missing required keyword argument: 'param_name'",
+        ):
+            MultiChannelInstrumentParameter(
+                channels=[], name="test", names=("a",), shapes=((),)
+            )

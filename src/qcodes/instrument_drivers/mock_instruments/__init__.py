@@ -675,8 +675,8 @@ class MultiSetPointParam(MultiParameter):
         setpoint_units = (("this setpointunit",), ("this setpointunit",))
         super().__init__(
             name,
-            names,
-            shapes,
+            names=names,
+            shapes=shapes,
             instrument=instrument,
             labels=labels,
             units=units,
@@ -732,8 +732,8 @@ class Multi2DSetPointParam(MultiParameter):
         )
         super().__init__(
             name,
-            names,
-            shapes,
+            names=names,
+            shapes=shapes,
             instrument=instrument,
             labels=labels,
             units=units,
@@ -792,8 +792,8 @@ class Multi2DSetPointParam2Sizes(MultiParameter):
         )
         super().__init__(
             name,
-            names,
-            shapes,
+            names=names,
+            shapes=shapes,
             instrument=instrument,
             labels=labels,
             units=units,
@@ -828,8 +828,8 @@ class MultiScalarParam(MultiParameter):
         setpoints = ((), ())
         super().__init__(
             name,
-            names,
-            shapes,
+            names=names,
+            shapes=shapes,
             instrument=instrument,
             labels=labels,
             units=units,
