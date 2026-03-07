@@ -13,7 +13,9 @@ from qcodes.instrument import Instrument
 from qcodes.parameters import (
     ArrayParameter,
     DelegateParameter,
+    ElapsedTimeParameter,
     GroupParameter,
+    InstrumentRefParameter,
     MultiParameter,
     Parameter,
     ParameterBase,
@@ -388,3 +390,67 @@ class TestMultiChannelInstrumentParameterPositionalArgs:
             MultiChannelInstrumentParameter(
                 channels=[], name="test", names=("a",), shapes=((),)
             )
+
+
+class TestElapsedTimeParameterPositionalArgs:
+    """ElapsedTimeParameter should warn when arguments after ``name`` are positional."""
+
+    def test_single_positional_arg_warns(self) -> None:
+        with pytest.warns(
+            QCoDeSDeprecationWarning,
+            match="Passing 'label' as positional argument",
+        ):
+            ElapsedTimeParameter("test", "My label")
+
+    def test_keyword_args_do_not_warn(self) -> None:
+        p = ElapsedTimeParameter("test", label="My label")
+        assert p.name == "test"
+        assert p.label == "My label"
+
+    def test_duplicate_positional_and_keyword_raises(self) -> None:
+        with pytest.raises(
+            TypeError,
+            match="got multiple values for argument 'label'",
+        ):
+            ElapsedTimeParameter("test", "label1", label="label2")
+
+    def test_too_many_positional_args_raises(self) -> None:
+        with pytest.raises(TypeError, match="takes at most"):
+            ElapsedTimeParameter("test", "a", "b")
+
+
+class TestInstrumentRefParameterPositionalArgs:
+    """InstrumentRefParameter should warn when arguments after ``name`` are positional."""
+
+    def test_single_positional_arg_warns(self) -> None:
+        with pytest.warns(
+            QCoDeSDeprecationWarning,
+            match="Passing 'instrument' as positional argument",
+        ):
+            InstrumentRefParameter("test", None)
+
+    def test_multiple_positional_args_warn(self) -> None:
+        with pytest.warns(
+            QCoDeSDeprecationWarning,
+            match="'instrument', 'label'",
+        ):
+            InstrumentRefParameter("test", None, "my label")
+
+    def test_keyword_args_do_not_warn(self) -> None:
+        p = InstrumentRefParameter("test", instrument=None, label="my label")
+        assert p.name == "test"
+        assert p.label == "my label"
+
+    def test_duplicate_positional_and_keyword_raises(
+        self, mock_instrument: _MockInstrument
+    ) -> None:
+        with pytest.raises(
+            TypeError,
+            match="got multiple values for argument 'instrument'",
+        ):
+            InstrumentRefParameter("test", None, instrument=mock_instrument)
+
+    def test_too_many_positional_args_raises(self) -> None:
+        too_many = (None,) * 15
+        with pytest.raises(TypeError, match="takes at most"):
+            InstrumentRefParameter("test", *too_many)
