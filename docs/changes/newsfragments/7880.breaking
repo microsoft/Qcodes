@@ -1,0 +1,4 @@
+Passing arguments as positional arguments is deprecated for ``ParameterBase``, ``Parameter``,
+``ArrayParameter``, ``DelegateParameter``, ``GroupParameter``, ``GroupedParameter``,
+``MultiParameter``, ``MultiChannelInstrumentParameter``, ``ElapsedTimeParameter``,
+and ``InstrumentRefParameter``. Please pass all arguments except ``name`` as keyword arguments.
