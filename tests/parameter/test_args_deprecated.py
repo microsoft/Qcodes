@@ -13,8 +13,14 @@ from qcodes.instrument import Instrument
 from qcodes.parameters import (
     ArrayParameter,
     DelegateParameter,
+    GroupParameter,
     Parameter,
     ParameterBase,
+)
+from qcodes.parameters.grouped_parameter import (
+    DelegateGroup,
+    DelegateGroupParameter,
+    GroupedParameter,
 )
 from qcodes.utils import QCoDeSDeprecationWarning
 
@@ -174,3 +180,92 @@ class TestArrayParameterPositionalArgs:
             match="missing required keyword argument: 'shape'",
         ):
             _ConcreteArrayParameter("test")
+
+
+class TestGroupParameterPositionalArgs:
+    """GroupParameter should warn when arguments after ``name`` are positional."""
+
+    def test_single_positional_arg_warns(self) -> None:
+        with pytest.warns(
+            QCoDeSDeprecationWarning,
+            match="Passing 'instrument' as positional argument",
+        ):
+            GroupParameter("test", None)
+
+    def test_multiple_positional_args_warn(self) -> None:
+        with pytest.warns(
+            QCoDeSDeprecationWarning,
+            match="'instrument', 'initial_value'",
+        ):
+            GroupParameter("test", None, None)
+
+    def test_keyword_args_do_not_warn(self) -> None:
+        p = GroupParameter("test", instrument=None, initial_value=None)
+        assert p.name == "test"
+
+    def test_duplicate_positional_and_keyword_raises(
+        self, mock_instrument: _MockInstrument
+    ) -> None:
+        with pytest.raises(
+            TypeError,
+            match="got multiple values for argument 'instrument'",
+        ):
+            GroupParameter("test", None, instrument=mock_instrument)
+
+    def test_too_many_positional_args_raises(self) -> None:
+        too_many = (None,) * 5
+        with pytest.raises(TypeError, match="takes at most"):
+            GroupParameter("test", *too_many)
+
+
+def _make_delegate_group() -> DelegateGroup:
+    """Helper to create a minimal DelegateGroup for testing."""
+    source = Parameter("source", set_cmd=None, get_cmd=None)
+    dp = DelegateGroupParameter("dp", source=source)
+    return DelegateGroup("grp", parameters=[dp])
+
+
+class TestGroupedParameterPositionalArgs:
+    """GroupedParameter should warn when arguments after ``name`` are positional."""
+
+    def test_single_positional_arg_warns(self) -> None:
+        grp = _make_delegate_group()
+        with pytest.warns(
+            QCoDeSDeprecationWarning,
+            match="Passing 'group' as positional argument",
+        ):
+            GroupedParameter("test", grp)
+
+    def test_multiple_positional_args_warn(self) -> None:
+        grp = _make_delegate_group()
+        with pytest.warns(
+            QCoDeSDeprecationWarning,
+            match="'group', 'unit'",
+        ):
+            GroupedParameter("test", grp, "V")
+
+    def test_keyword_args_do_not_warn(self) -> None:
+        grp = _make_delegate_group()
+        p = GroupedParameter("test", group=grp, unit="V")
+        assert p.name == "test"
+        assert p.unit == "V"
+
+    def test_duplicate_positional_and_keyword_raises(self) -> None:
+        grp = _make_delegate_group()
+        with pytest.raises(
+            TypeError,
+            match="got multiple values for argument 'group'",
+        ):
+            GroupedParameter("test", grp, group=grp)
+
+    def test_too_many_positional_args_raises(self) -> None:
+        too_many = (None,) * 5
+        with pytest.raises(TypeError, match="takes at most"):
+            GroupedParameter("test", *too_many)
+
+    def test_missing_group_raises(self) -> None:
+        with pytest.raises(
+            TypeError,
+            match="missing required keyword argument: 'group'",
+        ):
+            GroupedParameter("test")
