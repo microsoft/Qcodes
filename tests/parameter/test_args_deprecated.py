@@ -10,7 +10,12 @@ from typing import Any
 import pytest
 
 from qcodes.instrument import Instrument
-from qcodes.parameters import DelegateParameter, Parameter, ParameterBase
+from qcodes.parameters import (
+    ArrayParameter,
+    DelegateParameter,
+    Parameter,
+    ParameterBase,
+)
 from qcodes.utils import QCoDeSDeprecationWarning
 
 
@@ -121,3 +126,51 @@ class TestDelegateParameterPositionalArgs:
         source = Parameter("source", set_cmd=None)
         p = DelegateParameter("test", source, instrument=None)
         assert p.name == "test"
+
+
+# Minimal concrete subclass of ArrayParameter for testing
+class _ConcreteArrayParameter(ArrayParameter):
+    def get_raw(self) -> Any:
+        return [0]
+
+
+class TestArrayParameterPositionalArgs:
+    """ArrayParameter should warn when arguments after ``name`` are positional."""
+
+    def test_single_positional_arg_warns(self) -> None:
+        with pytest.warns(
+            QCoDeSDeprecationWarning,
+            match="Passing 'shape' as positional argument",
+        ):
+            _ConcreteArrayParameter("test", (3,))
+
+    def test_multiple_positional_args_warn(self) -> None:
+        with pytest.warns(
+            QCoDeSDeprecationWarning,
+            match="'shape', 'instrument'",
+        ):
+            _ConcreteArrayParameter("test", (3,), None)
+
+    def test_keyword_args_do_not_warn(self) -> None:
+        p = _ConcreteArrayParameter("test", shape=(3,), instrument=None)
+        assert p.name == "test"
+        assert p.shape == (3,)
+
+    def test_duplicate_positional_and_keyword_raises(self) -> None:
+        with pytest.raises(
+            TypeError,
+            match="got multiple values for argument 'shape'",
+        ):
+            _ConcreteArrayParameter("test", (3,), shape=(3,))
+
+    def test_too_many_positional_args_raises(self) -> None:
+        too_many = (None,) * 20
+        with pytest.raises(TypeError, match="takes at most"):
+            _ConcreteArrayParameter("test", *too_many)
+
+    def test_missing_shape_raises(self) -> None:
+        with pytest.raises(
+            TypeError,
+            match="missing required keyword argument: 'shape'",
+        ):
+            _ConcreteArrayParameter("test")
