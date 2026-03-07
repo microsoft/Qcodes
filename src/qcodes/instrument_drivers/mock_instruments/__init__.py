@@ -864,8 +864,8 @@ class ArraySetPointParam(ArrayParameter):
         setpoint_units = ("this setpointunit",)
         super().__init__(
             name,
-            shape,
-            instrument,
+            shape=shape,
+            instrument=instrument,
             label=label,
             unit=unit,
             setpoints=setpoints,
@@ -901,8 +901,8 @@ class ComplexArraySetPointParam(ArrayParameter):
         setpoint_units = ("this setpointunit",)
         super().__init__(
             name,
-            shape,
-            instrument,
+            shape=shape,
+            instrument=instrument,
             label=label,
             unit=unit,
             setpoints=setpoints,
