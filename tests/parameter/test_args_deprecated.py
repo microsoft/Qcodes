@@ -368,10 +368,19 @@ class TestMultiChannelInstrumentParameterPositionalArgs:
                 [], channels=[], param_name="x", name="test", names=("a",), shapes=((),)
             )
 
-    def test_too_many_positional_args_raises(self) -> None:
-        too_many = (None,) * 5
-        with pytest.raises(TypeError, match="takes at most"):
-            MultiChannelInstrumentParameter(*too_many)
+    def test_extra_positional_args_forwarded_to_super(self) -> None:
+        """Args beyond channels/param_name are forwarded to MultiParameter."""
+        with pytest.warns(QCoDeSDeprecationWarning) as records:
+            p = MultiChannelInstrumentParameter([], "x", "test", ("a",), ((),))
+        # First warning for channels/param_name, second for names/shapes
+        messages = [str(r.message) for r in records]
+        assert any("'channels', 'param_name'" in m for m in messages)
+        assert any("'names', 'shapes'" in m for m in messages)
+        assert p._channels == []
+        assert p._param_name == "x"
+        assert p.name == "test"
+        assert p.names == ("a",)
+        assert p.shapes == ((),)
 
     def test_missing_channels_raises(self) -> None:
         with pytest.raises(

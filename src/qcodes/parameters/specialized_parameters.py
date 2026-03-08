@@ -40,7 +40,7 @@ class ElapsedTimeParameter(Parameter):
     ):
         if args:
             # TODO: After QCoDeS 0.57 remove the args argument and delete this code block.
-            positional_names = self._DEPRECATED_POSITIONAL_ARGS
+            positional_names = __class__._DEPRECATED_POSITIONAL_ARGS
             if len(args) > len(positional_names):
                 raise TypeError(
                     f"{type(self).__name__}.__init__() takes at most "
@@ -144,7 +144,7 @@ class InstrumentRefParameter(Parameter):
     ) -> None:
         if args:
             # TODO: After QCoDeS 0.57 remove the args argument and delete this code block.
-            positional_names = self._DEPRECATED_POSITIONAL_ARGS
+            positional_names = __class__._DEPRECATED_POSITIONAL_ARGS
             if len(args) > len(positional_names):
                 raise TypeError(
                     f"{type(self).__name__}.__init__() takes at most "

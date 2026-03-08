@@ -48,15 +48,11 @@ class MultiChannelInstrumentParameter(MultiParameter, Generic[InstrumentModuleTy
         param_name: str = _PARAM_NAME_UNSET,
         **kwargs: Any,
     ) -> None:
+        extra_args: tuple[Any, ...] = ()
         if args:
             # TODO: After QCoDeS 0.57 remove the args argument and delete this code block.
-            positional_names = self._DEPRECATED_POSITIONAL_ARGS
-            if len(args) > len(positional_names):
-                raise TypeError(
-                    f"{type(self).__name__}.__init__() takes at most "
-                    f"{len(positional_names) + 1} positional arguments "
-                    f"({len(args) + 1} given)"
-                )
+            positional_names = __class__._DEPRECATED_POSITIONAL_ARGS
+            n_own = min(len(args), len(positional_names))
 
             _defaults: dict[str, Any] = {
                 "channels": self._CHANNELS_UNSET,
@@ -68,7 +64,7 @@ class MultiChannelInstrumentParameter(MultiParameter, Generic[InstrumentModuleTy
                 "param_name": param_name,
             }
 
-            for i in range(len(args)):
+            for i in range(n_own):
                 arg_name = positional_names[i]
                 if _kwarg_vals[arg_name] is not _defaults[arg_name]:
                     raise TypeError(
@@ -76,7 +72,7 @@ class MultiChannelInstrumentParameter(MultiParameter, Generic[InstrumentModuleTy
                         f"values for argument '{arg_name}'"
                     )
 
-            positional_arg_names = positional_names[: len(args)]
+            positional_arg_names = positional_names[:n_own]
             names_str = ", ".join(f"'{n}'" for n in positional_arg_names)
             warnings.warn(
                 f"Passing {names_str} as positional argument(s) to "
@@ -90,6 +86,9 @@ class MultiChannelInstrumentParameter(MultiParameter, Generic[InstrumentModuleTy
             channels = _pos.get("channels", channels)
             param_name = _pos.get("param_name", param_name)
 
+            # Any args beyond our own positional args are forwarded to super
+            extra_args = args[n_own:]
+
         if channels is self._CHANNELS_UNSET:
             raise TypeError(
                 f"{type(self).__name__}.__init__() missing required "
@@ -101,7 +100,7 @@ class MultiChannelInstrumentParameter(MultiParameter, Generic[InstrumentModuleTy
                 f"keyword argument: 'param_name'"
             )
 
-        super().__init__(**kwargs)
+        super().__init__(*extra_args, **kwargs)
         self._channels = channels
         self._param_name = param_name
 
