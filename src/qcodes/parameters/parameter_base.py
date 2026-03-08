@@ -17,7 +17,6 @@ from qcodes.metadatable import Metadatable, MetadatableWithName
 from qcodes.parameters import ParamSpecBase
 from qcodes.utils import (
     DelegateAttributes,
-    QCoDeSDeprecationWarning,
     full_class,
     qcodes_abstractmethod,
 )
@@ -231,35 +230,10 @@ class ParameterBase(
         Callable[[ParameterBase, ParamDataType], None] | None
     ] = None
 
-    # Ordered list of keyword argument names (after 'name') for
-    # backwards-compatible positional argument handling.
-    # TODO: remove with handling of args below after QCoDeS 0.57
-    _DEPRECATED_POSITIONAL_ARGS: ClassVar[tuple[str, ...]] = (
-        "instrument",
-        "snapshot_get",
-        "metadata",
-        "step",
-        "scale",
-        "offset",
-        "inter_delay",
-        "post_delay",
-        "val_mapping",
-        "get_parser",
-        "set_parser",
-        "snapshot_value",
-        "snapshot_exclude",
-        "max_val_age",
-        "vals",
-        "abstract",
-        "bind_to_instrument",
-        "register_name",
-        "on_set_callback",
-    )
-
     def __init__(
         self,
         name: str,
-        *args: Any,
+        *,
         # mypy seems to be confused here. The bound and default for InstrumentTypeVar_co
         # contains None but mypy will not allow None as a default as of v 1.19.0
         instrument: InstrumentTypeVar_co = None,  # type: ignore[assignment]
@@ -283,109 +257,6 @@ class ParameterBase(
         on_set_callback: Callable[[ParameterBase, ParameterDataTypeVar], None]
         | None = None,
     ) -> None:
-        if args:
-            # TODO: After QCoDeS 0.57 remove the args argument and delete this code block.
-            # we hardcode the class since mypy does not support __class__ and
-            # self / self.__class__ / type(self) in class bodies does not give
-            # exactly this class but the type of a subclass
-            positional_names = ParameterBase._DEPRECATED_POSITIONAL_ARGS
-            if len(args) > len(positional_names):
-                raise TypeError(
-                    f"{type(self).__name__}.__init__() takes at most "
-                    f"{len(positional_names) + 2} positional arguments "
-                    f"({len(args) + 2} given)"
-                )
-
-            _defaults: dict[str, Any] = {
-                "instrument": None,
-                "snapshot_get": True,
-                "metadata": None,
-                "step": None,
-                "scale": None,
-                "offset": None,
-                "inter_delay": 0,
-                "post_delay": 0,
-                "val_mapping": None,
-                "get_parser": None,
-                "set_parser": None,
-                "snapshot_value": True,
-                "snapshot_exclude": False,
-                "max_val_age": None,
-                "vals": None,
-                "abstract": False,
-                "bind_to_instrument": True,
-                "register_name": None,
-                "on_set_callback": None,
-            }
-
-            # Snapshot keyword values before any reassignment so we can
-            # detect duplicates (keyword value differs from its default).
-            _kwarg_vals: dict[str, Any] = {
-                "instrument": instrument,
-                "snapshot_get": snapshot_get,
-                "metadata": metadata,
-                "step": step,
-                "scale": scale,
-                "offset": offset,
-                "inter_delay": inter_delay,
-                "post_delay": post_delay,
-                "val_mapping": val_mapping,
-                "get_parser": get_parser,
-                "set_parser": set_parser,
-                "snapshot_value": snapshot_value,
-                "snapshot_exclude": snapshot_exclude,
-                "max_val_age": max_val_age,
-                "vals": vals,
-                "abstract": abstract,
-                "bind_to_instrument": bind_to_instrument,
-                "register_name": register_name,
-                "on_set_callback": on_set_callback,
-            }
-
-            # Check for duplicate arguments (passed both positionally and
-            # as keyword). We detect this by checking whether the keyword
-            # value differs from its default for each positionally-supplied
-            # argument.
-            for i in range(len(args)):
-                arg_name = positional_names[i]
-                if _kwarg_vals[arg_name] is not _defaults[arg_name]:
-                    raise TypeError(
-                        f"{type(self).__name__}.__init__() got multiple "
-                        f"values for argument '{arg_name}'"
-                    )
-
-            positional_arg_names = positional_names[: len(args)]
-            names_str = ", ".join(f"'{n}'" for n in positional_arg_names)
-            warnings.warn(
-                f"Passing {names_str} as positional argument(s) to "
-                f"{type(self).__name__} is deprecated. "
-                f"Please pass them as keyword arguments.",
-                QCoDeSDeprecationWarning,
-                stacklevel=2,
-            )
-
-            # Apply positional values to the keyword parameter variables.
-            _pos = dict(zip(positional_names, args))
-            instrument = _pos.get("instrument", instrument)
-            snapshot_get = _pos.get("snapshot_get", snapshot_get)
-            metadata = _pos.get("metadata", metadata)
-            step = _pos.get("step", step)
-            scale = _pos.get("scale", scale)
-            offset = _pos.get("offset", offset)
-            inter_delay = _pos.get("inter_delay", inter_delay)
-            post_delay = _pos.get("post_delay", post_delay)
-            val_mapping = _pos.get("val_mapping", val_mapping)
-            get_parser = _pos.get("get_parser", get_parser)
-            set_parser = _pos.get("set_parser", set_parser)
-            snapshot_value = _pos.get("snapshot_value", snapshot_value)
-            snapshot_exclude = _pos.get("snapshot_exclude", snapshot_exclude)
-            max_val_age = _pos.get("max_val_age", max_val_age)
-            vals = _pos.get("vals", vals)
-            abstract = _pos.get("abstract", abstract)
-            bind_to_instrument = _pos.get("bind_to_instrument", bind_to_instrument)
-            register_name = _pos.get("register_name", register_name)
-            on_set_callback = _pos.get("on_set_callback", on_set_callback)
-
         super().__init__(metadata)
         if not str(name).isidentifier():
             raise ValueError(
