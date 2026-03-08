@@ -163,8 +163,8 @@ class MultiParameter(
         self,
         name: str,
         *args: Any,
-        names: Sequence[str] = _NAMES_UNSET,  # type: ignore[assignment]
-        shapes: Sequence[Sequence[int]] = _SHAPES_UNSET,  # type: ignore[assignment]
+        names: Sequence[str] = _NAMES_UNSET,
+        shapes: Sequence[Sequence[int]] = _SHAPES_UNSET,
         # mypy seems to be confused here. The bound and default for InstrumentTypeVar_co
         # contains None but mypy will not allow it as a default as of v 1.19.0
         instrument: InstrumentTypeVar_co = None,  # type: ignore[assignment]

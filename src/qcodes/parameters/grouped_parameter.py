@@ -180,7 +180,7 @@ class GroupedParameter(ParameterBase):
         self,
         name: str,
         *args: Any,
-        group: DelegateGroup = _GROUP_UNSET,  # type: ignore[assignment]
+        group: DelegateGroup = _GROUP_UNSET,
         unit: str | None = None,
         label: str | None = None,
         **kwargs: Any,

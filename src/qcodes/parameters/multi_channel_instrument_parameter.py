@@ -44,8 +44,8 @@ class MultiChannelInstrumentParameter(MultiParameter, Generic[InstrumentModuleTy
     def __init__(
         self,
         *args: Any,
-        channels: Sequence[InstrumentModuleType] = _CHANNELS_UNSET,  # type: ignore[assignment]
-        param_name: str = _PARAM_NAME_UNSET,  # type: ignore[assignment]
+        channels: Sequence[InstrumentModuleType] = _CHANNELS_UNSET,
+        param_name: str = _PARAM_NAME_UNSET,
         **kwargs: Any,
     ) -> None:
         if args:
