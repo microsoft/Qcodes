@@ -53,7 +53,7 @@ class ElapsedTimeParameter(Parameter):
 
             for i in range(len(args)):
                 arg_name = positional_names[i]
-                if _kwarg_vals[arg_name] is not _defaults[arg_name]:
+                if _kwarg_vals[arg_name] != _defaults[arg_name]:
                     raise TypeError(
                         f"{type(self).__name__}.__init__() got multiple "
                         f"values for argument '{arg_name}'"
