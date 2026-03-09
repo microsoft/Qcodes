@@ -51,7 +51,12 @@ class MultiChannelInstrumentParameter(MultiParameter, Generic[InstrumentModuleTy
         extra_args: tuple[Any, ...] = ()
         if args:
             # TODO: After QCoDeS 0.57 remove the args argument and delete this code block.
-            positional_names = __class__._DEPRECATED_POSITIONAL_ARGS
+            # we hardcode the class since mypy does not support __class__ and
+            # self / self.__class__ / type(self) in class bodies does not give
+            # exactly this class but the type of a subclass
+            positional_names = (
+                MultiChannelInstrumentParameter._DEPRECATED_POSITIONAL_ARGS
+            )
             n_own = min(len(args), len(positional_names))
 
             _defaults: dict[str, Any] = {

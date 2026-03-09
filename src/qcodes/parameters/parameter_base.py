@@ -285,7 +285,10 @@ class ParameterBase(
     ) -> None:
         if args:
             # TODO: After QCoDeS 0.57 remove the args argument and delete this code block.
-            positional_names = __class__._DEPRECATED_POSITIONAL_ARGS
+            # we hardcode the class since mypy does not support __class__ and
+            # self / self.__class__ / type(self) in class bodies does not give
+            # exactly this class but the type of a subclass
+            positional_names = ParameterBase._DEPRECATED_POSITIONAL_ARGS
             if len(args) > len(positional_names):
                 raise TypeError(
                     f"{type(self).__name__}.__init__() takes at most "
