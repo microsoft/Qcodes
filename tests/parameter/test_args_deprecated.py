@@ -127,17 +127,48 @@ class TestParameterPositionalArgs:
 
 
 class TestDelegateParameterPositionalArgs:
-    """DelegateParameter should warn when extra positional args are passed."""
+    """DelegateParameter should warn when arguments after ``name`` are positional."""
 
-    def test_positional_args_warn(self) -> None:
+    def test_single_positional_arg_warns(self) -> None:
         source = Parameter("source", set_cmd=None)
-        with pytest.warns(QCoDeSDeprecationWarning):
+        with pytest.warns(
+            QCoDeSDeprecationWarning,
+            match="Passing 'source' as positional argument",
+        ):
+            DelegateParameter("test", source)
+
+    def test_multiple_positional_args_warn(self) -> None:
+        source = Parameter("source", set_cmd=None)
+        with pytest.warns(
+            QCoDeSDeprecationWarning,
+            match="'source', 'instrument'",
+        ):
             DelegateParameter("test", source, None)
 
     def test_keyword_args_do_not_warn(self) -> None:
         source = Parameter("source", set_cmd=None)
-        p = DelegateParameter("test", source, instrument=None)
+        p = DelegateParameter("test", source=source, instrument=None)
         assert p.name == "test"
+
+    def test_duplicate_positional_and_keyword_raises(self) -> None:
+        source = Parameter("source", set_cmd=None)
+        with pytest.raises(
+            TypeError,
+            match="got multiple values for argument 'source'",
+        ):
+            DelegateParameter("test", source, source=source)
+
+    def test_too_many_positional_args_raises(self) -> None:
+        too_many = (None,) * 20
+        with pytest.raises(TypeError, match="takes at most"):
+            DelegateParameter("test", *too_many)
+
+    def test_missing_source_raises(self) -> None:
+        with pytest.raises(
+            TypeError,
+            match="missing required keyword argument: 'source'",
+        ):
+            DelegateParameter("test")
 
 
 # Minimal concrete subclass of ArrayParameter for testing
