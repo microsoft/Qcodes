@@ -373,10 +373,26 @@ class TektronixDPOWaveform(InstrumentChannel["TektronixDPOChannel"]):
             )
         else:
             bytes_per_sample = waveform.bytes_per_sample()
-            data_type = {1: "b", 2: "h", 4: "f", 8: "d"}[bytes_per_sample]
+            data_format = waveform.data_format()
 
-            if waveform.data_format() == "unsigned_integer":
-                data_type = data_type.upper()
+            data_type: Literal["b", "B", "h", "H", "f", "d"]
+            match bytes_per_sample, data_format:
+                case 1, "signed_integer":
+                    data_type = "b"
+                case 1, "unsigned_integer":
+                    data_type = "B"
+                case 2, "signed_integer":
+                    data_type = "h"
+                case 2, "unsigned_integer":
+                    data_type = "H"
+                case 4, "floating_point":
+                    data_type = "f"
+                case 8, "floating_point":
+                    data_type = "d"
+                case _:
+                    raise ValueError(
+                        f"Unsupported combination of bytes_per_sample and data_format: {bytes_per_sample}, {data_format}"
+                    )
 
             is_big_endian = waveform.is_big_endian()
 
@@ -416,7 +432,9 @@ class TektronixDPOWaveformFormat(InstrumentChannel):
     ) -> None:
         super().__init__(parent, name, **kwargs)
 
-        self.data_format: Parameter = self.add_parameter(
+        self.data_format: Parameter[
+            Literal["signed_integer", "unsigned_integer", "floating_point"], Self
+        ] = self.add_parameter(
             "data_format",
             get_cmd="WFMOutpre:BN_Fmt?",
             set_cmd="WFMOutpre:BN_Fmt {}",
@@ -428,7 +446,7 @@ class TektronixDPOWaveformFormat(InstrumentChannel):
         )
         """Parameter data_format"""
 
-        self.is_big_endian: Parameter = self.add_parameter(
+        self.is_big_endian: Parameter[bool, Self] = self.add_parameter(
             "is_big_endian",
             get_cmd="WFMOutpre:BYT_Or?",
             set_cmd="WFMOutpre:BYT_Or {}",
@@ -436,16 +454,18 @@ class TektronixDPOWaveformFormat(InstrumentChannel):
         )
         """Parameter is_big_endian"""
 
-        self.bytes_per_sample: Parameter[int, Self] = self.add_parameter(
-            "bytes_per_sample",
-            get_cmd="WFMOutpre:BYT_Nr?",
-            set_cmd="WFMOutpre:BYT_Nr {}",
-            get_parser=int,
-            vals=Enum(1, 2, 4, 8),
+        self.bytes_per_sample: Parameter[Literal[1, 2, 4, 8], Self] = (
+            self.add_parameter(
+                "bytes_per_sample",
+                get_cmd="WFMOutpre:BYT_Nr?",
+                set_cmd="WFMOutpre:BYT_Nr {}",
+                get_parser=int,
+                vals=Enum(1, 2, 4, 8),
+            )
         )
         """Parameter bytes_per_sample"""
 
-        self.is_binary: Parameter = self.add_parameter(
+        self.is_binary: Parameter[bool, Self] = self.add_parameter(
             "is_binary",
             get_cmd="WFMOutpre:ENCdg?",
             set_cmd="WFMOutpre:ENCdg {}",
