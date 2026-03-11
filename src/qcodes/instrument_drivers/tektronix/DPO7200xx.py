@@ -158,6 +158,64 @@ class TektronixDPO7000xx(VisaInstrument):
         self.visa_log.debug(f"Response: {response}")
         return response
 
+    def single(self):
+        """
+        Set scope into single acquisition mode and wait for triggered acquisition
+        """
+        self.acquisition.stop_after("SEQUENCE")
+        self.acquisition.state("RUN")
+        timeout_val = self.timeout()
+        timeout = timeout_val if timeout_val is not None else 10.0
+        start_time = time.time()
+        while True:
+            acq_state = self.acquisition.state().strip()
+            trigger_state = self.trigger.ready().strip()
+            # logger.info(f"Trigger: {trigger_state}, Acquisition: {acq_state}")
+            if (acq_state == "1") and (trigger_state == "1"):
+                break
+
+            if time.time() - start_time > timeout:
+                break
+            time.sleep(0.1)
+
+    def download_waveforms(self) -> tuple:
+        """
+        Wait for acquisition of a triggered waveform to complete and then
+        download acquired waveforms from the enabled channels the Tektronix scope.
+        """
+        timeout_val = self.timeout()
+        timeout = timeout_val if timeout_val is not None else 60.0
+        start_time = time.time()
+        while True:
+            acq_state = self.acquisition.state().strip()
+            if acq_state == "0":
+                break
+            if time.time() - start_time > timeout:
+                break
+            time.sleep(0.1)
+
+        # Only download waveforms from enabled channels
+        wfms = ()
+        for ch in self.channel:
+            if self.ask(f"SELect:{ch._identifier}?").strip() == "1":
+                ch.set_trace_length(self.horizontal.record_length())
+                wfms += (
+                    ch.waveform.trace(),
+                )  # This will trigger the actual download of the waveform
+        return wfms
+
+    def get_timebase(self) -> tuple:
+        """
+        Get the timebase of the scope in seconds per division
+
+        Returns:
+            Tuple of time unit (str) and time axis values (np.ndarray)
+
+        """
+        time_unit = self.channel[0].waveform.trace_axis
+        time_axis = self.channel[0].waveform.trace_axis()
+        return time_unit.unit, time_axis
+
 
 class TektronixDPOData(InstrumentChannel):
     """
