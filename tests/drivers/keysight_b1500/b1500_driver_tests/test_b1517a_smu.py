@@ -434,6 +434,7 @@ def test_iv_sweep_delay(smu: KeysightB1517A) -> None:
     smu.iv_sweep.trigger_delay(0.1)
     smu.iv_sweep.measure_delay(15.4)
 
+    assert isinstance(mainframe, MagicMock)
     mainframe.write.assert_has_calls(
         [
             call("WT 43.12,0.0,0.0,0.0,0.0"),
