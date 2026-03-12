@@ -340,7 +340,7 @@ class KeysightB1500(VisaInstrument):
 
         """
         msg = MessageBuilder().cal_query(slot=slot)
-        with self.root_instrument.timeout.set_to(self.calibration_time_out):
+        with self.timeout.set_to(self.calibration_time_out):
             response = self.ask(msg.message)
         return constants.CALResponse(int(response))
 
@@ -377,7 +377,7 @@ class KeysightB1500(VisaInstrument):
         msg = MessageBuilder().err_query()
         self.write(msg.message)
 
-    def clear_timer_count(self, chnum: int | None = None) -> None:
+    def clear_timer_count(self, chnum: "int | Sequence[int] | None" = None) -> None:
         """
         This command clears the timer count. This command is effective for
         all measurement modes, regardless of the TSC setting. This command
@@ -391,13 +391,23 @@ class KeysightB1500(VisaInstrument):
                 source output start by the DV, DI, or DCV command for the
                 specified channel. The channel output switch of the
                 specified channel must be ON when the timer count is
-                cleared.
+                cleared. Alternatively a sequence of channels
+                can be passed to clear the timer count for multiple
+                channels at the same time.
 
         If chnum is not specified, this command clears the timer count
         immediately,
 
         """
-        msg = MessageBuilder().tsr(chnum=chnum)
+        msg = MessageBuilder()
+        if chnum is None:
+            chnum_internal: Sequence[int | None] = [None]
+        elif isinstance(chnum, int):
+            chnum_internal = [chnum]
+        else:
+            chnum_internal = chnum
+        for ch in chnum_internal:
+            msg.tsr(chnum=ch)
         self.write(msg.message)
 
     def set_measurement_mode(

@@ -553,9 +553,8 @@ class TimeTrace(ParameterWithSetpoints[npt.NDArray[np.float64], "Keysight344xxA"
         npts = self.instrument.timetrace_npts()
         meas_time = npts * dt
         disp_text = f"Acquiring {npts} samples"  # display limit: 40 characters
-        new_timeout = max(
-            self._acquire_timeout_fudge_factor * meas_time, self.instrument.timeout()
-        )
+        old_timeout = self.instrument.timeout() or float("inf")
+        new_timeout = max(self._acquire_timeout_fudge_factor * meas_time, old_timeout)
 
         with ExitStack() as stack:
             stack.enter_context(self.instrument.trigger.count.set_to(1))
@@ -583,7 +582,7 @@ class TimeTrace(ParameterWithSetpoints[npt.NDArray[np.float64], "Keysight344xxA"
         return data
 
 
-class TimeAxis(Parameter):
+class TimeAxis(Parameter[npt.NDArray, "Keysight344xxA"]):
     """
     A simple :class:`.Parameter` that holds all the times (relative to the
     measurement start) at which the points of the time trace were acquired.
