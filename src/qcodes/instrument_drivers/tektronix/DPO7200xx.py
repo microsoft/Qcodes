@@ -232,7 +232,7 @@ class TektronixDPOData(InstrumentChannel):
         """
 
 
-class TektronixDPOWaveform(InstrumentChannel):
+class TektronixDPOWaveform(InstrumentChannel["TektronixDPOChannel"]):
     """
     This submodule retrieves data from waveform sources, e.g.
     channels.
@@ -246,7 +246,7 @@ class TektronixDPOWaveform(InstrumentChannel):
 
     def __init__(
         self,
-        parent: InstrumentBase,
+        parent: "TektronixDPOChannel",
         name: str,
         identifier: str,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
@@ -345,6 +345,12 @@ class TektronixDPOWaveform(InstrumentChannel):
         )
         """Parameter trace"""
 
+    @property
+    def root_instrument(self) -> "TektronixDPO7000xx":
+        root_instrument = super().root_instrument
+        assert isinstance(root_instrument, TektronixDPO7000xx)
+        return root_instrument
+
     def _get_cmd(self, cmd_string: str) -> "Callable[[], str]":
         """
         Parameters defined in this submodule require the correct
@@ -363,14 +369,30 @@ class TektronixDPOWaveform(InstrumentChannel):
 
         if not waveform.is_binary():
             raw_data = self.root_instrument.visa_handle.query_ascii_values(
-                "CURVE?", container=np.array
+                "CURVE?", container=np.ndarray
             )
         else:
             bytes_per_sample = waveform.bytes_per_sample()
-            data_type = {1: "b", 2: "h", 4: "f", 8: "d"}[bytes_per_sample]
+            data_format = waveform.data_format()
 
-            if waveform.data_format() == "unsigned_integer":
-                data_type = data_type.upper()
+            data_type: Literal["b", "B", "h", "H", "f", "d"]
+            match bytes_per_sample, data_format:
+                case 1, "signed_integer":
+                    data_type = "b"
+                case 1, "unsigned_integer":
+                    data_type = "B"
+                case 2, "signed_integer":
+                    data_type = "h"
+                case 2, "unsigned_integer":
+                    data_type = "H"
+                case 4, "floating_point":
+                    data_type = "f"
+                case 8, "floating_point":
+                    data_type = "d"
+                case _:
+                    raise ValueError(
+                        f"Unsupported combination of bytes_per_sample and data_format: {bytes_per_sample}, {data_format}"
+                    )
 
             is_big_endian = waveform.is_big_endian()
 
@@ -378,7 +400,7 @@ class TektronixDPOWaveform(InstrumentChannel):
                 "CURVE?",
                 datatype=data_type,
                 is_big_endian=is_big_endian,
-                container=np.array,
+                container=np.ndarray,
             )
 
         return (raw_data - self.raw_data_offset()) * self.scale() + self.offset()
@@ -410,7 +432,9 @@ class TektronixDPOWaveformFormat(InstrumentChannel):
     ) -> None:
         super().__init__(parent, name, **kwargs)
 
-        self.data_format: Parameter = self.add_parameter(
+        self.data_format: Parameter[
+            Literal["signed_integer", "unsigned_integer", "floating_point"], Self
+        ] = self.add_parameter(
             "data_format",
             get_cmd="WFMOutpre:BN_Fmt?",
             set_cmd="WFMOutpre:BN_Fmt {}",
@@ -422,7 +446,7 @@ class TektronixDPOWaveformFormat(InstrumentChannel):
         )
         """Parameter data_format"""
 
-        self.is_big_endian: Parameter = self.add_parameter(
+        self.is_big_endian: Parameter[bool, Self] = self.add_parameter(
             "is_big_endian",
             get_cmd="WFMOutpre:BYT_Or?",
             set_cmd="WFMOutpre:BYT_Or {}",
@@ -430,16 +454,18 @@ class TektronixDPOWaveformFormat(InstrumentChannel):
         )
         """Parameter is_big_endian"""
 
-        self.bytes_per_sample: Parameter = self.add_parameter(
-            "bytes_per_sample",
-            get_cmd="WFMOutpre:BYT_Nr?",
-            set_cmd="WFMOutpre:BYT_Nr {}",
-            get_parser=int,
-            vals=Enum(1, 2, 4, 8),
+        self.bytes_per_sample: Parameter[Literal[1, 2, 4, 8], Self] = (
+            self.add_parameter(
+                "bytes_per_sample",
+                get_cmd="WFMOutpre:BYT_Nr?",
+                set_cmd="WFMOutpre:BYT_Nr {}",
+                get_parser=int,
+                vals=Enum(1, 2, 4, 8),
+            )
         )
         """Parameter bytes_per_sample"""
 
-        self.is_binary: Parameter = self.add_parameter(
+        self.is_binary: Parameter[bool, Self] = self.add_parameter(
             "is_binary",
             get_cmd="WFMOutpre:ENCdg?",
             set_cmd="WFMOutpre:ENCdg {}",
@@ -448,7 +474,7 @@ class TektronixDPOWaveformFormat(InstrumentChannel):
         """Parameter is_binary"""
 
 
-class TektronixDPOChannel(InstrumentChannel):
+class TektronixDPOChannel(InstrumentChannel[TektronixDPO7000xx]):
     """
     The main channel module for the oscilloscope. The parameters
     defined here reflect the waveforms as they are displayed on
@@ -457,7 +483,7 @@ class TektronixDPOChannel(InstrumentChannel):
 
     def __init__(
         self,
-        parent: Instrument | InstrumentChannel,
+        parent: TektronixDPO7000xx,
         name: str,
         channel_number: int,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
@@ -546,15 +572,15 @@ class TektronixDPOChannel(InstrumentChannel):
             value: The requested number of samples in the trace
 
         """
-        if self.root_instrument.horizontal.record_length() < value:
+        if self.parent.horizontal.record_length() < value:
             raise ValueError(
                 "Cannot set a trace length which is larger than "
                 "the record length. Please switch to manual mode "
                 "and adjust the record length first"
             )
 
-        self.root_instrument.data.start_index(1)
-        self.root_instrument.data.stop_index(value)
+        self.parent.data.start_index(1)
+        self.parent.data.stop_index(value)
 
     def set_trace_time(self, value: float) -> None:
         """
@@ -562,7 +588,7 @@ class TektronixDPOChannel(InstrumentChannel):
             value: The time over which a trace is desired.
 
         """
-        sample_rate = self.root_instrument.horizontal.sample_rate()
+        sample_rate = self.parent.horizontal.sample_rate()
         required_sample_count = int(sample_rate * value)
         self.set_trace_length(required_sample_count)
 
