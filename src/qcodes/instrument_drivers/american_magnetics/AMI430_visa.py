@@ -1215,6 +1215,7 @@ class AMIModel4303D(Instrument):
         individually. It results in additional safety checks being
         performed by this 3D driver.
         """
+        # TODO the _set_x _set_y _set_z methods don't seem to exist anywhere
         if instrument is self._instrument_x:
             self._set_x(value)
         elif instrument is self._instrument_y:
