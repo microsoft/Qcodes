@@ -6,11 +6,8 @@ should be of type :class:`GroupParameter`
 
 from __future__ import annotations
 
-import warnings
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Any, ClassVar
-
-from qcodes.utils import QCoDeSDeprecationWarning
+from typing import TYPE_CHECKING, Any
 
 from .parameter import Parameter
 
@@ -51,64 +48,14 @@ class GroupParameter(Parameter):
 
     """
 
-    _DEPRECATED_POSITIONAL_ARGS: ClassVar[tuple[str, ...]] = (
-        "instrument",
-        "initial_value",
-    )
-
     def __init__(
         self,
         name: str,
-        *args: Any,
+        *,
         instrument: InstrumentBase | None = None,
         initial_value: float | str | None = None,
         **kwargs: Any,
     ) -> None:
-        if args:
-            # TODO: After QCoDeS 0.57 remove the args argument and delete this code block.
-            # we hardcode the class since mypy does not support __class__ and
-            # self / self.__class__ / type(self) in class bodies does not give
-            # exactly this class but the type of a subclass
-            positional_names = GroupParameter._DEPRECATED_POSITIONAL_ARGS
-            if len(args) > len(positional_names):
-                raise TypeError(
-                    f"{type(self).__name__}.__init__() takes at most "
-                    f"{len(positional_names) + 2} positional arguments "
-                    f"({len(args) + 2} given)"
-                )
-
-            _defaults: dict[str, Any] = {
-                "instrument": None,
-                "initial_value": None,
-            }
-
-            _kwarg_vals: dict[str, Any] = {
-                "instrument": instrument,
-                "initial_value": initial_value,
-            }
-
-            for i in range(len(args)):
-                arg_name = positional_names[i]
-                if _kwarg_vals[arg_name] is not _defaults[arg_name]:
-                    raise TypeError(
-                        f"{type(self).__name__}.__init__() got multiple "
-                        f"values for argument '{arg_name}'"
-                    )
-
-            positional_arg_names = positional_names[: len(args)]
-            names_str = ", ".join(f"'{n}'" for n in positional_arg_names)
-            warnings.warn(
-                f"Passing {names_str} as positional argument(s) to "
-                f"{type(self).__name__} is deprecated. "
-                f"Please pass them as keyword arguments.",
-                QCoDeSDeprecationWarning,
-                stacklevel=2,
-            )
-
-            _pos = dict(zip(positional_names, args))
-            instrument = _pos.get("instrument", instrument)
-            initial_value = _pos.get("initial_value", initial_value)
-
         if "set_cmd" in kwargs or "get_cmd" in kwargs:
             raise ValueError(
                 "A GroupParameter does not use 'set_cmd' or 'get_cmd' kwarg"

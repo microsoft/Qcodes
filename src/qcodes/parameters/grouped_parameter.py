@@ -1,11 +1,8 @@
 from __future__ import annotations
 
 import logging
-import warnings
 from collections import OrderedDict, namedtuple
-from typing import TYPE_CHECKING, Any, ClassVar
-
-from qcodes.utils import QCoDeSDeprecationWarning
+from typing import TYPE_CHECKING, Any
 
 from .delegate_parameter import DelegateParameter
 from .group_parameter import Group, GroupParameter
@@ -168,77 +165,15 @@ class GroupedParameter(ParameterBase):
 
     """
 
-    _DEPRECATED_POSITIONAL_ARGS: ClassVar[tuple[str, ...]] = (
-        "group",
-        "unit",
-        "label",
-    )
-
-    _GROUP_UNSET: Any = object()
-
     def __init__(
         self,
         name: str,
-        *args: Any,
-        group: DelegateGroup = _GROUP_UNSET,
+        *,
+        group: DelegateGroup,
         unit: str | None = None,
         label: str | None = None,
         **kwargs: Any,
     ):
-        if args:
-            # TODO: After QCoDeS 0.57 remove the args argument and delete this code block.
-            # we hardcode the class since mypy does not support __class__ and
-            # self / self.__class__ / type(self) in class bodies does not give
-            # exactly this class but the type of a subclass
-            positional_names = GroupedParameter._DEPRECATED_POSITIONAL_ARGS
-            if len(args) > len(positional_names):
-                raise TypeError(
-                    f"{type(self).__name__}.__init__() takes at most "
-                    f"{len(positional_names) + 2} positional arguments "
-                    f"({len(args) + 2} given)"
-                )
-
-            _defaults: dict[str, Any] = {
-                "group": self._GROUP_UNSET,
-                "unit": None,
-                "label": None,
-            }
-
-            _kwarg_vals: dict[str, Any] = {
-                "group": group,
-                "unit": unit,
-                "label": label,
-            }
-
-            for i in range(len(args)):
-                arg_name = positional_names[i]
-                if _kwarg_vals[arg_name] is not _defaults[arg_name]:
-                    raise TypeError(
-                        f"{type(self).__name__}.__init__() got multiple "
-                        f"values for argument '{arg_name}'"
-                    )
-
-            positional_arg_names = positional_names[: len(args)]
-            names_str = ", ".join(f"'{n}'" for n in positional_arg_names)
-            warnings.warn(
-                f"Passing {names_str} as positional argument(s) to "
-                f"{type(self).__name__} is deprecated. "
-                f"Please pass them as keyword arguments.",
-                QCoDeSDeprecationWarning,
-                stacklevel=2,
-            )
-
-            _pos = dict(zip(positional_names, args))
-            group = _pos.get("group", group)
-            unit = _pos.get("unit", unit)
-            label = _pos.get("label", label)
-
-        if group is self._GROUP_UNSET:
-            raise TypeError(
-                f"{type(self).__name__}.__init__() missing required "
-                f"keyword argument: 'group'"
-            )
-
         super().__init__(name, **kwargs)
         self.label = name if label is None else label
         self.unit = unit if unit is not None else ""
