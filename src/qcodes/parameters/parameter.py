@@ -5,8 +5,11 @@ from __future__ import annotations
 
 import logging
 import os
+import warnings
 from types import MethodType
-from typing import TYPE_CHECKING, Any, Generic, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Literal
+
+from qcodes.utils import QCoDeSDeprecationWarning
 
 from .command import Command
 from .parameter_base import (
@@ -177,9 +180,27 @@ class Parameter(
 
     """
 
+    # Ordered list of keyword argument names (after 'name') for
+    # backwards-compatible positional argument handling.
+    # TODO: remove with handling of args below after QCoDeS 0.57
+    _DEPRECATED_POSITIONAL_ARGS: ClassVar[tuple[str, ...]] = (
+        "instrument",
+        "label",
+        "unit",
+        "get_cmd",
+        "set_cmd",
+        "initial_value",
+        "max_val_age",
+        "vals",
+        "docstring",
+        "initial_cache_value",
+        "bind_to_instrument",
+    )
+
     def __init__(
         self,
         name: str,
+        *args: Any,
         # mypy seems to be confused here. The bound and default for InstrumentTypeVar_co
         # contains None but mypy will not allow None as a default as of v 1.19.0
         instrument: InstrumentTypeVar_co = None,  # type: ignore[assignment]
@@ -195,6 +216,85 @@ class Parameter(
         bind_to_instrument: bool = True,
         **kwargs: Any,
     ) -> None:
+        if args:
+            # TODO: After QCoDeS 0.57 remove the args argument and delete this code block.
+            # we hardcode the class since mypy does not support __class__ and
+            # self / self.__class__ / type(self) in class bodies does not give
+            # exactly this class but the type of a subclass
+            positional_names = Parameter._DEPRECATED_POSITIONAL_ARGS
+            if len(args) > len(positional_names):
+                raise TypeError(
+                    f"{type(self).__name__}.__init__() takes at most "
+                    f"{len(positional_names) + 2} positional arguments "
+                    f"({len(args) + 2} given)"
+                )
+
+            _defaults: dict[str, Any] = {
+                "instrument": None,
+                "label": None,
+                "unit": None,
+                "get_cmd": None,
+                "set_cmd": False,
+                "initial_value": None,
+                "max_val_age": None,
+                "vals": None,
+                "docstring": None,
+                "initial_cache_value": None,
+                "bind_to_instrument": True,
+            }
+
+            # Snapshot keyword values before any reassignment so we can
+            # detect duplicates (keyword value differs from its default).
+            _kwarg_vals: dict[str, Any] = {
+                "instrument": instrument,
+                "label": label,
+                "unit": unit,
+                "get_cmd": get_cmd,
+                "set_cmd": set_cmd,
+                "initial_value": initial_value,
+                "max_val_age": max_val_age,
+                "vals": vals,
+                "docstring": docstring,
+                "initial_cache_value": initial_cache_value,
+                "bind_to_instrument": bind_to_instrument,
+            }
+
+            # Check for duplicate arguments (passed both positionally and
+            # as keyword). We detect this by checking whether the keyword
+            # value differs from its default for each positionally-supplied
+            # argument.
+            for i in range(len(args)):
+                arg_name = positional_names[i]
+                if _kwarg_vals[arg_name] is not _defaults[arg_name]:
+                    raise TypeError(
+                        f"{type(self).__name__}.__init__() got multiple "
+                        f"values for argument '{arg_name}'"
+                    )
+
+            positional_arg_names = positional_names[: len(args)]
+            names_str = ", ".join(f"'{n}'" for n in positional_arg_names)
+            warnings.warn(
+                f"Passing {names_str} as positional argument(s) to "
+                f"{type(self).__name__} is deprecated. "
+                f"Please pass them as keyword arguments.",
+                QCoDeSDeprecationWarning,
+                stacklevel=2,
+            )
+
+            # Apply positional values to the keyword parameter variables.
+            _pos = dict(zip(positional_names, args))
+            instrument = _pos.get("instrument", instrument)
+            label = _pos.get("label", label)
+            unit = _pos.get("unit", unit)
+            get_cmd = _pos.get("get_cmd", get_cmd)
+            set_cmd = _pos.get("set_cmd", set_cmd)
+            initial_value = _pos.get("initial_value", initial_value)
+            max_val_age = _pos.get("max_val_age", max_val_age)
+            vals = _pos.get("vals", vals)
+            docstring = _pos.get("docstring", docstring)
+            initial_cache_value = _pos.get("initial_cache_value", initial_cache_value)
+            bind_to_instrument = _pos.get("bind_to_instrument", bind_to_instrument)
+
         def _get_manual_parameter(self: Parameter) -> ParamRawDataType:
             if self.root_instrument is not None:
                 mylogger: InstrumentLoggerAdapter | logging.Logger = (

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Generic
+import warnings
+from typing import TYPE_CHECKING, Any, ClassVar, Generic
 
 from typing_extensions import TypeVar
+
+from qcodes.utils import QCoDeSDeprecationWarning
 
 from .parameter import Parameter
 from .parameter_base import InstrumentTypeVar_co, ParameterDataTypeVar
@@ -28,6 +31,7 @@ _local_InstrumentTypeVar_co = TypeVar(
     default="InstrumentBase | None",
     covariant=True,
 )
+_SOURCE_UNSET: Any = object()
 
 
 class DelegateParameter(
@@ -70,6 +74,11 @@ class DelegateParameter(
         be the case.
 
     """
+
+    _DEPRECATED_POSITIONAL_ARGS: ClassVar[tuple[str, ...]] = (
+        "source",
+        *Parameter._DEPRECATED_POSITIONAL_ARGS,
+    )
 
     class _DelegateCache(
         Generic[_local_ParameterDataTypeVar, _local_InstrumentTypeVar_co]
@@ -175,10 +184,58 @@ class DelegateParameter(
     def __init__(
         self,
         name: str,
-        source: Parameter | None,
         *args: Any,
+        source: Parameter | None = _SOURCE_UNSET,
         **kwargs: Any,
     ):
+        if args:
+            # TODO: After QCoDeS 0.57 remove the args argument and delete this code block.
+            positional_names = DelegateParameter._DEPRECATED_POSITIONAL_ARGS
+            if len(args) > len(positional_names):
+                raise TypeError(
+                    f"{type(self).__name__}.__init__() takes at most "
+                    f"{len(positional_names) + 2} positional arguments "
+                    f"({len(args) + 2} given)"
+                )
+
+            for i in range(len(args)):
+                arg_name = positional_names[i]
+                if arg_name == "source":
+                    if source is not _SOURCE_UNSET:
+                        raise TypeError(
+                            f"{type(self).__name__}.__init__() got multiple "
+                            f"values for argument '{arg_name}'"
+                        )
+                elif arg_name in kwargs:
+                    raise TypeError(
+                        f"{type(self).__name__}.__init__() got multiple "
+                        f"values for argument '{arg_name}'"
+                    )
+
+            positional_arg_names = positional_names[: len(args)]
+            names_str = ", ".join(f"'{n}'" for n in positional_arg_names)
+            warnings.warn(
+                f"Passing {names_str} as positional argument(s) to "
+                f"{type(self).__name__} is deprecated. "
+                "Please pass them as keyword arguments.",
+                QCoDeSDeprecationWarning,
+                stacklevel=2,
+            )
+
+            positional_values = dict(zip(positional_names, args))
+            if "source" in positional_values:
+                source = positional_values["source"]
+
+            for arg_name in positional_names[1:]:
+                if arg_name in positional_values:
+                    kwargs[arg_name] = positional_values[arg_name]
+
+        if source is _SOURCE_UNSET:
+            raise TypeError(
+                f"{type(self).__name__}.__init__() missing required keyword "
+                "argument: 'source'"
+            )
+
         if "bind_to_instrument" not in kwargs.keys():
             kwargs["bind_to_instrument"] = False
 
@@ -200,7 +257,7 @@ class DelegateParameter(
 
         initial_cache_value = kwargs.pop("initial_cache_value", None)
         self.source = source
-        super().__init__(name, *args, **kwargs)
+        super().__init__(name, **kwargs)
         self.label = kwargs.get("label", None)
         self.unit = kwargs.get("unit", None)
 

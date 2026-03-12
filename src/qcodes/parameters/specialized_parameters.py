@@ -6,9 +6,11 @@ provides useful/convenient specializations of such generic parameters.
 
 from __future__ import annotations
 
+import warnings
 from time import perf_counter
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
+from qcodes.utils import QCoDeSDeprecationWarning
 from qcodes.validators import Strings, Validator
 
 from .parameter import Parameter
@@ -31,7 +33,48 @@ class ElapsedTimeParameter(Parameter):
 
     """
 
-    def __init__(self, name: str, label: str = "Elapsed time", **kwargs: Any):
+    _DEPRECATED_POSITIONAL_ARGS: ClassVar[tuple[str, ...]] = ("label",)
+
+    def __init__(
+        self, name: str, *args: Any, label: str = "Elapsed time", **kwargs: Any
+    ):
+        if args:
+            # TODO: After QCoDeS 0.57 remove the args argument and delete this code block.
+            # we hardcode the class since mypy does not support __class__ and
+            # self / self.__class__ / type(self) in class bodies does not give
+            # exactly this class but the type of a subclass
+            positional_names = ElapsedTimeParameter._DEPRECATED_POSITIONAL_ARGS
+            if len(args) > len(positional_names):
+                raise TypeError(
+                    f"{type(self).__name__}.__init__() takes at most "
+                    f"{len(positional_names) + 2} positional arguments "
+                    f"({len(args) + 2} given)"
+                )
+
+            _defaults: dict[str, Any] = {"label": "Elapsed time"}
+            _kwarg_vals: dict[str, Any] = {"label": label}
+
+            for i in range(len(args)):
+                arg_name = positional_names[i]
+                if _kwarg_vals[arg_name] != _defaults[arg_name]:
+                    raise TypeError(
+                        f"{type(self).__name__}.__init__() got multiple "
+                        f"values for argument '{arg_name}'"
+                    )
+
+            positional_arg_names = positional_names[: len(args)]
+            names_str = ", ".join(f"'{n}'" for n in positional_arg_names)
+            warnings.warn(
+                f"Passing {names_str} as positional argument(s) to "
+                f"{type(self).__name__} is deprecated. "
+                f"Please pass them as keyword arguments.",
+                QCoDeSDeprecationWarning,
+                stacklevel=2,
+            )
+
+            _pos = dict(zip(positional_names, args))
+            label = _pos.get("label", label)
+
         hardcoded_kwargs = ["unit", "get_cmd", "set_cmd"]
 
         for hck in hardcoded_kwargs:
@@ -75,9 +118,22 @@ class InstrumentRefParameter(Parameter):
 
     """
 
+    _DEPRECATED_POSITIONAL_ARGS: ClassVar[tuple[str, ...]] = (
+        "instrument",
+        "label",
+        "unit",
+        "get_cmd",
+        "set_cmd",
+        "initial_value",
+        "max_val_age",
+        "vals",
+        "docstring",
+    )
+
     def __init__(
         self,
         name: str,
+        *args: Any,
         instrument: InstrumentBase | None = None,
         label: str | None = None,
         unit: str | None = None,
@@ -89,6 +145,72 @@ class InstrumentRefParameter(Parameter):
         docstring: str | None = None,
         **kwargs: Any,
     ) -> None:
+        if args:
+            # TODO: After QCoDeS 0.57 remove the args argument and delete this code block.
+            # we hardcode the class since mypy does not support __class__ and
+            # self / self.__class__ / type(self) in class bodies does not give
+            # exactly this class but the type of a subclass
+            positional_names = InstrumentRefParameter._DEPRECATED_POSITIONAL_ARGS
+            if len(args) > len(positional_names):
+                raise TypeError(
+                    f"{type(self).__name__}.__init__() takes at most "
+                    f"{len(positional_names) + 2} positional arguments "
+                    f"({len(args) + 2} given)"
+                )
+
+            _defaults: dict[str, Any] = {
+                "instrument": None,
+                "label": None,
+                "unit": None,
+                "get_cmd": None,
+                "set_cmd": None,
+                "initial_value": None,
+                "max_val_age": None,
+                "vals": None,
+                "docstring": None,
+            }
+
+            _kwarg_vals: dict[str, Any] = {
+                "instrument": instrument,
+                "label": label,
+                "unit": unit,
+                "get_cmd": get_cmd,
+                "set_cmd": set_cmd,
+                "initial_value": initial_value,
+                "max_val_age": max_val_age,
+                "vals": vals,
+                "docstring": docstring,
+            }
+
+            for i in range(len(args)):
+                arg_name = positional_names[i]
+                if _kwarg_vals[arg_name] is not _defaults[arg_name]:
+                    raise TypeError(
+                        f"{type(self).__name__}.__init__() got multiple "
+                        f"values for argument '{arg_name}'"
+                    )
+
+            positional_arg_names = positional_names[: len(args)]
+            names_str = ", ".join(f"'{n}'" for n in positional_arg_names)
+            warnings.warn(
+                f"Passing {names_str} as positional argument(s) to "
+                f"{type(self).__name__} is deprecated. "
+                f"Please pass them as keyword arguments.",
+                QCoDeSDeprecationWarning,
+                stacklevel=2,
+            )
+
+            _pos = dict(zip(positional_names, args))
+            instrument = _pos.get("instrument", instrument)
+            label = _pos.get("label", label)
+            unit = _pos.get("unit", unit)
+            get_cmd = _pos.get("get_cmd", get_cmd)
+            set_cmd = _pos.get("set_cmd", set_cmd)
+            initial_value = _pos.get("initial_value", initial_value)
+            max_val_age = _pos.get("max_val_age", max_val_age)
+            vals = _pos.get("vals", vals)
+            docstring = _pos.get("docstring", docstring)
+
         if vals is None:
             vals = Strings()
         if set_cmd is not None:
