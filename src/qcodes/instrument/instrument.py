@@ -77,6 +77,10 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         Standard IDN parameter, which queries the instrument for its ID
         """
 
+    @property
+    def root_instrument(self) -> Instrument:
+        return self
+
     def get_idn(self) -> dict[str, str | None]:
         """
         Parse a standard VISA ``*IDN?`` response into an ID dict.
