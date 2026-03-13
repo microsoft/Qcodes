@@ -22,7 +22,7 @@ repos:
     - id: mixed-line-ending
       args: ['--fix=no']
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.30.0
+    rev: v8.30.1
     hooks:
     - id: gitleaks
   - repo: https://github.com/jumanjihouse/pre-commit-hooks
