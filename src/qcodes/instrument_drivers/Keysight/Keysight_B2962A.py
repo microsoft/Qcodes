@@ -124,6 +124,14 @@ class KeysightB2962AChannel(InstrumentChannel):
         )
         """Parameter source_mode"""
 
+        self.remote_sensing: Parameter = self.add_parameter(
+            "remote_sensing",
+            get_cmd=f":SENS{chan:d}:REM?",
+            set_cmd=f":SENS{chan:d}:REM {{:d}}",
+            val_mapping={"on": 1, "off": 0},
+        )
+        """Parameter remote_sensing"""
+
         self.channel = chan
 
 
