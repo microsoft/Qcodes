@@ -92,7 +92,7 @@ def profile(func: Callable[P, T]) -> Callable[P, T]:
     """
 
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
-        profile_filename = func.__name__ + ".prof"
+        profile_filename = getattr(func, "__name__", "unknown_function") + ".prof"
         profiler = cProfile.Profile()
         result = profiler.runcall(func, *args, **kwargs)
         profiler.dump_stats(profile_filename)
