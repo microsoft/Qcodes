@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, call
 
 import pytest
 
-from qcodes.instrument import InstrumentBase
+from qcodes.instrument import Instrument
 from qcodes.instrument_drivers.Keysight.keysightb1500 import constants
 from qcodes.instrument_drivers.Keysight.keysightb1500.constants import (
     MM,
@@ -31,9 +31,9 @@ def _make_smu(mainframe: MagicMock) -> "Generator[KeysightB1517A, None, None]":
 
 
 def test_snapshot() -> None:
-    # We need to use `InstrumentBase` (not a bare mock) in order for
+    # We need to use `Instrument` (not a bare mock) in order for
     # `snapshot` methods call resolution to work out
-    mainframe = InstrumentBase(name="mainframe")
+    mainframe = Instrument(name="mainframe")
     mainframe.write = MagicMock()  # type: ignore[attr-defined]
     slot_nr = 1
     smu = KeysightB1517A(
