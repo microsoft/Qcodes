@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING
-from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock
 
 import numpy as np
 import numpy.typing as npt
@@ -83,7 +83,7 @@ def test_sampling_measurement(
     actual_data = smu.sampling_measurement_trace.get()
 
     np.testing.assert_allclose(actual_data, data_to_return, atol=1e-3)
-    assert isinstance(smu.root_instrument, MagicMock)
+    assert isinstance(smu.root_instrument.ask, Mock)
     smu.root_instrument.ask.assert_called_with("XE")
 
 
