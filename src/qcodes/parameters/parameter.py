@@ -11,6 +11,10 @@ from typing import TYPE_CHECKING, Any, ClassVar, Generic, Literal
 
 from qcodes.utils import QCoDeSDeprecationWarning
 
+from typing_extensions import deprecated
+
+from qcodes.utils import QCoDeSDeprecationWarning
+
 from .command import Command
 from .parameter_base import (
     InstrumentTypeVar_co,
@@ -499,6 +503,13 @@ class Parameter(
     def label(self, label: str) -> None:
         self._label = label
 
+    @deprecated(
+        (
+            "The ability to sweep a parameter using [start:step:stop] is deprecated and will be removed. "
+            "This is only used in qcodes_loop. See qcodes_loop for an alternative."
+        ),
+        category=QCoDeSDeprecationWarning,
+    )
     def __getitem__(self, keys: Any) -> SweepFixedValues:
         """
         Slice a Parameter to get a SweepValues object
@@ -517,6 +528,13 @@ class Parameter(
         # however we don't currently enforce that via typing
         self.set(self.get() + value)  # type: ignore[operator]
 
+    @deprecated(
+        (
+            "The sweep method on Parameter is deprecated and will be removed. "
+            "This is only used in qcodes_loop. See qcodes_loop for an alternative."
+        ),
+        category=QCoDeSDeprecationWarning,
+    )
     def sweep(
         self,
         start: float,
