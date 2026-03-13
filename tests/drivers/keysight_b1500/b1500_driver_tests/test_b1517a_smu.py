@@ -30,9 +30,10 @@ def _make_smu(mainframe: MagicMock) -> "Generator[KeysightB1517A, None, None]":
     yield smu
 
 
-def test_snapshot() -> None:
+def test_snapshot(request) -> None:
     # We need to use `Instrument` (not a bare mock) in order for
     # `snapshot` methods call resolution to work out
+    request.addfinalizer(Instrument.close_all)
     mainframe = Instrument(name="mainframe")
     mainframe.write = MagicMock()  # type: ignore[attr-defined]
     slot_nr = 1
