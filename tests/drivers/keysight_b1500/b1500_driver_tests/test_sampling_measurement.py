@@ -83,6 +83,7 @@ def test_sampling_measurement(
     actual_data = smu.sampling_measurement_trace.get()
 
     np.testing.assert_allclose(actual_data, data_to_return, atol=1e-3)
+    assert isinstance(smu.root_instrument.ask, Mock)
     smu.root_instrument.ask.assert_called_with("XE")
 
 

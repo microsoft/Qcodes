@@ -14,18 +14,19 @@ from qcodes.parameters import (
     Parameter,
 )
 
-from ..instrument_base import InstrumentBase
+from ..instrument import Instrument
 
 if TYPE_CHECKING:
     from qcodes.station import Station
 
     from ..channel import InstrumentChannel
+    from ..instrument_base import InstrumentBase
 
 
 _log = logging.getLogger(__name__)
 
 
-class DelegateInstrument(InstrumentBase):
+class DelegateInstrument(Instrument):
     """DelegateInstrument is an instrument driver with one or more
     parameters that connect to instrument parameters.
 

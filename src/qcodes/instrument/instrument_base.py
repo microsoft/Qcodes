@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from typing import NotRequired
 
     from qcodes.instrument.channel import ChannelTuple, InstrumentModule
+    from qcodes.instrument.instrument import Instrument
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 
 from qcodes.utils import QCoDeSDeprecationWarning
@@ -579,14 +580,21 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
             return (self,)
 
     @property
-    def root_instrument(self) -> InstrumentBase:
+    def root_instrument(self) -> Instrument:
         """
         The topmost parent of this module.
 
         For the ``root_instrument`` this is ``self``.
         """
+        warnings.warn(
+            "The implementation of `root_instrument` in InstrumentBase is deprecated. "
+            f"Your class: {type(self).__name__} should subclass InstrumentBase and implement `root_instrument` to return the root instrument. "
+            "In the future this will be an abstract method and not have a default implementation.",
+            category=QCoDeSDeprecationWarning,
+            stacklevel=2,
+        )
 
-        return self
+        return self  # type: ignore[return-value]
 
     @property
     def name_parts(self) -> list[str]:
