@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from qcodes.instrument.channel import ChannelTuple
 
 
-class LakeshoreBaseOutput(InstrumentChannel):
+class LakeshoreBaseOutput(InstrumentChannel["LakeshoreBase"]):
     MODES: ClassVar[dict[str, int]] = {}
     RANGES: ClassVar[dict[str, int]] = {}
 
@@ -475,9 +475,11 @@ class LakeshoreBaseOutput(InstrumentChannel):
         )
 
         active_channel_id = self.input_channel()
-        active_channel_name_on_instrument = self.root_instrument.input_channel_parameter_values_to_channel_name_on_instrument[
-            active_channel_id
-        ]
+        active_channel_name_on_instrument = (
+            self.parent.input_channel_parameter_values_to_channel_name_on_instrument[
+                active_channel_id
+            ]
+        )
         active_channel = getattr(
             self.root_instrument, active_channel_name_on_instrument
         )
