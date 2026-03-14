@@ -15,10 +15,10 @@ if TYPE_CHECKING:
     from qcodes.parameters import Parameter
 
 
-class MiniCircuitsRCSP4TChannel(InstrumentChannel):
+class MiniCircuitsRCSP4TChannel(InstrumentChannel["MiniCircuitsRCSP4T"]):
     def __init__(
         self,
-        parent: IPInstrument,
+        parent: "MiniCircuitsRCSP4T",
         name: str,
         channel_letter: str,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
@@ -47,7 +47,7 @@ class MiniCircuitsRCSP4TChannel(InstrumentChannel):
         """Parameter switch"""
 
     def _set_switch(self, switch: int) -> None:
-        if len(self._parent.channels) > 1:
+        if len(self.parent.channels) > 1:
             current_switchstate = int(self.ask("SWPORT?"))
             mask = 0xF << (4 * (1 - self.channel_number))
             current_switchstate = current_switchstate & mask
@@ -111,7 +111,8 @@ class MiniCircuitsRCSP4T(IPInstrument):
             channel = MiniCircuitsRCSP4TChannel(self, f"channel_{c}", c)
             channels.append(channel)
             self.add_submodule(f"channel_{c}", channel)
-        self.add_submodule("channels", channels.to_channel_tuple())
+        self.channels = self.add_submodule("channels", channels.to_channel_tuple())
+        """ChannelTuple of channels"""
 
         self.connect_message()
 
