@@ -64,5 +64,9 @@ def test_parameter_with_setpoints_has_control(experiment: "Experiment"):
     assert "p2" in xds.data_vars
     npt.assert_array_almost_equal(xds["p2"].values, p2_data)
 
-    # p1 data is retrievable from the raw parameter data
+    # p1 is included as a data variable (inferred from p2) with correct values
+    assert "p1" in xds.data_vars
+    npt.assert_array_almost_equal(xds["p1"].values, p1_data)
+
+    # p1 data is also retrievable from the raw parameter data
     npt.assert_array_almost_equal(raw_data["p2"]["p1"].ravel(), p1_data)

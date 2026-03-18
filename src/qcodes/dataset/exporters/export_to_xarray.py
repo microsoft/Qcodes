@@ -6,6 +6,7 @@ from importlib.metadata import version
 from math import prod
 from typing import TYPE_CHECKING, Literal
 
+import numpy as np
 from packaging import version as p_version
 
 from qcodes.dataset.linked_datasets.links import links_to_str
@@ -61,6 +62,56 @@ def _calculate_index_shape(idx: pd.Index | pd.MultiIndex) -> dict[Hashable, int]
     return expanded_shape
 
 
+def _add_inferred_data_vars(
+    dataset: DataSetProtocol,
+    name: str,
+    sub_dict: Mapping[str, npt.NDArray],
+    xr_dataset: xr.Dataset,
+) -> xr.Dataset:
+    """Add inferred parameters as data variables to an xarray dataset.
+
+    Parameters that are inferred from the top-level measurement parameter
+    and present in sub_dict but not yet in the dataset are added as data
+    variables along the existing dimensions.
+    """
+
+    interdeps = dataset.description.interdeps
+    meas_paramspec = interdeps.graph.nodes[name]["value"]
+    _, deps, inferred = interdeps.all_parameters_in_tree_by_group(meas_paramspec)
+
+    dep_names = {dep.name for dep in deps}
+    dims = tuple(d for d in xr_dataset.dims)
+
+    for inf in inferred:
+        if inf.name in dep_names:
+            continue
+        if inf.name in xr_dataset:
+            continue
+        if inf.name not in sub_dict:
+            continue
+
+        inf_data = sub_dict[inf.name]
+        if inf_data.dtype == np.dtype("O"):
+            try:
+                flat = np.concatenate(inf_data)
+            except ValueError:
+                flat = inf_data.ravel()
+        else:
+            flat = inf_data.ravel()
+
+        # Only add if the data length matches the existing dataset size
+        expected_size = 1
+        for d in dims:
+            expected_size *= xr_dataset.sizes[d]
+        if flat.shape[0] == expected_size:
+            xr_dataset[inf.name] = (
+                dims,
+                flat.reshape(tuple(xr_dataset.sizes[d] for d in dims)),
+            )
+
+    return xr_dataset
+
+
 def _load_to_xarray_dataset_dict_no_metadata(
     dataset: DataSetProtocol,
     datadict: Mapping[str, Mapping[str, npt.NDArray]],
@@ -100,7 +151,9 @@ def _load_to_xarray_dataset_dict_no_metadata(
                     interdeps=dataset.description.interdeps,
                     dependent_parameter=name,
                 ).to_xarray()
-                xr_dataset_dict[name] = xr_dataset
+                xr_dataset_dict[name] = _add_inferred_data_vars(
+                    dataset, name, sub_dict, xr_dataset
+                )
             elif index_is_unique:
                 df = _data_to_dataframe(
                     sub_dict,
@@ -108,8 +161,11 @@ def _load_to_xarray_dataset_dict_no_metadata(
                     interdeps=dataset.description.interdeps,
                     dependent_parameter=name,
                 )
-                xr_dataset_dict[name] = _xarray_data_set_from_pandas_multi_index(
+                xr_dataset = _xarray_data_set_from_pandas_multi_index(
                     dataset, use_multi_index, name, df, index
+                )
+                xr_dataset_dict[name] = _add_inferred_data_vars(
+                    dataset, name, sub_dict, xr_dataset
                 )
             else:
                 df = _data_to_dataframe(
@@ -118,7 +174,10 @@ def _load_to_xarray_dataset_dict_no_metadata(
                     interdeps=dataset.description.interdeps,
                     dependent_parameter=name,
                 )
-                xr_dataset_dict[name] = df.reset_index().to_xarray()
+                xr_dataset = df.reset_index().to_xarray()
+                xr_dataset_dict[name] = _add_inferred_data_vars(
+                    dataset, name, sub_dict, xr_dataset
+                )
 
     return xr_dataset_dict
 
