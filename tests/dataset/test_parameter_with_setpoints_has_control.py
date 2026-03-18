@@ -32,8 +32,6 @@ def test_parameter_with_setpoints_has_control(experiment: "Experiment"):
     with meas.run() as ds:
         ds.add_result((p2, p2()))
 
-    xds = ds.dataset.to_xarray_dataset()  # does not unravel to grid
+    xds = ds.dataset.to_xarray_dataset()
 
-    assert (
-        list(xds.sizes.keys()) == ["mp"]
-    )  # without p1 this correctly has mp as the only dim, with p1 this is turned into a generic 'index' dim
+    assert list(xds.sizes.keys()) == ["mp"]
