@@ -107,8 +107,11 @@ class InstrumentFilter(logging.Filter):
     """
 
     def __init__(self, instruments: InstrumentBase | Sequence[InstrumentBase]):
+        # avoid importing qcodes.instrument at module level to prevent circular imports
+        from qcodes.instrument import InstrumentBase  # noqa: PLC0415
+
         super().__init__()
-        if not isinstance(instruments, collections.abc.Sequence):
+        if isinstance(instruments, InstrumentBase):
             instrument_seq: Sequence[str] = (instruments.full_name,)
         else:
             instrument_seq = [inst.full_name for inst in instruments]
@@ -188,8 +191,14 @@ def filter_instrument(
         handlers = (myhandler,)
     elif not isinstance(handler, collections.abc.Sequence):
         handlers = (handler,)
-    else:
+    elif isinstance(handler, collections.abc.Sequence) and not isinstance(
+        handler, logging.Handler
+    ):
         handlers = handler
+    else:
+        raise TypeError(
+            f"handler must be a Handler or a Sequence of Handlers got {type(handler)}"
+        )
 
     instrument_filter = InstrumentFilter(instrument)
     for h in handlers:

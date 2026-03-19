@@ -322,6 +322,10 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
 
         return ins
 
+    @property
+    def root_instrument(self) -> Instrument:
+        return self
+
     @staticmethod
     def exist(name: str, instrument_class: type[Instrument] | None = None) -> bool:
         """
