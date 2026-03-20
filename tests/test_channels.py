@@ -20,8 +20,9 @@ from qcodes.parameters import (
 )
 
 if TYPE_CHECKING:
+    from typing import Unpack
+
     import pytest_mock
-    from typing_extensions import Unpack
 
     from qcodes.instrument.instrument_base import InstrumentBaseKWArgs
 

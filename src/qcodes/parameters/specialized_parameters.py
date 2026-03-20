@@ -14,7 +14,7 @@ from qcodes.validators import Strings
 from .parameter import Parameter, ParameterKWArgs
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.instrument import InstrumentBase
 

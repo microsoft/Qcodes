@@ -15,7 +15,7 @@ from .parameter_base import (
 from .sequence_helpers import is_sequence_of
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 try:
     from qcodes_loop.data.data_array import DataArray

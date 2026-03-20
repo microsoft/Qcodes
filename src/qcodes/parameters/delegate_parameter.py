@@ -10,8 +10,7 @@ from .parameter_base import InstrumentTypeVar_co, ParameterDataTypeVar
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from datetime import datetime
-
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.instrument import InstrumentBase
     from qcodes.validators.validators import Validator

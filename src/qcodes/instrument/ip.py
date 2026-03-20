@@ -11,8 +11,7 @@ from .instrument import Instrument
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from types import TracebackType
-
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from .instrument_base import InstrumentBaseKWArgs
 

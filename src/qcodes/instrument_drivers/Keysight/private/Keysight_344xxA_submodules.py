@@ -25,8 +25,7 @@ from qcodes.utils import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
-
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 NumericScpiMnemonic: TypeAlias = Literal["MIN", "MAX", "DEF"]
 

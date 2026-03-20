@@ -10,9 +10,7 @@ from qcodes.validators import Enum, Ints, Lists, MultiType
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
-    from typing import Concatenate
-
-    from typing_extensions import Unpack
+    from typing import Concatenate, Unpack
 
     from qcodes.parameters import Parameter
 

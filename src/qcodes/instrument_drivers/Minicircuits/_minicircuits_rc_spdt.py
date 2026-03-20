@@ -9,7 +9,7 @@ from qcodes.instrument import (
 )
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.instrument.channel import ChannelTuple
     from qcodes.parameters import Parameter

@@ -15,8 +15,7 @@ from .parameter_base import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, Sequence
-
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from .parameter import Parameter, ParameterKWArgs
 

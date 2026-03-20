@@ -22,9 +22,7 @@ from .sweep_values import SweepFixedValues
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping
-    from typing import NotRequired
-
-    from typing_extensions import Unpack
+    from typing import NotRequired, Unpack
 
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
     from qcodes.parameters import ParamSpecBase

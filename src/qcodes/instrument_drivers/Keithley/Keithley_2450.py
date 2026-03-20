@@ -1,8 +1,8 @@
-from typing import TYPE_CHECKING, Any, ClassVar, Self, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Self, Unpack, cast
 
 import numpy as np
 import numpy.typing as npt
-from typing_extensions import TypedDict, Unpack
+from typing_extensions import TypedDict
 
 from qcodes.instrument import InstrumentChannel, VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import (

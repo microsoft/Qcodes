@@ -23,9 +23,7 @@ from .instrument_base import InstrumentBase, InstrumentBaseKWArgs
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
-    from typing import NotRequired
-
-    from typing_extensions import Unpack
+    from typing import NotRequired, Unpack
 
     from qcodes.parameters.parameter import Parameter
 

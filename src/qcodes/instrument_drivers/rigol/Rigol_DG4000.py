@@ -6,9 +6,9 @@ from qcodes.validators import Anything, Enum, Ints, MultiType, Numbers
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from typing import Unpack
 
     import numpy.typing as npt
-    from typing_extensions import Unpack
 
     from qcodes.parameters import Parameter
 

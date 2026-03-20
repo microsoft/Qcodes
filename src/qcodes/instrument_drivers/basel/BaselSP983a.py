@@ -7,7 +7,7 @@ from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import DelegateParameter, Parameter
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 class BaselSP983a(VisaInstrument):

@@ -5,7 +5,7 @@ from qcodes.parameters import create_on_off_val_mapping
 from qcodes.validators import Enum, Strings
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.parameters import Parameter
 

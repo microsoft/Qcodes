@@ -14,9 +14,7 @@ from .keysight_34980a_submodules import Keysight34980ASwitchMatrixSubModule
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from typing import Concatenate
-
-    from typing_extensions import Unpack
+    from typing import Concatenate, Unpack
 
 KEYSIGHT_MODELS = {"34934A": Keysight34934A}
 

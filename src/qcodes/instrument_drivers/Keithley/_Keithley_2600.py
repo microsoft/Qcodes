@@ -27,9 +27,7 @@ from qcodes.parameters import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
-    from typing import assert_never
-
-    from typing_extensions import Unpack
+    from typing import Unpack, assert_never
 
 
 log = logging.getLogger(__name__)

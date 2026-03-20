@@ -13,7 +13,7 @@ from qcodes.instrument import (
 from qcodes.parameters import Parameter, ParamRawDataType
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 class KeithleyS46LockAcquisitionError(Exception):

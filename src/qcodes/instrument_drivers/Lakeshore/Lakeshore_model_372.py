@@ -9,7 +9,7 @@ from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (
 from qcodes.parameters import Group, GroupParameter
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.instrument import InstrumentBaseKWArgs, VisaInstrumentKWArgs
 

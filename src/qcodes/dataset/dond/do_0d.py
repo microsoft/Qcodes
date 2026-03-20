@@ -8,7 +8,7 @@ from opentelemetry import trace
 from .do_nd import DondKWargs, dond
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from .do_nd_utils import (
         AxesTupleListWithDataSet,

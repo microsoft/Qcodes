@@ -20,8 +20,7 @@ from .utils import TraceParameter
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Sequence
-
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 logger = logging.getLogger(__name__)
 

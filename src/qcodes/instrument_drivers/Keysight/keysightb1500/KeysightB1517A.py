@@ -1,10 +1,10 @@
 import re
 import textwrap
-from typing import TYPE_CHECKING, Any, Generic, Literal, NotRequired, overload
+from typing import TYPE_CHECKING, Any, Generic, Literal, NotRequired, Unpack, overload
 
 import numpy as np
 import numpy.typing as npt
-from typing_extensions import TypedDict, Unpack, deprecated
+from typing_extensions import TypedDict, deprecated
 
 import qcodes.validators as vals
 from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel

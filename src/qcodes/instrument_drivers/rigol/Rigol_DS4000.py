@@ -20,7 +20,7 @@ from qcodes.instrument import (
 from qcodes.parameters import ArrayParameter, ParamRawDataType
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.parameters import Parameter
 

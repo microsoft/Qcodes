@@ -28,7 +28,7 @@ from .KeysightB1500_module import (
 from .message_builder import MessageBuilder
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base import (
         KeysightB1500,

@@ -24,8 +24,7 @@ from qcodes.validators import Arrays, Bool, Enum, Ints, Numbers
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 class PNAAxisParameter(Parameter):
