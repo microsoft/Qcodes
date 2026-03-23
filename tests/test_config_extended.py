@@ -271,6 +271,7 @@ class TestConfigSave:
         cfg.save_config(config_path)
         loaded = Config.load_config(config_path)
         assert isinstance(loaded, DotDict)
+        assert cfg.current_config is not None
         assert loaded["core"]["db_debug"] == cfg.current_config["core"]["db_debug"]
 
 

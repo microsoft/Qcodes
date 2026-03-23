@@ -153,7 +153,7 @@ class TestBoolExtended:
     def test_non_bool_raises(self) -> None:
         b = Bool()
         with pytest.raises(TypeError, match="not Boolean"):
-            b.validate(1)
+            b.validate(1)  # pyright: ignore[reportArgumentType]
 
     def test_repr(self) -> None:
         assert repr(Bool()) == "<Boolean>"
@@ -201,7 +201,7 @@ class TestStringsExtended:
     def test_non_string_raises(self) -> None:
         s = Strings()
         with pytest.raises(TypeError, match="not a string"):
-            s.validate(42)
+            s.validate(42)  # pyright: ignore[reportArgumentType]
 
     def test_repr_with_constraints(self) -> None:
         s = Strings(min_length=2, max_length=10)
@@ -231,12 +231,12 @@ class TestEnumExtended:
     def test_unhashable_raises_type_error(self) -> None:
         e = Enum("a", "b")
         with pytest.raises(TypeError):
-            e.validate([1, 2])  # list is unhashable
+            e.validate([1, 2])  # pyright: ignore[reportArgumentType] # list is unhashable
 
     def test_unhashable_error_includes_context(self) -> None:
         e = Enum("a", "b")
         with pytest.raises(TypeError, match="test_ctx"):
-            e.validate([1, 2], context="test_ctx")
+            e.validate([1, 2], context="test_ctx")  # pyright: ignore[reportArgumentType] # list is unhashable
 
     def test_values_returns_copy(self) -> None:
         e = Enum("x", "y")
@@ -271,7 +271,7 @@ class TestOnOff:
 
     def test_non_string_rejected(self) -> None:
         with pytest.raises((TypeError, ValueError)):
-            OnOff().validate(1)
+            OnOff().validate(1)  # pyright: ignore[reportArgumentType]
 
     def test_valid_values(self) -> None:
         assert set(OnOff().valid_values) == {"on", "off"}
@@ -574,7 +574,7 @@ class TestListsExtended:
         lst = Lists(elt_validator=Ints())
         lst.validate([1, 2, 3])
         with pytest.raises(TypeError):
-            lst.validate(["a", "b"])
+            lst.validate(["a", "b"])  # pyright: ignore[reportArgumentType]
 
     def test_repr_format(self) -> None:
         lst = Lists(elt_validator=Ints())
@@ -660,7 +660,7 @@ class TestCallableExtended:
     def test_non_callable_raises(self) -> None:
         c = CallableValidator()
         with pytest.raises(TypeError, match="not a callable"):
-            c.validate(42)
+            c.validate(42)  # pyright: ignore[reportArgumentType]
 
     def test_repr(self) -> None:
         assert repr(CallableValidator()) == "<Callable>"
