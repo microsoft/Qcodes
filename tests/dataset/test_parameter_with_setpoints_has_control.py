@@ -70,3 +70,65 @@ def test_parameter_with_setpoints_has_control(experiment: "Experiment"):
 
     # p1 data is also retrievable from the raw parameter data
     npt.assert_array_almost_equal(raw_data["p2"]["p1"].ravel(), p1_data)
+
+
+def test_parameter_with_setpoints_has_control_2d(experiment: "Experiment"):
+    """Test that an inferred parameter with the same size as its parent
+    but different from the full dimension product is correctly included."""
+
+    class MySp(ParameterWithSetpoints):
+        def unpack_self(self, value):
+            res = super().unpack_self(value)
+            res.append((p1, p1()))
+            return res
+
+    n_x = 3
+    n_y = 4
+    mp_x_data = np.arange(n_x, dtype=float)
+    mp_y_data = np.arange(n_y, dtype=float)
+
+    mp_x = ManualParameter("mp_x", initial_value=0.0)
+    mp_y = ManualParameter("mp_y", vals=Arrays(shape=(n_y,)), initial_value=mp_y_data)
+
+    p1 = ParameterWithSetpoints(
+        "p1", vals=Arrays(shape=(n_y,)), setpoints=(mp_y,), set_cmd=None
+    )
+    p2 = MySp("p2", vals=Arrays(shape=(n_y,)), setpoints=(mp_y,), set_cmd=None)
+    p2.has_control_of.add(p1)
+
+    meas = Measurement()
+    meas.register_parameter(p2, setpoints=(mp_x,))
+
+    p1_all = []
+    p2_all = []
+
+    with meas.run() as ds:
+        for x_val in mp_x_data:
+            mp_x(x_val)
+            p1_row = np.linspace(-1, 1, n_y) + x_val
+            p1(p1_row)
+            p2_row = np.random.randn(n_y)
+            p2(p2_row)
+            p1_all.append(p1_row)
+            p2_all.append(p2_row)
+            ds.add_result((mp_x, mp_x()), (p2, p2()))
+
+    p1_all_arr = np.array(p1_all)
+    p2_all_arr = np.array(p2_all)
+
+    xds = ds.dataset.to_xarray_dataset()
+
+    # Should have 2 dimensions: mp_x and mp_y
+    assert set(xds.sizes.keys()) == {"mp_x", "mp_y"}
+    assert xds.sizes["mp_x"] == n_x
+    assert xds.sizes["mp_y"] == n_y
+
+    # p2 is the primary data variable
+    assert "p2" in xds.data_vars
+    npt.assert_array_almost_equal(xds["p2"].values, p2_all_arr)
+
+    # p1 is included as a data variable (inferred from p2)
+    # Its size (n_x * n_y = 12) matches its parent p2's size,
+    # which differs from either individual dimension.
+    assert "p1" in xds.data_vars
+    npt.assert_array_almost_equal(xds["p1"].values, p1_all_arr)
