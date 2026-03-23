@@ -113,6 +113,18 @@ def _add_inferred_data_vars(
                 dims,
                 flat.reshape(tuple(xr_dataset.sizes[d] for d in dims)),
             )
+        else:
+            _LOG.warning(
+                "Cannot add inferred parameter '%s' to xarray dataset for '%s' "
+                "(run_id=%s): data size %d does not match its parent parameter "
+                "'%s' size %d. This is likely a user error in the measurement setup.",
+                inf.name,
+                name,
+                dataset.run_id,
+                flat.shape[0],
+                parent_name,
+                expected_size,
+            )
 
     return xr_dataset
 

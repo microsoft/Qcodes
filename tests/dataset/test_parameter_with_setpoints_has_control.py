@@ -1,13 +1,18 @@
+import logging
 from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.testing as npt
+import xarray as xr
 
 from qcodes.dataset import Measurement
+from qcodes.dataset.exporters.export_to_xarray import _add_inferred_data_vars
 from qcodes.parameters import ManualParameter, ParameterWithSetpoints
 from qcodes.validators import Arrays
 
 if TYPE_CHECKING:
+    import pytest
+
     from qcodes.dataset.experiment_container import Experiment
 
 
@@ -132,3 +137,57 @@ def test_parameter_with_setpoints_has_control_2d(experiment: "Experiment"):
     # which differs from either individual dimension.
     assert "p1" in xds.data_vars
     npt.assert_array_almost_equal(xds["p1"].values, p1_all_arr)
+
+
+def test_parameter_with_setpoints_has_control_size_mismatch_warns(
+    experiment: "Experiment", caplog: "pytest.LogCaptureFixture"
+) -> None:
+    """Test that a warning is emitted when the inferred parameter has a
+    different data size than its parent parameter."""
+
+    class MySp(ParameterWithSetpoints):
+        def unpack_self(self, value):
+            res = super().unpack_self(value)
+            res.append((p1, p1()))
+            return res
+
+    mp_data = np.arange(10)
+
+    mp = ManualParameter("mp", vals=Arrays(shape=(10,)), initial_value=mp_data)
+    p1 = ParameterWithSetpoints(
+        "p1", vals=Arrays(shape=(10,)), setpoints=(mp,), set_cmd=None
+    )
+    p2 = MySp("p2", vals=Arrays(shape=(10,)), setpoints=(mp,), set_cmd=None)
+    p2.has_control_of.add(p1)
+
+    p1(np.linspace(-1, 1, 10))
+    p2(np.random.randn(10))
+
+    meas = Measurement()
+    meas.register_parameter(p2)
+    with meas.run() as ds:
+        ds.add_result((p2, p2()))
+
+    # Build an xarray dataset and sub_dict with mismatched p1 data to
+    # exercise the warning path in _add_inferred_data_vars directly.
+
+    raw_data = ds.dataset.get_parameter_data()
+    sub_dict = dict(raw_data["p2"])
+    # Replace p1 with wrong-sized data (5 instead of 10)
+    sub_dict["p1"] = np.zeros(5)
+
+    xr_dataset = xr.Dataset(
+        {"p2": (("mp",), sub_dict["p2"].ravel())},
+        coords={"mp": sub_dict["mp"].ravel()},
+    )
+
+    with caplog.at_level(
+        logging.WARNING, logger="qcodes.dataset.exporters.export_to_xarray"
+    ):
+        result = _add_inferred_data_vars(ds.dataset, "p2", sub_dict, xr_dataset)
+
+    assert "p1" not in result.data_vars
+    assert any(
+        "Cannot add inferred parameter 'p1'" in msg and "'p2'" in msg
+        for msg in caplog.messages
+    )
