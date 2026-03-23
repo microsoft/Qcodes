@@ -1,0 +1,6 @@
+Parameters using ``has_control_of`` are now correctly handled when exporting to
+xarray. Controlled parameters are no longer treated as independent top-level
+parameters, preventing duplicate data rows. Additionally, inferred parameters
+are now included as data variables in the xarray dataset when exporting via the
+pandas-based path, and a warning is logged when the inferred parameter data size
+does not match its parent parameter.
