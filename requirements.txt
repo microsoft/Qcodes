@@ -108,7 +108,7 @@ imagesize==2.0.0
     # via
     #   sphinx
     #   sphinx-favicon
-importlib-metadata==8.7.1
+importlib-metadata==9.0.0
     # via opentelemetry-api
 iniconfig==2.3.0
     # via pytest
