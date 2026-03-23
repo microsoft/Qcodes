@@ -99,10 +99,15 @@ def _add_inferred_data_vars(
         else:
             flat = inf_data.ravel()
 
-        # Only add if the data length matches the existing dataset size
-        expected_size = 1
-        for d in dims:
-            expected_size *= xr_dataset.sizes[d]
+        # Only add if the data has the same size as the parameter
+        # it is inferred from
+        inferred_from_params = interdeps.inferences.get(inf, ())
+        if len(inferred_from_params) == 0:
+            continue
+        parent_name = inferred_from_params[0].name
+        if parent_name not in sub_dict:
+            continue
+        expected_size = sub_dict[parent_name].ravel().shape[0]
         if flat.shape[0] == expected_size:
             xr_dataset[inf.name] = (
                 dims,
