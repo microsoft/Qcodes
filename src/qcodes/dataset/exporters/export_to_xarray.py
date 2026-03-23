@@ -99,31 +99,40 @@ def _add_inferred_data_vars(
         else:
             flat = inf_data.ravel()
 
-        # Only add if the data has the same size as the parameter
-        # it is inferred from
-        inferred_from_params = interdeps.inferences.get(inf, ())
-        if len(inferred_from_params) == 0:
+        # Only add if the data has the same size as one of the parameters
+        # it is inferred from. A parameter may be inferred from multiple
+        # parents so we iterate over all of them.
+        inferred_from_params = interdeps.inferences.get(inf)
+        if not inferred_from_params:
             continue
-        parent_name = inferred_from_params[0].name
-        if parent_name not in sub_dict:
-            continue
-        expected_size = sub_dict[parent_name].ravel().shape[0]
-        if flat.shape[0] == expected_size:
-            xr_dataset[inf.name] = (
-                dims,
-                flat.reshape(tuple(xr_dataset.sizes[d] for d in dims)),
-            )
-        else:
+
+        matched_parent = False
+        for parent in inferred_from_params:
+            if parent.name not in sub_dict:
+                continue
+            expected_size = sub_dict[parent.name].ravel().shape[0]
+            if flat.shape[0] == expected_size:
+                xr_dataset[inf.name] = (
+                    dims,
+                    flat.reshape(tuple(xr_dataset.sizes[d] for d in dims)),
+                )
+                matched_parent = True
+                break
+
+        if not matched_parent:
+            available_parents = [
+                p.name for p in inferred_from_params if p.name in sub_dict
+            ]
             _LOG.warning(
                 "Cannot add inferred parameter '%s' to xarray dataset for '%s' "
-                "(run_id=%s): data size %d does not match its parent parameter "
-                "'%s' size %d. This is likely a user error in the measurement setup.",
+                "(run_id=%s): data size %d does not match any of its parent "
+                "parameters %s. This is likely a user error in the measurement "
+                "setup.",
                 inf.name,
                 name,
                 dataset.run_id,
                 flat.shape[0],
-                parent_name,
-                expected_size,
+                available_parents,
             )
 
     return xr_dataset
