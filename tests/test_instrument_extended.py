@@ -116,8 +116,8 @@ def test_ask_wraps_exception() -> None:
 @pytest.mark.serial
 def test_close_all() -> None:
     """close_all should remove all registered instruments."""
-    DummyInstrument(name="closeall1", gates=["g1"])
-    DummyInstrument(name="closeall2", gates=["g2"])
+    _ = DummyInstrument(name="closeall1", gates=["g1"])
+    _ = DummyInstrument(name="closeall2", gates=["g2"])
 
     assert Instrument.exist("closeall1")
     assert Instrument.exist("closeall2")

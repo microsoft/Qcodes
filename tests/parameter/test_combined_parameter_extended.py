@@ -31,8 +31,9 @@ class TestCombineFunction:
     def test_combine_with_label_and_unit(self, two_params: list[Parameter]) -> None:
         """combine() passes label and unit through."""
         cp = combine(*two_params, name="xy", label="X and Y", unit="V")
-        assert cp.parameter.label == "X and Y"
-        assert cp.parameter.unit == "V"
+        # cp.parameter is a parameter like object but these attributes are dynamically added
+        assert cp.parameter.label == "X and Y"  # pyright: ignore[reportFunctionMemberAccess]
+        assert cp.parameter.unit == "V"  # pyright: ignore[reportFunctionMemberAccess]
 
     def test_combine_with_aggregator(self, two_params: list[Parameter]) -> None:
         """combine() passes aggregator through."""
@@ -108,7 +109,8 @@ class TestCombinedParameter:
         with caplog.at_level(logging.WARNING):
             cp = CombinedParameter(two_params, name="xy", units="mV")
         assert any("`units` is deprecated" in msg for msg in caplog.messages)
-        assert cp.parameter.unit == "mV"
+        # cp.parameter is a parameter like object but these attributes are dynamically added
+        assert cp.parameter.unit == "mV"  # pyright: ignore[reportFunctionMemberAccess]
 
     def test_units_deprecated_unit_takes_precedence(
         self, two_params: list[Parameter], caplog: pytest.LogCaptureFixture
@@ -116,7 +118,8 @@ class TestCombinedParameter:
         """When both unit and units are given, unit takes precedence."""
         with caplog.at_level(logging.WARNING):
             cp = CombinedParameter(two_params, name="xy", unit="V", units="mV")
-        assert cp.parameter.unit == "V"
+        # cp.parameter is a parameter like object but these attributes are dynamically added
+        assert cp.parameter.unit == "V"  # pyright: ignore[reportFunctionMemberAccess]
 
     def test_invalid_name_raises(self, two_params: list[Parameter]) -> None:
         """Invalid parameter name raises ValueError."""

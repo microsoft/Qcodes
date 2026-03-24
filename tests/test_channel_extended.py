@@ -178,7 +178,7 @@ def test_channel_tuple_add_type_mismatch(
     ct1 = ch_instr.channels
     ct2 = ChannelTuple(ch_instr, "other", OtherChannel)
     with pytest.raises(TypeError, match="same type"):
-        ct1 + ct2
+        _ = ct1 + ct2
 
 
 @pytest.mark.serial
@@ -190,7 +190,7 @@ def test_channel_tuple_add_different_parent() -> None:
         ct1 = instr1.channels[0:1]
         ct2 = instr2.channels[0:1]
         with pytest.raises(ValueError, match="same parent"):
-            ct1 + ct2
+            _ = ct1 + ct2
     finally:
         instr1.close()
         instr2.close()
