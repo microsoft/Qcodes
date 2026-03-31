@@ -929,7 +929,7 @@ class TektronixDPOTrigger(InstrumentChannel):
             f"CH{i}" for i in range(1, TektronixDPO7000xx.number_of_channels)
         ]
 
-        trigger_sources.extend([f"D{i}" for i in range(0, 16)])
+        trigger_sources.extend([f"D{i}" for i in range(16)])
 
         if self._identifier == "A":
             trigger_sources.append("line")

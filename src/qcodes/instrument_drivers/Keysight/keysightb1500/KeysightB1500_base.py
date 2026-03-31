@@ -704,7 +704,7 @@ class IVSweepMeasurement(
         for channel_index in range(n_channels):
             parsed_data_items = [
                 parsed_data[i][channel_index::n_all_data_channels]
-                for i in range(0, n_items_per_data_point)
+                for i in range(n_items_per_data_point)
             ]
             single_channel_data = _FMTResponse(*parsed_data_items)
             convert_dummy_val_to_nan(single_channel_data)
@@ -720,7 +720,7 @@ class IVSweepMeasurement(
         source_voltage_index = n_channels
         parsed_source_voltage_items = [
             parsed_data[i][source_voltage_index::n_all_data_channels]
-            for i in range(0, n_items_per_data_point)
+            for i in range(n_items_per_data_point)
         ]
         self.source_voltage = _FMTResponse(*parsed_source_voltage_items)
 

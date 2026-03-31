@@ -50,7 +50,7 @@ class AimTTiChannel(InstrumentChannel):
         self.channel = channel
         # The instrument can store up to ten configurations
         # internally.
-        self.set_up_store_slots = [i for i in range(0, 10)]
+        self.set_up_store_slots = [i for i in range(10)]
 
         self.volt: Parameter = self.add_parameter(
             "volt",

@@ -1234,16 +1234,16 @@ class KeysightB1500CVSweepMeasurement(
             parsed_data = fmt_response_base_parser(raw_data)
 
         if len(set(parsed_data.type)) == 2:
-            self.param1 = _FMTResponse(*(parsed_data[i][::2] for i in range(0, 4)))
-            self.param2 = _FMTResponse(*(parsed_data[i][1::2] for i in range(0, 4)))
+            self.param1 = _FMTResponse(*(parsed_data[i][::2] for i in range(4)))
+            self.param2 = _FMTResponse(*(parsed_data[i][1::2] for i in range(4)))
 
             self.shapes = ((num_steps,),) * 2
             self.setpoints = ((self.instrument.cv_sweep_voltages(),),) * 2
         else:
-            self.param1 = _FMTResponse(*(parsed_data[i][::4] for i in range(0, 4)))
-            self.param2 = _FMTResponse(*(parsed_data[i][1::4] for i in range(0, 4)))
-            self.ac_voltage = _FMTResponse(*(parsed_data[i][2::4] for i in range(0, 4)))
-            self.dc_voltage = _FMTResponse(*(parsed_data[i][3::4] for i in range(0, 4)))
+            self.param1 = _FMTResponse(*(parsed_data[i][::4] for i in range(4)))
+            self.param2 = _FMTResponse(*(parsed_data[i][1::4] for i in range(4)))
+            self.ac_voltage = _FMTResponse(*(parsed_data[i][2::4] for i in range(4)))
+            self.dc_voltage = _FMTResponse(*(parsed_data[i][3::4] for i in range(4)))
 
             self.shapes = ((len(self.dc_voltage.value),),) * 2
             self.setpoints = ((self.dc_voltage.value,),) * 2
