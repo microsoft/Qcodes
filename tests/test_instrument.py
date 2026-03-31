@@ -95,7 +95,7 @@ def test_validate_function(testdummy: DummyInstrument) -> None:
 
     testdummy.dac1.cache._value = 1000  # overrule the validator
     testdummy.dac1.cache._raw_value = 1000  # overrule the validator
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError):
         testdummy.validate_status()
 
 
