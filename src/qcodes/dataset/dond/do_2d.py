@@ -214,9 +214,8 @@ def do2d(
                     *additional_setpoints_data,
                 )
 
-                if callable(break_condition):
-                    if break_condition():
-                        raise BreakConditionInterrupt("Break condition was met.")
+                if callable(break_condition) and break_condition():
+                    raise BreakConditionInterrupt("Break condition was met.")
 
             for action in after_inner_actions:
                 action()

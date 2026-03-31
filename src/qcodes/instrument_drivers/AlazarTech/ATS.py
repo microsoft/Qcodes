@@ -570,13 +570,12 @@ class AlazarTechATS(Instrument):
         # check if all parameters are up to date
         # Getting IDN is very slow so skip that
         for _, p in self.parameters.items():
-            if isinstance(p, TraceParameter):
-                if p.synced_to_card is False:
-                    raise RuntimeError(
-                        f"TraceParameter {p} not synced to "
-                        f"Alazar card detected. Aborting. Data "
-                        f"may be corrupt"
-                    )
+            if isinstance(p, TraceParameter) and p.synced_to_card is False:
+                raise RuntimeError(
+                    f"TraceParameter {p} not synced to "
+                    f"Alazar card detected. Aborting. Data "
+                    f"may be corrupt"
+                )
 
         # Compute the total transfer time, and display performance information.
         end_time = time.perf_counter()

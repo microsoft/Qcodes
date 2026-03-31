@@ -441,11 +441,13 @@ def _insert_into_data_dict(
                 data[j] = np.atleast_1d(new_values[i])
         return data, None
     else:
-        if existing_values.dtype.kind in ("U", "S"):
+        if (
+            existing_values.dtype.kind in ("U", "S")
+            and new_values.dtype.itemsize > existing_values.dtype.itemsize
+        ):
             # string type arrays may be too small for the new data
             # read so rescale if needed.
-            if new_values.dtype.itemsize > existing_values.dtype.itemsize:
-                existing_values = existing_values.astype(new_values.dtype)
+            existing_values = existing_values.astype(new_values.dtype)
         n_values = new_values.size
         new_write_status = write_status + n_values
         if new_write_status > existing_values.size:

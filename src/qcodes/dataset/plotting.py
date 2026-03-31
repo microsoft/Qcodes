@@ -272,9 +272,9 @@ def plot_dataset(
             if len(data) == 2:  # 1D PLOTTING
                 if data[1]["name"] not in parameters:
                     indices_to_remove.append(i)
-            elif len(data) == 3:  # 2D PLOTTING
-                if data[2]["name"] not in parameters:
-                    indices_to_remove.append(i)
+            elif len(data) == 3 and data[2]["name"] not in parameters:
+                # 2D PLOTTING
+                indices_to_remove.append(i)
         alldata = [d for (i, d) in enumerate(alldata) if i not in indices_to_remove]
 
     for data, ax, colorbar in zip(alldata, axeslist, colorbars):
@@ -904,12 +904,15 @@ def _rescale_ticks_and_units(
         ax.set_ylabel(new_y_label)
 
     # for z aka colorbar axis
-    if cax is not None and len(data) > 2:
-        if not _is_string_valued_array(data[2]["data"]):
-            z_ticks_formatter, new_z_label = _make_rescaled_ticks_and_units(data[2])
-            cax.set_label(new_z_label)
-            cax.formatter = z_ticks_formatter
-            cax.update_ticks()
+    if (
+        cax is not None
+        and len(data) > 2
+        and not _is_string_valued_array(data[2]["data"])
+    ):
+        z_ticks_formatter, new_z_label = _make_rescaled_ticks_and_units(data[2])
+        cax.set_label(new_z_label)
+        cax.formatter = z_ticks_formatter
+        cax.update_ticks()
 
 
 def _is_string_valued_array(values: npt.NDArray) -> bool:

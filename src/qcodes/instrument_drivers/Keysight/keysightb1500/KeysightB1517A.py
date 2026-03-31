@@ -1184,20 +1184,25 @@ class KeysightB1517A(KeysightB1500Module):
                 range
 
         """
-        if min_compliance_range is not None:
-            if isinstance(min_compliance_range, type(output_range)):
-                raise TypeError(
-                    "When forcing voltage, min_compliance_range must be an "
-                    "current output range (and vice versa)."
-                )
+        if min_compliance_range is not None and isinstance(
+            min_compliance_range, type(output_range)
+        ):
+            raise TypeError(
+                "When forcing voltage, min_compliance_range must be an "
+                "current output range (and vice versa)."
+            )
 
-        if isinstance(output_range, VOutputRange):
-            if output_range not in self._valid_v_output_ranges:
-                raise RuntimeError("Invalid Source Voltage Output Range")
+        if (
+            isinstance(output_range, VOutputRange)
+            and output_range not in self._valid_v_output_ranges
+        ):
+            raise RuntimeError("Invalid Source Voltage Output Range")
 
-        if isinstance(output_range, IOutputRange):
-            if output_range not in self._valid_i_output_ranges:
-                raise RuntimeError("Invalid Source Current Output Range")
+        if (
+            isinstance(output_range, IOutputRange)
+            and output_range not in self._valid_i_output_ranges
+        ):
+            raise RuntimeError("Invalid Source Current Output Range")
 
         self._source_config = {
             "output_range": output_range,

@@ -840,10 +840,9 @@ def mark_run_complete(
             is a noop.
 
     """
-    if override is False:
-        if completed(conn=conn, run_id=run_id):
-            log.warning("Trying to mark a run completed that was already completed.")
-            return
+    if override is False and completed(conn=conn, run_id=run_id):
+        log.warning("Trying to mark a run completed that was already completed.")
+        return
 
     query = """
     UPDATE

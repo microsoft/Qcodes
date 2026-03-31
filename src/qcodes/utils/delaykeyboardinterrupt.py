@@ -93,6 +93,9 @@ class DelayedKeyboardInterrupt:
     ) -> None:
         if self.old_handler is not None:
             signal.signal(signal.SIGINT, self.old_handler)
-        if self.signal_received is not None:
-            if self.old_handler is not None and not isinstance(self.old_handler, int):
-                self.old_handler(*self.signal_received)
+        if (
+            self.signal_received is not None
+            and self.old_handler is not None
+            and not isinstance(self.old_handler, int)
+        ):
+            self.old_handler(*self.signal_received)

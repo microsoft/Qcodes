@@ -1020,20 +1020,26 @@ class Arrays(Validator[npt.NDArray]):
                 )
 
         # Only check if max is not inf as it can be expensive for large arrays
-        if self._max_value != (float("inf")) and self._max_value is not None:
-            if not (np.max(value) <= self._max_value):
-                raise ValueError(
-                    f"{value!r} is invalid: all values must be between "
-                    f"{self._min_value} and {self._max_value} inclusive; {context}"
-                )
+        if (
+            self._max_value != (float("inf"))
+            and self._max_value is not None
+            and not (np.max(value) <= self._max_value)
+        ):
+            raise ValueError(
+                f"{value!r} is invalid: all values must be between "
+                f"{self._min_value} and {self._max_value} inclusive; {context}"
+            )
 
         # Only check if min is not -inf as it can be expensive for large arrays
-        if self._min_value != (-float("inf")) and self._min_value is not None:
-            if not (self._min_value <= np.min(value)):
-                raise ValueError(
-                    f"{value!r} is invalid: all values must be between "
-                    f"{self._min_value} and {self._max_value} inclusive; {context}"
-                )
+        if (
+            self._min_value != (-float("inf"))
+            and self._min_value is not None
+            and not (self._min_value <= np.min(value))
+        ):
+            raise ValueError(
+                f"{value!r} is invalid: all values must be between "
+                f"{self._min_value} and {self._max_value} inclusive; {context}"
+            )
 
     is_numeric = True
 

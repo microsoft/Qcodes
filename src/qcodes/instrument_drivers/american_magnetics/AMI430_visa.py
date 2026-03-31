@@ -429,9 +429,8 @@ class AMIModel430(VisaInstrument):
         self.write(f"CONF:FIELD:TARG {value}")
 
         # If we have a persistent switch, make sure it is resistive
-        if self.switch_heater.enabled():
-            if not self.switch_heater.state():
-                raise AMI430Exception("Switch heater is not on")
+        if self.switch_heater.enabled() and not self.switch_heater.state():
+            raise AMI430Exception("Switch heater is not on")
         self.ramp()
 
         # Check if we want to block
