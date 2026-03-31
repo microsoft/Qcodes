@@ -297,7 +297,7 @@ class Station(Metadatable, DelegateAttributes):
             if name in str(e):
                 raise KeyError(f"Component {name} is not part of the station")
             else:
-                raise e
+                raise
 
     def get_component(self, full_name: str) -> MetadatableWithName:
         """

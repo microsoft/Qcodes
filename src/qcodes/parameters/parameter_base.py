@@ -913,7 +913,7 @@ class ParameterBase(
 
             except Exception as e:
                 e.args = (*e.args, f"getting {self}")
-                raise e
+                raise
 
         return get_wrapper
 
@@ -971,7 +971,7 @@ class ParameterBase(
 
             except Exception as e:
                 e.args = (*e.args, f"setting {self} to {value}")
-                raise e
+                raise
 
         return set_wrapper
 

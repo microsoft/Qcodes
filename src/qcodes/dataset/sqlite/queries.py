@@ -1829,7 +1829,7 @@ def get_data_by_tag_and_table_name(
         ):
             data = None
         else:
-            raise e
+            raise
     return data
 
 
@@ -1953,7 +1953,7 @@ def add_data_to_dynamic_columns(
         if str(e).startswith("duplicate"):
             update_columns(conn, row_id, table_name, data)
         else:
-            raise e
+            raise
 
 
 def get_experiment_name_from_experiment_id(conn: AtomicConnection, exp_id: int) -> str:

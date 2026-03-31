@@ -400,7 +400,7 @@ def load_or_create_experiment(
         if "Experiment not found" in str(exception):
             experiment = new_experiment(experiment_name, sample_name, conn=conn)
         else:
-            raise exception
+            raise
     return experiment
 
 

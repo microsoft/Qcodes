@@ -266,7 +266,7 @@ ignore = ["E501", "G004", "PLR2004", "PLR0913", "PLR0911", "PLR0912", "PLR0915",
     "DTZ007", "DTZ005", "C408", "BLE001", "S110", "C414", "C405",
     "PIE790", "N999", "C419", "TRY002", "PIE804",
     "C400", "B023", "B008", "TRY004",
-    "TRY201", "B033", "B010", "DTZ006","PIE808", "FURB166",
+    "B033", "B010", "DTZ006","PIE808", "FURB166",
     "C409", "B016"]
 
 # we want to explicitly use the micro symbol
