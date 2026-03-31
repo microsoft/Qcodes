@@ -36,9 +36,7 @@ class InterDependencies:  # noqa: PLW1641
             return False
         ours = sorted(self.paramspecs, key=lambda ps: ps.name)
         theirs = sorted(other.paramspecs, key=lambda ps: ps.name)
-        if not ours == theirs:
-            return False
-        return True
+        return ours == theirs
 
     def _to_dict(self) -> InterDependenciesDict:
         """
