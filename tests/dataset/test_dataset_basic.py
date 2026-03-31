@@ -420,7 +420,7 @@ def test_set_interdependencies(dataset) -> None:
     paramspecs = shadow_ds.paramspecs
 
     expected_keys = ["a_param", "b_param", "c_param"]
-    keys = sorted(list(paramspecs.keys()))
+    keys = sorted(paramspecs.keys())
     assert keys == expected_keys
     for expected_param_name in expected_keys:
         ps = paramspecs[expected_param_name]

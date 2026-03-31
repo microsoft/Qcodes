@@ -579,7 +579,7 @@ class GalilDMC4133Controller(GalilMotionController):
         """
         Gets absolution position of the motors from the defined origin
         """
-        result = dict()
+        result = {}
         data = self.ask("PA ?,?,?").split(" ")
         result["A"] = int(data[0][:-1])
         result["B"] = int(data[1][:-1])

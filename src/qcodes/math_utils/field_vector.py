@@ -205,7 +205,7 @@ class FieldVector:
             >>> f.set_vector(x=9, y=0, r=3)
 
         """
-        names = sorted(list(new_values.keys()))
+        names = sorted(new_values.keys())
         groups = [["x", "y", "z"], ["phi", "r", "theta"], ["phi", "rho", "z"]]
         if names not in groups:
             raise ValueError("Can only set vector with a complete value set")

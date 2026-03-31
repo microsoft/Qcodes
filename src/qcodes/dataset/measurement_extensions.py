@@ -159,7 +159,7 @@ def parse_dond_into_args(
 def dond_into(
     datasaver: DataSaver,
     *params: AbstractSweep | ParamMeasT,
-    additional_setpoints: Sequence[ParameterBase] = tuple(),
+    additional_setpoints: Sequence[ParameterBase] = (),
 ) -> None:
     """
     A doNd-like utility function that writes gridded data to the supplied DataSaver

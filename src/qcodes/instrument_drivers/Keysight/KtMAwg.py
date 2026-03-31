@@ -342,7 +342,7 @@ class KeysightM9336A(Instrument):
     def get_errors(self) -> dict[int, str]:
         error_code = ctypes.c_int(-1)
         error_message = ctypes.create_string_buffer(256)
-        error_dict = dict()
+        error_dict = {}
         while error_code.value != 0:
             status = self._dll.KtMAwg_error_query(
                 self._session, ctypes.byref(error_code), error_message
