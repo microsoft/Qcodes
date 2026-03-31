@@ -569,7 +569,7 @@ class AlazarTechATS(Instrument):
         time_done_free_mem = time.perf_counter()
         # check if all parameters are up to date
         # Getting IDN is very slow so skip that
-        for _, p in self.parameters.items():
+        for p in self.parameters.values():
             if isinstance(p, TraceParameter) and p.synced_to_card is False:
                 raise RuntimeError(
                     f"TraceParameter {p} not synced to "
