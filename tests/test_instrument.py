@@ -121,11 +121,13 @@ def test_instrument_fail() -> None:
 @pytest.mark.usefixtures("close_before_and_after")
 def test_instrument_on_invalid_identifier() -> None:
     # Check if warning and error raised when invalid identifer name given
-    with pytest.warns(
-        UserWarning, match="Changed !-name to !_name for instrument identifier"
+    with (
+        pytest.warns(
+            UserWarning, match="Changed !-name to !_name for instrument identifier"
+        ),
+        pytest.raises(ValueError, match="!_name invalid instrument identifier"),
     ):
-        with pytest.raises(ValueError, match="!_name invalid instrument identifier"):
-            DummyInstrument(name="!-name")
+        DummyInstrument(name="!-name")
 
     assert Instrument.instances() == []
     assert DummyInstrument.instances() == []

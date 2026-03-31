@@ -55,9 +55,11 @@ def test_version_4a_bugfix_raises() -> None:
 
     skip_if_no_fixtures(dbname_old)
 
-    with temporarily_copied_DB(dbname_old, debug=False, version=3) as conn:
-        with pytest.raises(RuntimeError):
-            fix_version_4a_run_description_bug(conn)
+    with (
+        temporarily_copied_DB(dbname_old, debug=False, version=3) as conn,
+        pytest.raises(RuntimeError),
+    ):
+        fix_version_4a_run_description_bug(conn)
 
 
 def test_fix_wrong_run_descriptions() -> None:
@@ -107,6 +109,8 @@ def test_fix_wrong_run_descriptions_raises() -> None:
 
     skip_if_no_fixtures(dbname_old)
 
-    with temporarily_copied_DB(dbname_old, debug=False, version=4) as conn:
-        with pytest.raises(RuntimeError):
-            fix_wrong_run_descriptions(conn, [1])
+    with (
+        temporarily_copied_DB(dbname_old, debug=False, version=4) as conn,
+        pytest.raises(RuntimeError),
+    ):
+        fix_wrong_run_descriptions(conn, [1])

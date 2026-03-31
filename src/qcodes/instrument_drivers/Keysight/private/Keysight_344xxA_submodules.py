@@ -1169,9 +1169,8 @@ mode."""
             The float value of the parameter.
 
         """
-        with self.sense_function.set_to(sense_function):
-            with self.sample.count.set_to(1):
-                response = self.ask("READ?")
+        with self.sense_function.set_to(sense_function), self.sample.count.set_to(1):
+            response = self.ask("READ?")
 
         if float(response) >= 9.9e37:
             return np.inf

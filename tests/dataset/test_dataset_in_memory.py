@@ -178,19 +178,21 @@ def test_dataset_in_memory_reload_from_db_3d(
 def test_dataset_in_memory_without_cache_raises(
     meas_with_registered_param, DMM, DAC, tmp_path
 ) -> None:
-    with pytest.raises(
-        RuntimeError,
-        match=re.escape(
-            "Cannot disable the in memory cache for a dataset that is only in memory."
+    with (
+        pytest.raises(
+            RuntimeError,
+            match=re.escape(
+                "Cannot disable the in memory cache for a dataset that is only in memory."
+            ),
         ),
-    ):
-        with meas_with_registered_param.run(
+        meas_with_registered_param.run(
             dataset_class=DataSetType.DataSetInMem, in_memory_cache=False
-        ) as datasaver:
-            for set_v in np.linspace(0, 25, 10):
-                DAC.ch1.set(set_v)
-                get_v = DMM.v1()
-                datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
+        ) as datasaver,
+    ):
+        for set_v in np.linspace(0, 25, 10):
+            DAC.ch1.set(set_v)
+            get_v = DMM.v1()
+            datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
 
 
 def test_dataset_in_memory_reload_from_db_complex(

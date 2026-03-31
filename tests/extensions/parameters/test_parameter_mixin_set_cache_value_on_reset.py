@@ -136,33 +136,37 @@ def test_direct_cache_update_and_reset(store, reset_instr) -> None:
 
 
 def test_error_if_get_cmd_supplied(reset_instr) -> None:
-    with pytest.warns(QCoDeSDeprecationWarning, match="does not correctly pass kwargs"):
+    with (
+        pytest.warns(QCoDeSDeprecationWarning, match="does not correctly pass kwargs"),
+        pytest.raises(TypeError, match="without 'get_cmd'"),
+    ):
         # with pytest.raises(KeyError, match="Duplicate parameter name managed_param on instrument"):
-        with pytest.raises(TypeError, match="without 'get_cmd'"):
-            reset_instr.add_parameter(
-                name="test_param_error",
-                parameter_class=ResetTestParameter,
-                group_names=["reset_group_general"],
-                cache_value_after_reset=42,
-                set_cmd=lambda x: None,
-                get_cmd=lambda: 100,
-                docstring="A parameter incorrectly supplying get_cmd.",
-            )
+        reset_instr.add_parameter(
+            name="test_param_error",
+            parameter_class=ResetTestParameter,
+            group_names=["reset_group_general"],
+            cache_value_after_reset=42,
+            set_cmd=lambda x: None,
+            get_cmd=lambda: 100,
+            docstring="A parameter incorrectly supplying get_cmd.",
+        )
 
 
 def test_error_if_get_parser_supplied(reset_instr) -> None:
-    with pytest.warns(QCoDeSDeprecationWarning, match="does not correctly pass kwargs"):
+    with (
+        pytest.warns(QCoDeSDeprecationWarning, match="does not correctly pass kwargs"),
+        pytest.raises(TypeError, match="Supplying 'get_parser' is not allowed"),
+    ):
         # with pytest.raises(KeyError, match="Duplicate parameter name managed_param on instrument"):
-        with pytest.raises(TypeError, match="Supplying 'get_parser' is not allowed"):
-            reset_instr.add_parameter(
-                name="test_param_get_parser_error",
-                parameter_class=ResetTestParameter,
-                group_names=["reset_group_general"],
-                cache_value_after_reset=42,
-                set_cmd=lambda x: None,
-                get_parser=lambda x: x + 1,
-                docstring="A parameter incorrectly supplying get_parser.",
-            )
+        reset_instr.add_parameter(
+            name="test_param_get_parser_error",
+            parameter_class=ResetTestParameter,
+            group_names=["reset_group_general"],
+            cache_value_after_reset=42,
+            set_cmd=lambda x: None,
+            get_parser=lambda x: x + 1,
+            docstring="A parameter incorrectly supplying get_parser.",
+        )
 
 
 def test_parameter_in_multiple_reset_groups(store, reset_instr) -> None:
@@ -227,14 +231,14 @@ def test_warning_if_group_names_missing(store, reset_instr):
 
 
 def test_typeerror_if_group_names_invalid(store, reset_instr):
-    with pytest.warns(QCoDeSDeprecationWarning):
-        with pytest.raises(
-            TypeError, match="group_names must be a list of strings or None"
-        ):
-            reset_instr.add_parameter(
-                name="test_param",
-                parameter_class=ResetTestParameter,
-                cache_value_after_reset=42,
-                group_names=123,
-                set_cmd=lambda x: store.update({"reset_param": x}),
-            )
+    with (
+        pytest.warns(QCoDeSDeprecationWarning),
+        pytest.raises(TypeError, match="group_names must be a list of strings or None"),
+    ):
+        reset_instr.add_parameter(
+            name="test_param",
+            parameter_class=ResetTestParameter,
+            cache_value_after_reset=42,
+            group_names=123,
+            set_cmd=lambda x: store.update({"reset_param": x}),
+        )

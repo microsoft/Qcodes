@@ -58,9 +58,8 @@ def test_atomic_raises_for_non_atomic_conn() -> None:
         "atomic context manager only accepts AtomicConnection "
         "database connection objects."
     )
-    with pytest.raises(ValueError, match=match_str):
-        with atomic(sqlite_conn):  # type: ignore[arg-type]
-            pass
+    with pytest.raises(ValueError, match=match_str), atomic(sqlite_conn):  # type: ignore[arg-type]
+        pass
 
 
 def test_atomic() -> None:
@@ -93,12 +92,14 @@ def test_atomic_with_exception() -> None:
 
     assert 25 == sqlite_conn.execute("PRAGMA user_version").fetchall()[0][0]
 
-    with pytest.raises(
-        RuntimeError, match="Rolling back due to unhandled exception"
-    ) as e:
-        with atomic(sqlite_conn) as atomic_conn:
-            atomic_conn.execute("PRAGMA user_version(42)")
-            raise Exception("intended exception")
+    with (
+        pytest.raises(
+            RuntimeError, match="Rolling back due to unhandled exception"
+        ) as e,
+        atomic(sqlite_conn) as atomic_conn,
+    ):
+        atomic_conn.execute("PRAGMA user_version(42)")
+        raise Exception("intended exception")
     assert error_caused_by(e, "intended exception")
 
     assert 25 == sqlite_conn.execute("PRAGMA user_version").fetchall()[0][0]
@@ -115,9 +116,8 @@ def test_atomic_on_outmost_connection_that_is_in_transaction() -> None:
         "Please commit those before starting an atomic "
         "transaction."
     )
-    with pytest.raises(RuntimeError, match=match_str):
-        with atomic(conn):
-            pass
+    with pytest.raises(RuntimeError, match=match_str), atomic(conn):
+        pass
 
 
 @pytest.mark.parametrize("in_transaction", (True, False))
