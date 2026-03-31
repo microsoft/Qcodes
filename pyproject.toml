@@ -262,7 +262,7 @@ extend-select = [
 # it may be worth fixing some or these in the future
 # PYI036 disable until https://github.com/astral-sh/ruff/issues/9794 is fixed
 ignore = ["E501", "G004", "PLR2004", "PLR0913", "PLR0911", "PLR0912", "PLR0915", "PLW0602", "PLW0603", "PLW2901", "PYI036",
-    "B018", "B017", "B009","SIM118", "PT014", "LOG015", "PT031",
+    "B018", "B017","SIM118", "PT014", "LOG015", "PT031",
     "DTZ007", "DTZ005", "BLE001", "S110",
     "PIE790", "N999", "PIE804",
     "DTZ006",
