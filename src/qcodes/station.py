@@ -851,9 +851,10 @@ def update_config_schema(
             json.dump(data, f, indent=4)
 
     additional_instrument_modules = additional_instrument_modules or []
-    instrument_modules: set[ModuleType] = set(
-        [qcodes.instrument_drivers, *additional_instrument_modules]
-    )
+    instrument_modules: set[ModuleType] = {
+        qcodes.instrument_drivers,
+        *additional_instrument_modules,
+    }
 
     instrument_names = tuple(
         itertools.chain.from_iterable(

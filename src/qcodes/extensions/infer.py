@@ -220,7 +220,7 @@ def _merge_user_and_class_attrs(
     if alt_source_attrs is None:
         return InferAttrs.known_attrs()
     elif isinstance(alt_source_attrs, str):
-        return set.union(set((alt_source_attrs,)), set(InferAttrs.known_attrs()))
+        return set.union({alt_source_attrs}, set(InferAttrs.known_attrs()))
     else:
         return set.union(set(alt_source_attrs), set(InferAttrs.known_attrs()))
 
