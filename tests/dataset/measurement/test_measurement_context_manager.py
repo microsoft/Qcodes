@@ -413,10 +413,7 @@ def test_setting_write_period(wp) -> None:
 def test_setting_write_period_from_config(wp) -> None:
     qc.config.dataset.write_period = wp
 
-    if isinstance(wp, str):
-        with pytest.raises(ValueError):
-            Measurement()
-    elif wp < 1e-3:
+    if isinstance(wp, str) or wp < 1e-3:
         with pytest.raises(ValueError):
             Measurement()
     else:

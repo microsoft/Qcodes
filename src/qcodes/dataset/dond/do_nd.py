@@ -883,9 +883,7 @@ def _parse_dond_arguments(
     sweep_instances: list[AbstractSweep | TogetherSweep] = []
     params_meas: list[ParamMeasT | Sequence[ParamMeasT]] = []
     for par in params:
-        if isinstance(par, AbstractSweep):
-            sweep_instances.append(par)
-        elif isinstance(par, TogetherSweep):
+        if isinstance(par, AbstractSweep | TogetherSweep):
             sweep_instances.append(par)
         else:
             params_meas.append(par)

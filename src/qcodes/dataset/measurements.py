@@ -1125,9 +1125,9 @@ class Measurement:
         return_paramtype: str
         if paramtype is not None:  # override with argument
             return_paramtype = paramtype
-        elif isinstance(parameter.vals, vals.Arrays):
-            return_paramtype = "array"
-        elif isinstance(parameter, ArrayParameter):
+        elif isinstance(parameter.vals, vals.Arrays) or isinstance(
+            parameter, ArrayParameter
+        ):
             return_paramtype = "array"
         elif isinstance(parameter.vals, vals.Strings):
             return_paramtype = "text"

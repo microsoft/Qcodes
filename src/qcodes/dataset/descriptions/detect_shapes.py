@@ -90,11 +90,10 @@ def _get_shape_of_step(step: int | np.integer[Any] | Sized | npt.NDArray) -> int
 
 
 def _param_is_array_like(meas_param: ParameterBase) -> bool:
-    if isinstance(meas_param, (ArrayParameter, ParameterWithSetpoints)):
-        return True
-    elif isinstance(meas_param.vals, Arrays):
-        return True
-    return False
+    is_array_like = isinstance(
+        meas_param, (ArrayParameter, ParameterWithSetpoints)
+    ) or isinstance(meas_param.vals, Arrays)
+    return is_array_like
 
 
 def _get_shape_of_arrayparam(param: ParameterBase) -> tuple[int, ...]:

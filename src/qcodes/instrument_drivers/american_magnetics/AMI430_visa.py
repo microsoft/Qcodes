@@ -384,9 +384,7 @@ class AMIModel430(VisaInstrument):
         state = self.ramping_state()
         if state == "ramping":
             # If we don't have a persistent switch, or it's warm
-            if not self.switch_heater.enabled():
-                return True
-            elif self.switch_heater.state():
+            if not self.switch_heater.enabled() or self.switch_heater.state():
                 return True
         elif state in ["holding", "paused", "at zero current"]:
             return True

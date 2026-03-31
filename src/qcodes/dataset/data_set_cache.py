@@ -378,10 +378,7 @@ def _merge_data_single_param(
         )
     elif new_values is not None or shape is not None:
         (merged_data, new_write_status) = _create_new_data_dict(new_values, shape)
-    elif existing_values is not None:
-        merged_data = existing_values
-        new_write_status = single_tree_write_status
-    elif shape is None and new_values is None:
+    elif existing_values is not None or (shape is None and new_values is None):
         merged_data = existing_values
         new_write_status = single_tree_write_status
     else:
