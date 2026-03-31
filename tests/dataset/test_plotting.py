@@ -421,7 +421,7 @@ def test_plot_dataset_parameters(experiment, request: FixtureRequest, params) ->
             assert_allclose(np.array(plotted), data, rtol=1e-10)
 
     # check only 'requested' parameter has been plotted
-    elif params == "y" or "y2":
+    elif params in ["y", "y2"]:
         assert isinstance(params, str)
         assert len(axes) == 1
         dsdata = dataset.get_parameter_data()
