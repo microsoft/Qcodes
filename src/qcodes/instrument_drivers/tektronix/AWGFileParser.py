@@ -335,7 +335,8 @@ def _unpacker(
         bitstring = bin(bitnum)[2:].zfill(16)
         m2[ii] = int(bitstring[0])
         m1[ii] = int(bitstring[1])
-        wf[ii] = (int(bitstring[2:], base=2) - 2**13) / 2**13
+        wf[ii] = (int(bitstring[2:], base=2) - 2**13) / 2**13  # noqa: FURB166
+        # the prefix of the bitsring is m2, m1 and not a int type prefix so disable FURB166
         # print(bitstring, int(bitstring[2:], base=2))
 
     return wf, m1, m2

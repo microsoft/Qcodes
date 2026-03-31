@@ -264,10 +264,12 @@ extend-select = [
 ignore = ["E501", "G004", "PLR2004", "PLR0913", "PLR0911", "PLR0912", "PLR0915", "PLW0602", "PLW0603", "PLW2901", "PYI036",
     "B018", "B017", "B009","SIM118", "PT014", "LOG015", "PT031",
     "DTZ007", "DTZ005", "C408", "BLE001", "S110", "C414", "C405",
-    "PIE790", "N999", "C419", "TRY002", "PIE804",
-    "C400", "B023", "B008", "TRY004",
-    "B033", "B010", "DTZ006","PIE808", "FURB166",
-    "C409", "B016"]
+    "PIE790", "N999", "C419", "PIE804",
+    "C400", "B023", "B008",
+    "B033", "B010", "DTZ006","PIE808",
+    "C409", "B016",
+    "TRY002", "TRY004" # these would require changing exception types
+]
 
 # we want to explicitly use the micro symbol
 # not the greek letter
