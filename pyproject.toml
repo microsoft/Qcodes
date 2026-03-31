@@ -265,7 +265,7 @@ ignore = ["E501", "G004", "PLR2004", "PLR0913", "PLR0911", "PLR0912", "PLR0915",
     "B018", "B017", "B009","SIM118", "PT014", "LOG015", "PT031",
     "DTZ007", "DTZ005", "C408", "BLE001", "S110", "C414", "C405",
     "PIE790", "N999", "C419", "PIE804",
-    "C400", "DTZ006",
+    "DTZ006",
     "TRY002", "TRY004" # these would require changing exception types
 ]
 

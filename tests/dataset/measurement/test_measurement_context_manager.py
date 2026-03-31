@@ -2174,13 +2174,13 @@ def test_datasaver_arrays_of_different_length(storage_type, Ns, bg_writing) -> N
 
     with meas.run(write_in_background=bg_writing) as datasaver:
         result_t = ("temperature", 70)
-        result_freqs = list(
+        result_freqs = [
             (f"freqs{n}", np.linspace(0, 1, Ns[n])) for n in range(no_of_signals)
-        )
-        result_sigs = list(
+        ]
+        result_sigs = [
             (f"signal{n}", np.random.default_rng().standard_normal(Ns[n]))
             for n in range(no_of_signals)
-        )
+        ]
         full_result: tuple[tuple[str, int | np.ndarray | str], ...] = tuple(
             result_freqs + result_sigs + [result_t]
         )
