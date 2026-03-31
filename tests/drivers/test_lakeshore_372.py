@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
-VISA_LOGGER = ".".join((InstrumentBase.__module__, "com", "visa"))
+VISA_LOGGER = f"{InstrumentBase.__module__}.com.visa"
 
 P = ParamSpec("P")
 T = TypeVar("T")

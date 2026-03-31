@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
     from qcodes.parameters.parameter import Parameter
 
-VISA_LOGGER = ".".join((InstrumentBase.__module__, "com", "visa"))
+VISA_LOGGER = f"{InstrumentBase.__module__}.com.visa"
 
 log = logging.getLogger(__name__)
 
