@@ -576,13 +576,13 @@ def test_subscriptions(experiment, DAC, DMM) -> None:
             @retry_until_does_not_throw(
                 exception_class_to_expect=AssertionError, delay=0.5, tries=20
             )
-            def assert_states_updated_from_callbacks() -> None:
-                assert values_larger_than_7 == values_larger_than_7__expected
+            def assert_states_updated_from_callbacks(values, current_num) -> None:
+                assert values_larger_than_7 == values
                 assert list(all_results_dict.keys()) == [
-                    result_index for result_index in range(1, num + 1 + 1)
+                    result_index for result_index in range(1, current_num + 1 + 1)
                 ]
 
-            assert_states_updated_from_callbacks()
+            assert_states_updated_from_callbacks(values_larger_than_7__expected, num)
 
     # Ensure that after exiting the "run()" context,
     # all subscribers get unsubscribed from the dataset
