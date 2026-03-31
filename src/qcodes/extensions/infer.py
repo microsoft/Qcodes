@@ -264,11 +264,9 @@ def get_parent_instruments_from_chain_of_type(
 
     param_chain = get_parameter_chain(parameter)
     return tuple(
-        [
-            param.instrument
-            for param in param_chain
-            if isinstance(param.instrument, instrument_type)
-        ]
+        param.instrument
+        for param in param_chain
+        if isinstance(param.instrument, instrument_type)
     )
 
 

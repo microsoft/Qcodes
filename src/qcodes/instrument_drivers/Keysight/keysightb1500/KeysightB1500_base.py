@@ -515,9 +515,9 @@ class IVSweepMeasurement(
     def __init__(self, name: str, instrument: KeysightB1500, **kwargs: Any):
         super().__init__(
             name,
-            names=tuple(["param1", "param2"]),
-            units=tuple(["A", "A"]),
-            labels=tuple(["Param1 Current", "Param2 Current"]),
+            names=("param1", "param2"),
+            units=("A", "A"),
+            labels=("Param1 Current", "Param2 Current"),
             shapes=((1,),) * 2,
             setpoint_names=(("Voltage",),) * 2,
             setpoint_labels=(("Voltage",),) * 2,
