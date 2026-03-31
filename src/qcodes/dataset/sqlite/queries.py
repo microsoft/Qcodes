@@ -2300,7 +2300,7 @@ def raw_time_to_str_time(
 def _check_if_table_found(conn: AtomicConnection, table_name: str) -> bool:
     query = "SELECT name FROM sqlite_master WHERE type='table' AND name=?"
     cursor = conn.cursor()
-    return not many_many(cursor.execute(query, (table_name,)), "name") == []
+    return many_many(cursor.execute(query, (table_name,)), "name") != []
 
 
 def _get_result_table_name_by_guid(conn: AtomicConnection, guid: str) -> str:

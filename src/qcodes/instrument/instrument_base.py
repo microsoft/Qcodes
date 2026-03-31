@@ -529,7 +529,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
             if unit != "":  # corresponds to no unit
                 msg += f"({unit})"
             # Truncate the message if it is longer than max length
-            if len(msg) > max_chars and not max_chars == -1:
+            if len(msg) > max_chars and max_chars != -1:
                 msg = msg[0 : max_chars - 3] + "..."
             print(msg)
 

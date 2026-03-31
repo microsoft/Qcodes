@@ -824,7 +824,7 @@ class KeysightB1520A(KeysightB1500Module):
         step_value = self.cv_sweep.sweep_steps()
         mode = self.cv_sweep.sweep_mode()
         if mode in (2, 4):
-            if not sign(start_value) == sign(end_value):
+            if sign(start_value) != sign(end_value):
                 if sign(start_value) == 0:
                     start_value = sign(start_value) * 0.005  # resolution
                 elif sign(end_value) == 0:

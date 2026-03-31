@@ -121,7 +121,7 @@ def test_same_label_and_unit_on_init(simple_param: Parameter) -> None:
 def test_overwritten_unit_on_init(simple_param: Parameter) -> None:
     d = DelegateParameter("test_delegate_parameter", source=simple_param, unit="Ohm")
     assert d.label == simple_param.label
-    assert not d.unit == simple_param.unit
+    assert d.unit != simple_param.unit
     assert d.unit == "Ohm"
 
 
@@ -130,7 +130,7 @@ def test_overwritten_label_on_init(simple_param: Parameter) -> None:
         "test_delegate_parameter", source=simple_param, label="Physical parameter"
     )
     assert d.unit == simple_param.unit
-    assert not d.label == simple_param.label
+    assert d.label != simple_param.label
     assert d.label == "Physical parameter"
 
 

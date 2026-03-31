@@ -719,7 +719,7 @@ def test_datasaver_scalars(
         # so we add a bit more wait time here if the expected number
         # of points have not been written
         for _ in range(10):
-            if not datasaver.points_written == breakpoint + 1:
+            if datasaver.points_written != breakpoint + 1:
                 sleep(write_period * 1.1)
         assert datasaver.points_written == breakpoint + 1
 
