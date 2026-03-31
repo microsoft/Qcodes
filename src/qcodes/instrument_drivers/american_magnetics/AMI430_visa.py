@@ -1009,7 +1009,7 @@ class AMIModel4303D(Instrument):
             return bool(np.linalg.norm(setpoint_values) < self._field_limit)
 
         answer = any(
-            [limit_function(*setpoint_values) for limit_function in self._field_limit]
+            limit_function(*setpoint_values) for limit_function in self._field_limit
         )
 
         return answer

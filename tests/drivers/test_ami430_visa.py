@@ -551,7 +551,7 @@ def test_field_limit_exception(current_driver) -> None:
     set_points = zip(*(i.flatten() for i in np.meshgrid(x, y, z)))
 
     for set_point in set_points:
-        should_not_raise = any([is_safe(*set_point) for is_safe in field_limit])
+        should_not_raise = any(is_safe(*set_point) for is_safe in field_limit)
 
         if should_not_raise:
             current_driver.cartesian(set_point)
@@ -561,7 +561,7 @@ def test_field_limit_exception(current_driver) -> None:
 
             assert "field would exceed limit" in excinfo.value.args[0]
             vals_and_setpoints = zip(current_driver.cartesian(), set_point)
-            belief = not (all([val == sp for val, sp in vals_and_setpoints]))
+            belief = not (all(val == sp for val, sp in vals_and_setpoints))
             assert belief
 
 

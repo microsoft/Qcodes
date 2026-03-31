@@ -96,11 +96,9 @@ def test_wrong_model_warns(
     assert len(warns) >= 4
     assert (
         sum(
-            [
-                "The driver class name " in record.msg
-                and "does not match the detected model" in record.msg
-                for record in warns
-            ]
+            "The driver class name " in record.msg
+            and "does not match the detected model" in record.msg
+            for record in warns
         )
         == 4
     )
