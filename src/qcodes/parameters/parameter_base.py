@@ -1377,7 +1377,7 @@ class ParameterBase(
         if self.vals is None:
             self.vals = new_vals
         elif type(self.vals) is not type(new_vals):
-            logging.warning(
+            LOG.warning(
                 f"Tried to set a new paramtype {paramtype}, but this parameter already has paramtype {self.paramtype} which does not match"
             )
         self.param_spec.type = paramtype

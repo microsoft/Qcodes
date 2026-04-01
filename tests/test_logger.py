@@ -157,7 +157,7 @@ def test_set_level_without_starting_raises() -> None:
 def test_handler_level() -> None:
     logger.start_logger()
     with logger.LogCapture(level=logging.INFO) as logs:
-        logging.debug(TEST_LOG_MESSAGE)
+        logging.debug(TEST_LOG_MESSAGE)  # noqa: LOG015
     assert logs.value == ""
 
     with (
@@ -165,7 +165,7 @@ def test_handler_level() -> None:
         logger.handler_level(level=logging.DEBUG, handler=logs.string_handler),
     ):
         print(logs.string_handler)
-        logging.debug(TEST_LOG_MESSAGE)
+        logging.debug(TEST_LOG_MESSAGE)  # noqa: LOG015
     assert logs.value.strip() == TEST_LOG_MESSAGE
 
 
