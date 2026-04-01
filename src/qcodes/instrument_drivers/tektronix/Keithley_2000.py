@@ -25,5 +25,3 @@ class Keithley_2000(Keithley2000):
     """
     Backwards compatibility alias for Keithley 2000 driver
     """
-
-    pass

@@ -97,8 +97,6 @@ ChannelOrInstrumentBase = InstrumentBase | ChannelTuple
 class ValidationWarning(Warning):
     """Replacement for jsonschema.error.ValidationError as warning."""
 
-    pass
-
 
 class StationConfig(dict[Any, Any]):
     def snapshot(self, update: bool = True) -> StationConfig:

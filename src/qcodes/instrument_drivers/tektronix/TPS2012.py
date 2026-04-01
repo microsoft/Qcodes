@@ -473,5 +473,3 @@ class TPS2012(TektronixTPS2012):
     """
     Deprecated alias for ``TektronixTPS2012``
     """
-
-    pass

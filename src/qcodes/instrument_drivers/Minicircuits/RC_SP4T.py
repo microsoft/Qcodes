@@ -15,8 +15,6 @@ class MC_channel(MiniCircuitsRCSP4TChannel):
     Alias for backwards compatibility
     """
 
-    pass
-
 
 @deprecated(
     "RC_SP4T is deprecated. Please use qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4T instead.",
@@ -27,5 +25,3 @@ class RC_SP4T(MiniCircuitsRCSP4T):
     """
     Alias for backwards compatibility
     """
-
-    pass

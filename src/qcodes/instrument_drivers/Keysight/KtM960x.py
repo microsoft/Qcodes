@@ -306,5 +306,3 @@ class KeysightM960x(Instrument):
 )
 class KtM960x(KeysightM960x):
     """Alias for backwards compatibility"""
-
-    pass

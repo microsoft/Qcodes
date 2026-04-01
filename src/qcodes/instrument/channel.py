@@ -927,8 +927,6 @@ class ChannelTupleValidator(Validator[InstrumentChannel]):
 class ChannelListValidator(ChannelTupleValidator):
     """Alias for backwards compatibility. Do not use"""
 
-    pass
-
 
 class AutoLoadableInstrumentChannel(InstrumentChannel):
     """

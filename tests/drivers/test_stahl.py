@@ -94,4 +94,3 @@ def test_get_temperature(stahl_instrument) -> None:
     Line 191 of pyvisa-sim/component.py  should read
     "return response.encode('latin-1')" for this to work.
     """
-    pass

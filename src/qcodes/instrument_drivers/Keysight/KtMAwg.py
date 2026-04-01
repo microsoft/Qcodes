@@ -421,8 +421,6 @@ class KeysightM9336A(Instrument):
 class KtMAWGChannel(KeysightM9336AAWGChannel):
     """Alias for backwards compatibility"""
 
-    pass
-
 
 @deprecated(
     "KtMAwg is deprecated. Please use qcodes.instrument_drivers.Keysight.KeysightM9336A instead.",
@@ -431,5 +429,3 @@ class KtMAWGChannel(KeysightM9336AAWGChannel):
 )
 class KtMAwg(KeysightM9336A):
     """Alias for backwards compatibility"""
-
-    pass

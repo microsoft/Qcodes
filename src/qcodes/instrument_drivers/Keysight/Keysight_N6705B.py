@@ -106,8 +106,6 @@ class KeysightN6705BChannel(InstrumentChannel):
 class N6705BChannel(KeysightN6705BChannel):
     """Alias for backwards compatibility"""
 
-    pass
-
 
 class KeysightN6705B(VisaInstrument):
     default_terminator = "\n"

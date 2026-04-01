@@ -853,13 +853,11 @@ class AcquisitionInterface(Generic[OutputType]):
         The Alazar instrument will call this method right before
         'AlazarStartCapture' is called
         """
-        pass
 
     def pre_acquire(self) -> None:
         """
         This method is called immediately after 'AlazarStartCapture' is called
         """
-        pass
 
     def handle_buffer(
         self, buffer: npt.NDArray, buffer_number: int | None = None
@@ -900,7 +898,6 @@ class AcquisitionInterface(Generic[OutputType]):
                 to local memory at the time of this callback.
 
         """
-        pass
 
 
 class AcquisitionController(Instrument, AcquisitionInterface[Any], Generic[OutputType]):

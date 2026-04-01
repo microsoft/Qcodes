@@ -260,8 +260,6 @@ class VectorMode(GalilDMC4133VectorMode):
     Alias for backwards compatibility
     """
 
-    pass
-
 
 class GalilDMC4133Motor(InstrumentChannel["GalilDMC4133Controller"]):
     """
@@ -489,8 +487,6 @@ class Motor(GalilDMC4133Motor):
     Alias for backwards compatibility
     """
 
-    pass
-
 
 class GalilDMC4133Controller(GalilMotionController):
     """
@@ -654,8 +650,6 @@ class DMC4133Controller(GalilDMC4133Controller):
     """
     Alias for backwards compatibility
     """
-
-    pass
 
 
 class GalilDMC4133Arm:
@@ -1177,5 +1171,3 @@ class Arm(GalilDMC4133Arm):
     """
     Alias for backwards compatibility
     """
-
-    pass

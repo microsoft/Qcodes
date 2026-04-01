@@ -707,8 +707,6 @@ class IVSweeper(KeysightB1500IVSweeper):
     Alias for backwards compatibility
     """
 
-    pass
-
 
 class _ParameterWithStatus(
     Parameter[ParameterDataTypeVar, "KeysightB1517A"], Generic[ParameterDataTypeVar]
@@ -1434,5 +1432,3 @@ class B1517A(KeysightB1517A):
     """
     Alias for backwards compatibility
     """
-
-    pass

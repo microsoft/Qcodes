@@ -500,8 +500,6 @@ class BoundMeasurement(KeysightInfiniiumBoundMeasurement):
     Alias for backwards compatibility
     """
 
-    pass
-
 
 class KeysightInfiniiumUnboundMeasurement(AbstractMeasurementSubsystem):
     def __init__(
@@ -589,8 +587,6 @@ class UnboundMeasurement(KeysightInfiniiumUnboundMeasurement):
     """
     Alias for backwards compatibility
     """
-
-    pass
 
 
 class KeysightInfiniiumFunction(InstrumentChannel):
@@ -718,8 +714,6 @@ class InfiniiumFunction(KeysightInfiniiumFunction):
     """
     Alias for backwards compatibility
     """
-
-    pass
 
 
 class KeysightInfiniiumChannel(InstrumentChannel["KeysightInfiniium"]):
@@ -850,8 +844,6 @@ class InfiniiumChannel(KeysightInfiniiumChannel):
     """
     Alias for backwards compatibility
     """
-
-    pass
 
 
 class KeysightInfiniium(VisaInstrument):
@@ -1351,5 +1343,3 @@ class Infiniium(KeysightInfiniium):
     """
     Alias for backwards compatibility
     """
-
-    pass

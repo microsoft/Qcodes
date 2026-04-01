@@ -462,8 +462,6 @@ class CVSweeper(KeysightB1500CVSweeper):
     Alias for backwards compatibility
     """
 
-    pass
-
 
 class KeysightB1520A(KeysightB1500Module):
     """
@@ -1161,8 +1159,6 @@ class B1520A(KeysightB1520A):
     Alias for backwards compatiblitly
     """
 
-    pass
-
 
 class KeysightB1500CVSweepMeasurement(
     MultiParameter[tuple[tuple[float, ...], tuple[float, ...]], KeysightB1520A],
@@ -1275,8 +1271,6 @@ class CVSweepMeasurement(KeysightB1500CVSweepMeasurement):
     """
     Alias for backwards compatibility
     """
-
-    pass
 
 
 class KeysightB1500Correction(InstrumentChannel["KeysightB1520A"]):
@@ -1453,8 +1447,6 @@ class Correction(KeysightB1500Correction):
     Alias for backwards compatibility
     """
 
-    pass
-
 
 class KeysightB1500FrequencyList(InstrumentChannel["KeysightB1500Correction"]):
     """
@@ -1519,5 +1511,3 @@ class FrequencyList(KeysightB1500FrequencyList):
     """
     Alias for backwards compatibility
     """
-
-    pass

@@ -488,8 +488,6 @@ class AWGChannel(Tektronix70000AWGChannel):
     Alias for Tektronix70000AWGChannel for backwards compatibility.
     """
 
-    pass
-
 
 class TektronixAWG70000Base(VisaInstrument):
     """

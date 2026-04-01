@@ -18,8 +18,6 @@ class SwitchChannelUSB(MiniCircuitsUsbSPDTSwitchChannel):
     Alias for backwards compatibility
     """
 
-    pass
-
 
 @deprecated(
     "USB_SPDT is deprecated. Please use qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT instead.",
@@ -30,5 +28,3 @@ class USB_SPDT(MiniCircuitsUsbSPDT):
     """
     Alias for backwards compatibility
     """
-
-    pass

@@ -820,5 +820,3 @@ class QDac(QDevQDac):
     """
     Backwards compatibility alias for QDevQDac driver
     """
-
-    pass

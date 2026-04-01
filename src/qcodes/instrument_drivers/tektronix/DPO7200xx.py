@@ -51,8 +51,6 @@ class TektronixDPOModeError(Exception):
     perform an action
     """
 
-    pass
-
 
 @deprecated(
     "ModeError is deprecated. Please use qcodes.instrument_drivers.tektronix.TektronixDPOModeError instead.",
@@ -63,8 +61,6 @@ class ModeError(TektronixDPOModeError):
     """
     Alias for backwards compatibility
     """
-
-    pass
 
 
 class TektronixDPO7000xx(VisaInstrument):

@@ -27,5 +27,3 @@ class Keithley_3706A(Keithley3706A):
     """
     Alias left for backwards compatibility. Will eventually be deprecated and removed.
     """
-
-    pass

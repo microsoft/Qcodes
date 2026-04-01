@@ -1888,5 +1888,3 @@ class Tektronix_AWG5014(TektronixAWG5014):
     """
     Alias with non-conformant name left for backwards compatibility
     """
-
-    pass

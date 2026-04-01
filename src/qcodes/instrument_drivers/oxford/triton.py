@@ -611,5 +611,3 @@ class OxfordTriton(IPInstrument):
 )
 class Triton(OxfordTriton):
     """Alias for backwards compatibility"""
-
-    pass

@@ -48,5 +48,3 @@ class AWG70002A(TektronixAWG70002A):
     """
     Alias with non-conformant name left for backwards compatibility
     """
-
-    pass

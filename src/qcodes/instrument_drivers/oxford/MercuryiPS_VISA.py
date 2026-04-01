@@ -302,8 +302,6 @@ class MercuryWorkerPS(OxfordMercuryWorkerPS):
     Alias for backwards compatibility
     """
 
-    pass
-
 
 class OxfordMercuryiPS(VisaInstrument):
     """
@@ -738,5 +736,3 @@ class OxfordMercuryiPS(VisaInstrument):
 )
 class MercuryiPS(OxfordMercuryiPS):
     """Alias for backwards compatibility"""
-
-    pass
