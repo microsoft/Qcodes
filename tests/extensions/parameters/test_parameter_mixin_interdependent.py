@@ -179,7 +179,6 @@ def test_error_on_non_interdependent_dependency(store, mock_instr) -> None:
                 docstring="Parameter managed_param depends on a non-interdependent param.",
             ),
         )
-        """Parameter managed_param depends on a non-interdependent param."""
 
 
 def test_parsers_and_dependency_propagation(store, mock_instr) -> None:

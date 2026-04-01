@@ -279,7 +279,7 @@ def test_add_remove_f_p(testdummy) -> None:
         match="Use attributes directly on the instrument object instead",
     ):
         fcn = testdummy["function"]
-        assert isinstance(fcn, Function)
+    assert isinstance(fcn, Function)
     # by design, one gets the parameter if a function exists
     # and has same name
     with pytest.warns(
@@ -287,7 +287,7 @@ def test_add_remove_f_p(testdummy) -> None:
         match="Use attributes directly on the instrument object instead",
     ):
         dac1 = testdummy["dac1"]
-        assert isinstance(dac1, Parameter)
+    assert isinstance(dac1, Parameter)
 
 
 def test_instances(testdummy, parabola) -> None:
