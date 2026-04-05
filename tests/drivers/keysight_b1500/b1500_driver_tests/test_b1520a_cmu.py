@@ -179,7 +179,7 @@ def test_get_post_sweep_voltage_cond(cmu: KeysightB1520A) -> None:
 
 def test_cv_sweep_delay(cmu: KeysightB1520A) -> None:
     mainframe = cmu.root_instrument
-
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = "WTDCV0.0,0.0,0.0,0.0,0.0"
 
     cmu.cv_sweep.hold_time(1.0)
@@ -192,6 +192,7 @@ def test_cv_sweep_delay(cmu: KeysightB1520A) -> None:
 
 def test_cmu_sweep_steps(cmu: KeysightB1520A) -> None:
     mainframe = cmu.root_instrument
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = "WDCV3,1,0.0,0.0,1"
     cmu.cv_sweep.sweep_start(2.0)
     cmu.cv_sweep.sweep_end(4.0)
@@ -208,6 +209,7 @@ def test_cv_sweep_voltages(cmu: KeysightB1520A) -> None:
     end = 1.0
     steps = 5
     return_string = f"WDCV3,1,{start},{end},{steps}"
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = return_string
 
     cmu.cv_sweep.sweep_start(start)
@@ -226,6 +228,7 @@ def test_sweep_modes(cmu: KeysightB1520A) -> None:
     steps = 5
     mode = constants.SweepMode.LINEAR_TWO_WAY
     return_string = f"WDCV3,{mode},{start},{end},{steps}"
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = return_string
 
     cmu.cv_sweep.sweep_start(start)
@@ -249,6 +252,7 @@ def test_run_sweep(cmu: KeysightB1520A) -> None:
         f"0.0000;WDCV3,"
         f"1,{start},{end},{steps};ACT0,1"
     )
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = return_string
     cmu.setup_fnc_already_run = True
     cmu.impedance_model(constants.IMP.MeasurementMode.G_X)
