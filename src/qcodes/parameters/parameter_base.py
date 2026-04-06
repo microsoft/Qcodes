@@ -8,7 +8,7 @@ from collections.abc import Iterator, MutableSet
 from contextlib import contextmanager
 from datetime import datetime
 from functools import cached_property, wraps
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, cast, overload
 
 import numpy as np
 from typing_extensions import TypeVar
@@ -46,7 +46,7 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from qcodes.dataset.data_set_protocol import ValuesType
-    from qcodes.instrument import InstrumentBase
+    from qcodes.instrument import Instrument, InstrumentBase
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 ParameterDataTypeVar = TypeVar("ParameterDataTypeVar", default=Any)
 # InstrumentTypeVar_co is a covariant type variable representing the instrument
@@ -1080,7 +1080,7 @@ class ParameterBase(
         return self._instrument
 
     @property
-    def root_instrument(self) -> InstrumentBase | None:
+    def root_instrument(self) -> Instrument | None:
         """
         Return the fundamental instrument that this parameter belongs too.
         E.g if the parameter is bound to a channel this will return the
@@ -1088,7 +1088,7 @@ class ParameterBase(
         :meth:`instrument` to get the channel.
         """
         if self._instrument is not None:
-            return self._instrument.root_instrument
+            return cast("Instrument | None", self._instrument.root_instrument)
         else:
             return None
 
