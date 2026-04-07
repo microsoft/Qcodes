@@ -87,7 +87,7 @@ class InstrumentModule(InstrumentBase, Generic[_TIB_co]):
         return self._parent
 
     @property
-    def root_instrument(self) -> Instrument:
+    def root_instrument(self) -> Instrument:  # type: ignore[override]
         # the root instrument is the top level parent of this module, we need to
         # go up the parent hierarchy until we find an object that returns itself as the parent, this should be the root instrument. We also
         # this is required to be an Instrument.

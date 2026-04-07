@@ -142,7 +142,10 @@ class KeysightM9336AAWGChannel(InstrumentChannel["KeysightM9336A"]):
         """Parameter digital_gain"""
 
     @property
-    def root_instrument(self) -> "KeysightM9336A":
+    def root_instrument(self) -> "KeysightM9336A":  # type: ignore[override]
+        # ideally this should be a generic type parameter but
+        # for now we override it here. This requies a mypy ignore
+        # because the return type is more specific than the parent class.
         root_instrument = super().root_instrument
         assert isinstance(root_instrument, KeysightM9336A)
         return root_instrument

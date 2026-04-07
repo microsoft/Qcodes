@@ -300,7 +300,10 @@ class KeysightPNATrace(InstrumentChannel["KeysightPNABase"]):
         """Parameter polar"""
 
     @property
-    def root_instrument(self) -> "KeysightPNABase":
+    def root_instrument(self) -> "KeysightPNABase":  # type: ignore[override]
+        # ideally this should be a generic type parameter but
+        # for now we override it here. This requies a mypy ignore
+        # because the return type is more specific than the parent class.
         root_instrument = super().root_instrument
         assert isinstance(root_instrument, KeysightPNABase)
         return root_instrument
