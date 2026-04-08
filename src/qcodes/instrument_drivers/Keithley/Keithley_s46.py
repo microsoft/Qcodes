@@ -7,7 +7,6 @@ from itertools import product
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from qcodes.instrument import (
-    Instrument,
     VisaInstrument,
     VisaInstrumentKWArgs,
 )
@@ -56,7 +55,7 @@ class KeithleyS46RelayLock:
             self._locked_by = None
 
 
-class S46Parameter(Parameter):
+class S46Parameter(Parameter[ParamRawDataType, "KeithleyS46"]):
     """
     A parameter class for S46 channels. We do not use the QCoDeS
     InstrumentChannel class because our channel has one state parameter,
@@ -73,7 +72,7 @@ class S46Parameter(Parameter):
     def __init__(
         self,
         name: str,
-        instrument: Instrument | None,
+        instrument: "KeithleyS46",
         channel_number: int,
         lock: KeithleyS46RelayLock,
         **kwargs: Any,
@@ -95,7 +94,6 @@ class S46Parameter(Parameter):
                 ) from e
 
     def _get(self, get_cached: bool) -> str:
-        assert isinstance(self.instrument, KeithleyS46)
         closed_channels = self.instrument.closed_channels.get_latest()
 
         if not get_cached or closed_channels is None:

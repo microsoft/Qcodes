@@ -5,15 +5,19 @@ improve the code structure (which is more the purpose of the
 :mod:`.AlazarTech.helpers` module).
 """
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Generic
 
 from qcodes.parameters import Parameter, ParamRawDataType
+from qcodes.parameters.parameter_base import ParameterDataTypeVar
 
 if TYPE_CHECKING:
-    from .ATS import AlazarTechATS
+    # ruff does not detect that this is used as a generic parameter below
+    from .ATS import AlazarTechATS  # noqa: F401
 
 
-class TraceParameter(Parameter):
+class TraceParameter(
+    Parameter[ParameterDataTypeVar, "AlazarTechATS"], Generic[ParameterDataTypeVar]
+):
     """
     A parameter that keeps track of if its value has been synced to
     the ``Instrument``. To achieve that, this parameter sets
@@ -38,6 +42,5 @@ class TraceParameter(Parameter):
         return self._synced_to_card
 
     def set_raw(self, value: ParamRawDataType) -> None:
-        instrument = cast("AlazarTechATS", self.instrument)
-        instrument._parameters_synced = False
+        self.instrument._parameters_synced = False
         self._synced_to_card = False

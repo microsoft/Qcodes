@@ -1,6 +1,8 @@
 import ctypes
 from functools import partial
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Generic
+
+from typing_extensions import deprecated
 
 import qcodes.validators as vals
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs
@@ -10,6 +12,8 @@ from qcodes.parameters import (
     ParamRawDataType,
     create_on_off_val_mapping,
 )
+from qcodes.parameters.parameter_base import ParameterDataTypeVar
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 from . import KtM960xDefs
 
@@ -17,7 +21,9 @@ if TYPE_CHECKING:
     from typing_extensions import Unpack
 
 
-class Measure(MultiParameter):
+class Measure(
+    MultiParameter[ParameterDataTypeVar, "KeysightM960x"], Generic[ParameterDataTypeVar]
+):
     def __init__(self, name: str, instrument: "KeysightM960x") -> None:
         super().__init__(
             name=name,
@@ -28,7 +34,6 @@ class Measure(MultiParameter):
             labels="Measurement Data",
             docstring="param that returns measurement values",
         )
-        self.instrument: KeysightM960x
 
     def get_raw(self) -> tuple[ParamRawDataType, ...]:
         return self.instrument._measure()
@@ -294,5 +299,12 @@ class KeysightM960x(Instrument):
         super().close()
 
 
-KtM960x = KeysightM960x
-"Alias for backwards compatibility"
+@deprecated(
+    "KtM960x is deprecated. Please use qcodes.instrument_drivers.Keysight.KeysightM960x instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
+class KtM960x(KeysightM960x):
+    """Alias for backwards compatibility"""
+
+    pass

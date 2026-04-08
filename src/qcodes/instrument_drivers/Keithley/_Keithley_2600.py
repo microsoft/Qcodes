@@ -3,111 +3,415 @@ from __future__ import annotations
 import logging
 import struct
 import warnings
+from dataclasses import dataclass
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, Protocol, Self, cast
 
 import numpy as np
 import numpy.typing as npt
 
 import qcodes.validators as vals
+from qcodes.extensions.infer import infer_channel
 from qcodes.instrument import (
-    Instrument,
     InstrumentChannel,
     VisaInstrument,
     VisaInstrumentKWArgs,
 )
 from qcodes.parameters import (
-    ArrayParameter,
     Parameter,
+    ParameterBase,
     ParameterWithSetpoints,
     ParamRawDataType,
     create_on_off_val_mapping,
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
+    from typing import assert_never
 
-    from qcodes_loop.data.data_set import DataSet
     from typing_extensions import Unpack
 
 
 log = logging.getLogger(__name__)
 
 
-class LuaSweepParameter(ArrayParameter):
+class _LinSweepLike(Protocol):
     """
-    Parameter class to hold the data from a
-    deployed Lua script sweep.
+    Protocol for linear sweep objects that can be used with ``setup_fastsweep``.
+
+    Any object implementing this protocol can be used to configure fast sweeps.
+    The canonical example is :class:`qcodes.dataset.LinSweep`.
+
+    Required attributes:
+        param: The parameter being swept (e.g., ``keith.smua.volt``).
+        delay: Time in seconds to wait after setting each point before measuring.
+        num_points: Number of sweep points.
+
+    Required methods:
+        get_setpoints: Returns the array of setpoint values for the sweep.
     """
 
-    def __init__(self, name: str, instrument: Instrument, **kwargs: Any) -> None:
-        super().__init__(
-            name=name,
-            shape=(1,),
-            docstring="Holds a sweep",
-            instrument=instrument,
-            **kwargs,
-        )
+    @property
+    def param(self) -> ParameterBase: ...
 
-    def prepareSweep(self, start: float, stop: float, steps: int, mode: str) -> None:
+    @property
+    def delay(self) -> float: ...
+
+    @property
+    def num_points(self) -> int: ...
+
+    def get_setpoints(self) -> npt.NDArray: ...
+
+
+@dataclass
+class _FastSweepConfig:
+    """Internal configuration for fastsweep."""
+
+    inner_start: float
+    inner_stop: float
+    inner_npts: int
+    inner_delay: float = 0.0
+    inner_param_name: str = "Voltage"
+    inner_param_unit: str = "V"
+    inner_param_full_name: str | None = None  # Original parameter's full_name
+    inner_channel: str = "smua"  # Lua channel name for inner sweep
+    outer_start: float | None = None
+    outer_stop: float | None = None
+    outer_npts: int | None = None
+    outer_delay: float = 0.0
+    outer_param_name: str = "Voltage"
+    outer_param_unit: str = "V"
+    outer_param_full_name: str | None = None  # Original parameter's full_name
+    outer_channel: str = "smub"  # Lua channel name for outer sweep
+    mode: Literal["IV", "VI", "VIfourprobe"] = "IV"
+    measurement_channel: str = "smua"
+
+    @property
+    def is_2d(self) -> bool:
+        return self.outer_npts is not None
+
+    @property
+    def total_points(self) -> int:
+        if self.is_2d:
+            assert self.outer_npts is not None
+            return self.inner_npts * self.outer_npts
+        return self.inner_npts
+
+    def get_inner_setpoints(self) -> npt.NDArray:
+        return np.linspace(self.inner_start, self.inner_stop, self.inner_npts)
+
+    def get_outer_setpoints(self) -> npt.NDArray:
+        if not self.is_2d:
+            raise RuntimeError("No outer setpoints for 1D sweep")
+        assert self.outer_start is not None
+        assert self.outer_stop is not None
+        assert self.outer_npts is not None
+        return np.linspace(self.outer_start, self.outer_stop, self.outer_npts)
+
+
+def _make_setpoint_parameter(
+    name: str,
+    label: str,
+    unit: str,
+    shape: tuple[int, ...],
+    get_values: Callable[[], npt.NDArray],
+    register_name: str | None = None,
+) -> Parameter:
+    """Create a standalone setpoint parameter for fastsweep.
+
+    A fresh parameter is created on each call so that its ``param_spec``
+    is always consistent with the current sweep configuration.
+    """
+    p: Parameter = Parameter(
+        name=name,
+        label=label,
+        unit=unit,
+        snapshot_value=False,
+        vals=vals.Arrays(shape=shape),
+        set_cmd=False,
+        get_cmd=get_values,
+        register_name=register_name,
+    )
+    return p
+
+
+class LuaSweepParameter(ParameterWithSetpoints[npt.NDArray, "Keithley2600Channel"]):
+    """
+    Parameter class to perform fast sweeps using Lua scripts on the Keithley 2600.
+
+    Supports both 1D and 2D sweeps. Configure using the channel's
+    ``setup_fastsweep`` method with sweep objects that implement the
+    ``_LinSweepLike`` protocol (e.g., :class:`qcodes.dataset.LinSweep`).
+
+    For 1D sweeps, returns a 1D array. For 2D sweeps, returns a 2D array
+    with shape (outer_npts, inner_npts).
+
+    For more information on writing Lua scripts for the Keithley2600, please see
+    https://www.tek.com/en/documents/application-note/how-to-write-scripts-for-test-script-processing-(tsp)
+    """
+
+    def _update_metadata(self, config: _FastSweepConfig) -> None:
+        """Update parameter metadata based on sweep configuration.
+
+        Creates fresh setpoint parameters each time so that their
+        ``param_spec`` is always consistent with the current sweep
+        configuration — no cache invalidation needed.
         """
-        Builds setpoints and labels
+        # Invalidate our own cached param_spec since unit/label/vals will change
+        self._param_spec = None
 
-        Args:
-            start: Starting point of the sweep
-            stop: Endpoint of the sweep
-            steps: No. of sweep steps
-            mode: Type of sweep, either 'IV' (voltage sweep),
-                'VI' (current sweep two probe setup) or
-                'VIfourprobe' (current sweep four probe setup)
+        mode = config.mode
 
-        """
+        match mode:
+            case "IV":
+                self.unit = "A"
+                self.label = "Current"
+            case "VI" | "VIfourprobe":
+                self.unit = "V"
+                self.label = "Voltage"
 
-        if mode not in ["IV", "VI", "VIfourprobe"]:
-            raise ValueError('mode must be either "VI", "IV" or "VIfourprobe"')
-
-        self.shape = (steps,)
-
-        if mode == "IV":
-            self.unit = "A"
-            self.setpoint_names = ("Voltage",)
-            self.setpoint_units = ("V",)
-            self.label = "current"
-            self._short_name = "iv_sweep"
-
-        if mode == "VI":
-            self.unit = "V"
-            self.setpoint_names = ("Current",)
-            self.setpoint_units = ("A",)
-            self.label = "voltage"
-            self._short_name = "vi_sweep"
-
-        if mode == "VIfourprobe":
-            self.unit = "V"
-            self.setpoint_names = ("Current",)
-            self.setpoint_units = ("A",)
-            self.label = "voltage"
-            self._short_name = "vi_sweep_four_probe"
-
-        self.setpoints = (tuple(np.linspace(start, stop, steps)),)
-
-        self.start = start
-        self.stop = stop
-        self.steps = steps
-        self.mode = mode
-
-    def get_raw(self) -> npt.NDArray:
-        if self.instrument is not None:
-            data = self.instrument._fast_sweep(
-                self.start, self.stop, self.steps, self.mode
+        inner_full_label = config.inner_param_name
+        if config.inner_param_full_name:
+            inner_full_label = (
+                f"{config.inner_param_name} ({config.inner_param_full_name})"
             )
-        else:
+
+        if self.instrument is not None:
+            # Create a fresh inner setpoint parameter
+            self.instrument.fastsweep_inner_setpoints = _make_setpoint_parameter(
+                name="fastsweep_inner_setpoints",
+                label=inner_full_label,
+                unit=config.inner_param_unit,
+                shape=(config.inner_npts,),
+                get_values=config.get_inner_setpoints,
+                register_name=config.inner_param_full_name,
+            )
+
+            if config.is_2d:
+                assert config.outer_npts is not None
+                outer_full_label = config.outer_param_name
+                if config.outer_param_full_name:
+                    outer_full_label = (
+                        f"{config.outer_param_name} ({config.outer_param_full_name})"
+                    )
+
+                # Create a fresh outer setpoint parameter
+                self.instrument.fastsweep_outer_setpoints = _make_setpoint_parameter(
+                    name="fastsweep_outer_setpoints",
+                    label=outer_full_label,
+                    unit=config.outer_param_unit,
+                    shape=(config.outer_npts,),
+                    get_values=config.get_outer_setpoints,
+                    register_name=config.outer_param_full_name,
+                )
+
+                self.setpoints = (
+                    self.instrument.fastsweep_outer_setpoints,
+                    self.instrument.fastsweep_inner_setpoints,
+                )
+                self.setpoint_names = (outer_full_label, inner_full_label)
+                self.setpoint_units = (config.outer_param_unit, config.inner_param_unit)
+                self.vals = vals.Arrays(shape=(config.outer_npts, config.inner_npts))
+            else:
+                self.setpoints = (self.instrument.fastsweep_inner_setpoints,)
+                self.setpoint_names = (inner_full_label,)  # type: ignore[assignment]
+                self.setpoint_units = (config.inner_param_unit,)  # type: ignore[assignment]
+                self.vals = vals.Arrays(shape=(config.inner_npts,))
+
+    def _build_1d_script(self, config: _FastSweepConfig) -> list[str]:
+        """Build Lua script for 1D sweep."""
+        if self.instrument is None:
             raise RuntimeError("No instrument attached to Parameter.")
 
-        return data
+        sweep_channel = config.inner_channel
+        meas_channel = config.measurement_channel
+        nplc = self.instrument.nplc()
+
+        if config.inner_npts < 1:
+            raise ValueError(
+                f"inner_npts must be at least 1 for fast sweep, got {config.inner_npts}"
+            )
+        if config.inner_npts == 1:
+            dX = 0.0
+        else:
+            dX = (config.inner_stop - config.inner_start) / (config.inner_npts - 1)
+
+        match config.mode:
+            case "IV":
+                meas, source, func, sense_mode = "i", "v", "1", "0"
+            case "VI":
+                meas, source, func, sense_mode = "v", "i", "0", "0"
+            case "VIfourprobe":
+                meas, source, func, sense_mode = "v", "i", "0", "1"
+            case _:
+                if TYPE_CHECKING:
+                    assert_never()
+                raise ValueError(
+                    f"Unsupported fast sweep mode {config.mode!r}. "
+                    "Expected one of 'IV', 'VI', 'VIfourprobe'."
+                )
+
+        script = [
+            # Configure measurement channel
+            f"{meas_channel}.measure.nplc = {nplc:.12f}",
+            f"{meas_channel}.sense = {sense_mode}",
+            f"{meas_channel}.measure.count = 1",
+            # Configure sweep/source channel
+            f"{sweep_channel}.source.func = {func}",
+            f"{sweep_channel}.source.output = 1",
+            # Initialize sweep variables
+            f"startX = {config.inner_start:.12f}",
+            f"dX = {dX:.12f}",
+            # Clear measurement buffer
+            f"{meas_channel}.nvbuffer1.clear()",
+            f"{meas_channel}.nvbuffer1.appendmode = 1",
+            # Sweep loop
+            f"for index = 1, {config.inner_npts} do",
+            "  target = startX + (index-1)*dX",
+            f"  {sweep_channel}.source.level{source} = target",
+        ]
+
+        if config.inner_delay > 0:
+            script.append(f"  delay({config.inner_delay})")
+
+        script.extend(
+            [
+                f"  {meas_channel}.measure.{meas}({meas_channel}.nvbuffer1)",
+                "end",
+                "format.data = format.REAL32",
+                "format.byteorder = format.LITTLEENDIAN",
+                f"printbuffer(1, {config.inner_npts}, {meas_channel}.nvbuffer1.readings)",
+            ]
+        )
+        return script
+
+    def _build_2d_script(self, config: _FastSweepConfig) -> list[str]:
+        """Build Lua script for 2D sweep."""
+        if self.instrument is None:
+            raise RuntimeError("No instrument attached to Parameter.")
+
+        inner_channel = config.inner_channel
+        outer_channel = config.outer_channel
+        meas_channel = config.measurement_channel
+        nplc = self.instrument.nplc()
+
+        assert config.inner_start is not None
+        assert config.inner_stop is not None
+        assert config.inner_npts is not None
+        assert config.outer_start is not None
+        assert config.outer_stop is not None
+        assert config.outer_npts is not None
+
+        inner_npts = config.inner_npts
+        outer_npts = config.outer_npts
+
+        if inner_npts < 1:
+            raise ValueError("inner_npts must be at least 1 for 2D fast sweep.")
+        if outer_npts < 1:
+            raise ValueError("outer_npts must be at least 1 for 2D fast sweep.")
+
+        if inner_npts == 1:
+            dX_inner = 0.0
+        else:
+            dX_inner = (config.inner_stop - config.inner_start) / (
+                config.inner_npts - 1
+            )
+
+        if outer_npts == 1:
+            dX_outer = 0.0
+        else:
+            dX_outer = (config.outer_stop - config.outer_start) / (
+                config.outer_npts - 1
+            )
+
+        match config.mode:
+            case "IV":
+                meas, source, func, sense_mode = "i", "v", "1", "0"
+                outer_source, outer_func = "v", "1"
+            case "VI":
+                meas, source, func, sense_mode = "v", "i", "0", "0"
+                outer_source, outer_func = "i", "0"
+            case "VIfourprobe":
+                meas, source, func, sense_mode = "v", "i", "0", "1"
+                outer_source, outer_func = "i", "0"
+            case _:
+                if TYPE_CHECKING:
+                    assert_never()
+                raise ValueError(
+                    f"Unsupported fast sweep mode {config.mode!r}. "
+                    "Expected one of 'IV', 'VI', 'VIfourprobe'."
+                )
+
+        script = [
+            # Configure measurement channel
+            f"{meas_channel}.measure.nplc = {nplc:.12f}",
+            f"{meas_channel}.sense = {sense_mode}",
+            f"{meas_channel}.measure.count = 1",
+            # Set up inner channel (fast sweep)
+            f"{inner_channel}.source.func = {func}",
+            f"{inner_channel}.source.output = 1",
+            # Set up outer channel (slow sweep)
+            f"{outer_channel}.source.func = {outer_func}",
+            f"{outer_channel}.source.output = 1",
+            # Initialize sweep variables
+            f"startX_inner = {config.inner_start:.12f}",
+            f"dX_inner = {dX_inner:.12f}",
+            f"startX_outer = {config.outer_start:.12f}",
+            f"dX_outer = {dX_outer:.12f}",
+            # Clear measurement buffer
+            f"{meas_channel}.nvbuffer1.clear()",
+            f"{meas_channel}.nvbuffer1.appendmode = 1",
+            # Outer loop (slow axis)
+            f"for outer_idx = 1, {config.outer_npts} do",
+            "  outer_target = startX_outer + (outer_idx-1)*dX_outer",
+            f"  {outer_channel}.source.level{outer_source} = outer_target",
+        ]
+
+        if config.outer_delay > 0:
+            script.append(f"  delay({config.outer_delay})")
+
+        script.extend(
+            [
+                f"  for inner_idx = 1, {config.inner_npts} do",
+                "    inner_target = startX_inner + (inner_idx-1)*dX_inner",
+                f"    {inner_channel}.source.level{source} = inner_target",
+            ]
+        )
+
+        if config.inner_delay > 0:
+            script.append(f"    delay({config.inner_delay})")
+
+        script.extend(
+            [
+                f"    {meas_channel}.measure.{meas}({meas_channel}.nvbuffer1)",
+                "  end",
+                "end",
+                "format.data = format.REAL32",
+                "format.byteorder = format.LITTLEENDIAN",
+                f"printbuffer(1, {config.total_points}, {meas_channel}.nvbuffer1.readings)",
+            ]
+        )
+        return script
+
+    def get_raw(self) -> npt.NDArray:
+        if self.instrument is None:
+            raise RuntimeError("No instrument attached to Parameter.")
+
+        config = self.instrument._fastsweep_config
+        if config is None:
+            raise RuntimeError("Fastsweep not configured. Call setup_fastsweep first.")
+
+        if config.is_2d:
+            script = self._build_2d_script(config)
+            data = self.instrument._execute_lua(script, config.total_points)
+            assert config.outer_npts is not None
+            return data.reshape(config.outer_npts, config.inner_npts)
+        else:
+            script = self._build_1d_script(config)
+            return self.instrument._execute_lua(script, config.total_points)
 
 
-class TimeTrace(ParameterWithSetpoints):
+class TimeTrace(ParameterWithSetpoints[npt.NDArray, "Keithley2600Channel"]):
     """
     A parameter class that holds the data corresponding to the time dependence of
     current and voltage.
@@ -198,7 +502,7 @@ class TimeTrace(ParameterWithSetpoints):
         return data
 
 
-class TimeAxis(Parameter):
+class TimeAxis(Parameter[npt.NDArray, "Keithley2600Channel"]):
     """
     A simple :class:`.Parameter` that holds all the times (relative to the
     measurement start) at which the points of the time trace were acquired.
@@ -228,7 +532,8 @@ class Keithley2600MeasurementStatus(StrEnum):
 
 
 MeasurementStatus = Keithley2600MeasurementStatus
-"Alias for backwards compatibility. Will eventually be deprecated and removed"
+"""Alias for backwards compatibility. Will eventually be deprecated and removed"""
+
 
 _from_bits_tuple_to_status = {
     (0, 0): Keithley2600MeasurementStatus.NORMAL,
@@ -334,13 +639,13 @@ class _MeasurementVoltageParameter(_ParameterWithStatus):
         return value
 
 
-class Keithley2600Channel(InstrumentChannel):
+class Keithley2600Channel(InstrumentChannel["Keithley2600"]):
     """
     Class to hold the two Keithley channels, i.e.
     SMUA and SMUB.
     """
 
-    def __init__(self, parent: Instrument, name: str, channel: str) -> None:
+    def __init__(self, parent: Keithley2600, name: str, channel: str) -> None:
         """
         Args:
             parent: The Instrument instance to which the channel is
@@ -359,8 +664,8 @@ class Keithley2600Channel(InstrumentChannel):
         self._extra_visa_timeout = 5000
         self._measurement_duration_factor = 2  # Ensures that we are always above
         # the expected time.
-        vranges = self._parent._vranges
-        iranges = self._parent._iranges
+        vranges = self.parent._vranges
+        iranges = self.parent._iranges
         vlimit_minmax = self.parent._vlimit_minmax
         ilimit_minmax = self.parent._ilimit_minmax
 
@@ -432,6 +737,20 @@ class Keithley2600Channel(InstrumentChannel):
             vals=vals.Numbers(0.001, 25),
         )
         """Number of power line cycles, used to perform measurements"""
+
+        self.four_wire_measurement: Parameter[bool, Self] = self.add_parameter(
+            "four_wire_measurement",
+            label="Four-wire (remote) sense mode",
+            get_cmd=f"{channel}.sense",
+            get_parser=float,
+            set_cmd=f"{channel}.sense={{}}",
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
+            docstring="Enables or disables four-wire (remote) sense mode. "
+            "When enabled, voltage is measured at the DUT using "
+            "separate sense leads, eliminating lead resistance errors.",
+        )
+        """Enable or disables four-wire (remote) sense mode."""
+
         # volt range
         # needs get after set (WilliamHPNielsen): why?
         self.sourcerange_v: Parameter = self.add_parameter(
@@ -576,10 +895,69 @@ class Keithley2600Channel(InstrumentChannel):
         )
         """Current limit e.g. the maximum current allowed in voltage mode. If exceeded the voltage will be clipped."""
 
+        # Internal fastsweep configuration - set via setup_fastsweep()
+        self._fastsweep_config: _FastSweepConfig | None = None
+
+        # Setpoint parameters for fastsweep — created fresh by setup_fastsweep()
+        self.fastsweep_inner_setpoints: Parameter | None = None
+        self.fastsweep_outer_setpoints: Parameter | None = None
+
         self.fastsweep: LuaSweepParameter = self.add_parameter(
-            "fastsweep", parameter_class=LuaSweepParameter
+            "fastsweep",
+            vals=vals.Arrays(shape=(1,)),  # Placeholder, updated by setup_fastsweep
+            setpoints=(),  # Updated by setup_fastsweep
+            parameter_class=LuaSweepParameter,
+            docstring="Performs a fast sweep using on-instrument Lua scripts. "
+            "Configure using setup_fastsweep() with LinSweep-like object(s). "
+            "For 1D sweeps, returns a 1D array. "
+            "For 2D sweeps, returns a 2D array with shape (outer_npts, inner_npts).",
         )
-        """Parameter fastsweep"""
+        """
+        Performs a fast sweep. Configure with setup_fastsweep() before use.
+
+        Call ``fastsweep`` on the **inner** channel (the one from the first
+        :class:`~qcodes.dataset.LinSweep`). Calling this parameter (or using
+        ``.get()``) returns the fast sweep data as a NumPy ``ndarray`` with
+        shape determined by the configured sweep(s).
+
+        **Direct usage (returns ndarray)**
+
+        Example 1D::
+
+            >>> from qcodes.dataset import LinSweep
+            >>> keith.smua.setup_fastsweep(LinSweep(keith.smua.volt, 0, 1, 100))
+            >>> data = keith.smua.fastsweep()  # or: keith.smua.fastsweep.get()
+            >>> data.shape
+            (100,)
+
+        Example 2D (inner=smub, outer=smua)::
+
+            >>> from qcodes.dataset import LinSweep
+            >>> keith.smua.setup_fastsweep(
+            ...     LinSweep(keith.smub.volt, 0, 1, 100),   # inner
+            ...     LinSweep(keith.smua.volt, 0, 0.5, 20),  # outer
+            ... )
+            >>> data = keith.smub.fastsweep()  # call on inner channel
+            >>> data.shape
+            (20, 100)
+
+        **Dataset logging with do0d**
+
+        To log the fast sweep into a QCoDeS dataset, use :func:`do0d`
+        with the ``fastsweep`` parameter::
+
+            >>> from qcodes.dataset import LinSweep, do0d
+            >>> keith.smua.setup_fastsweep(LinSweep(keith.smua.volt, 0, 1, 100))
+            >>> ds, _, _ = do0d(keith.smua.fastsweep)
+
+        For a 2D sweep (inner=smub, outer=smua)::
+
+            >>> from qcodes.dataset import LinSweep, do0d
+            >>> keith.smua.setup_fastsweep(
+            ...     LinSweep(keith.smub.volt, 0, 1, 100),   # inner
+            ...     LinSweep(keith.smua.volt, 0, 0.5, 20),  # outer
+            ... )
+        """
 
         self.timetrace_npts: Parameter = self.add_parameter(
             "timetrace_npts",
@@ -645,106 +1023,133 @@ class Keithley2600Channel(InstrumentChannel):
         log.debug(f"Reset channel {self.channel}. Updating settings...")
         self.snapshot(update=True)
 
-    def doFastSweep(self, start: float, stop: float, steps: int, mode: str) -> DataSet:
-        """
-        Perform a fast sweep using a deployed lua script and
-        return a QCoDeS DataSet with the sweep.
-
-        Args:
-            start: starting sweep value (V or A)
-            stop: end sweep value (V or A)
-            steps: number of steps
-            mode: Type of sweep, either 'IV' (voltage sweep),
-                'VI' (current sweep two probe setup) or
-                'VIfourprobe' (current sweep four probe setup)
-
-        """
-        try:
-            # lazy import to avoid a geneal dependency on qcodes_loop
-            from qcodes_loop.measure import Measure
-        except ImportError as e:
-            raise ImportError(
-                "The doFastSweep method requires the "
-                "qcodes_loop package to be installed."
-            ) from e
-        # prepare setpoints, units, name
-        self.fastsweep.prepareSweep(start, stop, steps, mode)
-
-        data = Measure(self.fastsweep).run()
-
-        return data
-
-    def _fast_sweep(
+    def setup_fastsweep(
         self,
-        start: float,
-        stop: float,
-        steps: int,
+        inner: _LinSweepLike,
+        outer: _LinSweepLike | None = None,
         mode: Literal["IV", "VI", "VIfourprobe"] = "IV",
-    ) -> npt.NDArray:
+        measure_inner_channel: bool = True,
+    ) -> None:
         """
-        Perform a fast sweep using a deployed Lua script.
-        This is the engine that forms the script, uploads it,
-        runs it, collects the data, and casts the data correctly.
+        Configure a 1D or 2D fastsweep using sweep objects.
+
+        Accepts any object implementing the ``_LinSweepLike`` protocol.
+        The canonical example is :class:`qcodes.dataset.LinSweep`.
+
+        Both 1D and 2D sweeps execute entirely on the instrument via Lua scripts,
+        minimizing communication overhead.
+
+        For 1D sweeps, provide only the inner sweep.
+        For 2D sweeps, provide both inner and outer sweeps. The inner sweep
+        runs to completion for each step of the outer sweep.
+
+        The channels are determined by the sweep parameters you provide.
+        After calling setup_fastsweep, call ``fastsweep`` on the **inner** channel
+        (the channel from the first sweep object) to execute the measurement.
 
         Args:
-            start: starting voltage
-            stop: end voltage
-            steps: number of steps
-            mode: Type of sweep, either 'IV' (voltage sweep),
-                'VI' (current sweep two probe setup) or
-                'VIfourprobe' (current sweep four probe setup)
+            inner: Sweep object for the inner (fast) axis. Must have ``param``,
+                   ``delay``, ``num_points`` attributes and a ``get_setpoints()``
+                   method. See :class:`qcodes.dataset.LinSweep` for an example.
+                   The channel is determined from ``param.instrument.channel``.
+            outer: Optional sweep object for the outer (slow) axis.
+                   If provided, performs a 2D sweep.
+            mode: Sweep mode - 'IV' (sweep voltage, measure current),
+                  'VI' (sweep current, measure voltage), or
+                  'VIfourprobe' (four-probe VI measurement).
+            measure_inner_channel: If True (default), measure on the inner sweep channel.
+                   If False, measure on the opposite sweep channel as inner.
+                   This allows measuring a response on a different channel than
+                   the one being swept. For example, sweep voltage on smua while
+                   measuring current on smub.
+
+        Example 1D:
+
+            >>> from qcodes.dataset import LinSweep
+            >>> keith.smua.setup_fastsweep(LinSweep(keith.smua.volt, 0, 1, 100))
+            >>> ds, _, _ = do0d(keith.smua.fastsweep)
+
+        Example 2D (inner=smua, outer=smub):
+
+            >>> keith.smua.setup_fastsweep(
+            ...     LinSweep(keith.smua.volt, 0, 1, 100),  # inner
+            ...     LinSweep(keith.smub.volt, 0, 0.5, 20),  # outer
+            ... )
+            >>> ds, _, _ = do0d(keith.smua.fastsweep)  # call on inner channel
+
+        Example 2D (inner=smub, outer=smua):
+
+            >>> keith.smua.setup_fastsweep(
+            ...     LinSweep(keith.smub.volt, 0, 1, 100),  # inner
+            ...     LinSweep(keith.smua.volt, 0, 0.5, 20),  # outer
+            ... )
+            >>> ds, _, _ = do0d(keith.smub.fastsweep)  # call on inner channel
 
         """
 
-        channel = self.channel
+        # Get setpoints from inner sweep to derive start/stop
+        inner_setpoints = inner.get_setpoints()
+        inner_start = float(inner_setpoints[0])
+        inner_stop = float(inner_setpoints[-1])
+        inner_param = cast("Parameter", inner.param)
+        inner_channel = infer_channel(inner_param)
+        if not isinstance(inner_channel, Keithley2600Channel):
+            raise ValueError(
+                "Inner sweep parameter must belong to a Keithley2600Channel."
+            )
+        inner_channel_name = inner_channel.channel
 
-        # an extra visa query, a necessary precaution
-        # to avoid timing out when waiting for long
-        # measurements
-        nplc = self.nplc()
+        channel_to_measure = inner_channel_name
 
-        dV = (stop - start) / (steps - 1)
+        if not measure_inner_channel:
+            channels = ["smua", "smub"]
+            channel_to_measure = next(
+                channel for channel in channels if channel != inner_channel_name
+            )
 
-        if mode == "IV":
-            meas = "i"
-            sour = "v"
-            func = "1"
-            sense_mode = "0"
-        elif mode == "VI":
-            meas = "v"
-            sour = "i"
-            func = "0"
-            sense_mode = "0"
-        elif mode == "VIfourprobe":
-            meas = "v"
-            sour = "i"
-            func = "0"
-            sense_mode = "1"
-        else:
-            raise ValueError(f"Invalid mode {mode}")
+        # Build the configuration
+        config = _FastSweepConfig(
+            inner_start=inner_start,
+            inner_stop=inner_stop,
+            inner_npts=inner.num_points,
+            inner_delay=inner.delay,
+            inner_param_name=inner_param.label,
+            inner_param_unit=inner_param.unit,
+            inner_param_full_name=inner_param.full_name,
+            inner_channel=inner_channel_name,
+            mode=mode,
+            measurement_channel=channel_to_measure,
+        )
 
-        script = [
-            f"{channel}.measure.nplc = {nplc:.12f}",
-            f"{channel}.source.output = 1",
-            f"startX = {start:.12f}",
-            f"dX = {dV:.12f}",
-            f"{channel}.sense = {sense_mode}",
-            f"{channel}.source.output = 1",
-            f"{channel}.source.func = {func}",
-            f"{channel}.measure.count = 1",
-            f"{channel}.nvbuffer1.clear()",
-            f"{channel}.nvbuffer1.appendmode = 1",
-            f"for index = 1, {steps} do",
-            "  target = startX + (index-1)*dX",
-            f"  {channel}.source.level{sour} = target",
-            f"  {channel}.measure.{meas}({channel}.nvbuffer1)",
-            "end",
-            "format.data = format.REAL32",
-            "format.byteorder = format.LITTLEENDIAN",
-            f"printbuffer(1, {steps}, {channel}.nvbuffer1.readings)",
-        ]
+        # Add outer sweep configuration if provided
+        if outer is not None:
+            outer_setpoints = outer.get_setpoints()
+            outer_start = float(outer_setpoints[0])
+            outer_stop = float(outer_setpoints[-1])
+            outer_param = cast("Parameter", outer.param)
+            outer_channel = infer_channel(outer_param)
+            if not isinstance(outer_channel, Keithley2600Channel):
+                raise ValueError(
+                    "Outer sweep parameter must belong to a Keithley2600Channel."
+                )
+            outer_channel_name = outer_channel.channel
 
-        return self._execute_lua(script, steps)
+            config.outer_start = outer_start
+            config.outer_stop = outer_stop
+            config.outer_npts = outer.num_points
+            config.outer_delay = outer.delay
+            config.outer_param_name = outer_param.label
+            config.outer_param_unit = outer_param.unit
+            config.outer_param_full_name = outer_param.full_name
+            config.outer_channel = outer_channel_name
+
+        # fastsweep should be called from inner channel object where
+        # measurement happens.
+        # Store configuration on the inner channel - users call fastsweep there
+        inner_channel._fastsweep_config = config
+
+        # Update fastsweep parameter metadata on the inner channel
+        inner_channel.fastsweep._update_metadata(config)
 
     def _execute_lua(self, _script: list[str], steps: int) -> npt.NDArray:
         """
@@ -765,7 +1170,7 @@ class Keithley2600Channel(InstrumentChannel):
             estimated_measurement_duration + _time_trace_extra_visa_timeout
         )
 
-        self.write(self.root_instrument._scriptwrapper(program=_script, debug=True))
+        self.write(self.parent._scriptwrapper(program=_script, debug=True))
 
         # now poll all the data
         # The problem is that a '\n' character might by chance be present in
@@ -774,9 +1179,9 @@ class Keithley2600Channel(InstrumentChannel):
         received = 0
         data = b""
         # we must wait for the script to execute
-        with self.root_instrument.timeout.set_to(new_visa_timeout):
+        with self.parent.timeout.set_to(new_visa_timeout):
             while received < fullsize:
-                data_temp = self.root_instrument.visa_handle.read_raw()
+                data_temp = self.parent.visa_handle.read_raw()
                 received += len(data_temp)
                 data += data_temp
 

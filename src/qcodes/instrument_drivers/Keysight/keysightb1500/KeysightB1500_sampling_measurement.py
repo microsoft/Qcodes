@@ -1,7 +1,8 @@
 import warnings
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy
+import numpy.typing as npt
 
 from qcodes.parameters import ParameterWithSetpoints
 
@@ -15,15 +16,17 @@ from .KeysightB1500_module import (
 from .message_builder import MessageBuilder
 
 if TYPE_CHECKING:
-    from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base import (
+    from .KeysightB1500_base import (
         KeysightB1500,
     )
-    from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import (
-        KeysightB1517A,
+    from .KeysightB1517A import (
+        KeysightB1517A,  # noqa: F401 # used in generic argument below
     )
 
 
-class SamplingMeasurement(ParameterWithSetpoints):
+class SamplingMeasurement(
+    ParameterWithSetpoints[npt.NDArray[numpy.float64], "KeysightB1517A"]
+):
     """
     Performs sampling measurement using semiconductor
     parameter analyzer B1500A.
@@ -36,10 +39,16 @@ class SamplingMeasurement(ParameterWithSetpoints):
 
     def __init__(self, name: str, **kwargs: Any):
         super().__init__(name, **kwargs)
-        self.instrument: KeysightB1517A
-        self.root_instrument: KeysightB1500
 
         self.data = _FMTResponse(None, None, None, None)
+
+    @property
+    def root_instrument(self) -> "KeysightB1500":
+        # since Parameter is not generic over RootInstrument type
+        # we override the property here to make the root_instrument type
+        # explicit
+
+        return cast("KeysightB1500", super().root_instrument)
 
     def get_raw(self) -> numpy.ndarray:
         """
@@ -61,6 +70,8 @@ class SamplingMeasurement(ParameterWithSetpoints):
         measurement_time = self.instrument._total_measurement_time()
         time_out = measurement_time * self._timeout_response_factor
         default_timeout = self.root_instrument.timeout()
+        if default_timeout is None:
+            default_timeout = float("inf")
 
         # if time out to be set is lower than the default value
         # then keep default

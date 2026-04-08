@@ -6,18 +6,15 @@ from typing import TYPE_CHECKING, Generic, Literal, TypeVar
 
 import numpy as np
 import numpy.typing as npt
-from typing_extensions import deprecated
 
 from qcodes.dataset.exporters.export_info import ExportInfo
 from qcodes.dataset.sqlite.queries import completed, load_new_data_for_rundescriber
-from qcodes.utils import QCoDeSDeprecationWarning
 
 from .exporters.export_to_pandas import (
     load_to_concatenated_dataframe,
     load_to_dataframe_dict,
 )
 from .exporters.export_to_xarray import (
-    load_to_xarray_dataarray_dict,  # pyright: ignore[reportDeprecated]
     load_to_xarray_dataset,
     load_to_xarray_dataset_dict,
 )
@@ -187,30 +184,6 @@ class DataSetCache(Generic[DatasetType_co]):
         """
         data = self.data()
         return load_to_concatenated_dataframe(data, self.rundescriber.interdeps)
-
-    @deprecated(
-        "to_xarray_dataarray_dict is deprecated, use to_xarray_dataset_dict instead",
-        category=QCoDeSDeprecationWarning,
-    )
-    def to_xarray_dataarray_dict(
-        self, *, use_multi_index: Literal["auto", "always", "never"] = "auto"
-    ) -> dict[str, xr.DataArray]:
-        """
-        Returns the values stored in the :class:`.dataset.data_set.DataSet` as a dict of
-        :py:class:`xr.DataArray` s
-        Each element in the dict is indexed by the names of the dependent parameters.
-
-        Returns:
-            Dictionary from requested parameter names to :py:class:`xr.DataArray` s
-            with the requested parameter(s) as a column(s) and coordinates
-            formed by the dependencies.
-
-        """
-        data = self.data()
-        data_dict = load_to_xarray_dataarray_dict(  # pyright: ignore[reportDeprecated]
-            self._dataset, data, use_multi_index=use_multi_index
-        )
-        return data_dict
 
     def to_xarray_dataset_dict(
         self, *, use_multi_index: Literal["auto", "always", "never"] = "auto"

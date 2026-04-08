@@ -1,14 +1,16 @@
 import re
 import textwrap
-from typing import TYPE_CHECKING, Any, Literal, NotRequired, cast, overload
+from typing import TYPE_CHECKING, Any, Generic, Literal, NotRequired, overload
 
 import numpy as np
 import numpy.typing as npt
-from typing_extensions import TypedDict, Unpack
+from typing_extensions import TypedDict, Unpack, deprecated
 
 import qcodes.validators as vals
 from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel
 from qcodes.parameters import Group, GroupParameter, Parameter, ParamRawDataType
+from qcodes.parameters.parameter_base import ParameterDataTypeVar
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 from . import constants
 from .constants import (
@@ -50,7 +52,7 @@ class SweepSteps(TypedDict):
     power_compliance: float | None
 
 
-class KeysightB1500IVSweeper(InstrumentChannel):
+class KeysightB1500IVSweeper(InstrumentChannel["KeysightB1517A"]):
     def __init__(
         self,
         parent: "KeysightB1517A",
@@ -695,13 +697,22 @@ class KeysightB1500IVSweeper(InstrumentChannel):
         return out_dict
 
 
-IVSweeper = KeysightB1500IVSweeper
-"""
-Alias for backwards compatibility
-"""
+@deprecated(
+    "IVSweeper is deprecated. Please use qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500IVSweeper instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
+class IVSweeper(KeysightB1500IVSweeper):
+    """
+    Alias for backwards compatibility
+    """
+
+    pass
 
 
-class _ParameterWithStatus(Parameter):
+class _ParameterWithStatus(
+    Parameter[ParameterDataTypeVar, "KeysightB1517A"], Generic[ParameterDataTypeVar]
+):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
@@ -726,9 +737,11 @@ class _ParameterWithStatus(Parameter):
         return snapshot
 
 
-class _SpotMeasurementVoltageParameter(_ParameterWithStatus):
+class _SpotMeasurementVoltageParameter(
+    _ParameterWithStatus[ParameterDataTypeVar], Generic[ParameterDataTypeVar]
+):
     def set_raw(self, value: ParamRawDataType) -> None:
-        smu = cast("KeysightB1517A", self.instrument)
+        smu = self.instrument
 
         if smu._source_config["output_range"] is None:
             smu._source_config["output_range"] = constants.VOutputRange.AUTO
@@ -747,12 +760,12 @@ class _SpotMeasurementVoltageParameter(_ParameterWithStatus):
         )
         smu.write(msg.message)
 
-        smu.root_instrument._reset_measurement_statuses_of_smu_spot_measurement_parameters(
+        smu.parent._reset_measurement_statuses_of_smu_spot_measurement_parameters(
             "voltage"
         )
 
     def get_raw(self) -> ParamRawDataType:
-        smu = cast("KeysightB1517A", self.instrument)
+        smu = self.instrument
 
         msg = MessageBuilder().tv(
             chnum=smu.channels[0],
@@ -767,9 +780,11 @@ class _SpotMeasurementVoltageParameter(_ParameterWithStatus):
         return parsed["value"]
 
 
-class _SpotMeasurementCurrentParameter(_ParameterWithStatus):
+class _SpotMeasurementCurrentParameter(
+    _ParameterWithStatus[ParameterDataTypeVar], Generic[ParameterDataTypeVar]
+):
     def set_raw(self, value: ParamRawDataType) -> None:
-        smu = cast("KeysightB1517A", self.instrument)
+        smu = self.instrument
 
         if smu._source_config["output_range"] is None:
             smu._source_config["output_range"] = constants.IOutputRange.AUTO
@@ -788,12 +803,12 @@ class _SpotMeasurementCurrentParameter(_ParameterWithStatus):
         )
         smu.write(msg.message)
 
-        smu.root_instrument._reset_measurement_statuses_of_smu_spot_measurement_parameters(
+        smu.parent._reset_measurement_statuses_of_smu_spot_measurement_parameters(
             "current"
         )
 
     def get_raw(self) -> ParamRawDataType:
-        smu = cast("KeysightB1517A", self.instrument)
+        smu = self.instrument
 
         msg = MessageBuilder().ti(
             chnum=smu.channels[0],
@@ -1148,7 +1163,7 @@ class KeysightB1517A(KeysightB1500Module):
                 True: Connect.
 
         """
-        self.root_instrument.enable_smu_filters(
+        self.parent.enable_smu_filters(
             enable_filter=enable_filter, channels=[self.channels[0]]
         )
 
@@ -1400,12 +1415,19 @@ class KeysightB1517A(KeysightB1500Module):
         self.iv_sweep.sweep_end(v_end)
         self.iv_sweep.sweep_steps(n_steps)
         self.iv_sweep.current_compliance(i_comp)
-        self.root_instrument.clear_timer_count()
+        self.parent.clear_timer_count()
 
         self.setup_fnc_already_run = True
 
 
-B1517A = KeysightB1517A
-"""
-Alias for backwards compatibility
-"""
+@deprecated(
+    "B1517A is deprecated. Please use qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
+class B1517A(KeysightB1517A):
+    """
+    Alias for backwards compatibility
+    """
+
+    pass

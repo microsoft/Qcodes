@@ -1,6 +1,9 @@
 from typing import TYPE_CHECKING, Any
 
+from typing_extensions import deprecated
+
 from qcodes import validators
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 from .ATS import AlazarTechATS
 from .utils import TraceParameter
@@ -397,6 +400,11 @@ class AlazarTechATS9440(AlazarTechATS):
         """Parameter buffer_timeout"""
 
 
+@deprecated(
+    "AlazarTech_ATS9440 is deprecated. Please use qcodes.instrument_drivers.AlazarTech.AlazarTechATS9440 instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
 class AlazarTech_ATS9440(AlazarTechATS9440):
     """
     Alias for backwards compatibility. Will eventually be deprecated and removed

@@ -7,10 +7,11 @@ MSO70000/C/DX Series Digital Oscilloscopes
 import textwrap
 import time
 from functools import partial
-from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Literal, Self
 
 import numpy as np
 import numpy.typing as npt
+from typing_extensions import deprecated
 
 from qcodes.instrument import (
     ChannelList,
@@ -26,7 +27,9 @@ from qcodes.parameters import (
     ParameterWithSetpoints,
     create_on_off_val_mapping,
 )
-from qcodes.validators import Arrays, Enum
+from qcodes.parameters.parameter_base import ParameterDataTypeVar
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
+from qcodes.validators import Arrays, Enum, Numbers
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -51,10 +54,17 @@ class TektronixDPOModeError(Exception):
     pass
 
 
-ModeError = TektronixDPOModeError
-"""
-Alias for backwards compatibility
-"""
+@deprecated(
+    "ModeError is deprecated. Please use qcodes.instrument_drivers.tektronix.TektronixDPOModeError instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
+class ModeError(TektronixDPOModeError):
+    """
+    Alias for backwards compatibility
+    """
+
+    pass
 
 
 class TektronixDPO7000xx(VisaInstrument):
@@ -95,7 +105,19 @@ class TektronixDPO7000xx(VisaInstrument):
             TektronixDPOTrigger(self, "delayed_trigger", delayed_trigger=True),
         )
         """Instrument module delayed_trigger"""
-
+        self.acquisition: TektronixDPOAcquisition = self.add_submodule(
+            "acquisition", TektronixDPOAcquisition(self, "acquisition")
+        )
+        """Instrument module acquisition"""
+        self.cursor: TektronixDPOCursor = self.add_submodule(
+            "cursor", TektronixDPOCursor(self, "cursor")
+        )
+        """Instrument module cursor"""
+        self.measure_immediate: TektronixDPOMeasurementImmediate = self.add_submodule(
+            "measure_immediate",
+            TektronixDPOMeasurementImmediate(self, "measure_immediate"),
+        )
+        """Instrument module measure immediate"""
         measurement_list = ChannelList(self, "measurement", TektronixDPOMeasurement)
         for measurement_number in range(1, self.number_of_measurements):
             measurement_name = f"measurement{measurement_number}"
@@ -219,7 +241,7 @@ class TektronixDPOData(InstrumentChannel):
         """
 
 
-class TektronixDPOWaveform(InstrumentChannel):
+class TektronixDPOWaveform(InstrumentChannel["TektronixDPOChannel"]):
     """
     This submodule retrieves data from waveform sources, e.g.
     channels.
@@ -233,7 +255,7 @@ class TektronixDPOWaveform(InstrumentChannel):
 
     def __init__(
         self,
-        parent: InstrumentBase,
+        parent: "TektronixDPOChannel",
         name: str,
         identifier: str,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
@@ -332,6 +354,12 @@ class TektronixDPOWaveform(InstrumentChannel):
         )
         """Parameter trace"""
 
+    @property
+    def root_instrument(self) -> "TektronixDPO7000xx":
+        root_instrument = super().root_instrument
+        assert isinstance(root_instrument, TektronixDPO7000xx)
+        return root_instrument
+
     def _get_cmd(self, cmd_string: str) -> "Callable[[], str]":
         """
         Parameters defined in this submodule require the correct
@@ -350,14 +378,30 @@ class TektronixDPOWaveform(InstrumentChannel):
 
         if not waveform.is_binary():
             raw_data = self.root_instrument.visa_handle.query_ascii_values(
-                "CURVE?", container=np.array
+                "CURVE?", container=np.ndarray
             )
         else:
             bytes_per_sample = waveform.bytes_per_sample()
-            data_type = {1: "b", 2: "h", 4: "f", 8: "d"}[bytes_per_sample]
+            data_format = waveform.data_format()
 
-            if waveform.data_format() == "unsigned_integer":
-                data_type = data_type.upper()
+            data_type: Literal["b", "B", "h", "H", "f", "d"]
+            match bytes_per_sample, data_format:
+                case 1, "signed_integer":
+                    data_type = "b"
+                case 1, "unsigned_integer":
+                    data_type = "B"
+                case 2, "signed_integer":
+                    data_type = "h"
+                case 2, "unsigned_integer":
+                    data_type = "H"
+                case 4, "floating_point":
+                    data_type = "f"
+                case 8, "floating_point":
+                    data_type = "d"
+                case _:
+                    raise ValueError(
+                        f"Unsupported combination of bytes_per_sample and data_format: {bytes_per_sample}, {data_format}"
+                    )
 
             is_big_endian = waveform.is_big_endian()
 
@@ -365,7 +409,7 @@ class TektronixDPOWaveform(InstrumentChannel):
                 "CURVE?",
                 datatype=data_type,
                 is_big_endian=is_big_endian,
-                container=np.array,
+                container=np.ndarray,
             )
 
         return (raw_data - self.raw_data_offset()) * self.scale() + self.offset()
@@ -397,7 +441,9 @@ class TektronixDPOWaveformFormat(InstrumentChannel):
     ) -> None:
         super().__init__(parent, name, **kwargs)
 
-        self.data_format: Parameter = self.add_parameter(
+        self.data_format: Parameter[
+            Literal["signed_integer", "unsigned_integer", "floating_point"], Self
+        ] = self.add_parameter(
             "data_format",
             get_cmd="WFMOutpre:BN_Fmt?",
             set_cmd="WFMOutpre:BN_Fmt {}",
@@ -409,7 +455,7 @@ class TektronixDPOWaveformFormat(InstrumentChannel):
         )
         """Parameter data_format"""
 
-        self.is_big_endian: Parameter = self.add_parameter(
+        self.is_big_endian: Parameter[bool, Self] = self.add_parameter(
             "is_big_endian",
             get_cmd="WFMOutpre:BYT_Or?",
             set_cmd="WFMOutpre:BYT_Or {}",
@@ -417,16 +463,18 @@ class TektronixDPOWaveformFormat(InstrumentChannel):
         )
         """Parameter is_big_endian"""
 
-        self.bytes_per_sample: Parameter = self.add_parameter(
-            "bytes_per_sample",
-            get_cmd="WFMOutpre:BYT_Nr?",
-            set_cmd="WFMOutpre:BYT_Nr {}",
-            get_parser=int,
-            vals=Enum(1, 2, 4, 8),
+        self.bytes_per_sample: Parameter[Literal[1, 2, 4, 8], Self] = (
+            self.add_parameter(
+                "bytes_per_sample",
+                get_cmd="WFMOutpre:BYT_Nr?",
+                set_cmd="WFMOutpre:BYT_Nr {}",
+                get_parser=int,
+                vals=Enum(1, 2, 4, 8),
+            )
         )
         """Parameter bytes_per_sample"""
 
-        self.is_binary: Parameter = self.add_parameter(
+        self.is_binary: Parameter[bool, Self] = self.add_parameter(
             "is_binary",
             get_cmd="WFMOutpre:ENCdg?",
             set_cmd="WFMOutpre:ENCdg {}",
@@ -435,7 +483,7 @@ class TektronixDPOWaveformFormat(InstrumentChannel):
         """Parameter is_binary"""
 
 
-class TektronixDPOChannel(InstrumentChannel):
+class TektronixDPOChannel(InstrumentChannel[TektronixDPO7000xx]):
     """
     The main channel module for the oscilloscope. The parameters
     defined here reflect the waveforms as they are displayed on
@@ -444,7 +492,7 @@ class TektronixDPOChannel(InstrumentChannel):
 
     def __init__(
         self,
-        parent: Instrument | InstrumentChannel,
+        parent: TektronixDPO7000xx,
         name: str,
         channel_number: int,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
@@ -457,6 +505,17 @@ class TektronixDPOChannel(InstrumentChannel):
         )
         """Instrument module waveform"""
 
+        self.coupling: Parameter[Literal["AC", "DC", "DCREJECT", "GND"], Self] = (
+            self.add_parameter(
+                "coupling",
+                get_cmd=f"{self._identifier}:COUPling?",
+                set_cmd=f"{self._identifier}:COUPling {{}}",
+                vals=Enum("AC", "DC", "DCREJECT", "GND"),
+                get_parser=str,
+            )
+        )
+        """Parameter coupling: 'AC', 'DC', 'DCREJECT', 'GND'"""
+
         self.scale: Parameter = self.add_parameter(
             "scale",
             get_cmd=f"{self._identifier}:SCA?",
@@ -464,7 +523,7 @@ class TektronixDPOChannel(InstrumentChannel):
             get_parser=float,
             unit="V/div",
         )
-        """Parameter scale"""
+        """Parameter scale V/div"""
 
         self.offset: Parameter = self.add_parameter(
             "offset",
@@ -473,16 +532,17 @@ class TektronixDPOChannel(InstrumentChannel):
             get_parser=float,
             unit="V",
         )
-        """Parameter offset"""
+        """Parameter offset voltage"""
 
         self.position: Parameter = self.add_parameter(
             "position",
             get_cmd=f"{self._identifier}:POS?",
             set_cmd=f"{self._identifier}:POS {{}}",
             get_parser=float,
-            unit="V",
+            vals=Numbers(-8, 8),
+            unit="div",
         )
-        """Parameter position"""
+        """Parameter position [-8, 8] divisions"""
 
         self.termination: Parameter = self.add_parameter(
             "termination",
@@ -521,15 +581,15 @@ class TektronixDPOChannel(InstrumentChannel):
             value: The requested number of samples in the trace
 
         """
-        if self.root_instrument.horizontal.record_length() < value:
+        if self.parent.horizontal.record_length() < value:
             raise ValueError(
                 "Cannot set a trace length which is larger than "
                 "the record length. Please switch to manual mode "
                 "and adjust the record length first"
             )
 
-        self.root_instrument.data.start_index(1)
-        self.root_instrument.data.stop_index(value)
+        self.parent.data.start_index(1)
+        self.parent.data.stop_index(value)
 
     def set_trace_time(self, value: float) -> None:
         """
@@ -537,7 +597,7 @@ class TektronixDPOChannel(InstrumentChannel):
             value: The time over which a trace is desired.
 
         """
-        sample_rate = self.root_instrument.horizontal.sample_rate()
+        sample_rate = self.parent.horizontal.sample_rate()
         required_sample_count = int(sample_rate * value)
         self.set_trace_length(required_sample_count)
 
@@ -676,6 +736,90 @@ class TektronixDPOHorizontal(InstrumentChannel):
         self.write(f"HORizontal:MODE:SCAle {value}")
 
 
+class TektronixDPOAcquisition(InstrumentChannel):
+    """
+    This submodule controls the acquisition mode of the
+    oscilloscope. It is used to set the acquisition mode
+    and the number of acquisitions.
+    """
+
+    def __init__(
+        self,
+        parent: Instrument,
+        name: str,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ) -> None:
+        super().__init__(parent, name, **kwargs)
+
+        self.mode: Parameter[
+            Literal["sample", "peakdetect", "average", "high_res", "wfmdb", "envelope"],
+            Self,
+        ] = self.add_parameter(
+            "mode",
+            get_cmd="ACQuire:MODe?",
+            set_cmd="ACQuire:MODe {}",
+            vals=Enum(
+                "sample",
+                "peakdetect",
+                "average",
+                "high_res",
+                "wfmdb",
+                "envelope",
+            ),
+            get_parser=str.lower,
+        )
+        """Sample mode. This command sets or queries the acquisition mode. The acquisition mode
+        determines how the instrument acquires and processes data. The available acquisition modes are:
+        - Sample:       The instrument acquires data at the specified sample rate and record length.
+                        This is the default acquisition mode.
+        - Peak Detect:  The instrument captures the maximum and minimum values for each sample interval. This mode is useful
+                        for capturing narrow pulses or glitches that may be missed in sample mode.
+        - Average:      The instrument acquires multiple waveforms and averages them together to reduce noise.
+                        The number of waveforms to average can be set with the 'averages' parameter.
+        - High Res:     The instrument acquires data at a higher resolution by using oversampling and digital filtering.
+                            This mode is useful for capturing small signal details.
+        - WfmDB:        Statistical database aquisition mode. The instrument acquires data and stores it in a statistical
+                        database for later analysis.
+        - Envelope:     The instrument captures the maximum and minimum values for each sample interval over multiple acquisitions
+        """
+
+        self.state: Parameter[Literal["ON", "OFF", "RUN", "STOP"], Self] = (
+            self.add_parameter(
+                "state",
+                get_cmd="ACQuire:STATE?",
+                set_cmd="ACQuire:STATE {}",
+                vals=Enum(
+                    "ON",
+                    "OFF",
+                    "RUN",
+                    "STOP",
+                ),
+                get_parser=str.upper,
+            )
+        )
+        """
+        This command starts or stops acquisitions. When state is set to ON or RUN, a
+        new acquisition will be started. If the last acquisition was a single acquisition
+        sequence, a new single sequence acquisition will be started. If the last acquisition
+        was continuous, a new continuous acquisition will be started.
+
+        State can be 'ON', 'OFF', 'RUN', or 'STOP'.
+
+        """
+
+        self.stop_after: Parameter = self.add_parameter(
+            "stop_after",
+            get_cmd="ACQuire:STOPAfter?",
+            set_cmd="ACQuire:STOPAfter {}",
+            vals=Enum("SEQUENCE", "RUNSTOP"),
+            get_parser=str.upper,
+        )
+        """This command sets or queries whether the instrument continually acquires
+        acquisitions or acquires a single sequence. Pressing SINGLE on the front
+        panel button is equivalent to sending these commands: ACQUIRE:STOPAFTER
+        SEQUENCE and ACQUIRE:STATE 1."""
+
+
 class TektronixDPOTrigger(InstrumentChannel):
     """
     Submodule for trigger setup.
@@ -711,6 +855,42 @@ class TektronixDPOTrigger(InstrumentChannel):
                 ["video", "i2c", "can", "spi", "communication", "serial", "rs232"]
             )
 
+        self.ready: Parameter = self.add_parameter(
+            "ready",
+            get_cmd=f"TRIGger:{self._identifier}:READY?",
+            get_parser=str.lower,
+        )
+        """Indicates whether the trigger system is ready to accept a trigger.
+        A value of 1 indicates that the trigger system is ready to accept a trigger.
+        A value of 0 indicates that the trigger system is not ready to accept a trigger.
+        """
+
+        self.state: Parameter = self.add_parameter(
+            "state",
+            get_cmd="TRIGger:STATe?",
+            get_parser=str.lower,
+        )
+        """Gets the current Trigger state:
+
+            ARMED indicates that the instrument is acquiring pretrigger information.
+
+            AUTO indicates that the instrument is in the automatic mode and acquires data
+            even in the absence of a trigger.
+
+            DPO indicates that the instrument is in DPO mode.
+
+            PARTIAL indicates that the A trigger has occurred and the instrument is waiting
+            for the B trigger to occur.
+
+            READY indicates that all pretrigger information is acquired and that the instrument
+            is ready to accept a trigger.
+
+            SAVE indicates that the instrument is in save mode and is not acquiring data.
+
+            TRIGGER indicates that the instrument triggered and is acquiring the post trigger
+            information.
+        """
+
         self.type: Parameter = self.add_parameter(
             "type",
             get_cmd=f"TRIGger:{self._identifier}:TYPE?",
@@ -718,7 +898,7 @@ class TektronixDPOTrigger(InstrumentChannel):
             vals=Enum(*trigger_types),
             get_parser=str.lower,
         )
-        """Parameter type"""
+        """Trigger type"""
 
         edge_couplings = ["ac", "dc", "hfrej", "lfrej", "noiserej"]
         if self._identifier == "B":
@@ -731,16 +911,19 @@ class TektronixDPOTrigger(InstrumentChannel):
             vals=Enum(*edge_couplings),
             get_parser=str.lower,
         )
-        """Parameter edge_coupling"""
+        """Trigger edge coupling for A and B triggers:
+        Trigger A: 'ac', 'dc', 'hfrej', 'lfrej', 'noiserej'
+        Trigger B: 'ac', 'dc', 'hfrej', 'lfrej', 'noiserej', 'atrigger'
+        """
 
         self.edge_slope: Parameter = self.add_parameter(
             "edge_slope",
             get_cmd=f"TRIGger:{self._identifier}:EDGE:SLOpe?",
             set_cmd=f"TRIGger:{self._identifier}:EDGE:SLOpe {{}}",
-            vals=Enum("rise", "fall", "either"),
+            vals=Enum("RISE", "rise", "FALL", "fall", "EITHER", "either"),
             get_parser=str.lower,
         )
-        """Parameter edge_slope"""
+        """Trigger edge slope: 'rise', 'fall', or 'either'"""
 
         trigger_sources = [
             f"CH{i}" for i in range(1, TektronixDPO7000xx.number_of_channels)
@@ -751,23 +934,37 @@ class TektronixDPOTrigger(InstrumentChannel):
         if self._identifier == "A":
             trigger_sources.append("line")
 
+        trigger_sources.append("AUX")
+
         self.source: Parameter = self.add_parameter(
             "source",
             get_cmd=f"TRIGger:{self._identifier}:EDGE:SOUrce?",
             set_cmd=f"TRIGger:{self._identifier}:EDGE:SOUrce {{}}",
             vals=Enum(*trigger_sources),
         )
-        """Parameter source"""
+        """Trigger source: 'CH1', 'CH2', ..., 'CH4', 'D0', 'D1', ..., 'D15', 'AUX', 'LINE'"""
+
+        self.level: Parameter = self.add_parameter(
+            "level",
+            get_cmd=f"TRIGger:{self._identifier}:LEVel?",
+            set_cmd=f"TRIGger:{self._identifier}:LEVel {{}}",
+            get_parser=float,
+            unit="V",
+        )
+        """Trigger level: The voltage level at which the trigger condition is met."""
 
     def _trigger_type(self, value: str) -> None:
-        if value != "edge":
+        if value.lower() != "edge":
             raise NotImplementedError(
                 "We currently only support the 'edge' trigger type"
             )
         self.write(f"TRIGger:{self._identifier}:TYPE {value}")
 
 
-class TektronixDPOMeasurementParameter(Parameter):
+class TektronixDPOMeasurementParameter(
+    Parameter[ParameterDataTypeVar, "TektronixDPOMeasurement"],
+    Generic[ParameterDataTypeVar],
+):
     """
     A measurement parameter does not only return the instantaneous value
     of a measurement, but can also return some statistics. The accumulation
@@ -778,7 +975,7 @@ class TektronixDPOMeasurementParameter(Parameter):
     """
 
     def _get(self, metric: str) -> float:
-        measurement_channel = cast("TektronixDPOMeasurement", self.instrument)
+        measurement_channel = self.instrument
         if measurement_channel.type.get_latest() != self.name:
             measurement_channel.type(self.name)
 
@@ -998,3 +1195,225 @@ class TektronixDPOMeasurementStatistics(InstrumentChannel):
 
     def reset(self) -> None:
         self.write("MEASUrement:STATIstics:COUNt RESEt")
+
+
+class TektronixDPOMeasurementImmediate(InstrumentChannel):
+    """
+    The measurement commands let you specify an additional measurement, IMMed. The immediate measurement
+    has no front panel equivalent. Immediate measurements are never displayed.
+    Because they are computed only when needed, immediate measurements slow the
+    waveform update rate less than displayed measurements.
+
+    """
+
+    def __init__(
+        self,
+        parent: Instrument,
+        name: str,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ) -> None:
+        super().__init__(parent, name, **kwargs)
+
+        self.gating: Parameter = self.add_parameter(
+            "gating",
+            get_cmd="MEASUrement:GATing?",
+            set_cmd="MEASUrement:GATing {}",
+            vals=Enum("ON", "OFF", "ZOOM1", "ZOOM2", "ZOOM3", "ZOOM4", "CURSOR"),
+        )
+        """Gating for the immediate measurement. Gating allows you to specify a subset of the waveform
+        to be measured. When gating is on, the measurement is performed only on the portion of the waveform
+        defined by the gate. The gate can be defined by zooming in on a portion of
+        the waveform and selecting one of the zoom gates (ZOOM1, ZOOM2, ZOOM3, ZOOM4), or by using the
+        cursor gate (CURSOR), which uses the horizontal positions of the cursors to define the gate.
+        """
+
+        self.source1: Parameter = self.add_parameter(
+            "source1",
+            get_cmd="MEASUrement:IMMed:SOUrce1?",
+            set_cmd="MEASUrement:IMMed:SOUrce1 {}",
+            vals=Enum(*TektronixDPOWaveform.valid_identifiers),
+        )
+        """Source 1 for the immediate measurement:
+        CH1, CH2, CH3, CH4, MATH1, MATH2, MATH3, MATH4,
+        REF1, REF2, REF3, REF4, HISTogram"""
+
+        self.source2: Parameter = self.add_parameter(
+            "source2",
+            get_cmd="MEASUrement:IMMed:SOUrce2?",
+            set_cmd="MEASUrement:IMMed:SOUrce2 {}",
+            vals=Enum(*TektronixDPOWaveform.valid_identifiers),
+        )
+        """Source 2 for the immediate measurement.  Source2 measurements only apply
+        to phase and delay measurement types, which require both a target (Source1)
+        and reference (Source2) source.
+        CH1, CH2, CH3, CH4, MATH1, MATH2, MATH3, MATH4,
+        REF1, REF2, REF3, REF4
+        """
+
+        self.type: Parameter = self.add_parameter(
+            "type",
+            get_cmd="MEASUrement:IMMed:TYPE?",
+            set_cmd="MEASUrement:IMMed:TYPE {}",
+            vals=Enum(
+                "ACRMS",
+                "AMPlitude",
+                "AREa",
+                "BURst",
+                "CARea",
+                "CMEan",
+                "CRMs",
+                "DELay",
+                "DISTDUty",
+                "EXTINCTDB",
+                "EXTINCTPCT",
+                "EXTINCTRATIO",
+                "EYEHeight",
+                "EYEWIdth",
+                "FALL",
+                "FREQuency",
+                "HIGH",
+                "HITs",
+                "LOW",
+                "MAXimum",
+                "MEAN",
+                "MEDian",
+                "MINImum",
+                "NCROss",
+                "NDUty",
+                "NOVershoot",
+                "NWIdth",
+                "PBASe",
+                "PCROss",
+                "PCTCROss",
+                "PDUty",
+                "PEAKHits",
+                "PERIod",
+                "PHAse",
+                "PK2Pk",
+                "PKPKJitter",
+                "PKPKNoise",
+                "POVershoot",
+                "PTOP",
+                "PWIdth",
+                "QFACtor",
+                "RISe",
+                "RMS",
+                "RMSJitter",
+                "RMSNoise",
+                "SIGMA1",
+                "SIGMA2",
+                "SIGMA3",
+                "SIXSigmajit",
+                "SNRatio",
+                "STDdev",
+                "UNDEFINED",
+                "WAVEFORMS",
+            ),
+            get_parser=str.lower,
+        )
+        """
+        Immediate measurement type
+        Please see page 2-547 of the programmers manual for a detailed description of these arguments.
+        https://download.tek.com/manual/MSO-DPO5000-B-DPO7000-C-DPO70000-B-C-D-DX-DSA70000-B-C-D-and-MSO70000-C-DX-_2.pdf
+        """
+
+        self.units: Parameter = self.add_parameter(
+            "units",
+            get_cmd="MEASUrement:IMMed:UNITS?",
+            get_parser=strip_quotes,
+        )
+        """Units of the immediate measurement"""
+
+        self.value: Parameter = self.add_parameter(
+            "value",
+            get_cmd="MEASUrement:IMMed:VALue?",
+            get_parser=float,
+        )
+        """The value of the immediate measurement"""
+
+
+class TektronixDPOCursor(InstrumentChannel):
+    """
+    The cursor submodule allows you to set and retrieve
+    information regarding the cursor type, state, and
+    positions. The cursor can be used to measure
+    voltage and time differences between two points on
+    the waveform display.
+
+    Methods:
+        - function: Set or get the cursor type (e.g., horizontal bars, vertical bars, etc.)
+        - state: Set or get the cursor state (ON or OFF)
+        - x1: Set or get the x1 position of the cursor (in seconds)
+        - x2: Set or get the x2 position of the cursor (in seconds)
+        - y1: Set or get the y1 position of the cursor (in Volts)
+        - y2: Set or get the y2 position of the cursor (in Volts)
+
+    """
+
+    def __init__(
+        self,
+        parent: Instrument,
+        name: str,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ) -> None:
+        super().__init__(parent, name, **kwargs)
+
+        self.function: Parameter = self.add_parameter(
+            "function",
+            get_cmd="CURSOR:FUNCtion?",
+            set_cmd="CURSOR:FUNCtion {}",
+            vals=Enum(
+                "OFF",
+                "HBARS",
+                "VBARS",
+                "SCREEN",
+                "WAVEFORM",
+            ),
+            get_parser=str.lower,
+        )
+        """Cursor Type [OFF, HBARS, VBARS, SCREEN, WAVEFORM]"""
+
+        self.state: Parameter = self.add_parameter(
+            "state",
+            get_cmd="CURSOR:STATE?",
+            set_cmd="CURSOR:STATE {}",
+            vals=Enum("ON", "OFF"),
+            get_parser=str.lower,
+        )
+        """Cursor state [ON, OFF]"""
+
+        self.x1: Parameter = self.add_parameter(
+            "x1",
+            get_cmd="CURSOR:VBARS:POSITION1?",
+            set_cmd="CURSOR:VBARS:POSITION1 {}",
+            get_parser=float,
+            unit="s",
+        )
+        """Cursor x1 position in seconds"""
+
+        self.x2: Parameter = self.add_parameter(
+            "x2",
+            get_cmd="CURSOR:VBARS:POSITION2?",
+            set_cmd="CURSOR:VBARS:POSITION2 {}",
+            get_parser=float,
+            unit="s",
+        )
+        """Cursor x2 position in seconds"""
+
+        self.y1: Parameter = self.add_parameter(
+            "y1",
+            get_cmd="CURSOR:HBARS:POSITION1?",
+            set_cmd="CURSOR:HBARS:POSITION1 {}",
+            get_parser=float,
+            unit="V",
+        )
+        """Cursor y1 position in Volts"""
+
+        self.y2: Parameter = self.add_parameter(
+            "y2",
+            get_cmd="CURSOR:HBARS:POSITION2?",
+            set_cmd="CURSOR:HBARS:POSITION2 {}",
+            get_parser=float,
+            unit="V",
+        )
+        """Cursor y2 position in Volts"""

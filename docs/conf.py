@@ -24,6 +24,7 @@ from importlib import reload
 # before qcodes imports pyplot and automatically
 # sets the backend
 import matplotlib
+from intersphinx_registry import get_intersphinx_mapping
 from packaging.version import parse
 
 # setting the metaclass will cause sphinx
@@ -434,14 +435,9 @@ texinfo_show_urls = "footnote"
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {
-    "pandas": ("https://pandas.pydata.org/pandas-docs/stable", None),
-    "matplotlib": ("https://matplotlib.org/stable", None),
-    "python": ("https://docs.python.org/3", None),
-    "numpy": ("https://numpy.org/doc/stable", None),
-    "pyvisa": ("https://pyvisa.readthedocs.io/en/stable", None),
-    "IPython": ("https://ipython.readthedocs.io/en/stable", None),
-}
+intersphinx_mapping = get_intersphinx_mapping(
+    packages={"ipython", "matplotlib", "numpy", "pandas", "python", "pyvisa", "xarray"}
+)
 
 autoclass_content = "both"
 # classes should include both the

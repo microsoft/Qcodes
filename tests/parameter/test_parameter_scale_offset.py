@@ -192,7 +192,7 @@ def test_numpy_array_valued_parameter_preserves_type_if_scale_and_offset_are_set
     None
 ):
     def rands():
-        return np.random.randn(5)
+        return np.random.default_rng().standard_normal(5)
 
     param = Parameter(name="test_param", set_cmd=None, get_cmd=rands)
 

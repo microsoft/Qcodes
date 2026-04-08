@@ -32,12 +32,12 @@ class MultiChannelInstrumentParameter(MultiParameter, Generic[InstrumentModuleTy
 
     def __init__(
         self,
+        *,
         channels: Sequence[InstrumentModuleType],
         param_name: str,
-        *args: Any,
         **kwargs: Any,
     ) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
         self._channels = channels
         self._param_name = param_name
 

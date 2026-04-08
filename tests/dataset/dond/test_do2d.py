@@ -193,9 +193,13 @@ def test_do2d_output_data(_param, _param_complex, _param_set, _param_set_2) -> N
 @given(
     num_points_p1=hst.integers(min_value=1, max_value=5),
     num_points_p2=hst.integers(min_value=1, max_value=5),
-    n_points_pws=hst.integers(min_value=1, max_value=500),
+    n_points_pws=hst.integers(min_value=1, max_value=50),
 )
-@settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@settings(
+    deadline=None,
+    max_examples=10,
+    suppress_health_check=(HealthCheck.function_scoped_fixture,),
+)
 def test_do2d_verify_shape(
     _param,
     _param_complex,

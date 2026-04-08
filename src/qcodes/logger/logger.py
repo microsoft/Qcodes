@@ -15,7 +15,7 @@ from collections import OrderedDict
 from contextlib import contextmanager
 from copy import copy
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
@@ -422,7 +422,7 @@ class LogCapture:
         for h in self.stashed_handlers:
             self.logger.removeHandler(h)
 
-    def __enter__(self) -> "LogCapture":
+    def __enter__(self) -> Self:
         self.log_capture = io.StringIO()
         self.string_handler = logging.StreamHandler(self.log_capture)
         self.string_handler.setLevel(self.level)

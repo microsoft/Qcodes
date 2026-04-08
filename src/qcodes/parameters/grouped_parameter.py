@@ -168,6 +168,7 @@ class GroupedParameter(ParameterBase):
     def __init__(
         self,
         name: str,
+        *,
         group: DelegateGroup,
         unit: str | None = None,
         label: str | None = None,

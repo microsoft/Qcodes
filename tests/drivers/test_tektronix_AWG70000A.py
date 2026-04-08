@@ -55,10 +55,11 @@ def random_wfm_m1_m2_package():
     """
 
     def make():
-        length = np.random.randint(2400, 2500)
-        wfm = 0.2 * (np.random.rand(length) - 0.5)
-        m1 = np.random.randint(0, 2, length)
-        m2 = np.random.randint(0, 2, length)
+        rng = np.random.default_rng()
+        length = rng.integers(2400, 2500)
+        wfm = 0.2 * (rng.random(length) - 0.5)
+        m1 = rng.integers(0, 2, length)
+        m2 = rng.integers(0, 2, length)
         return np.array([wfm, m1, m2])
 
     return make
@@ -82,11 +83,12 @@ def _make_forged_sequence():
         2400 points long, the minimum allowed by the instrument
         """
         data = {n: {} for n in range(1, 1 + num_chans)}
+        rng = np.random.default_rng()
         for key in data.keys():
             data[key] = {
-                "wfm": np.random.randn(2400),
-                "m1": np.random.randint(0, 2, 2400),
-                "m2": np.random.randint(0, 2, 2400),
+                "wfm": rng.standard_normal(2400),
+                "m1": rng.integers(0, 2, 2400),
+                "m2": rng.integers(0, 2, 2400),
             }
 
         return data

@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from qcodes.instrument.channel import ChannelTuple
 
 
-class LakeshoreBaseOutput(InstrumentChannel):
+class LakeshoreBaseOutput(InstrumentChannel["LakeshoreBase"]):
     MODES: ClassVar[dict[str, int]] = {}
     RANGES: ClassVar[dict[str, int]] = {}
 
@@ -236,6 +236,7 @@ class LakeshoreBaseOutput(InstrumentChannel):
             get_parser=float,
             set_cmd=f"SETP {output_index}, {{}}",
             get_cmd=f"SETP? {output_index}",
+            post_delay=0.5,  # getting setpoint too soon after setting may fetch previous setpoint
         )
         """
         The value of the setpoint in the preferred units of the control loop sensor
@@ -474,9 +475,11 @@ class LakeshoreBaseOutput(InstrumentChannel):
         )
 
         active_channel_id = self.input_channel()
-        active_channel_name_on_instrument = self.root_instrument.input_channel_parameter_values_to_channel_name_on_instrument[
-            active_channel_id
-        ]
+        active_channel_name_on_instrument = (
+            self.parent.input_channel_parameter_values_to_channel_name_on_instrument[
+                active_channel_id
+            ]
+        )
         active_channel = getattr(
             self.root_instrument, active_channel_name_on_instrument
         )

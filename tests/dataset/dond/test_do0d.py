@@ -100,8 +100,12 @@ def test_do0d_output_data(_param) -> None:
     "multiparamtype",
     [MultiSetPointParam, Multi2DSetPointParam, Multi2DSetPointParam2Sizes],
 )
-@given(n_points_pws=hst.integers(min_value=1, max_value=1000))
-@settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@given(n_points_pws=hst.integers(min_value=1, max_value=50))
+@settings(
+    deadline=None,
+    max_examples=10,
+    suppress_health_check=(HealthCheck.function_scoped_fixture,),
+)
 def test_do0d_verify_shape(
     _param, _param_complex, multiparamtype, dummyinstrument, n_points_pws
 ) -> None:

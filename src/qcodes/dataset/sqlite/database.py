@@ -220,7 +220,10 @@ def get_DB_debug() -> bool:
     return bool(qcodes.config["core"]["db_debug"])
 
 
-def initialise_database(journal_mode: JournalMode | None = "WAL") -> None:
+def initialise_database(
+    journal_mode: JournalMode | None = "WAL",
+    db_path: str | Path | None = None,
+) -> None:
     """
     Initialise a database in the location specified by the config object
     and set ``atomic commit and rollback mode`` of the db. The db is created
@@ -232,16 +235,65 @@ def initialise_database(journal_mode: JournalMode | None = "WAL") -> None:
         journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
             Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
             no changes are made.
+        db_path: Path to database file. If None, the path specified in the config object is used.
 
     """
     # calling connect performs all the needed actions to create and upgrade
     # the db to the latest version.
-    conn = connect(get_DB_location(), get_DB_debug())
+    if db_path is None:
+        db_path = get_DB_location()
+    conn = connect(db_path, get_DB_debug())
     reset_default_experiment_id(conn)
     if journal_mode is not None:
         set_journal_mode(conn, journal_mode)
     conn.close()
     del conn
+
+
+def initialise_or_create_database_at(
+    db_file_with_abs_path: str | Path, journal_mode: JournalMode | None = "WAL"
+) -> None:
+    """
+    Initialises or creates a database at the specified location and configures QCoDeS to use
+    this as the default database for the duration of the session.
+
+
+    Args:
+        db_file_with_abs_path: Database file name with absolute path, for example
+            ``C:\\mydata\\majorana_experiments.db``
+        journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
+            Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
+            no changes are made.
+
+    """
+    qcodes.config.core.db_location = str(db_file_with_abs_path)
+    initialise_database(journal_mode)
+
+
+@contextmanager
+def initialised_database_at(
+    db_file_with_abs_path: str | Path, *, journal_mode: JournalMode | None = "WAL"
+) -> Iterator[None]:
+    """
+    Initialises or creates a database at the specified location, configures QCoDeS to use this as the
+    default database for the duration of the context, and restores the 'db_location' afterwards.
+
+    Args:
+        db_file_with_abs_path: Database file name with absolute path, for example
+            ``C:\\mydata\\majorana_experiments.db``
+        journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
+            Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
+            no changes are made.
+
+    """
+    db_location = qcodes.config["core"]["db_location"]
+    try:
+        initialise_or_create_database_at(
+            db_file_with_abs_path, journal_mode=journal_mode
+        )
+        yield
+    finally:
+        qcodes.config["core"]["db_location"] = db_location
 
 
 def set_journal_mode(conn: AtomicConnection, journal_mode: JournalMode) -> None:
@@ -263,43 +315,6 @@ def set_journal_mode(conn: AtomicConnection, journal_mode: JournalMode) -> None:
     query = f"PRAGMA journal_mode={journal_mode};"
     cursor = conn.cursor()
     cursor.execute(query)
-
-
-def initialise_or_create_database_at(
-    db_file_with_abs_path: str | Path, journal_mode: JournalMode | None = "WAL"
-) -> None:
-    """
-    This function sets up QCoDeS to refer to the given database file. If the
-    database file does not exist, it will be initiated.
-
-    Args:
-        db_file_with_abs_path: Database file name with absolute path, for example
-            ``C:\\mydata\\majorana_experiments.db``
-        journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
-            Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
-            no changes are made.
-
-    """
-    qcodes.config.core.db_location = str(db_file_with_abs_path)
-    initialise_database(journal_mode)
-
-
-@contextmanager
-def initialised_database_at(db_file_with_abs_path: str | Path) -> Iterator[None]:
-    """
-    Initializes or creates a database and restores the 'db_location' afterwards.
-
-    Args:
-        db_file_with_abs_path: Database file name with absolute path, for example
-            ``C:\\mydata\\majorana_experiments.db``
-
-    """
-    db_location = qcodes.config["core"]["db_location"]
-    try:
-        initialise_or_create_database_at(db_file_with_abs_path)
-        yield
-    finally:
-        qcodes.config["core"]["db_location"] = db_location
 
 
 def conn_from_dbpath_or_conn(

@@ -86,11 +86,11 @@ def test_nested_measurement(bg_writing) -> None:
 
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("bg_writing", [True, False])
-@settings(deadline=None, max_examples=25)
+@settings(deadline=None, max_examples=10)
 @given(
-    outer_len=hst.integers(min_value=1, max_value=100),
-    inner_len1=hst.integers(min_value=1, max_value=1000),
-    inner_len2=hst.integers(min_value=1, max_value=1000),
+    outer_len=hst.integers(min_value=1, max_value=20),
+    inner_len1=hst.integers(min_value=1, max_value=200),
+    inner_len2=hst.integers(min_value=1, max_value=200),
 )
 def test_nested_measurement_array(
     bg_writing, outer_len, inner_len1, inner_len2

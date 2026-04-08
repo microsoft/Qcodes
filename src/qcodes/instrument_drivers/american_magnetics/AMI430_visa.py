@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import logging
 import time
-import warnings
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Sequence
 from contextlib import ExitStack
 from functools import partial
-from typing import TYPE_CHECKING, ClassVar, Concatenate, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Concatenate, TypeVar, cast
 
 import numpy as np
 from pyvisa import VisaIOError
@@ -22,7 +21,6 @@ from qcodes.instrument import (
 )
 from qcodes.math_utils import FieldVector
 from qcodes.parameters import Parameter
-from qcodes.utils import QCoDeSDeprecationWarning
 from qcodes.utils.types import NumberType
 from qcodes.validators import Anything, Bool, Enum, Ints, Numbers
 
@@ -47,7 +45,7 @@ class AMI430Warning(UserWarning):
     pass
 
 
-class AMI430SwitchHeater(InstrumentChannel):
+class AMI430SwitchHeater(InstrumentChannel["AMIModel430"]):
     class _Decorators:
         @classmethod
         def check_enabled(
@@ -72,7 +70,7 @@ class AMI430SwitchHeater(InstrumentChannel):
             "enabled",
             label="Switch Heater Enabled",
             get_cmd=self._check_enabled,
-            set_cmd=lambda x: (self._enable() if x else self._disable()),
+            set_cmd=lambda x: self._enable() if x else self._disable(),
             vals=Bool(),
         )
         """Parameter enabled"""
@@ -80,7 +78,7 @@ class AMI430SwitchHeater(InstrumentChannel):
             "state",
             label="Switch Heater On",
             get_cmd=self._check_state,
-            set_cmd=lambda x: (self._on() if x else self._off()),
+            set_cmd=lambda x: self._on() if x else self._off(),
             vals=Bool(),
         )
         """Parameter state. Always False is the switch heater is not enabled"""
@@ -140,19 +138,45 @@ class AMI430SwitchHeater(InstrumentChannel):
     @_Decorators.check_enabled
     def _on(self) -> None:
         self.write("PS 1")
-        while self._parent.ramping_state() == "heating switch":
-            self._parent._sleep(0.5)
+        while self.parent.ramping_state() == "heating switch":
+            self.parent._sleep(0.5)
 
     @_Decorators.check_enabled
     def _off(self) -> None:
         self.write("PS 0")
-        while self._parent.ramping_state() == "cooling switch":
-            self._parent._sleep(0.5)
+        while self.parent.ramping_state() == "cooling switch":
+            self.parent._sleep(0.5)
 
     def _check_state(self) -> bool:
         if self.enabled() is False:
             return False
         return bool(int(self.ask("PS?").strip()))
+
+    def snapshot_base(
+        self,
+        update: bool | None = False,
+        params_to_skip_update: Sequence[str] | None = None,
+    ) -> dict[str, Any]:
+        if params_to_skip_update is None:
+            params_to_skip_update = []
+
+        if update is True:
+            enabled = self.enabled.get()
+        else:
+            enabled = self.enabled.cache.get()
+        if not enabled:
+            heater_params = [
+                "state",
+                "in_persistent_mode",
+                "current",
+                "heat_time",
+                "cool_time",
+            ]
+            params_to_skip_update = list(params_to_skip_update) + heater_params
+
+        return super().snapshot_base(
+            update=update, params_to_skip_update=params_to_skip_update
+        )
 
 
 class AMIModel430(VisaInstrument):
@@ -194,15 +218,6 @@ class AMIModel430(VisaInstrument):
             **kwargs: Additional kwargs are passed to the base class
 
         """
-        if "has_current_rating" in kwargs.keys():
-            warnings.warn(
-                "'has_current_rating' kwarg to AMIModel430 "
-                "is deprecated and has no effect",
-                category=QCoDeSDeprecationWarning,
-            )
-            # this key should not be here so mypy complains about it
-            kwargs.pop("has_current_rating")  # type: ignore[typeddict-item]
-
         super().__init__(
             name,
             address,
@@ -229,10 +244,8 @@ class AMIModel430(VisaInstrument):
                 # read the hello part of the welcome message
                 self.visa_handle.read()
 
-        self._parent_instrument = None
+        self._parent_instrument: AMIModel4303D | None = None
 
-        # Add reset function
-        self.add_function("reset", call_cmd="*RST")
         if reset:
             self.reset()
 
@@ -262,8 +275,8 @@ class AMIModel430(VisaInstrument):
         """Parameter current_ramp_limit"""
         self.field_ramp_limit: Parameter = self.add_parameter(
             "field_ramp_limit",
-            get_cmd=lambda: self.current_ramp_limit(),
-            set_cmd=lambda x: self.current_ramp_limit(x),
+            get_cmd=self.current_ramp_limit.get,
+            set_cmd=self.current_ramp_limit.set,
             scale=1 / float(self.ask("COIL?")),
             unit="T/s",
         )
@@ -320,8 +333,7 @@ class AMIModel430(VisaInstrument):
             "is_quenched", get_cmd="QU?", val_mapping={True: 1, False: 0}
         )
         """Parameter is_quenched"""
-        self.add_function("reset_quench", call_cmd="QU 0")
-        self.add_function("set_quenched", call_cmd="QU 1")
+
         self.ramping_state: Parameter = self.add_parameter(
             "ramping_state",
             get_cmd="STATE?",
@@ -356,16 +368,41 @@ class AMIModel430(VisaInstrument):
         )
         """Submodule the switch heater submodule."""
 
-        # Add interaction functions
-        self.add_function("get_error", call_cmd="SYST:ERR?")
-        self.add_function("ramp", call_cmd="RAMP")
-        self.add_function("pause", call_cmd="PAUSE")
-        self.add_function("zero", call_cmd="ZERO")
-
         # Correctly assign all units
         self._update_units()
 
         self.connect_message()
+
+    def get_error(self) -> str:
+        """Get the last error from the instrument"""
+        return self.ask("SYST:ERR?")
+
+    def ramp(self) -> None:
+        """Start ramping to the setpoint"""
+        self.write("RAMP")
+
+    def pause(self) -> None:
+        """Pause ramping"""
+        self.write("PAUSE")
+
+    def zero(self) -> None:
+        """Ramp to zero current"""
+        self.write("ZERO")
+        self.field.cache.invalidate()
+        if self._parent_instrument is not None:
+            self._parent_instrument._update_setpoint_on_child_zero(self)
+
+    def reset_quench(self) -> None:
+        """Reset a quench condition on the instrument"""
+        self.write("QU 0")
+
+    def set_quenched(self) -> None:
+        """Set a quench condition on the instrument"""
+        self.write("QU 1")
+
+    def reset(self) -> None:
+        """Reset the instrument to default settings"""
+        self.write("*RST")
 
     def _sleep(self, t: float) -> None:
         """
@@ -672,6 +709,10 @@ class AMIModel4303D(Instrument):
             if isinstance(instrument_z, AMIModel430)
             else find_ami430_with_name(instrument_z)
         )
+
+        self._instrument_x._parent_instrument = self
+        self._instrument_y._parent_instrument = self
+        self._instrument_z._parent_instrument = self
 
         self._field_limit: float | Iterable[CartesianFieldLimitFunction]
         if isinstance(field_limit, Iterable):
@@ -1045,8 +1086,12 @@ class AMIModel4303D(Instrument):
             raise ValueError("_set_fields aborted; field would exceed limit")
 
         # Check if the individual instruments are ready
-        for name in ("x", "y", "z"):
-            instrument = getattr(self, f"_instrument_{name}")
+        Instruments_to_check = (
+            self._instrument_x,
+            self._instrument_y,
+            self._instrument_z,
+        )
+        for instrument in Instruments_to_check:
             if instrument.ramping_state() == "ramping":
                 msg = f"_set_fields aborted; magnet {instrument} is already ramping"
                 raise AMI430Exception(msg)
@@ -1186,6 +1231,19 @@ class AMIModel4303D(Instrument):
         ):
             axis_instrument.pause()
 
+    def _update_setpoint_on_child_zero(self, instrument: AMIModel430) -> None:
+        """
+        Update the internal ``_set_point`` when a child instrument's
+        ``zero()`` method is called directly, so that the 3D driver's
+        setpoint tracking remains consistent.
+        """
+        if instrument is self._instrument_x:
+            self._set_point.set_component(x=0.0)
+        elif instrument is self._instrument_y:
+            self._set_point.set_component(y=0.0)
+        elif instrument is self._instrument_z:
+            self._set_point.set_component(z=0.0)
+
     def _request_field_change(self, instrument: AMIModel430, value: NumberType) -> None:
         """
         This method is called by the child x/y/z magnets if they are set
@@ -1193,11 +1251,11 @@ class AMIModel4303D(Instrument):
         performed by this 3D driver.
         """
         if instrument is self._instrument_x:
-            self._set_x(value)
+            self._set_setpoints(("x",), (float(value),))
         elif instrument is self._instrument_y:
-            self._set_y(value)
+            self._set_setpoints(("y",), (float(value),))
         elif instrument is self._instrument_z:
-            self._set_z(value)
+            self._set_setpoints(("z",), (float(value),))
         else:
             msg = "This magnet doesnt belong to its specified parent {}"
             raise NameError(msg.format(self))

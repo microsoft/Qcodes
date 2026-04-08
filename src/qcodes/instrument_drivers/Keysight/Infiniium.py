@@ -9,10 +9,12 @@ import numpy as np
 import numpy.typing as npt
 from pyvisa import VisaIOError
 from pyvisa.constants import StatusCode
+from typing_extensions import deprecated
 
 import qcodes.validators as vals
 from qcodes.instrument import (
     ChannelList,
+    ChannelTuple,
     InstrumentBase,
     InstrumentBaseKWArgs,
     InstrumentChannel,
@@ -26,6 +28,7 @@ from qcodes.parameters import (
     ParameterWithSetpoints,
     create_on_off_val_mapping,
 )
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -89,7 +92,11 @@ class DSOFrequencyAxisParam(Parameter):
         )
 
 
-class DSOTraceParam(ParameterWithSetpoints):
+class DSOTraceParam(
+    ParameterWithSetpoints[
+        npt.NDArray, "KeysightInfiniiumChannel | KeysightInfiniiumFunction"
+    ]
+):
     """
     Trace parameter for the Infiniium series DSO
     """
@@ -180,7 +187,7 @@ class DSOTraceParam(ParameterWithSetpoints):
         acquisition if instr.cache_setpoints is False
         """
         instrument: KeysightInfiniiumChannel | KeysightInfiniiumFunction
-        instrument = self.instrument  # type: ignore[assignment]
+        instrument = self.instrument
         if preamble is None:
             instrument.write(f":WAV:SOUR {self._channel}")
             preamble = instrument.ask(":WAV:PRE?").strip().split(",")
@@ -257,6 +264,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
         self,
         parent: InstrumentBase,
         name: str,
+        channel: str,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
         """
@@ -264,6 +272,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
         directly, rather initialize BoundMeasurementSubsystem
         or UnboundMeasurementSubsystem.
         """
+        self._channel = channel
         super().__init__(parent, name, **kwargs)
 
         ###################################
@@ -477,17 +486,21 @@ class KeysightInfiniiumBoundMeasurement(AbstractMeasurementSubsystem):
         """
         Initialize measurement subsystem bound to a specific channel
         """
-        # Bind the channel
-        self._channel = parent.channel_name
-
         # Initialize measurement parameters
-        super().__init__(parent, name, **kwargs)
+        super().__init__(parent, name, channel=parent.channel_name, **kwargs)
 
 
-BoundMeasurement = KeysightInfiniiumBoundMeasurement
-"""
-Alias for backwards compatibility
-"""
+@deprecated(
+    "BoundMeasurement is deprecated. Please use qcodes.instrument_drivers.Keysight.KeysightInfiniiumBoundMeasurement instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
+class BoundMeasurement(KeysightInfiniiumBoundMeasurement):
+    """
+    Alias for backwards compatibility
+    """
+
+    pass
 
 
 class KeysightInfiniiumUnboundMeasurement(AbstractMeasurementSubsystem):
@@ -500,11 +513,8 @@ class KeysightInfiniiumUnboundMeasurement(AbstractMeasurementSubsystem):
         """
         Initialize measurement subsystem where target is set by the parameter `source`.
         """
-        # Blank channel
-        self._channel = ""
-
         # Initialize measurement parameters
-        super().__init__(parent, name, **kwargs)
+        super().__init__(parent, name, channel="", **kwargs)
 
         self.source = Parameter(
             name="source",
@@ -514,6 +524,12 @@ class KeysightInfiniiumUnboundMeasurement(AbstractMeasurementSubsystem):
             get_cmd=self._get_source,
             snapshot_value=False,
         )
+
+    @property
+    def root_instrument(self) -> "KeysightInfiniium":
+        root_instrument = super().root_instrument
+        assert isinstance(root_instrument, KeysightInfiniium)
+        return root_instrument
 
     def _validate_source(self, source: str) -> str:
         """Validate and set the source."""
@@ -564,10 +580,17 @@ class KeysightInfiniiumUnboundMeasurement(AbstractMeasurementSubsystem):
         return self._channel
 
 
-UnboundMeasurement = KeysightInfiniiumUnboundMeasurement
-"""
-Alias for backwards compatibility
-"""
+@deprecated(
+    "UnboundMeasurement is deprecated. Please use qcodes.instrument_drivers.Keysight.KeysightInfiniiumUnboundMeasurement instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
+class UnboundMeasurement(KeysightInfiniiumUnboundMeasurement):
+    """
+    Alias for backwards compatibility
+    """
+
+    pass
 
 
 class KeysightInfiniiumFunction(InstrumentChannel):
@@ -686,13 +709,20 @@ class KeysightInfiniiumFunction(InstrumentChannel):
             self.write(":SYST:HEAD OFF")
 
 
-InfiniiumFunction = KeysightInfiniiumFunction
-"""
-Alias for backwards compatibility
-"""
+@deprecated(
+    "InfiniiumFunction is deprecated. Please use qcodes.instrument_drivers.Keysight.KeysightInfiniiumFunction instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
+class InfiniiumFunction(KeysightInfiniiumFunction):
+    """
+    Alias for backwards compatibility
+    """
+
+    pass
 
 
-class KeysightInfiniiumChannel(InstrumentChannel):
+class KeysightInfiniiumChannel(InstrumentChannel["KeysightInfiniium"]):
     def __init__(
         self,
         parent: "KeysightInfiniium",
@@ -811,10 +841,17 @@ class KeysightInfiniiumChannel(InstrumentChannel):
         self.trace.update_setpoints()
 
 
-InfiniiumChannel = KeysightInfiniiumChannel
-"""
-Alias for backwards compatibility
-"""
+@deprecated(
+    "InfiniiumChannel is deprecated. Please use qcodes.instrument_drivers.Keysight.KeysightInfiniiumChannel instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
+class InfiniiumChannel(KeysightInfiniiumChannel):
+    """
+    Alias for backwards compatibility
+    """
+
+    pass
 
 
 class KeysightInfiniium(VisaInstrument):
@@ -850,10 +887,7 @@ class KeysightInfiniium(VisaInstrument):
 
         # Check if we are using pyvisa-py as our visa lib and warn users that
         # this may cause long digitize operations to fail
-        if (
-            self.visa_handle.visalib.library_path == "py"
-            and not silence_pyvisapy_warning
-        ):
+        if self.visabackend == "py" and not silence_pyvisapy_warning:
             self.log.warning(
                 "Timeout not handled correctly in pyvisa_py. This may cause"
                 " long acquisitions to fail. Either use ni/keysight visalib"
@@ -1081,7 +1115,10 @@ class KeysightInfiniium(VisaInstrument):
             channel = KeysightInfiniiumChannel(self, f"chan{i}", i)
             _channels.append(channel)
             self.add_submodule(f"ch{i}", channel)
-        self.add_submodule("channels", _channels.to_channel_tuple())
+        self.channels: ChannelTuple[KeysightInfiniiumChannel] = self.add_submodule(
+            "channels", _channels.to_channel_tuple()
+        )
+        """Tuple of oscilloscope channels."""
 
         # Functions
         _functions = ChannelList(
@@ -1093,11 +1130,17 @@ class KeysightInfiniium(VisaInstrument):
             self.add_submodule(f"func{i}", function)
         # Have to call channel list "funcs" here as functions is a
         # reserved name in Instrument.
-        self.add_submodule("funcs", _functions.to_channel_tuple())
+        self.funcs: ChannelTuple[KeysightInfiniiumFunction] = self.add_submodule(
+            "funcs", _functions.to_channel_tuple()
+        )
+        """Tuple of oscilloscope functions."""
 
         # Submodules
         meassubsys = KeysightInfiniiumUnboundMeasurement(self, "measure")
-        self.add_submodule("measure", meassubsys)
+        self.measure: KeysightInfiniiumUnboundMeasurement = self.add_submodule(
+            "measure", meassubsys
+        )
+        """Unbound measurement subsystem."""
 
     def _query_capabilities(self) -> None:
         """
@@ -1299,7 +1342,14 @@ class KeysightInfiniium(VisaInstrument):
             return None
 
 
-Infiniium = KeysightInfiniium
-"""
-Alias for backwards compatibility
-"""
+@deprecated(
+    "Infiniium is deprecated. Please use qcodes.instrument_drivers.Keysight.KeysightInfiniium instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
+class Infiniium(KeysightInfiniium):
+    """
+    Alias for backwards compatibility
+    """
+
+    pass

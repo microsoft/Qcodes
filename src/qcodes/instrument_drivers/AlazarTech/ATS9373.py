@@ -2,10 +2,12 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from packaging import version
+from typing_extensions import deprecated
 
 from qcodes import validators
 from qcodes.instrument_drivers.AlazarTech.ATS import AlazarTechATS
 from qcodes.instrument_drivers.AlazarTech.utils import TraceParameter
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from qcodes.parameters import Parameter
@@ -497,6 +499,11 @@ class AlazarTechATS9373(AlazarTechATS):
         self._write_register(58, int(new_value))
 
 
+@deprecated(
+    "AlazarTech_ATS9373 is deprecated. Please use qcodes.instrument_drivers.AlazarTech.AlazarTechATS9373 instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
 class AlazarTech_ATS9373(AlazarTechATS9373):
     """
     Alias for backwards compatibility. Will eventually be deprecated and removed

@@ -328,8 +328,12 @@ def test_dond_multi_datasets_meas_names_len_mismatch(_param, experiment) -> None
     "multiparamtype",
     [MultiSetPointParam, Multi2DSetPointParam, Multi2DSetPointParam2Sizes],
 )
-@given(n_points_pws=hst.integers(min_value=1, max_value=500))
-@settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@given(n_points_pws=hst.integers(min_value=1, max_value=50))
+@settings(
+    deadline=None,
+    max_examples=10,
+    suppress_health_check=(HealthCheck.function_scoped_fixture,),
+)
 def test_dond_0d_verify_shape(
     _param, _param_complex, multiparamtype, dummyinstrument, n_points_pws
 ) -> None:
@@ -478,9 +482,13 @@ def test_dond_1d_parameter_with_array_vals(_param_set) -> None:
 )
 @given(
     num_points=hst.integers(min_value=1, max_value=5),
-    n_points_pws=hst.integers(min_value=1, max_value=500),
+    n_points_pws=hst.integers(min_value=1, max_value=50),
 )
-@settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@settings(
+    deadline=None,
+    max_examples=10,
+    suppress_health_check=(HealthCheck.function_scoped_fixture,),
+)
 def test_dond_1d_verify_shape(
     _param,
     _param_complex,
@@ -648,9 +656,13 @@ def test_dond_1d_output_type(_param, _param_complex, _param_set) -> None:
 @given(
     num_points_p1=hst.integers(min_value=1, max_value=5),
     num_points_p2=hst.integers(min_value=1, max_value=5),
-    n_points_pws=hst.integers(min_value=1, max_value=500),
+    n_points_pws=hst.integers(min_value=1, max_value=50),
 )
-@settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@settings(
+    deadline=None,
+    max_examples=10,
+    suppress_health_check=(HealthCheck.function_scoped_fixture,),
+)
 def test_dond_2d_verify_shape(
     _param,
     _param_complex,

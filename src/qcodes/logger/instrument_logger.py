@@ -85,11 +85,7 @@ class InstrumentLoggerAdapter(logging.LoggerAdapter):
         full_name = getattr(inst, "full_name", None)
         instr_type = str(type(inst).__name__)
 
-        # merge_extra is a bool attribute in 3.13 and later
-        # but not included in the typestub see
-        # https://github.com/python/typeshed/pull/14197
-        # this makes it a type checking error in 3.13 but not in earlier versions
-        if self.merge_extra and "extra" in kwargs:  # type: ignore[attr-defined,unused-ignore]
+        if self.merge_extra and "extra" in kwargs:
             kwargs["extra"] = {**extra, **kwargs["extra"]}
         else:
             kwargs["extra"] = extra

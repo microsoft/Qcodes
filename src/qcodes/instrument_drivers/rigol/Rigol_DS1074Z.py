@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from qcodes.parameters import Parameter
 
 
-class RigolDS1074ZChannel(InstrumentChannel):
+class RigolDS1074ZChannel(InstrumentChannel["RigolDS1074Z"]):
     """
     Contains methods and attributes specific to the Rigol
     oscilloscope channels.
@@ -58,9 +58,9 @@ class RigolDS1074ZChannel(InstrumentChannel):
         """Parameter trace"""
 
     def _get_full_trace(self) -> npt.NDArray:
-        y_ori = self.root_instrument.waveform_yorigin()
-        y_increm = self.root_instrument.waveform_yincrem()
-        y_ref = self.root_instrument.waveform_yref()
+        y_ori = self.parent.waveform_yorigin()
+        y_increm = self.parent.waveform_yincrem()
+        y_ref = self.parent.waveform_yref()
         y_raw = self._get_raw_trace()
         y_raw_shifted = y_raw - y_ori - y_ref
         full_data = np.multiply(y_raw_shifted, y_increm)
@@ -68,13 +68,13 @@ class RigolDS1074ZChannel(InstrumentChannel):
 
     def _get_raw_trace(self) -> npt.NDArray:
         # set the out type from oscilloscope channels to WORD
-        self.root_instrument.write(":WAVeform:FORMat WORD")
+        self.parent.write(":WAVeform:FORMat WORD")
 
         # set the channel from where data will be obtained
-        self.root_instrument.data_source(f"ch{self.channel}")
+        self.parent.data_source(f"ch{self.channel}")
 
         # Obtain the trace
-        raw_trace_val = self.root_instrument.visa_handle.query_binary_values(
+        raw_trace_val = self.parent.visa_handle.query_binary_values(
             "WAV:DATA?", datatype="h", is_big_endian=False, expect_termination=False
         )
         return np.array(raw_trace_val)
@@ -231,10 +231,8 @@ class RigolDS1074Z(VisaInstrument):
         return xdata
 
     def _get_trigger_level(self) -> str:
-        trigger_level = self.root_instrument.ask(
-            f":TRIGger:{self.trigger_mode()}:LEVel?"
-        )
+        trigger_level = self.ask(f":TRIGger:{self.trigger_mode()}:LEVel?")
         return trigger_level
 
     def _set_trigger_level(self, value: str) -> None:
-        self.root_instrument.write(f":TRIGger:{self.trigger_mode()}:LEVel {value}")
+        self.write(f":TRIGger:{self.trigger_mode()}:LEVel {value}")

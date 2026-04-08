@@ -27,9 +27,10 @@ def test_init_awg(awg) -> None:
 def test_pack_waveform(awg) -> None:
     N = 25
 
-    waveform = np.random.rand(N)
-    m1 = np.random.randint(0, 2, N)
-    m2 = np.random.randint(0, 2, N)
+    rng = np.random.default_rng()
+    waveform = rng.random(N)
+    m1 = rng.integers(0, 2, N)
+    m2 = rng.integers(0, 2, N)
 
     package = awg._pack_waveform(waveform, m1, m2)
 
@@ -39,9 +40,10 @@ def test_pack_waveform(awg) -> None:
 def test_make_awg_file(awg) -> None:
     N = 25
 
-    waveforms = [[np.random.rand(N)]]
-    m1s = [[np.random.randint(0, 2, N)]]
-    m2s = [[np.random.randint(0, 2, N)]]
+    rng = np.random.default_rng()
+    waveforms = [[rng.random(N)]]
+    m1s = [[rng.integers(0, 2, N)]]
+    m2s = [[rng.integers(0, 2, N)]]
     nreps = [1]
     trig_waits = [0]
     goto_states = [0]

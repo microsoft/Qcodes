@@ -2,12 +2,12 @@ import os
 
 import pytest
 
-from qcodes.instrument_drivers.tektronix.AWG5208 import AWG5208
+from qcodes.instrument_drivers.tektronix.AWG5208 import TektronixAWG5208
 
 
 @pytest.fixture(scope="function")
 def awg():
-    awg_sim = AWG5208(
+    awg_sim = TektronixAWG5208(
         "awg_sim", address="GPIB0::1::INSTR", pyvisa_sim_file="Tektronix_AWG5208.yaml"
     )
     yield awg_sim

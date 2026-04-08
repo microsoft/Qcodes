@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 import numpy.typing as npt
-from typing_extensions import deprecated
 
 from qcodes.dataset.data_set_protocol import (
     SPECS,
@@ -41,7 +40,7 @@ from qcodes.dataset.sqlite.queries import (
     update_parent_datasets,
     update_run_description,
 )
-from qcodes.utils import NumpyJSONEncoder, QCoDeSDeprecationWarning
+from qcodes.utils import NumpyJSONEncoder
 
 from .data_set_cache import DataSetCacheDeferred, DataSetCacheInMem
 from .dataset_helpers import _add_run_to_runs_table
@@ -748,7 +747,10 @@ class DataSetInMem(BaseDataSet):
         self._parent_dataset_links = links
 
     def _set_interdependencies(
-        self, interdeps: InterDependencies_, shapes: Shapes | None = None
+        self,
+        interdeps: InterDependencies_,
+        shapes: Shapes | None = None,
+        override: bool = False,
     ) -> None:
         """
         Set the interdependencies object (which holds all added
@@ -761,7 +763,7 @@ class DataSetInMem(BaseDataSet):
                 f"Wrong input type. Expected InterDepencies_, got {type(interdeps)}"
             )
 
-        if not self.pristine:
+        if not self.pristine and not override:
             mssg = "Can not set interdependencies on a DataSet that has been started."
             raise RuntimeError(mssg)
         self._rundescriber = RunDescriber(interdeps, shapes=shapes)
@@ -849,20 +851,6 @@ class DataSetInMem(BaseDataSet):
             return ",".join(psnames)
         else:
             return None
-
-    @deprecated(
-        "to_xarray_dataarray_dict is deprecated, use to_xarray_dataset_dict instead",
-        category=QCoDeSDeprecationWarning,
-    )
-    def to_xarray_dataarray_dict(
-        self,
-        *params: str | ParamSpec | ParameterBase,
-        start: int | None = None,
-        end: int | None = None,
-        use_multi_index: Literal["auto", "always", "never"] = "auto",
-    ) -> dict[str, xr.DataArray]:
-        self._warn_if_set(*params, start=start, end=end)
-        return self.cache.to_xarray_dataarray_dict()  # pyright: ignore[reportDeprecated]
 
     def to_xarray_dataset_dict(
         self,

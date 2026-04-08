@@ -6,6 +6,8 @@ Will be deprecated and eventually removed.
 from functools import partial
 from typing import TYPE_CHECKING, Literal, cast
 
+from typing_extensions import deprecated
+
 from qcodes.instrument import (
     InstrumentBaseKWArgs,
     InstrumentChannel,
@@ -13,6 +15,7 @@ from qcodes.instrument import (
     VisaInstrumentKWArgs,
 )
 from qcodes.parameters import DelegateParameter
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 from qcodes.validators import Bool, Enum, Ints, Numbers
 
 if TYPE_CHECKING:
@@ -37,10 +40,20 @@ def float_round(val: float) -> int:
     return round(float(val))
 
 
+@deprecated(
+    "GS200Exception is deprecated. Please use qcodes.instrument_drivers.yokogawa.YokogawaGS200Exception instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
 class GS200Exception(Exception):
     pass
 
 
+@deprecated(
+    "GS200_Monitor is deprecated. Please use qcodes.instrument_drivers.yokogawa.YokogawaGS200Monitor instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
 class GS200_Monitor(InstrumentChannel):
     """
     Monitor part of the GS200. This is only enabled if it is
@@ -60,7 +73,7 @@ class GS200_Monitor(InstrumentChannel):
 
     def __init__(
         self,
-        parent: "GS200",
+        parent: "GS200",  # pyright: ignore[reportDeprecated]
         name: str,
         present: bool,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
@@ -171,19 +184,19 @@ class GS200_Monitor(InstrumentChannel):
 
     def _get_measurement(self) -> float:
         if self._unit is None or self._range is None:
-            raise GS200Exception("Measurement module not initialized.")
+            raise GS200Exception("Measurement module not initialized.")  # pyright: ignore[reportDeprecated]
         if self._parent.auto_range.get() or (self._unit == "VOLT" and self._range < 1):
             # Measurements will not work with autorange, or when
             # range is <1V.
             self._enabled = False
-            raise GS200Exception(
+            raise GS200Exception(  # pyright: ignore[reportDeprecated]
                 "Measurements will not work when range is <1V"
                 "or when in auto range mode."
             )
         if not self._output:
-            raise GS200Exception("Output is off.")
+            raise GS200Exception("Output is off.")  # pyright: ignore[reportDeprecated]
         if not self._enabled:
-            raise GS200Exception("Measurements are disabled.")
+            raise GS200Exception("Measurements are disabled.")  # pyright: ignore[reportDeprecated]
         # If enabled and output is on, then we can perform a measurement.
         return float(self.ask(":MEAS?"))
 
@@ -210,6 +223,11 @@ class GS200_Monitor(InstrumentChannel):
             self.measure.unit = "V"
 
 
+@deprecated(
+    "GS200Program is deprecated. Please use qcodes.instrument_drivers.yokogawa.YokogawaGS200Program instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
 class GS200Program(InstrumentChannel):
     """
     InstrumentModule that holds a Program for the YokoGawa GS200
@@ -218,7 +236,7 @@ class GS200Program(InstrumentChannel):
 
     def __init__(
         self,
-        parent: "GS200",
+        parent: "GS200",  # pyright: ignore[reportDeprecated]
         name: str,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
@@ -300,6 +318,11 @@ class GS200Program(InstrumentChannel):
         )
 
 
+@deprecated(
+    "GS200 is deprecated. Please use qcodes.instrument_drivers.yokogawa.YokogawaGS200 instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
 class GS200(VisaInstrument):
     """
     This is the QCoDeS driver for the Yokogawa GS200 voltage and current source.
@@ -481,16 +504,18 @@ class GS200(VisaInstrument):
 
         # Check if monitor is present, and if so enable measurement
         monitor_present = "/MON" in self.ask("*OPT?")
-        self.measure: GS200_Monitor = self.add_submodule(
-            "measure", GS200_Monitor(self, "measure", monitor_present)
+        self.measure: GS200_Monitor = self.add_submodule(  # pyright: ignore[reportDeprecated]
+            "measure",
+            GS200_Monitor(self, "measure", monitor_present),  # pyright: ignore[reportDeprecated]
         )
         """Instrument module measure"""
 
         # Reset function
         self.add_function("reset", call_cmd="*RST")
 
-        self.program: GS200Program = self.add_submodule(
-            "program", GS200Program(self, "program")
+        self.program: GS200Program = self.add_submodule(  # pyright: ignore[reportDeprecated]
+            "program",
+            GS200Program(self, "program"),  # pyright: ignore[reportDeprecated]
         )
         """Instrument module program"""
 
@@ -721,7 +746,7 @@ class GS200(VisaInstrument):
 
         """
         if self.output() == "on":
-            raise GS200Exception("Cannot switch mode while source is on")
+            raise GS200Exception("Cannot switch mode while source is on")  # pyright: ignore[reportDeprecated]
 
         if mode == "VOLT":
             self.range.source = self.voltage_range

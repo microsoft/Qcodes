@@ -209,8 +209,6 @@ class Keithley2000(VisaInstrument):
         )
         """Parameter amplitude"""
 
-        self.add_function("reset", call_cmd="*RST")
-
         if reset:
             self.reset()
 
@@ -219,6 +217,9 @@ class Keithley2000(VisaInstrument):
         self.write("FORM:ELEM READ")
 
         self.connect_message()
+
+    def reset(self) -> None:
+        self.write("*RST")
 
     def trigger(self) -> None:
         if not self.trigger_continuous():

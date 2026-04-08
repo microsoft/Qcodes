@@ -1,6 +1,9 @@
 from typing import TYPE_CHECKING, Any
 
+from typing_extensions import deprecated
+
 from qcodes import validators
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 from .ATS import AlazarTechATS
 from .utils import TraceParameter
@@ -405,6 +408,11 @@ class AlazarTechATS9870(AlazarTechATS):
             )
 
 
+@deprecated(
+    "AlazarTech_ATS9870 is deprecated. Please use qcodes.instrument_drivers.AlazarTech.AlazarTechATS9870 instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
 class AlazarTech_ATS9870(AlazarTechATS9870):
     """
     Alias for backwards compatibility. Will eventually be deprecated and removed

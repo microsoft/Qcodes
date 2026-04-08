@@ -1,15 +1,15 @@
 import pytest
 
-from qcodes.instrument_drivers.Keysight.N9030B import (
-    N9030B,
-    PhaseNoiseMode,
-    SpectrumAnalyzerMode,
+from qcodes.instrument_drivers.Keysight.Keysight_N9030B import (
+    KeysightN9030B,
+    KeysightN9030BPhaseNoiseMode,
+    KeysightN9030BSpectrumAnalyzerMode,
 )
 
 
 @pytest.fixture(name="driver")
 def _make_driver():
-    driver = N9030B(
+    driver = KeysightN9030B(
         "n9030B_sim", address="GPIB::1::INSTR", pyvisa_sim_file="Keysight_N9030B.yaml"
     )
     yield driver
@@ -36,7 +36,7 @@ def test_idn(driver) -> None:
 
 
 def test_swept_sa_setup(sa) -> None:
-    assert isinstance(sa, SpectrumAnalyzerMode)
+    assert isinstance(sa, KeysightN9030BSpectrumAnalyzerMode)
 
     sa.setup_swept_sa_sweep(123, 11e3, 501)
     assert sa.root_instrument.mode() == "SA"
@@ -48,7 +48,7 @@ def test_swept_sa_setup(sa) -> None:
 
 
 def test_log_plot_setup(pn) -> None:
-    assert isinstance(pn, PhaseNoiseMode)
+    assert isinstance(pn, KeysightN9030BPhaseNoiseMode)
 
     pn.setup_log_plot_sweep(1000, 1e7, 10001)
     assert pn.root_instrument.mode() == "PNOISE"

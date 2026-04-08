@@ -1,5 +1,5 @@
 from functools import partial
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Literal, Self
 
 from qcodes.instrument import (
     InstrumentBaseKWArgs,
@@ -11,6 +11,8 @@ from qcodes.parameters import DelegateParameter
 from qcodes.validators import Bool, Enum, Ints, Numbers
 
 if TYPE_CHECKING:
+    from typing import assert_never
+
     from typing_extensions import Unpack
 
     from qcodes.parameters import Parameter
@@ -36,7 +38,7 @@ class YokogawaGS200Exception(Exception):
     pass
 
 
-class YokogawaGS200Monitor(InstrumentChannel):
+class YokogawaGS200Monitor(InstrumentChannel["YokogawaGS200"]):
     """
     Monitor part of the GS200. This is only enabled if it is
     installed in the GS200 (it is an optional extra).
@@ -167,7 +169,7 @@ class YokogawaGS200Monitor(InstrumentChannel):
     def _get_measurement(self) -> float:
         if self._unit is None or self._range is None:
             raise YokogawaGS200Exception("Measurement module not initialized.")
-        if self._parent.auto_range.get() or (self._unit == "VOLT" and self._range < 1):
+        if self.parent.auto_range.get() or (self._unit == "VOLT" and self._range < 1):
             # Measurements will not work with autorange, or when
             # range is <1V.
             self._enabled = False
@@ -205,7 +207,7 @@ class YokogawaGS200Monitor(InstrumentChannel):
             self.measure.unit = "V"
 
 
-class YokogawaGS200Program(InstrumentChannel):
+class YokogawaGS200Program(InstrumentChannel["YokogawaGS200"]):
     """
     InstrumentModule that holds a Program for the YokoGawa GS200
 
@@ -328,12 +330,14 @@ class YokogawaGS200(VisaInstrument):
         )
         """Parameter output"""
 
-        self.source_mode: Parameter = self.add_parameter(
-            "source_mode",
-            label="Source Mode",
-            get_cmd=":SOUR:FUNC?",
-            set_cmd=self._set_source_mode,
-            vals=Enum("VOLT", "CURR"),
+        self.source_mode: Parameter[Literal["VOLT", "CURR"], YokogawaGS200] = (
+            self.add_parameter(
+                "source_mode",
+                label="Source Mode",
+                get_cmd=":SOUR:FUNC?",
+                set_cmd=self._set_source_mode,
+                vals=Enum("VOLT", "CURR"),
+            )
         )
         """Parameter source_mode"""
 
@@ -410,12 +414,19 @@ class YokogawaGS200(VisaInstrument):
         # We need to pass the source parameter for delegate parameters
         # (range and output_level) here according to the present
         # source_mode.
-        if self.source_mode() == "VOLT":
-            self.range.source = self.voltage_range
-            self.output_level.source = self.voltage
-        else:
-            self.range.source = self.current_range
-            self.output_level.source = self.current
+        match mode := self.source_mode():
+            case "VOLT":
+                self.range.source = self.voltage_range
+                self.output_level.source = self.voltage
+            case "CURR":
+                self.range.source = self.current_range
+                self.output_level.source = self.current
+            case _:
+                if TYPE_CHECKING:
+                    assert_never(mode)
+                raise ValueError(
+                    f"Invalid mode {mode}. Mode must be one of 'CURR' or 'VOLT'"
+                )
 
         self.voltage_limit: Parameter = self.add_parameter(
             "voltage_limit",
@@ -429,7 +440,7 @@ class YokogawaGS200(VisaInstrument):
         )
         """Parameter voltage_limit"""
 
-        self.current_limit: Parameter = self.add_parameter(
+        self.current_limit: Parameter[float, Self] = self.add_parameter(
             "current_limit",
             label="Current Protection Limit",
             unit="I",
@@ -620,11 +631,18 @@ class YokogawaGS200(VisaInstrument):
                     "Trying to set output but not in auto mode and range is unknown."
                 )
         else:
-            mode = self.source_mode.get_latest()
-            if mode == "CURR":
-                self_range = 200e-3
-            else:
-                self_range = 30.0
+            mode = self.source_mode.cache.get(get_if_invalid=True)
+            match mode:
+                case "CURR":
+                    self_range = 200e-3
+                case "VOLT":
+                    self_range = 30.0
+                case _:
+                    if TYPE_CHECKING:
+                        assert_never(mode)
+                    raise ValueError(
+                        f"Invalid mode {mode}. Mode must be one of 'CURR' or 'VOLT'"
+                    )
 
         # Check we are not trying to set an out of range value
         if self.range() is None or abs(output_level) > abs(self_range):
@@ -670,7 +688,7 @@ class YokogawaGS200(VisaInstrument):
             # since the parameter is not generic in the data type this cannot
             # narrow None to ModeType even if that is the only valid values
             # for source_mode.
-            source_mode = cast("ModeType", self.source_mode.get_latest())
+            source_mode = self.source_mode.get_latest()
         # Get source range if auto-range is off
         if source_range is None and not self.auto_range():
             source_range = self.range()

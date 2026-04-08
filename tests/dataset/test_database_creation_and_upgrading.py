@@ -3,6 +3,8 @@ import logging
 import os
 from contextlib import contextmanager
 from copy import deepcopy
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
@@ -15,6 +17,7 @@ from qcodes.dataset import (
     connect,
     initialise_database,
     initialise_or_create_database_at,
+    initialised_database_at,
     load_by_counter,
     load_by_id,
     load_by_run_spec,
@@ -52,12 +55,16 @@ from qcodes.parameters import Parameter, ParamSpecBase
 from tests.common import error_caused_by, skip_if_no_fixtures
 from tests.dataset.conftest import temporarily_copied_DB
 
-fixturepath = os.sep.join(tests.dataset.__file__.split(os.sep)[:-1])
-fixturepath = os.path.join(fixturepath, "fixtures")
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+fixturepath = Path(tests.dataset.__file__).parent / "fixtures"
 
 
 @contextmanager
-def location_and_station_set_to(location: int, work_station: int):
+def location_and_station_set_to(
+    location: int, work_station: int
+) -> "Generator[None, None, None]":
     cfg = qc.config.current_config
     if cfg is None:
         raise RuntimeError("Expected config to be not None.")
@@ -78,14 +85,14 @@ LATEST_VERSION_ARG = -1
 
 
 @pytest.mark.parametrize("ver", (*VERSIONS, LATEST_VERSION_ARG))
-def test_connect_upgrades_user_version(ver) -> None:
+def test_connect_upgrades_user_version(ver: int) -> None:
     expected_version = ver if ver != LATEST_VERSION_ARG else LATEST_VERSION
     conn = connect(":memory:", version=ver)
     assert expected_version == get_user_version(conn)
 
 
 @pytest.mark.parametrize("version", (*VERSIONS, LATEST_VERSION_ARG))
-def test_tables_exist(empty_temp_db, version) -> None:
+def test_tables_exist(empty_temp_db: None, version: int) -> None:
     conn = connect(
         qc.config["core"]["db_location"], qc.config["core"]["db_debug"], version=version
     )
@@ -102,7 +109,7 @@ def test_tables_exist(empty_temp_db, version) -> None:
     conn.close()
 
 
-def test_initialise_database_at_for_nonexisting_db(tmp_path) -> None:
+def test_initialise_database_at_for_nonexisting_db(tmp_path: Path) -> None:
     db_location = str(tmp_path / "temp.db")
     assert not os.path.exists(db_location)
 
@@ -112,7 +119,7 @@ def test_initialise_database_at_for_nonexisting_db(tmp_path) -> None:
     assert qc.config["core"]["db_location"] == db_location
 
 
-def test_initialise_database_at_for_nonexisting_db_pathlib_path(tmp_path) -> None:
+def test_initialise_database_at_for_nonexisting_db_pathlib_path(tmp_path: Path) -> None:
     db_location = tmp_path / "temp.db"
     assert not db_location.exists()
 
@@ -122,7 +129,7 @@ def test_initialise_database_at_for_nonexisting_db_pathlib_path(tmp_path) -> Non
     assert qc.config["core"]["db_location"] == str(db_location)
 
 
-def test_initialise_database_at_for_existing_db(tmp_path) -> None:
+def test_initialise_database_at_for_existing_db(tmp_path: Path) -> None:
     # Define DB location
     db_location = str(tmp_path / "temp.db")
     assert not os.path.exists(db_location)
@@ -141,6 +148,128 @@ def test_initialise_database_at_for_existing_db(tmp_path) -> None:
     # Check if the DB is still correct
     assert os.path.exists(db_location)
     assert qc.config["core"]["db_location"] == db_location
+
+
+def test_initialise_database_with_db_path(tmp_path: Path) -> None:
+    db_location = str(tmp_path / "custom.db")
+    assert not os.path.exists(db_location)
+
+    initialise_database(db_path=db_location)
+
+    assert os.path.exists(db_location)
+    conn = connect(db_location)
+    assert get_user_version(conn) == LATEST_VERSION
+    conn.close()
+
+
+def test_initialise_database_with_db_path_pathlib(tmp_path: Path) -> None:
+    db_location = Path(tmp_path / "custom_pathlib.db")
+    assert not db_location.exists()
+
+    initialise_database(db_path=db_location)
+
+    assert db_location.exists()
+    conn = connect(str(db_location))
+    assert get_user_version(conn) == LATEST_VERSION
+    conn.close()
+
+
+def test_initialise_database_with_journal_mode_none(tmp_path: Path) -> None:
+    db_location = str(tmp_path / "no_journal.db")
+    initialise_database(journal_mode=None, db_path=db_location)
+
+    assert os.path.exists(db_location)
+
+
+def test_initialise_database_with_journal_mode(tmp_path: Path) -> None:
+    db_location = str(tmp_path / "delete_journal.db")
+    initialise_database(journal_mode="DELETE", db_path=db_location)
+
+    assert os.path.exists(db_location)
+    conn = connect(db_location)
+    cursor = conn.execute("PRAGMA journal_mode;")
+    mode = cursor.fetchone()[0]
+    assert mode == "delete"
+    conn.close()
+
+
+def test_initialise_or_create_database_at_sets_config(
+    tmp_path: Path, request: pytest.FixtureRequest
+) -> None:
+    db_location = str(tmp_path / "session.db")
+    old_location = qc.config["core"]["db_location"]
+    request.addfinalizer(
+        lambda: qc.config["core"].__setitem__("db_location", old_location)
+    )
+
+    initialise_or_create_database_at(db_location)
+
+    assert qc.config["core"]["db_location"] == db_location
+    assert os.path.exists(db_location)
+
+
+def test_initialise_or_create_database_at_with_journal_mode(tmp_path: Path) -> None:
+    db_location = str(tmp_path / "journal_test.db")
+
+    initialise_or_create_database_at(db_location, journal_mode="DELETE")
+
+    assert os.path.exists(db_location)
+    conn = connect(db_location)
+    cursor = conn.execute("PRAGMA journal_mode;")
+    mode = cursor.fetchone()[0]
+    assert mode == "delete"
+    conn.close()
+
+
+def test_initialise_or_create_database_at_with_journal_mode_none(
+    tmp_path: Path,
+) -> None:
+    db_location = str(tmp_path / "no_journal.db")
+
+    initialise_or_create_database_at(db_location, journal_mode=None)
+
+    assert os.path.exists(db_location)
+
+
+def test_initialised_database_at_restores_db_location(tmp_path: Path) -> None:
+    db_location = str(tmp_path / "context.db")
+    original_location = qc.config["core"]["db_location"]
+
+    with initialised_database_at(db_location):
+        assert qc.config["core"]["db_location"] == db_location
+        assert os.path.exists(db_location)
+
+    assert qc.config["core"]["db_location"] == original_location
+
+
+def test_initialised_database_at_restores_db_location_on_error(tmp_path: Path) -> None:
+    db_location = str(tmp_path / "context_err.db")
+    original_location = qc.config["core"]["db_location"]
+
+    with pytest.raises(RuntimeError, match="intentional"):
+        with initialised_database_at(db_location):
+            assert qc.config["core"]["db_location"] == db_location
+            raise RuntimeError("intentional")
+
+    assert qc.config["core"]["db_location"] == original_location
+
+
+def test_initialised_database_at_with_journal_mode(tmp_path: Path) -> None:
+    db_location = str(tmp_path / "ctx_journal.db")
+
+    with initialised_database_at(db_location, journal_mode="DELETE"):
+        conn = connect(db_location)
+        cursor = conn.execute("PRAGMA journal_mode;")
+        mode = cursor.fetchone()[0]
+        assert mode == "delete"
+        conn.close()
+
+
+def test_initialised_database_at_with_journal_mode_none(tmp_path: Path) -> None:
+    db_location = str(tmp_path / "ctx_no_journal.db")
+
+    with initialised_database_at(db_location, journal_mode=None):
+        assert os.path.exists(db_location)
 
 
 def test_perform_actual_upgrade_0_to_1() -> None:
@@ -627,7 +756,7 @@ def _assert_loc_station(ds, expected_loc, expected_station):
 @pytest.mark.parametrize(
     "db_file", ["empty", "with_runs_but_no_snapshots", "with_runs_and_snapshots"]
 )
-def test_perform_actual_upgrade_4_to_5(db_file) -> None:
+def test_perform_actual_upgrade_4_to_5(db_file: str) -> None:
     v4fixpath = os.path.join(fixturepath, "db_files", "version4")
 
     db_file += ".db"
@@ -791,9 +920,10 @@ def test_perform_actual_upgrade_6_to_newest_add_new_data() -> None:
         # Make a number of identical runs
         for _ in range(10):
             with meas.run() as datasaver:
-                for x in np.random.rand(10):
-                    for y in np.random.rand(10):
-                        z = np.random.rand()
+                rng = np.random.default_rng()
+                for x in rng.random(10):
+                    for y in rng.random(10):
+                        z = rng.random()
                         datasaver.add_result(
                             (params[0], 0),
                             (params[1], 1),
@@ -843,7 +973,7 @@ def test_perform_actual_upgrade_6_to_newest_add_new_data() -> None:
 
 
 @pytest.mark.parametrize("db_file", ["empty", "some_runs"])
-def test_perform_actual_upgrade_7_to_8(db_file) -> None:
+def test_perform_actual_upgrade_7_to_8(db_file: str) -> None:
     v7fixpath = os.path.join(fixturepath, "db_files", "version7")
 
     db_file += ".db"
@@ -876,7 +1006,7 @@ def test_latest_available_version() -> None:
 
 
 @pytest.mark.parametrize("version", VERSIONS[:-1])
-def test_getting_db_version(version) -> None:
+def test_getting_db_version(version: int) -> None:
     fixpath = os.path.join(fixturepath, "db_files", f"version{version}")
 
     dbname = os.path.join(fixpath, "empty.db")
@@ -890,7 +1020,7 @@ def test_getting_db_version(version) -> None:
 
 
 @pytest.mark.parametrize("db_file", ["empty", "some_runs"])
-def test_perform_actual_upgrade_8_to_9(db_file) -> None:
+def test_perform_actual_upgrade_8_to_9(db_file: str) -> None:
     v8fixpath = os.path.join(fixturepath, "db_files", "version8")
 
     db_file += ".db"

@@ -1,5 +1,3 @@
-import sys
-import timeit
 from typing import TYPE_CHECKING
 
 import pytest
@@ -8,6 +6,8 @@ from qcodes.instrument_drivers.tektronix.DPO7200xx import TektronixDPO7000xx
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+
+    from pytest_mock import MockerFixture
 
 
 @pytest.fixture(scope="function")
@@ -25,37 +25,43 @@ def tektronix_dpo() -> "Generator[TektronixDPO7000xx, None, None]":
     driver.close()
 
 
-@pytest.mark.xfail(
-    condition=sys.platform == "win32", reason="Time resolution is too low on windows"
-)
-def test_adjust_timer(tektronix_dpo: TektronixDPO7000xx) -> None:
+def test_adjust_timer(
+    tektronix_dpo: TektronixDPO7000xx, mocker: "MockerFixture"
+) -> None:
     """
     After adjusting the type of the measurement or the source of the
     measurement, we need wait at least 0.1 seconds
     ('minimum_adjustment_time') before a measurement value can be
     retrieved. Test this.
     """
+    measurement = tektronix_dpo.measurement[0]
+    min_time = measurement._minimum_adjustment_time
 
-    timer = timeit.Timer(
-        'tektronix_dpo.measurement[0].source1("CH1"),'
-        "tektronix_dpo.measurement[0].amplitude()",
-        globals=locals(),
-    )
-    min_time = tektronix_dpo.measurement[0]._minimum_adjustment_time
-    repeats = timer.repeat(repeat=10, number=1)
+    mock_time = mocker.patch("qcodes.instrument_drivers.tektronix.DPO7200xx.time")
 
-    # The minimum time should be at least 95% of the 'minimum_adjustment_time'
-    assert all(t > min_time * 0.95 for t in repeats)
-    # To see why this fudge factor is necessary, try the following:
-    # >>> import time
-    # >>> import timeit
-    # >>> timer = timeit.Timer("time.sleep(1E-3)")
-    # >>> print(any(t < 1E-3 for t in timer.repeat(repeat=100, number=1)))
-    # ... True
-    # Conclusion: the command 'time.sleep(1E-3)' sometimes takes less
-    # than 1E-3 seconds to return. Since the sleep time is not critical
-    # to the microsecond, we don't care that we sometimes retrieve
-    # measurements slightly sooner then 'minimum_adjustment_time'
+    # Simulate: source was set at t=1.0, measurement read at t=1.05
+    # (only 0.05s elapsed, less than the 0.1s minimum)
+    mock_time.perf_counter.return_value = 1.05
+    measurement._adjustment_time = 1.0
+    measurement.wait_adjustment_time()
+    mock_time.sleep.assert_called_once_with(pytest.approx(min_time - 0.05))
+
+    # Simulate: enough time has passed (0.2s > 0.1s minimum)
+    mock_time.reset_mock()
+    mock_time.perf_counter.return_value = 1.2
+    measurement._adjustment_time = 1.0
+    measurement.wait_adjustment_time()
+    mock_time.sleep.assert_not_called()
+
+    # Verify _set_source records the adjustment time
+    mock_time.perf_counter.return_value = 5.0
+    measurement._set_source(1, "CH1")
+    assert measurement._adjustment_time == 5.0
+
+    # Verify _set_measurement_type records the adjustment time
+    mock_time.perf_counter.return_value = 6.0
+    measurement._set_measurement_type("AMPlitude")
+    assert measurement._adjustment_time == 6.0
 
 
 def test_measurements_return_float(tektronix_dpo: TektronixDPO7000xx) -> None:

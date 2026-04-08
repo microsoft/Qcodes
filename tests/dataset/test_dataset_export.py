@@ -39,7 +39,6 @@ from qcodes.dataset.exporters.export_to_pandas import _generate_pandas_index
 from qcodes.dataset.exporters.export_to_xarray import _calculate_index_shape
 from qcodes.dataset.linked_datasets.links import links_to_str
 from qcodes.parameters import ManualParameter, Parameter, ParamSpecBase
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from collections.abc import Hashable
@@ -867,16 +866,6 @@ def test_export_to_xarray_dataset_empty_ds(mock_empty_dataset: DataSet) -> None:
     _assert_xarray_metadata_is_as_expected(ds, mock_empty_dataset)
 
 
-def test_export_to_xarray_dataarray_empty_ds(mock_empty_dataset: DataSet) -> None:
-    with pytest.warns(QCoDeSDeprecationWarning, match="to_xarray_dataarray_dict"):
-        dad = mock_empty_dataset.to_xarray_dataarray_dict()  # pyright: ignore[reportDeprecated]
-    assert len(dad) == 2
-    assert len(dad["y"].coords) == 1
-    assert "x" in dad["y"].coords
-    assert len(dad["z"].coords) == 1
-    assert "x" in dad["z"].coords
-
-
 def test_export_to_xarray_dataset_dict_empty_ds(mock_empty_dataset: DataSet) -> None:
     dad = mock_empty_dataset.to_xarray_dataset_dict()
     assert len(dad) == 2
@@ -918,16 +907,6 @@ def test_export_to_xarray_extra_metadata(mock_dataset: DataSet) -> None:
 
     for array_name in ds.data_vars:
         assert "snapshot" not in ds[array_name].attrs.keys()
-
-
-def test_export_to_xarray_da_dict_extra_metadata(mock_dataset: DataSet) -> None:
-    mock_dataset.add_metadata("mytag", "somestring")
-    mock_dataset.add_metadata("myothertag", 1)
-    with pytest.warns(QCoDeSDeprecationWarning, match="to_xarray_dataarray_dict"):
-        da_dict = mock_dataset.to_xarray_dataarray_dict()  # pyright: ignore[reportDeprecated]
-
-    for datarray in da_dict.values():
-        _assert_xarray_metadata_is_as_expected(datarray, mock_dataset)
 
 
 def test_export_to_xarray_ds_dict_extra_metadata(mock_dataset: DataSet) -> None:
@@ -988,24 +967,6 @@ def test_to_xarray_ds_paramspec_metadata_is_preserved(
         assert xr_ds.data_vars[param_name].attrs == _get_expected_param_spec_attrs(
             mock_dataset_label_unit, param_name
         )
-
-
-def test_to_xarray_da_dict_paramspec_metadata_is_preserved(
-    mock_dataset_label_unit: DataSet,
-) -> None:
-    with pytest.warns(QCoDeSDeprecationWarning, match="to_xarray_dataarray_dict"):
-        xr_das = mock_dataset_label_unit.to_xarray_dataarray_dict()  # pyright: ignore[reportDeprecated]
-
-    for outer_param_name, xr_da in xr_das.items():
-        for param_name in xr_da.dims:
-            assert xr_da.coords[param_name].attrs == _get_expected_param_spec_attrs(
-                mock_dataset_label_unit, param_name
-            )
-        expected_param_spec_attrs = _get_expected_param_spec_attrs(
-            mock_dataset_label_unit, outer_param_name
-        )
-        for spec_name, spec_value in expected_param_spec_attrs.items():
-            assert xr_da.attrs[spec_name] == spec_value
 
 
 def test_to_xarray_ds_dict_paramspec_metadata_is_preserved(
@@ -1923,7 +1884,6 @@ def test_netcdf_export_with_mixed_timestamp_raw(
     assert loaded_ds.completed_timestamp_raw is None
 
 
-@pytest.mark.skip(reason="Disabled until we renable new export")
 @given(data=hst.data())
 @settings(
     max_examples=10,
@@ -2114,11 +2074,10 @@ def test_measurement_2d_with_inferred_setpoint(
     with caplog.at_level(logging.INFO):
         xr_ds = ds.to_xarray_dataset()
 
-    # disabled until we renable new export
-    # assert any(
-    #     "Exporting signal to xarray using direct method" in record.message
-    #     for record in caplog.records
-    # )
+    assert any(
+        "Exporting signal to xarray using direct method" in record.message
+        for record in caplog.records
+    )
 
     # Sizes and coords
     assert xr_ds.sizes == {"x": nx, "y": ny}
@@ -2130,16 +2089,15 @@ def test_measurement_2d_with_inferred_setpoint(
     expected_signal = x_vals[:, None] + 3.0 * y_vals[None, :]
     np.testing.assert_allclose(xr_ds["signal"].values, expected_signal)
 
-    # disabled until we renable new export
-    # # Inferred coords for y_b0 and y_b1 exist with dims only along y
-    # for name, vals in ("y_b0", y_b0_vals), ("y_b1", y_b1_vals):
-    #     assert name in xr_ds.coords
-    #     assert xr_ds.coords[name].dims == ("y",)
-    #     np.testing.assert_allclose(xr_ds.coords[name].values, vals)
-    #     # Indexes of inferred coords should correspond to the y axis index
-    #     inf_idx = xr_ds.coords[name].indexes
-    #     assert set(inf_idx.keys()) == {"y"}
-    #     assert inf_idx["y"].equals(xr_ds.indexes["y"])
+    # Inferred coords for y_b0 and y_b1 exist with dims only along y
+    for name, vals in ("y_b0", y_b0_vals), ("y_b1", y_b1_vals):
+        assert name in xr_ds.coords
+        assert xr_ds.coords[name].dims == ("y",)
+        np.testing.assert_allclose(xr_ds.coords[name].values, vals)
+        # Indexes of inferred coords should correspond to the y axis index
+        inf_idx = xr_ds.coords[name].indexes
+        assert set(inf_idx.keys()) == {"y"}
+        assert inf_idx["y"].equals(xr_ds.indexes["y"])
 
 
 def test_measurement_2d_with_inferred_setpoint_from_setpoint(
@@ -2181,11 +2139,10 @@ def test_measurement_2d_with_inferred_setpoint_from_setpoint(
     with caplog.at_level(logging.INFO):
         xr_ds = ds.to_xarray_dataset()
 
-    # disabled until we renable new export
-    # assert any(
-    #     "Exporting signal to xarray using direct method" in record.message
-    #     for record in caplog.records
-    # )
+    assert any(
+        "Exporting signal to xarray using direct method" in record.message
+        for record in caplog.records
+    )
 
     # Sizes and coords
     assert xr_ds.sizes == {"x": nx, "y": ny}
@@ -2240,24 +2197,22 @@ def test_measurement_2d_top_level_inferred_is_data_var(
         xr_ds = ds.to_xarray_dataset()
 
     # Direct path log should be present
-    # disabled until we renable new export
-    # assert any(
-    #     "Exporting signal to xarray using direct method" in record.message
-    #     for record in caplog.records
-    # )
+    assert any(
+        "Exporting signal to xarray using direct method" in record.message
+        for record in caplog.records
+    )
 
     # The derived param should be a data variable with dims (x, y), not a coord
-    # assert "derived" in xr_ds.data_vars
-    # assert "derived" not in xr_ds.coords
-    # assert xr_ds["derived"].dims == ("x", "y")
+    assert "derived" in xr_ds.data_vars
+    assert "derived" not in xr_ds.coords
+    assert xr_ds["derived"].dims == ("x", "y")
 
     expected_signal = x_vals[:, None] + y_vals[None, :]
-    # expected_derived = 2.0 * expected_signal
+    expected_derived = 2.0 * expected_signal
     np.testing.assert_allclose(xr_ds["signal"].values, expected_signal)
-    # np.testing.assert_allclose(xr_ds["derived"].values, expected_derived)
+    np.testing.assert_allclose(xr_ds["derived"].values, expected_derived)
 
 
-@pytest.mark.skip(reason="Disabled until we renable new export")
 def test_with_without_shape_is_the_same(experiment: Experiment) -> None:
     nx, ny = 2, 3
     x_vals = np.linspace(0.0, -1.0, nx)
@@ -2316,3 +2271,60 @@ def test_with_without_shape_is_the_same(experiment: Experiment) -> None:
     # however data for a given coordinate is the same
     assert bool((dsx2 - dsx1)["z"].max() == 0)
     assert bool((dsx2 - dsx1)["x"].max() == 0)
+
+
+def test_incomplete_measurement_with_shared_setpoint(
+    experiment: Experiment,
+) -> None:
+    """
+    Regression test for a MergeError when exporting an incomplete measurement
+    where a shared setpoint parameter ends up as a coordinate in one
+    sub-dataset and a data variable in another.
+
+    The scenario: a 2D sweep (x, y) where y is an array-type parameter with
+    constant values (non-unique MultiIndex), plus a 1D dependent on x alone.
+    When the measurement is incomplete (actual rows < declared shape), the
+    direct export path is bypassed and the pandas fallback is used.  The 1D
+    dependent produces a unique index (x as coordinate) while the 2D
+    dependents produce a non-unique index (x becomes a data variable via
+    reset_index).  Without the fix, xr.merge raises MergeError because x has
+    conflicting roles across sub-datasets.
+    """
+    n_expected = 10
+    n_actual = 7  # incomplete: fewer rows than declared shape
+    n_array = 5
+
+    x_vals = np.linspace(0.0, 1.0, n_actual)
+    # y is constant across all points (triggers non-unique MultiIndex)
+    y_const = 0.42
+
+    meas = Measurement(exp=experiment, name="incomplete_shared_setpoint")
+    meas.register_custom_parameter("x", paramtype="numeric")
+    meas.register_custom_parameter("y", paramtype="array")
+    meas.register_custom_parameter("signal_2d", setpoints=("x", "y"), paramtype="array")
+    meas.register_custom_parameter("signal_1d", setpoints=("x",), paramtype="numeric")
+    # Declare shapes larger than actual data to force pandas fallback
+    meas.set_shapes({"signal_2d": (n_expected, n_array), "signal_1d": (n_expected,)})
+
+    with meas.run() as datasaver:
+        for ix in range(n_actual):
+            x = float(x_vals[ix])
+            y_arr = np.full(n_array, y_const)
+            sig_2d = np.arange(n_array, dtype=float) * x
+            datasaver.add_result(
+                ("x", x),
+                ("y", y_arr),
+                ("signal_2d", sig_2d),
+                ("signal_1d", x * 2.0),
+            )
+
+    ds = datasaver.dataset
+
+    # This previously raised:
+    # MergeError: unable to determine if these variables should be
+    # coordinates or not in the merged result: {'x'}
+    xr_ds = ds.to_xarray_dataset()
+
+    assert "signal_1d" in xr_ds.data_vars
+    assert "signal_2d" in xr_ds.data_vars
+    assert "x" in xr_ds.coords

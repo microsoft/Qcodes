@@ -36,7 +36,7 @@ def test_force_dc_voltage(cmu: KeysightB1520A) -> None:
 
 def test_force_ac_voltage(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
-
+    assert isinstance(mainframe, MagicMock)
     cmu.voltage_ac(0.1)
 
     mainframe.write.assert_called_once_with("ACV 3,0.1")
@@ -44,7 +44,7 @@ def test_force_ac_voltage(cmu: KeysightB1520A) -> None:
 
 def test_set_ac_frequency(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
-
+    assert isinstance(mainframe, MagicMock)
     cmu.frequency(100e3)
 
     mainframe.write.assert_called_once_with("FC 3,100000.0")
@@ -52,6 +52,7 @@ def test_set_ac_frequency(cmu: KeysightB1520A) -> None:
 
 def test_get_dc_voltage(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = "DCV3,0.000;ACV3,0.0;FC3,1000.000"
     response = cmu.voltage_dc()
     assert response == 0.0
@@ -69,6 +70,7 @@ def test_get_dc_voltage(cmu: KeysightB1520A) -> None:
 
 def test_get_ac_voltage(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = "DCV3,0.000;ACV3,0.000;FC3,1000.000"
     response = cmu.voltage_ac()
     assert response == 0.0
@@ -86,6 +88,7 @@ def test_get_ac_voltage(cmu: KeysightB1520A) -> None:
 
 def test_get_frequency(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = "DCV3,0.000;ACV3,0.000;FC3,100000.000"
     response = cmu.frequency()
     assert response == 100000.0
@@ -103,7 +106,7 @@ def test_get_frequency(cmu: KeysightB1520A) -> None:
 
 def test_get_capacitance(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
-
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = "NCC-1.45713E-06,NCD-3.05845E-03"
 
     assert pytest.approx((-1.45713e-06, -3.05845e-03)) == cmu.capacitance()
@@ -117,7 +120,7 @@ def test_get_capacitance(cmu: KeysightB1520A) -> None:
 
 def test_raise_error_on_unsupported_result_format(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
-
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = "NCR-1.1234E-03,NCX-4.5677E-03,NCV+0.14235E-03"
 
     with pytest.raises(ValueError):
@@ -126,7 +129,7 @@ def test_raise_error_on_unsupported_result_format(cmu: KeysightB1520A) -> None:
 
 def test_ranging_mode(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
-
+    assert isinstance(mainframe, MagicMock)
     cmu.ranging_mode(constants.RangingMode.AUTO)
 
     mainframe.write.assert_called_once_with("RC 3,0")
@@ -134,7 +137,7 @@ def test_ranging_mode(cmu: KeysightB1520A) -> None:
 
 def test_set_sweep_auto_abort(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
-
+    assert isinstance(mainframe, MagicMock)
     cmu.cv_sweep.sweep_auto_abort(constants.Abort.ENABLED)
 
     mainframe.write.assert_called_once_with("WMDCV 2")
@@ -142,7 +145,7 @@ def test_set_sweep_auto_abort(cmu: KeysightB1520A) -> None:
 
 def test_get_sweep_auto_abort(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
-
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = "WMDCV2,2;WTDCV1.0,0.0,0.0,0.0,0.0"
     condition = cmu.cv_sweep.sweep_auto_abort()
     assert condition == constants.Abort.ENABLED
@@ -150,6 +153,7 @@ def test_get_sweep_auto_abort(cmu: KeysightB1520A) -> None:
 
 def test_set_post_sweep_voltage_cond(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = "WMDCV2,2;WTDCV1.0,0.0,0.0,0.0,0.0"
     cmu.cv_sweep.post_sweep_voltage_condition.set(constants.WMDCV.Post.STOP)
 
@@ -158,7 +162,7 @@ def test_set_post_sweep_voltage_cond(cmu: KeysightB1520A) -> None:
 
 def test_get_post_sweep_voltage_cond(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
-
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = "WMDCV2,2;WTDCV1.0,0.0,0.0,0.0,0.0"
     condition = cmu.cv_sweep.post_sweep_voltage_condition()
     assert condition == constants.WMDCV.Post.STOP
@@ -270,7 +274,7 @@ def test_run_sweep(cmu: KeysightB1520A) -> None:
 
 def test_phase_compensation_mode(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
-
+    assert isinstance(mainframe, MagicMock)
     cmu.phase_compensation_mode(constants.ADJ.Mode.MANUAL)
 
     mainframe.write.assert_called_once_with("ADJ 3,1")
@@ -280,7 +284,7 @@ def test_phase_compensation_mode(cmu: KeysightB1520A) -> None:
 
 def test_phase_compensation(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
-
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = 0
 
     response = cmu.phase_compensation()
@@ -292,7 +296,7 @@ def test_phase_compensation(cmu: KeysightB1520A) -> None:
 
 def test_phase_compensation_with_mode(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
-
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = 0
 
     response = cmu.phase_compensation(constants.ADJQuery.Mode.USE_LAST)
@@ -304,7 +308,7 @@ def test_phase_compensation_with_mode(cmu: KeysightB1520A) -> None:
 
 def test_enable_correction(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
-
+    assert isinstance(mainframe, MagicMock)
     cmu.correction.enable(constants.CalibrationType.OPEN)
     mainframe.write.assert_called_once_with("CORRST 3,1,1")
 
@@ -321,7 +325,7 @@ def test_enable_correction(cmu: KeysightB1520A) -> None:
 
 def test_disable_correction(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
-
+    assert isinstance(mainframe, MagicMock)
     cmu.correction.disable(constants.CalibrationType.OPEN)
     mainframe.write.assert_called_once_with("CORRST 3,1,0")
 
@@ -338,7 +342,7 @@ def test_disable_correction(cmu: KeysightB1520A) -> None:
 
 def test_correction_is_enabled(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
-
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = "1"
 
     response = cmu.correction.is_enabled(constants.CalibrationType.SHORT)
@@ -347,7 +351,7 @@ def test_correction_is_enabled(cmu: KeysightB1520A) -> None:
 
 def test_correction_set_reference_values(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
-
+    assert isinstance(mainframe, MagicMock)
     cmu.correction.set_reference_values(
         constants.CalibrationType.OPEN, constants.DCORR.Mode.Cp_G, 1, 2
     )
@@ -356,7 +360,7 @@ def test_correction_set_reference_values(cmu: KeysightB1520A) -> None:
 
 def test_correction_get_reference_values(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
-
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = "100,0.001,2"
     response = "Mode: Cp_G, Primary Cp: 0.001 F, Secondary G: 2.0 S"
     assert response == cmu.correction.get_reference_values(
@@ -368,7 +372,7 @@ def test_clear_and_set_default_frequency_list_for_correction(
     cmu: KeysightB1520A,
 ) -> None:
     mainframe = cmu.parent
-
+    assert isinstance(mainframe, MagicMock)
     cmu.correction.frequency_list.clear_and_set_default()
 
     mainframe.write.assert_called_once_with("CLCORR 3,2")
@@ -376,7 +380,7 @@ def test_clear_and_set_default_frequency_list_for_correction(
 
 def test_clear_frequency_list_for_correction(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
-
+    assert isinstance(mainframe, MagicMock)
     cmu.correction.frequency_list.clear()
 
     mainframe.write.assert_called_once_with("CLCORR 3,1")
@@ -384,7 +388,7 @@ def test_clear_frequency_list_for_correction(cmu: KeysightB1520A) -> None:
 
 def test_add_frequency_for_correction(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
-
+    assert isinstance(mainframe, MagicMock)
     cmu.correction.frequency_list.add(1000)
 
     mainframe.write.assert_called_once_with("CORRL 3,1000")
@@ -392,7 +396,7 @@ def test_add_frequency_for_correction(cmu: KeysightB1520A) -> None:
 
 def test_query_from_frequency_list_for_correction(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
-
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = "25"
 
     assert pytest.approx(25) == cmu.correction.frequency_list.query()
@@ -401,7 +405,7 @@ def test_query_from_frequency_list_for_correction(cmu: KeysightB1520A) -> None:
 
 def test_query_at_index_from_frequency_list_for_correction(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
-
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = "1234.567"
 
     assert pytest.approx(1234.567) == cmu.correction.frequency_list.query(index=0)
@@ -410,7 +414,7 @@ def test_query_at_index_from_frequency_list_for_correction(cmu: KeysightB1520A) 
 
 def test_perform_correction(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
-
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = 0
 
     response = cmu.correction.perform(constants.CalibrationType.OPEN)
@@ -419,7 +423,7 @@ def test_perform_correction(cmu: KeysightB1520A) -> None:
 
 def test_perform_and_enable_correction(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
-
+    assert isinstance(mainframe, MagicMock)
     mainframe.ask.side_effect = [
         "0",  # for correction status
         "1",  # for correction state (enabled/disabled)
@@ -438,7 +442,7 @@ def test_perform_and_enable_correction(cmu: KeysightB1520A) -> None:
 
 def test_abort(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
+    assert isinstance(mainframe, MagicMock)
 
     cmu.abort()
-
     mainframe.write.assert_called_once_with("AB")

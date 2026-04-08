@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import pytest
 
-from qcodes.instrument_drivers.rohde_schwarz.SGS100A import RohdeSchwarz_SGS100A
+from qcodes.instrument_drivers.rohde_schwarz.SGS100A import RohdeSchwarzSGS100A
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -14,7 +14,7 @@ def _make_sg():
     """
     Create a RohdeSchwarz SGS100A instrument
     """
-    driver = RohdeSchwarz_SGS100A(
+    driver = RohdeSchwarzSGS100A(
         "sgs100a", address="GPIB::1::INSTR", pyvisa_sim_file="RSSGS100A.yaml"
     )
     yield driver

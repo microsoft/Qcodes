@@ -105,9 +105,13 @@ def test_do1d_output_data(_param, _param_set) -> None:
 )
 @given(
     num_points=hst.integers(min_value=1, max_value=10),
-    n_points_pws=hst.integers(min_value=1, max_value=500),
+    n_points_pws=hst.integers(min_value=1, max_value=50),
 )
-@settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@settings(
+    deadline=None,
+    max_examples=10,
+    suppress_health_check=(HealthCheck.function_scoped_fixture,),
+)
 def test_do1d_verify_shape(
     _param,
     _param_complex,

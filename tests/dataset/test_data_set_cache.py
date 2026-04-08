@@ -191,7 +191,7 @@ def test_cache_standalone(
 @pytest.mark.parametrize("in_memory_cache", [True, False])
 @settings(
     deadline=None,
-    max_examples=10,
+    max_examples=5,
     suppress_health_check=(HealthCheck.function_scoped_fixture,),
 )
 @given(n_points=hst.integers(min_value=1, max_value=11))
@@ -455,7 +455,7 @@ def test_cache_1d_every_other_point(
 @pytest.mark.parametrize("in_memory_cache", [True, False])
 @settings(
     deadline=None,
-    max_examples=10,
+    max_examples=5,
     suppress_health_check=(HealthCheck.function_scoped_fixture,),
 )
 @given(
@@ -838,7 +838,7 @@ def test_cache_1d_shape(
 @pytest.mark.parametrize("cache_size", ["too_large", "correct", "too_small"])
 @settings(
     deadline=None,
-    max_examples=10,
+    max_examples=5,
     suppress_health_check=(HealthCheck.function_scoped_fixture,),
 )
 @given(

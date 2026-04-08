@@ -25,7 +25,7 @@ def vna():
 
 def test_m5065_instantiation(vna):
     assert vna.name == "M5065"
-    assert vna._address == "TCPIP0::localhost::hislip0::INSTR"
+    assert vna.address == "TCPIP0::localhost::hislip0::INSTR"
 
 
 def test_idn_command(vna):

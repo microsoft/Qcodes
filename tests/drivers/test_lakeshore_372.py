@@ -55,7 +55,7 @@ class MockVisaInstrument:
         # cycle through all methods
         for func_name in func_names:
             with warnings.catch_warnings():
-                if func_name == "_name":
+                if func_name in {"_name", "_address", "visalib"}:
                     # silence warning when getting deprecated attribute
                     warnings.simplefilter("ignore", category=QCoDeSDeprecationWarning)
 

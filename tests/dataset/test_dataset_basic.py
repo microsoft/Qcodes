@@ -491,8 +491,9 @@ def test_add_data_array() -> None:
 
     expected_x = np.arange(100)
     expected_y = []
+    rng = np.random.default_rng()
     for x in range(100):
-        y = np.random.random_sample(10)
+        y = rng.random(10)
         expected_y.append(y)
         mydataset.add_results([{"x": x, "y": y}])
 
@@ -1146,8 +1147,8 @@ def test_get_varlen_array_in_scalar_param_data(varlen_array_in_scalar_dataset) -
             setpoint_param_values_list.append(j)
             scalar_param_values_list.append(i)
 
-    np.random.seed(0)
-    test_parameter_values = np.random.rand(n_points)
+    rng = np.random.default_rng(0)
+    test_parameter_values = rng.random(n_points)
     scalar_param_values = np.array(scalar_param_values_list)
     setpoint_param_values = np.array(setpoint_param_values_list)
 

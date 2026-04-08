@@ -17,17 +17,20 @@ try:
 except ImportError:
     raise ImportError(
         """Module clr not found. Please obtain it by
-                         running 'pip install pythonnet'
-                         in a qcodes environment terminal"""
+                         installing QCoDeS with the
+                         minicircuits_usb_spdt extra, e.g. by running
+                         pip install qcodes[minicircuits_usb_spdt]"""
     )
 
 
-class MiniCircuitsUsbSPDTSwitchChannel(MiniCircuitsSPDTSwitchChannelBase):
+class MiniCircuitsUsbSPDTSwitchChannel(
+    MiniCircuitsSPDTSwitchChannelBase["MiniCircuitsUsbSPDT"]
+):
     def _set_switch(self, switch: int) -> None:
-        self._parent.switch.Set_Switch(self.channel_letter, switch - 1)
+        self.parent.switch.Set_Switch(self.channel_letter, switch - 1)
 
     def _get_switch(self) -> int:
-        status = self._parent.switch.GetSwitchesStatus(self._parent.address)[1]
+        status = self.parent.switch.GetSwitchesStatus(self._parent.address)[1]
         return int(f"{status:04b}"[-1 - self.channel_number]) + 1
 
 

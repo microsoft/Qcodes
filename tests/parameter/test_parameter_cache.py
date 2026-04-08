@@ -231,7 +231,7 @@ def test_no_get_max_val_age_runtime_error(
             self.set_raw = lambda x: x  # type: ignore[method-assign]
             self.set = self._wrap_set(self.set_raw)
 
-    local_parameter = LocalParameter("test_param", None, max_val_age=1)
+    local_parameter = LocalParameter("test_param", instrument=None, max_val_age=1)
     start = datetime.now()
     set_time = start - timedelta(seconds=10)
     local_parameter.cache._update_with(value=value, raw_value=value, timestamp=set_time)

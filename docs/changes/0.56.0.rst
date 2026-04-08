@@ -1,0 +1,16 @@
+QCoDeS 0.56.0 (2026-03-16)
+==========================
+
+Breaking Changes:
+-----------------
+
+- Passing arguments as positional arguments is deprecated for ``ParameterBase``, ``Parameter``,
+  ``ArrayParameter``, ``DelegateParameter``, ``GroupParameter``, ``GroupedParameter``,
+  ``MultiParameter``, ``MultiChannelInstrumentParameter``, ``ElapsedTimeParameter``,
+  and ``InstrumentRefParameter``. Please pass all arguments except ``name`` as keyword arguments. (:pr:`7880`)
+
+
+Improved:
+---------
+
+- Enabled setting shape of Measurement in measurement_extensions.py. Added `shapes` to DataSetDefinition and use it in setup_measurement_instances to set shape of measurement. Added new tests for new use cases. (:pr:`7891`)

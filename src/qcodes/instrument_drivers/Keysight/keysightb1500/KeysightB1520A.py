@@ -1,12 +1,14 @@
 import re
 import textwrap
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
+from typing_extensions import deprecated
 
 import qcodes.validators as vals
 from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel
 from qcodes.parameters import Group, GroupParameter, MultiParameter, Parameter
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 from . import constants
 from .constants import MM, ChNr, ModuleKind
@@ -38,7 +40,7 @@ _pattern = re.compile(
 )
 
 
-class KeysightB1500CVSweeper(InstrumentChannel):
+class KeysightB1500CVSweeper(InstrumentChannel["KeysightB1520A"]):
     def __init__(
         self,
         parent: "KeysightB1520A",
@@ -450,10 +452,17 @@ class KeysightB1500CVSweeper(InstrumentChannel):
         return int(resp_dict["output_after_sweep"])
 
 
-CVSweeper = KeysightB1500CVSweeper
-"""
-Alias for backwards compatibility
-"""
+@deprecated(
+    "CVSweeper is deprecated. Please use qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500CVSweeper instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
+class CVSweeper(KeysightB1500CVSweeper):
+    """
+    Alias for backwards compatibility
+    """
+
+    pass
 
 
 class KeysightB1520A(KeysightB1500Module):
@@ -956,7 +965,7 @@ class KeysightB1520A(KeysightB1500Module):
             :class:`.constants.ADJQuery.Response`
 
         """
-        with self.root_instrument.timeout.set_to(self.phase_compensation_timeout):
+        with self.parent.timeout.set_to(self.phase_compensation_timeout):
             msg = MessageBuilder().adj_query(chnum=self.channels[0], mode=mode)
             response = self.ask(msg.message)
         return constants.ADJQuery.Response(int(response))
@@ -987,9 +996,7 @@ class KeysightB1520A(KeysightB1500Module):
         self.write(msg.message)
 
     def _set_measurement_mode(self, mode: MM.Mode | int) -> None:
-        self.root_instrument.set_measurement_mode(
-            mode=mode, channels=(self.channels[0],)
-        )
+        self.parent.set_measurement_mode(mode=mode, channels=(self.channels[0],))
 
     def _set_impedance_model(self, val: constants.IMP.MeasurementMode) -> None:
         msg = MessageBuilder().imp(mode=val)
@@ -1145,13 +1152,23 @@ class KeysightB1520A(KeysightB1500Module):
         self.setup_fnc_already_run = True
 
 
-B1520A = KeysightB1520A
-"""
-Alias for backwards compatiblitly
-"""
+@deprecated(
+    "B1520A is deprecated. Please use qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1520A instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
+class B1520A(KeysightB1520A):
+    """
+    Alias for backwards compatiblitly
+    """
+
+    pass
 
 
-class KeysightB1500CVSweepMeasurement(MultiParameter, StatusMixin):
+class KeysightB1500CVSweepMeasurement(
+    MultiParameter[tuple[tuple[float, ...], tuple[float, ...]], KeysightB1520A],
+    StatusMixin,
+):
     """
     CV sweep measurement outputs a list of primary (capacitance) and secondary
     parameter (disipation).
@@ -1175,8 +1192,6 @@ class KeysightB1500CVSweepMeasurement(MultiParameter, StatusMixin):
             instrument=instrument,
             **kwargs,
         )
-        self.instrument: KeysightB1520A
-        self.root_instrument: KeysightB1500
 
         self.update_name_label_unit_from_impedance_model()
 
@@ -1193,6 +1208,13 @@ class KeysightB1500CVSweepMeasurement(MultiParameter, StatusMixin):
 
         self.power_line_frequency: int = 50
         self._fudge: float = 1.5  # fudge factor for setting timeout
+
+    @property
+    def root_instrument(self) -> "KeysightB1500":
+        # since Parameter is not generic over RootInstrument type
+        # we override the property here to make the root_instrument type
+        # explicit
+        return cast("KeysightB1500", super().root_instrument)
 
     def get_raw(self) -> tuple[tuple[float, ...], tuple[float, ...]]:
         if not self.instrument.setup_fnc_already_run:
@@ -1245,13 +1267,20 @@ class KeysightB1500CVSweepMeasurement(MultiParameter, StatusMixin):
         )
 
 
-CVSweepMeasurement = KeysightB1500CVSweepMeasurement
-"""
-Alias for backwards compatibility
-"""
+@deprecated(
+    "CVSweepMeasurement is deprecated. Please use qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500CVSweepMeasurement instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
+class CVSweepMeasurement(KeysightB1500CVSweepMeasurement):
+    """
+    Alias for backwards compatibility
+    """
+
+    pass
 
 
-class KeysightB1500Correction(InstrumentChannel):
+class KeysightB1500Correction(InstrumentChannel["KeysightB1520A"]):
     """
     A Keysight B1520A CMU submodule for performing open/short/load corrections.
     """
@@ -1415,13 +1444,20 @@ class KeysightB1500Correction(InstrumentChannel):
         return response_out
 
 
-Correction = KeysightB1500Correction
-"""
-Alias for backwards compatibility
-"""
+@deprecated(
+    "Correction is deprecated. Please use qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500Correction instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
+class Correction(KeysightB1500Correction):
+    """
+    Alias for backwards compatibility
+    """
+
+    pass
 
 
-class KeysightB1500FrequencyList(InstrumentChannel):
+class KeysightB1500FrequencyList(InstrumentChannel["KeysightB1500Correction"]):
     """
     A frequency list for open/short/load correction for Keysight B1520A CMU.
     """
@@ -1475,7 +1511,14 @@ class KeysightB1500FrequencyList(InstrumentChannel):
         return float(response)
 
 
-FrequencyList = KeysightB1500FrequencyList
-"""
-Alias for backwards compatibility
-"""
+@deprecated(
+    "FrequencyList is deprecated. Please use qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500FrequencyList instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
+class FrequencyList(KeysightB1500FrequencyList):
+    """
+    Alias for backwards compatibility
+    """
+
+    pass

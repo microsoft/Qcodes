@@ -1,5 +1,9 @@
 from typing import TYPE_CHECKING
 
+from typing_extensions import deprecated
+
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
+
 from .constants import ChNr, ModuleKind
 from .KeysightB1500_module import KeysightB1500Module
 
@@ -43,7 +47,14 @@ class KeysightB1530A(KeysightB1500Module):
         self.channels = (ChNr(slot_nr), ChNr(int(f"{slot_nr:d}02")))
 
 
-B1530A = KeysightB1530A
-"""
-Alias for backwards compatibility
-"""
+@deprecated(
+    "B1530A is deprecated. Please use qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1530A instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
+class B1530A(KeysightB1530A):
+    """
+    Alias for backwards compatibility
+    """
+
+    pass

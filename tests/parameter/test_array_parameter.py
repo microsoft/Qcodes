@@ -27,7 +27,7 @@ class SettableArray(SimpleArrayParam):
 def test_default_attributes() -> None:
     name = "array_param"
     shape = (2, 3)
-    p = SimpleArrayParam([[1, 2, 3], [4, 5, 6]], name, shape)
+    p = SimpleArrayParam([[1, 2, 3], [4, 5, 6]], name, shape=shape)
 
     assert p.name == name
     assert p.shape == shape
@@ -67,7 +67,7 @@ def test_explicit_attributes() -> None:
     p = SimpleArrayParam(
         [6, 7],
         name,
-        shape,
+        shape=shape,
         label=label,
         unit=unit,
         setpoints=setpoints,
@@ -113,9 +113,9 @@ def test_has_set_get() -> None:
     name = "array_param"
     shape = (3,)
     with pytest.raises(AttributeError):
-        ArrayParameter(name, shape)
+        ArrayParameter(name, shape=shape)
 
-    p = SimpleArrayParam([1, 2, 3], name, shape)
+    p = SimpleArrayParam([1, 2, 3], name, shape=shape)
 
     assert hasattr(p, "get")
     assert p.gettable
@@ -132,13 +132,13 @@ def test_has_set_get() -> None:
     assert p.get_latest() == [1, 2, 3]
 
     with pytest.raises(AttributeError):
-        SettableArray([1, 2, 3], name, shape)
+        SettableArray([1, 2, 3], name, shape=shape)
 
 
 def test_full_name() -> None:
     # three cases where only name gets used for full_name
     for instrument in blank_instruments:
-        p = SimpleArrayParam([6, 7], "fred", (2,), setpoint_names=("barney",))
+        p = SimpleArrayParam([6, 7], "fred", shape=(2,), setpoint_names=("barney",))
         # this is not allowed since instrument
         # here is not actually an instrument
         # but useful for testing
@@ -147,14 +147,14 @@ def test_full_name() -> None:
         assert p.setpoint_full_names == ("barney",)
 
     # and then an instrument that really has a name
-    p = SimpleArrayParam([6, 7], "wilma", (2,), setpoint_names=("betty",))
+    p = SimpleArrayParam([6, 7], "wilma", shape=(2,), setpoint_names=("betty",))
     p._instrument = named_instrument  # type: ignore[assignment]
     assert str(p) == "astro_wilma"
     assert p.setpoint_full_names == ("astro_betty",)
 
     # and with a 2d parameter to test mixed setpoint_names
     p = SimpleArrayParam(
-        [[6, 7, 8], [1, 2, 3]], "wilma", (3, 2), setpoint_names=("betty", None)
+        [[6, 7, 8], [1, 2, 3]], "wilma", shape=(3, 2), setpoint_names=("betty", None)
     )
     p._instrument = named_instrument  # type: ignore[assignment]
     assert p.setpoint_full_names == ("astro_betty", None)

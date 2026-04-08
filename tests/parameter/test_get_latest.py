@@ -172,6 +172,6 @@ def test_no_get_max_val_age() -> None:
             self.set_raw = lambda x: x  # type: ignore[method-assign]
             self.set = self._wrap_set(self.set_raw)
 
-    localparameter = LocalParameter("test_param", None, max_val_age=1)
+    localparameter = LocalParameter("test_param", instrument=None, max_val_age=1)
     with pytest.raises(RuntimeError):
         localparameter.get_latest()

@@ -44,7 +44,7 @@ class InstrumentGroup(InstrumentBase):
         super().__init__(name=name, **kwargs)
 
         module_name = ".".join(submodules_type.split(".")[:-1])
-        instr_class_name = submodules_type.split(".")[-1]
+        instr_class_name = submodules_type.rsplit(".", maxsplit=1)[-1]
         module = importlib.import_module(module_name)
         instr_class = getattr(module, instr_class_name)
 

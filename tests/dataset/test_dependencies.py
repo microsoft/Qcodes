@@ -6,6 +6,7 @@ import pytest
 from networkx import NetworkXError
 
 from qcodes.dataset.descriptions.dependencies import (
+    FrozenInterDependencies_,
     IncompleteSubsetError,
     InterDependencies_,
 )
@@ -477,3 +478,60 @@ def test_dependency_on_middle_parameter(
     # in both directions, ps4 is actually a member of the tree for ps1
     assert idps.top_level_parameters == (ps1,)
     assert idps.find_all_parameters_in_tree(ps1) == {ps1, ps2, ps3, ps4}
+
+
+def test_frozen_interdependencies(some_paramspecbases) -> None:
+    ps1, ps2, ps3, ps4 = some_paramspecbases
+    idps = InterDependencies_(dependencies={ps1: (ps2, ps3)}, inferences={ps2: (ps4,)})
+
+    frozen = FrozenInterDependencies_(idps)
+
+    assert frozen.dependencies == idps.dependencies
+    assert frozen.inferences == idps.inferences
+    assert frozen.standalones == idps.standalones
+    assert frozen.top_level_parameters == idps.top_level_parameters
+
+    # Test immutability
+    with pytest.raises(TypeError, match="FrozenInterDependencies_ is immutable"):
+        frozen.add_dependencies({ps4: (ps1,)})
+
+    with pytest.raises(TypeError, match="FrozenInterDependencies_ is immutable"):
+        frozen.add_inferences({ps4: (ps1,)})
+
+    with pytest.raises(TypeError, match="FrozenInterDependencies_ is immutable"):
+        frozen.add_standalones((ps4,))
+
+    with pytest.raises(TypeError, match="FrozenInterDependencies_ is immutable"):
+        frozen.remove(ps1)
+
+    with pytest.raises(TypeError, match="FrozenInterDependencies_ is immutable"):
+        frozen.add_paramspecs((ps1,))
+
+    # Test extend returns InterDependencies_ (mutable)
+    ps5 = ParamSpecBase("psb5", "numeric", "number", "")
+    extended = frozen.extend(standalones=(ps5,))
+    assert isinstance(extended, InterDependencies_)
+    assert not isinstance(extended, FrozenInterDependencies_)
+    assert ps5 in extended.standalones
+
+    # Test caching of properties
+    # Access properties to trigger caching
+    _ = frozen.dependencies
+    _ = frozen.inferences
+    _ = frozen.standalones
+    _ = frozen.top_level_parameters
+
+    assert frozen._dependencies_cache is not None
+    assert frozen._inferences_cache is not None
+    assert frozen._standalones_cache is not None
+    assert frozen._top_level_parameters_cache is not None
+
+
+def test_frozen_from_dict(some_paramspecbases) -> None:
+    ps1, ps2, ps3, _ = some_paramspecbases
+    idps = InterDependencies_(dependencies={ps1: (ps2, ps3)})
+    ser = idps._to_dict()
+
+    frozen = FrozenInterDependencies_._from_dict(ser)
+    assert isinstance(frozen, FrozenInterDependencies_)
+    assert frozen == FrozenInterDependencies_(idps)

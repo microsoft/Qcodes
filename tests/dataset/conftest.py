@@ -4,7 +4,6 @@ import gc
 import os
 import shutil
 import tempfile
-from collections.abc import Generator
 from contextlib import contextmanager
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any
@@ -378,13 +377,13 @@ def varlen_array_in_scalar_dataset(experiment):
     param = ArraySetPointParam()
     meas.register_parameter(scalar_param)
     meas.register_parameter(param, setpoints=(scalar_param,), paramtype="array")
-    np.random.seed(0)
+    rng = np.random.default_rng(0)
     with meas.run() as datasaver:
         for i in range(1, 10):
             scalar_param.set(i)
             param.setpoints = (np.arange(i),)
             datasaver.add_result(
-                (scalar_param, scalar_param.get()), (param, np.random.rand(i))
+                (scalar_param, scalar_param.get()), (param, rng.random(i))
             )
     try:
         yield datasaver.dataset
@@ -686,13 +685,14 @@ def SpectrumAnalyzer():
             self.npts = 100
             self.start = 0
             self.stop = 2e6
+            self._rng = np.random.default_rng()
 
         def get_data(self):
             # This is how it should be: the setpoints are generated at the
             # time we get. But that will of course not work with the old Loop
             self.setpoints = (tuple(np.linspace(self.start, self.stop, self.npts)),)
             # not the best SA on the market; it just returns noise...
-            return np.random.randn(self.npts)
+            return self._rng.standard_normal(self.npts)
 
     class Spectrum(BaseSpectrum):
         def get_raw(self):
@@ -719,9 +719,10 @@ def SpectrumAnalyzer():
                 setpoint_units=("Hz", "Other Hz", "Third Hz"),
                 **kwargs,
             )
+            self._rng = np.random.default_rng()
 
         def get_raw(self):
-            return np.random.randn(*self.npts)
+            return self._rng.standard_normal(self.npts)
 
     class ListSpectrum(BaseSpectrum):
         def get_raw(self):
@@ -790,13 +791,14 @@ def _make_dummy_instrument() -> Iterator[DummyChannelInstrument]:
 class ArrayshapedParam(Parameter):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._rng = np.random.default_rng()
 
     def get_raw(self):
         assert isinstance(self.vals, Arrays)
         assert self.vals.shape is not None
         shape = self.vals.shape
 
-        return np.random.rand(*shape)
+        return self._rng.random(shape)
 
 
 class SimpleMultiParam(MultiParameter):

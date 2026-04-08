@@ -179,10 +179,10 @@ class WrappedDll(metaclass=DllWrapperMeta):
             if ret_type is RETURN_CODE:
                 # since RETURN_CODE is a NewType checking that
                 # ret_type is RETURN_CODE only narrows the type
-                # of it to type. The type checker therefor does not know
+                # of it to type. The type checker therefore does not know
                 # that this type has a __supertype__ attribute
                 ret_type = (
-                    ret_type.__supertype__  # pyright: ignore[reportFunctionMemberAccess]
+                    ret_type.__supertype__  # type: ignore[attr-defined]
                 )
                 c_func.errcheck = _check_error_code
             elif ret_type in (

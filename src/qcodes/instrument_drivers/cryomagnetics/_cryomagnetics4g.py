@@ -3,7 +3,8 @@ from __future__ import annotations
 import re
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from time import time as _time
+from typing import TYPE_CHECKING, Self
 
 from pyvisa import VisaIOError
 
@@ -84,6 +85,8 @@ class CryomagneticsModel4G(VisaInstrument):
         # Initialize rate manager based on hypothetical hardware specific limits
         self._initialize_max_current_limits()
 
+        self._stability_check_interval = 20
+
         # Adding parameters
         self.units: Parameter = self.add_parameter(
             name="units",
@@ -95,7 +98,7 @@ class CryomagneticsModel4G(VisaInstrument):
         )
         """Field Units"""
 
-        self.ramping_state_check_interval: Parameter = self.add_parameter(
+        self.ramping_state_check_interval: Parameter[float, Self] = self.add_parameter(
             "ramping_state_check_interval",
             initial_value=0.05,
             unit="s",
@@ -319,8 +322,7 @@ class CryomagneticsModel4G(VisaInstrument):
         if getattr(self, "visabackend", False) == "sim":
             # write setpoint directly in sim mode
             self.write(f"IMAG {value / self.KG_TO_TESLA}")
-        last_check_time = time.time()
-        stability_check_interval = 20
+        last_check_time = _time()
         last_stable_field = self._get_field()
 
         while True:
@@ -329,8 +331,9 @@ class CryomagneticsModel4G(VisaInstrument):
             if setpoint_reached:
                 break
 
-            elapsed_time = time.time() - last_check_time
-            time_for_stability_check = elapsed_time > stability_check_interval
+            current_time = _time()
+            elapsed_time = current_time - last_check_time
+            time_for_stability_check = elapsed_time > self._stability_check_interval
             field_is_stable = abs(last_stable_field - current_field) < threshold
 
             if time_for_stability_check and field_is_stable:
@@ -340,7 +343,7 @@ class CryomagneticsModel4G(VisaInstrument):
                 )
             elif time_for_stability_check and not field_is_stable:
                 last_stable_field = current_field
-                last_check_time = time.time()
+                last_check_time = current_time
 
             self._sleep(self.ramping_state_check_interval())
         self.write("SWEEP PAUSE")

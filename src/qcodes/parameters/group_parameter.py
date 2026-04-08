@@ -51,6 +51,7 @@ class GroupParameter(Parameter):
     def __init__(
         self,
         name: str,
+        *,
         instrument: InstrumentBase | None = None,
         initial_value: float | str | None = None,
         **kwargs: Any,

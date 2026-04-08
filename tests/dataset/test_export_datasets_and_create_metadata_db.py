@@ -172,10 +172,6 @@ def test_export_datasets_preserve_experiment_structure(
     # TODO: assert netcdf files, and result statuses
 
 
-@pytest.mark.xfail(
-    run=True,
-    reason="For incomplete datasets, this should not fail but either succeed or copy as is",
-)
 def test_export_datasets_with_incomplete_dataset(
     tmp_path: "Path", request: pytest.FixtureRequest
 ) -> None:
@@ -226,7 +222,7 @@ def test_export_datasets_with_incomplete_dataset(
 
     # Incomplete dataset should be copied as-is
     assert result[dataset1.run_id] == "exported"
-    assert result[dataset2.run_id] == "failed"
+    assert result[dataset2.run_id] == "exported"
 
 
 def test_export_datasets_empty_database(tmp_path: "Path") -> None:

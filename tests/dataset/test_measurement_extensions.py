@@ -21,6 +21,7 @@ from qcodes.dataset.measurement_extensions import (
     LinSweeper,
     datasaver_builder,
     dond_into,
+    setup_measurement_instances,
 )
 from qcodes.parameters import Parameter, ParameterWithSetpoints
 from qcodes.validators import Arrays
@@ -490,3 +491,150 @@ def test_context_with_override_experiment(
 
     assert datasets[0].exp_name == experiment2.name
     assert datasets[1].exp_name == experiment2.name
+
+
+def test_shapes_in_dataset_definition_with_scalar_params(
+    default_params, default_database_and_experiment
+):
+    """Test that shapes specified in DataSetDefinition are stored on the dataset."""
+    _ = default_database_and_experiment
+    set1, set2, _, meas1, meas2, _ = default_params
+
+    expected_shapes = {
+        meas1.register_name: (11, 11),
+        meas2.register_name: (11, 11),
+    }
+    dataset_definition = [
+        DataSetDefinition(
+            name="dataset_with_shapes",
+            independent=[set1, set2],
+            dependent=[meas1, meas2],
+            shapes=expected_shapes,
+        ),
+    ]
+    with datasaver_builder(dataset_definition) as datasavers:
+        for _ in LinSweeper(set1, 0, 10, 11, 0.001):
+            sweep1 = LinSweep(set2, 0, 10, 11, 0.001)
+            dond_into(datasavers[0], sweep1, meas1, meas2, additional_setpoints=(set1,))
+        datasets = [datasaver.dataset for datasaver in datasavers]
+
+    assert datasets[0].description.shapes == expected_shapes
+
+
+def test_shapes_in_dataset_definition_with_pws(
+    pws_params, default_database_and_experiment
+):
+    """Test that shapes for ParameterWithSetpoints are stored on the dataset."""
+    _ = default_database_and_experiment
+    pws1, set1 = pws_params
+
+    expected_shapes = {
+        pws1.register_name: (11, 11),
+    }
+    dataset_definition = [
+        DataSetDefinition(
+            name="dataset_pws_shapes",
+            independent=[set1],
+            dependent=[pws1],
+            shapes=expected_shapes,
+        ),
+    ]
+    with datasaver_builder(dataset_definition) as datasavers:
+        for _ in LinSweeper(set1, 0, 10, 11, 0.001):
+            dond_into(datasavers[0], pws1, additional_setpoints=(set1,))
+        datasets = [datasaver.dataset for datasaver in datasavers]
+
+    assert datasets[0].description.shapes == expected_shapes
+
+
+def test_shapes_none_by_default(default_params, default_database_and_experiment):
+    """Test that shapes is None when not specified in DataSetDefinition."""
+    _ = default_database_and_experiment
+    set1, _, _, meas1, _, _ = default_params
+
+    dataset_definition = [
+        DataSetDefinition(
+            name="dataset_no_shapes",
+            independent=[set1],
+            dependent=[meas1],
+        ),
+    ]
+    with datasaver_builder(dataset_definition) as datasavers:
+        for _ in LinSweeper(set1, 0, 5, 6, 0.001):
+            datasavers[0].add_result((set1, set1()), (meas1, meas1()))
+        datasets = [datasaver.dataset for datasaver in datasavers]
+
+    assert datasets[0].description.shapes is None
+
+
+def test_setup_measurement_instances_sets_shapes(
+    default_params, default_database_and_experiment
+):
+    """Test that setup_measurement_instances correctly sets shapes on Measurement."""
+    _ = default_database_and_experiment
+    set1, _, _, meas1, _, _ = default_params
+
+    expected_shapes = {meas1.register_name: (5,)}
+    dataset_definitions = [
+        DataSetDefinition(
+            name="test_shapes",
+            independent=[set1],
+            dependent=[meas1],
+            shapes=expected_shapes,
+        ),
+    ]
+    measurements = setup_measurement_instances(dataset_definitions)
+    assert len(measurements) == 1
+    assert measurements[0]._shapes == expected_shapes
+
+
+def test_setup_measurement_instances_no_shapes(
+    default_params, default_database_and_experiment
+):
+    """Test that setup_measurement_instances leaves shapes as None when not specified."""
+    _ = default_database_and_experiment
+    set1, _, _, meas1, _, _ = default_params
+
+    dataset_definitions = [
+        DataSetDefinition(
+            name="test_no_shapes",
+            independent=[set1],
+            dependent=[meas1],
+        ),
+    ]
+    measurements = setup_measurement_instances(dataset_definitions)
+    assert len(measurements) == 1
+    assert measurements[0]._shapes is None
+
+
+def test_shapes_with_multiple_datasets(default_params, default_database_and_experiment):
+    """Test shapes are correctly applied to multiple datasets independently."""
+    _ = default_database_and_experiment
+    set1, set2, set3, meas1, _, meas3 = default_params
+
+    shapes_1 = {meas1.register_name: (11, 11)}
+    shapes_2 = {meas3.register_name: (11, 11)}
+    dataset_definition = [
+        DataSetDefinition(
+            name="dataset_1",
+            independent=[set1, set2],
+            dependent=[meas1],
+            shapes=shapes_1,
+        ),
+        DataSetDefinition(
+            name="dataset_2",
+            independent=[set1, set3],
+            dependent=[meas3],
+            shapes=shapes_2,
+        ),
+    ]
+    with datasaver_builder(dataset_definition) as datasavers:
+        for _ in LinSweeper(set1, 0, 10, 11, 0.001):
+            sweep1 = LinSweep(set2, 0, 10, 11, 0.001)
+            sweep2 = LinSweep(set3, -10, 0, 11, 0.001)
+            dond_into(datasavers[0], sweep1, meas1, additional_setpoints=(set1,))
+            dond_into(datasavers[1], sweep2, meas3, additional_setpoints=(set1,))
+        datasets = [datasaver.dataset for datasaver in datasavers]
+
+    assert datasets[0].description.shapes == shapes_1
+    assert datasets[1].description.shapes == shapes_2

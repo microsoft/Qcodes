@@ -31,7 +31,7 @@ class ElapsedTimeParameter(Parameter):
 
     """
 
-    def __init__(self, name: str, label: str = "Elapsed time", **kwargs: Any):
+    def __init__(self, name: str, *, label: str = "Elapsed time", **kwargs: Any):
         hardcoded_kwargs = ["unit", "get_cmd", "set_cmd"]
 
         for hck in hardcoded_kwargs:
@@ -78,6 +78,7 @@ class InstrumentRefParameter(Parameter):
     def __init__(
         self,
         name: str,
+        *,
         instrument: InstrumentBase | None = None,
         label: str | None = None,
         unit: str | None = None,

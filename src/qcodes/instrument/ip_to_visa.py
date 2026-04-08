@@ -24,7 +24,7 @@ from .visa import VISA_LOGGER, VisaInstrument
 # Such a driver is just a two-line class definition.
 
 
-class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore[misc]
+class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore[override,misc]
     """
     Class to inject an VisaInstrument like behaviour in an
     IPInstrument that we'd like to use as a VISAInstrument with the
@@ -72,8 +72,7 @@ class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore[misc]
 
         traversable_handle = files("qcodes.instrument.sims") / pyvisa_sim_file
         with as_file(traversable_handle) as sim_visalib_path:
-            self.visalib = f"{sim_visalib_path!s}@sim"
-            self.set_address(address=address)
+            self.set_address(address=address, visalib=f"{sim_visalib_path!s}@sim")
 
         if device_clear:
             self.device_clear()
@@ -88,8 +87,10 @@ class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore[misc]
         if getattr(self, "visa_handle", None):
             self.visa_handle.close()
 
-        if getattr(self, "visabackend", None) == "sim" and getattr(
-            self, "resource_manager", None
+        if (
+            getattr(self, "visabackend", None) == "sim"
+            and getattr(self, "resource_manager", None)
+            and self.resource_manager is not None
         ):
             # The pyvisa-sim visalib has a session attribute but the resource manager is not generic in the
             # visalib type so we cannot get it in a type safe way

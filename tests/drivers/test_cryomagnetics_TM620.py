@@ -1,18 +1,22 @@
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
 
 from qcodes.instrument_drivers.cryomagnetics import CryomagneticsModelTM620
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 
 @pytest.fixture(name="tm620", scope="function")
-def fixture_tm620():
+def fixture_tm620() -> "Generator[CryomagneticsModelTM620, None, None]":
     """
     Fixture to create and yield a CryomagneticsModelTM620 object and close it after testing.
     """
     instrument = CryomagneticsModelTM620(
         name="test_cryo_tm620",
-        address="GPIB::2::INSTR",
+        address="GPIB0::1::INSTR",
         terminator="\r\n",
         pyvisa_sim_file="cryo_tm620.yaml",
     )
@@ -22,7 +26,7 @@ def fixture_tm620():
 
 def test_initialization(tm620):
     assert tm620.name == "test_cryo_tm620"
-    assert tm620._address == "GPIB::2::INSTR"
+    assert tm620.address == "GPIB0::1::INSTR"
     assert hasattr(tm620, "shield")
     assert hasattr(tm620, "magnet")
 

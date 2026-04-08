@@ -95,8 +95,9 @@ def test_setpoint_always_follows_source_function(k2450) -> None:
     should always follow the source module
     """
     n = 100
-    sense_modes = np.random.choice(["current", "voltage", "resistance"], n)
-    source_modes = np.random.choice(["current", "voltage"], n)
+    rng = np.random.default_rng()
+    sense_modes = rng.choice(["current", "voltage", "resistance"], n)
+    source_modes = rng.choice(["current", "voltage"], n)
 
     for sense_mode, source_mode in zip(sense_modes, source_modes):
         k2450.sense.function("voltage")  # In 'resistance' sense mode, we cannot

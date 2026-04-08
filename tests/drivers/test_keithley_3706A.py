@@ -2,12 +2,12 @@ import itertools
 
 import pytest
 
-from qcodes.instrument_drivers.tektronix.Keithley_3706A import Keithley_3706A
+from qcodes.instrument_drivers.Keithley.Keithley_3706A import Keithley3706A
 
 
 @pytest.fixture(scope="function", name="driver")
 def _make_driver():
-    driver = Keithley_3706A(
+    driver = Keithley3706A(
         "Keithley_3706A",
         address="GPIB::11::INSTR",
         pyvisa_sim_file="Keithley_3706A.yaml",

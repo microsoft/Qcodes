@@ -13,10 +13,10 @@ if TYPE_CHECKING:
 
     from qcodes.instrument import (
         InstrumentBaseKWArgs,
-        InstrumentChannel,
-        VisaInstrument,
     )
     from qcodes.parameters import Parameter
+
+    from .keysight_34980a import Keysight34980A
 
 
 class Keysight34934A(Keysight34980ASwitchMatrixSubModule):
@@ -32,7 +32,7 @@ class Keysight34934A(Keysight34980ASwitchMatrixSubModule):
 
     def __init__(
         self,
-        parent: "VisaInstrument | InstrumentChannel",
+        parent: "Keysight34980A",
         name: str,
         slot: int,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",

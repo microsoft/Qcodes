@@ -1,5 +1,9 @@
 from typing import TYPE_CHECKING, Any
 
+from typing_extensions import deprecated
+
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
+
 from .constants import IMeasRange, IOutputRange
 from .KeysightB1517A import KeysightB1517A
 
@@ -107,7 +111,14 @@ class KeysightB1511B(KeysightB1517A):
             )
 
 
-B1511B = KeysightB1511B
-"""
-Alias for backwards compatibility
-"""
+@deprecated(
+    "B1511B is deprecated. Please use qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1511B instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
+class B1511B(KeysightB1511B):
+    """
+    Alias for backwards compatibility
+    """
+
+    pass

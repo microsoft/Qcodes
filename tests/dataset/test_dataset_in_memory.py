@@ -691,7 +691,7 @@ def test_dataset_in_mem_with_inferred_parameters(
     inferred2 = ManualParameter("inferred2", initial_value=0.0)
     control1 = ManualParameter("control1", initial_value=0.0)
     control2 = ManualParameter("control2", initial_value=0.0)
-    dependent = Parameter("dependent", get_cmd=lambda: control1(), set_cmd=False)
+    dependent = Parameter("dependent", get_cmd=control1, set_cmd=False)
     meas = Measurement(exp=experiment, name="via Measurement")
 
     meas.register_parameter(control1)

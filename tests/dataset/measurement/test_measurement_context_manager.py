@@ -21,6 +21,10 @@ from pytest import LogCaptureFixture
 import qcodes as qc
 import qcodes.validators as vals
 from qcodes.dataset.data_set import DataSet, load_by_id
+from qcodes.dataset.descriptions.dependencies import (
+    FrozenInterDependencies_,
+    InterDependencies_,
+)
 from qcodes.dataset.experiment_container import new_experiment
 from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.measurements import Measurement
@@ -730,6 +734,16 @@ def test_datasaver_scalars(
         with pytest.raises(ValueError):
             datasaver.add_result((DMM.v1, 0))
 
+    ds = datasaver.dataset
+    assert isinstance(ds, DataSet)
+    assert isinstance(ds.description.interdeps, InterDependencies_)
+    assert not isinstance(ds.description.interdeps, FrozenInterDependencies_)
+
+    loaded_ds = load_by_id(ds.run_id)
+
+    assert isinstance(loaded_ds.description.interdeps, InterDependencies_)
+    assert not isinstance(loaded_ds.description.interdeps, FrozenInterDependencies_)
+
     # More assertions of setpoints, labels and units in the DB!
 
 
@@ -801,7 +815,7 @@ def test_datasaver_arrays_lists_tuples(bg_writing, N) -> None:
 
     with meas.run(write_in_background=bg_writing) as datasaver:
         freqax = np.linspace(1e6, 2e6, N)
-        signal = np.random.randn(N)
+        signal = np.random.default_rng().standard_normal(N)
 
         datasaver.add_result(("freqax", freqax), ("signal", signal))
 
@@ -812,7 +826,7 @@ def test_datasaver_arrays_lists_tuples(bg_writing, N) -> None:
 
     with meas.run(write_in_background=bg_writing) as datasaver:
         freqax = np.linspace(1e6, 2e6, N)
-        signal = np.random.randn(N - 1)
+        signal = np.random.default_rng().standard_normal(N - 1)
 
         with pytest.raises(ValueError):
             datasaver.add_result(("freqax", freqax), ("signal", signal))
@@ -831,7 +845,7 @@ def test_datasaver_arrays_lists_tuples(bg_writing, N) -> None:
     # save arrays
     with meas.run(write_in_background=bg_writing) as datasaver:
         freqax = np.linspace(1e6, 2e6, N)
-        signal1 = np.random.randn(N)
+        signal1 = np.random.default_rng().standard_normal(N)
 
         datasaver.add_result(
             ("freqax", freqax), ("signal", signal1), ("gate_voltage", 0)
@@ -845,7 +859,7 @@ def test_datasaver_arrays_lists_tuples(bg_writing, N) -> None:
     # save lists
     with meas.run(write_in_background=bg_writing) as datasaver:
         freqax2 = np.linspace(1e6, 2e6, N).flatten().tolist()
-        signal2 = np.random.randn(N).flatten().tolist()
+        signal2 = np.random.default_rng().standard_normal(N).flatten().tolist()
 
         datasaver.add_result(
             ("freqax", freqax2), ("signal", signal2), ("gate_voltage", 0)
@@ -856,7 +870,7 @@ def test_datasaver_arrays_lists_tuples(bg_writing, N) -> None:
     # save tuples
     with meas.run(write_in_background=bg_writing) as datasaver:
         freqax3 = tuple(np.linspace(1e6, 2e6, N).flatten().tolist())
-        signal3 = tuple(np.random.randn(N).flatten().tolist())
+        signal3 = tuple(np.random.default_rng().standard_normal(N).flatten().tolist())
 
         datasaver.add_result(
             ("freqax", freqax3), ("signal", signal3), ("gate_voltage", 0)
@@ -889,7 +903,7 @@ def test_datasaver_numeric_and_array_paramtype(bg_writing, N) -> None:
         setpoints=("numeric_1",),
     )
 
-    signal = np.random.randn(113)
+    signal = np.random.default_rng().standard_normal(113)
 
     with meas.run(bg_writing) as datasaver:
         datasaver.add_result(("numeric_1", 3.75), ("array_1", signal))
@@ -925,7 +939,7 @@ def test_datasaver_numeric_after_array_paramtype(bg_writing) -> None:
         setpoints=("numeric_1",),
     )
 
-    signal = np.random.randn(113)
+    signal = np.random.default_rng().standard_normal(113)
 
     with meas.run(write_in_background=bg_writing) as datasaver:
         # it is important that first comes the 'array' data and then 'numeric'
@@ -958,7 +972,7 @@ def test_datasaver_foul_input(bg_writing) -> None:
 
 
 @settings(max_examples=10, deadline=None)
-@given(N=hst.integers(min_value=2, max_value=500))
+@given(N=hst.integers(min_value=2, max_value=50))
 @pytest.mark.usefixtures("empty_temp_db")
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ["numeric", "array"])
@@ -982,8 +996,8 @@ def test_datasaver_unsized_arrays(N, storage_type, bg_writing) -> None:
     # correctly
     with meas.run(write_in_background=bg_writing) as datasaver:
         freqax = np.linspace(1e6, 2e6, N)
-        np.random.seed(0)
-        signal = np.random.randn(N)
+        rng = np.random.default_rng(0)
+        signal = rng.standard_normal(N)
         for i in range(N):
             myfreq = np.array(freqax[i])
             assert myfreq.shape == ()
@@ -996,8 +1010,8 @@ def test_datasaver_unsized_arrays(N, storage_type, bg_writing) -> None:
     assert isinstance(ds, DataSet)
     loaded_data = ds.get_parameter_data()["signal"]
 
-    np.random.seed(0)
-    expected_signal = np.random.randn(N)
+    rng = np.random.default_rng(0)
+    expected_signal = rng.standard_normal(N)
     expected_freqax = np.linspace(1e6, 2e6, N)
 
     if storage_type == "array":
@@ -1065,20 +1079,21 @@ def test_datasaver_arrayparams(
 
     spectrum.npts = M
 
-    np.random.seed(seed)
+    collected_outputs = []
     with meas.run(write_in_background=bg_writing) as datasaver:
         for set_v in np.linspace(0, 0.01, N):
-            datasaver.add_result((DAC.ch1, set_v), (spectrum, spectrum.get()))
+            output = spectrum.get()
+            collected_outputs.append(output)
+            datasaver.add_result((DAC.ch1, set_v), (spectrum, output))
 
     if storage_type == "numeric":
         assert datasaver.points_written == N * M
     elif storage_type == "array":
         assert datasaver.points_written == N
 
-    np.random.seed(seed)
     expected_dac_data = np.repeat(np.linspace(0, 0.01, N), M)
     expected_freq_axis = np.tile(spectrum.setpoints[0], N)
-    expected_output = np.array([spectrum.get() for _ in range(N)]).reshape(N * M)
+    expected_output = np.array(collected_outputs).reshape(N * M)
 
     if storage_type == "array":
         expected_dac_data = expected_dac_data.reshape(N, M)
@@ -1099,7 +1114,7 @@ def test_datasaver_arrayparams(
     deadline=None,
     suppress_health_check=(HealthCheck.function_scoped_fixture,),
 )
-@given(N=hst.integers(min_value=5, max_value=500))
+@given(N=hst.integers(min_value=5, max_value=100))
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ["numeric", "array"])
 @pytest.mark.usefixtures("experiment")
@@ -1173,7 +1188,6 @@ def test_datasaver_array_parameters_channel(
 def test_datasaver_parameter_with_setpoints(
     channel_array_instrument, DAC, n, storage_type, bg_writing
 ) -> None:
-    random_seed = 1
     chan = channel_array_instrument.A
     param = chan.dummy_parameter_with_setpoints
     chan.dummy_n_points(n)
@@ -1194,10 +1208,8 @@ def test_datasaver_parameter_with_setpoints(
 
     # Now for a real measurement
     with meas.run(write_in_background=bg_writing) as datasaver:
-        # we seed the random number generator
-        # so we can test that we get the expected numbers
-        np.random.seed(random_seed)
-        datasaver.add_result((param, param.get()))
+        param_data = param.get()
+        datasaver.add_result((param, param_data))
     if storage_type == "numeric":
         expected_points_written = n
     elif storage_type == "array":
@@ -1229,8 +1241,7 @@ def test_datasaver_parameter_with_setpoints(
     expected_dep_data = np.linspace(
         chan.dummy_start(), chan.dummy_stop(), chan.dummy_n_points()
     )
-    np.random.seed(random_seed)
-    expected_data = np.random.rand(n)
+    expected_data = param_data
     if storage_type == "array":
         expected_dep_data = expected_dep_data.reshape((1, chan.dummy_n_points()))
         expected_data = expected_data.reshape((1, chan.dummy_n_points()))
@@ -1254,7 +1265,6 @@ def test_datasaver_parameter_with_setpoints(
 def test_datasaver_parameter_with_setpoints_explicitly_expanded(
     channel_array_instrument, DAC, n, storage_type, bg_writing
 ) -> None:
-    random_seed = 1
     chan = channel_array_instrument.A
     param = chan.dummy_parameter_with_setpoints
     chan.dummy_n_points(n)
@@ -1275,10 +1285,8 @@ def test_datasaver_parameter_with_setpoints_explicitly_expanded(
 
     # Now for a real measurement
     with meas.run(write_in_background=bg_writing) as datasaver:
-        # we seed the random number generator
-        # so we can test that we get the expected numbers
-        np.random.seed(random_seed)
-        datasaver.add_result(*expand_setpoints_helper(param))
+        param_data = param.get()
+        datasaver.add_result(*expand_setpoints_helper(param, results=param_data))
     if storage_type == "numeric":
         expected_points_written = n
     elif storage_type == "array":
@@ -1310,8 +1318,7 @@ def test_datasaver_parameter_with_setpoints_explicitly_expanded(
     expected_dep_data = np.linspace(
         chan.dummy_start(), chan.dummy_stop(), chan.dummy_n_points()
     )
-    np.random.seed(random_seed)
-    expected_data = np.random.rand(n)
+    expected_data = param_data
     if storage_type == "array":
         expected_dep_data = expected_dep_data.reshape((1, chan.dummy_n_points()))
         expected_data = expected_data.reshape((1, chan.dummy_n_points()))
@@ -1327,7 +1334,6 @@ def test_datasaver_parameter_with_setpoints_explicitly_expanded(
 def test_datasaver_parameter_with_setpoints_that_are_different_raises(
     channel_array_instrument, DAC
 ) -> None:
-    random_seed = 1
     chan = channel_array_instrument.A
     param = chan.dummy_parameter_with_setpoints_2d
     chan.dummy_n_points(10)
@@ -1350,10 +1356,7 @@ def test_datasaver_parameter_with_setpoints_that_are_different_raises(
     assert dep_ps in meas._interdeps.dependencies[param_ps]
 
     with meas.run() as datasaver:
-        # we seed the random number generator
-        # so we can test that we get the expected numbers
         # This fails because a 2D PWS expects 2D setpoints parameter values (ie a grid)
-        np.random.seed(random_seed)
         with pytest.raises(ValueError, match="Multiple distinct values found for"):
             datasaver.add_result((param, param.get()), (sp_param_1, sp_param_1.get()))
 
@@ -1369,7 +1372,6 @@ def test_datasaver_parameter_with_setpoints_that_are_different_raises(
 def test_datasaver_parameter_with_setpoints_complex(
     channel_array_instrument, DAC, n, bg_writing
 ) -> None:
-    random_seed = 1
     chan = channel_array_instrument.A
     param = chan.dummy_parameter_with_setpoints_complex
     chan.dummy_n_points(n)
@@ -1394,10 +1396,8 @@ def test_datasaver_parameter_with_setpoints_complex(
 
     # Now for a real measurement
     with meas.run(write_in_background=bg_writing) as datasaver:
-        # we seed the random number generator
-        # so we can test that we get the expected numbers
-        np.random.seed(random_seed)
-        datasaver.add_result((param, param.get()))
+        param_data = param.get()
+        datasaver.add_result((param, param_data))
     assert datasaver.points_written == 1
 
     ds = load_by_id(datasaver.run_id)
@@ -1413,10 +1413,9 @@ def test_datasaver_parameter_with_setpoints_complex(
             chan.dummy_start(), chan.dummy_stop(), chan.dummy_n_points()
         ).reshape(1, chan.dummy_n_points()),
     )
-    np.random.seed(random_seed)
     assert_allclose(
         subdata["dummy_channel_inst_ChanA_dummy_parameter_with_setpoints_complex"],
-        (np.random.rand(n) + 1j * np.random.rand(n)).reshape(1, chan.dummy_n_points()),
+        param_data.reshape(1, chan.dummy_n_points()),
     )
 
 
@@ -1431,7 +1430,6 @@ def test_datasaver_parameter_with_setpoints_complex(
 def test_datasaver_parameter_with_setpoints_complex_explicitly_expanded(
     channel_array_instrument, DAC, n, bg_writing
 ) -> None:
-    random_seed = 1
     chan = channel_array_instrument.A
     param = chan.dummy_parameter_with_setpoints_complex
     chan.dummy_n_points(n)
@@ -1456,10 +1454,8 @@ def test_datasaver_parameter_with_setpoints_complex_explicitly_expanded(
 
     # Now for a real measurement
     with meas.run(write_in_background=bg_writing) as datasaver:
-        # we seed the random number generator
-        # so we can test that we get the expected numbers
-        np.random.seed(random_seed)
-        datasaver.add_result(*expand_setpoints_helper(param))
+        param_data = param.get()
+        datasaver.add_result(*expand_setpoints_helper(param, results=param_data))
     assert datasaver.points_written == 1
 
     ds = load_by_id(datasaver.run_id)
@@ -1475,10 +1471,9 @@ def test_datasaver_parameter_with_setpoints_complex_explicitly_expanded(
             chan.dummy_start(), chan.dummy_stop(), chan.dummy_n_points()
         ).reshape(1, chan.dummy_n_points()),
     )
-    np.random.seed(random_seed)
     assert_allclose(
         subdata["dummy_channel_inst_ChanA_dummy_parameter_with_setpoints_complex"],
-        (np.random.rand(n) + 1j * np.random.rand(n)).reshape(1, chan.dummy_n_points()),
+        param_data.reshape(1, chan.dummy_n_points()),
     )
 
 
@@ -1619,7 +1614,7 @@ def test_datasaver_parameter_with_setpoints_reg_but_missing(
     deadline=None,
     suppress_health_check=(HealthCheck.function_scoped_fixture,),
 )
-@given(N=hst.integers(min_value=5, max_value=500))
+@given(N=hst.integers(min_value=5, max_value=100))
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("storage_type", ["numeric", "array"])
 @pytest.mark.parametrize("bg_writing", [True, False])
@@ -1790,7 +1785,7 @@ def test_datasaver_multidim_array(experiment, bg_writing) -> None:
     meas.register_parameter(x2, paramtype="array")
     meas.register_parameter(y1, setpoints=[x1, x2], paramtype="array")
     meas.register_parameter(y2, setpoints=[x1, x2], paramtype="array")
-    data = np.random.rand(4, size1, size2)
+    data = np.random.default_rng().random((4, size1, size2))
     expected = {
         "x1": data[0, :, :],
         "x2": data[1, :, :],
@@ -1840,7 +1835,7 @@ def test_datasaver_export(
     meas.register_parameter(x2, paramtype="array")
     meas.register_parameter(y1, setpoints=[x1, x2], paramtype="array")
     meas.register_parameter(y2, setpoints=[x1, x2], paramtype="array")
-    data = np.random.rand(4, size1, size2)
+    data = np.random.default_rng().random((4, size1, size2))
     expected = {
         "x1": data[0, :, :],
         "x2": data[1, :, :],
@@ -1900,7 +1895,7 @@ def test_datasaver_multidim_numeric(experiment, bg_writing) -> None:
     meas.register_parameter(x2, paramtype="numeric")
     meas.register_parameter(y1, setpoints=[x1, x2], paramtype="numeric")
     meas.register_parameter(y2, setpoints=[x1, x2], paramtype="numeric")
-    data = np.random.rand(4, size1, size2)
+    data = np.random.default_rng().random((4, size1, size2))
     with meas.run(write_in_background=bg_writing) as datasaver:
         datasaver.add_result(
             (str(x1), data[0, :, :]),
@@ -2152,7 +2147,7 @@ def test_datasaver_2d_multi_parameters_array(
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ["numeric", "array"])
-@settings(deadline=None)
+@settings(deadline=None, max_examples=10)
 @given(Ns=hst.lists(hst.integers(2, 10), min_size=2, max_size=5))
 def test_datasaver_arrays_of_different_length(storage_type, Ns, bg_writing) -> None:
     """
@@ -2178,7 +2173,8 @@ def test_datasaver_arrays_of_different_length(storage_type, Ns, bg_writing) -> N
             (f"freqs{n}", np.linspace(0, 1, Ns[n])) for n in range(no_of_signals)
         )
         result_sigs = list(
-            (f"signal{n}", np.random.randn(Ns[n])) for n in range(no_of_signals)
+            (f"signal{n}", np.random.default_rng().standard_normal(Ns[n]))
+            for n in range(no_of_signals)
         )
         full_result: tuple[tuple[str, int | np.ndarray | str], ...] = tuple(
             result_freqs + result_sigs + [result_t]

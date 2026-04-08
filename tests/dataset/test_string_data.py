@@ -170,7 +170,7 @@ def test_list_of_strings(experiment) -> None:
     Test saving list of strings via DataSaver
     """
     p_values = ["X_Y", "X_X", "X_I", "I_I"]
-    list_of_strings = list(np.random.choice(p_values, (10,)))
+    list_of_strings = list(np.random.default_rng().choice(p_values, (10,)))
 
     p = Parameter(
         "p",

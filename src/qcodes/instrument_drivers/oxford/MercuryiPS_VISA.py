@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, cast
 import numpy as np
 import numpy.typing as npt
 from packaging import version
+from typing_extensions import deprecated
 
 from qcodes.instrument import (
     InstrumentBaseKWArgs,
@@ -16,6 +17,7 @@ from qcodes.instrument import (
     VisaInstrumentKWArgs,
 )
 from qcodes.math_utils import FieldVector
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -73,17 +75,17 @@ def _temp_parser(response: str) -> float:
         response: What comes back from instrument.ask
 
     """
-    return float(response.split(":")[-1][:-1])
+    return float(response.rsplit(":", maxsplit=1)[-1][:-1])
 
 
-class OxfordMercuryWorkerPS(InstrumentChannel):
+class OxfordMercuryWorkerPS(InstrumentChannel["OxfordMercuryiPS"]):
     """
     Class to hold a worker power supply for the Oxford MercuryiPS
     """
 
     def __init__(
         self,
-        parent: VisaInstrument,
+        parent: OxfordMercuryiPS,
         name: str,
         UID: str,
         **kwargs: Unpack[InstrumentBaseKWArgs],
@@ -108,7 +110,7 @@ class OxfordMercuryWorkerPS(InstrumentChannel):
 
         # The firmware update from 2.5 -> 2.6 changed the command
         # syntax slightly
-        if version.parse(self.root_instrument.firmware) >= version.parse("2.6"):
+        if version.parse(self.parent.firmware) >= version.parse("2.6"):
             self.psu_string = "SPSU"
         else:
             self.psu_string = "PSU"
@@ -290,10 +292,17 @@ class OxfordMercuryWorkerPS(InstrumentChannel):
         #  the intended value
 
 
-MercuryWorkerPS = OxfordMercuryWorkerPS
-"""
-Alias for backwards compatibility
-"""
+@deprecated(
+    "MercuryWorkerPS is deprecated. Please use qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
+class MercuryWorkerPS(OxfordMercuryWorkerPS):
+    """
+    Alias for backwards compatibility
+    """
+
+    pass
 
 
 class OxfordMercuryiPS(VisaInstrument):
@@ -348,10 +357,14 @@ class OxfordMercuryiPS(VisaInstrument):
         self.firmware = self.IDN()["firmware"]
 
         # TODO: Query instrument to ensure which PSUs are actually present
-        for grp in ["GRPX", "GRPY", "GRPZ"]:
-            psu_name = grp
-            psu = OxfordMercuryWorkerPS(self, psu_name, grp)
-            self.add_submodule(psu_name, psu)
+        GRPX = OxfordMercuryWorkerPS(self, "GRPX", "GRPX")
+        self.GRPX: OxfordMercuryWorkerPS = self.add_submodule("GRPX", GRPX)
+
+        GRPY = OxfordMercuryWorkerPS(self, "GRPY", "GRPY")
+        self.GRPY: OxfordMercuryWorkerPS = self.add_submodule("GRPY", GRPY)
+
+        GRPZ = OxfordMercuryWorkerPS(self, "GRPZ", "GRPZ")
+        self.GRPZ: OxfordMercuryWorkerPS = self.add_submodule("GRPZ", GRPZ)
 
         self._field_limits = field_limits if field_limits else lambda x, y, z: True
 
@@ -719,5 +732,12 @@ class OxfordMercuryiPS(VisaInstrument):
         return base_resp
 
 
-MercuryiPS = OxfordMercuryiPS
-"""Alias for backwards compatibility"""
+@deprecated(
+    "MercuryiPS is deprecated. Please use qcodes.instrument_drivers.oxford.OxfordMercuryiPS instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
+class MercuryiPS(OxfordMercuryiPS):
+    """Alias for backwards compatibility"""
+
+    pass

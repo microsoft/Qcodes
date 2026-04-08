@@ -19,9 +19,11 @@ from typing import (
 import numpy as np
 import numpy.typing as npt
 from pyvisa.errors import VisaIOError
+from typing_extensions import deprecated
 
 from qcodes import validators as vals
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -173,7 +175,6 @@ class TektronixAWG5014(VisaInstrument):
         """
         super().__init__(name, address, **kwargs)
 
-        self._address = address
         self.num_channels = num_channels
 
         self._values: dict[str, dict[str, dict[str, npt.NDArray | float | None]]] = {}
@@ -275,7 +276,7 @@ class TektronixAWG5014(VisaInstrument):
             get_cmd="AWGControl:SEQuencer:POSition?",
             set_cmd="SEQuence:JUMP:IMMediate {}",
             vals=vals.PermissiveInts(1),
-            set_parser=lambda x: round(x),
+            set_parser=round,
         )
         """Parameter sequence_pos"""
 
@@ -1882,6 +1883,11 @@ class TektronixAWG5014(VisaInstrument):
         self.visa_handle.timeout = original_timeout
 
 
+@deprecated(
+    "Tektronix_AWG5014 is deprecated. Please use qcodes.instrument_drivers.tektronix.TektronixAWG5014 instead.",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=1,
+)
 class Tektronix_AWG5014(TektronixAWG5014):
     """
     Alias with non-conformant name left for backwards compatibility

@@ -6,13 +6,13 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from pytest import LogCaptureFixture
 
-from qcodes.instrument_drivers.oxford.MercuryiPS_VISA import MercuryiPS
+from qcodes.instrument_drivers.oxford.MercuryiPS_VISA import OxfordMercuryiPS
 from qcodes.math_utils.field_vector import FieldVector
 
 
 @pytest.fixture(scope="function")
 def driver():
-    mips = MercuryiPS(
+    mips = OxfordMercuryiPS(
         "mips", address="GPIB::1::INSTR", pyvisa_sim_file="MercuryiPS.yaml"
     )
     yield mips
@@ -27,7 +27,7 @@ def driver_spher_lim():
         """
         return np.sqrt(x**2 + y**2 + z**2) <= 2
 
-    mips_sl = MercuryiPS(
+    mips_sl = OxfordMercuryiPS(
         "mips_sl",
         address="GPIB::1::INSTR",
         pyvisa_sim_file="MercuryiPS.yaml",
@@ -49,7 +49,7 @@ def driver_cyl_lim():
 
         return rho_check and z_check
 
-    mips_cl = MercuryiPS(
+    mips_cl = OxfordMercuryiPS(
         "mips_cl",
         address="GPIB::1::INSTR",
         pyvisa_sim_file="MercuryiPS.yaml",
@@ -88,7 +88,7 @@ def test_vector_ramp_rate(driver) -> None:
 def test_wrong_field_limit_raises() -> None:
     # check that a non-callable input fails
     with pytest.raises(ValueError):
-        MercuryiPS(
+        OxfordMercuryiPS(
             "mips",
             address="GPIB::1::INSTR",
             pyvisa_sim_file="MercuryiPS.yaml",

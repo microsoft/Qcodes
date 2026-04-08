@@ -18,7 +18,6 @@ from qcodes.instrument_drivers.mock_instruments import (
 from qcodes.parameters import (
     MultiChannelInstrumentParameter,
 )
-from qcodes.utils import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     import pytest_mock
@@ -515,8 +514,8 @@ def test_access_channels_by_name_empty_raises(dci: DummyChannelInstrument) -> No
 
 
 def test_access_channel_by_name_empty_raises(dci: DummyChannelInstrument) -> None:
-    with pytest.raises(TypeError, match="one or more names must be given"):
-        dci.channels.get_channel_by_name()
+    with pytest.raises(TypeError, match="missing 1 required positional argument"):
+        dci.channels.get_channel_by_name()  # pyright: ignore[reportCallIssue]
 
 
 def test_delete_from_channel_list(dci_with_list: DCIWithList) -> None:
@@ -577,23 +576,6 @@ def test_set_element_locked_raises(dci_with_list: DCIWithList) -> None:
     ):
         dci_with_list.channels[0] = dci_with_list.channels[1]
     assert dci_with_list.channels[0] is not dci_with_list.channels[1]
-
-
-@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,), deadline=1000)
-@given(myindexs=hst.lists(elements=hst.integers(0, 7), min_size=2))
-def test_access_channels_by_name_deprecated(
-    dci: DummyChannelInstrument, myindexs: list[int]
-) -> None:
-    names = ("A", "B", "C", "D", "E", "F", "G", "H")
-    channels = tuple(DummyChannel(dci, "Chan" + name, name) for name in names)
-    chlist = ChannelList(dci, "channels", DummyChannel, channels)
-
-    channel_names = (f"Chan{names[i]}" for i in myindexs)
-
-    with pytest.warns(QCoDeSDeprecationWarning, match="get_channel_by_name"):
-        mychans = chlist.get_channel_by_name(*channel_names)
-        for chan, chanindex in zip(mychans, myindexs):  # pyright: ignore[reportArgumentType]
-            assert chan.name == f"dci_Chan{names[chanindex]}"
 
 
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,), deadline=1000)

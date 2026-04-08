@@ -13,6 +13,7 @@ from pytest import FixtureRequest
 from qcodes.instrument import Instrument, VisaInstrument
 from qcodes.instrument_drivers.AimTTi import AimTTiPL601
 from qcodes.instrument_drivers.american_magnetics import AMIModel430
+from qcodes.utils import QCoDeSDeprecationWarning
 from qcodes.validators import Numbers
 
 
@@ -29,10 +30,14 @@ class MockVisa(VisaInstrument):
 
     def _open_resource(
         self, address: str, visalib: str | None
-    ) -> tuple[pyvisa.resources.MessageBasedResource, str, pyvisa.ResourceManager]:
+    ) -> pyvisa.resources.MessageBasedResource:
         if visalib is None:
             visalib = "MockVisaLib"
-        return MockVisaHandle(), visalib, pyvisa.ResourceManager("@sim")
+        return MockVisaHandle()
+
+    @property
+    def visabackend(self) -> str:
+        return "sim"
 
 
 class MockVisaHandle(pyvisa.resources.MessageBasedResource):
@@ -46,6 +51,8 @@ class MockVisaHandle(pyvisa.resources.MessageBasedResource):
     - any ask command returns the state
     - a state > 10 throws an error
     """
+
+    resource_name: str = "MOCK::INSTR"  # pyright: ignore[reportIncompatibleVariableOverride]
 
     def __init__(self):
         self.state = 0
@@ -67,7 +74,7 @@ class MockVisaHandle(pyvisa.resources.MessageBasedResource):
     ) -> int:
         if self.closed:
             raise RuntimeError("Trying to write to a closed instrument")
-        num = float(message.split(":")[-1])
+        num = float(message.rsplit(":", maxsplit=1)[-1])
         self.state = num
 
         if num < 0:
@@ -132,6 +139,7 @@ def test_visa_gc_closes_connection(caplog) -> None:
             terminator="\n",
         )
         assert list(Instrument._all_instruments.keys()) == ["x"]
+        assert x.resource_manager is not None
         assert len(x.resource_manager.list_opened_resources()) == 1
         assert x.resource_manager.list_opened_resources() == [x.visa_handle]
         return x.resource_manager
@@ -148,9 +156,12 @@ def test_visa_gc_closes_connection(caplog) -> None:
     # and the instrument should no longer be in the instrument registry
     assert len(Instrument._all_instruments) == 0
     assert len(rm.list_opened_resources()) == 0
-    assert (
-        caplog.records[-1].message == "Closing VISA handle to x as there are no non "
-        "weak references to the instrument."
+    # the order of the log messages depends on the pyvisa version but regardless
+    # of which version we should see the message about closing the handle
+    assert any(
+        record.message
+        == "Closing VISA handle to x as there are no non weak references to the instrument."
+        for record in caplog.records
     )
 
 
@@ -187,7 +198,11 @@ def test_visa_backend(mocker, request: FixtureRequest) -> None:
     address_opened = [None]
 
     class MockBackendVisaInstrument(VisaInstrument):
-        visa_handle = MockVisaHandle()
+        _visa_handle = MockVisaHandle()
+
+        @property
+        def visabackend(self) -> str:
+            return "sim"
 
     class MockRM:
         def open_resource(self, address):
@@ -246,8 +261,19 @@ def test_load_pyvisa_sim_file_implict_module(request: FixtureRequest) -> None:
     )
     request.addfinalizer(driver.close)
     assert driver.visabackend == "sim"
-    assert driver.visalib is not None
-    path_str, backend = driver.visalib.split("@")
+
+    assert Path(driver.visa_handle.visalib.library_path).match(
+        "qcodes/instrument/sims/AimTTi_PL601P.yaml"
+    )
+    assert driver.visa_handle.visalib.__class__.__name__ == "SimVisaLibrary"
+
+    # legacy
+    with pytest.warns(
+        QCoDeSDeprecationWarning, match="The visalib property is deprecated"
+    ):
+        visalib = driver.visalib  # pyright: ignore[reportDeprecated]
+    assert visalib is not None
+    path_str, backend = visalib.split("@")
     assert backend == "sim"
     path = Path(path_str)
     assert path.match("qcodes/instrument/sims/AimTTi_PL601P.yaml")
@@ -261,8 +287,17 @@ def test_load_pyvisa_sim_file_explicit_module(request: FixtureRequest) -> None:
     )
     request.addfinalizer(driver.close)
     assert driver.visabackend == "sim"
-    assert driver.visalib is not None
-    path_str, backend = driver.visalib.split("@")
+    assert Path(driver.visa_handle.visalib.library_path).match(
+        "qcodes/instrument/sims/AimTTi_PL601P.yaml"
+    )
+    assert driver.visa_handle.visalib.__class__.__name__ == "SimVisaLibrary"
+
+    with pytest.warns(
+        QCoDeSDeprecationWarning, match="The visalib property is deprecated"
+    ):
+        visalib = driver.visalib  # pyright: ignore[reportDeprecated]
+    assert visalib is not None
+    path_str, backend = visalib.split("@")
     assert backend == "sim"
     path = Path(path_str)
     assert path.match("qcodes/instrument/sims/AimTTi_PL601P.yaml")
@@ -292,3 +327,52 @@ def test_load_pyvisa_sim_file_invalid_module_raises(request: FixtureRequest) -> 
             address="GPIB::1::INSTR",
             pyvisa_sim_file="qcodes.instrument.not_a_module:AimTTi_PL601P.yaml",
         )
+
+
+def test_existing_resource(request: FixtureRequest) -> None:
+    handle = MockVisaHandle()
+    mv = MockVisa("from_resource", resource=handle)
+    request.addfinalizer(mv.close)
+    assert mv.visa_handle is handle
+    assert mv.address == "MOCK::INSTR"
+    mv.state.set(5)
+    assert mv.state.get() == 5
+
+
+def test_existing_resource_with_address_raises() -> None:
+    handle = MockVisaHandle()
+    with pytest.raises(
+        TypeError,
+        match=re.escape("'address' and 'resource' are mutually exclusive"),
+    ):
+        MockVisa("bad", address="some_address", resource=handle)
+
+
+def test_existing_resource_with_visalib_raises() -> None:
+    handle = MockVisaHandle()
+    with pytest.raises(
+        TypeError,
+        match=re.escape(
+            "Cannot supply visalib or pyvisa_sim_file when using an existing resource"
+        ),
+    ):
+        MockVisa("bad", resource=handle, visalib="@py")
+
+
+def test_existing_resource_with_pyvisa_sim_file_raises() -> None:
+    handle = MockVisaHandle()
+    with pytest.raises(
+        TypeError,
+        match=re.escape(
+            "Cannot supply visalib or pyvisa_sim_file when using an existing resource"
+        ),
+    ):
+        MockVisa("bad", resource=handle, pyvisa_sim_file="somefile.yaml")
+
+
+def test_no_address_or_resource_raises() -> None:
+    with pytest.raises(
+        TypeError,
+        match=re.escape("Either 'address' or 'resource' must be provided"),
+    ):
+        MockVisa("bad")

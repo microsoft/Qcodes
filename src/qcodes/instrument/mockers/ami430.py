@@ -3,7 +3,15 @@ import time
 from datetime import datetime
 from typing import ClassVar
 
+from typing_extensions import deprecated
 
+from qcodes.utils import QCoDeSDeprecationWarning
+
+
+@deprecated(
+    "This class is unused in qcodes and will be removed in a future version. It is unused and no longer maintained.",
+    category=QCoDeSDeprecationWarning,
+)
 class MockAMI430:
     states: ClassVar[dict[str, str]] = {
         "RAMPING to target field/current": "1",
@@ -30,16 +38,16 @@ class MockAMI430:
 
         self._field_mag = 0
         self._field_target = 0
-        self._state = MockAMI430.states["HOLDING at the target field/current"]
+        self._state = MockAMI430.states["HOLDING at the target field/current"]  # pyright: ignore[reportDeprecated]
 
         self.handlers = {
-            "RAMP:RATE:UNITS": {"get": MockAMI430.ramp_rate_units["A/s"], "set": None},
-            "FIELD:UNITS": {"get": MockAMI430.field_units["tesla"], "set": None},
+            "RAMP:RATE:UNITS": {"get": MockAMI430.ramp_rate_units["A/s"], "set": None},  # pyright: ignore[reportDeprecated]
+            "FIELD:UNITS": {"get": MockAMI430.field_units["tesla"], "set": None},  # pyright: ignore[reportDeprecated]
             "*IDN": {"get": "v0.1 Mock", "set": None},
             "STATE": {"get": self._getter("_state"), "set": self._setter("_state")},
             "FIELD:MAG": {"get": self._getter("_field_mag"), "set": None},
             "QU": {
-                "get": MockAMI430.quench_state[
+                "get": MockAMI430.quench_state[  # pyright: ignore[reportDeprecated]
                     False
                 ],  # We are never in a quenching state so always return the
                 # same value
@@ -155,7 +163,7 @@ class MockAMI430:
 
         # Find which handler is suitable to handle the message
         for key in self.handlers:
-            match, args = MockAMI430.message_parser(gs, msg, key)
+            match, args = MockAMI430.message_parser(gs, msg, key)  # pyright: ignore[reportDeprecated]
             if not match:
                 continue
 
@@ -175,17 +183,17 @@ class MockAMI430:
         return rval
 
     def _do_pause(self, _):
-        self._state = MockAMI430.states["PAUSED"]
+        self._state = MockAMI430.states["PAUSED"]  # pyright: ignore[reportDeprecated]
 
     def _is_paused(self):
-        return self._state == MockAMI430.states["PAUSED"]
+        return self._state == MockAMI430.states["PAUSED"]  # pyright: ignore[reportDeprecated]
 
     def _do_ramp(self, _):
         self._log(f"Ramping to {self._field_target}")
-        self._state = MockAMI430.states["RAMPING to target field/current"]
+        self._state = MockAMI430.states["RAMPING to target field/current"]  # pyright: ignore[reportDeprecated]
         time.sleep(0.1)  # Lets pretend to be ramping for a bit
         self._field_mag = self._field_target
-        self._state = MockAMI430.states["HOLDING at the target field/current"]
+        self._state = MockAMI430.states["HOLDING at the target field/current"]  # pyright: ignore[reportDeprecated]
 
     def get_log_messages(self):
         return self.log_messages
