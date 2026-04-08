@@ -8,8 +8,9 @@ from __future__ import annotations
 
 import warnings
 from time import perf_counter
-from typing import TYPE_CHECKING, Any, ClassVar, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Literal
 
+from qcodes.parameters.parameter_base import InstrumentTypeVar_co
 from qcodes.utils import QCoDeSDeprecationWarning
 from qcodes.validators import Strings, Validator
 
@@ -18,7 +19,7 @@ from .parameter import Parameter
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from qcodes.instrument import InstrumentBase
+    from qcodes.instrument import Instrument
 
 
 class ElapsedTimeParameter(Parameter):
@@ -96,7 +97,9 @@ class ElapsedTimeParameter(Parameter):
         return self._t0
 
 
-class InstrumentRefParameter(Parameter):
+class InstrumentRefParameter(
+    Parameter[str, InstrumentTypeVar_co], Generic[InstrumentTypeVar_co]
+):
     """
     An instrument reference parameter.
 
@@ -134,12 +137,12 @@ class InstrumentRefParameter(Parameter):
         self,
         name: str,
         *args: Any,
-        instrument: InstrumentBase | None = None,
+        instrument: InstrumentTypeVar_co = None,
         label: str | None = None,
         unit: str | None = None,
         get_cmd: str | Callable[..., Any] | Literal[False] | None = None,
         set_cmd: str | Callable[..., Any] | Literal[False] | None = None,
-        initial_value: float | str | None = None,
+        initial_value: str | None = None,
         max_val_age: float | None = None,
         vals: Validator[Any] | None = None,
         docstring: str | None = None,
@@ -229,16 +232,15 @@ class InstrumentRefParameter(Parameter):
             **kwargs,
         )
 
-    # TODO(nulinspiratie) check class works now it's subclassed from Parameter
-    def get_instr(self) -> InstrumentBase:
+    def get_instr(self) -> Instrument | None:
         """
         Returns the instance of the instrument with the name equal to the
         value of this parameter.
         """
+        # lazy import to avoid circular import
+        # since Instrument module depends on parameer module
+        from qcodes.instrument import Instrument  # noqa: PLC0415
+
         ref_instrument_name = self.get()
-        # note that _instrument refers to the instrument this parameter belongs
-        # to, while the ref_instrument_name is the instrument that is the value
-        # of this parameter.
-        if self._instrument is None:
-            raise RuntimeError("InstrumentRefParameter is not bound to an instrument.")
-        return self._instrument.find_instrument(ref_instrument_name)
+
+        return Instrument.find_instrument(ref_instrument_name)
