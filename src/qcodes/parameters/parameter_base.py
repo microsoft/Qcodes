@@ -1251,7 +1251,11 @@ class ParameterBase(
             logging.warning(
                 f"Tried to set a new paramtype {paramtype}, but this parameter already has paramtype {self.paramtype} which does not match"
             )
-        self.param_spec.type = paramtype
+        # ParamSpecBase is secretly immutable (its hash is computed only at instantiation time),
+        # so to change the paramtype we need to create a new one
+        self._param_spec = ParamSpecBase(
+            self.param_spec.name, paramtype, self.param_spec.label, self.param_spec.unit
+        )
 
     @property
     def depends_on(self) -> ParameterSet:

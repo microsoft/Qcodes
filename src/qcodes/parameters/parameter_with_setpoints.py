@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Generic
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 import numpy as np
 
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
     from qcodes.dataset.data_set_protocol import ValuesType
-    from qcodes.parameters.parameter_base import ParamDataType, ParameterBase
+    from qcodes.parameters.parameter_base import ParamDataType
 
 LOG = logging.getLogger(__name__)
 
@@ -76,6 +76,7 @@ class ParameterWithSetpoints(
             self.setpoints = setpoints
 
         self._validate_on_get = True
+        self._depends_on = ParameterSetWithSetpoints(self.setpoints)
 
     @property
     def setpoints(self) -> Sequence[ParameterBase]:
@@ -165,10 +166,6 @@ class ParameterWithSetpoints(
             self.validate_consistent_shape()
         super().validate(value)
 
-    @property
-    def depends_on(self) -> ParameterSet:
-        return ParameterSet(self.setpoints)
-
     def unpack_self(self, value: ValuesType) -> list[tuple[ParameterBase, ValuesType]]:
         unpacked_results: list[tuple[ParameterBase, ValuesType]] = []
         setpoint_params = []
@@ -214,3 +211,31 @@ def expand_setpoints_helper(
         return parameter.unpack_self(results)
     else:
         return parameter.unpack_self(parameter.get())
+
+
+P = TypeVar("P", bound=ParameterBase)
+
+
+class ParameterSetWithSetpoints(ParameterSet[P]):
+    """An ordered :class:`ParameterSet` that always keeps *setpoints*
+    flushed to the very right."""
+
+    def __init__(
+        self, setpoints: Sequence[P], parameters: Sequence[P] | None = None
+    ) -> None:
+        super().__init__(parameters)
+        self._setpoints = setpoints
+        self.update(self._setpoints)
+
+    @property
+    def setpoints(self) -> Sequence[P]:
+        return self._setpoints
+
+    def add(self, value: P) -> None:
+        # Not the most efficient but unlikely to be a bottleneck
+        params = [param for param in self._dict if param not in self._setpoints]
+        params.append(value)
+        params.extend(self.setpoints)
+        self._dict.clear()
+        for param in params:
+            self._dict[param] = None
