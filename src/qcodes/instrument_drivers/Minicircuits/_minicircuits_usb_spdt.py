@@ -125,3 +125,16 @@ class MiniCircuitsUsbSPDT(MiniCircuitsSPDTBase):
 
         id_dict = {"firmware": fw, "model": MN, "serial": SN, "vendor": "Mini-Circuits"}
         return id_dict
+
+
+# Notes:
+# https://www.minicircuits.com/softwaredownload/Prog_Manual-2-Switch.pdf
+# Section 3 of the Minicircuits Programming Manual for RF switches includes additional
+# SCPI commands which we may find useful. These are not currently implemented
+# For example: `SETP=[states]` allows multiple switch states to be set with a single command
+#
+# We may also eventually be able to unify the Ethernet interface used by the RC-SPDT and RC-SP4T drivers
+# with the USB interface and have both rely on the SCPI commands
+#
+# Finally, the commands for SP4T and SPDT are not so different that we couldn't have a generic driver
+# That works for all versions
