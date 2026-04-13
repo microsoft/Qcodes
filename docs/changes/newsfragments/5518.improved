@@ -1,0 +1,6 @@
+Errors raised inside a ``@property`` getter on a subclass of
+:class:`~qcodes.utils.DelegateAttributes` (such as :class:`~qcodes.instrument.Instrument`)
+are now surfaced with their original traceback, instead of being masked by a
+generic ``AttributeError: ... object and its delegates have no attribute ...``
+message. The underlying cause of the failure is now visible in the traceback,
+making misbehaving properties much easier to debug.
