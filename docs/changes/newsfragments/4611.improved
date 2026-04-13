@@ -1,0 +1,4 @@
+Calling :meth:`~qcodes.instrument.Instrument.get_idn` on a virtual instrument that
+does not implement ``ask_raw`` no longer logs a spurious warning. Only
+``NotImplementedError`` is treated as an expected virtual-instrument signal;
+unrelated errors during ``*IDN?`` handling are still reported as warnings.

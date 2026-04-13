@@ -256,6 +256,59 @@ def test_get_idn(testdummy: DummyInstrument) -> None:
     assert testdummy.get_idn() == idn
 
 
+def test_get_idn_on_virtual_instrument_does_not_warn(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Virtual instruments that inherit from ``Instrument`` without overriding
+    ``ask_raw`` must not log a warning when ``get_idn`` is called; the missing
+    hardware communication layer is expected. The returned dict should still be
+    structurally valid.
+    """
+
+    class VirtualInstrument(Instrument):
+        """A bare virtual instrument with no ``ask_raw`` implementation."""
+
+    virtual = VirtualInstrument(name="virtual_no_ask")
+    try:
+        with caplog.at_level("WARNING"):
+            idn = virtual.get_idn()
+        assert idn == {
+            "vendor": None,
+            "model": "virtual_no_ask",
+            "serial": None,
+            "firmware": None,
+        }
+        assert "Error getting or interpreting *IDN?" not in caplog.text
+    finally:
+        virtual.close()
+
+
+def test_get_idn_still_warns_on_other_errors(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Unexpected errors in ``*IDN?`` handling should still be surfaced via a
+    warning so real misbehaviour is not silenced by the virtual-instrument
+    short-circuit."""
+
+    class BrokenInstrument(Instrument):
+        def ask_raw(self, cmd: str) -> str:
+            raise RuntimeError("communication failure")
+
+    broken = BrokenInstrument(name="broken_ask")
+    try:
+        with caplog.at_level("WARNING"):
+            idn = broken.get_idn()
+        assert idn == {
+            "vendor": None,
+            "model": "broken_ask",
+            "serial": None,
+            "firmware": None,
+        }
+        assert "Error getting or interpreting *IDN?" in caplog.text
+    finally:
+        broken.close()
+
+
 def test_repr(testdummy: DummyInstrument) -> None:
     assert repr(testdummy) == "<DummyInstrument: testdummy>"
 
