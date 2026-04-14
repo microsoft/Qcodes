@@ -34,7 +34,7 @@ def test_parameter_with_setpoints_has_control(experiment: "Experiment"):
     p2.has_control_of.add(p1)
 
     p1(p1_data)
-    p2_data = np.random.randn(10)
+    p2_data = np.random.default_rng().standard_normal(10)
     p2(p2_data)
 
     meas = Measurement()
@@ -112,7 +112,7 @@ def test_parameter_with_setpoints_has_control_2d(experiment: "Experiment"):
             mp_x(x_val)
             p1_row = np.linspace(-1, 1, n_y) + x_val
             p1(p1_row)
-            p2_row = np.random.randn(n_y)
+            p2_row = np.random.default_rng().standard_normal(n_y)
             p2(p2_row)
             p1_all.append(p1_row)
             p2_all.append(p2_row)
@@ -161,7 +161,7 @@ def test_parameter_with_setpoints_has_control_size_mismatch_warns(
     p2.has_control_of.add(p1)
 
     p1(np.linspace(-1, 1, 10))
-    p2(np.random.randn(10))
+    p2(np.random.default_rng().standard_normal(10))
 
     meas = Measurement()
     meas.register_parameter(p2)
