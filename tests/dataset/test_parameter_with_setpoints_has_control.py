@@ -7,7 +7,7 @@ import xarray as xr
 
 from qcodes.dataset import Measurement
 from qcodes.dataset.exporters.export_to_xarray import _add_inferred_data_vars
-from qcodes.parameters import ManualParameter, ParameterWithSetpoints
+from qcodes.parameters import ManualParameter, Parameter, ParameterWithSetpoints
 from qcodes.validators import Arrays
 
 if TYPE_CHECKING:
@@ -16,13 +16,25 @@ if TYPE_CHECKING:
     from qcodes.dataset.experiment_container import Experiment
 
 
-def test_parameter_with_setpoints_has_control(experiment: "Experiment"):
-    class MySp(ParameterWithSetpoints):
-        def unpack_self(self, value):
+def _make_controlled_setpoints(
+    name: str,
+    controlled: Parameter,
+    **kwargs: object,
+) -> ParameterWithSetpoints:
+    """Create a ParameterWithSetpoints that infers ``controlled`` via unpack_self."""
+
+    class _ControlledSetpoints(ParameterWithSetpoints):
+        def unpack_self(self, value):  # type: ignore[override]
             res = super().unpack_self(value)
-            res.append((p1, p1()))
+            res.append((controlled, controlled()))
             return res
 
+    p = _ControlledSetpoints(name, **kwargs)  # type: ignore[arg-type]
+    p.has_control_of.add(controlled)
+    return p
+
+
+def test_parameter_with_setpoints_has_control(experiment: "Experiment"):
     mp_data = np.arange(10)
     p1_data = np.linspace(-1, 1, 10)
 
@@ -30,8 +42,9 @@ def test_parameter_with_setpoints_has_control(experiment: "Experiment"):
     p1 = ParameterWithSetpoints(
         "p1", vals=Arrays(shape=(10,)), setpoints=(mp,), set_cmd=None
     )
-    p2 = MySp("p2", vals=Arrays(shape=(10,)), setpoints=(mp,), set_cmd=None)
-    p2.has_control_of.add(p1)
+    p2 = _make_controlled_setpoints(
+        "p2", p1, vals=Arrays(shape=(10,)), setpoints=(mp,), set_cmd=None
+    )
 
     p1(p1_data)
     p2_data = np.random.default_rng().standard_normal(10)
@@ -81,12 +94,6 @@ def test_parameter_with_setpoints_has_control_2d(experiment: "Experiment"):
     """Test that an inferred parameter with the same size as its parent
     but different from the full dimension product is correctly included."""
 
-    class MySp(ParameterWithSetpoints):
-        def unpack_self(self, value):
-            res = super().unpack_self(value)
-            res.append((p1, p1()))
-            return res
-
     n_x = 3
     n_y = 4
     mp_x_data = np.arange(n_x, dtype=float)
@@ -98,8 +105,9 @@ def test_parameter_with_setpoints_has_control_2d(experiment: "Experiment"):
     p1 = ParameterWithSetpoints(
         "p1", vals=Arrays(shape=(n_y,)), setpoints=(mp_y,), set_cmd=None
     )
-    p2 = MySp("p2", vals=Arrays(shape=(n_y,)), setpoints=(mp_y,), set_cmd=None)
-    p2.has_control_of.add(p1)
+    p2 = _make_controlled_setpoints(
+        "p2", p1, vals=Arrays(shape=(n_y,)), setpoints=(mp_y,), set_cmd=None
+    )
 
     meas = Measurement()
     meas.register_parameter(p2, setpoints=(mp_x,))
@@ -145,20 +153,15 @@ def test_parameter_with_setpoints_has_control_size_mismatch_warns(
     """Test that a warning is emitted when the inferred parameter has a
     different data size than its parent parameter."""
 
-    class MySp(ParameterWithSetpoints):
-        def unpack_self(self, value):
-            res = super().unpack_self(value)
-            res.append((p1, p1()))
-            return res
-
     mp_data = np.arange(10)
 
     mp = ManualParameter("mp", vals=Arrays(shape=(10,)), initial_value=mp_data)
     p1 = ParameterWithSetpoints(
         "p1", vals=Arrays(shape=(10,)), setpoints=(mp,), set_cmd=None
     )
-    p2 = MySp("p2", vals=Arrays(shape=(10,)), setpoints=(mp,), set_cmd=None)
-    p2.has_control_of.add(p1)
+    p2 = _make_controlled_setpoints(
+        "p2", p1, vals=Arrays(shape=(10,)), setpoints=(mp,), set_cmd=None
+    )
 
     p1(np.linspace(-1, 1, 10))
     p2(np.random.default_rng().standard_normal(10))
