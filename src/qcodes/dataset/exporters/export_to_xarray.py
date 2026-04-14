@@ -99,40 +99,26 @@ def _add_inferred_data_vars(
         else:
             flat = inf_data.ravel()
 
-        # Only add if the data has the same size as one of the parameters
-        # it is inferred from. A parameter may be inferred from multiple
-        # parents so we iterate over all of them.
-        inferred_from_params = interdeps.inferences.get(inf)
-        if not inferred_from_params:
-            continue
-
-        matched_parent = False
-        for parent in inferred_from_params:
-            if parent.name not in sub_dict:
-                continue
-            expected_size = sub_dict[parent.name].ravel().shape[0]
-            if flat.shape[0] == expected_size:
-                xr_dataset[inf.name] = (
-                    dims,
-                    flat.reshape(tuple(xr_dataset.sizes[d] for d in dims)),
-                )
-                matched_parent = True
-                break
-
-        if not matched_parent:
-            available_parents = [
-                p.name for p in inferred_from_params if p.name in sub_dict
-            ]
+        # Only add if the flattened data can be reshaped to the dataset
+        # dimensions. This is more robust than checking individual parent
+        # sizes because an inferred parameter may have multiple parents
+        # with different sizes.
+        expected_shape = tuple(xr_dataset.sizes[d] for d in dims)
+        expected_size = prod(expected_shape)
+        if flat.shape[0] == expected_size:
+            xr_dataset[inf.name] = (dims, flat.reshape(expected_shape))
+        else:
             _LOG.warning(
                 "Cannot add inferred parameter '%s' to xarray dataset for '%s' "
-                "(run_id=%s): data size %d does not match any of its parent "
-                "parameters %s. This is likely a user error in the measurement "
-                "setup.",
+                "(run_id=%s): data size %d does not match the dataset "
+                "dimensions %s (size %d). This is likely a user error in the "
+                "measurement setup.",
                 inf.name,
                 name,
                 dataset.run_id,
                 flat.shape[0],
-                available_parents,
+                dict(zip(dims, expected_shape)),
+                expected_size,
             )
 
     return xr_dataset
