@@ -61,7 +61,7 @@ class TestSingleParentBaseline:
         n = 10
         sub_dict: dict[str, np.ndarray] = {
             "sp": np.arange(n, dtype=float),
-            "meas": np.random.randn(n),
+            "meas": np.random.default_rng().standard_normal(n),
             "inf_param": np.linspace(0, 1, n),
         }
 
@@ -97,8 +97,8 @@ class TestMultipleParentsAllMatch:
         n = 10
         sub_dict: dict[str, np.ndarray] = {
             "sp": np.arange(n, dtype=float),
-            "parent1": np.random.randn(n),
-            "parent2": np.random.randn(n),
+            "parent1": np.random.default_rng().standard_normal(n),
+            "parent2": np.random.default_rng().standard_normal(n),
             "inf_param": np.linspace(0, 1, n),
         }
 
@@ -144,8 +144,8 @@ class TestMultipleParentsOnlyFirstMatches:
         sub_dict: dict[str, np.ndarray] = {
             "sp1": np.arange(n1, dtype=float),
             "sp2": np.arange(n2, dtype=float),
-            "parent1": np.random.randn(n1),
-            "parent2": np.random.randn(n2),
+            "parent1": np.random.default_rng().standard_normal(n1),
+            "parent2": np.random.default_rng().standard_normal(n2),
             # inf_param has the same size as parent1
             "inf_param": np.linspace(0, 1, n1),
         }
@@ -192,8 +192,8 @@ class TestMultipleParentsOnlySecondMatches:
         sub_dict: dict[str, np.ndarray] = {
             "sp1": np.arange(n1, dtype=float),
             "sp2": np.arange(n2, dtype=float),
-            "parent1": np.random.randn(n1),
-            "parent2": np.random.randn(n2),
+            "parent1": np.random.default_rng().standard_normal(n1),
+            "parent2": np.random.default_rng().standard_normal(n2),
             # inf_param has the same size as parent2 but NOT the dataset dims
             "inf_param": np.linspace(0, 1, n2),
         }
@@ -238,8 +238,8 @@ class TestMultipleParentsNoneMatch:
         n = 10
         sub_dict: dict[str, np.ndarray] = {
             "sp": np.arange(n, dtype=float),
-            "parent1": np.random.randn(n),
-            "parent2": np.random.randn(n),
+            "parent1": np.random.default_rng().standard_normal(n),
+            "parent2": np.random.default_rng().standard_normal(n),
             # inf_param has a completely different size
             "inf_param": np.linspace(0, 1, 7),
         }
@@ -282,7 +282,7 @@ class TestMultipleParentsOneUnavailable:
         n = 10
         sub_dict: dict[str, np.ndarray] = {
             "sp": np.arange(n, dtype=float),
-            "parent1": np.random.randn(n),
+            "parent1": np.random.default_rng().standard_normal(n),
             # parent2 is NOT in sub_dict
             "inf_param": np.linspace(0, 1, n),
         }
@@ -315,7 +315,7 @@ class TestMultipleParentsOneUnavailable:
         n = 10
         sub_dict: dict[str, np.ndarray] = {
             "sp": np.arange(n, dtype=float),
-            "parent1": np.random.randn(n),
+            "parent1": np.random.default_rng().standard_normal(n),
             # parent2 missing, inf_param has wrong size
             "inf_param": np.linspace(0, 1, 7),
         }
@@ -358,8 +358,8 @@ class TestMultipleParentsSameSizeAllMatch:
         n = 10
         sub_dict: dict[str, np.ndarray] = {
             "sp": np.arange(n, dtype=float),
-            "parent1": np.random.randn(n),
-            "parent2": np.random.randn(n),
+            "parent1": np.random.default_rng().standard_normal(n),
+            "parent2": np.random.default_rng().standard_normal(n),
             "inf_param": np.linspace(0, 1, n),
         }
 
