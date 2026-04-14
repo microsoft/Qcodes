@@ -527,5 +527,5 @@ zhinst-toolkit==1.3.0
     # via zhinst-qcodes
 zhinst-utils==0.7.1
     # via zhinst-toolkit
-zipp==3.23.0
+zipp==3.23.1
     # via importlib-metadata
