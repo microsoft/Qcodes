@@ -2,7 +2,7 @@ import textwrap
 from bisect import bisect_left
 from contextlib import ExitStack
 from functools import partial
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, get_args
+from typing import TYPE_CHECKING, Literal, TypeAlias, get_args
 
 import numpy as np
 import numpy.typing as npt
@@ -18,7 +18,7 @@ from qcodes.instrument import (
 from qcodes.instrument_drivers.Keysight.private.error_handling import (
     KeysightErrorQueueMixin,
 )
-from qcodes.parameters import Parameter, ParameterWithSetpoints
+from qcodes.parameters import Parameter, ParameterKWArgs, ParameterWithSetpoints
 from qcodes.utils import (
     convert_legacy_version_to_supported_version,
 )
@@ -502,8 +502,12 @@ class TimeTrace(ParameterWithSetpoints[npt.NDArray[np.float64], "Keysight344xxA"
     intervals
     """
 
-    def __init__(self, name: str, instrument: "Keysight344xxA", **kwargs: Any):
-        super().__init__(name=name, instrument=instrument, **kwargs)
+    def __init__(
+        self,
+        name: str,
+        **kwargs: "Unpack[ParameterKWArgs[npt.NDArray[np.float64], Keysight344xxA]]",
+    ):
+        super().__init__(name=name, **kwargs)
 
         # the extra time needed to avoid timeouts during acquisition
         self._acquire_timeout_fudge_factor = 1.25
