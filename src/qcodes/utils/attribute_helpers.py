@@ -39,17 +39,6 @@ class DelegateAttributes:
     """
 
     def __getattr__(self, key: str) -> Any:
-        # If ``key`` names a data descriptor (e.g. ``@property``) on the class,
-        # the only way Python reaches ``__getattr__`` is because the descriptor's
-        # own ``__get__`` raised ``AttributeError``. Re-invoke the descriptor so
-        # the underlying error surfaces with its original traceback, instead of
-        # being masked by the generic "has no attribute" error below.
-        descriptor = inspect.getattr_static(type(self), key, None)
-        if descriptor is not None and hasattr(descriptor, "__get__") and (
-            hasattr(descriptor, "__set__") or hasattr(descriptor, "__delete__")
-        ):
-            return descriptor.__get__(self, type(self))
-
         if key in self.omit_delegate_attrs:
             raise AttributeError(
                 f"'{self.__class__.__name__}' does not delegate attribute {key}"
@@ -79,6 +68,14 @@ class DelegateAttributes:
                     return getattr(obj, key)
             except AttributeError:
                 pass
+
+        # ``inspect.getattr_static`` is comparatively expensive. Keep it as a
+        # fallback only when delegation did not resolve ``key``.
+        descriptor = inspect.getattr_static(type(self), key, None)
+        if descriptor is not None and hasattr(descriptor, "__get__") and (
+            hasattr(descriptor, "__set__") or hasattr(descriptor, "__delete__")
+        ):
+            return descriptor.__get__(self, type(self))
 
         raise AttributeError(
             f"'{self.__class__.__name__}' object and its delegates have no attribute '{key}'"
