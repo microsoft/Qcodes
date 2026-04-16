@@ -1,4 +1,4 @@
-Calling :meth:`~qcodes.instrument.Instrument.get_idn` on a virtual instrument that
-does not implement ``ask_raw`` no longer logs a spurious warning. Only
-``NotImplementedError`` is treated as an expected virtual-instrument signal;
-unrelated errors during ``*IDN?`` handling are still reported as warnings.
+:class:`~qcodes.instrument.VirtualInstrument` has been added for virtual drivers
+that do not communicate with hardware. Its ``get_idn`` returns a default IDN
+dict without warning. :meth:`~qcodes.instrument.Instrument.get_idn` remains
+unchanged and still warns when communication via ``ask_raw`` is unavailable.

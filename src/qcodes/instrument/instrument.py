@@ -91,10 +91,6 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         semicolon and colon are also common separators so we accept them here
         as well.
 
-        Virtual instruments that do not define ``ask_raw`` will produce a dict
-        with ``None`` entries (and ``name`` as the model) without emitting a
-        warning, since the absence of real hardware communication is expected.
-
         Returns:
             A dict containing vendor, model, serial, and firmware.
 
@@ -113,11 +109,6 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
             # in case parts at the end are missing, fill in None
             if len(idparts) < 4:
                 idparts += [None] * (4 - len(idparts))
-        except NotImplementedError:
-            # Virtual instruments inherit from Instrument without overriding
-            # ``ask_raw``; treat this as an expected condition rather than a
-            # misconfiguration, so the user does not see a spurious warning.
-            idparts = [None, self.name, None, None]
         except Exception:
             self.log.warning(
                 f"Error getting or interpreting *IDN?: {idstr!r}", exc_info=True
@@ -468,6 +459,15 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         raise NotImplementedError(
             f"Instrument {type(self).__name__} has not defined an ask method"
         )
+
+
+class VirtualInstrument(Instrument):
+    """
+    Base class for virtual instruments that do not communicate with hardware.
+    """
+
+    def get_idn(self) -> dict[str, str | None]:
+        return {"vendor": None, "model": self.name, "serial": None, "firmware": None}
 
 
 def find_or_create_instrument(

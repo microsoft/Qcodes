@@ -19,6 +19,7 @@ from qcodes.instrument import (
     Instrument,
     InstrumentBase,
     InstrumentModule,
+    VirtualInstrument,
     find_or_create_instrument,
 )
 from qcodes.instrument_drivers.mock_instruments import (
@@ -259,17 +260,11 @@ def test_get_idn(testdummy: DummyInstrument) -> None:
 def test_get_idn_on_virtual_instrument_does_not_warn(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """Virtual instruments that inherit from ``Instrument`` without overriding
-    ``ask_raw`` must not log a warning when ``get_idn`` is called; the missing
-    hardware communication layer is expected. The returned dict should still be
-    structurally valid.
-    """
-
-    class VirtualInstrument(Instrument):
-        """A bare virtual instrument with no ``ask_raw`` implementation."""
+    """``VirtualInstrument.get_idn`` should return a default IDN without warning."""
 
     virtual = VirtualInstrument(name="virtual_no_ask")
     try:
+        caplog.clear()
         with caplog.at_level("WARNING"):
             idn = virtual.get_idn()
         assert idn == {
@@ -281,6 +276,27 @@ def test_get_idn_on_virtual_instrument_does_not_warn(
         assert "Error getting or interpreting *IDN?" not in caplog.text
     finally:
         virtual.close()
+
+
+def test_get_idn_on_base_instrument_warns(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """The plain ``Instrument`` base class should still warn without ``ask_raw``."""
+
+    instrument = Instrument(name="instrument_no_ask")
+    try:
+        caplog.clear()
+        with caplog.at_level("WARNING"):
+            idn = instrument.get_idn()
+        assert idn == {
+            "vendor": None,
+            "model": "instrument_no_ask",
+            "serial": None,
+            "firmware": None,
+        }
+        assert "Error getting or interpreting *IDN?" in caplog.text
+    finally:
+        instrument.close()
 
 
 def test_get_idn_still_warns_on_other_errors(
