@@ -1,7 +1,7 @@
 import binascii
 import logging
 from functools import partial
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
@@ -16,7 +16,12 @@ from qcodes.instrument import (
     VisaInstrument,
     VisaInstrumentKWArgs,
 )
-from qcodes.parameters import ArrayParameter, Parameter, ParamRawDataType
+from qcodes.parameters import (
+    ArrayParameter,
+    Parameter,
+    ParameterBaseKWArgs,
+    ParamRawDataType,
+)
 
 if TYPE_CHECKING:
     from qcodes.instrument.channel import ChannelTuple
@@ -50,9 +55,9 @@ class ScopeArray(ArrayParameter):
     def __init__(
         self,
         name: str,
-        instrument: "TektronixTPS2012Channel",
+        *,
         channel: int,
-        **kwargs: Any,
+        **kwargs: Unpack[ParameterBaseKWArgs],
     ):
         super().__init__(
             name=name,
@@ -63,7 +68,6 @@ class ScopeArray(ArrayParameter):
             setpoint_labels=("Time",),
             setpoint_units=("s",),
             docstring="holds an array from scope",
-            instrument=instrument,
             **kwargs,
         )
         self.channel = channel
