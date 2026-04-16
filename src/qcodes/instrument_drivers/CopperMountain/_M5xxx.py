@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -8,6 +8,7 @@ from qcodes.parameters import (
     ManualParameter,
     MultiParameter,
     Parameter,
+    ParameterBaseKWArgs,
     ParamRawDataType,
     create_on_off_val_mapping,
 )
@@ -637,9 +638,9 @@ class FrequencySweepMagPhase(
         start: float,
         stop: float,
         number_of_points: int,
-        instrument: CopperMountainM5xxx,
+        *,
         expected_measurement_duration: float = 600,
-        **kwargs: Any,
+        **kwargs: "Unpack[ParameterBaseKWArgs[tuple[NDArray, NDArray], CopperMountainM5xxx]]",
     ) -> None:
         """
         Linear frequency sweep that returns magnitude and phase for a single
@@ -650,17 +651,18 @@ class FrequencySweepMagPhase(
             start: Start frequency of linear sweep
             stop: Stop frequency of linear sweep
             number_of_points: Number of points of linear sweep
-            instrument: Instrument to which sweep is bound to.
             expected_measurement_duration: Adjusts instrument timeout (seconds). Defaults to 600 seconds.
-            **kwargs: Any
+            **kwargs: Keyword arguments forwarded to MultiParameter.
 
         """
 
         self.expected_measurement_duration = expected_measurement_duration
 
+        instrument = kwargs.get("instrument")
+        assert instrument is not None
+
         super().__init__(
             name,
-            instrument=instrument,
             names=(
                 f"{instrument.short_name}_{name}_magnitude",
                 f"{instrument.short_name}_{name}_phase",
@@ -746,26 +748,27 @@ class PointMagPhase(
     def __init__(
         self,
         name: str,
-        instrument: CopperMountainM5xxx,
+        *,
         expected_measurement_duration: float = 600,
-        **kwargs: Any,
+        **kwargs: "Unpack[ParameterBaseKWArgs[tuple[np.floating, np.floating], CopperMountainM5xxx]]",
     ) -> None:
         """Magnitude and phase measurement of a single point at start
         frequency.
 
         Args:
             name: Name of point measurement
-            instrument:  Instrument to which parameter is bound to.
             expected_measurement_duration: Adjusts instrument timeout (seconds). Defaults to 600 seconds.
-            **kwargs: Any
+            **kwargs: Keyword arguments forwarded to MultiParameter.
 
         """
 
         self.expected_measurement_duration = expected_measurement_duration
 
+        instrument = kwargs.get("instrument")
+        assert instrument is not None
+
         super().__init__(
             name,
-            instrument=instrument,
             names=(
                 f"{instrument.short_name}_{name}_magnitude",
                 f"{instrument.short_name}_{name}_phase",
@@ -844,26 +847,27 @@ class PointIQ(MultiParameter[tuple[np.floating, np.floating], CopperMountainM5xx
     def __init__(
         self,
         name: str,
-        instrument: CopperMountainM5xxx,
+        *,
         expected_measurement_duration: float = 600,
-        **kwargs: Any,
+        **kwargs: "Unpack[ParameterBaseKWArgs[tuple[np.floating, np.floating], CopperMountainM5xxx]]",
     ) -> None:
         """I and Q measurement of a single point at start
         frequency.
 
         Args:
             name: Name of point measurement
-            instrument:  Instrument to which parameter is bound to.
             expected_measurement_duration: Adjusts instrument timeout (seconds). Defaults to 600 seconds.
-            **kwargs: Any
+            **kwargs: Keyword arguments forwarded to MultiParameter.
 
         """
 
         self.expected_measurement_duration = expected_measurement_duration
 
+        instrument = kwargs.get("instrument")
+        assert instrument is not None
+
         super().__init__(
             name,
-            instrument=instrument,
             names=(
                 f"{instrument.short_name}_{name}_i",
                 f"{instrument.short_name}_{name}_q",
