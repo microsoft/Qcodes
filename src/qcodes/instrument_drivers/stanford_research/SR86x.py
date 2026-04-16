@@ -14,7 +14,7 @@ from qcodes.instrument import (
     VisaInstrument,
     VisaInstrumentKWArgs,
 )
-from qcodes.parameters import ArrayParameter
+from qcodes.parameters import ArrayParameter, ParameterBaseKWArgs
 from qcodes.validators import ComplexNumbers, Enum, Ints, Numbers
 
 if TYPE_CHECKING:
@@ -38,7 +38,7 @@ class SR86xBufferReadout(ArrayParameter):
 
     """
 
-    def __init__(self, name: str, instrument: SR86x, **kwargs: Any) -> None:
+    def __init__(self, name: str, **kwargs: Unpack[ParameterBaseKWArgs]) -> None:
         unit = "deg"
         if name in ["X", "Y", "R"]:
             unit = "V"
@@ -50,7 +50,6 @@ class SR86xBufferReadout(ArrayParameter):
             setpoint_names=("Time",),
             setpoint_labels=("Time",),
             setpoint_units=("s",),
-            instrument=instrument,
             docstring="Holds an acquired (part of the) data buffer of one channel.",
             **kwargs,
         )
