@@ -4,13 +4,13 @@ Driver for the Keithley S46 RF switch
 
 import re
 from itertools import product
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from qcodes.instrument import (
     VisaInstrument,
     VisaInstrumentKWArgs,
 )
-from qcodes.parameters import Parameter, ParamRawDataType
+from qcodes.parameters import Parameter, ParameterKWArgs, ParamRawDataType
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
@@ -72,12 +72,12 @@ class S46Parameter(Parameter[ParamRawDataType, "KeithleyS46"]):
     def __init__(
         self,
         name: str,
-        instrument: "KeithleyS46",
+        *,
         channel_number: int,
         lock: KeithleyS46RelayLock,
-        **kwargs: Any,
+        **kwargs: "Unpack[ParameterKWArgs[ParamRawDataType, KeithleyS46]]",
     ):
-        super().__init__(name, instrument=instrument, **kwargs)
+        super().__init__(name, **kwargs)
 
         self._lock = lock
         self._channel_number = channel_number
