@@ -25,6 +25,7 @@ from qcodes.instrument import (
 from qcodes.parameters import (
     Parameter,
     ParameterBase,
+    ParameterKWArgs,
     ParameterWithSetpoints,
     create_on_off_val_mapping,
 )
@@ -41,12 +42,20 @@ class DSOTimeAxisParam(Parameter):
     Time axis parameter for the Infiniium series DSO.
     """
 
-    def __init__(self, xorigin: float, xincrement: float, points: int, **kwargs: Any):
+    def __init__(
+        self,
+        xorigin: float,
+        xincrement: float,
+        points: int,
+        *,
+        name: str,
+        **kwargs: "Unpack[ParameterKWArgs]",
+    ):
         """
         Initialize time axis. If values are unknown, they can be initialized to zero and
         filled in later.
         """
-        super().__init__(**kwargs)
+        super().__init__(name, **kwargs)
 
         self.xorigin = xorigin
         self.xincrement = xincrement
@@ -69,12 +78,20 @@ class DSOFrequencyAxisParam(Parameter):
     Frequency axis parameter for the Infiniium series DSO.
     """
 
-    def __init__(self, xorigin: float, xincrement: float, points: int, **kwargs: Any):
+    def __init__(
+        self,
+        xorigin: float,
+        xincrement: float,
+        points: int,
+        *,
+        name: str,
+        **kwargs: "Unpack[ParameterKWArgs]",
+    ):
         """
         Initialize frequency axis. If values are unknown, they can be initialized
         to zero and filled in later.
         """
-        super().__init__(**kwargs)
+        super().__init__(name, **kwargs)
 
         self.xorigin = xorigin
         self.xincrement = xincrement
@@ -113,15 +130,15 @@ class DSOTraceParam(
     def __init__(
         self,
         name: str,
-        instrument: "KeysightInfiniiumChannel | KeysightInfiniiumFunction",
+        *,
         channel: str,
-        **kwargs: Any,
+        **kwargs: "Unpack[ParameterKWArgs[npt.NDArray, KeysightInfiniiumChannel | KeysightInfiniiumFunction]]",
     ):
         """
         Initialize DSOTraceParam bound to a specific channel.
         """
         self._ch_valid = False
-        super().__init__(name, instrument=instrument, **kwargs)
+        super().__init__(name, **kwargs)
         self._channel = channel
         # This parameter will be updated prior to being retrieved if
         # self.root_instrument.auto_digitize is true.
