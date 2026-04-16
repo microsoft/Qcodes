@@ -22,6 +22,7 @@ from qcodes.parameters import (
     ParameterBaseKWArgs,
     ParameterKWArgs,
     ParameterWithSetpoints,
+    ParameterWithSetpointsKWArgs,
     ParamRawDataType,
 )
 from qcodes.validators import Arrays, ComplexNumbers, Numbers, OnOff, Strings
@@ -942,7 +943,7 @@ class DummyParameterWithSetpoints1D(ParameterWithSetpoints):
     `dummy_n_points` parameter in the instrument.
     """
 
-    def __init__(self, *, name: str, **kwargs: Unpack[ParameterKWArgs]):
+    def __init__(self, *, name: str, **kwargs: Unpack[ParameterWithSetpointsKWArgs]):
         super().__init__(name, **kwargs)
         self._rng = np.random.default_rng()
 
@@ -958,7 +959,7 @@ class DummyParameterWithSetpoints2D(ParameterWithSetpoints):
     `dummy_n_points` and `dummy_n_points_2` parameters in the instrument.
     """
 
-    def __init__(self, *, name: str, **kwargs: Unpack[ParameterKWArgs]):
+    def __init__(self, *, name: str, **kwargs: Unpack[ParameterWithSetpointsKWArgs]):
         super().__init__(name, **kwargs)
         self._rng = np.random.default_rng()
 
@@ -975,7 +976,7 @@ class DummyParameterWithSetpointsComplex(ParameterWithSetpoints):
     `dummy_n_points` parameter in the instrument. Returns Complex values
     """
 
-    def __init__(self, *, name: str, **kwargs: Unpack[ParameterKWArgs]):
+    def __init__(self, *, name: str, **kwargs: Unpack[ParameterWithSetpointsKWArgs]):
         super().__init__(name, **kwargs)
         self._rng = np.random.default_rng()
 

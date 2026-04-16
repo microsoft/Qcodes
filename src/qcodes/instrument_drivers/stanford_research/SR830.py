@@ -12,6 +12,7 @@ from qcodes.parameters import (
     Parameter,
     ParameterKWArgs,
     ParameterWithSetpoints,
+    ParameterWithSetpointsKWArgs,
     ParamRawDataType,
 )
 from qcodes.validators import Arrays, ComplexNumbers, Enum, Ints, Numbers, Strings
@@ -28,7 +29,7 @@ class ChannelTrace(ParameterWithSetpoints):
     """
 
     def __init__(
-        self, name: str, channel: int, **kwargs: Unpack[ParameterKWArgs]
+        self, name: str, channel: int, **kwargs: Unpack[ParameterWithSetpointsKWArgs]
     ) -> None:
         """
         Args:

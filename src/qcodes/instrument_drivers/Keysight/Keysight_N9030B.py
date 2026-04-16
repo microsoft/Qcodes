@@ -14,8 +14,8 @@ from qcodes.instrument import (
 )
 from qcodes.parameters import (
     Parameter,
-    ParameterKWArgs,
     ParameterWithSetpoints,
+    ParameterWithSetpointsKWArgs,
     ParamRawDataType,
     create_on_off_val_mapping,
 )
@@ -48,7 +48,7 @@ class FrequencyAxis(
         npts: Parameter[int, _T],
         *,
         name: str,
-        **kwargs: Unpack[ParameterKWArgs[npt.NDArray[np.float64], _T]],
+        **kwargs: Unpack[ParameterWithSetpointsKWArgs[npt.NDArray[np.float64], _T]],
     ) -> None:
         super().__init__(name, **kwargs)
         self._start = start
@@ -73,7 +73,7 @@ class Trace(
         *,
         name: str,
         get_data: Callable[[int], ParameterDataTypeVar],
-        **kwargs: Unpack[ParameterKWArgs[ParameterDataTypeVar, _T]],
+        **kwargs: Unpack[ParameterWithSetpointsKWArgs[ParameterDataTypeVar, _T]],
     ) -> None:
         super().__init__(name, **kwargs)
         # while the parameter classes should ideally be generic in instrument

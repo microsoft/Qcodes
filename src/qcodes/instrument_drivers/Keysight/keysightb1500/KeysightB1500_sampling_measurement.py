@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, cast
 import numpy
 import numpy.typing as npt
 
-from qcodes.parameters import ParameterKWArgs, ParameterWithSetpoints
+from qcodes.parameters import ParameterWithSetpoints, ParameterWithSetpointsKWArgs
 
 from . import constants
 from .KeysightB1500_module import (
@@ -42,7 +42,7 @@ class SamplingMeasurement(
     def __init__(
         self,
         name: str,
-        **kwargs: "Unpack[ParameterKWArgs[npt.NDArray[numpy.float64], KeysightB1517A]]",
+        **kwargs: "Unpack[ParameterWithSetpointsKWArgs[npt.NDArray[numpy.float64], KeysightB1517A]]",
     ):
         super().__init__(name, **kwargs)
 

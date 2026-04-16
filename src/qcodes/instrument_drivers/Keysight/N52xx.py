@@ -19,6 +19,7 @@ from qcodes.parameters import (
     ParameterBase,
     ParameterKWArgs,
     ParameterWithSetpoints,
+    ParameterWithSetpointsKWArgs,
     create_on_off_val_mapping,
 )
 from qcodes.validators import Arrays, Bool, Enum, Ints, Numbers
@@ -85,7 +86,7 @@ class FormattedSweep(ParameterWithSetpoints[npt.NDArray, "KeysightPNATrace"]):
         *,
         sweep_format: str,
         memory: bool = False,
-        **kwargs: "Unpack[ParameterKWArgs[npt.NDArray, KeysightPNATrace]]",
+        **kwargs: "Unpack[ParameterWithSetpointsKWArgs[npt.NDArray, KeysightPNATrace]]",
     ) -> None:
         super().__init__(name, **kwargs)
         self.sweep_format = sweep_format

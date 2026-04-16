@@ -27,6 +27,7 @@ from qcodes.parameters import (
     ParameterBase,
     ParameterKWArgs,
     ParameterWithSetpoints,
+    ParameterWithSetpointsKWArgs,
     create_on_off_val_mapping,
 )
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
@@ -132,7 +133,7 @@ class DSOTraceParam(
         name: str,
         *,
         channel: str,
-        **kwargs: "Unpack[ParameterKWArgs[npt.NDArray, KeysightInfiniiumChannel | KeysightInfiniiumFunction]]",
+        **kwargs: "Unpack[ParameterWithSetpointsKWArgs[npt.NDArray, KeysightInfiniiumChannel | KeysightInfiniiumFunction]]",
     ):
         """
         Initialize DSOTraceParam bound to a specific channel.

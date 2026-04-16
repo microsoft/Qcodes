@@ -18,7 +18,11 @@ from qcodes.instrument import (
 from qcodes.instrument_drivers.Keysight.private.error_handling import (
     KeysightErrorQueueMixin,
 )
-from qcodes.parameters import Parameter, ParameterKWArgs, ParameterWithSetpoints
+from qcodes.parameters import (
+    Parameter,
+    ParameterWithSetpoints,
+    ParameterWithSetpointsKWArgs,
+)
 from qcodes.utils import (
     convert_legacy_version_to_supported_version,
 )
@@ -505,7 +509,7 @@ class TimeTrace(ParameterWithSetpoints[npt.NDArray[np.float64], "Keysight344xxA"
     def __init__(
         self,
         name: str,
-        **kwargs: "Unpack[ParameterKWArgs[npt.NDArray[np.float64], Keysight344xxA]]",
+        **kwargs: "Unpack[ParameterWithSetpointsKWArgs[npt.NDArray[np.float64], Keysight344xxA]]",
     ):
         super().__init__(name=name, **kwargs)
 
