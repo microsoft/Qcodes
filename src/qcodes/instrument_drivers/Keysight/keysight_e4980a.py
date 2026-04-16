@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from packaging import version
 from pyvisa.errors import VisaIOError
@@ -16,6 +16,7 @@ from qcodes.parameters import (
     ManualParameter,
     MultiParameter,
     Parameter,
+    ParameterBaseKWArgs,
     ParamRawDataType,
     create_on_off_val_mapping,
 )
@@ -54,7 +55,11 @@ class KeysightE4980AMeasurementPair(MultiParameter):
     value: tuple[float, float] = (0.0, 0.0)
 
     def __init__(
-        self, name: str, names: "Sequence[str]", units: "Sequence[str]", **kwargs: Any
+        self,
+        name: str,
+        names: "Sequence[str]",
+        units: "Sequence[str]",
+        **kwargs: "Unpack[ParameterBaseKWArgs]",
     ):
         super().__init__(
             name=name,
