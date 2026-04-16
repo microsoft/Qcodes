@@ -19,7 +19,7 @@ from .helpers import CapabilityHelper
 from .utils import TraceParameter
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Generator, Sequence
 
     from typing_extensions import Unpack
 
@@ -208,7 +208,7 @@ class AlazarTechATS(Instrument):
         }
 
     @contextmanager
-    def syncing(self) -> Iterator[None]:
+    def syncing(self) -> Generator[None, None, None]:
         """
         Context manager for syncing settings to Alazar card. It will
         automatically call sync_settings_to_card at the end of the
