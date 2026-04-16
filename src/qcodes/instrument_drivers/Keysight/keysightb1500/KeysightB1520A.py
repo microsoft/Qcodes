@@ -7,7 +7,13 @@ from typing_extensions import deprecated
 
 import qcodes.validators as vals
 from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel
-from qcodes.parameters import Group, GroupParameter, MultiParameter, Parameter
+from qcodes.parameters import (
+    Group,
+    GroupParameter,
+    MultiParameter,
+    Parameter,
+    ParameterBaseKWArgs,
+)
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 from . import constants
@@ -1179,7 +1185,11 @@ class KeysightB1500CVSweepMeasurement(
 
     """
 
-    def __init__(self, name: str, instrument: KeysightB1520A, **kwargs: Any):
+    def __init__(
+        self,
+        name: str,
+        **kwargs: "Unpack[ParameterBaseKWArgs[tuple[tuple[float, ...], tuple[float, ...]], KeysightB1520A]]",
+    ):
         super().__init__(
             name,
             names=("", ""),
@@ -1189,7 +1199,6 @@ class KeysightB1500CVSweepMeasurement(
             setpoint_names=(("Voltage",),) * 2,
             setpoint_labels=(("Voltage",),) * 2,
             setpoint_units=(("V",),) * 2,
-            instrument=instrument,
             **kwargs,
         )
 

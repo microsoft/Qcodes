@@ -8,7 +8,13 @@ from typing_extensions import TypedDict, Unpack, deprecated
 
 import qcodes.validators as vals
 from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel
-from qcodes.parameters import Group, GroupParameter, Parameter, ParamRawDataType
+from qcodes.parameters import (
+    Group,
+    GroupParameter,
+    Parameter,
+    ParameterKWArgs,
+    ParamRawDataType,
+)
 from qcodes.parameters.parameter_base import ParameterDataTypeVar
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
@@ -713,8 +719,12 @@ class IVSweeper(KeysightB1500IVSweeper):
 class _ParameterWithStatus(
     Parameter[ParameterDataTypeVar, "KeysightB1517A"], Generic[ParameterDataTypeVar]
 ):
-    def __init__(self, *args: Any, **kwargs: Any):
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        name: str,
+        **kwargs: Unpack[ParameterKWArgs[ParameterDataTypeVar, "KeysightB1517A"]],
+    ):
+        super().__init__(name, **kwargs)
 
         self._measurement_status: MeasurementStatus | None = None
 

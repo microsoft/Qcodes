@@ -1,10 +1,15 @@
 import re
 import textwrap
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Generic, TypedDict, cast
+from typing import TYPE_CHECKING, Generic, TypedDict, cast
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
-from qcodes.parameters import MultiParameter, Parameter, create_on_off_val_mapping
+from qcodes.parameters import (
+    MultiParameter,
+    Parameter,
+    ParameterBaseKWArgs,
+    create_on_off_val_mapping,
+)
 from qcodes.parameters.parameter_base import ParameterDataTypeVar
 
 from . import constants
@@ -512,7 +517,11 @@ class IVSweepMeasurement(
 
     """
 
-    def __init__(self, name: str, instrument: KeysightB1500, **kwargs: Any):
+    def __init__(
+        self,
+        name: str,
+        **kwargs: "Unpack[ParameterBaseKWArgs[ParameterDataTypeVar, KeysightB1500]]",
+    ):
         super().__init__(
             name,
             names=tuple(["param1", "param2"]),
@@ -522,7 +531,6 @@ class IVSweepMeasurement(
             setpoint_names=(("Voltage",),) * 2,
             setpoint_labels=(("Voltage",),) * 2,
             setpoint_units=(("V",),) * 2,
-            instrument=instrument,
             **kwargs,
         )
 
