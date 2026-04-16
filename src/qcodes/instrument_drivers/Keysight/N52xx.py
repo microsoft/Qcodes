@@ -17,6 +17,7 @@ from qcodes.instrument import (
 from qcodes.parameters import (
     Parameter,
     ParameterBase,
+    ParameterKWArgs,
     ParameterWithSetpoints,
     create_on_off_val_mapping,
 )
@@ -31,15 +32,17 @@ if TYPE_CHECKING:
 class PNAAxisParameter(Parameter):
     def __init__(
         self,
+        *,
+        name: str,
         startparam: Parameter,
         stopparam: Parameter,
         pointsparam: Parameter,
-        **kwargs: Any,
+        **kwargs: "Unpack[ParameterKWArgs]",
     ):
         """
         Axis parameter for traces from the PNA
         """
-        super().__init__(**kwargs)
+        super().__init__(name, **kwargs)
 
         self._startparam = startparam
         self._stopparam = stopparam
@@ -79,14 +82,12 @@ class FormattedSweep(ParameterWithSetpoints[npt.NDArray, "KeysightPNATrace"]):
     def __init__(
         self,
         name: str,
-        instrument: "KeysightPNATrace",
+        *,
         sweep_format: str,
-        label: str,
-        unit: str,
         memory: bool = False,
-        **kwargs: Any,
+        **kwargs: "Unpack[ParameterKWArgs[npt.NDArray, KeysightPNATrace]]",
     ) -> None:
-        super().__init__(name, instrument=instrument, label=label, unit=unit, **kwargs)
+        super().__init__(name, **kwargs)
         self.sweep_format = sweep_format
         self.memory = memory
 
