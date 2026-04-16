@@ -3,7 +3,7 @@
 import logging
 import time
 import warnings
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
@@ -19,7 +19,12 @@ from qcodes.instrument import (
     VisaInstrument,
     VisaInstrumentKWArgs,
 )
-from qcodes.parameters import ArrayParameter, Parameter, create_on_off_val_mapping
+from qcodes.parameters import (
+    ArrayParameter,
+    Parameter,
+    ParameterBaseKWArgs,
+    create_on_off_val_mapping,
+)
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
@@ -31,15 +36,16 @@ class ScopeTrace(ArrayParameter[npt.NDArray, "RohdeSchwarzRTO1000ScopeChannel"])
     def __init__(
         self,
         name: str,
-        instrument: "RohdeSchwarzRTO1000ScopeChannel",
+        *,
         channum: int,
-        **kwargs: Any,
+        **kwargs: "Unpack[ParameterBaseKWArgs[npt.NDArray, RohdeSchwarzRTO1000ScopeChannel]]",
     ) -> None:
         """
         The ScopeTrace parameter is attached to a channel of the oscilloscope.
 
         For now, we only support reading out the entire trace.
         """
+        kwargs.setdefault("snapshot_value", False)  # type: ignore[typeddict-readonly-mutated]
         super().__init__(
             name=name,
             shape=(1,),
@@ -49,12 +55,10 @@ class ScopeTrace(ArrayParameter[npt.NDArray, "RohdeSchwarzRTO1000ScopeChannel"])
             setpoint_labels=("Time",),
             setpoint_units=("s",),
             docstring="Holds scope trace",
-            snapshot_value=False,
-            instrument=instrument,
             **kwargs,
         )
 
-        self.channel = instrument
+        self.channel = self.instrument
         self.channum = channum
         self._trace_ready = False
 

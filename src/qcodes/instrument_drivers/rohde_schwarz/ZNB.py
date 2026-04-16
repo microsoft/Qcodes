@@ -18,6 +18,7 @@ from qcodes.parameters import (
     ManualParameter,
     MultiParameter,
     Parameter,
+    ParameterBaseKWArgs,
     create_on_off_val_mapping,
 )
 
@@ -45,14 +46,15 @@ class FixedFrequencyTraceIQ(
     def __init__(
         self,
         name: str,
-        instrument: "RohdeSchwarzZNBChannel",
+        *,
         npts: int,
         bandwidth: int,
-        **kwargs: Any,
+        **kwargs: "Unpack[ParameterBaseKWArgs[Any, RohdeSchwarzZNBChannel]]",
     ) -> None:
+        instrument = kwargs.get("instrument")
+        assert instrument is not None
         super().__init__(
             name,
-            instrument=instrument,
             names=("I", "Q"),
             labels=(f"{instrument.short_name} I", f"{instrument.short_name} Q"),
             units=("", ""),
@@ -124,11 +126,14 @@ class FixedFrequencyPointIQ(
     """
 
     def __init__(
-        self, name: str, instrument: "RohdeSchwarzZNBChannel", **kwargs: Any
+        self,
+        name: str,
+        **kwargs: "Unpack[ParameterBaseKWArgs[Any, RohdeSchwarzZNBChannel]]",
     ) -> None:
+        instrument = kwargs.get("instrument")
+        assert instrument is not None
         super().__init__(
             name,
-            instrument=instrument,
             names=("I", "Q"),
             labels=(f"{instrument.short_name} I", f"{instrument.short_name} Q"),
             units=("", ""),
@@ -174,11 +179,14 @@ class FixedFrequencyPointMagPhase(
     """
 
     def __init__(
-        self, name: str, instrument: "RohdeSchwarzZNBChannel", **kwargs: Any
+        self,
+        name: str,
+        **kwargs: "Unpack[ParameterBaseKWArgs[Any, RohdeSchwarzZNBChannel]]",
     ) -> None:
+        instrument = kwargs.get("instrument")
+        assert instrument is not None
         super().__init__(
             name,
-            instrument=instrument,
             names=("magnitude", "phase"),
             labels=(
                 f"{instrument.short_name} magnitude",
@@ -221,16 +229,17 @@ class FrequencySweepMagPhase(
     def __init__(
         self,
         name: str,
-        instrument: "RohdeSchwarzZNBChannel",
+        *,
         start: float,
         stop: float,
         npts: int,
         channel: int,
-        **kwargs: Any,
+        **kwargs: "Unpack[ParameterBaseKWArgs[Any, RohdeSchwarzZNBChannel]]",
     ) -> None:
+        instrument = kwargs.get("instrument")
+        assert instrument is not None
         super().__init__(
             name,
-            instrument=instrument,
             names=("magnitude", "phase"),
             labels=(
                 f"{instrument.short_name} magnitude",
@@ -281,16 +290,17 @@ class FrequencySweepDBPhase(
     def __init__(
         self,
         name: str,
-        instrument: "RohdeSchwarzZNBChannel",
+        *,
         start: float,
         stop: float,
         npts: int,
         channel: int,
-        **kwargs: Any,
+        **kwargs: "Unpack[ParameterBaseKWArgs[Any, RohdeSchwarzZNBChannel]]",
     ) -> None:
+        instrument = kwargs.get("instrument")
+        assert instrument is not None
         super().__init__(
             name,
-            instrument=instrument,
             names=("magnitude", "phase"),
             labels=(
                 f"{instrument.short_name} magnitude",
@@ -355,17 +365,18 @@ class FrequencySweep(
     def __init__(
         self,
         name: str,
-        instrument: "RohdeSchwarzZNBChannel",
+        *,
         start: float,
         stop: float,
         npts: int,
         channel: int,
-        **kwargs: Any,
+        **kwargs: "Unpack[ParameterBaseKWArgs[Any, RohdeSchwarzZNBChannel]]",
     ) -> None:
+        instrument = kwargs.get("instrument")
+        assert instrument is not None
         super().__init__(
             name,
             shape=(npts,),
-            instrument=instrument,
             unit="dB",
             label=f"{instrument.short_name} magnitude",
             setpoint_units=("Hz",),
