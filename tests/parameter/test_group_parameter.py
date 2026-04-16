@@ -221,6 +221,7 @@ def test_update_group_parameter_reflected_in_cache_of_all_params() -> None:
     assert before <= dummy.a.cache.timestamp
     assert after >= dummy.a.cache.timestamp
 
+    assert dummy.b.cache.timestamp is not None
     assert before <= dummy.b.cache.timestamp
     assert after >= dummy.b.cache.timestamp
 
@@ -244,6 +245,7 @@ def test_get_group_param_updates_cache_of_other_param() -> None:
     assert before <= dummy.a.cache.timestamp
     assert after >= dummy.a.cache.timestamp
 
+    assert dummy.b.cache.timestamp is not None
     assert before <= dummy.b.cache.timestamp
     assert after >= dummy.b.cache.timestamp
 
@@ -267,6 +269,7 @@ def test_set_group_param_updates_cache_of_other_param() -> None:
     assert before <= dummy.a.cache.timestamp
     assert after >= dummy.a.cache.timestamp
 
+    assert dummy.b.cache.timestamp is not None
     assert before <= dummy.b.cache.timestamp
     assert after >= dummy.b.cache.timestamp
 
