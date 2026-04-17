@@ -45,7 +45,7 @@ class ScopeTrace(ArrayParameter[npt.NDArray, "RohdeSchwarzRTO1000ScopeChannel"])
 
         For now, we only support reading out the entire trace.
         """
-        kwargs.setdefault("snapshot_value", False)  # type: ignore[typeddict-readonly-mutated]
+        kwargs.setdefault("snapshot_value", False)  # type: ignore[typeddict-readonly-mutated,unused-ignore]
         super().__init__(
             name=name,
             shape=(1,),

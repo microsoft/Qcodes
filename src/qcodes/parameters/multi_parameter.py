@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
     from typing_extensions import Unpack
 
-    from .parameter_base import Validator
+    from qcodes.validators import Validator
 
 try:
     from qcodes_loop.data.data_array import DataArray

@@ -14,6 +14,7 @@ from qcodes.instrument import (
 )
 from qcodes.parameters import (
     Parameter,
+    ParameterKWArgs,
     ParameterWithSetpoints,
     ParameterWithSetpointsKWArgs,
     ParamRawDataType,
@@ -48,7 +49,7 @@ class FrequencyAxis(
         npts: Parameter[int, _T],
         *,
         name: str,
-        **kwargs: Unpack[ParameterWithSetpointsKWArgs[npt.NDArray[np.float64], _T]],
+        **kwargs: Unpack[ParameterKWArgs[npt.NDArray[np.float64], _T]],
     ) -> None:
         super().__init__(name, **kwargs)
         self._start = start

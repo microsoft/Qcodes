@@ -23,7 +23,8 @@ if TYPE_CHECKING:
     from typing_extensions import Unpack
 
     from qcodes.dataset.data_set_protocol import ValuesType
-    from qcodes.parameters.parameter_base import ParamDataType, Validator
+    from qcodes.parameters.parameter_base import ParamDataType
+    from qcodes.validators import Validator
 
 LOG = logging.getLogger(__name__)
 
