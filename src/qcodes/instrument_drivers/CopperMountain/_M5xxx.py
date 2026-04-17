@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -7,8 +7,8 @@ from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import (
     ManualParameter,
     MultiParameter,
+    MultiParameterKWArgs,
     Parameter,
-    ParameterBaseKWArgs,
     ParamRawDataType,
     create_on_off_val_mapping,
 )
@@ -640,7 +640,7 @@ class FrequencySweepMagPhase(
         number_of_points: int,
         *,
         expected_measurement_duration: float = 600,
-        **kwargs: "Unpack[ParameterBaseKWArgs[tuple[NDArray, NDArray], CopperMountainM5xxx]]",
+        **kwargs: "Unpack[MultiParameterKWArgs[tuple[NDArray, NDArray], CopperMountainM5xxx]]",
     ) -> None:
         """
         Linear frequency sweep that returns magnitude and phase for a single
@@ -661,31 +661,47 @@ class FrequencySweepMagPhase(
         instrument = kwargs.get("instrument")
         assert instrument is not None
 
-        super().__init__(
-            name,
-            names=(
+        kw: dict[str, Any] = dict(kwargs)
+        kw.setdefault(
+            "names",
+            (
                 f"{instrument.short_name}_{name}_magnitude",
                 f"{instrument.short_name}_{name}_phase",
             ),
-            labels=(
+        )
+        kw.setdefault(
+            "labels",
+            (
                 f"{instrument.short_name} {name} magnitude",
                 f"{instrument.short_name} {name} phase",
             ),
-            units=("dB", "rad"),
-            setpoint_units=(("Hz",), ("Hz",)),
-            setpoint_labels=(
+        )
+        kw.setdefault("units", ("dB", "rad"))
+        kw.setdefault("setpoint_units", (("Hz",), ("Hz",)))
+        kw.setdefault(
+            "setpoint_labels",
+            (
                 (f"{instrument.short_name} frequency",),
                 (f"{instrument.short_name} frequency",),
             ),
-            setpoint_names=(
+        )
+        kw.setdefault(
+            "setpoint_names",
+            (
                 (f"{instrument.short_name}_frequency",),
                 (f"{instrument.short_name}_frequency",),
             ),
-            shapes=(
+        )
+        kw.setdefault(
+            "shapes",
+            (
                 (number_of_points,),
                 (number_of_points,),
             ),
-            **kwargs,
+        )
+        super().__init__(
+            name,
+            **kw,
         )
         self.set_sweep(start, stop, number_of_points)
 
@@ -750,7 +766,7 @@ class PointMagPhase(
         name: str,
         *,
         expected_measurement_duration: float = 600,
-        **kwargs: "Unpack[ParameterBaseKWArgs[tuple[np.floating, np.floating], CopperMountainM5xxx]]",
+        **kwargs: "Unpack[MultiParameterKWArgs[tuple[np.floating, np.floating], CopperMountainM5xxx]]",
     ) -> None:
         """Magnitude and phase measurement of a single point at start
         frequency.
@@ -767,26 +783,27 @@ class PointMagPhase(
         instrument = kwargs.get("instrument")
         assert instrument is not None
 
-        super().__init__(
-            name,
-            names=(
+        kw: dict[str, Any] = dict(kwargs)
+        kw.setdefault(
+            "names",
+            (
                 f"{instrument.short_name}_{name}_magnitude",
                 f"{instrument.short_name}_{name}_phase",
             ),
-            labels=(
+        )
+        kw.setdefault(
+            "labels",
+            (
                 f"{instrument.short_name} {name} magnitude",
                 f"{instrument.short_name} {name} phase",
             ),
-            units=("dB", "rad"),
-            setpoints=(
-                (),
-                (),
-            ),
-            shapes=(
-                (),
-                (),
-            ),
-            **kwargs,
+        )
+        kw.setdefault("units", ("dB", "rad"))
+        kw.setdefault("setpoints", ((), ()))
+        kw.setdefault("shapes", ((), ()))
+        super().__init__(
+            name,
+            **kw,
         )
 
     def get_raw(self) -> tuple[ParamRawDataType, ParamRawDataType]:
@@ -849,7 +866,7 @@ class PointIQ(MultiParameter[tuple[np.floating, np.floating], CopperMountainM5xx
         name: str,
         *,
         expected_measurement_duration: float = 600,
-        **kwargs: "Unpack[ParameterBaseKWArgs[tuple[np.floating, np.floating], CopperMountainM5xxx]]",
+        **kwargs: "Unpack[MultiParameterKWArgs[tuple[np.floating, np.floating], CopperMountainM5xxx]]",
     ) -> None:
         """I and Q measurement of a single point at start
         frequency.
@@ -866,26 +883,27 @@ class PointIQ(MultiParameter[tuple[np.floating, np.floating], CopperMountainM5xx
         instrument = kwargs.get("instrument")
         assert instrument is not None
 
-        super().__init__(
-            name,
-            names=(
+        kw: dict[str, Any] = dict(kwargs)
+        kw.setdefault(
+            "names",
+            (
                 f"{instrument.short_name}_{name}_i",
                 f"{instrument.short_name}_{name}_q",
             ),
-            labels=(
+        )
+        kw.setdefault(
+            "labels",
+            (
                 f"{instrument.short_name} {name} i",
                 f"{instrument.short_name} {name} q",
             ),
-            units=("V", "V"),
-            setpoints=(
-                (),
-                (),
-            ),
-            shapes=(
-                (),
-                (),
-            ),
-            **kwargs,
+        )
+        kw.setdefault("units", ("V", "V"))
+        kw.setdefault("setpoints", ((), ()))
+        kw.setdefault("shapes", ((), ()))
+        super().__init__(
+            name,
+            **kw,
         )
 
     def get_raw(self) -> tuple[ParamRawDataType, ParamRawDataType]:
