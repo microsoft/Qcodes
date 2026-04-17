@@ -11,8 +11,8 @@ import qcodes.validators as vals
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs
 from qcodes.parameters import (
     ArrayParameter,
+    ArrayParameterKWArgs,
     Parameter,
-    ParameterBaseKWArgs,
     ParameterKWArgs,
     ParameterWithSetpoints,
 )
@@ -138,17 +138,18 @@ class FrequencySweep(ArrayParameter):
         sweep_len: int,
         start_freq: float,
         stepsize: float,
-        **kwargs: "Unpack[ParameterBaseKWArgs]",
+        **kwargs: "Unpack[ArrayParameterKWArgs]",
     ) -> None:
+        kw: dict[str, Any] = dict(kwargs)
+        kw.setdefault("shape", (sweep_len,))
+        kw.setdefault("unit", "dBm")
+        kw.setdefault("label", "Magnitude")
+        kw.setdefault("setpoint_units", ("Hz",))
+        kw.setdefault("setpoint_labels", ("Frequency",))
+        kw.setdefault("setpoint_names", ("frequency",))
         super().__init__(
             name,
-            shape=(sweep_len,),
-            unit="dBm",
-            label="Magnitude",
-            setpoint_units=("Hz",),
-            setpoint_labels=("Frequency",),
-            setpoint_names=("frequency",),
-            **kwargs,
+            **kw,
         )
         self.set_sweep(sweep_len, start_freq, stepsize)
 
