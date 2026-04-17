@@ -3,7 +3,7 @@
 import logging
 import time
 import warnings
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import numpy.typing as npt
@@ -21,8 +21,8 @@ from qcodes.instrument import (
 )
 from qcodes.parameters import (
     ArrayParameter,
+    ArrayParameterKWArgs,
     Parameter,
-    ParameterBaseKWArgs,
     create_on_off_val_mapping,
 )
 
@@ -38,24 +38,25 @@ class ScopeTrace(ArrayParameter[npt.NDArray, "RohdeSchwarzRTO1000ScopeChannel"])
         name: str,
         *,
         channum: int,
-        **kwargs: "Unpack[ParameterBaseKWArgs[npt.NDArray, RohdeSchwarzRTO1000ScopeChannel]]",
+        **kwargs: "Unpack[ArrayParameterKWArgs[npt.NDArray, RohdeSchwarzRTO1000ScopeChannel]]",
     ) -> None:
         """
         The ScopeTrace parameter is attached to a channel of the oscilloscope.
 
         For now, we only support reading out the entire trace.
         """
-        kwargs.setdefault("snapshot_value", False)  # type: ignore[typeddict-readonly-mutated,unused-ignore]
+        kw: dict[str, Any] = dict(kwargs)
+        kw.setdefault("snapshot_value", False)
+        kw.setdefault("shape", (1,))
+        kw.setdefault("label", "Voltage")  # TODO: Is this sometimes dbm?
+        kw.setdefault("unit", "V")
+        kw.setdefault("setpoint_names", ("Time",))
+        kw.setdefault("setpoint_labels", ("Time",))
+        kw.setdefault("setpoint_units", ("s",))
+        kw.setdefault("docstring", "Holds scope trace")
         super().__init__(
             name=name,
-            shape=(1,),
-            label="Voltage",  # TODO: Is this sometimes dbm?
-            unit="V",
-            setpoint_names=("Time",),
-            setpoint_labels=("Time",),
-            setpoint_units=("s",),
-            docstring="Holds scope trace",
-            **kwargs,
+            **kw,
         )
 
         self.channel = self.instrument
