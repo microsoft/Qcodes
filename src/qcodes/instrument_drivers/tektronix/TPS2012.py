@@ -1,7 +1,7 @@
 import binascii
 import logging
 from functools import partial
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import numpy.typing as npt
@@ -18,8 +18,8 @@ from qcodes.instrument import (
 )
 from qcodes.parameters import (
     ArrayParameter,
+    ArrayParameterKWArgs,
     Parameter,
-    ParameterBaseKWArgs,
     ParamRawDataType,
 )
 
@@ -57,18 +57,19 @@ class ScopeArray(ArrayParameter):
         name: str,
         *,
         channel: int,
-        **kwargs: Unpack[ParameterBaseKWArgs],
+        **kwargs: Unpack[ArrayParameterKWArgs],
     ):
+        kw: dict[str, Any] = dict(kwargs)
+        kw.setdefault("shape", (2500,))
+        kw.setdefault("label", "Voltage")
+        kw.setdefault("unit", "V ")
+        kw.setdefault("setpoint_names", ("Time",))
+        kw.setdefault("setpoint_labels", ("Time",))
+        kw.setdefault("setpoint_units", ("s",))
+        kw.setdefault("docstring", "holds an array from scope")
         super().__init__(
             name=name,
-            shape=(2500,),
-            label="Voltage",
-            unit="V ",
-            setpoint_names=("Time",),
-            setpoint_labels=("Time",),
-            setpoint_units=("s",),
-            docstring="holds an array from scope",
-            **kwargs,
+            **kw,
         )
         self.channel = channel
 
