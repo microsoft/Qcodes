@@ -11,8 +11,8 @@ from qcodes.parameters import (
     Group,
     GroupParameter,
     MultiParameter,
+    MultiParameterKWArgs,
     Parameter,
-    ParameterBaseKWArgs,
 )
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
@@ -1188,18 +1188,19 @@ class KeysightB1500CVSweepMeasurement(
     def __init__(
         self,
         name: str,
-        **kwargs: "Unpack[ParameterBaseKWArgs[tuple[tuple[float, ...], tuple[float, ...]], KeysightB1520A]]",
+        **kwargs: "Unpack[MultiParameterKWArgs[tuple[tuple[float, ...], tuple[float, ...]], KeysightB1520A]]",
     ):
+        kw: dict[str, Any] = dict(kwargs)
+        kw.setdefault("names", ("", ""))
+        kw.setdefault("units", ("", ""))
+        kw.setdefault("labels", ("", ""))
+        kw.setdefault("shapes", ((1,),) * 2)
+        kw.setdefault("setpoint_names", (("Voltage",),) * 2)
+        kw.setdefault("setpoint_labels", (("Voltage",),) * 2)
+        kw.setdefault("setpoint_units", (("V",),) * 2)
         super().__init__(
             name,
-            names=("", ""),
-            units=("", ""),
-            labels=("", ""),
-            shapes=((1,),) * 2,
-            setpoint_names=(("Voltage",),) * 2,
-            setpoint_labels=(("Voltage",),) * 2,
-            setpoint_units=(("V",),) * 2,
-            **kwargs,
+            **kw,
         )
 
         self.update_name_label_unit_from_impedance_model()

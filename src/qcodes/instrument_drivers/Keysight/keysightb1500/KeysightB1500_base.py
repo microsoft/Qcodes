@@ -1,13 +1,13 @@
 import re
 import textwrap
 from collections import defaultdict
-from typing import TYPE_CHECKING, Generic, TypedDict, cast
+from typing import TYPE_CHECKING, Any, Generic, TypedDict, cast
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import (
     MultiParameter,
+    MultiParameterKWArgs,
     Parameter,
-    ParameterBaseKWArgs,
     create_on_off_val_mapping,
 )
 from qcodes.parameters.parameter_base import ParameterDataTypeVar
@@ -520,18 +520,19 @@ class IVSweepMeasurement(
     def __init__(
         self,
         name: str,
-        **kwargs: "Unpack[ParameterBaseKWArgs[ParameterDataTypeVar, KeysightB1500]]",
+        **kwargs: "Unpack[MultiParameterKWArgs[ParameterDataTypeVar, KeysightB1500]]",
     ):
+        kw: dict[str, Any] = dict(kwargs)
+        kw.setdefault("names", tuple(["param1", "param2"]))
+        kw.setdefault("units", tuple(["A", "A"]))
+        kw.setdefault("labels", tuple(["Param1 Current", "Param2 Current"]))
+        kw.setdefault("shapes", ((1,),) * 2)
+        kw.setdefault("setpoint_names", (("Voltage",),) * 2)
+        kw.setdefault("setpoint_labels", (("Voltage",),) * 2)
+        kw.setdefault("setpoint_units", (("V",),) * 2)
         super().__init__(
             name,
-            names=tuple(["param1", "param2"]),
-            units=tuple(["A", "A"]),
-            labels=tuple(["Param1 Current", "Param2 Current"]),
-            shapes=((1,),) * 2,
-            setpoint_names=(("Voltage",),) * 2,
-            setpoint_labels=(("Voltage",),) * 2,
-            setpoint_units=(("V",),) * 2,
-            **kwargs,
+            **kw,
         )
 
         self.param1 = _FMTResponse(None, None, None, None)
