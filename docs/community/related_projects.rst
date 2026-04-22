@@ -103,3 +103,15 @@ Quantify is a Python-based framework that enables quantum computing users to pro
 GitLab: `quantify-core <https://gitlab.com/quantify-os/quantify-core>`__ |  `quantify-scheduler <https://gitlab.com/quantify-os/quantify-scheduler>`__
 
 Website: `quantify-os.org <https://quantify-os.org>`__
+
+
+QT-DataViewer
+-------------
+QT-DataViewer is a data store browser and dataset viewer with backends for
+mulitple data stores. It can connect to the QCoDeS sqlite database and browse through 
+hdf5 / netcdf files on disk.
+The viewer can average and slice data, and plots in 1D, 2D, histograms, and scatter plots.
+The snapshot data can be explored as well.
+
+Install from pypi: ``pip install qt-dataviewer``.
+Repository and Read.me: `QT-DataViewer <https://gitlab.tudelft.nl/qutech-qdlabs/qt-dataviewer>`__
