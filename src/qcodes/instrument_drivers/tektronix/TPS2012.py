@@ -16,7 +16,12 @@ from qcodes.instrument import (
     VisaInstrument,
     VisaInstrumentKWArgs,
 )
-from qcodes.parameters import ArrayParameter, Parameter, ParamRawDataType
+from qcodes.parameters import (
+    ArrayParameter,
+    ArrayParameterKWArgs,
+    Parameter,
+    ParamRawDataType,
+)
 
 if TYPE_CHECKING:
     from qcodes.instrument.channel import ChannelTuple
@@ -50,21 +55,21 @@ class ScopeArray(ArrayParameter):
     def __init__(
         self,
         name: str,
-        instrument: "TektronixTPS2012Channel",
+        *,
         channel: int,
-        **kwargs: Any,
+        **kwargs: Unpack[ArrayParameterKWArgs],
     ):
+        kw: dict[str, Any] = dict(kwargs)
+        kw.setdefault("shape", (2500,))
+        kw.setdefault("label", "Voltage")
+        kw.setdefault("unit", "V ")
+        kw.setdefault("setpoint_names", ("Time",))
+        kw.setdefault("setpoint_labels", ("Time",))
+        kw.setdefault("setpoint_units", ("s",))
+        kw.setdefault("docstring", "holds an array from scope")
         super().__init__(
             name=name,
-            shape=(2500,),
-            label="Voltage",
-            unit="V ",
-            setpoint_names=("Time",),
-            setpoint_labels=("Time",),
-            setpoint_units=("s",),
-            docstring="holds an array from scope",
-            instrument=instrument,
-            **kwargs,
+            **kw,
         )
         self.channel = channel
 

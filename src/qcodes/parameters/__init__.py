@@ -69,14 +69,14 @@ more specialized ones:
 """
 
 from ._paramspec import ParamSpecBase, ParamSpecBaseDict
-from .array_parameter import ArrayParameter
+from .array_parameter import ArrayParameter, ArrayParameterKWArgs
 from .combined_parameter import CombinedParameter, combine
 from .delegate_parameter import DelegateParameter
 from .function import Function
 from .group_parameter import Group, GroupParameter
 from .grouped_parameter import DelegateGroup, DelegateGroupParameter, GroupedParameter
 from .multi_channel_instrument_parameter import MultiChannelInstrumentParameter
-from .multi_parameter import MultiParameter
+from .multi_parameter import MultiParameter, MultiParameterKWArgs
 from .parameter import ManualParameter, Parameter, ParameterKWArgs
 from .parameter_base import (
     ParamDataType,
@@ -86,7 +86,11 @@ from .parameter_base import (
     ParamRawDataType,
     invert_val_mapping,
 )
-from .parameter_with_setpoints import ParameterWithSetpoints, expand_setpoints_helper
+from .parameter_with_setpoints import (
+    ParameterWithSetpoints,
+    ParameterWithSetpointsKWArgs,
+    expand_setpoints_helper,
+)
 from .scaled_paramter import ScaledParameter
 from .specialized_parameters import ElapsedTimeParameter, InstrumentRefParameter
 from .sweep_values import SweepFixedValues, SweepValues
@@ -94,6 +98,7 @@ from .val_mapping import create_on_off_val_mapping
 
 __all__ = [
     "ArrayParameter",
+    "ArrayParameterKWArgs",
     "CombinedParameter",
     "DelegateGroup",
     "DelegateGroupParameter",
@@ -107,6 +112,7 @@ __all__ = [
     "ManualParameter",
     "MultiChannelInstrumentParameter",
     "MultiParameter",
+    "MultiParameterKWArgs",
     "ParamDataType",
     "ParamRawDataType",
     "ParamSpecBase",
@@ -117,6 +123,7 @@ __all__ = [
     "ParameterKWArgs",
     "ParameterSet",
     "ParameterWithSetpoints",
+    "ParameterWithSetpointsKWArgs",
     "ScaledParameter",
     "SweepFixedValues",
     "SweepValues",

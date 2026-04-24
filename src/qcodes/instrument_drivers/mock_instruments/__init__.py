@@ -17,9 +17,13 @@ from qcodes.instrument import (
 )
 from qcodes.parameters import (
     ArrayParameter,
+    ArrayParameterKWArgs,
     MultiParameter,
+    MultiParameterKWArgs,
     Parameter,
+    ParameterKWArgs,
     ParameterWithSetpoints,
+    ParameterWithSetpointsKWArgs,
     ParamRawDataType,
 )
 from qcodes.validators import Arrays, ComplexNumbers, Numbers, OnOff, Strings
@@ -258,7 +262,7 @@ class DummyAttrInstrument(DummyBase):
 
 
 class DmmExponentialParameter(Parameter):
-    def __init__(self, name: str, **kwargs: Any):
+    def __init__(self, name: str, **kwargs: Unpack[ParameterKWArgs]):
         super().__init__(name, **kwargs)
         self._rng = np.random.default_rng()
         self._ed = self._exponential_decay(5, 0.2)
@@ -289,7 +293,7 @@ class DmmExponentialParameter(Parameter):
 
 
 class DmmGaussParameter(Parameter):
-    def __init__(self, name: str, **kwargs: Any):
+    def __init__(self, name: str, **kwargs: Unpack[ParameterKWArgs]):
         super().__init__(name, **kwargs)
         self.x0 = 0.1
         self.y0 = 0.2
@@ -660,34 +664,33 @@ class MultiSetPointParam(MultiParameter):
 
     def __init__(
         self,
-        instrument: InstrumentBase | None = None,
         name: str = "multi_setpoint_param",
-        **kwargs: Any,
+        **kwargs: Unpack[MultiParameterKWArgs],
     ):
-        shapes = ((5,), (5,))
-        names = ("multi_setpoint_param_this", "multi_setpoint_param_that")
-        labels = ("this label", "that label")
-        units = ("this unit", "that unit")
         sp_base = tuple(np.linspace(5, 9, 5))
-        setpoints = ((sp_base,), (sp_base,))
-        setpoint_names = (
-            ("multi_setpoint_param_this_setpoint",),
-            ("multi_setpoint_param_this_setpoint",),
+        kw: dict[str, Any] = dict(kwargs)
+        kw.setdefault("shapes", ((5,), (5,)))
+        kw.setdefault(
+            "names",
+            ("multi_setpoint_param_this", "multi_setpoint_param_that"),
         )
-        setpoint_labels = (("this setpoint",), ("this setpoint",))
-        setpoint_units = (("this setpointunit",), ("this setpointunit",))
+        kw.setdefault("labels", ("this label", "that label"))
+        kw.setdefault("units", ("this unit", "that unit"))
+        kw.setdefault("setpoints", ((sp_base,), (sp_base,)))
+        kw.setdefault(
+            "setpoint_names",
+            (
+                ("multi_setpoint_param_this_setpoint",),
+                ("multi_setpoint_param_this_setpoint",),
+            ),
+        )
+        kw.setdefault("setpoint_labels", (("this setpoint",), ("this setpoint",)))
+        kw.setdefault(
+            "setpoint_units", (("this setpointunit",), ("this setpointunit",))
+        )
         super().__init__(
             name,
-            names=names,
-            shapes=shapes,
-            instrument=instrument,
-            labels=labels,
-            units=units,
-            setpoints=setpoints,
-            setpoint_labels=setpoint_labels,
-            setpoint_names=setpoint_names,
-            setpoint_units=setpoint_units,
-            **kwargs,
+            **kw,
         )
 
     def get_raw(self) -> ParamRawDataType:
@@ -703,48 +706,48 @@ class Multi2DSetPointParam(MultiParameter):
 
     def __init__(
         self,
-        instrument: InstrumentBase | None = None,
         name: str = "multi_2d_setpoint_param",
-        **kwargs: Any,
+        **kwargs: Unpack[MultiParameterKWArgs],
     ):
-        shapes = ((5, 3), (5, 3))
-        names = ("this", "that")
-        labels = ("this label", "that label")
-        units = ("this unit", "that unit")
         sp_base_1 = tuple(np.linspace(5, 9, 5).flatten().tolist())
         sp_base_2 = tuple(np.linspace(9, 11, 3).flatten().tolist())
         array_setpoints = setpoint_generator(sp_base_1, sp_base_2)
-        setpoints = (array_setpoints, array_setpoints)
-        setpoint_names = (
+        kw: dict[str, Any] = dict(kwargs)
+        kw.setdefault("shapes", ((5, 3), (5, 3)))
+        kw.setdefault("names", ("this", "that"))
+        kw.setdefault("labels", ("this label", "that label"))
+        kw.setdefault("units", ("this unit", "that unit"))
+        kw.setdefault("setpoints", (array_setpoints, array_setpoints))
+        kw.setdefault(
+            "setpoint_names",
             (
-                "multi_2d_setpoint_param_this_setpoint",
-                "multi_2d_setpoint_param_that_setpoint",
-            ),
-            (
-                "multi_2d_setpoint_param_this_setpoint",
-                "multi_2d_setpoint_param_that_setpoint",
+                (
+                    "multi_2d_setpoint_param_this_setpoint",
+                    "multi_2d_setpoint_param_that_setpoint",
+                ),
+                (
+                    "multi_2d_setpoint_param_this_setpoint",
+                    "multi_2d_setpoint_param_that_setpoint",
+                ),
             ),
         )
-        setpoint_labels = (
-            ("this setpoint", "that setpoint"),
-            ("this setpoint", "that setpoint"),
+        kw.setdefault(
+            "setpoint_labels",
+            (
+                ("this setpoint", "that setpoint"),
+                ("this setpoint", "that setpoint"),
+            ),
         )
-        setpoint_units = (
-            ("this setpointunit", "that setpointunit"),
-            ("this setpointunit", "that setpointunit"),
+        kw.setdefault(
+            "setpoint_units",
+            (
+                ("this setpointunit", "that setpointunit"),
+                ("this setpointunit", "that setpointunit"),
+            ),
         )
         super().__init__(
             name,
-            names=names,
-            shapes=shapes,
-            instrument=instrument,
-            labels=labels,
-            units=units,
-            setpoints=setpoints,
-            setpoint_labels=setpoint_labels,
-            setpoint_names=setpoint_names,
-            setpoint_units=setpoint_units,
-            **kwargs,
+            **kw,
         )
 
     def get_raw(self) -> ParamRawDataType:
@@ -760,51 +763,51 @@ class Multi2DSetPointParam2Sizes(MultiParameter):
 
     def __init__(
         self,
-        instrument: InstrumentBase | None = None,
         name: str = "multi_2d_setpoint_param",
-        **kwargs: Any,
+        **kwargs: Unpack[MultiParameterKWArgs],
     ):
-        shapes = ((5, 3), (2, 7))
-        names = ("this_5_3", "this_2_7")
-        labels = ("this label", "that label")
-        units = ("this unit", "that unit")
         sp_base_1_1 = tuple(np.linspace(5, 9, 5).flatten().tolist())
         sp_base_2_1 = tuple(np.linspace(9, 11, 3).flatten().tolist())
         array_setpoints_1 = setpoint_generator(sp_base_1_1, sp_base_2_1)
         sp_base_1_2 = tuple(np.linspace(5, 9, 2).flatten().tolist())
         sp_base_2_2 = tuple(np.linspace(9, 11, 7).flatten().tolist())
         array_setpoints_2 = setpoint_generator(sp_base_1_2, sp_base_2_2)
-        setpoints = (array_setpoints_1, array_setpoints_2)
-        setpoint_names = (
+        kw: dict[str, Any] = dict(kwargs)
+        kw.setdefault("shapes", ((5, 3), (2, 7)))
+        kw.setdefault("names", ("this_5_3", "this_2_7"))
+        kw.setdefault("labels", ("this label", "that label"))
+        kw.setdefault("units", ("this unit", "that unit"))
+        kw.setdefault("setpoints", (array_setpoints_1, array_setpoints_2))
+        kw.setdefault(
+            "setpoint_names",
             (
-                "multi_2d_setpoint_param_this_setpoint_1",
-                "multi_2d_setpoint_param_that_setpoint_1",
-            ),
-            (
-                "multi_2d_setpoint_param_this_setpoint_2",
-                "multi_2d_setpoint_param_that_setpoint_2",
+                (
+                    "multi_2d_setpoint_param_this_setpoint_1",
+                    "multi_2d_setpoint_param_that_setpoint_1",
+                ),
+                (
+                    "multi_2d_setpoint_param_this_setpoint_2",
+                    "multi_2d_setpoint_param_that_setpoint_2",
+                ),
             ),
         )
-        setpoint_labels = (
-            ("this setpoint 1", "that setpoint 1"),
-            ("this setpoint 2", "that setpoint 2"),
+        kw.setdefault(
+            "setpoint_labels",
+            (
+                ("this setpoint 1", "that setpoint 1"),
+                ("this setpoint 2", "that setpoint 2"),
+            ),
         )
-        setpoint_units = (
-            ("this setpointunit", "that setpointunit"),
-            ("this setpointunit", "that setpointunit"),
+        kw.setdefault(
+            "setpoint_units",
+            (
+                ("this setpointunit", "that setpointunit"),
+                ("this setpointunit", "that setpointunit"),
+            ),
         )
         super().__init__(
             name,
-            names=names,
-            shapes=shapes,
-            instrument=instrument,
-            labels=labels,
-            units=units,
-            setpoints=setpoints,
-            setpoint_labels=setpoint_labels,
-            setpoint_names=setpoint_names,
-            setpoint_units=setpoint_units,
-            **kwargs,
+            **kw,
         )
 
     def get_raw(self) -> ParamRawDataType:
@@ -820,24 +823,18 @@ class MultiScalarParam(MultiParameter):
 
     def __init__(
         self,
-        instrument: InstrumentBase | None = None,
         name: str = "multiscalarparameter",
-        **kwargs: Any,
+        **kwargs: Unpack[MultiParameterKWArgs],
     ):
-        shapes = ((), ())
-        names = ("thisparam", "thatparam")
-        labels = ("thisparam label", "thatparam label")
-        units = ("thisparam unit", "thatparam unit")
-        setpoints = ((), ())
+        kw: dict[str, Any] = dict(kwargs)
+        kw.setdefault("shapes", ((), ()))
+        kw.setdefault("names", ("thisparam", "thatparam"))
+        kw.setdefault("labels", ("thisparam label", "thatparam label"))
+        kw.setdefault("units", ("thisparam unit", "thatparam unit"))
+        kw.setdefault("setpoints", ((), ()))
         super().__init__(
             name,
-            names=names,
-            shapes=shapes,
-            instrument=instrument,
-            labels=labels,
-            units=units,
-            setpoints=setpoints,
-            **kwargs,
+            **kw,
         )
 
     def get_raw(self) -> ParamRawDataType:
@@ -853,29 +850,21 @@ class ArraySetPointParam(ArrayParameter):
 
     def __init__(
         self,
-        instrument: InstrumentBase | None = None,
         name: str = "array_setpoint_param",
-        **kwargs: Any,
+        **kwargs: Unpack[ArrayParameterKWArgs],
     ):
-        shape = (5,)
-        label = "this label"
-        unit = "this unit"
         sp_base = tuple(np.linspace(5, 9, 5))
-        setpoints = (sp_base,)
-        setpoint_names = ("array_setpoint_param_this_setpoint",)
-        setpoint_labels = ("this setpoint",)
-        setpoint_units = ("this setpointunit",)
+        kw: dict[str, Any] = dict(kwargs)
+        kw.setdefault("shape", (5,))
+        kw.setdefault("label", "this label")
+        kw.setdefault("unit", "this unit")
+        kw.setdefault("setpoints", (sp_base,))
+        kw.setdefault("setpoint_names", ("array_setpoint_param_this_setpoint",))
+        kw.setdefault("setpoint_labels", ("this setpoint",))
+        kw.setdefault("setpoint_units", ("this setpointunit",))
         super().__init__(
             name,
-            shape=shape,
-            instrument=instrument,
-            label=label,
-            unit=unit,
-            setpoints=setpoints,
-            setpoint_labels=setpoint_labels,
-            setpoint_names=setpoint_names,
-            setpoint_units=setpoint_units,
-            **kwargs,
+            **kw,
         )
 
     def get_raw(self) -> ParamRawDataType:
@@ -890,29 +879,21 @@ class ComplexArraySetPointParam(ArrayParameter):
 
     def __init__(
         self,
-        instrument: InstrumentBase | None = None,
         name: str = "testparameter",
-        **kwargs: Any,
+        **kwargs: Unpack[ArrayParameterKWArgs],
     ):
-        shape = (5,)
-        label = "this label"
-        unit = "this unit"
         sp_base = tuple(np.linspace(5, 9, 5))
-        setpoints = (sp_base,)
-        setpoint_names = ("this_setpoint",)
-        setpoint_labels = ("this setpoint",)
-        setpoint_units = ("this setpointunit",)
+        kw: dict[str, Any] = dict(kwargs)
+        kw.setdefault("shape", (5,))
+        kw.setdefault("label", "this label")
+        kw.setdefault("unit", "this unit")
+        kw.setdefault("setpoints", (sp_base,))
+        kw.setdefault("setpoint_names", ("this_setpoint",))
+        kw.setdefault("setpoint_labels", ("this setpoint",))
+        kw.setdefault("setpoint_units", ("this setpointunit",))
         super().__init__(
             name,
-            shape=shape,
-            instrument=instrument,
-            label=label,
-            unit=unit,
-            setpoints=setpoints,
-            setpoint_labels=setpoint_labels,
-            setpoint_names=setpoint_names,
-            setpoint_units=setpoint_units,
-            **kwargs,
+            **kw,
         )
 
     def get_raw(self) -> ParamRawDataType:
@@ -931,10 +912,11 @@ class GeneratedSetPoints(Parameter):
         startparam: Parameter,
         stopparam: Parameter,
         numpointsparam: Parameter,
-        *args: Any,
-        **kwargs: Any,
+        *,
+        name: str,
+        **kwargs: Unpack[ParameterKWArgs],
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(name, **kwargs)
         self._startparam = startparam
         self._stopparam = stopparam
         self._numpointsparam = numpointsparam
@@ -951,8 +933,8 @@ class DummyParameterWithSetpoints1D(ParameterWithSetpoints):
     `dummy_n_points` parameter in the instrument.
     """
 
-    def __init__(self, *args: Any, **kwargs: Any):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *, name: str, **kwargs: Unpack[ParameterWithSetpointsKWArgs]):
+        super().__init__(name, **kwargs)
         self._rng = np.random.default_rng()
 
     def get_raw(self) -> ParamRawDataType:
@@ -967,8 +949,8 @@ class DummyParameterWithSetpoints2D(ParameterWithSetpoints):
     `dummy_n_points` and `dummy_n_points_2` parameters in the instrument.
     """
 
-    def __init__(self, *args: Any, **kwargs: Any):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *, name: str, **kwargs: Unpack[ParameterWithSetpointsKWArgs]):
+        super().__init__(name, **kwargs)
         self._rng = np.random.default_rng()
 
     def get_raw(self) -> ParamRawDataType:
@@ -984,8 +966,8 @@ class DummyParameterWithSetpointsComplex(ParameterWithSetpoints):
     `dummy_n_points` parameter in the instrument. Returns Complex values
     """
 
-    def __init__(self, *args: Any, **kwargs: Any):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *, name: str, **kwargs: Unpack[ParameterWithSetpointsKWArgs]):
+        super().__init__(name, **kwargs)
         self._rng = np.random.default_rng()
 
     def get_raw(self) -> ParamRawDataType:

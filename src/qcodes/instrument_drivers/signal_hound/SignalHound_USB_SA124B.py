@@ -9,7 +9,13 @@ import numpy.typing as npt
 
 import qcodes.validators as vals
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs
-from qcodes.parameters import ArrayParameter, Parameter, ParameterWithSetpoints
+from qcodes.parameters import (
+    ArrayParameter,
+    ArrayParameterKWArgs,
+    Parameter,
+    ParameterKWArgs,
+    ParameterWithSetpoints,
+)
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
@@ -27,8 +33,12 @@ class TraceParameter(Parameter):
     I.e. calling set/get will not communicate with the instrument.
     """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        name: str,
+        **kwargs: "Unpack[ParameterKWArgs]",
+    ) -> None:
+        super().__init__(name, **kwargs)
 
     def set_raw(self, value: Any) -> None:
         if not isinstance(self.instrument, SignalHoundUSBSA124B):
@@ -87,8 +97,12 @@ class SweepTraceParameter(TraceParameter):
     addition to the functionality of `TraceParameter`
     """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        name: str,
+        **kwargs: "Unpack[ParameterKWArgs]",
+    ) -> None:
+        super().__init__(name, **kwargs)
 
     def set_raw(self, value: Any) -> None:
         if not isinstance(self.instrument, SignalHoundUSBSA124B):
@@ -120,22 +134,22 @@ class FrequencySweep(ArrayParameter):
     def __init__(
         self,
         name: str,
-        instrument: "SignalHoundUSBSA124B",
+        *,
         sweep_len: int,
         start_freq: float,
         stepsize: float,
-        **kwargs: Any,
+        **kwargs: "Unpack[ArrayParameterKWArgs]",
     ) -> None:
+        kw: dict[str, Any] = dict(kwargs)
+        kw.setdefault("shape", (sweep_len,))
+        kw.setdefault("unit", "dBm")
+        kw.setdefault("label", "Magnitude")
+        kw.setdefault("setpoint_units", ("Hz",))
+        kw.setdefault("setpoint_labels", ("Frequency",))
+        kw.setdefault("setpoint_names", ("frequency",))
         super().__init__(
             name,
-            shape=(sweep_len,),
-            instrument=instrument,
-            unit="dBm",
-            label="Magnitude",
-            setpoint_units=("Hz",),
-            setpoint_labels=("Frequency",),
-            setpoint_names=("frequency",),
-            **kwargs,
+            **kw,
         )
         self.set_sweep(sweep_len, start_freq, stepsize)
 

@@ -17,7 +17,11 @@ from qcodes.instrument import (
     VisaInstrument,
     VisaInstrumentKWArgs,
 )
-from qcodes.parameters import MultiChannelInstrumentParameter, ParamRawDataType
+from qcodes.parameters import (
+    MultiChannelInstrumentParameter,
+    ParameterBaseKWArgs,
+    ParamRawDataType,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -182,7 +186,7 @@ class QDevQDacMultiChannelParameter(MultiChannelInstrumentParameter):
         self,
         channels: "Sequence[InstrumentChannel]",
         param_name: str,
-        **kwargs: Any,
+        **kwargs: "Unpack[ParameterBaseKWArgs]",
     ):
         super().__init__(channels=channels, param_name=param_name, **kwargs)
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Generic
+from typing import TYPE_CHECKING, Any, Generic, Literal, NotRequired, TypedDict
 
 import numpy as np
 
@@ -18,14 +18,184 @@ from qcodes.parameters.parameter_base import (
 from qcodes.validators import Arrays
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Iterable, Mapping, Sequence
 
     from typing_extensions import Unpack
 
     from qcodes.dataset.data_set_protocol import ValuesType
-    from qcodes.parameters.parameter_base import ParamDataType, ParameterBase
+    from qcodes.parameters.parameter_base import ParamDataType
+    from qcodes.validators import Validator
 
 LOG = logging.getLogger(__name__)
+
+
+class ParameterWithSetpointsKWArgs(
+    TypedDict,
+    Generic[ParameterDataTypeVar, InstrumentTypeVar_co],
+):
+    """
+    This TypedDict defines the type of the kwargs that can be passed to
+    the ``ParameterWithSetpoints`` class.
+
+    A subclass of ``ParameterWithSetpoints`` should take
+    ``**kwargs: Unpack[ParameterWithSetpointsKWArgs]`` as input and forward
+    this to the super class to ensure that it can accept all the arguments
+    defined here.
+    """
+
+    # Members from ParameterBaseKWArgs are redeclared here
+    # so that Sphinx can discover and document them.
+    instrument: NotRequired[InstrumentTypeVar_co]
+    """
+    The instrument this parameter belongs to, if any.
+    """
+    snapshot_get: NotRequired[bool]
+    """
+    False prevents any update to the parameter during a snapshot,
+    even if the snapshot was called with ``update=True``.
+    Default True.
+    """
+    metadata: NotRequired[Mapping[Any, Any] | None]
+    """
+    Additional static metadata to add to this
+    parameter's JSON snapshot.
+    """
+    step: NotRequired[float | None]
+    """
+    Max increment of parameter value.
+    Larger changes are broken into multiple steps this size.
+    When combined with delays, this acts as a ramp.
+    """
+    scale: NotRequired[float | Iterable[float] | None]
+    """
+    Scale to multiply value with before performing set.
+    The internally multiplied value is stored in
+    ``cache.raw_value``. Can account for a voltage divider.
+    """
+    offset: NotRequired[float | Iterable[float] | None]
+    """
+    Compensate for a parameter specific offset.
+    get value = raw value - offset.
+    set value = argument + offset.
+    """
+    inter_delay: NotRequired[float]
+    """
+    Minimum time (in seconds) between successive sets.
+    If the previous set was less than this, it will wait until the
+    condition is met. Can be set to 0 to go maximum speed with
+    no errors.
+    """
+    post_delay: NotRequired[float]
+    """
+    Time (in seconds) to wait after the *start* of each set,
+    whether part of a sweep or not. Can be set to 0 to go maximum
+    speed with no errors.
+    """
+    val_mapping: NotRequired[Mapping[Any, Any] | None]
+    """
+    A bidirectional map of data/readable values to instrument codes,
+    expressed as a dict: ``{data_val: instrument_code}``.
+    """
+    get_parser: NotRequired[Callable[..., Any] | None]
+    """
+    Function to transform the response from get to the final
+    output value. See also ``val_mapping``.
+    """
+    set_parser: NotRequired[Callable[..., Any] | None]
+    """
+    Function to transform the input set value to an encoded
+    value sent to the instrument. See also ``val_mapping``.
+    """
+    snapshot_value: NotRequired[bool]
+    """
+    False prevents parameter value to be stored in the snapshot.
+    Useful if the value is large. Default True.
+    """
+    snapshot_exclude: NotRequired[bool]
+    """
+    True prevents parameter to be included in the snapshot.
+    Useful if there are many of the same parameter which are
+    clogging up the snapshot. Default False.
+    """
+    max_val_age: NotRequired[float | None]
+    """
+    The max time (in seconds) to trust a saved value obtained
+    from ``cache.get`` (or ``get_latest``). If this parameter has not
+    been set or measured more recently than this, perform an
+    additional measurement.
+    """
+    vals: NotRequired[Validator[Any] | None]
+    """
+    A Validator object for this parameter.
+    """
+    abstract: NotRequired[bool | None]
+    """
+    Specifies if this parameter is abstract or not. Default is False.
+    If the parameter is 'abstract', it *must* be overridden by a
+    non-abstract parameter before the instrument containing this
+    parameter can be instantiated.
+    """
+    bind_to_instrument: NotRequired[bool]
+    """
+    Should the parameter be registered as a delegate attribute
+    on the instrument passed via the instrument argument.
+    """
+    register_name: NotRequired[str | None]
+    """
+    Specifies if the parameter should be registered in datasets
+    using a different name than the parameter's ``full_name``.
+    """
+    on_set_callback: NotRequired[
+        Callable[[ParameterBase, ParameterDataTypeVar], None] | None
+    ]
+    """
+    Callback called when the parameter value is set.
+    """
+    # Members from ParameterKWArgs are redeclared here
+    # so that Sphinx can discover and document them.
+    label: NotRequired[str | None]
+    """
+    Normally used as the axis label when this parameter is graphed,
+    along with ``unit``.
+    """
+    unit: NotRequired[str | None]
+    """
+    The unit of measure. Use ``''`` for unitless.
+    """
+    get_cmd: NotRequired[str | Callable[..., Any] | Literal[False] | None]
+    """
+    A command to issue to the instrument to retrieve the value of this
+    parameter. Can be a callable with zero args, a VISA command string,
+    ``None`` to use ``get_raw``, or ``False`` to disable getting.
+    """
+    set_cmd: NotRequired[str | Callable[..., Any] | Literal[False] | None]
+    """
+    A command to issue to the instrument to set the value of this
+    parameter. Can be a callable with one arg, a VISA command string,
+    ``None`` to use ``set_raw``, or ``False`` to disable setting.
+    Default ``False``.
+    """
+    initial_value: NotRequired[ParameterDataTypeVar | None]
+    """
+    Value to set the parameter to at the end of its initialization.
+    Cannot be passed together with ``initial_cache_value`` argument.
+    """
+    docstring: NotRequired[str | None]
+    """
+    Documentation string for the ``__doc__`` field of the object.
+    """
+    initial_cache_value: NotRequired[ParameterDataTypeVar | None]
+    """
+    Value to set the cache of the parameter to at the end of its
+    initialization. Cannot be passed together with ``initial_value``
+    argument.
+    """
+    # Members specific to ParameterWithSetpointsKWArgs
+    setpoints: NotRequired[Sequence[ParameterBase] | None]
+    """
+    A list of other parameters that describe the values, names
+    and units of the setpoint axes for this parameter.
+    """
 
 
 class ParameterWithSetpoints(

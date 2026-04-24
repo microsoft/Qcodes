@@ -20,6 +20,7 @@ from qcodes.instrument import (
 from qcodes.parameters import (
     Parameter,
     ParameterBase,
+    ParameterKWArgs,
     ParameterWithSetpoints,
     ParamRawDataType,
     create_on_off_val_mapping,
@@ -544,8 +545,8 @@ _from_bits_tuple_to_status = {
 
 
 class _ParameterWithStatus(Parameter):
-    def __init__(self, *args: Any, **kwargs: Any):
-        super().__init__(*args, **kwargs)
+    def __init__(self, name: str, **kwargs: Unpack[ParameterKWArgs]):
+        super().__init__(name, **kwargs)
 
         self._measurement_status: Keithley2600MeasurementStatus | None = None
 

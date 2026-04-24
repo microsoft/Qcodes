@@ -19,7 +19,12 @@ from qcodes.instrument import (
     VisaInstrument,
     VisaInstrumentKWArgs,
 )
-from qcodes.parameters import ArrayParameter, Parameter, create_on_off_val_mapping
+from qcodes.parameters import (
+    ArrayParameter,
+    ArrayParameterKWArgs,
+    Parameter,
+    create_on_off_val_mapping,
+)
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
@@ -31,30 +36,30 @@ class ScopeTrace(ArrayParameter[npt.NDArray, "RohdeSchwarzRTO1000ScopeChannel"])
     def __init__(
         self,
         name: str,
-        instrument: "RohdeSchwarzRTO1000ScopeChannel",
+        *,
         channum: int,
-        **kwargs: Any,
+        **kwargs: "Unpack[ArrayParameterKWArgs[npt.NDArray, RohdeSchwarzRTO1000ScopeChannel]]",
     ) -> None:
         """
         The ScopeTrace parameter is attached to a channel of the oscilloscope.
 
         For now, we only support reading out the entire trace.
         """
+        kw: dict[str, Any] = dict(kwargs)
+        kw.setdefault("snapshot_value", False)
+        kw.setdefault("shape", (1,))
+        kw.setdefault("label", "Voltage")  # TODO: Is this sometimes dbm?
+        kw.setdefault("unit", "V")
+        kw.setdefault("setpoint_names", ("Time",))
+        kw.setdefault("setpoint_labels", ("Time",))
+        kw.setdefault("setpoint_units", ("s",))
+        kw.setdefault("docstring", "Holds scope trace")
         super().__init__(
             name=name,
-            shape=(1,),
-            label="Voltage",  # TODO: Is this sometimes dbm?
-            unit="V",
-            setpoint_names=("Time",),
-            setpoint_labels=("Time",),
-            setpoint_units=("s",),
-            docstring="Holds scope trace",
-            snapshot_value=False,
-            instrument=instrument,
-            **kwargs,
+            **kw,
         )
 
-        self.channel = instrument
+        self.channel = self.instrument
         self.channum = channum
         self._trace_ready = False
 

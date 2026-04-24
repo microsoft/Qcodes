@@ -14,7 +14,7 @@ from qcodes.instrument import (
     VisaInstrument,
     VisaInstrumentKWArgs,
 )
-from qcodes.parameters import ArrayParameter
+from qcodes.parameters import ArrayParameter, ArrayParameterKWArgs
 from qcodes.validators import ComplexNumbers, Enum, Ints, Numbers
 
 if TYPE_CHECKING:
@@ -38,21 +38,24 @@ class SR86xBufferReadout(ArrayParameter):
 
     """
 
-    def __init__(self, name: str, instrument: SR86x, **kwargs: Any) -> None:
+    def __init__(self, name: str, **kwargs: Unpack[ArrayParameterKWArgs]) -> None:
         unit = "deg"
         if name in ["X", "Y", "R"]:
             unit = "V"
 
+        kw: dict[str, Any] = dict(kwargs)
+        kw.setdefault("shape", (1,))  # dummy initial shape
+        kw.setdefault("unit", unit)
+        kw.setdefault("setpoint_names", ("Time",))
+        kw.setdefault("setpoint_labels", ("Time",))
+        kw.setdefault("setpoint_units", ("s",))
+        kw.setdefault(
+            "docstring",
+            "Holds an acquired (part of the) data buffer of one channel.",
+        )
         super().__init__(
             name,
-            shape=(1,),  # dummy initial shape
-            unit=unit,
-            setpoint_names=("Time",),
-            setpoint_labels=("Time",),
-            setpoint_units=("s",),
-            instrument=instrument,
-            docstring="Holds an acquired (part of the) data buffer of one channel.",
-            **kwargs,
+            **kw,
         )
 
         self._capture_data: npt.NDArray | None = None

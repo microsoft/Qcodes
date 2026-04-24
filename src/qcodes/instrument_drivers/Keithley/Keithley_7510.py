@@ -13,6 +13,8 @@ from qcodes.parameters import (
     DelegateParameter,
     MultiParameter,
     Parameter,
+    ParameterBaseKWArgs,
+    ParameterKWArgs,
     ParamRawDataType,
     create_on_off_val_mapping,
     invert_val_mapping,
@@ -38,13 +40,19 @@ class DataArray7510(MultiParameter):
         names: "Sequence[str]",
         shapes: "Sequence[Sequence[int]]",
         setpoints: "Sequence[Sequence[Any]] | None",
-        **kwargs: Any,
+        units: "Sequence[str] | None" = None,
+        setpoint_units: "Sequence[Sequence[str]] | None" = None,
+        setpoint_names: "Sequence[Sequence[str]] | None" = None,
+        **kwargs: "Unpack[ParameterBaseKWArgs]",
     ):
         super().__init__(
             name="data_array_7510",
             names=names,
             shapes=shapes,
             setpoints=setpoints,
+            units=units,
+            setpoint_units=setpoint_units,
+            setpoint_names=setpoint_names,
             **kwargs,
         )
         for param_name in self.names:
@@ -65,10 +73,11 @@ class GeneratedSetPoints(Parameter):
         start: Parameter,
         stop: Parameter,
         n_points: Parameter,
-        *args: Any,
-        **kwargs: Any,
+        *,
+        name: str,
+        **kwargs: "Unpack[ParameterKWArgs]",
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(name, **kwargs)
         self._start = start
         self._stop = stop
         self._n_points = n_points

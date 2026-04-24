@@ -7,7 +7,13 @@ from typing_extensions import deprecated
 
 import qcodes.validators as vals
 from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel
-from qcodes.parameters import Group, GroupParameter, MultiParameter, Parameter
+from qcodes.parameters import (
+    Group,
+    GroupParameter,
+    MultiParameter,
+    MultiParameterKWArgs,
+    Parameter,
+)
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 from . import constants
@@ -1179,18 +1185,22 @@ class KeysightB1500CVSweepMeasurement(
 
     """
 
-    def __init__(self, name: str, instrument: KeysightB1520A, **kwargs: Any):
+    def __init__(
+        self,
+        name: str,
+        **kwargs: "Unpack[MultiParameterKWArgs[tuple[tuple[float, ...], tuple[float, ...]], KeysightB1520A]]",
+    ):
+        kw: dict[str, Any] = dict(kwargs)
+        kw.setdefault("names", ("", ""))
+        kw.setdefault("units", ("", ""))
+        kw.setdefault("labels", ("", ""))
+        kw.setdefault("shapes", ((1,),) * 2)
+        kw.setdefault("setpoint_names", (("Voltage",),) * 2)
+        kw.setdefault("setpoint_labels", (("Voltage",),) * 2)
+        kw.setdefault("setpoint_units", (("V",),) * 2)
         super().__init__(
             name,
-            names=("", ""),
-            units=("", ""),
-            labels=("", ""),
-            shapes=((1,),) * 2,
-            setpoint_names=(("Voltage",),) * 2,
-            setpoint_labels=(("Voltage",),) * 2,
-            setpoint_units=(("V",),) * 2,
-            instrument=instrument,
-            **kwargs,
+            **kw,
         )
 
         self.update_name_label_unit_from_impedance_model()

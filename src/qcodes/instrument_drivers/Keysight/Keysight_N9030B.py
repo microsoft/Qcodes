@@ -14,7 +14,9 @@ from qcodes.instrument import (
 )
 from qcodes.parameters import (
     Parameter,
+    ParameterKWArgs,
     ParameterWithSetpoints,
+    ParameterWithSetpointsKWArgs,
     ParamRawDataType,
     create_on_off_val_mapping,
 )
@@ -45,10 +47,11 @@ class FrequencyAxis(
         start: Parameter[float, _T],
         stop: Parameter[float, _T],
         npts: Parameter[int, _T],
-        *args: Any,
-        **kwargs: Any,
+        *,
+        name: str,
+        **kwargs: Unpack[ParameterKWArgs[npt.NDArray[np.float64], _T]],
     ) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__(name, **kwargs)
         self._start = start
         self._stop = stop
         self._npts = npts
@@ -68,11 +71,12 @@ class Trace(
     def __init__(
         self,
         number: int,
-        *args: Any,
+        *,
+        name: str,
         get_data: Callable[[int], ParameterDataTypeVar],
-        **kwargs: Any,
+        **kwargs: Unpack[ParameterWithSetpointsKWArgs[ParameterDataTypeVar, _T]],
     ) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__(name, **kwargs)
         # while the parameter classes should ideally be generic in instrument
         # type it is not generic in the root instrument type
         self.root_instrument: KeysightN9030B

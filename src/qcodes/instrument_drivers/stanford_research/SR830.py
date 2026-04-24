@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 from functools import partial
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 import numpy as np
 
@@ -10,7 +10,9 @@ from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import (
     ArrayParameter,
     Parameter,
+    ParameterKWArgs,
     ParameterWithSetpoints,
+    ParameterWithSetpointsKWArgs,
     ParamRawDataType,
 )
 from qcodes.validators import Arrays, ComplexNumbers, Enum, Ints, Numbers, Strings
@@ -26,7 +28,9 @@ class ChannelTrace(ParameterWithSetpoints):
     Parameter class for the two channel buffers
     """
 
-    def __init__(self, name: str, channel: int, **kwargs: Any) -> None:
+    def __init__(
+        self, name: str, channel: int, **kwargs: Unpack[ParameterWithSetpointsKWArgs]
+    ) -> None:
         """
         Args:
             name: The name of the parameter
@@ -1001,10 +1005,11 @@ class GeneratedSetPoints(Parameter):
     def __init__(
         self,
         sweep_array: Iterable[float | int] = np.linspace(0, 1, 10),
-        *args: Any,
-        **kwargs: Any,
+        *,
+        name: str,
+        **kwargs: Unpack[ParameterKWArgs],
     ) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__(name, **kwargs)
         self.sweep_array = sweep_array
         self.update_units_if_constant_sample_rate()
 

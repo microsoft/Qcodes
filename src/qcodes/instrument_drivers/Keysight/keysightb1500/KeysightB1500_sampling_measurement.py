@@ -1,10 +1,10 @@
 import warnings
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, cast
 
 import numpy
 import numpy.typing as npt
 
-from qcodes.parameters import ParameterWithSetpoints
+from qcodes.parameters import ParameterWithSetpoints, ParameterWithSetpointsKWArgs
 
 from . import constants
 from .KeysightB1500_module import (
@@ -16,11 +16,13 @@ from .KeysightB1500_module import (
 from .message_builder import MessageBuilder
 
 if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
     from .KeysightB1500_base import (
         KeysightB1500,
     )
     from .KeysightB1517A import (
-        KeysightB1517A,  # noqa: F401 # used in generic argument below
+        KeysightB1517A,  # used in generic argument below
     )
 
 
@@ -37,7 +39,11 @@ class SamplingMeasurement(
     # the measured measurement-time and the calculated measurement
     # (from the user input). Check :get_raw: method to find its usage.
 
-    def __init__(self, name: str, **kwargs: Any):
+    def __init__(
+        self,
+        name: str,
+        **kwargs: "Unpack[ParameterWithSetpointsKWArgs[npt.NDArray[numpy.float64], KeysightB1517A]]",
+    ):
         super().__init__(name, **kwargs)
 
         self.data = _FMTResponse(None, None, None, None)
