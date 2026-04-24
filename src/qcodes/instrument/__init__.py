@@ -16,7 +16,7 @@ from qcodes.parameters import (  # noqa: F401
 )
 
 from .channel import ChannelList, ChannelTuple, InstrumentChannel, InstrumentModule
-from .instrument import Instrument, find_or_create_instrument
+from .instrument import Instrument, VirtualInstrument, find_or_create_instrument
 from .instrument_base import InstrumentBase, InstrumentBaseKWArgs
 from .ip import IPInstrument
 from .visa import VisaInstrument, VisaInstrumentKWArgs
@@ -30,6 +30,7 @@ __all__ = [
     "InstrumentBaseKWArgs",
     "InstrumentChannel",
     "InstrumentModule",
+    "VirtualInstrument",
     "VisaInstrument",
     "VisaInstrumentKWArgs",
     "find_or_create_instrument",

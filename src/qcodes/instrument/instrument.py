@@ -461,6 +461,15 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         )
 
 
+class VirtualInstrument(Instrument):
+    """
+    Base class for virtual instruments that do not communicate with hardware.
+    """
+
+    def get_idn(self) -> dict[str, str | None]:
+        return {"vendor": None, "model": self.name, "serial": None, "firmware": None}
+
+
 def find_or_create_instrument(
     instrument_class: type[T],
     name: str,

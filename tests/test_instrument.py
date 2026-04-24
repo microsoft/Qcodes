@@ -19,6 +19,7 @@ from qcodes.instrument import (
     Instrument,
     InstrumentBase,
     InstrumentModule,
+    VirtualInstrument,
     find_or_create_instrument,
 )
 from qcodes.instrument_drivers.mock_instruments import (
@@ -254,6 +255,74 @@ def test_get_idn(testdummy: DummyInstrument) -> None:
         "firmware": "NA",
     }
     assert testdummy.get_idn() == idn
+
+
+def test_get_idn_on_virtual_instrument_does_not_warn(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """``VirtualInstrument.get_idn`` should return a default IDN without warning."""
+
+    virtual = VirtualInstrument(name="virtual_no_ask")
+    try:
+        caplog.clear()
+        with caplog.at_level("WARNING"):
+            idn = virtual.get_idn()
+        assert idn == {
+            "vendor": None,
+            "model": "virtual_no_ask",
+            "serial": None,
+            "firmware": None,
+        }
+        assert "Error getting or interpreting *IDN?" not in caplog.text
+    finally:
+        virtual.close()
+
+
+def test_get_idn_on_base_instrument_warns(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """The plain ``Instrument`` base class should still warn without ``ask_raw``."""
+
+    instrument = Instrument(name="instrument_no_ask")
+    try:
+        caplog.clear()
+        with caplog.at_level("WARNING"):
+            idn = instrument.get_idn()
+        assert idn == {
+            "vendor": None,
+            "model": "instrument_no_ask",
+            "serial": None,
+            "firmware": None,
+        }
+        assert "Error getting or interpreting *IDN?" in caplog.text
+    finally:
+        instrument.close()
+
+
+def test_get_idn_still_warns_on_other_errors(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Unexpected errors in ``*IDN?`` handling should still be surfaced via a
+    warning so real misbehaviour is not silenced by the virtual-instrument
+    short-circuit."""
+
+    class BrokenInstrument(Instrument):
+        def ask_raw(self, cmd: str) -> str:
+            raise RuntimeError("communication failure")
+
+    broken = BrokenInstrument(name="broken_ask")
+    try:
+        with caplog.at_level("WARNING"):
+            idn = broken.get_idn()
+        assert idn == {
+            "vendor": None,
+            "model": "broken_ask",
+            "serial": None,
+            "firmware": None,
+        }
+        assert "Error getting or interpreting *IDN?" in caplog.text
+    finally:
+        broken.close()
 
 
 def test_repr(testdummy: DummyInstrument) -> None:

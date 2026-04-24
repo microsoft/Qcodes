@@ -51,6 +51,7 @@ from qcodes.instrument import (
     Instrument,
     InstrumentChannel,
     IPInstrument,
+    VirtualInstrument,
     VisaInstrument,
     find_or_create_instrument,
 )
