@@ -219,7 +219,7 @@ markers = "serial"
 # triggered by third party packages
 # and error on all other warnings
 filterwarnings = [
-    # 'error',
+    'error',
     'ignore:open_binary is deprecated:DeprecationWarning', # pyvisa-sim deprecated in 3.11 un-deprecated in 3.12. Drop filter once we drop support for 3.11
     'ignore:unclosed database in:ResourceWarning', # internal should be fixed
     'ignore:unclosed\ <socket\.socket:ResourceWarning', # not clear from where this is coming
