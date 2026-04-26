@@ -209,7 +209,7 @@ reportUnnecessaryContains = "none"
 
 [tool.pytest.ini_options]
 minversion = "7.2"
-# testpaths = "tests"
+testpaths = ["tests","src"]  # we include src to collect doctests
 addopts = "-n auto --dist=loadfile --cov-config=pyproject.toml"
 asyncio_default_fixture_loop_scope = "function"
 markers = "serial"
