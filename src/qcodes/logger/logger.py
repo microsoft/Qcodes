@@ -408,11 +408,11 @@ class LogCapture:
     from a specific logger.
 
     Example:
-        .. code-block:: python
-
-            with LogCapture() as logs:
-                code_that_makes_logs(...)
-            log_str = logs.value
+        >>> import logging
+        >>> with LogCapture() as logs:
+        ...     logging.warning("test message")
+        >>> isinstance(logs.value, str)
+        True
 
     """
 

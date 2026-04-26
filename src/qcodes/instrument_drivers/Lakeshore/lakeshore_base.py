@@ -628,12 +628,9 @@ class LakeshoreBaseSensorChannel(InstrumentChannel):
         is a usually the default status code for success.
 
         Example:
-
-        .. code-block:: python
-
-            terms = [1, 16, 32, 64, 128]
-            get_sum_terms(terms, 96)
-            # returns [64, 32] because 96=64+32
+        >>> terms = [1, 16, 32, 64, 128]
+        >>> [int(x) for x in LakeshoreBaseSensorChannel._get_sum_terms(terms, 96)]
+        [64, 32]
 
         """
         terms_in_number: list[int] = []

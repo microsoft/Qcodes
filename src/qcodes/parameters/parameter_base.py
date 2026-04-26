@@ -1225,18 +1225,23 @@ class ParameterBase(
         This may be overridden with ``allow_changes=True``.
 
         Examples:
-            .. code-block:: python
-
-                from qcodes.parameters import Parameter
-                p = Parameter("p", set_cmd=None, get_cmd=None)
-                p.set(2)
-                with p.set_to(3):
-                    print(f"p value in with block {p.get()}")  # prints 3
-                    p.set(5)  # raises an exception
-                print(f"p value outside with block {p.get()}")  # prints 2
-                with p.set_to(3, allow_changes=True):
-                    p.set(5)  # now this works
-                print(f"value after second block: {p.get()}")  # still prints 2
+            >>> from qcodes.parameters import Parameter
+            >>> p = Parameter("p", set_cmd=None, get_cmd=None)
+            >>> p.set(2)
+            >>> with p.set_to(3):
+            ...     print(f"p value in with block {p.get()}")
+            ...     try:
+            ...         p.set(5)
+            ...     except TypeError:
+            ...         print("raises an exception")
+            p value in with block 3
+            raises an exception
+            >>> print(f"p value outside with block {p.get()}")
+            p value outside with block 2
+            >>> with p.set_to(3, allow_changes=True):
+            ...     p.set(5)
+            >>> print(f"value after second block: {p.get()}")
+            value after second block: 2
 
         """
         context_manager = _SetParamContext(self, value, allow_changes=allow_changes)
@@ -1253,16 +1258,20 @@ class ParameterBase(
         unintentionally modifies a parameter.
 
         Example:
-            .. code-block:: python
-
-                p = Parameter("p", set_cmd=None, get_cmd=None)
-                p.set(2)
-                with p.restore_at_exit():
-                    p.set(3)
-                    print(f"value inside with block: {p.get()}")  # prints 3
-                print(f"value after with block: {p.get()}")  # prints 2
-                with p.restore_at_exit(allow_changes=False):
-                    p.set(5)  # raises an exception
+            >>> from qcodes.parameters import Parameter
+            >>> p = Parameter("p", set_cmd=None, get_cmd=None)
+            >>> p.set(2)
+            >>> with p.restore_at_exit():
+            ...     p.set(3)
+            ...     print(f"value inside with block: {p.get()}")
+            value inside with block: 3
+            >>> print(f"value after with block: {p.get()}")
+            value after with block: 2
+            >>> with p.restore_at_exit(allow_changes=False):
+            ...     p.set(5)  # doctest: +ELLIPSIS
+            Traceback (most recent call last):
+                ...
+            TypeError: ...
 
         """
         return self.set_to(self.cache(), allow_changes=allow_changes)

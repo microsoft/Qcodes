@@ -19,14 +19,15 @@ class RespondingThread(threading.Thread, Generic[T]):
     The `output` method joins the thread, then checks for errors and
     returns the output value.
 
-    so, if you have a function `f` where `f(1, 2, a=3) == 4`, then:
+    so, if you have a function `f` where `f(1, 2, a=3) == 6`, then:
 
-    .. code-block:: python
-
-        thread = RespondingThread(target=f, args=(1, 2), kwargs={'a': 3})
-        thread.start()
-        # do other things while this is running
-        out = thread.output()  # out is 4
+    >>> def f(x, y, a=0):
+    ...     return x + y + a
+    >>> thread = RespondingThread(target=f, args=(1, 2), kwargs={'a': 3})
+    >>> thread.start()
+    >>> out = thread.output()
+    >>> out
+    6
     """
 
     def __init__(

@@ -35,12 +35,11 @@ def chain(*functions: Callable[..., Any]) -> Callable[..., Any]:
     The output of the first callable is piped to the input of the second, etc.
 
     Example:
+        >>> def f():
+        ...     return "1.2"
+        >>> chain(f, float)()
+        1.2
 
-        .. code-block:: python
-
-            def f():
-                return "1.2"
-            chain(f, float)()  # return 1.2 as float
 
     """
 

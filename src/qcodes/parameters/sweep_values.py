@@ -43,14 +43,12 @@ def make_sweep(
         numpy.ndarray: numbers over a specified interval as a ``numpy.linspace``.
 
     Examples:
-        .. code-block:: python
-
-            make_sweep(0, 10, num=5)
-            # [0.0, 2.5, 5.0, 7.5, 10.0]
-            make_sweep(5, 10, step=1)
-            # [5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
-            make_sweep(15, 10.5, step=1.5)
-            # [15.0, 13.5, 12.0, 10.5]
+        >>> make_sweep(0, 10, num=5)
+        [0.0, 2.5, 5.0, 7.5, 10.0]
+        >>> make_sweep(5, 10, step=1)
+        [5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+        >>> make_sweep(15, 10.5, step=1.5)
+        [15.0, 13.5, 12.0, 10.5]
 
     """
     if step and num:
