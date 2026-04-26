@@ -42,12 +42,16 @@ class KeysightE4980AMeasurementPair(MultiParameter):
         To create a measurement data with capacitance=1.2, and
         dissipation_factor=3.4.
 
-        >>> data = KeysightE4980AMeasurementPair(name="CPD",
-                                    names=("capacitance", "dissipation_factor"),
-                                    units=("F", ""))
-        >>> data.set((1.2, 3.4))
-        >>> data.get()
-        (1.2, 3.4)
+        .. code-block:: python
+
+            data = KeysightE4980AMeasurementPair(
+                name="CPD",
+                names=("capacitance", "dissipation_factor"),
+                units=("F", ""),
+            )
+            data.set((1.2, 3.4))
+            data.get()
+            (1.2, 3.4)
 
     """
 

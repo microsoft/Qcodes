@@ -544,12 +544,14 @@ class Parameter(
             iterated over.
 
         Examples:
-            >>> sweep(0, 10, num=5)
-             [0.0, 2.5, 5.0, 7.5, 10.0]
-            >>> sweep(5, 10, step=1)
-            [5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
-            >>> sweep(15, 10.5, step=1.5)
-            >[15.0, 13.5, 12.0, 10.5]
+            .. code-block:: python
+
+                sweep(0, 10, num=5)
+                # [0.0, 2.5, 5.0, 7.5, 10.0]
+                sweep(5, 10, step=1)
+                # [5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+                sweep(15, 10.5, step=1.5)
+                # [15.0, 13.5, 12.0, 10.5]
 
         """
         return SweepFixedValues(self, start=start, stop=stop, step=step, num=num)

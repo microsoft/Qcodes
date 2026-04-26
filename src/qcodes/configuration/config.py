@@ -240,7 +240,7 @@ class Config:
             default: default value, stored only in the schema
 
         Examples:
-            >>> defaults.add("trace_color", "blue", "string", "description")
+            >>> defaults.add("trace_color", "blue", "string", "description")  # doctest: +SKIP
 
         will update the config:
 

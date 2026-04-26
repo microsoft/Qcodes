@@ -71,11 +71,13 @@ class _SetParamContext:
 
     Example usage:
 
-    >>> v = dac.voltage()
-    >>> with dac.voltage.set_to(-1):
-        ...     # Do stuff with the DAC output set to -1 V.
-        ...
-    >>> assert abs(dac.voltage() - v) <= tolerance
+    .. code-block:: python
+
+        v = dac.voltage()
+        with dac.voltage.set_to(-1):
+            # Do stuff with the DAC output set to -1 V.
+            ...
+        assert abs(dac.voltage() - v) <= tolerance
 
     """
 
@@ -1223,16 +1225,18 @@ class ParameterBase(
         This may be overridden with ``allow_changes=True``.
 
         Examples:
-            >>> from qcodes.parameters import Parameter
-            >>> p = Parameter("p", set_cmd=None, get_cmd=None)
-            >>> p.set(2)
-            >>> with p.set_to(3):
-            ...     print(f"p value in with block {p.get()}")  # prints 3
-            ...     p.set(5)  # raises an exception
-            >>> print(f"p value outside with block {p.get()}")  # prints 2
-            >>> with p.set_to(3, allow_changes=True):
-            ...     p.set(5)  # now this works
-            >>> print(f"value after second block: {p.get()}")  # still prints 2
+            .. code-block:: python
+
+                from qcodes.parameters import Parameter
+                p = Parameter("p", set_cmd=None, get_cmd=None)
+                p.set(2)
+                with p.set_to(3):
+                    print(f"p value in with block {p.get()}")  # prints 3
+                    p.set(5)  # raises an exception
+                print(f"p value outside with block {p.get()}")  # prints 2
+                with p.set_to(3, allow_changes=True):
+                    p.set(5)  # now this works
+                print(f"value after second block: {p.get()}")  # still prints 2
 
         """
         context_manager = _SetParamContext(self, value, allow_changes=allow_changes)
@@ -1249,14 +1253,16 @@ class ParameterBase(
         unintentionally modifies a parameter.
 
         Example:
-            >>> p = Parameter("p", set_cmd=None, get_cmd=None)
-            >>> p.set(2)
-            >>> with p.restore_at_exit():
-            ...     p.set(3)
-            ...     print(f"value inside with block: {p.get()}")  # prints 3
-            >>> print(f"value after with block: {p.get()}")  # prints 2
-            >>> with p.restore_at_exit(allow_changes=False):
-            ...     p.set(5)  # raises an exception
+            .. code-block:: python
+
+                p = Parameter("p", set_cmd=None, get_cmd=None)
+                p.set(2)
+                with p.restore_at_exit():
+                    p.set(3)
+                    print(f"value inside with block: {p.get()}")  # prints 3
+                print(f"value after with block: {p.get()}")  # prints 2
+                with p.restore_at_exit(allow_changes=False):
+                    p.set(5)  # raises an exception
 
         """
         return self.set_to(self.cache(), allow_changes=allow_changes)
@@ -1420,10 +1426,12 @@ class GetLatest(DelegateAttributes, Generic[ParameterDataTypeVar]):
     ``parameter.get_latest``.
 
     Examples:
-        >>> # Can be called:
-        >>> param.get_latest()
-        >>> # Or used as if it were a gettable-only parameter itself:
-        >>> Loop(...).each(param.get_latest)
+        .. code-block:: python
+
+            # Can be called:
+            param.get_latest()
+            # Or used as if it were a gettable-only parameter itself:
+            Loop(...).each(param.get_latest)
 
     Args:
         parameter: Parameter to be wrapped.

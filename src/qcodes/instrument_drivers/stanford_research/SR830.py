@@ -769,10 +769,15 @@ class SR830(VisaInstrument):
             A tuple of floating point values in the same order as requested.
 
         Examples:
-            >>> lockin.snap('x','y') -> tuple(x,y)
 
-            >>> lockin.snap('aux1','aux2','freq','phase')
-            >>> -> tuple(aux1,aux2,freq,phase)
+            .. code-block:: python
+
+                lockin.snap('x','y') -> tuple(x,y)
+
+            .. code-block:: python
+
+                lockin.snap('aux1','aux2','freq','phase')
+                -> tuple(aux1,aux2,freq,phase)
 
         Note:
             Volts for x, y, r, and aux 1-4

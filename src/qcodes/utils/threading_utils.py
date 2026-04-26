@@ -21,10 +21,12 @@ class RespondingThread(threading.Thread, Generic[T]):
 
     so, if you have a function `f` where `f(1, 2, a=3) == 4`, then:
 
-    >>> thread = RespondingThread(target=f, args=(1, 2), kwargs={'a': 3})
-    >>> thread.start()
-    >>> # do other things while this is running
-    >>> out = thread.output()  # out is 4
+    .. code-block:: python
+
+        thread = RespondingThread(target=f, args=(1, 2), kwargs={'a': 3})
+        thread.start()
+        # do other things while this is running
+        out = thread.output()  # out is 4
     """
 
     def __init__(

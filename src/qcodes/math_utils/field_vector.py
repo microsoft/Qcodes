@@ -192,17 +192,19 @@ class FieldVector:
         Reset the the values of the vector.
 
         Examples:
-            >>> f = FieldVector(x=0, y=2, z=6)
-            >>> f.set_vector(x=9, y=3, z=1)
-            >>> f.set_vector(r=1, theta=30.0, phi=10.0)
-            # The following should raise a value error:
-            # "Can only set vector with a complete value set"
-            >>> f.set_vector(x=9, y=0)
-            # Although mathematically it is possible to compute the complete
-            # vector from the values given, this is too hard to implement with
-            # generality (and not worth it), so the following will raise the
-            # above-mentioned ValueError too.
-            >>> f.set_vector(x=9, y=0, r=3)
+            .. code-block:: python
+
+                f = FieldVector(x=0, y=2, z=6)
+                f.set_vector(x=9, y=3, z=1)
+                f.set_vector(r=1, theta=30.0, phi=10.0)
+                # The following should raise a value error:
+                # "Can only set vector with a complete value set"
+                f.set_vector(x=9, y=0)
+                # Although mathematically it is possible to compute the complete
+                # vector from the values given, this is too hard to implement with
+                # generality (and not worth it), so the following will raise the
+                # above-mentioned ValueError too.
+                f.set_vector(x=9, y=0, r=3)
 
         """
         names = sorted(list(new_values.keys()))
@@ -221,14 +223,16 @@ class FieldVector:
         other, setting one has to effect the other).
 
         Examples:
-            >>> f = FieldVector(x=2, y=3, z=4)
-            # Since r is part of the set (r, theta, phi) representing
-            # spherical coordinates, setting r means that theta and phi are
-            # kept constant and only r is changed. After changing r,
-            # (x, y, z) values are recomputed, as is the rho coordinate.
-            # Internally we arrange this by setting x, y, z and rho to None
-            # and calling self._compute_unknowns().
-            >>> f.set_component(r=10)
+            .. code-block:: python
+
+                f = FieldVector(x=2, y=3, z=4)
+                # Since r is part of the set (r, theta, phi) representing
+                # spherical coordinates, setting r means that theta and phi are
+                # kept constant and only r is changed. After changing r,
+                # (x, y, z) values are recomputed, as is the rho coordinate.
+                # Internally we arrange this by setting x, y, z and rho to None
+                # and calling self._compute_unknowns().
+                f.set_component(r=10)
 
         Args:
             new_values (dict): Keys representing parameter names and values the

@@ -80,7 +80,7 @@ def guids_from_list_str(s: str) -> tuple[str, ...] | None:
         For an empty list/tuple/set or empty string an empty tuple is returned.
 
     Examples:
-        >>> guids_from_str(
+        >>> guids_from_str(  # doctest: +SKIP
         "['07fd7195-c51e-44d6-a085-fa8274cf00d6', \
           '070d7195-c51e-44d6-a085-fa8274cf00d6']")
         will return

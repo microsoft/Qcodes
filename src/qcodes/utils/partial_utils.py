@@ -15,12 +15,14 @@ def partial_with_docstring(
 
     Consider the follow example why this is needed:
 
-    >>> from functools import partial
-    >>> def f():
-    >>> ... pass
-    >>> g = partial(f)
-    >>> g.__doc__ = "bla"
-    >>> help(g) # this will print the docstring of partial and not the docstring set above
+    .. code-block:: python
+
+        from functools import partial
+        def f():
+            pass
+        g = partial(f)
+        g.__doc__ = "bla"
+        help(g)  # this will print the docstring of partial and not the docstring set above
 
     Args:
         func: A function that its docstring will be accessed.
