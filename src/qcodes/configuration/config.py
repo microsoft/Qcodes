@@ -477,7 +477,10 @@ class DotDict(dict[str, Any]):
         """
         Overwrite ``__getattr__`` to provide dot access
         """
-        return self.__getitem__(name)
+        try:
+            return self.__getitem__(name)
+        except KeyError:
+            raise AttributeError(name)
 
     def __setattr__(self, key: str, value: Any) -> None:
         """
