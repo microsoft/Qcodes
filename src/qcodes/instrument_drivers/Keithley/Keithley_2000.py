@@ -36,7 +36,7 @@ def _parse_output_string(s: str) -> str:
 
 
 def _parse_output_bool(value: str) -> bool:
-    return True if int(value) == 1 else False
+    return int(value) == 1
 
 
 class Keithley2000(VisaInstrument):

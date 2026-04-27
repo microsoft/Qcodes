@@ -129,7 +129,7 @@ def test_get_board_info(alazar_api) -> None:
         "board_kind",
         "max_samples",
         "bits_per_sample",
-    } == set(list(info.keys()))
+    } == set(info.keys())
     assert info["system_id"] == SYSTEM_ID
     assert info["board_id"] == BOARD_ID
 
@@ -151,7 +151,7 @@ def test_idn(alazar) -> None:
         "pcie_link_width",
         "bits_per_sample",
         "max_samples",
-    } == set(list(idn.keys()))
+    } == set(idn.keys())
     assert idn["vendor"] == "AlazarTech"
     assert idn["model"][:3] == "ATS"
 

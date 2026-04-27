@@ -47,9 +47,11 @@ def test_parse_output_valid(tm620):
 
 
 def test_parse_output_invalid(tm620, caplog):
-    with caplog.at_level("ERROR"):
-        with pytest.raises(ValueError, match="No floating point number found"):
-            tm620._parse_output("Invalid output")
+    with (
+        caplog.at_level("ERROR"),
+        pytest.raises(ValueError, match="No floating point number found"),
+    ):
+        tm620._parse_output("Invalid output")
     assert "No floating point number found in output" in caplog.text
 
 
@@ -59,7 +61,6 @@ def test_convert_to_numerics_valid(tm620):
 
 
 def test_convert_to_numerics_invalid(tm620, caplog):
-    with caplog.at_level("ERROR"):
-        with pytest.raises(ValueError, match="Unable to convert"):
-            tm620._convert_to_numeric("not_a_number")
+    with caplog.at_level("ERROR"), pytest.raises(ValueError, match="Unable to convert"):
+        tm620._convert_to_numeric("not_a_number")
     assert "Error converting 'not_a_number' to float" in caplog.text

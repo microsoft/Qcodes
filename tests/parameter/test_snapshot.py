@@ -23,9 +23,12 @@ def create_parameter(
     get_cmd: Callable[..., Any] | bool | None | Literal["NOT_PASSED"],
     offset: float | Literal["NOT_PASSED"] = NOT_PASSED,
 ) -> Parameter:
-    kwargs: dict[str, Any] = dict(
-        set_cmd=None, label="Parameter", unit="a.u.", docstring="some docs"
-    )
+    kwargs: dict[str, Any] = {
+        "set_cmd": None,
+        "label": "Parameter",
+        "unit": "a.u.",
+        "docstring": "some docs",
+    }
 
     if offset != NOT_PASSED:
         kwargs.update(offset=offset)

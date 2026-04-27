@@ -443,11 +443,10 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
             AttributeError: If no parameter with the given name exists.
 
         """
-        if len(self) > 0:
+        if len(self) > 0 and name in self._channels[0].parameters:
             # Check if this is a valid parameter
-            if name in self._channels[0].parameters:
-                param = self._construct_multiparam(name)
-                return param
+            param = self._construct_multiparam(name)
+            return param
         raise AttributeError(
             f"'{self.__class__.__name__}' object has no parameter '{name}'"
         )
@@ -927,8 +926,6 @@ class ChannelTupleValidator(Validator[InstrumentChannel]):
 
 class ChannelListValidator(ChannelTupleValidator):
     """Alias for backwards compatibility. Do not use"""
-
-    pass
 
 
 class AutoLoadableInstrumentChannel(InstrumentChannel):

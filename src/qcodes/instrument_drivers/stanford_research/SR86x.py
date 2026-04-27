@@ -1292,7 +1292,7 @@ class SR86x(VisaInstrument):
             method_name = "get_latest"
 
         return tuple(
-            getattr(getattr(self.data_channels[i], "assigned_parameter"), method_name)()
+            getattr(self.data_channels[i].assigned_parameter, method_name)()
             for i in range(self._N_DATA_CHANNELS)
         )
 

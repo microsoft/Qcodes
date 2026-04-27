@@ -134,41 +134,43 @@ def test_cache_standalone(
     for param in meas_parameters2:
         meas2.register_parameter(param)
 
-    with meas1.run(
-        write_in_background=bg_writing, in_memory_cache=in_memory_cache
-    ) as datasaver1:
-        with meas2.run(
+    with (
+        meas1.run(
             write_in_background=bg_writing, in_memory_cache=in_memory_cache
-        ) as datasaver2:
-            dataset1 = datasaver1.dataset
-            dataset2 = datasaver2.dataset
+        ) as datasaver1,
+        meas2.run(
+            write_in_background=bg_writing, in_memory_cache=in_memory_cache
+        ) as datasaver2,
+    ):
+        dataset1 = datasaver1.dataset
+        dataset2 = datasaver2.dataset
+        _assert_parameter_data_is_identical(
+            dataset1.get_parameter_data(), dataset1.cache.data()
+        )
+        _assert_parameter_data_is_identical(
+            dataset2.get_parameter_data(), dataset2.cache.data()
+        )
+        for _ in range(n_points):
+            meas_vals1 = [(param, param.get()) for param in meas_parameters1]
+
+            datasaver1.add_result(*meas_vals1)
+            datasaver1.flush_data_to_database(block=True)
+
+            meas_vals2 = [(param, param.get()) for param in meas_parameters2]
+
+            datasaver2.add_result(*meas_vals2)
+            datasaver2.flush_data_to_database(block=True)
+
             _assert_parameter_data_is_identical(
-                dataset1.get_parameter_data(), dataset1.cache.data()
+                dataset1.get_parameter_data(),
+                dataset1.cache.data(),
+                shaped_partial=set_shape,
             )
             _assert_parameter_data_is_identical(
-                dataset2.get_parameter_data(), dataset2.cache.data()
+                dataset2.get_parameter_data(),
+                dataset2.cache.data(),
+                shaped_partial=set_shape,
             )
-            for _ in range(n_points):
-                meas_vals1 = [(param, param.get()) for param in meas_parameters1]
-
-                datasaver1.add_result(*meas_vals1)
-                datasaver1.flush_data_to_database(block=True)
-
-                meas_vals2 = [(param, param.get()) for param in meas_parameters2]
-
-                datasaver2.add_result(*meas_vals2)
-                datasaver2.flush_data_to_database(block=True)
-
-                _assert_parameter_data_is_identical(
-                    dataset1.get_parameter_data(),
-                    dataset1.cache.data(),
-                    shaped_partial=set_shape,
-                )
-                _assert_parameter_data_is_identical(
-                    dataset2.get_parameter_data(),
-                    dataset2.cache.data(),
-                    shaped_partial=set_shape,
-                )
     _assert_parameter_data_is_identical(
         dataset1.get_parameter_data(), dataset1.cache.data()
     )
@@ -316,43 +318,45 @@ def test_cache_1d(
     for param in meas_parameters2:
         meas2.register_parameter(param, setpoints=(setpoints_param,))
 
-    with meas1.run(
-        write_in_background=bg_writing, in_memory_cache=in_memory_cache
-    ) as datasaver1:
-        with meas2.run(
+    with (
+        meas1.run(
             write_in_background=bg_writing, in_memory_cache=in_memory_cache
-        ) as datasaver2:
-            dataset1 = datasaver1.dataset
-            dataset2 = datasaver2.dataset
+        ) as datasaver1,
+        meas2.run(
+            write_in_background=bg_writing, in_memory_cache=in_memory_cache
+        ) as datasaver2,
+    ):
+        dataset1 = datasaver1.dataset
+        dataset2 = datasaver2.dataset
+        _assert_parameter_data_is_identical(
+            dataset1.get_parameter_data(), dataset1.cache.data()
+        )
+        _assert_parameter_data_is_identical(
+            dataset2.get_parameter_data(), dataset2.cache.data()
+        )
+        for v in setpoints_values:
+            setpoints_param.set(v)
+
+            meas_vals1 = [(param, param.get()) for param in meas_parameters1]
+
+            datasaver1.add_result((setpoints_param, v), *meas_vals1)
+            datasaver1.flush_data_to_database(block=True)
+
+            meas_vals2 = [(param, param.get()) for param in meas_parameters2]
+
+            datasaver2.add_result((setpoints_param, v), *meas_vals2)
+            datasaver2.flush_data_to_database(block=True)
+
             _assert_parameter_data_is_identical(
-                dataset1.get_parameter_data(), dataset1.cache.data()
+                dataset1.get_parameter_data(),
+                dataset1.cache.data(),
+                shaped_partial=set_shape,
             )
             _assert_parameter_data_is_identical(
-                dataset2.get_parameter_data(), dataset2.cache.data()
+                dataset2.get_parameter_data(),
+                dataset2.cache.data(),
+                shaped_partial=set_shape,
             )
-            for v in setpoints_values:
-                setpoints_param.set(v)
-
-                meas_vals1 = [(param, param.get()) for param in meas_parameters1]
-
-                datasaver1.add_result((setpoints_param, v), *meas_vals1)
-                datasaver1.flush_data_to_database(block=True)
-
-                meas_vals2 = [(param, param.get()) for param in meas_parameters2]
-
-                datasaver2.add_result((setpoints_param, v), *meas_vals2)
-                datasaver2.flush_data_to_database(block=True)
-
-                _assert_parameter_data_is_identical(
-                    dataset1.get_parameter_data(),
-                    dataset1.cache.data(),
-                    shaped_partial=set_shape,
-                )
-                _assert_parameter_data_is_identical(
-                    dataset2.get_parameter_data(),
-                    dataset2.cache.data(),
-                    shaped_partial=set_shape,
-                )
     _assert_parameter_data_is_identical(
         dataset1.get_parameter_data(), dataset1.cache.data()
     )

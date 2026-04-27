@@ -196,17 +196,19 @@ def fixed_negative_float(response: str) -> float:
 
     decimal = decimal.replace("-", "")
 
-    output = ".".join([number, decimal])
+    output = f"{number}.{decimal}"
     return float(output)
 
 
 _dcorr_labels_units_map = {
-    constants.DCORR.Mode.Cp_G: dict(
-        primary=dict(label="Cp", unit="F"), secondary=dict(label="G", unit="S")
-    ),
-    constants.DCORR.Mode.Ls_Rs: dict(
-        primary=dict(label="Ls", unit="H"), secondary=dict(label="Rs", unit="Ω")
-    ),
+    constants.DCORR.Mode.Cp_G: {
+        "primary": {"label": "Cp", "unit": "F"},
+        "secondary": {"label": "G", "unit": "S"},
+    },
+    constants.DCORR.Mode.Ls_Rs: {
+        "primary": {"label": "Ls", "unit": "H"},
+        "secondary": {"label": "Rs", "unit": "Ω"},
+    },
 }
 
 

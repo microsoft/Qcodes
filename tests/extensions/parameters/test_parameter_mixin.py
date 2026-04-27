@@ -13,19 +13,13 @@ from qcodes.parameters import Parameter, ParameterBase
 class CompatibleParameter(Parameter):
     """Docstring for CompatibleParameter"""
 
-    pass
-
 
 class AnotherCompatibleParameter(Parameter):
     """Docstring for AnotherCompatibleParameter"""
 
-    pass
-
 
 class IncompatibleParameter(Parameter):
     """Docstring for IncompatibleParameter"""
-
-    pass
 
 
 class CompatibleParameterMixin(ParameterMixin):

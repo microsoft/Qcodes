@@ -110,7 +110,7 @@ class CombinedParameter(Metadatable):
 
         if aggregator:
             self.f = aggregator
-            setattr(self, "aggregate", self._aggregate)
+            self.aggregate = self._aggregate
 
     def set(self, index: int) -> list[Any]:
         """

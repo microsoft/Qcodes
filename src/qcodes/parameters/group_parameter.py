@@ -179,9 +179,8 @@ class Group:
         for p in parameters:
             p._group = self
 
-        if single_instrument:
-            if len({p.root_instrument for p in parameters}) > 1:
-                raise ValueError("All parameters should belong to the same instrument")
+        if single_instrument and len({p.root_instrument for p in parameters}) > 1:
+            raise ValueError("All parameters should belong to the same instrument")
 
         self._instrument = parameters[0].root_instrument
 

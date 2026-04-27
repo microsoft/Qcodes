@@ -88,11 +88,10 @@ class GroupRegistryParameterMixin(ParameterMixin):
 
     @group_names.setter
     def group_names(self, value: list[str] | None) -> None:
-        if value is not None:
-            if not isinstance(value, list) or not all(
-                isinstance(v, str) for v in value
-            ):
-                raise TypeError("group_names must be a list of strings or None.")
+        if value is not None and (
+            not isinstance(value, list) or not all(isinstance(v, str) for v in value)
+        ):
+            raise TypeError("group_names must be a list of strings or None.")
         self._group_names = value
 
     @classmethod

@@ -378,10 +378,7 @@ def _merge_data_single_param(
         )
     elif new_values is not None or shape is not None:
         (merged_data, new_write_status) = _create_new_data_dict(new_values, shape)
-    elif existing_values is not None:
-        merged_data = existing_values
-        new_write_status = single_tree_write_status
-    elif shape is None and new_values is None:
+    elif existing_values is not None or (shape is None and new_values is None):
         merged_data = existing_values
         new_write_status = single_tree_write_status
     else:
@@ -444,11 +441,13 @@ def _insert_into_data_dict(
                 data[j] = np.atleast_1d(new_values[i])
         return data, None
     else:
-        if existing_values.dtype.kind in ("U", "S"):
+        if (
+            existing_values.dtype.kind in ("U", "S")
+            and new_values.dtype.itemsize > existing_values.dtype.itemsize
+        ):
             # string type arrays may be too small for the new data
             # read so rescale if needed.
-            if new_values.dtype.itemsize > existing_values.dtype.itemsize:
-                existing_values = existing_values.astype(new_values.dtype)
+            existing_values = existing_values.astype(new_values.dtype)
         n_values = new_values.size
         new_write_status = write_status + n_values
         if new_write_status > existing_values.size:

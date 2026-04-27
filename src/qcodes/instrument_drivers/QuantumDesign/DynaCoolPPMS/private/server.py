@@ -45,10 +45,9 @@ def run_server() -> None:
         read_sockets = select.select(list(socket_dict.keys()), [], [], 1)[0]
 
         # Keyboard
-        if kbhit():
-            if ord(getch()) == 27:
-                print("Server exiting")
-                break
+        if kbhit() and ord(getch()) == 27:
+            print("Server exiting")
+            break
 
         for sock in read_sockets:
             # New connection

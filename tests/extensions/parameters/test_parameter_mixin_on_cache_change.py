@@ -21,8 +21,6 @@ class OnCacheChangeParameter(OnCacheChangeParameterMixin, Parameter):
     A parameter invoking callbacks on cache changes.
     """
 
-    pass
-
 
 @pytest.fixture
 def store():

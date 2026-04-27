@@ -21,9 +21,8 @@ def is_function(f: object, arg_count: int, coroutine: bool | None = False) -> bo
 
     if not callable(f):
         return False
-    if coroutine is not None:
-        if bool(coroutine) is not iscoroutinefunction(f):
-            return False
+    if coroutine is not None and bool(coroutine) is not iscoroutinefunction(f):
+        return False
 
     if isinstance(f, type):
         # for type casting functions, eg int, str, float

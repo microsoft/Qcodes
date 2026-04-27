@@ -595,7 +595,7 @@ class CopperMountainM5xxx(VisaInstrument):
         start = self.start()
         stop = self.stop()
         number_of_points = self.number_of_points()
-        for _, parameter in self.parameters.items():
+        for parameter in self.parameters.values():
             if isinstance(parameter, (FrequencySweepMagPhase)):
                 try:
                     parameter.set_sweep(start, stop, number_of_points)

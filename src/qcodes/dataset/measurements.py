@@ -539,7 +539,7 @@ class Runner:
         experiment: Experiment | None = None,
         station: Station | None = None,
         write_period: float | None = None,
-        interdeps: InterDependencies_ = InterDependencies_(),
+        interdeps: InterDependencies_ | None = None,
         name: str = "",
         subscribers: Sequence[SubscriberType] | None = None,
         parent_datasets: Sequence[Mapping[Any, Any]] = (),
@@ -551,6 +551,8 @@ class Runner:
         parent_span: trace.Span | None = None,
         registered_parameters: Sequence[ParameterBase] = (),
     ) -> None:
+        if interdeps is None:
+            interdeps = InterDependencies_()
         if in_memory_cache is None:
             in_memory_cache = qc.config.dataset.in_memory_cache
             in_memory_cache = cast("bool", in_memory_cache)
@@ -1125,9 +1127,9 @@ class Measurement:
         return_paramtype: str
         if paramtype is not None:  # override with argument
             return_paramtype = paramtype
-        elif isinstance(parameter.vals, vals.Arrays):
-            return_paramtype = "array"
-        elif isinstance(parameter, ArrayParameter):
+        elif isinstance(parameter.vals, vals.Arrays) or isinstance(
+            parameter, ArrayParameter
+        ):
             return_paramtype = "array"
         elif isinstance(parameter.vals, vals.Strings):
             return_paramtype = "text"

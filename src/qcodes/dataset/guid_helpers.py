@@ -89,7 +89,7 @@ def guids_from_list_str(s: str) -> tuple[str, ...] | None:
 
     """
     if s == "":
-        return tuple()
+        return ()
 
     try:
         validate_guid_format(s)
@@ -111,7 +111,7 @@ def guids_from_list_str(s: str) -> tuple[str, ...] | None:
         if isinstance(parsed.value, str) and len(parsed.value) > 0:
             return (parsed.value,)
         else:
-            return tuple()
+            return ()
 
     if not isinstance(parsed, (ast.List, ast.Tuple, ast.Set)):
         return None

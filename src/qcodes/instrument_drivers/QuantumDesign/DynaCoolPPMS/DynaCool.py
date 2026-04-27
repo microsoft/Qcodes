@@ -390,7 +390,7 @@ class DynaCool(VisaInstrument):
         The combined set function for the three field parameters,
         field_setpoint, field_rate, and field_approach
         """
-        temporary_values = list(self.parameters[p].raw_value for p in self.field_params)
+        temporary_values = [self.parameters[p].raw_value for p in self.field_params]
         values = cast("list[int | float]", temporary_values)
         values[self.field_params.index(param)] = value
 
@@ -424,7 +424,7 @@ class DynaCool(VisaInstrument):
         The setter function for the temperature parameters. All three are set
         with the same call to the instrument API
         """
-        temp_values = list(self.parameters[par].raw_value for par in self.temp_params)
+        temp_values = [self.parameters[par].raw_value for par in self.temp_params]
         values = cast("list[int | float]", temp_values)
         values[self.temp_params.index(param)] = value
 

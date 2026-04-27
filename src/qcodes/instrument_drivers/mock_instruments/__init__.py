@@ -1083,7 +1083,7 @@ class MockField(DummyBase):
     def __init__(
         self,
         name: str,
-        vals: Numbers = Numbers(min_value=-1.0, max_value=1.0),
+        vals: Numbers | None = None,
         **kwargs: Unpack[InstrumentBaseKWArgs],
     ):
         """Mock instrument for emulating a magnetic field axis
@@ -1096,6 +1096,8 @@ class MockField(DummyBase):
         """
         super().__init__(name=name, **kwargs)
         self._field = 0.0
+        if vals is None:
+            vals = Numbers(min_value=-1.0, max_value=1.0)
         self.field: Parameter = self.add_parameter(
             "field",
             parameter_class=Parameter,

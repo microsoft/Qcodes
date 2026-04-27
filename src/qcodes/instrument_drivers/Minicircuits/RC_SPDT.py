@@ -15,8 +15,6 @@ class MC_channel(MiniCircuitsRCSPDTChannel):
     Alias for backwards compatibility
     """
 
-    pass
-
 
 @deprecated(
     "RC_SPDT is deprecated. Please use qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDT instead.",
@@ -27,5 +25,3 @@ class RC_SPDT(MiniCircuitsRCSPDT):
     """
     Alias for backwards compatibility
     """
-
-    pass

@@ -56,5 +56,3 @@ class B1530A(KeysightB1530A):
     """
     Alias for backwards compatibility
     """
-
-    pass

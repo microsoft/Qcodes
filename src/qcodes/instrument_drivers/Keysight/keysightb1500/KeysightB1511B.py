@@ -120,5 +120,3 @@ class B1511B(KeysightB1511B):
     """
     Alias for backwards compatibility
     """
-
-    pass

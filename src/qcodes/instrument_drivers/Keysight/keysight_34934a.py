@@ -1,4 +1,3 @@
-import logging
 import re
 from typing import TYPE_CHECKING
 
@@ -65,7 +64,7 @@ class Keysight34934A(Keysight34980ASwitchMatrixSubModule):
         layout = self.ask(f"SYSTEM:MODule:TERMinal:TYPE? {self.slot}")
         self._is_locked = layout == "NONE"
         if self._is_locked:
-            logging.warning(
+            self.log.warning(
                 f"For slot {slot}, no configuration module"
                 f"connected, or safety interlock jumper removed. "
                 "Making any connection is not allowed"
@@ -80,7 +79,7 @@ class Keysight34934A(Keysight34980ASwitchMatrixSubModule):
         connections. There will be no effect when try to connect any channels.
         """
         if self._is_locked:
-            logging.warning(
+            self.log.warning(
                 "Warning: no configuration module connected, "
                 "or safety interlock enabled. "
                 "Making any connection is not allowed"

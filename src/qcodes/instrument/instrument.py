@@ -346,7 +346,7 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
             if instrument_is_not_found:
                 instrument_exists = False
             else:
-                raise exception
+                raise
 
         return instrument_exists
 
@@ -360,16 +360,15 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
             instr_instance: Instance of an Instrument class or its subclass.
 
         """
-        if (
+        # note that it is important to call `instances` on the instance
+        # object instead of `Instrument` class, because instances of
+        # Instrument subclasses are recorded inside their subclasses; see
+        # `instances` for more information
+        is_valid_instrument_instance = (
             isinstance(instr_instance, Instrument)
             and instr_instance in instr_instance.instances()
-        ):
-            # note that it is important to call `instances` on the instance
-            # object instead of `Instrument` class, because instances of
-            # Instrument subclasses are recorded inside their subclasses; see
-            # `instances` for more information
-            return True
-        return False
+        )
+        return is_valid_instrument_instance
 
     # `write_raw` and `ask_raw` are the interface to hardware                #
     # `write` and `ask` are standard wrappers to help with error reporting   #
@@ -398,7 +397,7 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
                 *e.args,
                 f"writing {cmd!r} to {self!r}",
             )
-            raise e
+            raise
 
     def write_raw(self, cmd: str) -> None:
         """
@@ -442,7 +441,7 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
 
         except Exception as e:
             e.args = (*e.args, f"asking {cmd!r} to {self!r}")
-            raise e
+            raise
 
     def ask_raw(self, cmd: str) -> str:
         """

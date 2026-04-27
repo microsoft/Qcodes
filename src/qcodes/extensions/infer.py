@@ -220,7 +220,7 @@ def _merge_user_and_class_attrs(
     if alt_source_attrs is None:
         return InferAttrs.known_attrs()
     elif isinstance(alt_source_attrs, str):
-        return set.union(set((alt_source_attrs,)), set(InferAttrs.known_attrs()))
+        return set.union({alt_source_attrs}, set(InferAttrs.known_attrs()))
     else:
         return set.union(set(alt_source_attrs), set(InferAttrs.known_attrs()))
 
@@ -264,11 +264,9 @@ def get_parent_instruments_from_chain_of_type(
 
     param_chain = get_parameter_chain(parameter)
     return tuple(
-        [
-            param.instrument
-            for param in param_chain
-            if isinstance(param.instrument, instrument_type)
-        ]
+        param.instrument
+        for param in param_chain
+        if isinstance(param.instrument, instrument_type)
     )
 
 

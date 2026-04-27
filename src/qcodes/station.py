@@ -97,8 +97,6 @@ ChannelOrInstrumentBase = InstrumentBase | ChannelTuple
 class ValidationWarning(Warning):
     """Replacement for jsonschema.error.ValidationError as warning."""
 
-    pass
-
 
 class StationConfig(dict[Any, Any]):
     def snapshot(self, update: bool = True) -> StationConfig:
@@ -297,7 +295,7 @@ class Station(Metadatable, DelegateAttributes):
             if name in str(e):
                 raise KeyError(f"Component {name} is not part of the station")
             else:
-                raise e
+                raise
 
     def get_component(self, full_name: str) -> MetadatableWithName:
         """
@@ -438,7 +436,7 @@ class Station(Metadatable, DelegateAttributes):
         if len(filenames) == 0:
             self.load_config_file()
         else:
-            paths = list()
+            paths = []
             for filename in filenames:
                 assert isinstance(filename, str)
                 path = self._get_config_file_path(filename)
@@ -851,9 +849,10 @@ def update_config_schema(
             json.dump(data, f, indent=4)
 
     additional_instrument_modules = additional_instrument_modules or []
-    instrument_modules: set[ModuleType] = set(
-        [qcodes.instrument_drivers, *additional_instrument_modules]
-    )
+    instrument_modules: set[ModuleType] = {
+        qcodes.instrument_drivers,
+        *additional_instrument_modules,
+    }
 
     instrument_names = tuple(
         itertools.chain.from_iterable(

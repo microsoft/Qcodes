@@ -238,5 +238,3 @@ class SRS_SG384(SG384):
     """
     Deprecated alternative name for backwards compatibility
     """
-
-    pass

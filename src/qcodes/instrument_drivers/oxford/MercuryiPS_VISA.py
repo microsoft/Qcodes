@@ -305,8 +305,6 @@ class MercuryWorkerPS(OxfordMercuryWorkerPS):
     Alias for backwards compatibility
     """
 
-    pass
-
 
 class OxfordMercuryiPS(VisaInstrument):
     """
@@ -686,9 +684,8 @@ class OxfordMercuryiPS(VisaInstrument):
         for cur, worker in zip(meas_vals, self.submodules.values()):
             if not isinstance(worker, OxfordMercuryWorkerPS):
                 raise RuntimeError(f"Expected a MercuryWorkerPS but got {type(worker)}")
-            if worker.field_target() != cur:
-                if worker.field_ramp_rate() == 0:
-                    raise ValueError(f"Can not ramp {worker}; ramp rate set to zero!")
+            if worker.field_target() != cur and worker.field_ramp_rate() == 0:
+                raise ValueError(f"Can not ramp {worker}; ramp rate set to zero!")
 
         # then the actual ramp
         {
@@ -742,5 +739,3 @@ class OxfordMercuryiPS(VisaInstrument):
 )
 class MercuryiPS(OxfordMercuryiPS):
     """Alias for backwards compatibility"""
-
-    pass

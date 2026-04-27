@@ -37,11 +37,9 @@ _RNG = np.random.default_rng()
 @given(
     param_name=text(min_size=1, max_size=10),
     param_label=text(min_size=0, max_size=15),
-    scale=sampled_from(sorted(list(_ENGINEERING_PREFIXES.keys()))),
+    scale=sampled_from(sorted(_ENGINEERING_PREFIXES.keys())),
     unit=sampled_from(
-        sorted(
-            list(_UNITS_FOR_RESCALING.union(["", "unit", "kg", "%", "permille", "nW"]))
-        )
+        sorted(_UNITS_FOR_RESCALING.union(["", "unit", "kg", "%", "permille", "nW"]))
     ),
     data_strategy=data(),
 )
@@ -421,7 +419,7 @@ def test_plot_dataset_parameters(experiment, request: FixtureRequest, params) ->
             assert_allclose(np.array(plotted), data, rtol=1e-10)
 
     # check only 'requested' parameter has been plotted
-    elif params == "y" or "y2":
+    elif params in ["y", "y2"]:
         assert isinstance(params, str)
         assert len(axes) == 1
         dsdata = dataset.get_parameter_data()

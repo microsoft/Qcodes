@@ -83,8 +83,6 @@ class KeysightE4980AMeasurementPair(MultiParameter):
 class MeasurementPair(KeysightE4980AMeasurementPair):
     """Alias for backwards compatibility"""
 
-    pass
-
 
 class KeysightE4980AMeasurements:
     """
@@ -162,8 +160,6 @@ class KeysightE4980AMeasurements:
 class E4980AMeasurements(KeysightE4980AMeasurements):
     """Alias for backwards compatibility"""
 
-    pass
-
 
 class KeysightE4980ACorrection(InstrumentChannel):
     """
@@ -218,8 +214,6 @@ class KeysightE4980ACorrection(InstrumentChannel):
 )
 class Correction4980A(KeysightE4980ACorrection):
     """Alias for backwards compatibility"""
-
-    pass
 
 
 class KeysightE4980A(VisaInstrument):

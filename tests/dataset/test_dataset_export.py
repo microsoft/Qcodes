@@ -846,7 +846,7 @@ def test_partally_overlapping_setpoint_xarray_export_two_params_partial(
     expected_size = (5, 4)
 
     # Each variable should be 2D and have matching coords
-    for _, da in xrds.data_vars.items():
+    for da in xrds.data_vars.values():
         assert len(da.dims) == 2
         for dim, size in zip(da.dims, expected_size):
             assert dim in xrds.coords

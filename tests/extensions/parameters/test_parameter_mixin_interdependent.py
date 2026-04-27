@@ -159,25 +159,26 @@ def test_error_on_non_interdependent_dependency(store, mock_instr) -> None:
     )
     """A non-interdependent parameter."""
 
-    with pytest.warns(QCoDeSDeprecationWarning, match="does not correctly pass kwargs"):
-        with pytest.raises(
+    with (
+        pytest.warns(QCoDeSDeprecationWarning, match="does not correctly pass kwargs"),
+        pytest.raises(
             KeyError, match="Duplicate parameter name managed_param on instrument"
-        ):
-            with pytest.raises(
-                TypeError, match="must be an instance of InterdependentParameterMixin"
-            ):
-                mock_instr.managed_param = cast(
-                    "InterdependentParameter",
-                    mock_instr.add_parameter(
-                        name="managed_param",
-                        parameter_class=InterdependentParameter,
-                        dependent_on=["not_interdependent_param"],
-                        set_cmd=lambda x: store.update({"managed": x}),
-                        get_cmd=lambda: store.get("managed"),
-                        docstring="Parameter managed_param depends on a non-interdependent param.",
-                    ),
-                )
-                """Parameter managed_param depends on a non-interdependent param."""
+        ),
+        pytest.raises(
+            TypeError, match="must be an instance of InterdependentParameterMixin"
+        ),
+    ):
+        mock_instr.managed_param = cast(
+            "InterdependentParameter",
+            mock_instr.add_parameter(
+                name="managed_param",
+                parameter_class=InterdependentParameter,
+                dependent_on=["not_interdependent_param"],
+                set_cmd=lambda x: store.update({"managed": x}),
+                get_cmd=lambda: store.get("managed"),
+                docstring="Parameter managed_param depends on a non-interdependent param.",
+            ),
+        )
 
 
 def test_parsers_and_dependency_propagation(store, mock_instr) -> None:

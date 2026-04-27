@@ -840,10 +840,9 @@ def mark_run_complete(
             is a noop.
 
     """
-    if override is False:
-        if completed(conn=conn, run_id=run_id):
-            log.warning("Trying to mark a run completed that was already completed.")
-            return
+    if override is False and completed(conn=conn, run_id=run_id):
+        log.warning("Trying to mark a run completed that was already completed.")
+        return
 
     query = """
     UPDATE
@@ -1830,7 +1829,7 @@ def get_data_by_tag_and_table_name(
         ):
             data = None
         else:
-            raise e
+            raise
     return data
 
 
@@ -1954,7 +1953,7 @@ def add_data_to_dynamic_columns(
         if str(e).startswith("duplicate"):
             update_columns(conn, row_id, table_name, data)
         else:
-            raise e
+            raise
 
 
 def get_experiment_name_from_experiment_id(conn: AtomicConnection, exp_id: int) -> str:
@@ -2300,7 +2299,7 @@ def raw_time_to_str_time(
 def _check_if_table_found(conn: AtomicConnection, table_name: str) -> bool:
     query = "SELECT name FROM sqlite_master WHERE type='table' AND name=?"
     cursor = conn.cursor()
-    return not many_many(cursor.execute(query, (table_name,)), "name") == []
+    return many_many(cursor.execute(query, (table_name,)), "name") != []
 
 
 def _get_result_table_name_by_guid(conn: AtomicConnection, guid: str) -> str:

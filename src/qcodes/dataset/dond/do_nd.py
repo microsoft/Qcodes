@@ -593,7 +593,7 @@ def dond(
     do_plot: bool | None = None,
     show_progress: bool | None = None,
     use_threads: bool | None = None,
-    additional_setpoints: Sequence[ParameterBase] = tuple(),
+    additional_setpoints: Sequence[ParameterBase] = (),
     log_info: str | None = None,
     break_condition: BreakConditionT | None = None,
     dataset_dependencies: Mapping[str, Sequence[ParamMeasT]] | None = None,
@@ -613,7 +613,7 @@ def dond(
     do_plot: bool | None = None,
     show_progress: bool | None = None,
     use_threads: bool | None = None,
-    additional_setpoints: Sequence[ParameterBase] = tuple(),
+    additional_setpoints: Sequence[ParameterBase] = (),
     log_info: str | None = None,
     break_condition: BreakConditionT | None = None,
     dataset_dependencies: Mapping[str, Sequence[ParamMeasT]] | None = None,
@@ -633,7 +633,7 @@ def dond(
     do_plot: bool | None = None,
     show_progress: bool | None = None,
     use_threads: bool | None = None,
-    additional_setpoints: Sequence[ParameterBase] = tuple(),
+    additional_setpoints: Sequence[ParameterBase] = (),
     log_info: str | None = None,
     break_condition: BreakConditionT | None = None,
     dataset_dependencies: Mapping[str, Sequence[ParamMeasT]] | None = None,
@@ -653,7 +653,7 @@ def dond(
     do_plot: bool | None = None,
     show_progress: bool | None = None,
     use_threads: bool | None = None,
-    additional_setpoints: Sequence[ParameterBase] = tuple(),
+    additional_setpoints: Sequence[ParameterBase] = (),
     log_info: str | None = None,
     break_condition: BreakConditionT | None = None,
     dataset_dependencies: Mapping[str, Sequence[ParamMeasT]] | None = None,
@@ -835,9 +835,8 @@ def dond(
                         *additional_setpoints_data,
                     )
 
-                if callable(break_condition):
-                    if break_condition():
-                        raise BreakConditionInterrupt("Break condition was met.")
+                if callable(break_condition) and break_condition():
+                    raise BreakConditionInterrupt("Break condition was met.")
     finally:
         for datasaver in datasavers:
             ds, plot_axis, plot_color = _handle_plotting(
@@ -883,9 +882,7 @@ def _parse_dond_arguments(
     sweep_instances: list[AbstractSweep | TogetherSweep] = []
     params_meas: list[ParamMeasT | Sequence[ParamMeasT]] = []
     for par in params:
-        if isinstance(par, AbstractSweep):
-            sweep_instances.append(par)
-        elif isinstance(par, TogetherSweep):
+        if isinstance(par, AbstractSweep | TogetherSweep):
             sweep_instances.append(par)
         else:
             params_meas.append(par)

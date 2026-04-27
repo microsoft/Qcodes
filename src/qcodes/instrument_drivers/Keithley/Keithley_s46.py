@@ -181,11 +181,11 @@ class KeithleyS46(VisaInstrument):
                     )
 
                     self._available_channels.append(alias)
-        except RuntimeError as err:
+        except RuntimeError:
             # If we error on undesirable state we want to make sure
             # we also close the visa connection
             self.close()
-            raise err
+            raise
 
     @staticmethod
     def _get_closed_channels_parser(reply: str) -> list[str]:

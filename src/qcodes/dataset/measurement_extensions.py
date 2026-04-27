@@ -151,9 +151,7 @@ def parse_dond_into_args(
             raise ValueError("dond_into does not support TogetherSweeps")
         elif isinstance(par, Sequence):
             raise ValueError("dond_into does not support multiple datasets")
-        elif isinstance(par, ParameterBase) and par.gettable:
-            params_meas.append(par)
-        elif callable(par):
+        elif (isinstance(par, ParameterBase) and par.gettable) or callable(par):
             params_meas.append(par)
     return sweep_instances, params_meas
 
@@ -161,7 +159,7 @@ def parse_dond_into_args(
 def dond_into(
     datasaver: DataSaver,
     *params: AbstractSweep | ParamMeasT,
-    additional_setpoints: Sequence[ParameterBase] = tuple(),
+    additional_setpoints: Sequence[ParameterBase] = (),
 ) -> None:
     """
     A doNd-like utility function that writes gridded data to the supplied DataSaver

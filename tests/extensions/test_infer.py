@@ -275,10 +275,10 @@ def test_parameters_on_delegate_instruments(instrument_fixture, good_inst_delega
 def test_merge_user_and_class_attrs():
     InferAttrs.add("attr1")
     attr_set = _merge_user_and_class_attrs("attr2")
-    assert set(("attr1", "attr2")) == attr_set
+    assert {"attr1", "attr2"} == attr_set
 
     attr_set_list = _merge_user_and_class_attrs(("attr2", "attr3"))
-    assert set(("attr1", "attr2", "attr3")) == attr_set_list
+    assert {"attr1", "attr2", "attr3"} == attr_set_list
 
 
 def test_infer_attrs():
@@ -286,14 +286,14 @@ def test_infer_attrs():
     assert InferAttrs.known_attrs() == ()
 
     InferAttrs.add("attr1")
-    assert set(InferAttrs.known_attrs()) == set(("attr1",))
+    assert set(InferAttrs.known_attrs()) == {"attr1"}
 
     InferAttrs.add("attr2")
     InferAttrs.discard("attr1")
-    assert set(InferAttrs.known_attrs()) == set(("attr2",))
+    assert set(InferAttrs.known_attrs()) == {"attr2"}
 
     InferAttrs.add(("attr1", "attr3"))
-    assert set(InferAttrs.known_attrs()) == set(("attr1", "attr2", "attr3"))
+    assert set(InferAttrs.known_attrs()) == {"attr1", "attr2", "attr3"}
 
 
 def test_get_parameter_chain_with_loops(good_inst_delegates):
@@ -327,7 +327,7 @@ def test_chain_links_of_type():
 
     InferAttrs.add("linked_parameter")
     user_links = get_chain_links_of_type(UserLinkingParameter, user_link_2)
-    assert set(user_links) == set([user_link, user_link_2])
+    assert set(user_links) == {user_link, user_link_2}
 
 
 def test_sole_chain_link_of_type():
@@ -362,7 +362,7 @@ def test_get_instrument_from_chain(
     instruments = get_parent_instruments_from_chain_of_type(
         DummyInstrument, good_inst_del_3
     )
-    assert set(instruments) == set([inst, inst2])
+    assert set(instruments) == {inst, inst2}
 
 
 def test_get_sole_instrument_from_chain(instrument_fixture2, multi_inst_chain):

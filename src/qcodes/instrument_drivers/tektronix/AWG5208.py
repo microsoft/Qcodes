@@ -45,5 +45,3 @@ class AWG5208(TektronixAWG5208):
     """
     Alias with non-conformant name left for backwards compatibility
     """
-
-    pass

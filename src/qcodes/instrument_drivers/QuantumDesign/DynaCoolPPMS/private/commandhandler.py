@@ -135,7 +135,7 @@ class CommandHandler:
             is_query = True
         else:
             cmd = self._sets[cmd_head]
-            args = list(float(arg) for arg in cmd_str[5:].split(", "))
+            args = [float(arg) for arg in cmd_str[5:].split(", ")]
             is_query = False
 
         return CmdArgs(cmd=cmd, args=args), is_query
@@ -169,7 +169,7 @@ class CommandHandler:
         if is_query:
             # read out the mutated values
             # (win32 reverses the order)
-            vals = list(arg.value for arg in cmd_and_args.args)
+            vals = [arg.value for arg in cmd_and_args.args]
             vals.reverse()
             # reset the value variables for good measures
             for arg in cmd_and_args.args:

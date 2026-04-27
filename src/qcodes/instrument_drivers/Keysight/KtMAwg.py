@@ -342,7 +342,7 @@ class KeysightM9336A(Instrument):
     def get_errors(self) -> dict[int, str]:
         error_code = ctypes.c_int(-1)
         error_message = ctypes.create_string_buffer(256)
-        error_dict = dict()
+        error_dict = {}
         while error_code.value != 0:
             status = self._dll.KtMAwg_error_query(
                 self._session, ctypes.byref(error_code), error_message
@@ -421,8 +421,6 @@ class KeysightM9336A(Instrument):
 class KtMAWGChannel(KeysightM9336AAWGChannel):
     """Alias for backwards compatibility"""
 
-    pass
-
 
 @deprecated(
     "KtMAwg is deprecated. Please use qcodes.instrument_drivers.Keysight.KeysightM9336A instead.",
@@ -431,5 +429,3 @@ class KtMAWGChannel(KeysightM9336AAWGChannel):
 )
 class KtMAwg(KeysightM9336A):
     """Alias for backwards compatibility"""
-
-    pass

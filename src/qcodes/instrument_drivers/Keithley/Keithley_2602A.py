@@ -5,5 +5,3 @@ class Keithley2602A(Keithley2600):
     """
     QCoDeS driver for the Keithley 2602A Source-Meter
     """
-
-    pass

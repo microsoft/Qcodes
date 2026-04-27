@@ -222,9 +222,7 @@ class Keithley3706A(VisaInstrument):
     def _is_backplane_channel(self, channel_id: str) -> bool:
         if len(channel_id) != 4:
             raise Keithley3706AInvalidValue(f"{channel_id} is not a valid channel id")
-        if channel_id[1] == "9":
-            return True
-        return False
+        return channel_id[1] == "9"
 
     def exclusive_close(self, val: str) -> None:
         """

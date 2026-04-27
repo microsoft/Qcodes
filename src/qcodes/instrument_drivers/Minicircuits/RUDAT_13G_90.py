@@ -17,8 +17,6 @@ from .USBHIDMixin import MiniCircuitsHIDMixin
 class RUDAT_13G_90(MiniCircuitsRudat13G90Base):
     """Alias for backwards compatibility."""
 
-    pass
-
 
 @deprecated(
     "RUDAT_13G_90_USB is deprecated. Please use qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb instead.",
@@ -27,5 +25,3 @@ class RUDAT_13G_90(MiniCircuitsRudat13G90Base):
 )
 class RUDAT_13G_90_USB(MiniCircuitsRudat13G90Usb):
     """Alias for backwards compatibility."""
-
-    pass

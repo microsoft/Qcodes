@@ -98,7 +98,7 @@ def strip_attrs(obj: object, whitelist: "Sequence[str]" = ()) -> None:
 
     """
     try:
-        lst = set(list(obj.__dict__.keys())) - set(whitelist)
+        lst = set(obj.__dict__.keys()) - set(whitelist)
         for key in lst:
             try:
                 del obj.__dict__[key]

@@ -164,7 +164,7 @@ def generate_log_file_name() -> str:
 
     pid = str(os.getpid())
     dt_str = datetime.now().strftime("%y%m%d")
-    python_log_name = "-".join([dt_str, pid, PYTHON_LOG_NAME])
+    python_log_name = f"{dt_str}-{pid}-{PYTHON_LOG_NAME}"
     return python_log_name
 
 
@@ -412,9 +412,11 @@ class LogCapture:
 
     def __init__(
         self,
-        logger: logging.Logger = logging.getLogger(),
+        logger: logging.Logger | None = None,
         level: LevelType | None = None,
     ) -> None:
+        if logger is None:
+            logger = logging.getLogger()
         self.logger = logger
         self.level = level or logging.NOTSET
 

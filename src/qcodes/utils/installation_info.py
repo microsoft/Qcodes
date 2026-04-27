@@ -28,7 +28,7 @@ def is_qcodes_installed_editably() -> bool | None:
             stdout=subprocess.PIPE,
         )
         e_pkgs = json.loads(pipproc.stdout.decode("utf-8"))
-        answer = any([d["name"] == "qcodes" for d in e_pkgs])
+        answer = any(d["name"] == "qcodes" for d in e_pkgs)
     except Exception as e:  # we actually do want a catch-all here
         log.warning(f"{type(e)}: {e!s}")
         answer = None

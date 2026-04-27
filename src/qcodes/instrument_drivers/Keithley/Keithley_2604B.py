@@ -5,5 +5,3 @@ class Keithley2604B(Keithley2600):
     """
     QCoDeS driver for the Keithley 2604B Source-Meter
     """
-
-    pass

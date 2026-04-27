@@ -882,7 +882,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel["RohdeSchwarzZNBBase"]):
         start = self.start()
         stop = self.stop()
         npts = self.npts()
-        for _, parameter in self.parameters.items():
+        for parameter in self.parameters.values():
             if isinstance(
                 parameter,
                 (FrequencySweep, FrequencySweepMagPhase, FrequencySweepDBPhase),
@@ -898,7 +898,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel["RohdeSchwarzZNBBase"]):
         """
         bandwidth = self.bandwidth()
         npts = self.npts()
-        for _, parameter in self.parameters.items():
+        for parameter in self.parameters.values():
             if isinstance(parameter, FixedFrequencyTraceIQ):
                 try:
                     parameter.set_cw_sweep(npts, bandwidth)

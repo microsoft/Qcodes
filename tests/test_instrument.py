@@ -95,7 +95,7 @@ def test_validate_function(testdummy: DummyInstrument) -> None:
 
     testdummy.dac1.cache._value = 1000  # overrule the validator
     testdummy.dac1.cache._raw_value = 1000  # overrule the validator
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError):
         testdummy.validate_status()
 
 
@@ -121,11 +121,13 @@ def test_instrument_fail() -> None:
 @pytest.mark.usefixtures("close_before_and_after")
 def test_instrument_on_invalid_identifier() -> None:
     # Check if warning and error raised when invalid identifer name given
-    with pytest.warns(
-        UserWarning, match="Changed !-name to !_name for instrument identifier"
+    with (
+        pytest.warns(
+            UserWarning, match="Changed !-name to !_name for instrument identifier"
+        ),
+        pytest.raises(ValueError, match="!_name invalid instrument identifier"),
     ):
-        with pytest.raises(ValueError, match="!_name invalid instrument identifier"):
-            DummyInstrument(name="!-name")
+        DummyInstrument(name="!-name")
 
     assert Instrument.instances() == []
     assert DummyInstrument.instances() == []
@@ -277,7 +279,7 @@ def test_add_remove_f_p(testdummy) -> None:
         match="Use attributes directly on the instrument object instead",
     ):
         fcn = testdummy["function"]
-        assert isinstance(fcn, Function)
+    assert isinstance(fcn, Function)
     # by design, one gets the parameter if a function exists
     # and has same name
     with pytest.warns(
@@ -285,7 +287,7 @@ def test_add_remove_f_p(testdummy) -> None:
         match="Use attributes directly on the instrument object instead",
     ):
         dac1 = testdummy["dac1"]
-        assert isinstance(dac1, Parameter)
+    assert isinstance(dac1, Parameter)
 
 
 def test_instances(testdummy, parabola) -> None:
