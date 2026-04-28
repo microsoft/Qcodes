@@ -50,6 +50,8 @@ def _get_data_from_ds(ds: DataSetProtocol) -> list[list[DSPlotData]]:
                 data = data_dict[param_spec_base.name]
             elif param_spec_base.name in all_data:
                 data = all_data[param_spec_base.name]
+                if param_spec_base.name in data:
+                    data = all_data[param_spec_base.name][param_spec_base.name]
             else:
                 raise KeyError(
                     f"Data for parameter {param_spec_base.name} not found in dataset cache"
