@@ -213,9 +213,7 @@ def test_faulty_property_preserves_inner_traceback() -> None:
             raise AttributeError("specific underlying failure")
 
     obj = WithFaultyProperty()
-    with pytest.raises(
-        AttributeError, match="specific underlying failure"
-    ) as excinfo:
+    with pytest.raises(AttributeError, match="specific underlying failure") as excinfo:
         obj.prop
     assert any(entry.name == "prop" for entry in excinfo.traceback)
 
