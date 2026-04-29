@@ -1,0 +1,1 @@
+Fixed ``_get_data_from_ds`` to correctly handle datasets with incorrect multi-index structure during export by adding a fallback data lookup.

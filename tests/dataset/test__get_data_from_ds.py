@@ -5,7 +5,11 @@ from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_allclose
 
 from qcodes.dataset.data_export import _get_data_from_ds
+from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
+from qcodes.dataset.exporters.export_to_xarray import (
+    xarray_to_h5netcdf_with_complex_numbers,
+)
 from qcodes.dataset.measurements import Measurement
 from qcodes.parameters import ManualParameter, ParamSpecBase
 
@@ -323,3 +327,62 @@ def test_datasaver_multidim_numeric(experiment, bg_writing) -> None:
             assert_allclose(datadict["data"], expected_data)
 
             assert datadict["data"].shape == (size1 * size2,)
+
+
+def test_get_data_from_ds_non_unique_setpoint_after_netcdf_reload(
+    experiment, tmp_path
+) -> None:
+    """
+    Test that _get_data_from_ds works on a dataset reloaded from netcdf when
+    the setpoint values are not unique (e.g. a sweep that doubles back).
+
+    Non-unique setpoints cause the xarray export to use
+    ``df.reset_index().to_xarray()``, which makes both the setpoint and the
+    dependent parameter appear as top-level data_vars under an integer
+    ``index`` dimension.  After reloading, ``cache.data()`` therefore has
+    structure::
+
+        {
+            'setpoint': {'setpoint': array, 'index': array},
+            'dep':      {'dep':      array, 'index': array},
+        }
+
+    while ``interdeps`` still correctly records ``dep -> (setpoint,)``.  The
+    old code would raise ``KeyError`` because ``setpoint`` was not found
+    inside the ``dep`` sub-dict; the fix falls back to ``all_data``.
+    """
+    setpoint = ManualParameter("setpoint")
+    dep = ManualParameter("dep")
+
+    meas = Measurement(experiment)
+    meas.register_parameter(setpoint, paramtype="numeric")
+    meas.register_parameter(dep, setpoints=[setpoint], paramtype="numeric")
+
+    # Non-unique setpoint: sweep forward then back, 0.5 appears twice
+    setpoint_values = np.array([0.0, 0.5, 1.0, 0.5, 0.0])
+    dep_values = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+
+    with meas.run(write_in_background=False) as datasaver:
+        for s, d in zip(setpoint_values, dep_values):
+            datasaver.add_result((setpoint, s), (dep, d))
+
+    dataset = datasaver.dataset
+
+    # Export to netcdf (non-unique setpoint → df.reset_index().to_xarray())
+    xarr = dataset.to_xarray_dataset()
+    file_path = tmp_path / "test_non_unique.nc"
+    xarray_to_h5netcdf_with_complex_numbers(xarr, file_path)
+
+    # Reload: cache has 'setpoint' and 'dep' as separate top-level keys
+    # with 'index' coords, but interdeps still records dep -> (setpoint,)
+    loaded_ds = DataSetInMem._load_from_netcdf(file_path)
+
+    # This must not raise a KeyError
+    datadicts = _get_data_from_ds(loaded_ds)
+
+    # One dependent parameter -> one outer list
+    assert len(datadicts) == 1
+    result = {d["name"]: d for d in datadicts[0]}
+
+    assert "dep" in result
+    assert_allclose(result["dep"]["data"], dep_values)
