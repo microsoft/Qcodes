@@ -77,7 +77,13 @@ class DelegateAttributes:
             and hasattr(descriptor, "__get__")
             and (hasattr(descriptor, "__set__") or hasattr(descriptor, "__delete__"))
         ):
-            return descriptor.__get__(self, type(self))
+            try:
+                return descriptor.__get__(self, type(self))
+            except TypeError:
+                # Descriptor may not be applicable to this type, e.g.
+                # type.__name__ found via the MRO but invoked on a
+                # non-type instance.
+                pass
 
         raise AttributeError(
             f"'{self.__class__.__name__}' object and its delegates have no attribute '{key}'"

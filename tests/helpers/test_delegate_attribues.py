@@ -1,3 +1,4 @@
+import inspect
 from typing import ClassVar
 
 import pytest
@@ -216,6 +217,32 @@ def test_faulty_property_preserves_inner_traceback() -> None:
     with pytest.raises(AttributeError, match="specific underlying failure") as excinfo:
         obj.prop
     assert any(entry.name == "prop" for entry in excinfo.traceback)
+
+
+def test_inapplicable_descriptor_does_not_raise_type_error() -> None:
+    """Descriptors found via the MRO that are not applicable to the instance
+    (e.g. ``type.__name__`` invoked on a non-type object) must not leak a
+    ``TypeError`` out of ``__getattr__``.  Instead they should be skipped so
+    that the normal ``AttributeError`` is raised.
+
+    Regression test for a bug where ``inspect.iscoroutinefunction`` triggered
+    ``getattr(obj, '__name__', None)`` and the descriptor introspection in
+    ``__getattr__`` called ``type.__name__.__get__`` on a non-type instance.
+    """
+
+    class Plain(DelegateAttributes):
+        delegate_attr_objects: ClassVar[list[str]] = []
+
+    obj = Plain()
+
+    # ``__name__`` is not defined on ``Plain`` instances, so accessing it
+    # should raise ``AttributeError``, never ``TypeError``.
+    with pytest.raises(AttributeError):
+        obj.__name__  # type: ignore[attr-defined]
+
+    # ``inspect.iscoroutinefunction`` internally does
+    # ``getattr(obj, '__name__', None)`` — this must not raise.
+    assert inspect.iscoroutinefunction(obj) is False
 
 
 def test_working_property_still_returns_value() -> None:
