@@ -1,3 +1,4 @@
+import inspect
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, ClassVar
 
@@ -67,6 +68,16 @@ class DelegateAttributes:
                     return getattr(obj, key)
             except AttributeError:
                 pass
+
+        # ``inspect.getattr_static`` is comparatively expensive. Keep it as a
+        # fallback only when delegation did not resolve ``key``.
+        descriptor = inspect.getattr_static(type(self), key, None)
+        if (
+            descriptor is not None
+            and hasattr(descriptor, "__get__")
+            and (hasattr(descriptor, "__set__") or hasattr(descriptor, "__delete__"))
+        ):
+            return descriptor.__get__(self, type(self))
 
         raise AttributeError(
             f"'{self.__class__.__name__}' object and its delegates have no attribute '{key}'"
