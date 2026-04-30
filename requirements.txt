@@ -515,15 +515,15 @@ xarray==2026.4.0
     #   cf-xarray
     #   qcodes
     #   qcodes-loop
-zhinst-core==26.1.3.9
+zhinst-core==26.4.0.940
     # via
     #   zhinst-toolkit
     #   zhinst-utils
 zhinst-qcodes==0.7.0
     # via qcodes (pyproject.toml)
-zhinst-timing-models==26.1.0
+zhinst-timing-models==26.4.0
     # via zhinst-utils
-zhinst-toolkit==1.3.0
+zhinst-toolkit==1.4.0
     # via zhinst-qcodes
 zhinst-utils==0.7.2
     # via zhinst-toolkit
