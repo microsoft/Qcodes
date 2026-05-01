@@ -1,0 +1,4 @@
+Added ``StructParameter``, a new parameter type that returns structured data
+as a Python ``dataclass`` or Pydantic v2 ``BaseModel``. Each field of the struct
+is automatically unpacked into a separate dataset column when used with
+``Measurement``. Pydantic support is optional.
