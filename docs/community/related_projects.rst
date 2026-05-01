@@ -108,7 +108,7 @@ Website: `quantify-os.org <https://quantify-os.org>`__
 QT-DataViewer
 -------------
 QT-DataViewer is a data store browser and dataset viewer with backends for
-mulitple data stores. It can connect to the QCoDeS sqlite database and browse through 
+mulitple data stores. It can connect to the QCoDeS sqlite database and browse through
 hdf5 / netcdf files on disk.
 The viewer can average and slice data, and plots in 1D, 2D, histograms, and scatter plots.
 The snapshot data can be explored as well.
