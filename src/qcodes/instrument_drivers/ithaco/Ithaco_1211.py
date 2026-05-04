@@ -1,10 +1,7 @@
 from typing import TYPE_CHECKING
 
-from typing_extensions import deprecated
-
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs
 from qcodes.parameters import MultiParameter, Parameter, ParamRawDataType
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 from qcodes.validators import Bool, Enum
 
 if TYPE_CHECKING:
@@ -150,14 +147,3 @@ class Ithaco1211(Instrument):
             "serial": serial,
             "firmware": firmware,
         }
-
-
-@deprecated(
-    "Ithaco_1211 is deprecated. Please use qcodes.instrument_drivers.ithaco.Ithaco1211 instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=1,
-)
-class Ithaco_1211(Ithaco1211):
-    """
-    Old alias for Itaco1211. Will eventually be deprecated and removed.
-    """
