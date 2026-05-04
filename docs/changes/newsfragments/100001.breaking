@@ -1,0 +1,1 @@
+Removed deprecated Keithley/Tektronix compatibility shims and aliases that were deprecated in ``0.57.0``. Use ``qcodes.instrument_drivers.Keithley`` imports and the non-underscored Keithley class names instead.
