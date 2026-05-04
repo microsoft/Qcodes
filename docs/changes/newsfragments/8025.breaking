@@ -1,1 +1,0 @@
-Yokogawa GS200: The `step` and `delay` arguments of `ramp_voltage` and `ramp_current` have been deprecated in favor of the `ramp_step` and `ramp_rate` instrument parameters.

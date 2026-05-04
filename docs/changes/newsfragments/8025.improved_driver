@@ -1,9 +1,0 @@
-Keysight 344xxA: Add SCPI mnemonics (`'MIN'`, `'MAX'`, `'DEF'`) to allowed values where allowed
-Oxford Mercury IPS: Allow setting current ramp rate and target
-Oxford Triton: Also assume magnet is not available if there is a communication timeout
-Yokagawa GS200 Program: Validate program times on multiples of the internal clock rate of 0.1s
-Yokagawa GS200 Program: Only add trigger parameter if monitor option is installed
-Yokagawa GS200 Program: Add get parser to `count`; allow setting to SCPI mnemonics `'MIN'`, `'MAX'`.
-Yokagawa GS200 Program: Add `hold()`, `pause()`, `cont()` methods.
-Yokagawa GS200: Add parameters reading out device registers (`status_byte`, `standard_event_register`, `extended_event_register`, `condition_register`)
-Yokagawa GS200: Implement hardware ramps. `ramp_mode` parameter switches the mode of output sets between `"JUMP"`, `"SOFTWARE"`, and `"HARDWARE"`. The last uses a program to ramp, software corresponds to the previous ramp implementation. `ramp_step`, `ramp_rate`, `ramp_blocking` configure the way ramps behave.
