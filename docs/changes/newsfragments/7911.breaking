@@ -1,2 +1,0 @@
-All arguments to Parameter classes and subclasses, except ``name``, are now keyword-only.
-Previously deprecated positional arguments have been removed.

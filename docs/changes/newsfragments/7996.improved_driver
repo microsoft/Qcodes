@@ -1,6 +1,0 @@
-The ``TektronixAWG5014`` driver has been refactored to use ``InstrumentChannel``
-submodules. Per-channel parameters (e.g. ``amp``, ``offset``, ``state``) are now
-accessed via ``awg.ch1.amp`` instead of ``awg.ch1_amp``, and marker parameters
-via ``awg.ch1.m1.high`` instead of ``awg.ch1_m1_high``. The old flat attribute
-names still work but emit a deprecation warning. The example notebook has been
-updated accordingly.

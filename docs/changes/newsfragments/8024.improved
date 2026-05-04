@@ -1,3 +1,0 @@
-Add ``ParameterBaseKWArgs`` and ``ParameterKWArgs`` TypedDicts for typing ``**kwargs``
-forwarded through the ``Parameter`` class hierarchy. Subclasses of ``Parameter`` can now
-use ``**kwargs: Unpack[ParameterKWArgs]`` for statically checked kwargs forwarding.
