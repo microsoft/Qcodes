@@ -28,7 +28,7 @@ broadbean==0.14.0
     #   qcodes
 certifi==2026.4.22
     # via requests
-cf-xarray==0.10.11
+cf-xarray==0.11.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
