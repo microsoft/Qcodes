@@ -274,10 +274,6 @@ known-first-party = ["qcodes"]
 # deprecated modules left
 # for backwards compatibility
 "src/qcodes/instrument_drivers/AimTTi/AimTTi_PL601P_channels.py" = ["F401"]
-"src/qcodes/instrument_drivers/tektronix/Keithley_6500.py" = ["F401"]
-"src/qcodes/instrument_drivers/tektronix/Keithley_2600_channels.py" = ["F401"]
-"src/qcodes/instrument_drivers/tektronix/Keithley_2450.py" = ["F401"]
-"src/qcodes/instrument_drivers/tektronix/keithley_7510.py" = ["F401"]
 "src/qcodes/instrument_drivers/signal_hound/USB_SA124B.py" = ["F401"]
 "src/qcodes/instrument_drivers/rohde_schwarz/RTE1000.py" = ["F401"]
 "src/qcodes/instrument_drivers/devices.py" = ["F401"]
