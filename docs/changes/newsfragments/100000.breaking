@@ -1,0 +1,1 @@
+Removed the deprecated ``VectorMode``, ``Motor``, ``DMC4133Controller``, and ``Arm`` Galil driver aliases. Use ``GalilDMC4133VectorMode``, ``GalilDMC4133Motor``, ``GalilDMC4133Controller``, and ``GalilDMC4133Arm`` instead.
