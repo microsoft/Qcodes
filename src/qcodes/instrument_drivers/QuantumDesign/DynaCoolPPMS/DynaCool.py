@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
     from qcodes.parameters import Parameter
 
+
 class DynaCool(VisaInstrument):
     """
     Class to represent the DynaCoolPPMS

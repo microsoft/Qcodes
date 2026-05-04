@@ -62,7 +62,6 @@ def range_str(
         return ""
 
 
-
 class Validator[T]:
     """
     Base class for all value validators

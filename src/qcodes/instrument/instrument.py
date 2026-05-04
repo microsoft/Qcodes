@@ -31,7 +31,6 @@ class InstrumentProtocol(Protocol):
     def write(self, cmd: str) -> None: ...
 
 
-
 # a metaclass that overrides __call__ means that we lose
 # both the args and return type hints.
 # Since our metaclass does not modify the signature
@@ -279,7 +278,9 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
 
     @overload
     @classmethod
-    def find_instrument[T: "Instrument"](cls, name: str, instrument_class: type[T]) -> T: ...
+    def find_instrument[T: "Instrument"](
+        cls, name: str, instrument_class: type[T]
+    ) -> T: ...
 
     @classmethod
     def find_instrument[T: "Instrument"](

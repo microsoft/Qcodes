@@ -98,7 +98,9 @@ class InstrumentChannel(InstrumentModule[_TIB_co], Generic[_TIB_co]):
     pass
 
 
-class ChannelTuple[InstrumentModuleType: "InstrumentModule"](MetadatableWithName, Sequence[InstrumentModuleType]):
+class ChannelTuple[InstrumentModuleType: "InstrumentModule"](
+    MetadatableWithName, Sequence[InstrumentModuleType]
+):
     """
     Container for channelized parameters that allows for sweeps over
     all channels, as well as addressing of individual channels.
@@ -1158,8 +1160,9 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
         return self._exists_on_instrument
 
 
-
-class AutoLoadableChannelList[TAUTORELOADCHANNEL: AutoLoadableInstrumentChannel](ChannelList[TAUTORELOADCHANNEL]):
+class AutoLoadableChannelList[TAUTORELOADCHANNEL: AutoLoadableInstrumentChannel](
+    ChannelList[TAUTORELOADCHANNEL]
+):
     """
     Extends the QCoDeS :class:`ChannelList` class to add the following features:
     - Automatically create channel objects on initialization
