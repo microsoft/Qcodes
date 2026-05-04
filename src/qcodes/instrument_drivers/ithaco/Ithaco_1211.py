@@ -8,7 +8,7 @@ from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 from qcodes.validators import Bool, Enum
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 class CurrentParameter(

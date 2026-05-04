@@ -27,8 +27,7 @@ from qcodes.validators import Sequence as ValidatorSequence
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Sequence
-
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 log = logging.getLogger(__name__)
 

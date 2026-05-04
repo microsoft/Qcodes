@@ -19,8 +19,7 @@ from qcodes.validators import Arrays
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
-
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.dataset.data_set_protocol import ValuesType
     from qcodes.parameters.parameter_base import ParamDataType, ParameterBase

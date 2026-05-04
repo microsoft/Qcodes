@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from .keysight_34980a import Keysight34980A
 

@@ -13,8 +13,7 @@ from .parameter import Parameter, ParameterKWArgs
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
-
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.instrument import InstrumentBase
 

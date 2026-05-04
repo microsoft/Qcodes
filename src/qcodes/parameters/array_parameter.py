@@ -24,8 +24,7 @@ from .sequence_helpers import is_sequence_of
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 try:

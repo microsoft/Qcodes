@@ -17,8 +17,7 @@ from qcodes.validators import Arrays, ComplexNumbers, Enum, Ints, Numbers, Strin
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 class ChannelTrace(ParameterWithSetpoints):

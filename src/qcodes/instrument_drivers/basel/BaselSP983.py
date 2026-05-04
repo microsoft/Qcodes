@@ -5,7 +5,7 @@ from qcodes.parameters import DelegateParameter, Parameter
 from qcodes.validators import Enum, Numbers
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 class BaselSP983(Instrument):

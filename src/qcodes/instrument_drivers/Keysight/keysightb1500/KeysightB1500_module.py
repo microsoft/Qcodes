@@ -1,9 +1,9 @@
 import re
-from typing import TYPE_CHECKING, Any, NamedTuple, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, Unpack, cast
 
 import numpy as np
 import numpy.typing as npt
-from typing_extensions import TypedDict, Unpack
+from typing_extensions import TypedDict
 
 from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel
 

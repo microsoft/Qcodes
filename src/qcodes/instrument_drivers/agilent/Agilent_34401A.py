@@ -6,7 +6,7 @@ from qcodes.validators import Strings
 from ._Agilent_344xxA import Agilent344xxA
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.instrument import VisaInstrumentKWArgs
     from qcodes.parameters import Parameter

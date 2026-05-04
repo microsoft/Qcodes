@@ -22,8 +22,7 @@ from qcodes.validators import Arrays, Enum, Ints, Lists, Numbers
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from types import TracebackType
-
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 class DataArray7510(MultiParameter):

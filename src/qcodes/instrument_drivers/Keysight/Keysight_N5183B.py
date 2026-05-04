@@ -6,7 +6,7 @@ from qcodes.instrument_drivers.Keysight.N51x1 import KeysightN51x1
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.instrument import VisaInstrumentKWArgs
 

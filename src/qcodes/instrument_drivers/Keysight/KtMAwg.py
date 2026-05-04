@@ -12,7 +12,7 @@ from qcodes.validators import Numbers
 from . import KtMAwgDefs
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 _ch_type = bytes | ctypes.Array[ctypes.c_char]

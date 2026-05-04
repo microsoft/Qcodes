@@ -23,9 +23,7 @@ from qcodes.validators import (
 )
 
 if TYPE_CHECKING:
-    from typing import assert_never
-
-    from typing_extensions import Unpack
+    from typing import Unpack, assert_never
 
     from qcodes.parameters import Parameter
 

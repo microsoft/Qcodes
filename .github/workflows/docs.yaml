@@ -29,10 +29,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.11", "3.12", "3.13", "3.14"]
+        python-version: ["3.12", "3.13", "3.14"]
         exclude:
-          - os: windows-latest
-            python-version: 3.11
           - os: windows-latest
             python-version: 3.13
           - os: windows-latest
@@ -122,7 +120,7 @@ jobs:
     - name: Download artifact
       uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
       with:
-        name: docs_3.11_ubuntu-latest
+        name: docs_3.12_ubuntu-latest
         path: build_docs
 
     - name: Deploy to gh pages

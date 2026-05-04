@@ -9,7 +9,7 @@ from qcodes.parameters import Parameter
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 class Weinschel8320(VisaInstrument):

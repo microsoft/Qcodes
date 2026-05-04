@@ -8,7 +8,7 @@ from .constants import ChNr, ModuleKind
 from .KeysightB1500_module import KeysightB1500Module
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.instrument import InstrumentBaseKWArgs
     from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base import (

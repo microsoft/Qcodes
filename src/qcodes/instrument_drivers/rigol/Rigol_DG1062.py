@@ -13,7 +13,7 @@ from qcodes.instrument.channel import ChannelTuple
 from qcodes.utils import partial_with_docstring
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.parameters import Parameter
 
