@@ -4,11 +4,8 @@
 import logging
 from typing import TYPE_CHECKING
 
-from typing_extensions import deprecated
-
 from qcodes import validators as vals
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from typing import Unpack
@@ -166,15 +163,3 @@ class HP83650A(VisaInstrument):
         print(f"{self.amstatus.label}: {self.amstatus.get()}")
         print(f"{self.pulsestatus.label}: {self.pulsestatus.get()}")
         print(f"{self.pulsesource.label}: {self.pulsesource.get()}")
-
-
-@deprecated(
-    "HP_83650A is deprecated. Please use qcodes.instrument_drivers.HP.HP83650A instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=1,
-)
-class HP_83650A(HP83650A):
-    """
-    Alias of HP83650A for backwards compatibility.
-    Will eventually be deprecated and removed.
-    """
