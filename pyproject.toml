@@ -288,10 +288,7 @@ known-first-party = ["qcodes"]
 "src/qcodes/instrument_drivers/rigol/DS1074Z.py" = ["F401"]
 "src/qcodes/instrument_drivers/rigol/DG1062.py" = ["F401"]
 "src/qcodes/instrument_drivers/devices.py" = ["F401"]
-"src/qcodes/instrument_drivers/basel/sp983c_remote.py" = ["F401"]
 "src/qcodes/instrument_drivers/Minicircuits/RUDAT_13G_90.py" = ["F401"]
-"src/qcodes/instrument_drivers/HP/HP8133A.py" = ["F401"]
-"src/qcodes/instrument_drivers/HP/HP8753D.py" = ["F401"]
 "src/qcodes/instrument_drivers/Keysight/N9030B.py" = ["F401"]
 
 # TID253 these imports are fine at module level

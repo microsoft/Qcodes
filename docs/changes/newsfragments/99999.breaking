@@ -1,0 +1,1 @@
+Removed the deprecated ``qcodes.instrument_drivers.basel.sp983c`` and ``qcodes.instrument_drivers.basel.sp983c_remote`` module shims. Import Basel drivers from ``qcodes.instrument_drivers.basel`` instead.
