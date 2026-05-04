@@ -11,4 +11,3 @@ from qcodes.instrument_drivers.Keithley.Keithley_6500 import (
 )
 
 CommandSetError = Keithley6500CommandSetError
-

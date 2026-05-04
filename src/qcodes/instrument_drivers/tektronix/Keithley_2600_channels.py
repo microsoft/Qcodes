@@ -23,4 +23,3 @@ log = logging.getLogger(__name__)
 
 
 KeithleyChannel = Keithley2600Channel
-
