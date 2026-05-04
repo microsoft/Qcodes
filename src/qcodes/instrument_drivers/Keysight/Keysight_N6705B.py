@@ -1,7 +1,5 @@
 from typing import TYPE_CHECKING
 
-from typing_extensions import deprecated
-
 from qcodes.instrument import (
     Instrument,
     InstrumentBaseKWArgs,
@@ -9,7 +7,6 @@ from qcodes.instrument import (
     VisaInstrument,
     VisaInstrumentKWArgs,
 )
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from typing import Unpack
@@ -98,17 +95,6 @@ class KeysightN6705BChannel(InstrumentChannel):
         self.ch_name = name
 
 
-@deprecated(
-    "N6705BChannel is deprecated. Please use qcodes.instrument_drivers.Keysight.KeysightN6705BChannel instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=1,
-)
-class N6705BChannel(KeysightN6705BChannel):
-    """Alias for backwards compatibility"""
-
-    pass
-
-
 class KeysightN6705B(VisaInstrument):
     default_terminator = "\n"
 
@@ -135,14 +121,3 @@ class KeysightN6705B(VisaInstrument):
             "firmware": firmware,
         }
         return IDN
-
-
-@deprecated(
-    "N6705B is deprecated. Please use qcodes.instrument_drivers.Keysight.KeysightN6705B instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=1,
-)
-class N6705B(KeysightN6705B):
-    """
-    Alias for backwards compatibility.
-    """
