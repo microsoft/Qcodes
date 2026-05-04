@@ -271,11 +271,6 @@ allowed-confusables = ["µ"]
 known-first-party = ["qcodes"]
 
 [tool.ruff.lint.per-file-ignores]
-# deprecated modules left
-# for backwards compatibility
-"src/qcodes/instrument_drivers/AimTTi/AimTTi_PL601P_channels.py" = ["F401"]
-"src/qcodes/instrument_drivers/devices.py" = ["F401"]
-
 # TID253 these imports are fine at module level
 # in tests and examples
 "docs/*" = ["TID253"]
