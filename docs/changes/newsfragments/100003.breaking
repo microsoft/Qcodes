@@ -1,0 +1,1 @@
+Removed the deprecated Oxford Instruments driver aliases ``Triton``, ``MercuryWorkerPS``, and ``MercuryiPS``. Use ``OxfordTriton``, ``OxfordMercuryWorkerPS``, and ``OxfordMercuryiPS`` instead.
