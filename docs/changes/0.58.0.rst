@@ -1,6 +1,8 @@
 QCoDeS 0.58.0 (2026-05-04)
 ==========================
 
+This will be the last version to support Python 3.11. Python 3.12 will be required starting from QCoDeS 0.59.0.
+
 Breaking Changes:
 -----------------
 
