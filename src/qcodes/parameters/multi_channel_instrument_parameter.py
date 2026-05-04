@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any
 
 from .multi_parameter import MultiParameter
 
@@ -12,7 +12,6 @@ if TYPE_CHECKING:
 
     from .parameter_base import ParamRawDataType
 
-InstrumentModuleType = TypeVar("InstrumentModuleType", bound="InstrumentModule")
 _LOG = logging.getLogger(__name__)
 
 
@@ -89,3 +88,18 @@ class MultiChannelInstrumentParameter[InstrumentModuleType: "InstrumentModule"](
         """
 
         return self.names
+
+
+if not TYPE_CHECKING:
+    from typing import TypeVar
+
+    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
+
+    __getattr__ = _make_deprecated_typevars_getattr(
+        __name__,
+        {
+            "InstrumentModuleType": TypeVar(
+                "InstrumentModuleType", bound="InstrumentModule"
+            ),
+        },
+    )

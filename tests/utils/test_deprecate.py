@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import TypeVar
+import importlib
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 import pytest
 
@@ -9,9 +11,11 @@ from qcodes.utils.deprecate import (
     _make_deprecated_typevars_getattr,
 )
 
+_FixtureT = tuple[dict[str, TypeVar], Callable[[str], Any]]
+
 
 @pytest.fixture
-def deprecated_getattr() -> tuple[dict[str, TypeVar], callable]:
+def deprecated_getattr() -> _FixtureT:
     """Create a __getattr__ with two deprecated TypeVars."""
     deprecated = {
         "MyT": TypeVar("MyT"),
@@ -22,7 +26,7 @@ def deprecated_getattr() -> tuple[dict[str, TypeVar], callable]:
 
 
 def test_returns_typevar_and_warns(
-    deprecated_getattr: tuple[dict[str, TypeVar], callable],
+    deprecated_getattr: _FixtureT,
 ) -> None:
     deprecated, getattr_fn = deprecated_getattr
     with pytest.warns(QCoDeSDeprecationWarning, match="'MyT'.*'fake.module'"):
@@ -31,7 +35,7 @@ def test_returns_typevar_and_warns(
 
 
 def test_warns_for_each_deprecated_name(
-    deprecated_getattr: tuple[dict[str, TypeVar], callable],
+    deprecated_getattr: _FixtureT,
 ) -> None:
     deprecated, getattr_fn = deprecated_getattr
     with pytest.warns(QCoDeSDeprecationWarning, match="'MyK'"):
@@ -40,15 +44,15 @@ def test_warns_for_each_deprecated_name(
 
 
 def test_unknown_name_raises_attribute_error(
-    deprecated_getattr: tuple[dict[str, TypeVar], callable],
+    deprecated_getattr: _FixtureT,
 ) -> None:
     _, getattr_fn = deprecated_getattr
-    with pytest.raises(AttributeError, match="fake.module"):
+    with pytest.raises(AttributeError, match=r"fake\.module"):
         getattr_fn("DoesNotExist")
 
 
 def test_repeated_access_returns_same_object(
-    deprecated_getattr: tuple[dict[str, TypeVar], callable],
+    deprecated_getattr: _FixtureT,
 ) -> None:
     deprecated, getattr_fn = deprecated_getattr
     with pytest.warns(QCoDeSDeprecationWarning):
@@ -86,7 +90,8 @@ def test_fallback_not_called_for_deprecated_names() -> None:
 
 def test_real_module_import_triggers_warning() -> None:
     """Test that importing a deprecated TypeVar from an actual module works."""
+    mod = importlib.import_module("qcodes.utils.deep_update_utils")
     with pytest.warns(QCoDeSDeprecationWarning, match="'K'"):
-        from qcodes.utils.deep_update_utils import K
+        k = mod.K
 
-    assert isinstance(K, TypeVar)
+    assert isinstance(k, TypeVar)

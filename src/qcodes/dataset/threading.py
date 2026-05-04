@@ -24,8 +24,6 @@ if TYPE_CHECKING:
 ParamMeasT: TypeAlias = "ParameterBase | Callable[[], None]"
 OutType: TypeAlias = "list[tuple[ParameterBase, ValuesType]]"
 
-T = TypeVar("T")
-
 _LOG = logging.getLogger(__name__)
 
 
@@ -221,3 +219,13 @@ class ThreadPoolParamsCaller(_ParamsCallerProtocol):
         exc_tb: TracebackType | None,
     ) -> None:
         self._thread_pool.__exit__(exc_type, exc_val, exc_tb)
+
+
+if not TYPE_CHECKING:
+    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
+
+    _deprecated_typevars: dict[str, TypeVar] = {
+        "T": TypeVar("T"),
+    }
+
+    __getattr__ = _make_deprecated_typevars_getattr(__name__, _deprecated_typevars)

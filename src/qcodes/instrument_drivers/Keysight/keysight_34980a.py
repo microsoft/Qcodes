@@ -2,9 +2,7 @@ import logging
 import re
 import warnings
 from functools import wraps
-from typing import TYPE_CHECKING, TypeVar
-
-from typing_extensions import ParamSpec
+from typing import TYPE_CHECKING
 
 from qcodes import validators as vals
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
@@ -18,12 +16,8 @@ if TYPE_CHECKING:
 
 KEYSIGHT_MODELS = {"34934A": Keysight34934A}
 
-S = TypeVar("S", bound="Keysight34980A")
-P = ParamSpec("P")
-T = TypeVar("T")
 
-
-def post_execution_status_poll(
+def post_execution_status_poll[S: "Keysight34980A", T, **P](
     func: "Callable[Concatenate[S, P], T]",
 ) -> "Callable[Concatenate[S, P], T]":
     """
@@ -191,3 +185,20 @@ class Keysight34980A(VisaInstrument):
         else:
             vals.Ints(min_value=1, max_value=self._total_slot).validate(slot)
             self.write(f"ROUT:OPEN:ALL {slot}")
+
+
+if not TYPE_CHECKING:
+    from typing import TypeVar
+
+    from typing_extensions import ParamSpec
+
+    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
+
+    __getattr__ = _make_deprecated_typevars_getattr(
+        __name__,
+        {
+            "S": TypeVar("S", bound="Keysight34980A"),
+            "T": TypeVar("T"),
+            "P": ParamSpec("P"),
+        },
+    )

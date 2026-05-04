@@ -5,7 +5,8 @@ from typing import TYPE_CHECKING, Any, Generic, Literal, Protocol, overload
 
 from typing_extensions import TypeVar
 
-# due to circular imports we cannot import the TypeVar from parameter_base
+# Cannot convert to PEP 695: uses default= which requires PEP 696 (Python 3.13+).
+# Due to circular imports we cannot import the TypeVar from parameter_base.
 ParameterDataTypeVar = TypeVar("ParameterDataTypeVar", default=Any)
 
 if TYPE_CHECKING:

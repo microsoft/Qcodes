@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import time
 import weakref
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Protocol, overload
 
 from qcodes.utils import strip_attrs
 from qcodes.validators import Anything
@@ -31,7 +31,6 @@ class InstrumentProtocol(Protocol):
     def write(self, cmd: str) -> None: ...
 
 
-T = TypeVar("T", bound="Instrument")
 
 # a metaclass that overrides __call__ means that we lose
 # both the args and return type hints.
@@ -280,10 +279,10 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
 
     @overload
     @classmethod
-    def find_instrument(cls, name: str, instrument_class: type[T]) -> T: ...
+    def find_instrument[T: "Instrument"](cls, name: str, instrument_class: type[T]) -> T: ...
 
     @classmethod
-    def find_instrument(
+    def find_instrument[T: "Instrument"](
         cls, name: str, instrument_class: type[T] | None = None
     ) -> T | Instrument:
         """
@@ -504,3 +503,16 @@ def find_or_create_instrument[T: "Instrument"](
             instrument.connect_message()  # prints the message
 
     return instrument
+
+
+if not TYPE_CHECKING:
+    from typing import TypeVar
+
+    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
+
+    __getattr__ = _make_deprecated_typevars_getattr(
+        __name__,
+        {
+            "T": TypeVar("T", bound="Instrument"),
+        },
+    )

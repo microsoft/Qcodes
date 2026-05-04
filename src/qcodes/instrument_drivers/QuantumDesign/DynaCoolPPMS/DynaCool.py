@@ -1,7 +1,7 @@
 import warnings
 from functools import partial
 from time import sleep
-from typing import TYPE_CHECKING, ClassVar, Literal, TypeVar, cast
+from typing import TYPE_CHECKING, ClassVar, Literal, cast
 
 import numpy as np
 from pyvisa import VisaIOError
@@ -14,9 +14,6 @@ if TYPE_CHECKING:
     from typing import Unpack
 
     from qcodes.parameters import Parameter
-
-_T = TypeVar("_T")
-
 
 class DynaCool(VisaInstrument):
     """
@@ -276,7 +273,7 @@ class DynaCool(VisaInstrument):
         return self._error_code
 
     @staticmethod
-    def _pick_one(which_one: int, parser: "Callable[[str], _T]", resp: str) -> _T:
+    def _pick_one[T](which_one: int, parser: "Callable[[str], T]", resp: str) -> T:
         """
         Since most of the API calls return several values in a comma-separated
         string, here's a convenience function to pick out the substring of

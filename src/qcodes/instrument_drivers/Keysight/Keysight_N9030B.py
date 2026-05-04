@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Unpack
 
+# Cannot convert to PEP 695: uses default= which requires PEP 696 (Python 3.13+).
 _T = TypeVar(
     "_T",
     bound="KeysightN9030BSpectrumAnalyzerMode | KeysightN9030BPhaseNoiseMode",

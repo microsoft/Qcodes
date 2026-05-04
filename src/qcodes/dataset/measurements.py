@@ -18,7 +18,7 @@ from inspect import signature
 from itertools import chain
 from numbers import Number
 from time import perf_counter, perf_counter_ns
-from typing import TYPE_CHECKING, Any, TypeAlias, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeAlias, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -802,9 +802,6 @@ class Runner:
             if isinstance(self.ds, DataSet):
                 self.ds.unsubscribe_all()
             self._exit_stack.close()
-
-
-T = TypeVar("T", bound="Measurement")
 
 
 class Measurement:
@@ -1616,3 +1613,16 @@ def _numeric_values_are_equal(
         ):
             return False
     return True
+
+
+if not TYPE_CHECKING:
+    from typing import TypeVar
+
+    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
+
+    __getattr__ = _make_deprecated_typevars_getattr(
+        __name__,
+        {
+            "T": TypeVar("T", bound="Measurement"),
+        },
+    )

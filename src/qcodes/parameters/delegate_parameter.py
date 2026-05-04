@@ -20,8 +20,9 @@ if TYPE_CHECKING:
         ParamRawDataType,
     )
 
-# Generic type variables for inner cache class
-# these need to be different variables such that both classes can be generic
+# Cannot convert to PEP 695: uses default= which requires PEP 696 (Python 3.13+).
+# Generic type variables for inner cache class —
+# these need to be different variables such that both classes can be generic.
 _local_ParameterDataTypeVar = TypeVar("_local_ParameterDataTypeVar", default=Any)
 _local_InstrumentTypeVar_co = TypeVar(
     "_local_InstrumentTypeVar_co",

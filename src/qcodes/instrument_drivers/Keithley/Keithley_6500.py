@@ -1,5 +1,5 @@
 from functools import partial
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.validators import Bool, Enum, Ints, MultiType, Numbers
@@ -9,8 +9,6 @@ if TYPE_CHECKING:
     from typing import Unpack
 
     from qcodes.parameters import Parameter
-
-T = TypeVar("T")
 
 
 def _parse_output_string(string_value: str) -> str:
@@ -258,7 +256,7 @@ class Keithley6500(VisaInstrument):
     def _read_next_value(self) -> float:
         return float(self.ask("READ?"))
 
-    def _get_mode_param(self, parameter: str, parser: "Callable[[str], T]") -> T:
+    def _get_mode_param[T](self, parameter: str, parser: "Callable[[str], T]") -> T:
         """Reads the current mode of the multimeter and ask for the given parameter.
 
         Args:
@@ -287,3 +285,16 @@ class Keithley6500(VisaInstrument):
         mode = _parse_output_string(self._mode_map[self.mode()])
         cmd = f"{mode}:{parameter} {value}"
         self.write(cmd)
+
+
+if not TYPE_CHECKING:
+    from typing import TypeVar
+
+    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
+
+    __getattr__ = _make_deprecated_typevars_getattr(
+        __name__,
+        {
+            "T": TypeVar("T"),
+        },
+    )

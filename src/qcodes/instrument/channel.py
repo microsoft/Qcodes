@@ -15,7 +15,6 @@ from qcodes.parameters import (
     MultiParameter,
     Parameter,
 )
-from qcodes.parameters.multi_channel_instrument_parameter import InstrumentModuleType
 from qcodes.utils import full_class
 from qcodes.validators import Validator
 
@@ -27,6 +26,7 @@ if TYPE_CHECKING:
     from .instrument_base import InstrumentBaseKWArgs
 
 
+# Cannot convert to PEP 695: uses default= and covariant= which require PEP 696 (Python 3.13+).
 _TIB_co = TypeVar(
     "_TIB_co", bound="InstrumentBase", default=InstrumentBase, covariant=True
 )
@@ -98,10 +98,7 @@ class InstrumentChannel(InstrumentModule[_TIB_co], Generic[_TIB_co]):
     pass
 
 
-T = TypeVar("T", bound="ChannelTuple")
-
-
-class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
+class ChannelTuple[InstrumentModuleType: "InstrumentModule"](MetadatableWithName, Sequence[InstrumentModuleType]):
     """
     Container for channelized parameters that allows for sweeps over
     all channels, as well as addressing of individual channels.
@@ -628,7 +625,7 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
 
 # in index method the parameter obj should be called value but that would
 # be an incompatible change
-class ChannelList(  #  pyright: ignore[reportIncompatibleMethodOverride]
+class ChannelList[InstrumentModuleType: "InstrumentModule"](  #  pyright: ignore[reportIncompatibleMethodOverride]
     ChannelTuple[InstrumentModuleType], MutableSequence[InstrumentModuleType]
 ):
     """
@@ -1161,10 +1158,8 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
         return self._exists_on_instrument
 
 
-TAUTORELOADCHANNEL = TypeVar("TAUTORELOADCHANNEL", bound=AutoLoadableInstrumentChannel)
 
-
-class AutoLoadableChannelList(ChannelList[TAUTORELOADCHANNEL]):
+class AutoLoadableChannelList[TAUTORELOADCHANNEL: AutoLoadableInstrumentChannel](ChannelList[TAUTORELOADCHANNEL]):
     """
     Extends the QCoDeS :class:`ChannelList` class to add the following features:
     - Automatically create channel objects on initialization
@@ -1243,3 +1238,16 @@ class AutoLoadableChannelList(ChannelList[TAUTORELOADCHANNEL]):
 
         self.append(new_channel)
         return new_channel
+
+
+if not TYPE_CHECKING:
+    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
+
+    _deprecated_typevars: dict[str, TypeVar] = {
+        "T": TypeVar("T", bound="ChannelTuple"),
+        "TAUTORELOADCHANNEL": TypeVar(
+            "TAUTORELOADCHANNEL", bound=AutoLoadableInstrumentChannel
+        ),
+    }
+
+    __getattr__ = _make_deprecated_typevars_getattr(__name__, _deprecated_typevars)

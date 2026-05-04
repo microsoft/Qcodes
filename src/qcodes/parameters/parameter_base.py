@@ -49,7 +49,9 @@ if TYPE_CHECKING:
     from qcodes.dataset.data_set_protocol import ValuesType
     from qcodes.instrument import InstrumentBase
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
+# Cannot convert to PEP 695: uses default= which requires PEP 696 (Python 3.13+).
 ParameterDataTypeVar = TypeVar("ParameterDataTypeVar", default=Any)
+# Cannot convert to PEP 695: uses default= and covariant= which require PEP 696 (Python 3.13+).
 # InstrumentTypeVar_co is a covariant type variable representing the instrument
 # type associated with the parameter. It needs to be covariant to allow passing
 # a Parameter bound to None or a specific instrument where the default is used in the type hint.

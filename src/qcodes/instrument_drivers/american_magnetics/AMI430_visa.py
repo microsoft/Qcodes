@@ -6,11 +6,10 @@ from collections import defaultdict
 from collections.abc import Callable, Iterable, Sequence
 from contextlib import ExitStack
 from functools import partial
-from typing import TYPE_CHECKING, Any, ClassVar, Concatenate, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Concatenate, cast
 
 import numpy as np
 from pyvisa import VisaIOError
-from typing_extensions import ParamSpec
 
 from qcodes.instrument import (
     Instrument,
@@ -32,10 +31,6 @@ log = logging.getLogger(__name__)
 
 CartesianFieldLimitFunction = Callable[[float, float, float], bool]
 
-S = TypeVar("S", bound="AMI430SwitchHeater")
-T = TypeVar("T")
-P = ParamSpec("P")
-
 
 class AMI430Exception(Exception):
     pass
@@ -48,7 +43,7 @@ class AMI430Warning(UserWarning):
 class AMI430SwitchHeater(InstrumentChannel["AMIModel430"]):
     class _Decorators:
         @classmethod
-        def check_enabled(
+        def check_enabled[S: "AMI430SwitchHeater", T, **P](
             cls, f: Callable[Concatenate[S, P], T]
         ) -> Callable[Concatenate[S, P], T]:
             def check_enabled_decorator(
@@ -1320,3 +1315,20 @@ class AMIModel4303D(Instrument):
         self._adjust_child_instruments(setpoint_values)
 
         self._set_point = set_point
+
+
+if not TYPE_CHECKING:
+    from typing import TypeVar
+
+    from typing_extensions import ParamSpec
+
+    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
+
+    __getattr__ = _make_deprecated_typevars_getattr(
+        __name__,
+        {
+            "S": TypeVar("S", bound="AMI430SwitchHeater"),
+            "T": TypeVar("T"),
+            "P": ParamSpec("P"),
+        },
+    )

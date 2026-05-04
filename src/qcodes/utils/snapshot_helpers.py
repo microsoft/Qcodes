@@ -1,11 +1,9 @@
-from typing import Any, NamedTuple, TypeVar
-
-T = TypeVar("T")
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 # Unbound parameters or Instrument parameters
 ParameterKey = str | tuple[str, str]
 
-ParameterDict = dict[ParameterKey, T]
+type ParameterDict[T] = dict[ParameterKey, T]
 Snapshot = dict[str, Any]
 
 
@@ -59,5 +57,18 @@ def diff_param_values(
             key: (left_params[key], right_params[key])
             for key in common_keys
             if left_params[key] != right_params[key]
+        },
+    )
+
+
+if not TYPE_CHECKING:
+    from typing import TypeVar
+
+    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
+
+    __getattr__ = _make_deprecated_typevars_getattr(
+        __name__,
+        {
+            "T": TypeVar("T"),
         },
     )

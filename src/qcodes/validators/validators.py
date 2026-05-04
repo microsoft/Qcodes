@@ -9,7 +9,7 @@ import math
 import typing
 from collections import abc
 from collections.abc import Hashable
-from typing import Any, Literal, TypeVar, cast, get_args
+from typing import TYPE_CHECKING, Any, Literal, cast, get_args
 
 import numpy as np
 import numpy.typing as npt
@@ -61,8 +61,6 @@ def range_str(
     else:
         return ""
 
-
-T = TypeVar("T")
 
 
 class Validator[T]:
@@ -501,7 +499,7 @@ class Enum(Validator[Hashable]):
         return self._values.copy()
 
 
-class LiteralValidator(Validator[T]):
+class LiteralValidator[T](Validator[T]):
     """
 
     A validator that allows users to check that values supplied are in set of members
@@ -1061,7 +1059,7 @@ class Arrays(Validator[npt.NDArray]):
         return float(self._max_value) if self._max_value is not None else None
 
 
-class Lists(Validator[list[T]]):
+class Lists[T](Validator[list[T]]):
     """
     Validator for lists
 
@@ -1253,3 +1251,16 @@ class Dict(Validator[dict[Hashable, Any]]):
     @allowed_keys.setter
     def allowed_keys(self, keys: abc.Sequence[Hashable] | None) -> None:
         self._allowed_keys = keys
+
+
+if not TYPE_CHECKING:
+    from typing import TypeVar
+
+    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
+
+    __getattr__ = _make_deprecated_typevars_getattr(
+        __name__,
+        {
+            "T": TypeVar("T"),
+        },
+    )

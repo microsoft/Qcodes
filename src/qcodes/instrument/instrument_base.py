@@ -27,6 +27,7 @@ from qcodes.utils import QCoDeSDeprecationWarning
 
 log = logging.getLogger(__name__)
 
+# Cannot convert to PEP 695: uses default= which requires PEP 696 (Python 3.13+).
 TParameter = TypeVar("TParameter", bound="ParameterBase", default="Parameter")
 TSubmodule = TypeVar(
     "TSubmodule", bound="InstrumentModule | ChannelTuple", default="InstrumentModule"
