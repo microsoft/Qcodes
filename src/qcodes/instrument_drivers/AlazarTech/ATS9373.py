@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from packaging import version
+
 from qcodes import validators
 from qcodes.instrument_drivers.AlazarTech.ATS import AlazarTechATS
 from qcodes.instrument_drivers.AlazarTech.utils import TraceParameter
