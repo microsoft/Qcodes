@@ -281,7 +281,6 @@ known-first-party = ["qcodes"]
 "src/qcodes/instrument_drivers/signal_hound/USB_SA124B.py" = ["F401"]
 "src/qcodes/instrument_drivers/rohde_schwarz/RTE1000.py" = ["F401"]
 "src/qcodes/instrument_drivers/devices.py" = ["F401"]
-"src/qcodes/instrument_drivers/Minicircuits/RUDAT_13G_90.py" = ["F401"]
 "src/qcodes/instrument_drivers/Keysight/N9030B.py" = ["F401"]
 
 # TID253 these imports are fine at module level
