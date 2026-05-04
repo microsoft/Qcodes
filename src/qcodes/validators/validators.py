@@ -9,7 +9,7 @@ import math
 import typing
 from collections import abc
 from collections.abc import Hashable
-from typing import Any, Generic, Literal, TypeVar, cast, get_args
+from typing import Any, Literal, TypeVar, cast, get_args
 
 import numpy as np
 import numpy.typing as npt
@@ -65,7 +65,7 @@ def range_str(
 T = TypeVar("T")
 
 
-class Validator(Generic[T]):
+class Validator[T]:
     """
     Base class for all value validators
     each validator should implement:

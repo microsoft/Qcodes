@@ -31,9 +31,6 @@ RETURN_CODE = NewType("RETURN_CODE", ctypes.c_uint)
 
 
 # FUNCTIONS #
-T = TypeVar("T")
-
-
 def _api_call_task(
     lock: Lock, c_func: Callable[..., int], callback: Callable[[], None], *args: Any
 ) -> int:
@@ -43,7 +40,7 @@ def _api_call_task(
     return retval
 
 
-def _normalize_params(*args: T) -> list[T]:
+def _normalize_params[T](*args: T) -> list[T]:
     args_out: list[T] = []
     for arg in args:
         if isinstance(arg, ParameterBase):
@@ -205,3 +202,13 @@ class WrappedDll(metaclass=DllWrapperMeta):
             *_normalize_params(*args),
         )
         return future.result()
+
+
+if not TYPE_CHECKING:
+    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
+
+    _deprecated_typevars: dict[str, TypeVar] = {
+        "T": TypeVar("T"),
+    }
+
+    __getattr__ = _make_deprecated_typevars_getattr(__name__, _deprecated_typevars)

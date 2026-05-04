@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
 import numpy.typing as npt
@@ -12,10 +12,8 @@ if TYPE_CHECKING:
     from qcodes.dataset.dond.do_nd_utils import ActionsT
     from qcodes.parameters import ParameterBase
 
-T = TypeVar("T", bound=np.generic)
 
-
-class AbstractSweep(ABC, Generic[T]):
+class AbstractSweep[T: np.generic](ABC):
     """
     Abstract sweep class that defines an interface for concrete sweep classes.
     """
@@ -195,7 +193,7 @@ class LogSweep(AbstractSweep[np.floating]):
         return self._get_after_set
 
 
-class ArraySweep(AbstractSweep, Generic[T]):
+class ArraySweep[T: np.generic](AbstractSweep):
     """
     Sweep the values of a given array.
 
@@ -281,3 +279,13 @@ class TogetherSweep:
     @property
     def num_points(self) -> int:
         return self.sweeps[0].num_points
+
+
+if not TYPE_CHECKING:
+    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
+
+    _deprecated_typevars: dict[str, TypeVar] = {
+        "T": TypeVar("T", bound=np.generic),
+    }
+
+    __getattr__ = _make_deprecated_typevars_getattr(__name__, _deprecated_typevars)

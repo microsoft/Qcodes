@@ -11,9 +11,6 @@ if TYPE_CHECKING:
 
 DOES_NOT_EXIST = "Does not exist"
 
-C = TypeVar("C", bound=ParameterBase)
-TInstrument = TypeVar("TInstrument", bound=InstrumentBase)
-
 
 class InferError(AttributeError): ...
 
@@ -225,7 +222,7 @@ def _merge_user_and_class_attrs(
         return set.union(set(alt_source_attrs), set(InferAttrs.known_attrs()))
 
 
-def get_chain_links_of_type(
+def get_chain_links_of_type[C: ParameterBase](
     link_param_type: type[C] | tuple[type[C], ...], parameter: Parameter
 ) -> tuple[C, ...]:
     """Gets all parameters in a chain of linked parameters that match a given type"""
@@ -237,7 +234,7 @@ def get_chain_links_of_type(
     return tuple(chain_links)
 
 
-def get_sole_chain_link_of_type(
+def get_sole_chain_link_of_type[C: ParameterBase](
     link_param_type: type[C] | tuple[type[C], ...], parameter: Parameter
 ) -> C:
     """Gets the one parameter in a chain of linked parameters that matches a given type"""
@@ -256,7 +253,7 @@ def get_sole_chain_link_of_type(
     return chain_links[0]
 
 
-def get_parent_instruments_from_chain_of_type(
+def get_parent_instruments_from_chain_of_type[TInstrument: InstrumentBase](
     instrument_type: type[TInstrument] | tuple[type[TInstrument], ...],
     parameter: Parameter,
 ) -> tuple[TInstrument, ...]:
@@ -272,7 +269,7 @@ def get_parent_instruments_from_chain_of_type(
     )
 
 
-def get_sole_parent_instrument_from_chain_of_type(
+def get_sole_parent_instrument_from_chain_of_type[TInstrument: InstrumentBase](
     instrument_type: type[TInstrument] | tuple[type[TInstrument], ...],
     parameter: Parameter,
 ) -> TInstrument:
@@ -289,3 +286,14 @@ def get_sole_parent_instrument_from_chain_of_type(
 
         raise ValueError(f"{error_msg_1} {[instr.name for instr in instruments]}")
     return instruments[0]
+
+
+if not TYPE_CHECKING:
+    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
+
+    _deprecated_typevars: dict[str, TypeVar] = {
+        "C": TypeVar("C", bound=ParameterBase),
+        "TInstrument": TypeVar("TInstrument", bound=InstrumentBase),
+    }
+
+    __getattr__ = _make_deprecated_typevars_getattr(__name__, _deprecated_typevars)

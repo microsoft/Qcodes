@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from .multi_parameter import MultiParameter
 
@@ -16,7 +16,9 @@ InstrumentModuleType = TypeVar("InstrumentModuleType", bound="InstrumentModule")
 _LOG = logging.getLogger(__name__)
 
 
-class MultiChannelInstrumentParameter(MultiParameter, Generic[InstrumentModuleType]):
+class MultiChannelInstrumentParameter[InstrumentModuleType: "InstrumentModule"](
+    MultiParameter
+):
     """
     Parameter to get or set multiple channels simultaneously.
 

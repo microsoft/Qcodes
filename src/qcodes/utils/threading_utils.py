@@ -1,6 +1,6 @@
 import logging
 import threading
-from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Optional, TypeVar
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -10,7 +10,7 @@ _LOG = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
-class RespondingThread(threading.Thread, Generic[T]):
+class RespondingThread[T](threading.Thread):
     """
     Thread subclass for parallelizing execution. Behaves like a
     regular thread but returns a value from target, and propagates

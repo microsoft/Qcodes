@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING
 
 from qcodes.instrument import (
     ChannelList,
@@ -19,13 +19,13 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
-_TINSTR = TypeVar("_TINSTR", bound="MiniCircuitsSPDTBase")
 
-
-class MiniCircuitsSPDTSwitchChannelBase(InstrumentChannel[_TINSTR], Generic[_TINSTR]):
+class MiniCircuitsSPDTSwitchChannelBase[TINSTR: "MiniCircuitsSPDTBase"](
+    InstrumentChannel[TINSTR]
+):
     def __init__(
         self,
-        parent: _TINSTR,
+        parent: TINSTR,
         name: str,
         channel_letter: str,
         **kwargs: Unpack[InstrumentBaseKWArgs],

@@ -6,7 +6,7 @@ import sys
 import time
 import warnings
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -827,7 +827,7 @@ class Buffer:
             )
 
 
-class AcquisitionInterface(Generic[OutputType]):
+class AcquisitionInterface[OutputType]:
     """
     This class represents all choices that the end-user has to make regarding
     the data-acquisition. this class should be subclassed to program these
@@ -903,7 +903,7 @@ class AcquisitionInterface(Generic[OutputType]):
         pass
 
 
-class AcquisitionController(Instrument, AcquisitionInterface[Any], Generic[OutputType]):
+class AcquisitionController[OutputType](Instrument, AcquisitionInterface[Any]):
     """
     Compatibility class. The methods of :class:`AcquisitionController`
     have been extracted. This class is the base class fro AcquisitionInterfaces

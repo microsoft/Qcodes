@@ -78,7 +78,7 @@ def retry_until_does_not_throw(
     return retry_until_passes_decorator
 
 
-def profile(func: Callable[P, T]) -> Callable[P, T]:
+def profile[**P, T](func: Callable[P, T]) -> Callable[P, T]:
     """
     Decorator that profiles the wrapped function with cProfile.
 

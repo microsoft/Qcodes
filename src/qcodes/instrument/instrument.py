@@ -459,7 +459,7 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         )
 
 
-def find_or_create_instrument(
+def find_or_create_instrument[T: "Instrument"](
     instrument_class: type[T],
     name: str,
     *args: Any,

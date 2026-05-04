@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 from qcodes.utils import is_function
 
@@ -12,11 +12,7 @@ class NoCommandError(Exception):
     pass
 
 
-Output = TypeVar("Output")
-ParsedOutput = TypeVar("ParsedOutput")
-
-
-class Command(Generic[Output, ParsedOutput]):
+class Command[Output, ParsedOutput]:
     """
     Create a callable command from a string or function.
 
@@ -211,3 +207,14 @@ class Command(Generic[Output, ParsedOutput]):
         if len(args) != self.arg_count:
             raise TypeError(f"command takes exactly {self.arg_count} args")
         return self.exec_function(*args)
+
+
+if not TYPE_CHECKING:
+    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
+
+    _deprecated_typevars: dict[str, TypeVar] = {
+        "Output": TypeVar("Output"),
+        "ParsedOutput": TypeVar("ParsedOutput"),
+    }
+
+    __getattr__ = _make_deprecated_typevars_getattr(__name__, _deprecated_typevars)

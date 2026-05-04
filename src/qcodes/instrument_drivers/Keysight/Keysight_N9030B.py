@@ -62,7 +62,10 @@ class FrequencyAxis(
 
 
 class Trace(
-    ParameterWithSetpoints[ParameterDataTypeVar, _T], Generic[ParameterDataTypeVar, _T]
+    ParameterWithSetpoints[ParameterDataTypeVar, _T],
+    # Generic can be replaced with PEP 695 type params once Python 3.12
+    # support is dropped (TypeVars use default= which requires PEP 696)
+    Generic[ParameterDataTypeVar, _T],  # noqa: UP046
 ):
     def __init__(
         self,

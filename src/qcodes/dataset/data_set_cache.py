@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Generic, Literal, TypeVar
+from typing import TYPE_CHECKING, Literal, TypeVar
 
 import numpy as np
 import numpy.typing as npt
@@ -34,12 +34,10 @@ if TYPE_CHECKING:
     from .data_set_in_memory import DataSetInMem
     from .data_set_protocol import DataSetProtocol, ParameterData
 
-DatasetType_co = TypeVar("DatasetType_co", bound="DataSetProtocol", covariant=True)
-
 log = logging.getLogger(__name__)
 
 
-class DataSetCache(Generic[DatasetType_co]):
+class DataSetCache[DatasetType_co: "DataSetProtocol"]:
     """
     The DataSetCache contains a in memory representation of the
     data in this dataset as well a a method to progressively read data
@@ -572,3 +570,15 @@ class DataSetCacheWithDBBackend(DataSetCache["DataSet"]):
         )
         if not data_not_read:
             self._live = False
+
+
+if not TYPE_CHECKING:
+    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
+
+    _deprecated_typevars: dict[str, TypeVar] = {
+        "DatasetType_co": TypeVar(
+            "DatasetType_co", bound="DataSetProtocol", covariant=True
+        ),
+    }
+
+    __getattr__ = _make_deprecated_typevars_getattr(__name__, _deprecated_typevars)
