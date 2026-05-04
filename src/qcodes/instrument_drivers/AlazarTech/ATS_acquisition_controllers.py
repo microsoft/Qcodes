@@ -3,9 +3,6 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import numpy.typing as npt
-from typing_extensions import deprecated
-
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 from .ATS import AcquisitionController
 
@@ -167,16 +164,3 @@ class DemodulationAcquisitionController(AcquisitionController[float]):
 
         # see manual page 52!!! (using unsigned data)
         return ampl, math.atan2(ImPart, RePart) * 360 / (2 * math.pi)
-
-
-@deprecated(
-    "Demodulation_AcquisitionController is deprecated. Please use qcodes.instrument_drivers.AlazarTech.DemodulationAcquisitionController instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=1,
-)
-class Demodulation_AcquisitionController(DemodulationAcquisitionController):
-    """
-    Alias for backwards compatibility. Will eventually be deprecated and removed
-    """
-
-    pass

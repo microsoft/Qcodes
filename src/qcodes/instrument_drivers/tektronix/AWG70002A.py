@@ -1,9 +1,5 @@
 from typing import TYPE_CHECKING
 
-from typing_extensions import deprecated
-
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
-
 from .AWG70000A import TektronixAWG70000Base
 
 if TYPE_CHECKING:
@@ -37,16 +33,3 @@ class TektronixAWG70002A(TektronixAWG70000Base):
         """
 
         super().__init__(name, address, num_channels=2, **kwargs)
-
-
-@deprecated(
-    "AWG70002A is deprecated. Please use qcodes.instrument_drivers.tektronix.TektronixAWG70002A instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=1,
-)
-class AWG70002A(TektronixAWG70002A):
-    """
-    Alias with non-conformant name left for backwards compatibility
-    """
-
-    pass

@@ -1,11 +1,8 @@
 from typing import TYPE_CHECKING
 
-from typing_extensions import deprecated
-
 import qcodes.validators as vals
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import create_on_off_val_mapping
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from typing import Unpack
@@ -346,12 +343,3 @@ class RohdeSchwarzSGS100A(VisaInstrument):
 
     def off(self) -> None:
         self.status("off")
-
-
-@deprecated(
-    "RohdeSchwarz_SGS100A is deprecated. Please use qcodes.instrument_drivers.rohde_schwarz.RohdeSchwarzSGS100A instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=1,
-)
-class RohdeSchwarz_SGS100A(RohdeSchwarzSGS100A):
-    pass

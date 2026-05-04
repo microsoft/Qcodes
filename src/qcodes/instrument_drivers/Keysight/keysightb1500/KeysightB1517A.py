@@ -4,13 +4,12 @@ from typing import TYPE_CHECKING, Any, Generic, Literal, NotRequired, Unpack, ov
 
 import numpy as np
 import numpy.typing as npt
-from typing_extensions import TypedDict, deprecated
+from typing_extensions import TypedDict
 
 import qcodes.validators as vals
 from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel
 from qcodes.parameters import Group, GroupParameter, Parameter, ParamRawDataType
 from qcodes.parameters.parameter_base import ParameterDataTypeVar
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 from . import constants
 from .constants import (
@@ -695,19 +694,6 @@ class KeysightB1500IVSweeper(InstrumentChannel["KeysightB1517A"]):
             "power_compliance": power_compliance,
         }
         return out_dict
-
-
-@deprecated(
-    "IVSweeper is deprecated. Please use qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500IVSweeper instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=1,
-)
-class IVSweeper(KeysightB1500IVSweeper):
-    """
-    Alias for backwards compatibility
-    """
-
-    pass
 
 
 class _ParameterWithStatus(
@@ -1418,16 +1404,3 @@ class KeysightB1517A(KeysightB1500Module):
         self.parent.clear_timer_count()
 
         self.setup_fnc_already_run = True
-
-
-@deprecated(
-    "B1517A is deprecated. Please use qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=1,
-)
-class B1517A(KeysightB1517A):
-    """
-    Alias for backwards compatibility
-    """
-
-    pass

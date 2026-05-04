@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING, Any, Literal, Self
 import numpy as np
 import numpy.typing as npt
 from broadbean.sequence import InvalidForgedSequenceError, fs_schema
-from typing_extensions import deprecated
 
 from qcodes import validators as vals
 from qcodes.instrument import (
@@ -24,7 +23,6 @@ from qcodes.instrument import (
     VisaInstrumentKWArgs,
 )
 from qcodes.parameters import create_on_off_val_mapping
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -475,19 +473,6 @@ class Tektronix70000AWGChannel(InstrumentChannel["TektronixAWG70000Base"]):
         """
 
         self.parent.write(f"SOURce{self.channel}:CASSet:CLEAR")
-
-
-@deprecated(
-    "AWGChannel is deprecated. Please use qcodes.instrument_drivers.tektronix.Tektronix70000AWGChannel instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=1,
-)
-class AWGChannel(Tektronix70000AWGChannel):
-    """
-    Alias for Tektronix70000AWGChannel for backwards compatibility.
-    """
-
-    pass
 
 
 class TektronixAWG70000Base(VisaInstrument):

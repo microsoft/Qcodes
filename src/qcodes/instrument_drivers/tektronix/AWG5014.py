@@ -20,7 +20,6 @@ from typing import (
 import numpy as np
 import numpy.typing as npt
 from pyvisa.errors import VisaIOError
-from typing_extensions import deprecated
 
 from qcodes import validators as vals
 from qcodes.instrument import (
@@ -1968,16 +1967,3 @@ class TektronixAWG5014(VisaInstrument):
             except VisaIOError:
                 gotexception = True
         self.visa_handle.timeout = original_timeout
-
-
-@deprecated(
-    "Tektronix_AWG5014 is deprecated. Please use qcodes.instrument_drivers.tektronix.TektronixAWG5014 instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=1,
-)
-class Tektronix_AWG5014(TektronixAWG5014):
-    """
-    Alias with non-conformant name left for backwards compatibility
-    """
-
-    pass
