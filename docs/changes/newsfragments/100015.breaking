@@ -1,0 +1,1 @@
+Removed deprecated Tektronix driver aliases ``AWG5208``, ``AWG70002A``, ``AWGChannel``, ``Tektronix_AWG5014``, and ``ModeError``. Use the corresponding ``Tektronix*`` class names instead.

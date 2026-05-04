@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING, Any, ClassVar, Generic, Literal, Self
 
 import numpy as np
 import numpy.typing as npt
-from typing_extensions import deprecated
 
 from qcodes.instrument import (
     ChannelList,
@@ -28,7 +27,6 @@ from qcodes.parameters import (
     create_on_off_val_mapping,
 )
 from qcodes.parameters.parameter_base import ParameterDataTypeVar
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 from qcodes.validators import Arrays, Enum, Numbers
 
 if TYPE_CHECKING:
@@ -48,19 +46,6 @@ class TektronixDPOModeError(Exception):
     """
     Raise this exception if we are in a wrong mode to
     perform an action
-    """
-
-    pass
-
-
-@deprecated(
-    "ModeError is deprecated. Please use qcodes.instrument_drivers.tektronix.TektronixDPOModeError instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=1,
-)
-class ModeError(TektronixDPOModeError):
-    """
-    Alias for backwards compatibility
     """
 
     pass
