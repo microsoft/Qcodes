@@ -1,0 +1,1 @@
+Removed deprecated Yokogawa GS200 aliases ``GS200Exception``, ``GS200_Monitor``, ``GS200Program``, and ``GS200``. Use the corresponding ``YokogawaGS200*`` names instead.
