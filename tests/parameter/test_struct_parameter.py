@@ -348,6 +348,40 @@ class TestStructParameterGet:
         assert got.count == 42
         assert got.flag is True
 
+    def test_get_cmd_callable(self) -> None:
+        expected = SimpleResult(voltage=2.0, current=0.5)
+        param = StructParameter(
+            "iv",
+            struct_type=SimpleResult,
+            get_cmd=lambda: expected,
+        )
+        got = param.get()
+        assert got == expected
+
+    def test_get_cmd_with_labels_and_units(self) -> None:
+        expected = SimpleResult(voltage=3.0, current=1.0)
+        param = StructParameter(
+            "iv",
+            struct_type=SimpleResult,
+            get_cmd=lambda: expected,
+            field_labels={"voltage": "V_out"},
+            field_units={"current": "mA"},
+        )
+        assert param.get() == expected
+        assert param.field_parameters["voltage"].label == "V_out"
+        assert param.field_parameters["current"].unit == "mA"
+
+    def test_get_cmd_with_subclass_get_raw_raises(self) -> None:
+        with pytest.raises(
+            TypeError,
+            match="Supplying get_cmd to a StructParameter that already implements get_raw",
+        ):
+            SimpleStructParam(
+                "iv",
+                result=SimpleResult(voltage=1.0, current=0.1),
+                get_cmd=lambda: SimpleResult(voltage=2.0, current=0.2),  # type: ignore[call-arg]
+            )
+
 
 class TestStructParameterUnpackSelf:
     def test_unpack_simple(self) -> None:

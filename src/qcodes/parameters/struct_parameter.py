@@ -14,6 +14,7 @@ from __future__ import annotations
 import dataclasses
 import os
 import typing
+from types import MethodType
 from typing import TYPE_CHECKING, Any, Generic
 
 import numpy as np
@@ -28,7 +29,7 @@ from .parameter_base import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Callable, Mapping
 
     from typing_extensions import Unpack
 
@@ -197,6 +198,9 @@ class StructParameter(
         field_paramtypes: Optional mapping of ``{field_name: paramtype}``
             to override the auto-inferred paramtype. Valid values are
             ``"numeric"``, ``"text"``, ``"complex"``, and ``"array"``.
+        get_cmd: A callable with zero arguments that returns an instance
+            of ``struct_type``. If ``None`` (the default), the subclass must
+            implement :meth:`get_raw`.
         docstring: Documentation string for the ``__doc__`` field.
         **kwargs: Forwarded to :class:`ParameterBase`.
             See :class:`ParameterBaseKWArgs` for details.
@@ -232,6 +236,7 @@ class StructParameter(
         name: str,
         struct_type: type,
         *,
+        get_cmd: Callable[[], Any] | None = None,
         field_labels: Mapping[str, str] | None = None,
         field_units: Mapping[str, str] | None = None,
         field_paramtypes: Mapping[str, str] | None = None,
@@ -242,6 +247,21 @@ class StructParameter(
     ) -> None:
         kwargs.setdefault("snapshot_value", False)
         super().__init__(name, **kwargs)
+
+        # Wire up get_cmd as get_raw if provided
+        if get_cmd is not None:
+            if self._implements_get_raw:
+                raise TypeError(
+                    "Supplying get_cmd to a StructParameter that already "
+                    "implements get_raw is an error."
+                )
+
+            def _get_from_cmd(self: StructParameter) -> Any:  # type: ignore[type-arg]
+                return get_cmd()
+
+            self.get_raw = MethodType(_get_from_cmd, self)  # type: ignore[method-assign]
+            self._gettable = True
+            self.get = self._wrap_get(self.get_raw)
 
         self._struct_type = struct_type
         field_labels = field_labels or {}
