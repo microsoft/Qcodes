@@ -1,0 +1,1 @@
+Removed the deprecated ``Weinschel_8320`` alias for the Weinschel 8320 driver. Use ``Weinschel8320`` instead.
