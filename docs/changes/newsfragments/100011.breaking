@@ -1,0 +1,1 @@
+Removed the deprecated ``RohdeSchwarz_SGS100A`` alias for the Rohde & Schwarz SGS100A driver. Use ``RohdeSchwarzSGS100A`` instead.
