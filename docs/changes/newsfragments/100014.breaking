@@ -1,1 +1,0 @@
-Removed the deprecated ``SRS_SG384`` alias for the Stanford Research Systems SG384 driver. Use ``SG384`` instead.

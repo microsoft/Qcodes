@@ -1,1 +1,0 @@
-Removed the deprecated ``SignalHound_USB_SA124B`` alias for the Signal Hound USB-SA124B driver. Use ``SignalHoundUSBSA124B`` instead.

@@ -1,1 +1,0 @@
-Removed deprecated Mini-Circuits driver aliases that were deprecated in ``0.57.0``. Use ``MiniCircuitsRCSP4TChannel``, ``MiniCircuitsRCSP4T``, ``MiniCircuitsRCSPDTChannel``, ``MiniCircuitsRCSPDT``, ``MiniCircuitsUsbSPDTSwitchChannel``, ``MiniCircuitsUsbSPDT``, ``MiniCircuitsRudat13G90Base``, and ``MiniCircuitsRudat13G90Usb`` instead.

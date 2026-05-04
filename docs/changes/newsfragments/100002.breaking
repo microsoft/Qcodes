@@ -1,1 +1,0 @@
-Removed the deprecated ``qcodes.instrument_drivers.rigol`` module shims for ``DG1062``, ``DG4000``, ``DP821``, ``DP831``, ``DP832``, ``DS1074Z``, and ``DS4000``. Import these drivers from ``qcodes.instrument_drivers.rigol`` instead.
