@@ -34,8 +34,6 @@ from .exporters.export_to_xarray import xarray_to_h5netcdf_with_complex_numbers
 from .sqlite.queries import raw_time_to_str_time
 
 if TYPE_CHECKING:
-    from typing import TypeAlias
-
     import pandas as pd
     import xarray as xr
 
@@ -60,13 +58,6 @@ type ValuesType = (
 )
 type ResType = "tuple[ParameterBase | str, ValuesType]"
 type SetpointsType = "Sequence[str | ParameterBase]"
-
-# deprecated alias left for backwards compatibility
-array_like_types = (tuple, list, npt.NDArray)
-scalar_res_types: TypeAlias = ScalarResTypes  # noqa PYI042
-values_type: TypeAlias = ValuesType  # noqa PYI042
-res_type: TypeAlias = ResType  # noqa PYI042
-setpoints_type: TypeAlias = SetpointsType  # noqa PYI042
 
 
 type SPECS = list[ParamSpec]
@@ -548,3 +539,18 @@ class BaseDataSet(DataSetProtocol, Protocol):
 class DataSetType(StrEnum):
     DataSet = "DataSet"
     DataSetInMem = "DataSetInMem"
+
+
+if not TYPE_CHECKING:
+    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
+
+    __getattr__ = _make_deprecated_typevars_getattr(
+        __name__,
+        {
+            "array_like_types": (tuple, list, npt.NDArray),
+            "scalar_res_types": ScalarResTypes,
+            "values_type": ValuesType,
+            "res_type": ResType,
+            "setpoints_type": SetpointsType,
+        },
+    )

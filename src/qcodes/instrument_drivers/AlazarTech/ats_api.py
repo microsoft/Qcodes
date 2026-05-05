@@ -31,8 +31,6 @@ POINTER_c_long = Any
 
 
 type IntOrParam = "int | Parameter"
-# deprecated alias for backwards compatibility
-type int_or_param = IntOrParam  # noqa: PYI042
 
 
 class AlazarATSAPI(WrappedDll):
@@ -667,3 +665,14 @@ class AlazarATSAPI(WrappedDll):
 
         """
         self.write_register(handle, offset, value, REGISTER_ACCESS_PASSWORD)
+
+
+if not TYPE_CHECKING:
+    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
+
+    __getattr__ = _make_deprecated_typevars_getattr(
+        __name__,
+        {
+            "int_or_param": IntOrParam,
+        },
+    )

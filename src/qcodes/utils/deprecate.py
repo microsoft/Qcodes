@@ -20,7 +20,7 @@ def _make_deprecated_typevars_getattr(
     fallback: Callable[[str], Any] | None = None,
 ) -> Callable[[str], Any]:
     """Return a module-level ``__getattr__`` that emits deprecation warnings
-    for removed TypeVar / type-alias names.
+    for removed TypeVar / type-alias / other names.
 
     Args:
         module_name: The ``__name__`` of the calling module.
@@ -38,7 +38,7 @@ def _make_deprecated_typevars_getattr(
         if name in deprecated:
             warnings.warn(
                 f"Importing {name!r} from {module_name!r} is deprecated. "
-                f"This TypeVar is no longer used and will be removed in a "
+                f"This name is no longer used and will be removed in a "
                 f"future version.",
                 QCoDeSDeprecationWarning,
                 stacklevel=2,
