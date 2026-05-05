@@ -1,0 +1,14 @@
+Fixed three bugs in :class:`qcodes.instrument_drivers.QuantumDesign.DynaCoolPPMS.DynaCool.DynaCool`
+that prevented the driver from instantiating and from updating the
+``temperature_setpoint`` cache:
+
+- ``block_while_ramping_temperature`` is now created with ``set_cmd=None`` /
+  ``get_cmd=None`` so it behaves as a settable cache-only parameter, instead of
+  ``set_cmd=False`` / ``get_cmd=False`` which made it read-only and rejected
+  the supplied ``initial_value``.
+- Removed the duplicate ``instrument=self`` argument from the
+  ``blocking_t_state_check_interval`` parameter creation, which is supplied
+  automatically by ``add_parameter`` and was raising on construction.
+- Fixed an ``AttributeError`` when setting the temperature: the cache update
+  in ``_set_temperature_and_state`` now correctly references
+  ``self.temperature_setpoint`` rather than the non-existent ``self.setpoint``.
