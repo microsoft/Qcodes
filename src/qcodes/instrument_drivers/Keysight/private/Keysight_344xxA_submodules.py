@@ -2,7 +2,7 @@ import textwrap
 from bisect import bisect_left
 from contextlib import ExitStack
 from functools import partial
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, get_args
+from typing import TYPE_CHECKING, Any, Literal, get_args
 
 import numpy as np
 import numpy.typing as npt
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
     from typing import Unpack
 
-NumericScpiMnemonic: TypeAlias = Literal["MIN", "MAX", "DEF"]
+type NumericScpiMnemonic = Literal["MIN", "MAX", "DEF"]
 
 
 class Keysight344xxATrigger(InstrumentChannel["Keysight344xxA"]):

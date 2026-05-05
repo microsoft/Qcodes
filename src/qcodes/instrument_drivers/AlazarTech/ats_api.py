@@ -6,7 +6,7 @@ of its C library in a python-friendly way.
 
 import ctypes
 from ctypes import POINTER
-from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
+from typing import TYPE_CHECKING, Any, ClassVar
 
 # `ParameterBase` is needed because users may pass instrument parameters
 # that originate from `Instrument.parameters` dictionary which is typed
@@ -30,9 +30,9 @@ POINTER_c_uint32 = Any
 POINTER_c_long = Any
 
 
-IntOrParam: TypeAlias = "int | Parameter"
+type IntOrParam = "int | Parameter"
 # deprecated alias for backwards compatibility
-int_or_param: TypeAlias = IntOrParam  # noqa: PYI042
+type int_or_param = IntOrParam  # noqa: PYI042
 
 
 class AlazarATSAPI(WrappedDll):

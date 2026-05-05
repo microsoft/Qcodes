@@ -51,17 +51,15 @@ if TYPE_CHECKING:
 # twice here convert to set to ensure no duplication.
 _EXPORT_CALLBACKS = set(entry_points(group="qcodes.dataset.on_export"))
 
-ScalarResTypes: TypeAlias = (
-    str | complex | np.integer | np.floating | np.complexfloating
-)
-ValuesType: TypeAlias = (
+type ScalarResTypes = str | complex | np.integer | np.floating | np.complexfloating
+type ValuesType = (
     ScalarResTypes
     | npt.NDArray
     | Sequence[ScalarResTypes]
     | Sequence[Sequence[ScalarResTypes]]
 )
-ResType: TypeAlias = "tuple[ParameterBase | str, ValuesType]"
-SetpointsType: TypeAlias = "Sequence[str | ParameterBase]"
+type ResType = "tuple[ParameterBase | str, ValuesType]"
+type SetpointsType = "Sequence[str | ParameterBase]"
 
 # deprecated alias left for backwards compatibility
 array_like_types = (tuple, list, npt.NDArray)
@@ -71,12 +69,12 @@ res_type: TypeAlias = ResType  # noqa PYI042
 setpoints_type: TypeAlias = SetpointsType  # noqa PYI042
 
 
-SPECS: TypeAlias = list[ParamSpec]
+type SPECS = list[ParamSpec]
 # Transition period type: SpecsOrInterDeps. We will allow both as input to
 # the DataSet constructor for a while, then deprecate SPECS and finally remove
 # the ParamSpec class
-SpecsOrInterDeps: TypeAlias = SPECS | InterDependencies_
-ParameterData: TypeAlias = dict[str, dict[str, npt.NDArray]]
+type SpecsOrInterDeps = SPECS | InterDependencies_
+type ParameterData = dict[str, dict[str, npt.NDArray]]
 
 LOG = logging.getLogger(__name__)
 
