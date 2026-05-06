@@ -14,7 +14,7 @@ from qcodes.parameters import (
 from qcodes.validators import Bool, Enum, Ints, Numbers
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 class CopperMountainM5xxx(VisaInstrument):

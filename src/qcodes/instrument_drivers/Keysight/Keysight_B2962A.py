@@ -1,7 +1,5 @@
 from typing import TYPE_CHECKING, Self
 
-from typing_extensions import deprecated
-
 from qcodes.instrument import (
     Instrument,
     InstrumentBaseKWArgs,
@@ -10,10 +8,9 @@ from qcodes.instrument import (
     VisaInstrumentKWArgs,
 )
 from qcodes.parameters import create_on_off_val_mapping
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.parameters import Parameter
 
@@ -181,14 +178,3 @@ class KeysightB2962A(VisaInstrument):
             "firmware": firmware,
         }
         return IDN
-
-
-@deprecated(
-    "B2962A is deprecated. Please use qcodes.instrument_drivers.Keysight.KeysightB2962A instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=1,
-)
-class B2962A(KeysightB2962A):
-    """
-    Alias for backwards compatibility
-    """

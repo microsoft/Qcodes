@@ -26,10 +26,29 @@ def setup_dmm(dmm: Instrument) -> None:
     dmm.autorange("OFF")
 
 
-def save_calibration(smu: Keithley26xx) -> None:
+def save_calibration(
+    smu: Keithley26xx, calibration_due_in_years_from_today: float = 1.0
+) -> None:
+    """Saves calibration for Keithley 2600 SMUs and sets a calibration due date
+    based on years.
+
+    Args:
+        smu: Keithley 2600 SMU
+        calibration_due_in_years_from_today: Period added to current date, used to set due date. Defaults to 1.0.
+
+    """
     calibration_date = int(time.time())
+    ONE_YEAR_IN_SECONDS = 31536000
+    recalibration_due_period = int(
+        ONE_YEAR_IN_SECONDS * calibration_due_in_years_from_today
+    )
+
     for smu_channel in smu.channels:
         smu.write(f"{smu_channel.channel}.cal.adjustdate = {calibration_date}")
+        smu.write(f"{smu_channel.channel}.cal.date = {calibration_date}")
+        smu.write(
+            f"{smu_channel.channel}.cal.due = {calibration_date + recalibration_due_period}"
+        )
         smu.write(f"{smu_channel.channel}.cal.save()")
 
 
@@ -39,6 +58,7 @@ def calibrate_keithley_smu_v(
     src_Z: float = 1e-30,
     time_delay: float = 3.0,
     save_calibrations: bool = False,
+    calibration_due_in_years_from_today: float = 1.0,
     dmm_range_per_smu_range_mapping: dict[str, float] | None = None,
 ) -> None:
     if dmm_range_per_smu_range_mapping is None:
@@ -70,7 +90,9 @@ def calibrate_keithley_smu_v(
             )
 
     if save_calibrations:
-        save_calibration(smu)
+        save_calibration(
+            smu, calibration_due_in_years_from_today=calibration_due_in_years_from_today
+        )
 
 
 def calibrate_keithley_smu_v_single(

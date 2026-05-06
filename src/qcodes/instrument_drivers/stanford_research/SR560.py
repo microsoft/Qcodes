@@ -5,7 +5,7 @@ from qcodes.parameters import MultiParameter, Parameter, ParamRawDataType
 from qcodes.validators import Bool, Enum
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 class VoltageParameter(MultiParameter):

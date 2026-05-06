@@ -29,7 +29,7 @@ from qcodes.dataset.sqlite.initial_schema import init_db
 from qcodes.utils.types import complex_types, numpy_floats, numpy_ints
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Generator
     from pathlib import Path
 
 JournalMode = Literal["DELETE", "TRUNCATE", "PERSIST", "MEMORY", "WAL", "OFF"]
@@ -273,7 +273,7 @@ def initialise_or_create_database_at(
 @contextmanager
 def initialised_database_at(
     db_file_with_abs_path: str | Path, *, journal_mode: JournalMode | None = "WAL"
-) -> Iterator[None]:
+) -> Generator[None, None, None]:
     """
     Initialises or creates a database at the specified location, configures QCoDeS to use this as the
     default database for the duration of the context, and restores the 'db_location' afterwards.

@@ -5,7 +5,7 @@ from qcodes.parameters import Parameter
 from qcodes.validators import Enum
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 class Agilent344xxA(VisaInstrument):

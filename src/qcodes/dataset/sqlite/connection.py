@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any
 from qcodes.utils import DelayedKeyboardInterrupt
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Generator
 
 log = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ class AtomicConnection(sqlite3.Connection):
 
 
 @contextmanager
-def atomic(conn: AtomicConnection) -> Iterator[AtomicConnection]:
+def atomic(conn: AtomicConnection) -> Generator[AtomicConnection, None, None]:
     """
     Guard a series of transactions as atomic.
 

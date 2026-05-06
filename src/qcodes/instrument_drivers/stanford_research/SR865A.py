@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from qcodes.instrument_drivers.stanford_research.SR86x import SR86x
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.instrument import VisaInstrumentKWArgs
 

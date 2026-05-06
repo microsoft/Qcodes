@@ -8,14 +8,12 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
-from typing_extensions import deprecated
 
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs, InstrumentChannel
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 from qcodes.validators import Enum, Ints, Multiples
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.parameters import Parameter
 
@@ -250,19 +248,6 @@ class GalilDMC4133VectorMode(InstrumentChannel):
         self.write(f"CS {coord_sys}")
 
 
-@deprecated(
-    "VectorMode is deprecated. Please use qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=1,
-)
-class VectorMode(GalilDMC4133VectorMode):
-    """
-    Alias for backwards compatibility
-    """
-
-    pass
-
-
 class GalilDMC4133Motor(InstrumentChannel["GalilDMC4133Controller"]):
     """
     Class to control a single motor (independent of possible other motors)
@@ -479,19 +464,6 @@ class GalilDMC4133Motor(InstrumentChannel["GalilDMC4133Controller"]):
         return float(self.ask(f"QS{self._axis}=?"))
 
 
-@deprecated(
-    "Motor is deprecated. Please use qcodes.instrument_drivers.Galil.GalilDMC4133Motor instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=1,
-)
-class Motor(GalilDMC4133Motor):
-    """
-    Alias for backwards compatibility
-    """
-
-    pass
-
-
 class GalilDMC4133Controller(GalilMotionController):
     """
     Driver for Galil DMC-4133 Controller
@@ -643,19 +615,6 @@ class GalilDMC4133Controller(GalilMotionController):
         except KeyboardInterrupt:
             self.abort()
             self.motors_off()
-
-
-@deprecated(
-    "DMC4133Controller is deprecated. Please use qcodes.instrument_drivers.Galil.GalilDMC4133Controller instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=1,
-)
-class DMC4133Controller(GalilDMC4133Controller):
-    """
-    Alias for backwards compatibility
-    """
-
-    pass
 
 
 class GalilDMC4133Arm:
@@ -1166,16 +1125,3 @@ def _calculate_vector_component(vec: float, val: int) -> int:
     assert return_val % 1024 == 0
 
     return return_val
-
-
-@deprecated(
-    "Arm is deprecated. Please use qcodes.instrument_drivers.Galil.GalilDMC4133Arm instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=1,
-)
-class Arm(GalilDMC4133Arm):
-    """
-    Alias for backwards compatibility
-    """
-
-    pass

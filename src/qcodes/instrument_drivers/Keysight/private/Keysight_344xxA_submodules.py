@@ -2,7 +2,7 @@ import textwrap
 from bisect import bisect_left
 from contextlib import ExitStack
 from functools import partial
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, get_args
 
 import numpy as np
 import numpy.typing as npt
@@ -25,8 +25,9 @@ from qcodes.utils import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+    from typing import Unpack
 
-    from typing_extensions import Unpack
+NumericScpiMnemonic: TypeAlias = Literal["MIN", "MAX", "DEF"]
 
 
 class Keysight344xxATrigger(InstrumentChannel["Keysight344xxA"]):
@@ -946,7 +947,9 @@ mode is disabled (default), the integration time is set in PLC
                 set_cmd=self._set_apt_time,
                 get_cmd=self._get_with_sense_function("APERture"),
                 get_parser=float,
-                vals=vals.Numbers(*apt_times[self.model]),
+                vals=vals.MultiType(
+                    vals.Numbers(*apt_times[self.model]), vals.Enum("MIN", "MAX", "DEF")
+                ),
                 docstring=textwrap.dedent(
                     """\
                 Specifies the integration time in seconds (called aperture
@@ -1240,8 +1243,11 @@ mode."""
 
         return func
 
-    def _set_apt_time(self, value: float) -> None:
-        self._write_with_sense_function("APERture", f"{value:f}")
+    def _set_apt_time(self, value: float | NumericScpiMnemonic) -> None:
+        if isinstance(value, float):
+            self._write_with_sense_function("APERture", f"{value:f}")
+        else:
+            self._write_with_sense_function("APERture", f"{value!s}")
 
         # setting aperture time switches aperture mode ON
         self.aperture_mode.get()
@@ -1262,21 +1268,25 @@ mode."""
         # resolution settings change with range
         self.resolution.get()
 
-    def _set_resolution(self, value: float) -> None:
+    def _set_resolution(self, value: float | NumericScpiMnemonic) -> None:
         rang = self.range.get()
 
         # convert both value*range and the resolution factors
         # to strings with few digits, so we avoid floating point
         # rounding errors.
-        res_fac_strs = [f"{(v * rang):.1e}" for v in self._resolution_factors]
-        if f"{value:.1e}" not in res_fac_strs:
-            raise ValueError(
-                f"Resolution setting {value:.1e}"
-                f"({value} at range {rang}) does not exist. "
-                f"Possible values are {res_fac_strs}"
-            )
+        if value in get_args(NumericScpiMnemonic):
+            str_value = str(value)  # already str, but mypy does not know this
+        else:
+            res_fac_strs = [f"{(v * rang):.1e}" for v in self._resolution_factors]
+            str_value = f"{value:.1e}"
+            if str_value not in res_fac_strs:
+                raise ValueError(
+                    f"Resolution setting {str_value}"
+                    f"({value} at range {rang}) does not exist. "
+                    f"Possible values are {res_fac_strs}"
+                )
 
-        self.write(f"VOLT:DC:RES {value:.1e}")
+        self.write(f"VOLT:DC:RES {str_value}")
 
         # NPLC settings change with resolution
         self.NPLC.get()

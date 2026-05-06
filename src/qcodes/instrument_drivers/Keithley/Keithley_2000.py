@@ -6,8 +6,7 @@ from qcodes.validators import Bool, Enum, Ints, MultiType, Numbers
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.parameters import Parameter
 

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Generic
+from typing import TYPE_CHECKING, Generic
 
 import numpy as np
 
 from qcodes.parameters.parameter import (
     Parameter,
+    ParameterKWArgs,
 )
 from qcodes.parameters.parameter_base import (
     InstrumentTypeVar_co,
@@ -14,10 +15,11 @@ from qcodes.parameters.parameter_base import (
     ParameterDataTypeVar,
     ParameterSet,
 )
-from qcodes.validators import Arrays, Validator
+from qcodes.validators import Arrays
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+    from typing import Unpack
 
     from qcodes.dataset.data_set_protocol import ValuesType
     from qcodes.parameters.parameter_base import ParamDataType, ParameterBase
@@ -41,18 +43,23 @@ class ParameterWithSetpoints(
 
     In all other ways this is identical to  :class:`Parameter`. See the
     documentation of :class:`Parameter` for more details.
+
+    Note:
+        ``snapshot_get`` and ``snapshot_value`` default to ``False``
+        (unlike :class:`Parameter` where they default to ``True``).
+
     """
 
     def __init__(
         self,
         name: str,
         *,
-        vals: Validator[Any] | None = None,
         setpoints: Sequence[ParameterBase] | None = None,
-        snapshot_get: bool = False,
-        snapshot_value: bool = False,
-        **kwargs: Any,
+        **kwargs: Unpack[ParameterKWArgs[ParameterDataTypeVar, InstrumentTypeVar_co]],
     ) -> None:
+        kwargs.setdefault("snapshot_get", False)
+        kwargs.setdefault("snapshot_value", False)
+        vals = kwargs.get("vals")
         if not isinstance(vals, Arrays):
             raise ValueError(
                 f"A ParameterWithSetpoints must have an Arrays "
@@ -65,9 +72,6 @@ class ParameterWithSetpoints(
 
         super().__init__(
             name=name,
-            vals=vals,
-            snapshot_get=snapshot_get,
-            snapshot_value=snapshot_value,
             **kwargs,
         )
         if setpoints is None:

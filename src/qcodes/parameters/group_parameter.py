@@ -9,10 +9,11 @@ from __future__ import annotations
 from collections import OrderedDict
 from typing import TYPE_CHECKING, Any
 
-from .parameter import Parameter
+from .parameter import Parameter, ParameterKWArgs
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
+    from typing import Unpack
 
     from qcodes.instrument import InstrumentBase
 
@@ -37,24 +38,18 @@ class GroupParameter(Parameter):
 
     Args:
         name: Name of the parameter.
-        instrument: Instrument that this parameter belongs to; this instrument
-            is used by the group to call its get and set commands.
-        initial_value: Initial value of the parameter. Note that either none or
-            all of the parameters in a :class:`.Group` should have an initial
-            value.
-
-        **kwargs: All kwargs used by the :class:`.Parameter` class, except
-             ``set_cmd`` and ``get_cmd``.
+        **kwargs: Forwarded to the ``Parameter`` base class.
+            See :class:`ParameterKWArgs` for details.
+            Note that ``set_cmd`` and ``get_cmd`` are not allowed.
+            ``initial_value``, if provided, is deferred until the
+            parameter is added to a :class:`.Group`.
 
     """
 
     def __init__(
         self,
         name: str,
-        *,
-        instrument: InstrumentBase | None = None,
-        initial_value: float | str | None = None,
-        **kwargs: Any,
+        **kwargs: Unpack[ParameterKWArgs],
     ) -> None:
         if "set_cmd" in kwargs or "get_cmd" in kwargs:
             raise ValueError(
@@ -62,8 +57,9 @@ class GroupParameter(Parameter):
             )
 
         self._group: Group | None = None
-        self._initial_value = initial_value
-        super().__init__(name, instrument=instrument, **kwargs)
+        self._initial_value = kwargs.get("initial_value")
+        kwargs["initial_value"] = None
+        super().__init__(name, **kwargs)
 
     @property
     def group(self) -> Group | None:

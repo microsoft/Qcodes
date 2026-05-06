@@ -5,7 +5,7 @@ from qcodes.parameters import Parameter, create_on_off_val_mapping
 from qcodes.validators import Numbers
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 class KeysightN51x1(VisaInstrument):

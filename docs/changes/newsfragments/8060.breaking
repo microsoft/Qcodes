@@ -1,0 +1,6 @@
+Legacy backwards-compatibility aliases across the ``instrument_drivers`` module that were
+deprecated in QCoDeS 0.57.0 have been removed. This includes deprecated class aliases and
+deprecated module shims for AlazarTech, Basel, Galil, HP, Ithaco, Keithley, Keysight,
+Mini-Circuits, Oxford Instruments, Rigol, Rohde & Schwarz, Signal Hound,
+Stanford Research Systems, Tektronix, Weinschel, and Yokogawa drivers. Users should
+migrate to the canonical class names listed in the 0.57.0 changelog.

@@ -1,8 +1,9 @@
+import inspect
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, ClassVar
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Generator, Sequence
 
 
 class DelegateAttributes:
@@ -66,6 +67,22 @@ class DelegateAttributes:
                 if obj is not None:
                     return getattr(obj, key)
             except AttributeError:
+                pass
+
+        # ``inspect.getattr_static`` is comparatively expensive. Keep it as a
+        # fallback only when delegation did not resolve ``key``.
+        descriptor = inspect.getattr_static(type(self), key, None)
+        if (
+            descriptor is not None
+            and hasattr(descriptor, "__get__")
+            and (hasattr(descriptor, "__set__") or hasattr(descriptor, "__delete__"))
+        ):
+            try:
+                return descriptor.__get__(self, type(self))
+            except TypeError:
+                # Descriptor may not be applicable to this type, e.g.
+                # type.__name__ found via the MRO but invoked on a
+                # non-type instance.
                 pass
 
         raise AttributeError(
@@ -165,7 +182,7 @@ def checked_getattr_indexed(
 @contextmanager
 def attribute_set_to(
     object_: object, attribute_name: str, new_value: Any
-) -> "Iterator[None]":
+) -> "Generator[None, None, None]":
     """
     This context manager allows to change a given attribute of a given object
     to a new value, and the original value is reverted upon exit of the context

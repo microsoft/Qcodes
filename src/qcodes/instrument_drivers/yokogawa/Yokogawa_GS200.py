@@ -1,5 +1,8 @@
+import time
+import warnings
+from enum import IntFlag
 from functools import partial
-from typing import TYPE_CHECKING, Literal, Self
+from typing import TYPE_CHECKING, Literal, Self, cast
 
 from qcodes.instrument import (
     InstrumentBaseKWArgs,
@@ -7,13 +10,20 @@ from qcodes.instrument import (
     VisaInstrument,
     VisaInstrumentKWArgs,
 )
-from qcodes.parameters import DelegateParameter
-from qcodes.validators import Bool, Enum, Ints, Numbers
+from qcodes.parameters import DelegateParameter, ManualParameter
+from qcodes.utils import QCoDeSDeprecationWarning
+from qcodes.validators import (
+    Bool,
+    Enum,
+    Ints,
+    MultiTypeAnd,
+    MultiTypeOr,
+    Numbers,
+    PermissiveMultiples,
+)
 
 if TYPE_CHECKING:
-    from typing import assert_never
-
-    from typing_extensions import Unpack
+    from typing import Unpack, assert_never
 
     from qcodes.parameters import Parameter
 
@@ -32,6 +42,104 @@ def _float_round(val: float) -> int:
 
     """
     return round(float(val))
+
+
+class StatusByte(IntFlag):
+    """Status byte.
+
+    Read: Serial polling (RQS), *STB? (MSS).
+    """
+
+    EES = 1 << 1
+    """Extended Event Summary Bit"""
+    EAV = 1 << 2
+    """Error available"""
+    MAV = 1 << 4
+    """Message available"""
+    ESB = 1 << 5
+    """Event Summary Bit"""
+    RQS = 1 << 6
+    """Request Service/Master Status Summary"""
+
+
+class StandardEventRegister(IntFlag):
+    """Standard event register.
+
+    Indicates device status changes. READ: *ESR?
+    """
+
+    OPC = 1 << 0
+    """Operation Complete"""
+    QYE = 1 << 2
+    """Query Error"""
+    DDE = 1 << 3
+    """Device Error"""
+    EXE = 1 << 4
+    """Execution Error"""
+    CME = 1 << 5
+    """Command Error"""
+    PON = 1 << 7
+    """Power on"""
+
+
+class ConditionRegister(IntFlag):
+    """Condition register.
+
+    Current device status. READ: :STATus:CONDition?
+    """
+
+    EOM = 1 << 0
+    """End of Measure"""
+    OVR = 1 << 1
+    """Over Range"""
+    EOT = 1 << 2
+    """End of Trace"""
+    ECF = 1 << 3
+    """End of Create File"""
+    TSE = 1 << 4
+    """Trigger Sampling Error"""
+    RFP = 1 << 8
+    """Ready for Program"""
+    LLO = 1 << 10
+    """Low Limiting"""
+    LHI = 1 << 11
+    """High Limiting"""
+    EMR = 1 << 13
+    """Emergency"""
+
+
+class ExtendedEventRegister(IntFlag):
+    """Extended event register.
+
+    Indicates device status changes. READ: :STATus:EVENt?
+    """
+
+    EOM = 1 << 0
+    """End of Measure"""
+    OVR = 1 << 1
+    """Over Range"""
+    EOT = 1 << 2
+    """End of Trace"""
+    ECF = 1 << 3
+    """End of Create File"""
+    TSE = 1 << 4
+    """Trigger Sampling Error"""
+    SCG = 1 << 5
+    """Source Change"""
+    EOS = 1 << 6
+    """End of Program Step"""
+    EOP = 1 << 7
+    """End of Program"""
+    RFP = 1 << 8
+    """Ready for Program"""
+    LLO = 1 << 10
+    """Low Limiting"""
+    LHI = 1 << 11
+    """High Limiting"""
+    TRP = 1 << 12
+    """Tripped"""
+    EMR = 1 << 13
+    """Emergency"""
 
 
 class YokogawaGS200Exception(Exception):
@@ -209,7 +317,10 @@ class YokogawaGS200Monitor(InstrumentChannel["YokogawaGS200"]):
 
 class YokogawaGS200Program(InstrumentChannel["YokogawaGS200"]):
     """
-    InstrumentModule that holds a Program for the YokoGawa GS200
+    InstrumentModule that holds a Program for the YokoGawa GS200.
+
+    monitor_present indicates if the */MON* option is available,
+    in which case the trigger parameter is as well.
 
     """
 
@@ -217,19 +328,24 @@ class YokogawaGS200Program(InstrumentChannel["YokogawaGS200"]):
         self,
         parent: "YokogawaGS200",
         name: str,
+        monitor_present: bool,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
         super().__init__(parent, name, **kwargs)
         self._repeat = 1
         self._file_name = None
 
+        # What the manual does not mention: the internal clock is an astonishing 10 Hz,
+        # so only multiples of 0.1 s are allowed.
         self.interval: Parameter = self.add_parameter(
             "interval",
             label="the program interval time",
             unit="s",
-            vals=Numbers(0.1, 3600.0),
+            vals=MultiTypeAnd(Numbers(0.1, 3600.0), PermissiveMultiples(0.1)),
             get_cmd=":PROG:INT?",
             set_cmd=":PROG:INT {}",
+            get_parser=float,
+            set_parser=float,
         )
         """Parameter interval"""
 
@@ -237,20 +353,23 @@ class YokogawaGS200Program(InstrumentChannel["YokogawaGS200"]):
             "slope",
             label="the program slope time",
             unit="s",
-            vals=Numbers(0.1, 3600.0),
+            vals=MultiTypeAnd(Numbers(0.0, 3600.0), PermissiveMultiples(0.1)),
             get_cmd=":PROG:SLOP?",
             set_cmd=":PROG:SLOP {}",
+            get_parser=float,
+            set_parser=float,
         )
         """Parameter slope"""
 
-        self.trigger: Parameter = self.add_parameter(
-            "trigger",
-            label="the program trigger",
-            get_cmd=":PROG:TRIG?",
-            set_cmd=":PROG:TRIG {}",
-            vals=Enum("normal", "mend"),
-        )
-        """Parameter trigger"""
+        if monitor_present:
+            self.trigger: Parameter = self.add_parameter(
+                "trigger",
+                label="the program trigger",
+                get_cmd=":PROG:TRIG?",
+                set_cmd=":PROG:TRIG {}",
+                vals=Enum("normal", "mend"),
+            )
+            """Parameter trigger"""
 
         self.save: Parameter = self.add_parameter(
             "save",
@@ -280,7 +399,8 @@ class YokogawaGS200Program(InstrumentChannel["YokogawaGS200"]):
             label="step of the current program",
             get_cmd=":PROG:COUN?",
             set_cmd=":PROG:COUN {}",
-            vals=Ints(1, 10000),
+            get_parser=int,
+            vals=MultiTypeOr(Ints(1, 10000), Enum("MIN", "MAX")),
         )
         """Parameter count"""
 
@@ -295,6 +415,18 @@ class YokogawaGS200Program(InstrumentChannel["YokogawaGS200"]):
             call_cmd=":PROG:RUN",
             docstring="run the program",
         )
+
+    def hold(self) -> None:
+        """Pauses and resumes the program currently being executed."""
+        self.write(":PROG:HOLD")
+
+    def pause(self) -> None:
+        """Pauses the program currently being executed."""
+        self.write(":PROG:PAUS")
+
+    def cont(self) -> None:
+        """Resumes the program currently being executed."""
+        self.write(":PROG:CONT")
 
 
 class YokogawaGS200(VisaInstrument):
@@ -496,7 +628,7 @@ class YokogawaGS200(VisaInstrument):
         self.add_function("reset", call_cmd="*RST")
 
         self.program: YokogawaGS200Program = self.add_submodule(
-            "program", YokogawaGS200Program(self, "program")
+            "program", YokogawaGS200Program(self, "program", monitor_present)
         )
         """Instrument module program"""
 
@@ -528,6 +660,91 @@ class YokogawaGS200(VisaInstrument):
         )
         """returns the oldest unread error message from the event log and removes it from the log."""
 
+        self.status_byte: Parameter = self.add_parameter(
+            "status_byte",
+            get_cmd="*STB?",
+            get_parser=lambda x: StatusByte(int(x)),
+            label="Status Byte",
+        )
+        """Query the instrument status byte."""
+
+        self.standard_event_register: Parameter = self.add_parameter(
+            "standard_event_register",
+            get_cmd="*ESR?",
+            get_parser=lambda x: StandardEventRegister(int(x)),
+            label="Standard Event Register",
+        )
+        """Query the instrument standard event register."""
+
+        self.extended_event_register: Parameter = self.add_parameter(
+            "extended_event_register",
+            get_cmd=":STAT:EVEN?",
+            get_parser=lambda x: ExtendedEventRegister(int(x)),
+            label="Extended Event Register",
+        )
+        """Query the instrument extended event register."""
+
+        self.condition_register: Parameter = self.add_parameter(
+            "condition_register",
+            get_cmd=":STAT:COND?",
+            get_parser=lambda x: ConditionRegister(int(x)),
+            label="Condition Register",
+        )
+        """Query the instrument condition register."""
+
+        self.ramp_mode: ManualParameter = self.add_parameter(
+            "ramp_mode",
+            ManualParameter,
+            label="Ramp Mode",
+            vals=Enum("JUMP", "HARDWARE", "SOFTWARE"),
+            initial_value="JUMP",
+        )
+        """Set whether :attr:`current`/:attr:`voltage` jump to the given
+        value or ramp at speed :attr:`ramp_rate`.
+
+         - ``"JUMP"`` corresponds to no ramp (instantaneous jump to the
+           new output level).
+         - ``"HARDWARE"`` corresponds to a program with a single step.
+         - ``"SOFTWARE"`` corresponds to a ramp implemented using the
+           parameter attributes :attr:`Parameter.step` and
+           :attr:`Parameter.inter_delay`.
+
+        """
+
+        self.ramp_blocking: ManualParameter = self.add_parameter(
+            "ramp_blocking",
+            ManualParameter,
+            label="Ramp Blocking",
+            vals=Bool(),
+            initial_value=True,
+        )
+        """Set whether ramps are blocking or not."""
+
+        self.ramp_rate: ManualParameter = self.add_parameter(
+            "ramp_rate",
+            ManualParameter,
+            label="Ramp Rate",
+            unit="V/s",
+            vals=Numbers(1e-3 / 3600, float("inf")),
+            initial_value=10e-3 if self.source_mode() == "VOLT" else 100e-6,
+        )
+        """The ramp rate when :attr:`ramp_mode` is not ``"JUMP"``."""
+
+        self.ramp_step: ManualParameter = self.add_parameter(
+            "ramp_step",
+            ManualParameter,
+            label="Ramp step",
+            unit="V",
+            vals=Numbers(0, float("inf")),
+            initial_value=0,
+        )
+        """The ramp step when :attr:`ramp_mode` is set to ``"SOFTWARE"``.
+
+        When :attr:`ramp_mode` is ``"HARDWARE"``, defines the output delta
+        above which a ramp is used. If the delta is below this value,
+        the output is "jumped".
+        """
+
         self.connect_message()
 
     def on(self) -> None:
@@ -546,54 +763,178 @@ class YokogawaGS200(VisaInstrument):
         self.measure._output = bool(state)
         return state
 
-    def ramp_voltage(self, ramp_to: float, step: float, delay: float) -> None:
+    def _parse_delay(self, delay: float | None, step: float) -> float:
+        if delay is not None and delay != 0:
+            warnings.warn(
+                "The delay parameter is deprecated and will be removed in a future release. "
+                "Please use the ramp_rate and ramp_step parameters instead.",
+                QCoDeSDeprecationWarning,
+                stacklevel=3,
+            )
+            rate = step / delay
+        else:
+            rate = self.ramp_rate()
+        return rate
+
+    def _parse_step(self, step: float | None) -> float:
+        if step is not None:
+            warnings.warn(
+                "The step parameter is deprecated and will be removed in a future release. "
+                "Please use the ramp_step parameter instead.",
+                QCoDeSDeprecationWarning,
+                stacklevel=3,
+            )
+            return float(step)
+        else:
+            return self.ramp_step()
+
+    def ramp_voltage(
+        self,
+        ramp_to: float,
+        step: float | None = None,
+        delay: float | None = None,
+        ramp_mode: Literal["HARDWARE", "SOFTWARE"] = "HARDWARE",
+    ) -> None:
         """
         Ramp the voltage from the current level to the specified output.
 
         Args:
             ramp_to: The ramp target in Volt
-            step: The ramp steps in Volt
+            step: The ramp steps in Volt. Deprecated.
             delay: The time between finishing one step and
-                starting another in seconds.
+                starting another in seconds. Deprecated.
+            ramp_mode: Use hardware or software ramps. See :attr:`ramp_mode`.
 
         """
-        self._assert_mode("VOLT")
-        self._ramp_source(ramp_to, step, delay)
+        step = self._parse_step(step)
+        rate = self._parse_delay(delay, step)
 
-    def ramp_current(self, ramp_to: float, step: float, delay: float) -> None:
+        self._assert_mode("VOLT")
+        with (
+            self.ramp_step.set_to(step),
+            self.ramp_rate.set_to(rate),
+            self.ramp_mode.set_to(ramp_mode),
+            self.ramp_blocking.set_to(True),
+        ):
+            self._ramp_source(ramp_to)
+
+    def ramp_current(
+        self,
+        ramp_to: float,
+        step: float | None = None,
+        delay: float | None = None,
+        ramp_mode: Literal["HARDWARE", "SOFTWARE"] = "HARDWARE",
+    ) -> None:
         """
         Ramp the current from the current level to the specified output.
 
         Args:
             ramp_to: The ramp target in Ampere
-            step: The ramp steps in Ampere
-            delay: The time between finishing one step and starting
-                another in seconds.
+            step: The ramp steps in Volt. Deprecated.
+            delay: The time between finishing one step and
+                starting another in seconds. Deprecated.
+            ramp_mode: Use hardware or software ramps. See :attr:`ramp_mode`.
 
         """
-        self._assert_mode("CURR")
-        self._ramp_source(ramp_to, step, delay)
+        step = self._parse_step(step)
+        rate = self._parse_delay(delay, step)
 
-    def _ramp_source(self, ramp_to: float, step: float, delay: float) -> None:
+        self._assert_mode("CURR")
+        with (
+            self.ramp_step.set_to(step),
+            self.ramp_rate.set_to(rate),
+            self.ramp_mode.set_to(ramp_mode),
+            self.ramp_blocking.set_to(True),
+        ):
+            self._ramp_source(ramp_to)
+
+    def _ramp_source(self, ramp_to: float) -> None:
         """
         Ramp the output from the current level to the specified output
 
         Args:
             ramp_to: The ramp target in volts/amps
-            step: The ramp steps in volts/ampere
-            delay: The time between finishing one step and
-                starting another in seconds.
 
         """
-        saved_step = self.output_level.step
-        saved_inter_delay = self.output_level.inter_delay
+        match self.ramp_mode():
+            case "HARDWARE":
+                if self.output() == "off":
+                    raise RuntimeError(
+                        "Need to enable output before hardware ramps are allowed."
+                    )
 
-        self.output_level.step = step
-        self.output_level.inter_delay = delay
-        self.output_level(ramp_to)
+                if abs(ramp_to) > (rng := self.range()):
+                    raise ValueError(
+                        f"Desired output level not in range  [-{rng:.3}, {rng:.3}]"
+                    )
 
-        self.output_level.step = saved_step
-        self.output_level.inter_delay = saved_inter_delay
+                if (
+                    delta := ramp_to
+                    - cast("Parameter", self.output_level.source).get_raw()
+                ) == 0:
+                    # Nothing to do. We got the raw value because ramp_to already went through
+                    # set-parsing including scaling and offsetting.
+                    return
+                elif abs(delta) < self.ramp_step():
+                    self._set_output(ramp_to)
+                    return
+
+                slope_time = abs(delta) / self.ramp_rate()
+
+                # Clip to hardware limits
+                if slope_time > 3600:
+                    self.log.info("Slope time > 3600s. Clipping.")
+                slope_time = min(slope_time, 3600)
+
+                if slope_time < 0.1:
+                    self.log.info("Interval time < 0.1s. Clipping.")
+                interval_time = max(slope_time, 0.1)
+
+                # Program the ramp; don't use the Program class to avoid overhead from
+                # repeated communication
+                self.write(
+                    ";".join(
+                        [
+                            "*CLS",
+                            ":PROG:REP 0",
+                            f":PROG:SLOP {slope_time:E}",
+                            f":PROG:INT {interval_time:E}",
+                            ":PROG:EDIT:STAR",
+                            f":SOUR:LEV {ramp_to:E}",
+                            ":PROG:EDIT:END",
+                            ":PROG:RUN",
+                        ]
+                    )
+                )
+
+                if not self.ramp_blocking():
+                    return
+
+                while ExtendedEventRegister.EOP not in self.extended_event_register():
+                    # EOP indicates the end of a program
+                    if StatusByte.EAV in self.status_byte() and (
+                        errors := self.system_errors()
+                    ):
+                        raise RuntimeError(f"Ramp failed with errors: {errors}")
+
+                    # Sleep between 2 and 100 ms before checking again.
+                    time.sleep(max(min(slope_time / 10, 100e-3), 2e-3))
+            case "SOFTWARE":
+                saved_step = self.output_level.step
+                saved_inter_delay = self.output_level.inter_delay
+
+                try:
+                    self.output_level.step = self.ramp_step()
+                    self.output_level.inter_delay = self.ramp_step() / self.ramp_rate()
+                    with self.ramp_mode.set_to("JUMP"):
+                        self.output_level(ramp_to)
+                finally:
+                    self.output_level.step = saved_step
+                    self.output_level.inter_delay = saved_inter_delay
+            case "JUMP":
+                self._set_output(ramp_to)
+            case _:
+                raise ValueError(f"Unknown ramp mode: {self.ramp_mode()}")
 
     def _get_set_output(
         self, mode: ModeType, output_level: float | None = None
@@ -609,7 +950,7 @@ class YokogawaGS200(VisaInstrument):
         """
         self._assert_mode(mode)
         if output_level is not None:
-            self._set_output(output_level)
+            self._ramp_source(output_level)
             return None
         return float(self.ask(":SOUR:LEV?"))
 
@@ -746,6 +1087,8 @@ class YokogawaGS200(VisaInstrument):
             self.voltage.snapshot_exclude = False
             self.current_range.snapshot_exclude = True
             self.current.snapshot_exclude = True
+            self.ramp_rate.unit = "V/s"
+            self.ramp_step.unit = "V"
         else:
             self.range.source = self.current_range
             self.output_level.source = self.current
@@ -753,6 +1096,8 @@ class YokogawaGS200(VisaInstrument):
             self.voltage.snapshot_exclude = True
             self.current_range.snapshot_exclude = False
             self.current.snapshot_exclude = False
+            self.ramp_rate.unit = "A/s"
+            self.ramp_step.unit = "A"
 
         self.write(f"SOUR:FUNC {mode}")
         # We set the cache here since `_update_measurement_module`

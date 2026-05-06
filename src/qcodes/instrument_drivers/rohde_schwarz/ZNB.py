@@ -22,7 +22,7 @@ from qcodes.parameters import (
 )
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 log = logging.getLogger(__name__)
 

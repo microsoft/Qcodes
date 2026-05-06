@@ -1,13 +1,10 @@
 from typing import TYPE_CHECKING
 
-from typing_extensions import deprecated
-
 from qcodes import validators as vals
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.parameters import Parameter
 
@@ -227,16 +224,3 @@ class SG384(VisaInstrument):
         )
         """Parameter modulation_type"""
         self.connect_message()
-
-
-@deprecated(
-    "SRS_SG384 is deprecated. Please use qcodes.instrument_drivers.stanford_research.SG384 instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=1,
-)
-class SRS_SG384(SG384):
-    """
-    Deprecated alternative name for backwards compatibility
-    """
-
-    pass

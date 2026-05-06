@@ -14,11 +14,17 @@ except ImportError:
     has_loop = False
 from typing import Generic
 
-from .parameter_base import InstrumentTypeVar_co, ParameterBase, ParameterDataTypeVar
+from .parameter_base import (
+    InstrumentTypeVar_co,
+    ParameterBase,
+    ParameterBaseKWArgs,
+    ParameterDataTypeVar,
+)
 from .sequence_helpers import is_sequence_of
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
+    from collections.abc import Sequence
+    from typing import Unpack
 
 
 try:
@@ -80,9 +86,6 @@ class ArrayParameter(
             to expect. Scalars should be denoted by (), 1D arrays as (n,),
             2D arrays as (n, m), etc.
 
-        instrument: The instrument this parameter
-            belongs to, if any.
-
         label: Normally used as the axis label when this
             parameter is graphed, along with ``unit``.
 
@@ -111,21 +114,10 @@ class ArrayParameter(
             field of the object. The ``__doc__`` field of the instance
             is used by some help systems, but not all.
 
-        snapshot_get: Prevent any update to the parameter, for example
-            if it takes too long to update. Default ``True``.
-
-        snapshot_value: Should the value of the parameter be stored in the
-            snapshot. Unlike Parameter this defaults to False as
-            ArrayParameters are potentially huge.
-
-        snapshot_exclude: ``True`` prevents parameter to be
-            included in the snapshot. Useful if there are many of the same
-            parameter which are clogging up the snapshot.
-
-            Default ``False``.
-
-        metadata: Extra information to include with the
-            JSON snapshot of the parameter.
+        **kwargs: Forwarded to the ``ParameterBase`` base class.
+            Note that ``snapshot_value`` defaults to ``False`` for
+            ``ArrayParameter``. See :class:`ParameterBaseKWArgs` for
+            details.
 
     """
 
@@ -134,9 +126,6 @@ class ArrayParameter(
         name: str,
         *,
         shape: Sequence[int],
-        # mypy seems to be confused here. The bound and default for InstrumentTypeVar_co
-        # contains None but mypy will not allow it as a default as of v 1.19.0
-        instrument: InstrumentTypeVar_co = None,  # type: ignore[assignment]
         label: str | None = None,
         unit: str | None = None,
         setpoints: Sequence[Any] | None = None,
@@ -144,19 +133,13 @@ class ArrayParameter(
         setpoint_labels: Sequence[str] | None = None,
         setpoint_units: Sequence[str] | None = None,
         docstring: str | None = None,
-        snapshot_get: bool = True,
-        snapshot_value: bool = False,
-        snapshot_exclude: bool = False,
-        metadata: Mapping[Any, Any] | None = None,
-        **kwargs: Any,
+        **kwargs: Unpack[
+            ParameterBaseKWArgs[ParameterDataTypeVar, InstrumentTypeVar_co]
+        ],
     ) -> None:
+        kwargs.setdefault("snapshot_value", False)
         super().__init__(
             name,
-            instrument=instrument,
-            snapshot_get=snapshot_get,
-            metadata=metadata,
-            snapshot_value=snapshot_value,
-            snapshot_exclude=snapshot_exclude,
             **kwargs,
         )
 

@@ -1,15 +1,13 @@
 from typing import TYPE_CHECKING
 
 import numpy as np
-from typing_extensions import deprecated
 
 from qcodes import validators as vals
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import Parameter
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 class Weinschel8320(VisaInstrument):
@@ -37,14 +35,3 @@ class Weinschel8320(VisaInstrument):
         """Control the attenuation"""
 
         self.connect_message()
-
-
-@deprecated(
-    "Weinschel_8320 is deprecated. Please use qcodes.instrument_drivers.Weinschel.Weinschel8320 instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=1,
-)
-class Weinschel_8320(Weinschel8320):
-    """
-    Alias for Weinschel8320 will eventually be deprecated and removed.
-    """

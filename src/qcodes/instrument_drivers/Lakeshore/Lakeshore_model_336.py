@@ -10,7 +10,7 @@ from .lakeshore_base import (
 )
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.instrument import InstrumentBaseKWArgs, VisaInstrumentKWArgs
 

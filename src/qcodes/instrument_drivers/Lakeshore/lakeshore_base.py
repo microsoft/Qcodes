@@ -17,8 +17,7 @@ from qcodes.parameters import Group, GroupParameter, Parameter
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.instrument.channel import ChannelTuple
 

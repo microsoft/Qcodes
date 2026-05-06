@@ -1,3 +1,4 @@
+import inspect
 from typing import ClassVar
 
 import pytest
@@ -180,3 +181,85 @@ def test_delegate_both() -> None:
     # all appropriate items are in dir() exactly once
     for attr in ["rock", "paper", "scissors", "year", "water"]:
         assert dir(tb).count(attr) == 1
+
+
+def test_faulty_property_surfaces_original_attribute_error() -> None:
+    """A ``@property`` whose getter raises ``AttributeError`` should surface
+    the *inner* error instead of being masked by the generic
+    ``DelegateAttributes.__getattr__`` fallback.
+    """
+
+    class WithFaultyProperty(DelegateAttributes):
+        @property
+        def prop(self) -> int:
+            # ``missing`` does not exist; accessing it raises AttributeError.
+            # Before this fix, Python fell through to ``__getattr__`` which
+            # reported "no attribute 'prop'" and hid the real cause.
+            return self.missing  # type: ignore[attr-defined]
+
+    obj = WithFaultyProperty()
+    with pytest.raises(AttributeError, match="missing"):
+        obj.prop
+
+
+def test_faulty_property_preserves_inner_traceback() -> None:
+    """The traceback of the surfaced error must include the line inside the
+    property's getter that actually raised, so downstream debugging is
+    possible.
+    """
+
+    class WithFaultyProperty(DelegateAttributes):
+        @property
+        def prop(self) -> int:
+            raise AttributeError("specific underlying failure")
+
+    obj = WithFaultyProperty()
+    with pytest.raises(AttributeError, match="specific underlying failure") as excinfo:
+        obj.prop
+    assert any(entry.name == "prop" for entry in excinfo.traceback)
+
+
+def test_inapplicable_descriptor_does_not_raise_type_error() -> None:
+    """Descriptors found via the MRO that are not applicable to the instance
+    (e.g. ``type.__name__`` invoked on a non-type object) must not leak a
+    ``TypeError`` out of ``__getattr__``.  Instead they should be skipped so
+    that the normal ``AttributeError`` is raised.
+
+    Regression test for a bug where ``inspect.iscoroutinefunction`` triggered
+    ``getattr(obj, '__name__', None)`` and the descriptor introspection in
+    ``__getattr__`` called ``type.__name__.__get__`` on a non-type instance.
+    """
+
+    class Plain(DelegateAttributes):
+        delegate_attr_objects: ClassVar[list[str]] = []
+
+    obj = Plain()
+
+    # ``__name__`` is not defined on ``Plain`` instances, so accessing it
+    # should raise ``AttributeError``, never ``TypeError``.
+    with pytest.raises(AttributeError):
+        obj.__name__  # type: ignore[attr-defined]
+
+    # ``inspect.iscoroutinefunction`` internally does
+    # ``getattr(obj, '__name__', None)`` — this must not raise.
+    assert inspect.iscoroutinefunction(obj) is False
+
+
+def test_working_property_still_returns_value() -> None:
+    """Re-invocation of a descriptor from ``__getattr__`` must never happen for
+    a well-behaved ``@property`` — normal attribute lookup should resolve the
+    value directly without touching ``__getattr__`` at all.
+    """
+
+    call_count = 0
+
+    class WithWorkingProperty(DelegateAttributes):
+        @property
+        def prop(self) -> int:
+            nonlocal call_count
+            call_count += 1
+            return 42
+
+    obj = WithWorkingProperty()
+    assert obj.prop == 42
+    assert call_count == 1

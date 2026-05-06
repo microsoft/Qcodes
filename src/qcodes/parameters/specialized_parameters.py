@@ -7,14 +7,14 @@ provides useful/convenient specializations of such generic parameters.
 from __future__ import annotations
 
 from time import perf_counter
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING
 
-from qcodes.validators import Strings, Validator
+from qcodes.validators import Strings
 
-from .parameter import Parameter
+from .parameter import Parameter, ParameterKWArgs
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from typing import Unpack
 
     from qcodes.instrument import InstrumentBase
 
@@ -28,17 +28,28 @@ class ElapsedTimeParameter(Parameter):
     Args:
         name: The local name of the parameter. See the documentation of
             :class:`qcodes.parameters.Parameter` for more details.
+        **kwargs: Forwarded to the ``Parameter`` base class.
+            See :class:`ParameterKWArgs` for details.
+            Note that ``unit``, ``get_cmd``, and ``set_cmd`` are not allowed
+            since ElapsedTimeParameter hardcodes these.
+            ``label`` defaults to ``"Elapsed time"`` if not provided.
+
+    Raises:
+        ValueError: If ``unit``, ``get_cmd``, or ``set_cmd`` is provided.
 
     """
 
-    def __init__(self, name: str, *, label: str = "Elapsed time", **kwargs: Any):
+    def __init__(self, name: str, **kwargs: Unpack[ParameterKWArgs]):
         hardcoded_kwargs = ["unit", "get_cmd", "set_cmd"]
 
         for hck in hardcoded_kwargs:
             if hck in kwargs:
                 raise ValueError(f'Can not set "{hck}" for an ElapsedTimeParameter.')
 
-        super().__init__(name=name, label=label, unit="s", set_cmd=False, **kwargs)
+        kwargs.setdefault("label", "Elapsed time")
+        kwargs["unit"] = "s"
+        kwargs["set_cmd"] = False
+        super().__init__(name=name, **kwargs)
 
         self._t0: float = perf_counter()
 
@@ -63,48 +74,29 @@ class InstrumentRefParameter(Parameter):
 
     Args:
         name: The name of the parameter that one wants to add.
+        **kwargs: Forwarded to the ``Parameter`` base class.
+            See :class:`ParameterKWArgs` for details.
+            Note that ``set_cmd`` is not allowed since
+            InstrumentRefParameter uses manual set (``set_cmd=None``).
+            ``vals`` defaults to :class:`~qcodes.validators.Strings`
+            if not provided.
 
-        instrument: The "parent" instrument this
-            parameter is attached to, if any.
-
-        initial_value: Starting value, may be None even if None does not
-            pass the validator. None is only allowed as an initial value
-            and cannot be set after initiation.
-
-        **kwargs: Passed to InstrumentRefParameter parent class
+    Raises:
+        RuntimeError: If ``set_cmd`` is provided with a non-None value.
 
     """
 
     def __init__(
         self,
         name: str,
-        *,
-        instrument: InstrumentBase | None = None,
-        label: str | None = None,
-        unit: str | None = None,
-        get_cmd: str | Callable[..., Any] | Literal[False] | None = None,
-        set_cmd: str | Callable[..., Any] | Literal[False] | None = None,
-        initial_value: float | str | None = None,
-        max_val_age: float | None = None,
-        vals: Validator[Any] | None = None,
-        docstring: str | None = None,
-        **kwargs: Any,
+        **kwargs: Unpack[ParameterKWArgs],
     ) -> None:
-        if vals is None:
-            vals = Strings()
-        if set_cmd is not None:
+        kwargs.setdefault("vals", Strings())
+        if kwargs.get("set_cmd") is not None:
             raise RuntimeError("InstrumentRefParameter does not support set_cmd.")
+        kwargs.setdefault("set_cmd", None)
         super().__init__(
             name,
-            instrument=instrument,
-            label=label,
-            unit=unit,
-            get_cmd=get_cmd,
-            set_cmd=set_cmd,
-            initial_value=initial_value,
-            max_val_age=max_val_age,
-            vals=vals,
-            docstring=docstring,
             **kwargs,
         )
 

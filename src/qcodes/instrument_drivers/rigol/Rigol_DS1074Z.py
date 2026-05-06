@@ -14,7 +14,7 @@ from qcodes.parameters import ParameterWithSetpoints
 from qcodes.validators import Arrays, Enum, Numbers
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.parameters import Parameter
 

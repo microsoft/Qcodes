@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING, Any
 
 from packaging import version
 from pyvisa.errors import VisaIOError
-from typing_extensions import deprecated
 
 from qcodes.instrument import (
     InstrumentBaseKWArgs,
@@ -20,13 +19,11 @@ from qcodes.parameters import (
     create_on_off_val_mapping,
 )
 from qcodes.utils import convert_legacy_version_to_supported_version
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 from qcodes.validators import Bool, Enum, Ints, Numbers
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 class KeysightE4980AMeasurementPair(MultiParameter):
@@ -73,17 +70,6 @@ class KeysightE4980AMeasurementPair(MultiParameter):
 
     def get_raw(self) -> tuple[ParamRawDataType, ...]:
         return self.value
-
-
-@deprecated(
-    "MeasurementPair is deprecated. Please use qcodes.instrument_drivers.Keysight.KeysightE4980AMeasurementPair instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=1,
-)
-class MeasurementPair(KeysightE4980AMeasurementPair):
-    """Alias for backwards compatibility"""
-
-    pass
 
 
 class KeysightE4980AMeasurements:
@@ -154,17 +140,6 @@ class KeysightE4980AMeasurements:
     VDID = KeysightE4980AMeasurementPair("VDID", ("voltage", "current"), ("V", "A"))
 
 
-@deprecated(
-    "E4980AMeasurements is deprecated. Please use qcodes.instrument_drivers.Keysight.KeysightE4980AMeasurements instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=1,
-)
-class E4980AMeasurements(KeysightE4980AMeasurements):
-    """Alias for backwards compatibility"""
-
-    pass
-
-
 class KeysightE4980ACorrection(InstrumentChannel):
     """
     Module for correction settings.
@@ -209,17 +184,6 @@ class KeysightE4980ACorrection(InstrumentChannel):
             docstring="Enables or disable SHORT correction.",
         )
         """Enables or disable SHORT correction."""
-
-
-@deprecated(
-    "Correction4980A is deprecated. Please use qcodes.instrument_drivers.Keysight.KeysightE4980ACorrection instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=1,
-)
-class Correction4980A(KeysightE4980ACorrection):
-    """Alias for backwards compatibility"""
-
-    pass
 
 
 class KeysightE4980A(VisaInstrument):

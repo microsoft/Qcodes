@@ -4,12 +4,13 @@ from typing import TYPE_CHECKING, Any, Generic
 
 from typing_extensions import TypeVar
 
-from .parameter import Parameter
+from .parameter import Parameter, ParameterKWArgs
 from .parameter_base import InstrumentTypeVar_co, ParameterDataTypeVar
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from datetime import datetime
+    from typing import Unpack
 
     from qcodes.instrument import InstrumentBase
     from qcodes.validators.validators import Validator
@@ -69,6 +70,10 @@ class DelegateParameter(
         A DelegateParameter is not registered on the instrument by default.
         You should pass ``bind_to_instrument=True`` if you want this to
         be the case.
+
+        ``set_cmd`` and ``get_cmd`` are not allowed since the source
+        parameter's commands are used. Providing ``initial_value`` or
+        ``initial_cache_value`` without a source is also an error.
 
     """
 
@@ -178,10 +183,9 @@ class DelegateParameter(
         name: str,
         *,
         source: Parameter | None,
-        **kwargs: Any,
+        **kwargs: Unpack[ParameterKWArgs[ParameterDataTypeVar, InstrumentTypeVar_co]],
     ):
-        if "bind_to_instrument" not in kwargs.keys():
-            kwargs["bind_to_instrument"] = False
+        kwargs.setdefault("bind_to_instrument", False)
 
         for cmd in ("set_cmd", "get_cmd"):
             if cmd in kwargs:

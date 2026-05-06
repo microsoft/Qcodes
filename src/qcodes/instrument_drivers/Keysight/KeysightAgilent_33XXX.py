@@ -13,7 +13,7 @@ from qcodes.instrument import (
 from .private.error_handling import KeysightErrorQueueMixin
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.parameters import Parameter
 

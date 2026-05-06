@@ -24,8 +24,7 @@ from qcodes.validators import Arrays, Bool, Enum, Ints, Numbers
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 class PNAAxisParameter(Parameter):
@@ -79,7 +78,7 @@ class FormattedSweep(ParameterWithSetpoints[npt.NDArray, "KeysightPNATrace"]):
     def __init__(
         self,
         name: str,
-        instrument: "KeysightPNABase",
+        instrument: "KeysightPNATrace",
         sweep_format: str,
         label: str,
         unit: str,

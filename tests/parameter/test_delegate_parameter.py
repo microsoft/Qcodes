@@ -5,6 +5,7 @@ Test suite for DelegateParameter
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal, cast
+from unittest.mock import patch
 
 import hypothesis.strategies as hst
 import pytest
@@ -12,6 +13,7 @@ from hypothesis import given
 
 import qcodes.validators as vals
 from qcodes.parameters import DelegateParameter, Parameter, ParamRawDataType
+from qcodes.parameters.cache import _Cache
 
 from .conftest import BetterGettableParam
 
@@ -140,7 +142,7 @@ def test_get_set_raises(simple_param: Parameter) -> None:
     """
     for kwargs in ({"set_cmd": None}, {"get_cmd": None}):
         with pytest.raises(KeyError) as e:
-            DelegateParameter("test_delegate_parameter", source=simple_param, **kwargs)
+            DelegateParameter("test_delegate_parameter", source=simple_param, **kwargs)  # type: ignore[arg-type]
         assert str(e.value).startswith("'It is not allowed to set")
 
 
@@ -360,6 +362,39 @@ def test_setting_initial_cache_delegate_parameter() -> None:
     )
     assert p.cache.get(get_if_invalid=False) == value
     assert d.cache.get(get_if_invalid=False) == value
+
+
+def test_initial_cache_value_not_applied_to_temporary_base_cache() -> None:
+    """
+    Regression test: initial_cache_value must be popped from kwargs before
+    calling super().__init__ so that Parameter.__init__ does not apply it
+    to the temporary _Cache that gets replaced by _DelegateCache.
+
+    If initial_cache_value leaks into Parameter.__init__, _Cache.set is
+    called an extra time on a cache object that is immediately discarded,
+    causing redundant validation and a potentially side-effecting cache
+    update.
+    """
+    source = Parameter("source", set_cmd=None, get_cmd=None)
+
+    cache_set_call_count = 0
+    original_cache_set = _Cache.set
+
+    def counting_set(self: _Cache, value: object) -> None:  # type: ignore[type-arg]
+        nonlocal cache_set_call_count
+        cache_set_call_count += 1
+        original_cache_set(self, value)
+
+    with patch.object(_Cache, "set", counting_set):
+        d = DelegateParameter("delegate", source=source, initial_cache_value=42)
+
+    # _Cache.set should be called exactly once: on the source parameter's
+    # cache, forwarded from _DelegateCache.set.  Without the fix, an extra
+    # call would occur on the delegate's temporary _Cache inside
+    # Parameter.__init__ before it is replaced by _DelegateCache.
+    assert cache_set_call_count == 1
+    assert d.cache.get(get_if_invalid=False) == 42
+    assert source.cache.get(get_if_invalid=False) == 42
 
 
 def test_delegate_parameter_with_none_source_works_as_expected() -> None:

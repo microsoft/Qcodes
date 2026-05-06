@@ -5,14 +5,11 @@ from functools import partial
 from time import sleep
 from typing import TYPE_CHECKING
 
-from typing_extensions import deprecated
-
 from qcodes.instrument import InstrumentBaseKWArgs, IPInstrument
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 from qcodes.validators import Enum, Ints, Numbers
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.parameters import Parameter
 
@@ -67,7 +64,10 @@ class OxfordTriton(IPInstrument):
         self._control_channel = 5
         self.pump_label_dict = {"TURB1": "Turbo 1", "COMP": "Compressor"}
 
-        self.magnet_available: bool = self._get_control_B_param("ACTN") != "INVALID"
+        self.magnet_available: bool = self._get_control_B_param("ACTN") not in (
+            "INVALID",
+            "communication timeout",
+        )
         """Indicates if a magnet is equipped *and* controlled by the Triton."""
 
         self.time: Parameter = self.add_parameter(
@@ -603,14 +603,3 @@ class OxfordTriton(IPInstrument):
         if "NOT_FOUND" in msg:
             return None
         return msg.rsplit(f"{key}:", maxsplit=1)[-1]
-
-
-@deprecated(
-    "Triton is deprecated. Please use qcodes.instrument_drivers.oxford.OxfordTriton instead.",
-    category=QCoDeSDeprecationWarning,
-    stacklevel=1,
-)
-class Triton(OxfordTriton):
-    """Alias for backwards compatibility"""
-
-    pass

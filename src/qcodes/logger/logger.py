@@ -18,7 +18,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, Self
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Generator, Sequence
     from types import TracebackType
 
 import qcodes as qc
@@ -352,7 +352,7 @@ def conditionally_start_all_logging() -> None:
 @contextmanager
 def handler_level(
     level: LevelType, handler: "logging.Handler | Sequence[logging.Handler]"
-) -> "Iterator[None]":
+) -> "Generator[None, None, None]":
     """
     Context manager to temporarily change the level of handlers.
 
@@ -378,7 +378,7 @@ def handler_level(
 
 
 @contextmanager
-def console_level(level: LevelType) -> "Iterator[None]":
+def console_level(level: LevelType) -> "Generator[None, None, None]":
     """
     Context manager to temporarily change the level of the qcodes console
     handler.

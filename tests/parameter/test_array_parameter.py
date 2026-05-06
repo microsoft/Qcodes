@@ -54,6 +54,31 @@ def test_default_attributes() -> None:
     assert name in p.__doc__
 
 
+def test_snapshot_value_default_false() -> None:
+    """snapshot_value defaults to False for ArrayParameter."""
+    p = SimpleArrayParam([1, 2, 3], "arr", shape=(3,))
+    assert p._snapshot_value is False
+    snap = p.snapshot(update=True)
+    assert "value" not in snap
+    assert "raw_value" not in snap
+
+
+def test_snapshot_value_explicit_true() -> None:
+    """snapshot_value=True includes value in snapshot for ArrayParameter."""
+    p = SimpleArrayParam([1, 2, 3], "arr", shape=(3,), snapshot_value=True)
+    assert p._snapshot_value is True
+    snap = p.snapshot(update=True)
+    assert snap["value"] == [1, 2, 3]
+
+
+def test_snapshot_value_explicit_false() -> None:
+    """snapshot_value=False excludes value from snapshot for ArrayParameter."""
+    p = SimpleArrayParam([1, 2, 3], "arr", shape=(3,), snapshot_value=False)
+    assert p._snapshot_value is False
+    snap = p.snapshot(update=True)
+    assert "value" not in snap
+
+
 def test_explicit_attributes() -> None:
     name = "tiny_array"
     shape = (2,)

@@ -287,6 +287,16 @@ class InterDependencies_:  # noqa: PLW1641
             for node_id, in_degree in self._dependency_subgraph.in_degree
             if in_degree == 0
         }
+        # Parameters that are inferred from other parameters (have outgoing
+        # edges in the inference subgraph) should not be independent top-level
+        # parameters, since their data is part of the tree of the parameter
+        # they are inferred from.
+        parameters_inferred_from_others = {
+            self._node_to_paramspec(node_id)
+            for node_id, out_degree in self._inference_subgraph.out_degree
+            if out_degree > 0
+        }
+        dependency_top_level = dependency_top_level - parameters_inferred_from_others
         standalone_top_level = {
             self._node_to_paramspec(node_id)
             for node_id, degree in self._graph.degree
