@@ -4,10 +4,9 @@ import cProfile
 import os
 from functools import wraps
 from time import sleep
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any
 
 import pytest
-from typing_extensions import ParamSpec
 
 from qcodes.metadatable import MetadatableWithName
 
@@ -18,11 +17,7 @@ if TYPE_CHECKING:
     from pytest import ExceptionInfo
 
 
-T = TypeVar("T")
-P = ParamSpec("P")
-
-
-def retry_until_does_not_throw(
+def retry_until_does_not_throw[**P, T](
     exception_class_to_expect: type[Exception] = AssertionError,
     tries: int = 5,
     delay: float = 0.1,
@@ -78,7 +73,7 @@ def retry_until_does_not_throw(
     return retry_until_passes_decorator
 
 
-def profile(func: Callable[P, T]) -> Callable[P, T]:
+def profile[**P, T](func: Callable[P, T]) -> Callable[P, T]:
     """
     Decorator that profiles the wrapped function with cProfile.
 

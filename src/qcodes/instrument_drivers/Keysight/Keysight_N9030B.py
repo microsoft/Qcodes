@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Unpack
 
+# Cannot convert to PEP 695: uses default= which requires PEP 696 (Python 3.13+).
 _T = TypeVar(
     "_T",
     bound="KeysightN9030BSpectrumAnalyzerMode | KeysightN9030BPhaseNoiseMode",
@@ -62,7 +63,10 @@ class FrequencyAxis(
 
 
 class Trace(
-    ParameterWithSetpoints[ParameterDataTypeVar, _T], Generic[ParameterDataTypeVar, _T]
+    ParameterWithSetpoints[ParameterDataTypeVar, _T],
+    # Generic can be replaced with PEP 695 type params once Python 3.12
+    # support is dropped (TypeVars use default= which requires PEP 696)
+    Generic[ParameterDataTypeVar, _T],  # noqa: UP046
 ):
     def __init__(
         self,

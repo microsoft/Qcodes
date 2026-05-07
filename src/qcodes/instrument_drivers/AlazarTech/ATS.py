@@ -6,7 +6,7 @@ import sys
 import time
 import warnings
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -23,8 +23,6 @@ if TYPE_CHECKING:
     from typing import Unpack
 
 logger = logging.getLogger(__name__)
-
-OutputType = TypeVar("OutputType")
 
 CtypesTypes = (
     type[ctypes.c_uint8]
@@ -308,7 +306,7 @@ class AlazarTechATS(Instrument):
         )
         return buffer
 
-    def acquire(  # noqa: D417 (missing args documentation)
+    def acquire[OutputType](  # noqa: D417 (missing args documentation)
         self,
         mode: str | None = None,
         samples_per_record: int | None = None,
@@ -827,7 +825,7 @@ class Buffer:
             )
 
 
-class AcquisitionInterface(Generic[OutputType]):
+class AcquisitionInterface[OutputType]:
     """
     This class represents all choices that the end-user has to make regarding
     the data-acquisition. this class should be subclassed to program these
@@ -903,7 +901,7 @@ class AcquisitionInterface(Generic[OutputType]):
         pass
 
 
-class AcquisitionController(Instrument, AcquisitionInterface[Any], Generic[OutputType]):
+class AcquisitionController[OutputType](Instrument, AcquisitionInterface[Any]):
     """
     Compatibility class. The methods of :class:`AcquisitionController`
     have been extracted. This class is the base class fro AcquisitionInterfaces
@@ -932,3 +930,16 @@ class AcquisitionController(Instrument, AcquisitionInterface[Any], Generic[Outpu
         :return: reference to the Alazar instrument
         """
         return self._alazar
+
+
+if not TYPE_CHECKING:
+    from typing import TypeVar
+
+    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
+
+    __getattr__ = _make_deprecated_typevars_getattr(
+        __name__,
+        {
+            "OutputType": TypeVar("OutputType"),
+        },
+    )

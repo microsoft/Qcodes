@@ -49,7 +49,9 @@ if TYPE_CHECKING:
     from qcodes.dataset.data_set_protocol import ValuesType
     from qcodes.instrument import InstrumentBase
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
+# Cannot convert to PEP 695: uses default= which requires PEP 696 (Python 3.13+).
 ParameterDataTypeVar = TypeVar("ParameterDataTypeVar", default=Any)
+# Cannot convert to PEP 695: uses default= and covariant= which require PEP 696 (Python 3.13+).
 # InstrumentTypeVar_co is a covariant type variable representing the instrument
 # type associated with the parameter. It needs to be covariant to allow passing
 # a Parameter bound to None or a specific instrument where the default is used in the type hint.
@@ -1472,11 +1474,8 @@ class GetLatest(DelegateAttributes, Generic[ParameterDataTypeVar]):
         return self.cache()
 
 
-P = TypeVar("P", bound=ParameterBase)
-
-
 # Does not implement __hash__, not clear it needs to
-class ParameterSet(MutableSet[P], Generic[P]):  # noqa: PLW1641
+class ParameterSet[P: ParameterBase](MutableSet[P]):  # noqa: PLW1641
     """A set-like container that preserves the insertion order of its parameters.
 
     This class implements the common set interface methods while maintaining
@@ -1592,3 +1591,13 @@ class ParameterSet(MutableSet[P], Generic[P]):  # noqa: PLW1641
         raise NotImplementedError(
             f">+ operation is not defined between ParameterSet and {type(other)}"
         )
+
+
+if not TYPE_CHECKING:
+    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
+
+    _deprecated_typevars: dict[str, TypeVar] = {
+        "P": TypeVar("P", bound="ParameterBase"),
+    }
+
+    __getattr__ = _make_deprecated_typevars_getattr(__name__, _deprecated_typevars)

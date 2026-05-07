@@ -1,6 +1,6 @@
 from functools import wraps
 from operator import xor
-from typing import TYPE_CHECKING, Generic, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, ParamSpec, TypeVar
 
 from . import constants
 
@@ -14,7 +14,6 @@ def as_csv(comps: "Iterable[object]", sep: str = ",") -> str:
 
 
 P = ParamSpec("P")
-T = TypeVar("T")
 
 
 def final_command(f: "Callable[P, MessageBuilder]") -> "Callable[P, MessageBuilder]":
@@ -28,7 +27,7 @@ def final_command(f: "Callable[P, MessageBuilder]") -> "Callable[P, MessageBuild
     return wrapper
 
 
-class CommandList(list[T], Generic[T]):
+class CommandList[T](list[T]):
     def __init__(self) -> None:
         super().__init__()
         self.is_final = False
@@ -3984,3 +3983,13 @@ class MessageBuilder:
 
         self._msg.append(cmd)
         return self
+
+
+if not TYPE_CHECKING:
+    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
+
+    _deprecated_typevars: dict[str, TypeVar] = {
+        "T": TypeVar("T"),
+    }
+
+    __getattr__ = _make_deprecated_typevars_getattr(__name__, _deprecated_typevars)

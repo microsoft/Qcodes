@@ -1,9 +1,7 @@
 import re
 import warnings
 from functools import wraps
-from typing import TYPE_CHECKING, TypeVar
-
-from typing_extensions import ParamSpec
+from typing import TYPE_CHECKING
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.validators import Enum, Ints, Lists, MultiType
@@ -15,12 +13,7 @@ if TYPE_CHECKING:
     from qcodes.parameters import Parameter
 
 
-S = TypeVar("S", bound="KeysightB220X")
-P = ParamSpec("P")
-T = TypeVar("T")
-
-
-def post_execution_status_poll(
+def post_execution_status_poll[S: "KeysightB220X", T, **P](
     func: "Callable[Concatenate[S, P], T]",
 ) -> "Callable[Concatenate[S, P], T]":
     """
@@ -447,3 +440,20 @@ class KeysightB2201(KeysightB220X):
     """
     QCodes driver for B2201
     """
+
+
+if not TYPE_CHECKING:
+    from typing import TypeVar
+
+    from typing_extensions import ParamSpec
+
+    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
+
+    __getattr__ = _make_deprecated_typevars_getattr(
+        __name__,
+        {
+            "S": TypeVar("S", bound="KeysightB220X"),
+            "T": TypeVar("T"),
+            "P": ParamSpec("P"),
+        },
+    )

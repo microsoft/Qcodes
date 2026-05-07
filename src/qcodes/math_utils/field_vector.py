@@ -18,7 +18,6 @@ if TYPE_CHECKING:
 
 AllCoordsType = tuple[float, float, float, float, float, float, float]
 NormOrder = Literal["fro", "nuc"] | None | float
-T = TypeVar("T", bound="FieldVector")
 
 
 class FieldVector:
@@ -424,3 +423,13 @@ class FieldVector:
         # Thus, we start by rescaling such that s == 1.
         hvec /= hvec[-1]
         return cls(x=hvec[0], y=hvec[1], z=hvec[2])
+
+
+if not TYPE_CHECKING:
+    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
+
+    _deprecated_typevars: dict[str, TypeVar] = {
+        "T": TypeVar("T", bound="FieldVector"),
+    }
+
+    __getattr__ = _make_deprecated_typevars_getattr(__name__, _deprecated_typevars)

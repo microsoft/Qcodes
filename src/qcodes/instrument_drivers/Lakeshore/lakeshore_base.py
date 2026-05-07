@@ -662,6 +662,7 @@ class LakeshoreBaseSensorChannel(InstrumentChannel):
         return terms_in_number
 
 
+# Cannot convert to PEP 695: uses default= and covariant= which require PEP 696 (Python 3.13+).
 ChanType_co = TypeVar(
     "ChanType_co",
     bound=LakeshoreBaseSensorChannel,
