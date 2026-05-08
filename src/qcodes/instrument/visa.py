@@ -12,11 +12,10 @@ import pyvisa
 import pyvisa.constants as vi_const
 import pyvisa.resources
 from pyvisa.errors import InvalidSession
-from typing_extensions import deprecated
 
 import qcodes.validators as vals
 from qcodes.logger import get_instrument_logger
-from qcodes.utils import DelayedKeyboardInterrupt, QCoDeSDeprecationWarning
+from qcodes.utils import DelayedKeyboardInterrupt
 
 from .instrument import Instrument
 from .instrument_base import InstrumentBase, InstrumentBaseKWArgs
@@ -213,8 +212,6 @@ class VisaInstrument(Instrument):
             visa_handle = self._connect_and_handle_error(address, visalib)
         finalize(self, _close_visa_handle, visa_handle, str(self.name))
 
-        self._legacy_address = address
-
         self._visa_handle: pyvisa.resources.MessageBasedResource = visa_handle
 
         if device_clear:
@@ -222,17 +219,6 @@ class VisaInstrument(Instrument):
 
         self.set_terminator(terminator)
         self.timeout.set(timeout)
-
-    @property
-    @deprecated(
-        "The _address property is deprecated, use the address property instead.",
-        category=QCoDeSDeprecationWarning,
-    )
-    def _address(self) -> str | None:
-        """
-        DEPRECATED: USE self.address INSTEAD.
-        """
-        return self._legacy_address
 
     @property
     def address(self) -> str | None:
@@ -275,17 +261,6 @@ class VisaInstrument(Instrument):
                 f"Could not determine VISA backend from visa library class name: {class_name} falling back to IVI default."
             )
             return "ivi"
-
-    @property
-    @deprecated(
-        "The visalib property is deprecated, use the visabackend property instead.",
-        category=QCoDeSDeprecationWarning,
-    )
-    def visalib(self) -> str | None:
-        """
-        The VISA library used by this instrument.
-        """
-        return f"{self.visa_handle.visalib.library_path}@{self.visabackend}"
 
     def _connect_and_handle_error(
         self, address: str, visalib: str | None
@@ -341,7 +316,6 @@ class VisaInstrument(Instrument):
 
         """
         self._visa_handle = self._open_resource(address, visalib)
-        self._legacy_address = address
 
     def device_clear(self) -> None:
         """Clear the buffers of the device"""
