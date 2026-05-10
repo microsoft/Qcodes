@@ -161,9 +161,12 @@ def capture_dataframe(
     Context manager to capture the logs in a :class:`pd.DataFrame`
 
     Example:
-        >>> with logger.capture_dataframe() as (handler, cb):
-        >>>     qdac.ch01(1)  # some commands
-        >>>     data_frame = cb()
+
+        .. code-block:: python
+
+            with logger.capture_dataframe() as (handler, cb):
+                qdac.ch01(1)  # some commands
+                data_frame = cb()
 
     Args:
         level: Level at which to capture.

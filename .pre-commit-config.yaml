@@ -3,29 +3,29 @@ repos:
     # Ruff version.
     rev: v0.15.12
     hooks:
-    - id: ruff-check
-      types_or: [python, pyi, jupyter, toml]
-      args: [ --fix, --exit-non-zero-on-fix ]
-    - id: ruff-format
+      - id: ruff-check
+        types_or: [python, pyi, jupyter, toml]
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
-    - id: trailing-whitespace
-    - id: end-of-file-fixer
-    - id: check-ast
-    - id: check-json
-      exclude: asv.conf.json
-    - id: check-toml
-    - id: check-yaml
-    - id: check-case-conflict
-    - id: debug-statements
-    - id: mixed-line-ending
-      args: ['--fix=no']
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-ast
+      - id: check-json
+        exclude: asv.conf.json
+      - id: check-toml
+      - id: check-yaml
+      - id: check-case-conflict
+      - id: debug-statements
+      - id: mixed-line-ending
+        args: ["--fix=no"]
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.30.1
     hooks:
-    - id: gitleaks
-  - repo: https://github.com/jumanjihouse/pre-commit-hooks
-    rev: 3.0.0
+      - id: gitleaks
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
     hooks:
-    - id: shellcheck
+      - id: shellcheck

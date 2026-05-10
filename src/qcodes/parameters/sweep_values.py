@@ -48,7 +48,7 @@ def make_sweep(
         >>> make_sweep(5, 10, step=1)
         [5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
         >>> make_sweep(15, 10.5, step=1.5)
-        >[15.0, 13.5, 12.0, 10.5]
+        [15.0, 13.5, 12.0, 10.5]
 
     """
     if step and num:
@@ -90,13 +90,13 @@ class SweepValues(Metadatable):
     Must be subclassed to provide the sweep values
     Intended use is to iterate over in a sweep, so it must support:
 
-    >>> .__iter__ # (and .__next__ if necessary).
-    >>> .set # is provided by the base class
+    - ``.__iter__`` (and ``.__next__`` if necessary).
+    - ``.set`` is provided by the base class
 
     Optionally, it can have a feedback method that allows the sweep to pass
     measurements back to this object for adaptive sampling:
 
-    >>> .feedback(set_values, measured_values)
+    - ``.feedback(set_values, measured_values)``
 
     Todo:
         - Link to adawptive sweep
@@ -114,12 +114,14 @@ class SweepValues(Metadatable):
 
     example usage:
 
-    >>> for i, value in eumerate(sv):
+    .. code-block:: python
+
+        for i, value in enumerate(sv):
             sv.set(value)
             sleep(delay)
             vals = measure()
-            sv.feedback((i, ), vals) # optional - sweep should not assume
-                                     # .feedback exists
+            sv.feedback((i, ), vals)  # optional - sweep should not assume
+                                      # .feedback exists
 
     note though that sweeps should only require set and __iter__ - ie
     "for val in sv", so any class that implements these may be used in sweeps.
@@ -188,21 +190,25 @@ class SweepFixedValues(SweepValues):
 
     A SweepFixedValues object is normally created by slicing a Parameter p:
 
-    >>>  sv = p[1.2:2:0.01]  # slice notation
-    sv = p[1, 1.1, 1.3, 1.6]  # explicit individual values
-    sv = p[1.2:2:0.01, 2:3:0.02]  # sequence of slices
-    sv = p[logrange(1,10,.01)]  # some function that returns a sequence
+    .. code-block:: python
+
+        sv = p[1.2:2:0.01]  # slice notation
+        sv = p[1, 1.1, 1.3, 1.6]  # explicit individual values
+        sv = p[1.2:2:0.01, 2:3:0.02]  # sequence of slices
+        sv = p[logrange(1,10,.01)]  # some function that returns a sequence
 
     You can also use list operations to modify these:
 
-    >>> sv += p[2:3:.01] # (another SweepFixedValues of the same parameter)
-    sv += [4, 5, 6] # (a bare sequence)
-    sv.extend(p[2:3:.01])
-    sv.append(3.2)
-    sv.reverse()
-    sv2 = reversed(sv)
-    sv3 = sv + sv2
-    sv4 = sv.copy()
+    .. code-block:: python
+
+        sv += p[2:3:.01]  # (another SweepFixedValues of the same parameter)
+        sv += [4, 5, 6]  # (a bare sequence)
+        sv.extend(p[2:3:.01])
+        sv.append(3.2)
+        sv.reverse()
+        sv2 = reversed(sv)
+        sv3 = sv + sv2
+        sv4 = sv.copy()
 
     note though that sweeps should only require set and __iter__ - ie
     "for val in sv", so any class that implements these may be used in sweeps.
