@@ -188,7 +188,7 @@ matplotlib==3.10.9
     #   broadbean
     #   qcodes
     #   qcodes-loop
-matplotlib-inline==0.2.1
+matplotlib-inline==0.2.2
     # via
     #   ipykernel
     #   ipython
