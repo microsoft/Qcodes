@@ -170,7 +170,7 @@ lazy-loader==0.5
     # via qcodes-loop
 libcst==1.8.6
     # via qcodes (pyproject.toml)
-librt==0.10.0
+librt==0.11.0
     # via mypy
 locket==1.0.0
     # via partd
