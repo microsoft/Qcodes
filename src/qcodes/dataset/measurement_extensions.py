@@ -86,7 +86,7 @@ def datasaver_builder(
     dataset_definitions: Sequence[DataSetDefinition],
     *,
     override_experiment: Experiment | None = None,
-) -> Generator[list[DataSaver], Any, None]:
+) -> Generator[list[DataSaver], None, None]:
     """
     A utility context manager intended to simplify the creation of datasavers
 
