@@ -2,7 +2,7 @@ import gc
 import logging
 import re
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 import pyvisa
@@ -15,11 +15,16 @@ from qcodes.instrument_drivers.AimTTi import AimTTiPL601
 from qcodes.instrument_drivers.american_magnetics import AMIModel430
 from qcodes.validators import Numbers
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from pytest_mock import MockerFixture
+
 
 class MockVisa(VisaInstrument):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.add_parameter(
+        self.state = self.add_parameter(
             "state",
             get_cmd="STAT?",
             get_parser=float,
@@ -121,7 +126,7 @@ args3 = ["I'm out of fingers", "asking 'STAT?' to <MockVisa: Joe>", "getting Joe
 
 
 @pytest.fixture(name="mock_visa")
-def _make_mock_visa():
+def _make_mock_visa() -> "Generator[MockVisa, None, None]":
     mv = MockVisa("Joe", "none_address")
     try:
         yield mv
@@ -129,7 +134,7 @@ def _make_mock_visa():
         mv.close()
 
 
-def test_visa_gc_closes_connection(caplog) -> None:
+def test_visa_gc_closes_connection(caplog: pytest.LogCaptureFixture) -> None:
     def use_magnet() -> pyvisa.ResourceManager:
         x = AMIModel430(
             "x",
@@ -164,7 +169,7 @@ def test_visa_gc_closes_connection(caplog) -> None:
     )
 
 
-def test_ask_write_local(mock_visa) -> None:
+def test_ask_write_local(mock_visa: MockVisa) -> None:
     # test normal ask and write behavior
     mock_visa.state.set(2)
     assert mock_visa.state.get() == 2
@@ -191,7 +196,7 @@ def test_ask_write_local(mock_visa) -> None:
         assert arg in str(eee.value)
 
 
-def test_visa_backend(mocker, request: FixtureRequest) -> None:
+def test_visa_backend(mocker: "MockerFixture", request: FixtureRequest) -> None:
     rm_mock = mocker.patch("qcodes.instrument.visa.pyvisa.ResourceManager")
 
     address_opened = [None]
