@@ -1,0 +1,5 @@
+Removed deprecated VISA-related APIs from
+:class:`~qcodes.instrument.visa.VisaInstrument`: the ``_address`` property
+(use ``address`` instead) and the ``visalib`` property (use ``visabackend``
+instead). The unused and deprecated ``MockAMI430`` mocker class has also been
+removed.
