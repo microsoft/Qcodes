@@ -52,6 +52,7 @@ from qcodes.parameters import (
     ParameterBase,
     ParameterWithSetpoints,
     ParamSpecBase,
+    StructParameter,
 )
 from qcodes.station import Station
 from qcodes.utils import DelayedKeyboardInterrupt
@@ -1080,6 +1081,8 @@ class Measurement:
                     basis,
                     paramtype,
                 )
+            case StructParameter():
+                self._register_structparameter(parameter, setpoints, basis)
             case ParameterBase() | ParameterWithSetpoints():
                 if paramtype is not None:
                     parameter.paramtype = paramtype
@@ -1356,6 +1359,30 @@ class Measurement:
                 basis,
                 paramtype,
             )
+
+    def _register_structparameter(
+        self,
+        parameter: StructParameter,
+        setpoints: SetpointsType | None,
+        basis: SetpointsType | None,
+    ) -> None:
+        """Register each field of a StructParameter as a separate dataset column.
+
+        The struct parameter itself is not stored in the dataset. Only its
+        individual field parameters are registered as dependents on the
+        supplied setpoints.
+        """
+        for field_param in parameter.field_parameters.values():
+            field_paramtype = field_param.paramtype
+            self._register_parameter(
+                name=field_param.register_name,
+                label=field_param.label,
+                unit=field_param.unit,
+                setpoints=setpoints,
+                basis=basis,
+                paramtype=field_paramtype,
+            )
+            self._registered_parameters.add(field_param)
 
     def register_custom_parameter(
         self: Self,

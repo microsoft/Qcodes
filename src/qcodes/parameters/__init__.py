@@ -89,6 +89,7 @@ from .parameter_base import (
 from .parameter_with_setpoints import ParameterWithSetpoints, expand_setpoints_helper
 from .scaled_paramter import ScaledParameter
 from .specialized_parameters import ElapsedTimeParameter, InstrumentRefParameter
+from .struct_parameter import StructParameter
 from .sweep_values import SweepFixedValues, SweepValues
 from .val_mapping import create_on_off_val_mapping
 
@@ -118,6 +119,7 @@ __all__ = [
     "ParameterSet",
     "ParameterWithSetpoints",
     "ScaledParameter",
+    "StructParameter",
     "SweepFixedValues",
     "SweepValues",
     "combine",
