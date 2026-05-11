@@ -102,7 +102,7 @@ hickle==5.0.3
     # via qcodes-loop
 hypothesis==6.152.4
     # via qcodes (pyproject.toml)
-idna==3.13
+idna==3.14
     # via requests
 imagesize==2.0.0
     # via
