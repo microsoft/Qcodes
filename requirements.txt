@@ -456,7 +456,7 @@ traitlets==5.15.0
     #   nbsphinx
 types-jsonschema==4.26.0.20260508
     # via qcodes (pyproject.toml)
-types-networkx==3.6.1.20260408
+types-networkx==3.6.1.20260508
     # via qcodes (pyproject.toml)
 types-pywin32==311.0.0.20260508
     # via qcodes (pyproject.toml)
