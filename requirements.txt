@@ -22,7 +22,7 @@ beautifulsoup4==4.14.3
     #   nbconvert
 bleach==6.3.0
     # via nbconvert
-broadbean==0.14.0
+broadbean==0.15.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
