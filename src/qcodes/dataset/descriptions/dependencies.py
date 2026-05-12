@@ -53,7 +53,7 @@ class InterDependencies_:  # noqa: PLW1641
         inferences: ParamSpecTree | None = None,
         standalones: tuple[ParamSpecBase, ...] = (),
     ):
-        self._graph: nx.DiGraph[str] = nx.DiGraph()
+        self._graph: nx.DiGraph[str, dict[str, ParamSpecBase]] = nx.DiGraph()
         self.add_dependencies(dependencies)
         self.add_inferences(inferences)
         self.add_standalones(standalones)
@@ -260,7 +260,9 @@ class InterDependencies_:  # noqa: PLW1641
         """
         Return the ParamSpecBase objects of this instance
         """
-        return tuple(paramspec for _, paramspec in self.graph.nodes(data="value"))
+        return tuple(
+            paramspec_dict["value"] for _, paramspec_dict in self.graph.nodes(data=True)
+        )
 
     @property
     def top_level_parameters(self) -> tuple[ParamSpecBase, ...]:
@@ -355,7 +357,7 @@ class InterDependencies_:  # noqa: PLW1641
         return self._node_to_paramspec(name)
 
     @property
-    def graph(self) -> nx.DiGraph[str]:
+    def graph(self) -> nx.DiGraph[str, dict[str, ParamSpecBase]]:
         return self._graph
 
     def to_ipycytoscape_json(self) -> dict[str, list[dict[str, Any]]]:
