@@ -53,6 +53,7 @@ from qcodes.measure_v2.sinks.memory import MemorySink
 if TYPE_CHECKING:
     from collections.abc import Generator, Sequence
 
+    from qcodes.dataset.data_set_protocol import DataSetProtocol
     from qcodes.measure_v2.events import Event, RunStopReason
     from qcodes.measure_v2.messages import Msg
     from qcodes.measure_v2.sinks import DataSink
@@ -87,13 +88,13 @@ class RunHandle:
         run_id: UUID,
         cancel_event: threading.Event,
         future: Future[RunResult],
-        dataset_future: Future[Any],
+        dataset_future: Future[DataSetProtocol | None],
     ) -> None:
         self.run_id = run_id
         self._cancel_event = cancel_event
         self._cancel_reason_box: list[str] = []
         self.future = future
-        self.dataset = dataset_future
+        self.dataset: Future[DataSetProtocol | None] = dataset_future
 
     def cancel(self, reason: str = "user") -> None:
         """Request graceful cancellation.
@@ -132,7 +133,7 @@ class _Submission:
     cancel_event: threading.Event
     cancel_reason_box: list[str]
     future: Future[RunResult]
-    dataset_future: Future[Any]
+    dataset_future: Future[DataSetProtocol | None]
     descriptor: Descriptor | None = None
     state: dict[ParameterBase, Any] = field(default_factory=dict)
     n_rows: int = 0
@@ -240,7 +241,7 @@ class MeasurementEngine:
         run_id = uuid4()
         cancel_event = threading.Event()
         future: Future[RunResult] = Future()
-        dataset_future: Future[Any] = Future()
+        dataset_future: Future[DataSetProtocol | None] = Future()
         sub = _Submission(
             run_id=run_id,
             plan=plan,

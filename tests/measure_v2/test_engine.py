@@ -9,6 +9,7 @@ event ordering — the things L1 tests can't reach.
 from __future__ import annotations
 
 import time
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -28,9 +29,12 @@ from qcodes.measure_v2 import (
 )
 from qcodes.parameters import Parameter, ParameterBase
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 
 @pytest.fixture
-def engine() -> MeasurementEngine:
+def engine() -> Generator[MeasurementEngine, None, None]:
     sink = MemorySink()
     eng = MeasurementEngine(sinks=[sink])
     # Stash the sink on the engine for test convenience.

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -15,9 +16,12 @@ from qcodes.measure_v2 import (
 )
 from qcodes.parameters import Parameter, ParameterBase
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 
 @pytest.fixture
-def engine_with_sqlite(empty_db) -> MeasurementEngine:
+def engine_with_sqlite(empty_db) -> Generator[MeasurementEngine, None, None]:
     del empty_db  # fixture activated for side effects
     sink = SqliteSink(experiment_name="measure_v2_test", sample_name="tracer")
     eng = MeasurementEngine(sinks=[sink])

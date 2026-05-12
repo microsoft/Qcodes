@@ -10,7 +10,7 @@ scans will be added once ``scan_inner_outer`` is implemented.
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, overload
 
 from qcodes.measure_v2.decorators import run
 from qcodes.measure_v2.engine import MeasurementEngine, RunHandle
@@ -61,6 +61,28 @@ def reset_default_engine() -> None:
         if _default_engine is not None:
             _default_engine.shutdown(wait=True, timeout=5.0)
             _default_engine = None
+
+
+@overload
+def scan(
+    *sweeps: AbstractSweep,
+    measure: Sequence[ParameterBase],
+    wait: Literal[True] = ...,
+    name: str = ...,
+    exp: Experiment | None = ...,
+    engine: MeasurementEngine | None = ...,
+) -> DataSetProtocol | None: ...
+
+
+@overload
+def scan(
+    *sweeps: AbstractSweep,
+    measure: Sequence[ParameterBase],
+    wait: Literal[False],
+    name: str = ...,
+    exp: Experiment | None = ...,
+    engine: MeasurementEngine | None = ...,
+) -> RunHandle: ...
 
 
 def scan(

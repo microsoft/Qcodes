@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -20,6 +21,9 @@ from qcodes.measure_v2 import (
 )
 from qcodes.parameters import Parameter, ParameterBase
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 
 def _make_params() -> tuple[ParameterBase, ParameterBase, ParameterBase]:
     g = Parameter("g", initial_value=0.0, set_cmd=None, get_cmd=None)
@@ -35,7 +39,7 @@ def _make_params() -> tuple[ParameterBase, ParameterBase, ParameterBase]:
 
 
 @pytest.fixture
-def memory_engine() -> MeasurementEngine:
+def memory_engine() -> Generator[MeasurementEngine, None, None]:
     sink = MemorySink()
     eng = MeasurementEngine(sinks=[sink])
     eng._test_sink = sink  # type: ignore[attr-defined]
@@ -171,7 +175,7 @@ def test_scan_nd_event_ordering(memory_engine: MeasurementEngine) -> None:
 
 
 @pytest.fixture
-def sqlite_engine(empty_db) -> MeasurementEngine:
+def sqlite_engine(empty_db) -> Generator[MeasurementEngine, None, None]:
     del empty_db
     sink = SqliteSink(experiment_name="measure_v2_2d_test", sample_name="tracer")
     eng = MeasurementEngine(sinks=[sink])

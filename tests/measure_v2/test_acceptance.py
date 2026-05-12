@@ -12,6 +12,7 @@ the architecture has cleared the proof bar end-to-end:
 from __future__ import annotations
 
 import time
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -25,9 +26,14 @@ from qcodes.measure_v2 import (
     SqliteSink,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from qcodes.parameters import ParameterBase
+
 
 @pytest.fixture
-def fresh_engine(empty_db):
+def fresh_engine(empty_db) -> Generator[MeasurementEngine, None, None]:
     """Acceptance engine: SqliteSink + isolated db, separate from default."""
     del empty_db
     sink = SqliteSink(experiment_name="acceptance", sample_name="tracer")
@@ -38,13 +44,15 @@ def fresh_engine(empty_db):
         eng.shutdown(wait=True, timeout=5.0)
 
 
-def _make_params():
+def _make_params() -> tuple[ParameterBase, ParameterBase]:
     g = qc.Parameter("g", initial_value=0.0, set_cmd=None, get_cmd=None)
     i = qc.Parameter("i", get_cmd=lambda: g.cache.get() ** 2)
     return g, i
 
 
-def test_acceptance_blocking_scan_returns_populated_dataset(fresh_engine) -> None:
+def test_acceptance_blocking_scan_returns_populated_dataset(
+    fresh_engine: MeasurementEngine,
+) -> None:
     """Acceptance #1: ``scan(..., wait=True)`` returns a real dataset."""
     g, i = _make_params()
 
@@ -65,7 +73,7 @@ def test_acceptance_blocking_scan_returns_populated_dataset(fresh_engine) -> Non
 
 
 def test_acceptance_nonblocking_cancel_preserves_partial_data(
-    fresh_engine,
+    fresh_engine: MeasurementEngine,
 ) -> None:
     """Acceptance #2: cancel mid-scan; finally ramps g to 0; partial data persisted."""
     g, i = _make_params()
