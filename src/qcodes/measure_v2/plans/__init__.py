@@ -5,6 +5,6 @@ Plan-builders are functions that return plan generators. They never yield
 to open the run.
 """
 
-from qcodes.measure_v2.plans.scan import scan_1d
+from qcodes.measure_v2.plans.scan import scan_1d, scan_nd
 
-__all__ = ["scan_1d"]
+__all__ = ["scan_1d", "scan_nd"]

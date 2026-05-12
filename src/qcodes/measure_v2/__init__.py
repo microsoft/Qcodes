@@ -34,7 +34,7 @@ from qcodes.measure_v2.messages import (
     Set,
     Sleep,
 )
-from qcodes.measure_v2.plans import scan_1d
+from qcodes.measure_v2.plans import scan_1d, scan_nd
 from qcodes.measure_v2.sinks import DataSink, MemorySink, SqliteSink, is_critical
 
 __all__ = [
@@ -65,4 +65,5 @@ __all__ = [
     "run",
     "scan",
     "scan_1d",
+    "scan_nd",
 ]

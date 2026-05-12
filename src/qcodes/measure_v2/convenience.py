@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 
 from qcodes.measure_v2.decorators import run
 from qcodes.measure_v2.engine import MeasurementEngine, RunHandle
-from qcodes.measure_v2.plans import scan_1d
+from qcodes.measure_v2.plans import scan_1d, scan_nd
 from qcodes.measure_v2.sinks import SqliteSink
 
 if TYPE_CHECKING:
@@ -71,16 +71,18 @@ def scan(
     exp: Experiment | None = None,
     engine: MeasurementEngine | None = None,
 ) -> DataSetProtocol | RunHandle | None:
-    """Run a scan.
+    """Run a 1D or N-D scan.
 
-    Tracer scope: one sweep only. The sweep parameter is set across its
-    setpoints; ``measure`` parameters are read at each point; a row is
-    emitted per point. On exit (success, error, or cancel), the swept
-    parameter is set back to 0.0 (the ``scan_1d`` cleanup contract).
+    For a single sweep, delegates to :py:func:`scan_1d`. For two or more
+    sweeps, delegates to :py:func:`scan_nd` (outermost-first ordering).
+    Each ``sweeps[k]`` is set across its setpoints; ``measure`` parameters
+    are read at each innermost point; a row is emitted per innermost point.
+    On exit (success, error, or cancel), every swept parameter is set
+    back to ``0.0`` — the ``scan_nd`` cleanup contract.
 
     Args:
-        *sweeps: Sweeps to perform. Currently exactly one sweep is required.
-        measure: Parameters to read at each setpoint.
+        *sweeps: One or more sweeps to perform, outermost-first.
+        measure: Parameters to read at each innermost setpoint.
         wait: If ``True`` (default), block until the run completes and
             return the resulting dataset. If ``False``, return the
             :py:class:`RunHandle` immediately for non-blocking workflows.
@@ -95,24 +97,25 @@ def scan(
         - If ``wait=False``: a :py:class:`RunHandle` for the running submission.
 
     """
-    if len(sweeps) != 1:
-        raise NotImplementedError(
-            "measure_v2.scan currently supports exactly one sweep "
-            f"(got {len(sweeps)}). Multi-dimensional scans are planned for v1."
-        )
+    if len(sweeps) == 0:
+        raise ValueError("scan requires at least one sweep")
 
-    sweep = sweeps[0]
     eng = engine if engine is not None else default_engine()
 
-    setpoints = (sweep.param,)
+    setpoints = tuple(s.param for s in sweeps)
     measured = tuple(measure)
+
+    if len(sweeps) == 1:
+        inner_plan = scan_1d(sweeps[0], measured)
+    else:
+        inner_plan = scan_nd(*sweeps, measured=measured)
 
     plan = run(
         name=name,
         exp=exp,
         setpoints=setpoints,
         measured=measured,
-    )(scan_1d(sweep, measured))
+    )(inner_plan)
 
     handle = eng.submit(plan)
     if not wait:
