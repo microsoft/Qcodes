@@ -87,9 +87,6 @@ if not TYPE_CHECKING:
         Getting __version__ is slow in an editable install since we have shell out to run git describe.
         Here we only do it lazily if required.
 
-        TODO this means that the type of __version__ is Any, which is not ideal.
-        __version__ is also not listed by dir(qcodes) that could be fixed by overwrting __dir__.
-        see https://peps.python.org/pep-0562/
         """
         if name == "__version__":
             import qcodes._version  # noqa: PLC0415  # lazy import since getting version is slow in editable install.
