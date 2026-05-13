@@ -78,8 +78,6 @@ if config.core.import_legacy_api:
         QCoDeSDeprecationWarning,
     )
 
-__version__: str
-
 if not TYPE_CHECKING:
 
     def __getattr__(name: str) -> Any:
@@ -93,3 +91,10 @@ if not TYPE_CHECKING:
 
             __version__ = qcodes._version.__version__
             return __version__
+else:
+    __version__ = "not_set"
+
+__all__ = [
+    "__version__",
+    "config",
+]
