@@ -91,6 +91,7 @@ if not TYPE_CHECKING:
 
             __version__ = qcodes._version.__version__
             return __version__
+        raise AttributeError(f"module {__name__} has no attribute {name}")
 else:
     __version__ = "not_set"
 
