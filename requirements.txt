@@ -355,7 +355,7 @@ referencing==0.37.0
     #   jsonschema
     #   jsonschema-specifications
     #   types-jsonschema
-requests==2.34.0
+requests==2.34.2
     # via
     #   sphinx
     #   sphinx-favicon
