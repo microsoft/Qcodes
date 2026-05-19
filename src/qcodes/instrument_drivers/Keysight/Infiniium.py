@@ -510,7 +510,10 @@ class KeysightInfiniiumUnboundMeasurement(AbstractMeasurementSubsystem):
         )
 
     @property
-    def root_instrument(self) -> "KeysightInfiniium":
+    def root_instrument(self) -> "KeysightInfiniium":  # type: ignore[override]
+        # ideally this should be a generic type parameter but
+        # for now we override it here. This requies a mypy ignore
+        # because the return type is more specific than the parent class.
         root_instrument = super().root_instrument
         assert isinstance(root_instrument, KeysightInfiniium)
         return root_instrument
