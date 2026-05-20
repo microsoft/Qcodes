@@ -112,7 +112,7 @@ importlib-metadata==8.7.1
     # via opentelemetry-api
 iniconfig==2.3.0
     # via pytest
-intersphinx-registry==0.2605.27
+intersphinx-registry==0.2605.28
     # via qcodes (pyproject.toml)
 ipykernel==7.2.0
     # via
