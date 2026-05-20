@@ -1,0 +1,41 @@
+QCoDeS 0.40.0 (2023-09-14)
+==========================
+
+Improved:
+---------
+
+- Very noisy log messages from `azure.monitor.opentelemetry.exporter` are now
+  by default filtered and not shown in the console logger. This matches the
+  behavior of the OpenCensus exporter. (:pr:`5278`)
+- The InstrumentLoggerAdapter has been updated to store the `instrument_name` and `instrument_type`
+  as fields on log records rather than the instrument it self. This enables opentelemetry to attache
+  the fields to a transmitted LogRecord for better filtering. (:pr:`5297`)
+- In the QCoDeS DataSetProtocol newly created dataset now always have a captured_run_id / captured_counter
+  that matches the run_id / result_counter that they are assigned on creation. Previously these could be
+  out of sync if datasets measured elsewhere had been inserted into the database. (:pr:`5329`)
+- The `pyvisa.ResourceManager` of a VISA instrument is now exposed
+  as `instr.resource_manager`. All VISA instruments will now use `weakref.finalize`
+  to close the visa resource on shutdown of the instrument. This should reduce the
+  chance that an instrument resource is not cleanup correctly on exit. (:pr:`5341`)
+
+
+Improved Drivers:
+-----------------
+
+- Parameters controlling the pid-values, pumps and state of the temperature channels have been added to OxfordTriton.
+  This allows temperature sweeps from base temperature to several Kelvin to be fully automatic. Code to create such sweeps can be found at https://github.com/qdev-dk/MeasFunc/blob/main/measfunc/temperature_sweep.py. (:pr:`5316`)
+
+
+New:
+----
+
+- The QCoDeS Measurement Context manager, DataSaverBuilder and DoND functions have been instrumented as OpenTelemetry traces.
+  This enables users to correlate log messages with the the measurement that they were performed within.
+  See the `OpenTelemetry <https://opentelemetry.io/>`_ documentation for examples of how this can be used.
+
+  The log exporting using OpenCensus within QCoDeS is expected to be deprecated and eventually removed in line
+  with OpenCensus being discontinued. Users that are interested in gathering telemetry of their setups are encouraged
+  to provide their own solution based on OpenTelemetry. (:pr:`5289`)
+- New features: datasaver_builder and dond_into are intermediate measurement extensions designed to fill a gap between
+  the low-level Measurement object and the high-level doNd functions. They allow convenient specification of parameter
+  dependencies for registration and doNd-like syntax while also allowing direct access to the underlying datasaver objects. (:pr:`5294`)

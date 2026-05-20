@@ -1,0 +1,32 @@
+Changelog for QCoDeS 0.10.0
+===========================
+
+The January 2020 release of QCoDeS
+
+
+New:
+----
+* ``initialised_database_at`` contextmanager to create a context for
+  operations on specified DB-file (:pr:`1899`)
+
+Improved:
+_________
+
+* Warning if unknown kwargs are passed to ``_BaseParameter`` (:pr:`1885`)
+* AlazarATS9870: Set default external_trigger_coupling to DC (:pr:`1886`)
+* Removed ramp rate warning in AMI430 instrument driver (:pr:`1897`)
+* Improved 'Writing Drivers' and '15 minutes to QCoDeS' documentation (:pr:`1892`)
+
+
+
+New Instrument drivers:
+_______________________
+
+* Keithley 2602A (:pr:`1889`)
+
+Under the hood:
+_______________
+
+* CI cleanup (:pr:`1890`)
+* Add numpy_stubs to type checking (:pr:`1898`)
+* Block ruamel.yaml version with broken type annotations (:pr:`1900`)
