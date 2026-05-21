@@ -29,7 +29,7 @@ broadbean==0.15.0
     #   qcodes
 cachebox==5.2.3
     # via deepdiff
-certifi==2026.4.22
+certifi==2026.5.20
     # via requests
 cf-xarray==0.11.1
     # via
