@@ -37,7 +37,7 @@ cf-xarray==0.11.1
     #   qcodes
 charset-normalizer==3.4.7
     # via requests
-click==8.4.0
+click==8.4.1
     # via
     #   dask
     #   towncrier
