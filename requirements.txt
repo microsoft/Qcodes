@@ -367,7 +367,7 @@ roman-numerals==4.1.0
     # via roman-numerals-py
 roman-numerals-py==4.1.0
     # via sphinx
-rpds-py==0.30.0
+rpds-py==2026.5.1
     # via
     #   jsonschema
     #   referencing
