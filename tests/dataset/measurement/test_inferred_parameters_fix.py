@@ -13,8 +13,6 @@ import pytest
 
 from qcodes.dataset import Measurement
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
-from qcodes.dataset.experiment_container import Experiment
-from qcodes.instrument_drivers.mock_instruments import DummyInstrument
 from qcodes.parameters import DelegateParameter, ManualParameter, Parameter
 
 if TYPE_CHECKING:

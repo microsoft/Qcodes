@@ -9,9 +9,6 @@ from qcodes.instrument_drivers.Keysight.keysightb1500 import constants
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module import (
     MeasurementNotTaken,
 )
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1511B import (
-    KeysightB1511B,
-)
 
 if TYPE_CHECKING:
     from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base import (

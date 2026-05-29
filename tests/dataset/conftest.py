@@ -4,7 +4,6 @@ import gc
 import os
 import shutil
 import tempfile
-from collections.abc import Generator
 from contextlib import contextmanager
 from enum import StrEnum
 from typing import TYPE_CHECKING

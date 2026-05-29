@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from typing import Unpack
 
     from qcodes.dataset.data_set_protocol import ValuesType
-    from qcodes.parameters.parameter_base import ParamDataType, ParameterBase
+    from qcodes.parameters.parameter_base import ParamDataType
 
 LOG = logging.getLogger(__name__)
 
