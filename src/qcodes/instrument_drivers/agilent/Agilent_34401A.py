@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
 
-from qcodes.instrument import VisaInstrumentKWArgs
 from qcodes.validators import Strings
 
 from ._Agilent_344xxA import Agilent344xxA

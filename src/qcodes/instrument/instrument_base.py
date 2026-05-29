@@ -5,7 +5,6 @@ from __future__ import annotations
 import collections.abc
 import logging
 import warnings
-from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import numpy as np

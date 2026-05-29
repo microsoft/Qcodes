@@ -21,7 +21,7 @@ from qcodes.validators import Validator
 from .instrument_base import InstrumentBase
 
 if TYPE_CHECKING:
-    from typing import Self, Unpack
+    from typing import Unpack
 
     from .instrument_base import InstrumentBaseKWArgs
 
