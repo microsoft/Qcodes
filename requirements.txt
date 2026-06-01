@@ -297,7 +297,7 @@ pyarrow==24.0.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-pyelftools==0.32
+pyelftools==0.33
     # via zhinst-toolkit
 pygments==2.20.0
     # via
