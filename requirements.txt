@@ -27,7 +27,7 @@ broadbean==0.15.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-cachebox==5.2.3
+cachebox==6.0.0
     # via deepdiff
 certifi==2026.5.20
     # via requests
