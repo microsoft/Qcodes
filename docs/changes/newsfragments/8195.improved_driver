@@ -1,0 +1,1 @@
+Correct the lower bound of the span parameter validator of the KeysightPNABase driver to 0 Hz.
