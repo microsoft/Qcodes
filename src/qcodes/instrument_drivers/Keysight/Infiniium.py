@@ -237,7 +237,7 @@ class DSOTraceParam(
         data: npt.NDArray
         data = root_instr.visa_handle.read_binary_values(  # type: ignore[assignment]
             "h",
-            container=npt.NDArray,
+            container=np.ndarray,
             header_fmt="empty",
             expect_termination=True,
             data_points=self._points,
