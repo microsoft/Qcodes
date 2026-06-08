@@ -402,23 +402,29 @@ class Keysight33xxx(KeysightErrorQueueMixin, VisaInstrument):
         no_of_channels = {
             "33210A": 1,
             "33250A": 1,
+            "33510B": 2,
             "33511B": 1,
             "33512B": 2,
+            "33521B": 1,
             "33522B": 2,
             "33611A": 1,
+            "33612A": 2,
+            "33621A": 1,
             "33622A": 2,
-            "33510B": 2,
         }
 
         self._max_freqs = {
             "33210A": 10e6,
+            "33250A": 80e6,
+            "33510B": 20e6,
             "33511B": 20e6,
             "33512B": 20e6,
-            "33250A": 80e6,
+            "33521B": 30e6,
             "33522B": 30e6,
             "33611A": 80e6,
+            "33612A": 80e6,
+            "33621A": 120e6,
             "33622A": 120e6,
-            "33510B": 20e6,
         }
 
         self.num_channels = no_of_channels[self.model]
