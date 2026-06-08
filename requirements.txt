@@ -17,7 +17,7 @@ autodocsumm==0.2.15
     # via qcodes (pyproject.toml)
 babel==2.18.0
     # via sphinx
-beautifulsoup4==4.14.3
+beautifulsoup4==4.15.0
     # via
     #   furo
     #   nbconvert
