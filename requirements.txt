@@ -113,7 +113,7 @@ imagesize==2.0.0
     #   sphinx-favicon
 iniconfig==2.3.0
     # via pytest
-intersphinx-registry==0.2605.28
+intersphinx-registry==0.2606.8
     # via qcodes (pyproject.toml)
 ipykernel==7.2.0
     # via
