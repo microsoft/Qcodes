@@ -469,7 +469,7 @@ types-requests==2.33.0.20260518
     #   types-tqdm
 types-tabulate==0.10.0.20260508
     # via qcodes (pyproject.toml)
-types-tqdm==4.67.3.20260518
+types-tqdm==4.68.0.20260608
     # via qcodes (pyproject.toml)
 typing-extensions==4.15.0
     # via
