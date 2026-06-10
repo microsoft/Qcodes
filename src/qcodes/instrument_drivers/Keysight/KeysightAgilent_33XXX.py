@@ -298,7 +298,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
 
         self.burst_int_period: Parameter = self.add_parameter(
             "burst_int_period",
-            label=(f"Channel {channum} burst internal period"),
+            label=f"Channel {channum} burst internal period",
             set_cmd=f"SOURce{channum}:BURSt:INTernal:PERiod {{}}",
             get_cmd=f"SOURce{channum}:BURSt:INTernal:PERiod?",
             unit="s",
@@ -322,8 +322,6 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
             vals=vals.MultiType(vals.Numbers(1, 10000), vals.Enum("INF", "MIN", "MAX", "DEF")),
         )
         """Sets expected output termination. Should equal the load impedance attached to the output."""
-
-
 
 
 OutputChannel = Keysight33xxxOutputChannel
