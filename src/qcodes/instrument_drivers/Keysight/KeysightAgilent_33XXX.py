@@ -322,6 +322,17 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
             vals=vals.MultiType(vals.Numbers(1, 10000), vals.Enum("INF", "MIN", "MAX", "DEF")),
         )
         """Sets expected output termination. Should equal the load impedance attached to the output."""
+        # Arbitrary waveforms
+        self.set_srate: Parameter = self.add_parameter(
+            'set_srate',
+            label=f'Channel {channum} sample rate',
+            set_cmd=f'SOURce{channum}:FUNCtion:ARBitrary:SRATe {{}}',
+            get_cmd=f'SOURce{channum}:FUNCtion:ARBitrary:SRATe?',
+            get_parser=int,
+            unit='Sa/s',
+            vals=vals.Numbers(1e-6, 6.6e8),
+        )
+        """Sets the sample rate for the arbitrary waveform."""
 
 
 OutputChannel = Keysight33xxxOutputChannel
