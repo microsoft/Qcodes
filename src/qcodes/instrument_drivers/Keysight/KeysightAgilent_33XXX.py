@@ -181,13 +181,13 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         """Parameter pulse_width"""
 
         self.edges: Parameter = self.add_parameter(
-            'edges',
-            label=f'Channel {channum} edges width',
-            set_cmd=f'SOURce{channum}:FUNCtion:PULSe:TRANsition {{}}',
-            get_cmd=f'SOURce{channum}:FUNCtion:PULSe:TRANsition?',
+            "edges",
+            label=f"Channel {channum} edges width",
+            set_cmd=f"SOURce{channum}:FUNCtion:PULSe:TRANsition {{}}",
+            get_cmd=f"SOURce{channum}:FUNCtion:PULSe:TRANsition?",
             get_parser=float,
-            unit='s',
-            vals=vals.MultiType(vals.Numbers(), vals.Enum("MIN", "MAX"))
+            unit="s",
+            vals=vals.MultiType(vals.Numbers(), vals.Enum("MIN", "MAX")),
         )
         """Sets the period for pulse waveforms."""
 
@@ -337,48 +337,53 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         """Sets expected output termination. Should equal the load impedance attached to the output."""
 
         self.auto_range: Parameter = self.add_parameter(
-            'auto_range',
-            label=f'Channel {channum} range mode',
-            set_cmd=f'SOURce{channum}:VOLTage:RANGe:AUTO {{}}',
-            get_cmd=f'SOURce{channum}:VOLTage:RANGe:AUTO?',
-            val_mapping={'ON': 1, 'OFF': 0},
-            vals=vals.Enum('ON', 'OFF'),
+            "auto_range",
+            label=f"Channel {channum} range mode",
+            set_cmd=f"SOURce{channum}:VOLTage:RANGe:AUTO {{}}",
+            get_cmd=f"SOURce{channum}:VOLTage:RANGe:AUTO?",
+            val_mapping={"ON": 1, "OFF": 0},
+            vals=vals.Enum("ON", "OFF"),
         )
         """Disables or enables voltage autoranging for all functions."""
 
         # Arbitrary waveforms
-        if self._parent.model[2] in ["5", "6"]:  # Older models do not support all arbitrary options
+        if self._parent.model[2] in [
+            "5",
+            "6",
+        ]:  # Older models do not support all arbitrary options
             max_srate = self._parent._max_srate[self.model]
             self.set_srate: Parameter = self.add_parameter(
-                'set_srate',
-                label=f'Channel {channum} sample rate',
-                set_cmd=f'SOURce{channum}:FUNCtion:ARBitrary:SRATe {{}}',
-                get_cmd=f'SOURce{channum}:FUNCtion:ARBitrary:SRATe?',
+                "set_srate",
+                label=f"Channel {channum} sample rate",
+                set_cmd=f"SOURce{channum}:FUNCtion:ARBitrary:SRATe {{}}",
+                get_cmd=f"SOURce{channum}:FUNCtion:ARBitrary:SRATe?",
                 get_parser=int,
-                unit='Sa/s',
-                vals=vals.MultiType(vals.Numbers(1e-6, max_srate), vals.Enum("MIN", "MAX", "DEF")),
+                unit="Sa/s",
+                vals=vals.MultiType(
+                    vals.Numbers(1e-6, max_srate), vals.Enum("MIN", "MAX", "DEF")
+                ),
             )
             """Sets the sample rate for the arbitrary waveform."""
 
             self.add_function(
-                'load_arb',
-                call_cmd=f'SOURce{channum}:DATA:ARBitrary {{}}, {{}}',
+                "load_arb",
+                call_cmd=f"SOURce{channum}:DATA:ARBitrary {{}}, {{}}",
                 args=[vals.Strings(), vals.Arrays()],
-                arg_parser=lambda sig_name, arr: (sig_name, ','.join(map(str, arr))),
+                arg_parser=lambda sig_name, arr: (sig_name, ",".join(map(str, arr))),
             )
             """Downloads integer values representing floating point values into waveform volatile memory."""
             # TODO: add DAC support
 
             self.add_function(
-                'set_arb',
-                call_cmd=f'SOURce{channum}:FUNCtion:ARBitrary {{}}',
+                "set_arb",
+                call_cmd=f"SOURce{channum}:FUNCtion:ARBitrary {{}}",
                 args=[vals.Strings()],
             )
             """Selects an arbitrary waveform that has previously been loaded into volatile memory."""
 
             self.add_function(
-                'clear_arb',
-                call_cmd=f'SOURce{channum}:DATA:VOLatile:CLEar',
+                "clear_arb",
+                call_cmd=f"SOURce{channum}:DATA:VOLatile:CLEar",
             )
             """Clears waveform memory and reloads the default waveform."""
 
