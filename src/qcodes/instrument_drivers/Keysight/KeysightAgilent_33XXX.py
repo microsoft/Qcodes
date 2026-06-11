@@ -336,6 +336,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         """Sets the period for pulse waveforms. """
 
         # Arbitrary waveforms
+            max_srate = self._parent._max_srate[self.model]
         self.set_srate: Parameter = self.add_parameter(
             'set_srate',
             label=f'Channel {channum} sample rate',
@@ -343,7 +344,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
             get_cmd=f'SOURce{channum}:FUNCtion:ARBitrary:SRATe?',
             get_parser=int,
             unit='Sa/s',
-            vals=vals.Numbers(1e-6, 6.6e8),
+                vals=vals.MultiType(vals.Numbers(1e-6, max_srate), vals.Enum("MIN", "MAX", "DEF")),
         )
         """Sets the sample rate for the arbitrary waveform."""
 
