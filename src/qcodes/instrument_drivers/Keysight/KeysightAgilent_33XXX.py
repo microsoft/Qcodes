@@ -119,6 +119,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
             vals=vals.Numbers(0, 360),
         )
         """Parameter phase"""
+
         self.amplitude_unit: Parameter = self.add_parameter(
             "amplitude_unit",
             label=f"Channel {channum} amplitude unit",
@@ -148,6 +149,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
             get_parser=float,
         )
         """Parameter offset"""
+
         self.output: Parameter = self.add_parameter(
             "output",
             label=f"Channel {channum} output state",
@@ -174,9 +176,20 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
             set_cmd=f"SOURce{channum}:FUNCtion:PULSE:WIDTh {{}}",
             get_cmd=f"SOURce{channum}:FUNCtion:PULSE:WIDTh?",
             get_parser=float,
-            unit="S",
+            unit="s",
         )
         """Parameter pulse_width"""
+
+        self.edges: Parameter = self.add_parameter(
+            'edges',
+            label=f'Channel {channum} edges width',
+            set_cmd=f'SOURce{channum}:FUNCtion:PULSe:TRANsition {{}}',
+            get_cmd=f'SOURce{channum}:FUNCtion:PULSe:TRANsition?',
+            get_parser=float,
+            unit='s',
+            vals=vals.MultiType(vals.Numbers(), vals.Enum("MIN", "MAX"))
+        )
+        """Sets the period for pulse waveforms."""
 
         # TRIGGER MENU
         self.trigger_source: Parameter = self.add_parameter(
@@ -333,21 +346,8 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         )
         """Disables or enables voltage autoranging for all functions."""
 
-        # Pulse waveforms
-        self.edges: Parameter = self.add_parameter(
-            'edges',
-            label=f'Channel {channum} edges width',
-            set_cmd=f'SOURce{channum}:FUNCtion:PULSe:TRANsition {{}}',
-            get_cmd=f'SOURce{channum}:FUNCtion:PULSe:TRANsition?',
-            get_parser=float,
-            unit='s',
-            vals=vals.MultiType(vals.Numbers(), vals.Enum("MIN", "MAX"))
-        )
-        """Sets the period for pulse waveforms. """
-
         # Arbitrary waveforms
-        # Older models do not support all arbitrary options
-        if self._parent.model[2] in ["5", "6"]:
+        if self._parent.model[2] in ["5", "6"]:  # Older models do not support all arbitrary options
             max_srate = self._parent._max_srate[self.model]
             self.set_srate: Parameter = self.add_parameter(
                 'set_srate',
@@ -367,7 +367,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
                 arg_parser=lambda sig_name, arr: (sig_name, ','.join(map(str, arr))),
             )
             """Downloads integer values representing floating point values into waveform volatile memory."""
-            # ToDo: add DAC support
+            # TODO: add DAC support
 
             self.add_function(
                 'set_arb',
