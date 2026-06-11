@@ -319,7 +319,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
             get_cmd=f"OUTPut{channum}:LOAD?",
             get_parser=partial(val_parser, float),
             unit="ohms",
-            vals=vals.MultiType(vals.Numbers(1, 10000), vals.Enum("INF", "MIN", "MAX", "DEF")),
+            vals=vals.MultiType(vals.Numbers(1, 10000), vals.Enum("INF", "MIN", "MAX")),
         )
         """Sets expected output termination. Should equal the load impedance attached to the output."""
 
@@ -336,10 +336,12 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         """Sets the period for pulse waveforms. """
 
         # Arbitrary waveforms
+        # Older models do not support all arbitrary options
+        if self._parent.model[2] in ["5", "6"]:
             max_srate = self._parent._max_srate[self.model]
-        self.set_srate: Parameter = self.add_parameter(
-            'set_srate',
-            label=f'Channel {channum} sample rate',
+            self.set_srate: Parameter = self.add_parameter(
+                'set_srate',
+                label=f'Channel {channum} sample rate',
             set_cmd=f'SOURce{channum}:FUNCtion:ARBitrary:SRATe {{}}',
             get_cmd=f'SOURce{channum}:FUNCtion:ARBitrary:SRATe?',
             get_parser=int,
