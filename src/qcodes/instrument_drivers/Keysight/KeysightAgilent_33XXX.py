@@ -350,6 +350,28 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         )
         """Sets the sample rate for the arbitrary waveform."""
 
+            self.add_function(
+                'load_arb',
+                call_cmd=f'SOURce{channum}:DATA:ARBitrary {{}}, {{}}',
+                args=[vals.Strings(), vals.Arrays()],
+                arg_parser=lambda sig_name, arr: (sig_name, ','.join(map(str, arr))),
+            )
+            """Downloads integer values representing floating point values into waveform volatile memory."""
+            # ToDo: add DAC support
+
+            self.add_function(
+                'set_arb',
+                call_cmd=f'SOURce{channum}:FUNCtion:ARBitrary {{}}',
+                args=[vals.Strings()],
+            )
+            """Selects an arbitrary waveform that has previously been loaded into volatile memory."""
+
+            self.add_function(
+                'clear_arb',
+                call_cmd=f'SOURce{channum}:DATA:VOLatile:CLEar',
+            )
+            """Clears waveform memory and reloads the default waveform."""
+
 
 OutputChannel = Keysight33xxxOutputChannel
 
