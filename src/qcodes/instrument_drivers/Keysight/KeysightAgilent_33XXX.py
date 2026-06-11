@@ -322,6 +322,19 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
             vals=vals.MultiType(vals.Numbers(1, 10000), vals.Enum("INF", "MIN", "MAX", "DEF")),
         )
         """Sets expected output termination. Should equal the load impedance attached to the output."""
+
+        # Pulse waveforms
+        self.edges: Parameter = self.add_parameter(
+            'edges',
+            label=f'Channel {channum} edges width',
+            set_cmd=f'SOURce{channum}:FUNCtion:PULSe:TRANsition {{}}',
+            get_cmd=f'SOURce{channum}:FUNCtion:PULSe:TRANsition?',
+            get_parser=float,
+            unit='s',
+            vals=vals.MultiType(vals.Numbers(), vals.Enum("MIN", "MAX"))
+        )
+        """Sets the period for pulse waveforms. """
+
         # Arbitrary waveforms
         self.set_srate: Parameter = self.add_parameter(
             'set_srate',
