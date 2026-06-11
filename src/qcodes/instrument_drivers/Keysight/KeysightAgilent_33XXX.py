@@ -449,6 +449,21 @@ class Keysight33xxx(KeysightErrorQueueMixin, VisaInstrument):
             "33622A": 120e6,
         }
 
+        # Refer to instruments User's guides
+        self._max_srate = {
+            "33210A": 50e6,
+            "33250A": 200e6,
+            "33510B": 160e6,
+            "33511B": 160e6,
+            "33512B": 160e6,
+            "33521B": 250e6,
+            "33522B": 250e6,
+            "33611A": 660e6,
+            "33612A": 660e6,
+            "33621A": 1e9,
+            "33622A": 1e9,
+        }
+
         self.num_channels = no_of_channels[self.model]
 
         if dynamic_channels:
