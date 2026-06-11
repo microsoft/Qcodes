@@ -323,6 +323,16 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         )
         """Sets expected output termination. Should equal the load impedance attached to the output."""
 
+        self.auto_range: Parameter = self.add_parameter(
+            'auto_range',
+            label=f'Channel {channum} range mode',
+            set_cmd=f'SOURce{channum}:VOLTage:RANGe:AUTO {{}}',
+            get_cmd=f'SOURce{channum}:VOLTage:RANGe:AUTO?',
+            val_mapping={'ON': 1, 'OFF': 0},
+            vals=vals.Enum('ON', 'OFF'),
+        )
+        """Disables or enables voltage autoranging for all functions."""
+
         # Pulse waveforms
         self.edges: Parameter = self.add_parameter(
             'edges',
@@ -342,13 +352,13 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
             self.set_srate: Parameter = self.add_parameter(
                 'set_srate',
                 label=f'Channel {channum} sample rate',
-            set_cmd=f'SOURce{channum}:FUNCtion:ARBitrary:SRATe {{}}',
-            get_cmd=f'SOURce{channum}:FUNCtion:ARBitrary:SRATe?',
-            get_parser=int,
-            unit='Sa/s',
+                set_cmd=f'SOURce{channum}:FUNCtion:ARBitrary:SRATe {{}}',
+                get_cmd=f'SOURce{channum}:FUNCtion:ARBitrary:SRATe?',
+                get_parser=int,
+                unit='Sa/s',
                 vals=vals.MultiType(vals.Numbers(1e-6, max_srate), vals.Enum("MIN", "MAX", "DEF")),
-        )
-        """Sets the sample rate for the arbitrary waveform."""
+            )
+            """Sets the sample rate for the arbitrary waveform."""
 
             self.add_function(
                 'load_arb',
