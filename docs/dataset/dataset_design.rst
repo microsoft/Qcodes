@@ -75,3 +75,33 @@ We note that the dataset currently exclusively supports storing data in an
 SQLite database. This is not an intrinsic limitation of the dataset and
 measurement layer. It is possible that at a future state support for writing
 to a different backend will be added.
+
+.. _sec:design_split_storage:
+
+Split Raw Data Storage
+======================
+
+As the main SQLite database grows with many datasets, browsing experiments and
+loading metadata can become slower due to the file size. To address this,
+QCoDeS supports an optional **split raw data storage** mode (see
+:ref:`sec:intro_split_raw_data` for user-facing details).
+
+From a design perspective, this feature adds a thin routing layer inside the
+``DataSet`` class without changing any public interfaces:
+
+- A ``_data_conn`` property transparently returns either the main database
+  connection or a per-dataset raw data connection, depending on the
+  configuration.
+- Write paths (``add_results``, ``_BackgroundWriter``) and read paths
+  (``get_parameter_data``, ``DataSetCacheWithDBBackend``, ``number_of_results``,
+  ``__len__``) all go through this single routing point.
+- The per-dataset SQLite file is a lightweight database containing only the
+  results table and numpy type adapters -- no QCoDeS metadata schema.
+- Subscriber triggers (used for real-time data callbacks) are created on the
+  data connection so that they fire regardless of which database holds the
+  results table.
+
+The implementation is contained in ``qcodes.dataset.raw_data_storage`` (helper
+functions) and a handful of additions to ``qcodes.dataset.data_set`` (routing
+logic). The ``Measurement`` context manager, ``DataSaver``, and all export
+functions work without modification.

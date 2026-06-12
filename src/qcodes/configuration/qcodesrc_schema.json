@@ -382,6 +382,16 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Should the data be cached in memory as it is measured. Useful to disable for large datasets to save on memory consumption."
+                },
+                "raw_data_to_separate_db": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "If true, raw measurement data (results tables) will be written to individual per-dataset SQLite files instead of the main database. Metadata remains in the main database."
+                },
+                "raw_data_path": {
+                    "type": "string",
+                    "default": "{db_location}",
+                    "description": "Path to the folder where per-dataset raw data SQLite files are stored. {db_location} is a directory in the same folder as the .db file with a matching name, e.g. for ~/experiments.db raw data files will be stored in ~/experiments_db/"
                 }
             },
             "description": "Settings related to the DataSet and Measurement Context manager",
