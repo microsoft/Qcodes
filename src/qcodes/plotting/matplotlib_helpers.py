@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 import logging
 from typing import TYPE_CHECKING, Any, Literal, cast
 
@@ -126,9 +125,9 @@ def apply_color_scale_limits(
     else:
         extend = "neither"
     _set_colorbar_extend(colorbar, extend)
-    cmap = copy.copy(colorbar.mappable.get_cmap())
-    cmap.set_over(color_over)
-    cmap.set_under(color_under)
+    cmap = colorbar.mappable.get_cmap().with_extremes(
+        over=color_over, under=color_under
+    )
     colorbar.mappable.set_cmap(cmap)
     colorbar.mappable.set_clim(*vlim)
 
