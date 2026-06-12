@@ -66,6 +66,7 @@ from qcodes.dataset.sqlite.queries import (
     get_run_timestamp_from_run_id,
     get_runid_from_guid,
     get_sample_name_from_experiment_id,
+    get_shaped_parameter_data_for_one_paramtree,
     mark_run_complete,
     remove_trigger,
     run_exists,
@@ -98,6 +99,12 @@ from .exporters.export_to_xarray import (
     load_to_xarray_dataset,
     load_to_xarray_dataset_dict,
     xarray_to_h5netcdf_with_complex_numbers,
+)
+from .raw_data_storage import (
+    connect_to_raw_data_db,
+    create_raw_data_db,
+    get_raw_data_db_path,
+    is_raw_data_storage_enabled,
 )
 from .subscriber import _Subscriber
 
@@ -141,22 +148,40 @@ class _BackgroundWriter(Thread):
 
     def run(self) -> None:
         self.conn = connect(self.path)
+        self._raw_data_conns: dict[str, AtomicConnection] = {}
 
         while self.keep_writing:
             item = self.queue.get()
             if item["keys"] == "stop":
                 self.keep_writing = False
                 self.conn.close()
+                for raw_conn in self._raw_data_conns.values():
+                    raw_conn.close()
             elif item["keys"] == "finalize":
                 _WRITERS[self.path].active_datasets.remove(item["values"])
             else:
-                self.write_results(item["keys"], item["values"], item["table_name"])
+                conn = self._get_conn_for_item(item)
+                self.write_results(
+                    conn, item["keys"], item["values"], item["table_name"]
+                )
             self.queue.task_done()
 
+    def _get_conn_for_item(self, item: dict[str, Any]) -> AtomicConnection:
+        raw_data_path = item.get("raw_data_path")
+        if raw_data_path is None:
+            return self.conn
+        if raw_data_path not in self._raw_data_conns:
+            self._raw_data_conns[raw_data_path] = connect_to_raw_data_db(raw_data_path)
+        return self._raw_data_conns[raw_data_path]
+
     def write_results(
-        self, keys: Sequence[str], values: Sequence[list[Any]], table_name: str
+        self,
+        conn: AtomicConnection,
+        keys: Sequence[str],
+        values: Sequence[list[Any]],
+        table_name: str,
     ) -> None:
-        insert_many_values(self.conn, table_name, keys, values)
+        insert_many_values(conn, table_name, keys, values)
 
     def shutdown(self) -> None:
         """
@@ -272,6 +297,7 @@ class DataSet(BaseDataSet):
         self._cache: DataSetCacheWithDBBackend = DataSetCacheWithDBBackend(self)
         self._results: list[dict[str, VALUE]] = []
         self._in_memory_cache = in_memory_cache
+        self._raw_data_conn: AtomicConnection | None = None
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -290,6 +316,13 @@ class DataSet(BaseDataSet):
             self._export_info = ExportInfo.from_str(
                 self.metadata.get("export_info", "")
             )
+            # If this dataset was saved with raw data in a separate db,
+            # re-open that connection for reads.
+            raw_db_path = self._metadata.get("raw_data_db_path")
+            if raw_db_path is not None and Path(raw_db_path).is_file():
+                self._raw_data_conn = connect_to_raw_data_db(
+                    raw_db_path, read_only=read_only
+                )
         else:
             # Actually perform all the side effects needed for the creation
             # of a new dataset. Note that a dataset is created (in the DB)
@@ -359,6 +392,17 @@ class DataSet(BaseDataSet):
         return self._cache
 
     @property
+    def _data_conn(self) -> AtomicConnection:
+        """Connection to use for results-table data operations.
+
+        Returns the separate raw-data connection when split storage is
+        active, otherwise falls back to the main database connection.
+        """
+        if self._raw_data_conn is not None:
+            return self._raw_data_conn
+        return self.conn
+
+    @property
     def run_id(self) -> int:
         return self._run_id
 
@@ -420,7 +464,7 @@ class DataSet(BaseDataSet):
     @property
     def number_of_results(self) -> int:
         sql = f'SELECT COUNT(*) FROM "{self.table_name}"'
-        cursor = atomic_transaction(self.conn, sql)
+        cursor = atomic_transaction(self._data_conn, sql)
         return one(cursor, "COUNT(*)")
 
     @property
@@ -682,11 +726,33 @@ class DataSet(BaseDataSet):
         Perform the actions that must take place once the run has been started
         """
         paramspecs = new_to_old(self._rundescriber.interdeps).paramspecs
+        raw_data_enabled = is_raw_data_storage_enabled()
 
         for spec in paramspecs:
             add_parameter(
-                spec, conn=self.conn, run_id=self.run_id, insert_into_results_table=True
+                spec,
+                conn=self.conn,
+                run_id=self.run_id,
+                insert_into_results_table=True,
             )
+
+        # When raw data split is enabled, create a per-dataset SQLite file
+        # for results data with the full results table.
+        if raw_data_enabled:
+            raw_db_path = get_raw_data_db_path(self.guid)
+            self._raw_data_conn = create_raw_data_db(
+                raw_db_path,
+                self.table_name,
+                self._rundescriber.interdeps.paramspecs,
+            )
+            # Persist the raw data path in metadata so we can find it when
+            # loading the dataset later.
+            raw_path_str = str(raw_db_path)
+            self._metadata["raw_data_db_path"] = raw_path_str
+            with atomic(self.conn) as aconn:
+                add_data_to_dynamic_columns(
+                    aconn, self.run_id, {"raw_data_db_path": raw_path_str}
+                )
 
         desc_str = serial.to_json_for_storage(self.description)
 
@@ -770,14 +836,18 @@ class DataSet(BaseDataSet):
         writer_status = self._writer_status
 
         if writer_status.write_in_background:
-            item = {
+            item: dict[str, Any] = {
                 "keys": list(expected_keys),
                 "values": values,
                 "table_name": self.table_name,
             }
+            if self._raw_data_conn is not None:
+                item["raw_data_path"] = self._raw_data_conn.path_to_dbfile
             writer_status.data_write_queue.put(item)
         else:
-            insert_many_values(self.conn, self.table_name, list(expected_keys), values)
+            insert_many_values(
+                self._data_conn, self.table_name, list(expected_keys), values
+            )
 
     def _raise_if_not_writable(self) -> None:
         if self.pristine:
@@ -869,6 +939,25 @@ class DataSet(BaseDataSet):
 
         else:
             valid_param_names = self._validate_parameters(*params)
+
+        if self._raw_data_conn is not None:
+            # When raw data lives in a separate DB, we bypass
+            # get_parameter_data (which looks up the rundescriber
+            # from the main DB) and call the lower-level function
+            # directly with the rundescriber we already hold.
+            output: ParameterData = {}
+            for param_name in valid_param_names:
+                output[param_name] = get_shaped_parameter_data_for_one_paramtree(
+                    self._raw_data_conn,
+                    self.table_name,
+                    self._rundescriber,
+                    param_name,
+                    start,
+                    end,
+                    callback,
+                )
+            return output
+
         return get_parameter_data(
             self.conn, self.table_name, valid_param_names, start, end, callback
         )
@@ -1225,7 +1314,7 @@ class DataSet(BaseDataSet):
         return get_data_by_tag_and_table_name(self.conn, tag, self.table_name)
 
     def __len__(self) -> int:
-        return length(self.conn, self.table_name)
+        return length(self._data_conn, self.table_name)
 
     def __repr__(self) -> str:
         out = []
@@ -1878,7 +1967,13 @@ def _get_datasetprotocol_from_guid(
     if _check_if_table_found(conn, result_table_name):
         d = DataSet(conn=conn, run_id=run_id)
     else:
-        d = DataSetInMem._load_from_db(conn=conn, guid=guid)
+        # The results table may be absent from the main DB when raw data
+        # is stored in a separate per-dataset SQLite file.
+        metadata = get_metadata_from_run_id(conn, run_id)
+        if metadata.get("raw_data_db_path") is not None:
+            d = DataSet(conn=conn, run_id=run_id)
+        else:
+            d = DataSetInMem._load_from_db(conn=conn, guid=guid)
 
     return d
 
