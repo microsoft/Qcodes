@@ -553,12 +553,15 @@ class DataSetCacheWithDBBackend(DataSetCache["DataSet"]):
             self._loaded_from_completed_ds = True
         if self._data == {}:
             self.prepare()
+        # Use the raw-data connection when the dataset stores results
+        # in a separate per-dataset SQLite file.
+        data_conn = self._dataset._data_conn
         (
             self._write_status,
             self._read_status,
             self._data,
         ) = load_new_data_from_db_and_append(
-            self._dataset.conn,
+            data_conn,
             self._dataset.table_name,
             self.rundescriber,
             self._write_status,
