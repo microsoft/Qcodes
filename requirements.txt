@@ -310,7 +310,7 @@ pygments==2.20.0
     #   sphinx
 pyparsing==3.3.2
     # via matplotlib
-pytest==9.0.3
+pytest==9.1.0
     # via
     #   qcodes (pyproject.toml)
     #   pytest-asyncio
