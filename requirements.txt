@@ -31,7 +31,7 @@ cachebox==5.2.3
     # via deepdiff
 certifi==2026.5.20
     # via requests
-cf-xarray==0.11.1
+cf-xarray==0.11.3
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
