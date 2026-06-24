@@ -1,0 +1,3 @@
+Fixed :meth:`qcodes.dataset.DataSet.to_xarray_dataset` raising an
+``AlignmentError`` when two data variables do not share the same setpoints
+and one of them is stored as a non-grid (multi-index) array parameter.
