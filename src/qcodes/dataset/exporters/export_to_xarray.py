@@ -365,26 +365,32 @@ def load_to_xarray_dataset(
     # unstacking the multi_index into proper independent dimensions (accepting
     # NaN for missing grid points) so that the shared coordinate becomes a
     # plain 1-D dimension in all sub-datasets.
-    multi_index_keys = [
-        k for k, ds in xr_dataset_dict.items() if "multi_index" in ds.dims
-    ]
-    if multi_index_keys:
-        standalone_dims: set[Hashable] = set()
-        for key, ds in xr_dataset_dict.items():
-            if key not in multi_index_keys:
-                standalone_dims.update(ds.dims)
-        if standalone_dims:
-            for key in multi_index_keys:
-                ds = xr_dataset_dict[key]
-                # Coordinates that are components of the multi_index have
-                # "multi_index" as their only dimension.
-                multi_index_level_coords = {
-                    c
-                    for c in ds.coords
-                    if c != "multi_index" and "multi_index" in ds.coords[c].dims
-                }
-                if multi_index_level_coords & standalone_dims:
-                    xr_dataset_dict[key] = ds.unstack("multi_index")
+    #
+    # This only applies when there are at least two variables and there is a
+    # mix of multi_index and non-multi_index sub-datasets, so we short-circuit
+    # when the dataset has only one variable or when all variables share the
+    # same multi_index structure.
+    if len(xr_dataset_dict) > 1:
+        multi_index_keys = [
+            k for k, ds in xr_dataset_dict.items() if "multi_index" in ds.dims
+        ]
+        if multi_index_keys:
+            standalone_dims: set[Hashable] = set()
+            for key, ds in xr_dataset_dict.items():
+                if key not in multi_index_keys:
+                    standalone_dims.update(ds.dims)
+            if standalone_dims:
+                for key in multi_index_keys:
+                    ds = xr_dataset_dict[key]
+                    # Coordinates that are components of the multi_index have
+                    # "multi_index" as their only dimension.
+                    multi_index_level_coords = {
+                        c
+                        for c in ds.coords
+                        if c != "multi_index" and "multi_index" in ds.coords[c].dims
+                    }
+                    if multi_index_level_coords & standalone_dims:
+                        xr_dataset_dict[key] = ds.unstack("multi_index")
 
     # When shapes are inconsistent (e.g. incomplete measurements), different
     # code paths may represent the same setpoint parameter as a coordinate in
