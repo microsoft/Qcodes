@@ -79,10 +79,10 @@ devices:
       chan1 srate:
         default: 4.000000000000000E+04
         getter:
-          q: "SOURce:FUNCtion:ARBitrary:SRATe?"
+          q: "SOURce1:FUNCtion:ARBitrary:SRATe?"
           r: "{:.8E}"
         setter:
-          q: "SOURce:FUNCtion:ARBitrary:SRATe {}"
+          q: "SOURce1:FUNCtion:ARBitrary:SRATe {}"
         specs:
           type: float
 

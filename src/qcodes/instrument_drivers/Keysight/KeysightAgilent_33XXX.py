@@ -357,7 +357,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
                 label=f"Channel {channum} sample rate",
                 set_cmd=f"SOURce{channum}:FUNCtion:ARBitrary:SRATe {{}}",
                 get_cmd=f"SOURce{channum}:FUNCtion:ARBitrary:SRATe?",
-                get_parser=int,
+                get_parser=float,
                 unit="Sa/s",
                 vals=vals.MultiType(
                     vals.Numbers(1e-6, max_srate), vals.Enum("MIN", "MAX", "DEF")
