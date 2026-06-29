@@ -52,6 +52,8 @@ devices:
           r: "{:.8E}"
         setter:
           q: "SOURce1:FUNCtion:PULSe:TRANsition {}"
+        specs:
+          type: float
 
       chan1 load:
         default: 5.000000000000000E+01
@@ -60,6 +62,8 @@ devices:
           r: "{:.8E}"
         setter:
           q: "OUTPut1:LOAD {}"
+        specs:
+          type: float
 
       chan1 auto_range:
         default: 1
@@ -68,6 +72,9 @@ devices:
           r: "{}"
         setter:
           q: "SOURce1:VOLTage:RANGe:AUTO {}"
+        specs:
+          type: int
+          valid: [ 0, 1 ]
 
       chan1 set_srate:
         default: 4.000000000000000E+04
@@ -76,6 +83,8 @@ devices:
           r: "{:.8E}"
         setter:
           q: "SOURce:FUNCtion:ARBitrary:SRATe {}"
+        specs:
+          type: float
 
 resources:
   GPIB::1::INSTR:
