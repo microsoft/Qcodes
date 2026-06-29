@@ -189,7 +189,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
             unit="s",
             vals=vals.MultiType(vals.Numbers(), vals.Enum("MIN", "MAX")),
         )
-        """Sets the period for pulse waveforms."""
+        """Sets the transition times for the leading and trailing edges of the pulse."""
 
         # TRIGGER MENU
         self.trigger_source: Parameter = self.add_parameter(
