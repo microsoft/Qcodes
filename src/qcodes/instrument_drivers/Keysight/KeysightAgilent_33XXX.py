@@ -372,7 +372,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
                 arg_parser=lambda sig_name, arr: (sig_name, ",".join(map(str, arr))),
             )
             """Downloads integer values representing floating point values into waveform volatile memory."""
-            # TODO: add DAC support
+            # TODO: add DAC (Digital-to-Analog Converter) support.
 
             self.add_function(
                 "set_arb",
