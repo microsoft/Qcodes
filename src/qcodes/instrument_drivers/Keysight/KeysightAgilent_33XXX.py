@@ -352,8 +352,8 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
             "6",
         ]:  # Older models do not support all arbitrary options
             max_srate = self._parent._max_srate[self.model]
-            self.set_srate: Parameter = self.add_parameter(
-                "set_srate",
+            self.srate: Parameter = self.add_parameter(
+                "srate",
                 label=f"Channel {channum} sample rate",
                 set_cmd=f"SOURce{channum}:FUNCtion:ARBitrary:SRATe {{}}",
                 get_cmd=f"SOURce{channum}:FUNCtion:ARBitrary:SRATe?",

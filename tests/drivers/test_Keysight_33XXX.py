@@ -93,11 +93,11 @@ def test_auto_range(driver: Keysight33522B) -> None:
     driver.ch1.auto_range("ON")
 
 
-def test_set_srate(driver: Keysight33522B) -> None:
-    assert driver.ch1.set_srate() == 4e04
-    driver.ch1.set_srate(3e04)
-    assert driver.ch1.set_srate() == 3e04
-    driver.ch1.set_srate(4e04)
+def test_srate(driver: Keysight33522B) -> None:
+    assert driver.ch1.srate() == 4e04
+    driver.ch1.srate(3e04)
+    assert driver.ch1.srate() == 3e04
+    driver.ch1.srate(4e04)
 
 
 def test_wrong_model_warns(

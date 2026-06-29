@@ -76,7 +76,7 @@ devices:
           type: int
           valid: [ 0, 1 ]
 
-      chan1 set_srate:
+      chan1 srate:
         default: 4.000000000000000E+04
         getter:
           q: "SOURce:FUNCtion:ARBitrary:SRATe?"
