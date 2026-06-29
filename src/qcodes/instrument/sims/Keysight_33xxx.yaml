@@ -45,6 +45,38 @@ devices:
         setter:
           q: "SOURce1:BURSt:NCYCles {}"
 
+      chan1 edges:
+        default: 4.000000000000000E-09
+        getter:
+          q: "SOURce1:FUNCtion:PULSe:TRANsition?"
+          r: "{:.8E}"
+        setter:
+          q: "SOURce1:FUNCtion:PULSe:TRANsition {}"
+
+      chan1 load:
+        default: 5.000000000000000E+01
+        getter:
+          q: "OUTPut1:LOAD?"
+          r: "{:.8E}"
+        setter:
+          q: "OUTPut1:LOAD {}"
+
+      chan1 auto_range:
+        default: 1
+        getter:
+          q: "SOURce1:VOLTage:RANGe:AUTO?"
+          r: "{}"
+        setter:
+          q: "SOURce1:VOLTage:RANGe:AUTO {}"
+
+      chan1 set_srate:
+        default: 4.000000000000000E+04
+        getter:
+          q: "SOURce:FUNCtion:ARBitrary:SRATe?"
+          r: "{:.8E}"
+        setter:
+          q: "SOURce:FUNCtion:ARBitrary:SRATe {}"
+
 resources:
   GPIB::1::INSTR:
     device: device 1

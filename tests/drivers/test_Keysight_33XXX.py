@@ -70,6 +70,36 @@ def test_burst(driver: Keysight33522B) -> None:
     # assert driver.ch1.burst_ncycles() == 'INF'
 
 
+def test_edges(driver: Keysight33522B) -> None:
+    assert driver.ch1.edges() == 4e-09
+    driver.ch1.edges(5e-09)
+    assert driver.ch1.edges() == 5e-09
+    driver.ch1.edges(4e-09)
+
+
+def test_load(driver: Keysight33522B) -> None:
+    assert driver.ch1.load() == 50
+    driver.ch1.load(100)
+    assert driver.ch1.load() == 100
+    driver.ch1.load("INF")
+    assert driver.ch1.load() == float("inf")
+    driver.ch1.load(50)
+
+
+def test_auto_range(driver: Keysight33522B) -> None:
+    assert driver.ch1.auto_range() == "ON"
+    driver.ch1.auto_range("OFF")
+    assert driver.ch1.auto_range() == "OFF"
+    driver.ch1.auto_range("ON")
+
+
+def test_set_srate(driver: Keysight33522B) -> None:
+    assert driver.ch1.set_srate() == 4e04
+    driver.ch1.set_srate(3e04)
+    assert driver.ch1.set_srate() == 3e04
+    driver.ch1.set_srate(4e04)
+
+
 def test_wrong_model_warns(
     caplog: pytest.LogCaptureFixture, request: pytest.FixtureRequest
 ) -> None:
