@@ -21,7 +21,7 @@ import numpy as np
 
 import qcodes
 from qcodes.dataset.export_config import _expand_export_path
-from qcodes.dataset.sqlite.connection import AtomicConnection
+from qcodes.dataset.sqlite.connection import AtomicConnection, atomic
 from qcodes.dataset.sqlite.database import (
     _adapt_array,
     _adapt_complex,
@@ -29,7 +29,9 @@ from qcodes.dataset.sqlite.database import (
     _convert_array,
     _convert_complex,
     _convert_numeric,
+    connect,
 )
+from qcodes.dataset.sqlite.query_helpers import is_column_in_table
 from qcodes.utils.types import complex_types, numpy_floats, numpy_ints
 
 if TYPE_CHECKING:
@@ -172,3 +174,85 @@ def create_raw_data_db(
         table_name,
     )
     return conn
+
+
+def update_raw_data_paths(
+    db_path: str | Path,
+    new_raw_data_folder: str | Path,
+) -> list[tuple[int, str, str]]:
+    """Update raw data file paths in the main database after files have moved.
+
+    Use this when per-dataset raw data files have been relocated to a new
+    folder but the main database still references the old paths3.
+
+    The function scans all runs that have a ``raw_data_db_path`` metadata
+    entry, verifies that a file with the expected GUID-based name exists in
+    *new_raw_data_folder*, and updates the stored path in the database.
+
+    Args:
+        db_path: Path to the main QCoDeS database file.
+        new_raw_data_folder: The new folder where the per-dataset SQLite
+            files now reside.
+
+    Returns:
+        A list of ``(run_id, old_path, new_path)`` tuples for every run
+        whose path was updated.
+
+    Raises:
+        FileNotFoundError: If the main database file does not exist.
+        FileNotFoundError: If *new_raw_data_folder* does not exist.
+
+    """
+    db_path = Path(db_path)
+    new_raw_data_folder = Path(new_raw_data_folder)
+
+    if not db_path.is_file():
+        raise FileNotFoundError(f"Database file not found: {db_path}")
+    if not new_raw_data_folder.is_dir():
+        raise FileNotFoundError(
+            f"New raw data folder not found: {new_raw_data_folder}"
+        )
+
+    conn = connect(str(db_path))
+
+    if not is_column_in_table(conn, "runs", "raw_data_db_path"):
+        log.info("No raw_data_db_path column found in %s; nothing to update.", db_path)
+        conn.close()
+        return []
+
+    cursor = conn.execute(
+        "SELECT run_id, raw_data_db_path FROM runs "
+        "WHERE raw_data_db_path IS NOT NULL"
+    )
+    rows = cursor.fetchall()
+
+    updated: list[tuple[int, str, str]] = []
+
+    for run_id, old_path_str in rows:
+        old_path = Path(old_path_str)
+        # The per-dataset file name is always <guid>.db — preserved on move
+        new_path = new_raw_data_folder / old_path.name
+
+        if not new_path.is_file():
+            log.warning(
+                "Run %d: expected raw data file %s not found in new folder; skipping.",
+                run_id,
+                new_path,
+            )
+            continue
+
+        if str(new_path) == old_path_str:
+            continue  # already correct
+
+        new_path_str = str(new_path)
+        with atomic(conn) as aconn:
+            aconn.execute(
+                "UPDATE runs SET raw_data_db_path = ? WHERE run_id = ?",
+                (new_path_str, run_id),
+            )
+        updated.append((run_id, old_path_str, new_path_str))
+        log.info("Run %d: updated raw_data_db_path from %s to %s", run_id, old_path_str, new_path_str)
+
+    conn.close()
+    log.info("Updated %d raw data paths in %s", len(updated), db_path)
+    return updated
