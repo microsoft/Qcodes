@@ -18,15 +18,15 @@ import pytest
 
 import qcodes as qc
 from qcodes.dataset import new_data_set, new_experiment
-from qcodes.dataset.data_set import DataSet, load_by_id
-from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.raw_data_storage import (
+from qcodes.dataset._raw_data_storage import (
     connect_to_raw_data_db,
     create_raw_data_db,
     get_raw_data_db_path,
     get_raw_data_folder,
     is_raw_data_storage_enabled,
 )
+from qcodes.dataset.data_set import DataSet, load_by_id
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.sqlite.database import initialise_database
 from qcodes.parameters import ParamSpecBase
 
@@ -156,6 +156,13 @@ class TestDataSetWithSplitRawData:
         ds.mark_completed()
         return ds, results
 
+    @staticmethod
+    def _close_ds(ds: DataSet) -> None:
+        """Close both main and raw data connections."""
+        if ds._raw_data_conn is not None:
+            ds._raw_data_conn.close()
+        ds.conn.close()
+
     def test_raw_data_conn_is_set(self) -> None:
         """When split is enabled, DataSet should have a raw data connection."""
         ds = new_data_set("test-split")
@@ -165,7 +172,7 @@ class TestDataSetWithSplitRawData:
         ds.set_interdependencies(idps)
         ds.mark_started()
         assert ds._raw_data_conn is not None
-        ds.conn.close()
+        self._close_ds(ds)
 
     def test_raw_data_file_created(self, tmp_path: Path) -> None:
         """A per-dataset SQLite file should be created."""
@@ -173,14 +180,14 @@ class TestDataSetWithSplitRawData:
         raw_folder = tmp_path / "raw_data"
         raw_file = raw_folder / f"{ds.guid}.db"
         assert raw_file.is_file()
-        ds.conn.close()
+        self._close_ds(ds)
 
     def test_raw_data_db_path_in_metadata(self) -> None:
         """The path to the raw data file should be stored in metadata."""
         ds, _ = self._make_dataset_with_data()
         assert "raw_data_db_path" in ds.metadata
         assert Path(ds.metadata["raw_data_db_path"]).is_file()
-        ds.conn.close()
+        self._close_ds(ds)
 
     def test_data_is_in_raw_db_not_main(self) -> None:
         """Data should be in the raw data file, not the main DB."""
@@ -203,13 +210,13 @@ class TestDataSetWithSplitRawData:
         cursor = raw_conn.execute(f'SELECT COUNT(*) FROM "{table_name}"')
         raw_count = cursor.fetchone()[0]
         assert raw_count == 5
-        ds.conn.close()
+        self._close_ds(ds)
 
     def test_number_of_results(self) -> None:
         """number_of_results should read from the raw data file."""
         ds, _ = self._make_dataset_with_data(n_rows=7)
         assert ds.number_of_results == 7
-        ds.conn.close()
+        self._close_ds(ds)
 
     def test_get_parameter_data(self) -> None:
         """get_parameter_data should read from the raw data file."""
@@ -222,7 +229,7 @@ class TestDataSetWithSplitRawData:
         np.testing.assert_array_almost_equal(
             data["y"]["y"], np.array([r["y"] for r in results])
         )
-        ds.conn.close()
+        self._close_ds(ds)
 
     def test_cache_loads_from_raw_data(self) -> None:
         """The cache should also read from the raw data file."""
@@ -234,13 +241,13 @@ class TestDataSetWithSplitRawData:
         np.testing.assert_array_almost_equal(
             cache_data["y"]["x"], np.array([r["x"] for r in results])
         )
-        ds.conn.close()
+        self._close_ds(ds)
 
     def test_load_by_id_with_split_data(self) -> None:
         """Loading by ID should automatically use the raw data connection."""
         ds, results = self._make_dataset_with_data(n_rows=3)
         run_id = ds.run_id
-        ds.conn.close()
+        self._close_ds(ds)
 
         # Re-load from the database
         loaded = load_by_id(run_id)
@@ -250,7 +257,7 @@ class TestDataSetWithSplitRawData:
         np.testing.assert_array_almost_equal(
             data["y"]["y"], np.array([r["y"] for r in results])
         )
-        loaded.conn.close()
+        self._close_ds(loaded)
 
     def test_multiple_datasets_split(self) -> None:
         """Multiple datasets should each get their own raw data file."""
@@ -262,8 +269,8 @@ class TestDataSetWithSplitRawData:
         assert ds1._raw_data_conn.path_to_dbfile != ds2._raw_data_conn.path_to_dbfile
         assert ds1.number_of_results == 3
         assert ds2.number_of_results == 5
-        ds1.conn.close()
-        ds2.conn.close()
+        self._close_ds(ds1)
+        self._close_ds(ds2)
 
     def test_metadata_remains_in_main_db(self) -> None:
         """Run metadata should be in the main DB, not the raw data DB."""
@@ -277,7 +284,22 @@ class TestDataSetWithSplitRawData:
         assert row is not None
         assert row[0] == "test-split"
         assert row[1] == 1  # completed
-        ds.conn.close()
+        self._close_ds(ds)
+
+    def test_missing_raw_data_file_raises(self, tmp_path: Path) -> None:
+        """Loading a dataset whose raw data file is missing should raise."""
+        ds, _ = self._make_dataset_with_data(n_rows=3)
+        run_id = ds.run_id
+        raw_path = Path(ds.metadata["raw_data_db_path"])
+        self._close_ds(ds)
+
+        # Delete the raw data file
+        raw_path.unlink()
+        assert not raw_path.exists()
+
+        # Attempting to load should raise FileNotFoundError
+        with pytest.raises(FileNotFoundError, match=r"Raw data file.*not found"):
+            load_by_id(run_id)
 
 
 # ---------------------------------------------------------------------------
