@@ -49,7 +49,7 @@ devices:
         default: 4.000000000000000E-09
         getter:
           q: "SOURce1:FUNCtion:PULSe:TRANsition?"
-          r: "{:.8E}"
+          r: "{:.15E}"
         setter:
           q: "SOURce1:FUNCtion:PULSe:TRANsition {}"
         specs:
@@ -59,7 +59,7 @@ devices:
         default: 5.000000000000000E+01
         getter:
           q: "OUTPut1:LOAD?"
-          r: "{:.8E}"
+          r: "{:.15E}"
         setter:
           q: "OUTPut1:LOAD {}"
         specs:
@@ -80,7 +80,7 @@ devices:
         default: 4.000000000000000E+04
         getter:
           q: "SOURce1:FUNCtion:ARBitrary:SRATe?"
-          r: "{:.8E}"
+          r: "{:.15E}"
         setter:
           q: "SOURce1:FUNCtion:ARBitrary:SRATe {}"
         specs:
