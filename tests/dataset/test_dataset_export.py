@@ -2326,3 +2326,70 @@ def test_incomplete_measurement_with_shared_setpoint(
     assert "signal_1d" in xr_ds.data_vars
     assert "signal_2d" in xr_ds.data_vars
     assert "x" in xr_ds.coords
+
+
+def test_export_to_xarray_dataset_different_setpoints(
+    experiment: Experiment,
+) -> None:
+    """
+    Regression test for https://github.com/microsoft/Qcodes/issues/8232
+
+    Export to xarray should succeed when two data variables do not share the
+    same setpoints.  Specifically, this covers the case where one parameter is
+    an array-type with setpoints (f_stop, freq) that are NOT on a regular grid
+    (so the multi_index path is used), while a second parameter has only the
+    scalar setpoint (f_stop,).  Previously this raised an AlignmentError
+    because xr.merge could not reconcile the different Index objects for the
+    shared 'f_stop' coordinate.
+    """
+    n_pts = 5
+
+    meas = Measurement(exp=experiment)
+    meas.register_custom_parameter("f_stop", paramtype="numeric")
+    meas.register_custom_parameter("freq", paramtype="array")
+    meas.register_custom_parameter(
+        "spectrum", setpoints=("f_stop", "freq"), paramtype="array"
+    )
+    meas.register_custom_parameter("bar", setpoints=("f_stop",), paramtype="numeric")
+
+    f_stop_vals = [10.0, 20.0]
+    with meas.run() as datasaver:
+        for f_stop in f_stop_vals:
+            freqs = np.linspace(0.0, f_stop, n_pts)
+            spectrum = freqs**2
+            bar = f_stop**2
+            datasaver.add_result(
+                ("f_stop", f_stop),
+                ("freq", freqs),
+                ("spectrum", spectrum),
+                ("bar", bar),
+            )
+
+    ds = datasaver.dataset
+
+    # This previously raised:
+    # AlignmentError: cannot align objects on coordinate 'f_stop' because of
+    # conflicting indexes
+    xr_ds = ds.to_xarray_dataset()
+
+    assert "spectrum" in xr_ds.data_vars
+    assert "bar" in xr_ds.data_vars
+    assert "f_stop" in xr_ds.coords
+
+    # bar should be recoverable along the f_stop axis
+    assert set(xr_ds["bar"].dims) == {"f_stop"}
+    np.testing.assert_allclose(
+        xr_ds["bar"].dropna("f_stop").values,
+        np.array([f**2 for f in f_stop_vals]),
+    )
+
+    # spectrum should have f_stop as a dimension (possibly with NaN for
+    # off-grid entries after unstacking the multi_index)
+    assert "f_stop" in xr_ds["spectrum"].dims
+    # Recover spectrum values for each f_stop: drop all-NaN freq slices and
+    # check that the non-NaN values match freq**2
+    for f_stop in f_stop_vals:
+        expected_freqs = np.linspace(0.0, f_stop, n_pts)
+        expected_spectrum = expected_freqs**2
+        actual = xr_ds["spectrum"].sel(f_stop=f_stop).dropna("freq").values
+        np.testing.assert_allclose(actual, expected_spectrum)
