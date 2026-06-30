@@ -17,6 +17,8 @@ from .database_extract_runs import (
     export_datasets_and_create_metadata_db,
     extract_runs_into_db,
 )
+from qcodes.parameters import ParamSpecBase
+
 from .descriptions.dependencies import InterDependencies_, ParamSpecTree
 from .descriptions.param_spec import ParamSpec
 from .descriptions.rundescriber import RunDescriber
@@ -77,6 +79,7 @@ __all__ = [
     "LogSweep",
     "Measurement",
     "ParamSpec",
+    "ParamSpecBase",
     "ParamSpecTree",
     "RunDescriber",
     "SQLiteSettings",
