@@ -17,7 +17,7 @@ from qcodes.utils import DelegateAttributes, full_class
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
-    from typing import NotRequired
+    from typing import NotRequired, Self
 
     from qcodes.instrument.channel import ChannelTuple, InstrumentModule
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
@@ -579,7 +579,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
             return (self,)
 
     @property
-    def root_instrument(self) -> InstrumentBase:
+    def root_instrument(self) -> Self:
         """
         The topmost parent of this module.
 
