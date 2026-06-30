@@ -86,6 +86,12 @@ from qcodes.utils import (
     NumpyJSONEncoder,
 )
 
+from ._raw_data_storage import (
+    connect_to_raw_data_db,
+    create_raw_data_db,
+    get_raw_data_db_path,
+    is_raw_data_storage_enabled,
+)
 from .data_set_cache import DataSetCacheWithDBBackend
 from .data_set_in_memory import DataSetInMem, load_from_file
 from .descriptions.versioning import serialization as serial
@@ -99,12 +105,6 @@ from .exporters.export_to_xarray import (
     load_to_xarray_dataset,
     load_to_xarray_dataset_dict,
     xarray_to_h5netcdf_with_complex_numbers,
-)
-from .raw_data_storage import (
-    connect_to_raw_data_db,
-    create_raw_data_db,
-    get_raw_data_db_path,
-    is_raw_data_storage_enabled,
 )
 from .subscriber import _Subscriber
 
@@ -319,10 +319,17 @@ class DataSet(BaseDataSet):
             # If this dataset was saved with raw data in a separate db,
             # re-open that connection for reads.
             raw_db_path = self._metadata.get("raw_data_db_path")
-            if raw_db_path is not None and Path(raw_db_path).is_file():
-                self._raw_data_conn = connect_to_raw_data_db(
-                    raw_db_path, read_only=read_only
-                )
+            if raw_db_path is not None:
+                if Path(raw_db_path).is_file():
+                    self._raw_data_conn = connect_to_raw_data_db(
+                        raw_db_path, read_only=read_only
+                    )
+                else:
+                    raise FileNotFoundError(
+                        f"Raw data file for dataset {self.guid} not found at "
+                        f"'{raw_db_path}'. The per-dataset SQLite file may "
+                        f"have been moved or deleted."
+                    )
         else:
             # Actually perform all the side effects needed for the creation
             # of a new dataset. Note that a dataset is created (in the DB)
