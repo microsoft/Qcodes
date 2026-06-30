@@ -149,7 +149,7 @@ def create_raw_data_db(
     conn = connect_to_raw_data_db(path)
 
     if paramspecs:
-        columns = ",".join(p.sql_repr() for p in paramspecs)
+        columns = ",".join(f'"{p.name}" {p.type}' for p in paramspecs)
         sql = f"""
         CREATE TABLE IF NOT EXISTS "{table_name}" (
             id INTEGER PRIMARY KEY,
