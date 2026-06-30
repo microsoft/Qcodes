@@ -9,6 +9,7 @@ remains in the main database.
 from __future__ import annotations
 
 import gc
+import shutil
 import sqlite3
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -24,6 +25,7 @@ from qcodes.dataset._raw_data_storage import (
     get_raw_data_db_path,
     get_raw_data_folder,
     is_raw_data_storage_enabled,
+    update_raw_data_paths,
 )
 from qcodes.dataset.data_set import DataSet, load_by_id
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
@@ -335,3 +337,87 @@ class TestDataSetWithoutSplitRawData:
         assert cursor.fetchone()[0] == 1
         assert ds.number_of_results == 1
         ds.conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Tests for update_raw_data_paths helper
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.usefixtures("_raw_data_experiment")
+class TestUpdateRawDataPaths:
+    @staticmethod
+    def _close_ds(ds: DataSet) -> None:
+        if ds._raw_data_conn is not None:
+            ds._raw_data_conn.close()
+        ds.conn.close()
+
+    def test_update_after_move(self, tmp_path: Path) -> None:
+        """Paths should be updated after raw data files are moved."""
+        ds = new_data_set("test-move")
+        x = ParamSpecBase("x", "numeric")
+        y = ParamSpecBase("y", "numeric")
+        idps = InterDependencies_(dependencies={y: (x,)})
+        ds.set_interdependencies(idps)
+        ds.mark_started()
+        ds.add_results([{"x": 1.0, "y": 2.0}])
+        ds.mark_completed()
+
+        raw_path = Path(ds.metadata["raw_data_db_path"])
+        db_path = ds.path_to_db
+        self._close_ds(ds)
+
+        # Move the raw data file to a new folder
+        new_folder = tmp_path / "moved_raw"
+        new_folder.mkdir()
+        new_file = new_folder / raw_path.name
+
+        shutil.move(str(raw_path), str(new_file))
+
+        # Run the update
+        updated = update_raw_data_paths(db_path, new_folder)
+        assert len(updated) == 1
+        run_id, old_path, new_path = updated[0]
+        assert old_path == str(raw_path)
+        assert new_path == str(new_file)
+
+        # Verify the dataset can now be loaded
+        loaded = load_by_id(run_id)
+        assert isinstance(loaded, DataSet)
+        assert loaded.number_of_results == 1
+        data = loaded.get_parameter_data()
+        assert data["y"]["x"][0] == 1.0
+        self._close_ds(loaded)
+
+    def test_update_skips_missing_files(self, tmp_path: Path) -> None:
+        """Runs whose files are not in the new folder should be skipped."""
+        ds = new_data_set("test-skip")
+        x = ParamSpecBase("x", "numeric")
+        y = ParamSpecBase("y", "numeric")
+        idps = InterDependencies_(dependencies={y: (x,)})
+        ds.set_interdependencies(idps)
+        ds.mark_started()
+        ds.add_results([{"x": 1.0, "y": 2.0}])
+        ds.mark_completed()
+
+        db_path = ds.path_to_db
+        self._close_ds(ds)
+
+        # Point to an empty folder — file not there
+        empty_folder = tmp_path / "empty"
+        empty_folder.mkdir()
+
+        updated = update_raw_data_paths(db_path, empty_folder)
+        assert len(updated) == 0
+
+    def test_update_nonexistent_db_raises(self, tmp_path: Path) -> None:
+        """Should raise if the main DB file doesn't exist."""
+        with pytest.raises(FileNotFoundError, match="Database file not found"):
+            update_raw_data_paths(tmp_path / "nonexistent.db", tmp_path)
+
+    def test_update_nonexistent_folder_raises(self, tmp_path: Path) -> None:
+        """Should raise if the new folder doesn't exist."""
+        db_path = tmp_path / "test.db"
+        db_path.touch()
+        with pytest.raises(FileNotFoundError, match="New raw data folder not found"):
+            update_raw_data_paths(db_path, tmp_path / "no_such_folder")
