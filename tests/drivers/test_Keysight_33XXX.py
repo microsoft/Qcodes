@@ -77,13 +77,13 @@ def test_edges(driver: Keysight33522B) -> None:
     driver.ch1.edges(4e-09)
 
 
-def test_load(driver: Keysight33522B) -> None:
-    assert driver.ch1.load() == 50
-    driver.ch1.load(100)
-    assert driver.ch1.load() == 100
-    driver.ch1.load("INF")
-    assert driver.ch1.load() == float("inf")
-    driver.ch1.load(50)
+def test_output_load(driver: Keysight33522B) -> None:
+    assert driver.ch1.output_load() == 50
+    driver.ch1.output_load(100)
+    assert driver.ch1.output_load() == 100
+    driver.ch1.output_load("INF")
+    assert driver.ch1.output_load() == float("inf")
+    driver.ch1.output_load(50)
 
 
 def test_auto_range(driver: Keysight33522B) -> None:

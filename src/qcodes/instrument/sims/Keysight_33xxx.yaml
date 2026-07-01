@@ -55,7 +55,7 @@ devices:
         specs:
           type: float
 
-      chan1 load:
+      chan1 output_load:
         default: 5.000000000000000E+01
         getter:
           q: "OUTPut1:LOAD?"

@@ -325,8 +325,8 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         )
         """The burst period is the time between the starts of consecutive bursts when trigger is immediate."""
 
-        self.load: Parameter = self.add_parameter(
-            "load",
+        self.output_load: Parameter = self.add_parameter(
+            "output_load",
             label=f"Channel {channum} output load",
             set_cmd=f"OUTPut{channum}:LOAD {{}}",
             get_cmd=f"OUTPut{channum}:LOAD?",
