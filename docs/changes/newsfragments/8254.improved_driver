@@ -1,14 +1,15 @@
 Referring to the:
 
 - `Keysight Trueform Series Operating and Service Guide`_
-.. _`Keysight Trueform Series Operating and Service Guide`: https://www.keysight.com/us/en/assets/9018-03714/service-manuals/9018-03714.pdf
-- `Agilent 33210A 10 MHz Function / Arbitrary Waveform Generator User’s Guide`_
-.. _`Agilent 33210A 10 MHz Function / Arbitrary Waveform Generator User’s Guide`: https://www.keysight.com/us/en/support/33210A/33210a-waveform-and-function-generator.html
+- `Agilent 33210A 10 MHz Function / Arbitrary Waveform Generator User's Guide`_
 - `Agilent 33250A 80 MHz Function / Arbitrary Waveform Generator`_
-.. _`Agilent 33250A 80 MHz Function / Arbitrary Waveform Generator`: https://www.keysight.com/us/en/support/33250A/function--arbitrary-waveform-generator-80-mhz.html
 
 Improvements:
 
 - Expanded the list of supported devices for the KeysightAgilent_33XXX driver
 - Added implementations of SCPI commands for working with: ARB signals, edges of Pulse function, output termination, voltage autoranging
 - Created tests for new commands and update sim file
+
+.. _`Keysight Trueform Series Operating and Service Guide`: https://www.keysight.com/us/en/assets/9018-03714/service-manuals/9018-03714.pdf
+.. _`Agilent 33210A 10 MHz Function / Arbitrary Waveform Generator User's Guide`: https://www.keysight.com/us/en/support/33210A/33210a-waveform-and-function-generator.html
+.. _`Agilent 33250A 80 MHz Function / Arbitrary Waveform Generator`: https://www.keysight.com/us/en/support/33250A/function--arbitrary-waveform-generator-80-mhz.html
