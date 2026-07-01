@@ -8,10 +8,14 @@ from .Infiniium import (
 )
 from .Keysight_33210a import Keysight33210A
 from .Keysight_33250a import Keysight33250A
+from .Keysight_33510b import Keysight33510B
 from .Keysight_33511b import Keysight33511B
 from .Keysight_33512b import Keysight33512B
+from .Keysight_33521b import Keysight33521B
 from .Keysight_33522b import Keysight33522B
 from .Keysight_33611a import Keysight33611A
+from .Keysight_33612a import Keysight33612A
+from .Keysight_33621a import Keysight33621A
 from .Keysight_33622a import Keysight33622A
 from .Keysight_34410A_submodules import Keysight34410A
 from .Keysight_34411A_submodules import Keysight34411A
@@ -86,10 +90,14 @@ __all__ = [
     "Keysight344xxATrigger",
     "Keysight33210A",
     "Keysight33250A",
+    "Keysight33510B",
     "Keysight33511B",
     "Keysight33512B",
+    "Keysight33521B",
     "Keysight33522B",
     "Keysight33611A",
+    "Keysight33612A",
+    "Keysight33621A",
     "Keysight33622A",
     "Keysight34410A",
     "Keysight34411A",
