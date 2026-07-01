@@ -5,7 +5,7 @@ accessible-pygments==0.0.5
     # via furo
 alabaster==1.0.0
     # via sphinx
-ast-serialize==0.5.0
+ast-serialize==0.6.0
     # via mypy
 asttokens==3.0.1
     # via stack-data
@@ -171,7 +171,7 @@ lazy-loader==0.5
     # via qcodes-loop
 libcst==1.8.6
     # via qcodes (pyproject.toml)
-librt==0.11.0
+librt==0.12.0
     # via mypy
 locket==1.0.0
     # via partd
@@ -367,7 +367,7 @@ roman-numerals==4.1.0
     # via roman-numerals-py
 roman-numerals-py==4.1.0
     # via sphinx
-rpds-py==2026.5.1
+rpds-py==2026.6.3
     # via
     #   jsonschema
     #   referencing
