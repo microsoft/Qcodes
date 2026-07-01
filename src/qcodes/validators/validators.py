@@ -707,16 +707,19 @@ class MultiType(Validator[Any]):
         1. To allow numbers as well as "off":
 
         >>> MultiType(Numbers(), Enum("off"))
+        <MultiType: Numbers, Enum: {'off'}>
 
         or:
 
         >>> MultiType(Numbers(), Enum("off"), combiner='OR')
+        <MultiType: Numbers, Enum: {'off'}>
 
         2. To require values that are divisible by 0.001 while >=0.002 and <=50000.0
 
         >>> MultiType(PermissiveMultiples(divisor=1e-3),
-        >>>           Numbers(min_value=2e-3, max_value=5e4),
-        >>>           combiner='AND')
+        ...           Numbers(min_value=2e-3, max_value=5e4),
+        ...           combiner='AND')
+        <MultiType: PermissiveMultiples, Multiples of 0.001 to within 1e-09, Numbers 0.002<=v<=50000.0>
 
     Raises:
         TypeError: If no validators provided. Or if any of the provided
@@ -791,6 +794,7 @@ class MultiTypeOr(MultiType):
         To allow numbers as well as "off":
 
         >>> MultiTypeOr(Numbers(), Enum("off"))
+        <MultiTypeOr: Numbers, Enum: {'off'}>
 
     Raises:
         TypeError: If no validators provided. Or if any of the provided
@@ -818,9 +822,9 @@ class MultiTypeAnd(MultiType):
     Example:
         To require values that are divisible by 0.001 while >=0.002 and <=50000.0
 
-        >>> MultiType(PermissiveMultiples(divisor=1e-3),
-        >>>           Numbers(min_value=2e-3, max_value=5e4),
-        >>>           combiner='AND')
+        >>> MultiTypeAnd(PermissiveMultiples(divisor=1e-3),
+        ...              Numbers(min_value=2e-3, max_value=5e4))
+        <MultiTypeAnd: PermissiveMultiples, Multiples of 0.001 to within 1e-09, Numbers 0.002<=v<=50000.0>
 
     Raises:
         TypeError: If no validators provided. Or if any of the provided

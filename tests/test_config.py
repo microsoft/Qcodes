@@ -9,6 +9,7 @@ import pytest
 
 import qcodes
 from qcodes.configuration import Config
+from qcodes.configuration.config import DotDict
 
 VALID_JSON = "{}"
 ENV_KEY = "/dev/random"
@@ -275,3 +276,17 @@ def test_add_and_describe() -> None:
     )
 
     assert desc == expected_desc
+
+
+def test_dotdict_missing_key_raises_attribute_error() -> None:
+    """
+    Test that DotDict raises AttributeError (not KeyError) for
+    missing attributes. This is required for correct behavior of
+    hasattr() and inspect.unwrap() among other things.
+    """
+    d = DotDict({"a": 1})
+    with pytest.raises(AttributeError, match="nonexistent"):
+        d.nonexistent
+    assert not hasattr(d, "__wrapped__")
+    assert hasattr(d, "a")
+    assert d.a == 1
