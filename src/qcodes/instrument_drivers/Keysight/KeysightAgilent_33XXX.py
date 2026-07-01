@@ -119,6 +119,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
             vals=vals.Numbers(0, 360),
         )
         """Parameter phase"""
+
         self.amplitude_unit: Parameter = self.add_parameter(
             "amplitude_unit",
             label=f"Channel {channum} amplitude unit",
@@ -148,6 +149,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
             get_parser=float,
         )
         """Parameter offset"""
+
         self.output: Parameter = self.add_parameter(
             "output",
             label=f"Channel {channum} output state",
@@ -174,9 +176,20 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
             set_cmd=f"SOURce{channum}:FUNCtion:PULSE:WIDTh {{}}",
             get_cmd=f"SOURce{channum}:FUNCtion:PULSE:WIDTh?",
             get_parser=float,
-            unit="S",
+            unit="s",
         )
         """Parameter pulse_width"""
+
+        self.edges: Parameter = self.add_parameter(
+            "edges",
+            label=f"Channel {channum} edges width",
+            set_cmd=f"SOURce{channum}:FUNCtion:PULSe:TRANsition {{}}",
+            get_cmd=f"SOURce{channum}:FUNCtion:PULSe:TRANsition?",
+            get_parser=float,
+            unit="s",
+            vals=vals.MultiType(vals.Numbers(), vals.Enum("MIN", "MAX")),
+        )
+        """Sets the transition times for the leading and trailing edges of the pulse."""
 
         # TRIGGER MENU
         self.trigger_source: Parameter = self.add_parameter(
@@ -298,7 +311,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
 
         self.burst_int_period: Parameter = self.add_parameter(
             "burst_int_period",
-            label=(f"Channel {channum} burst internal period"),
+            label=f"Channel {channum} burst internal period",
             set_cmd=f"SOURce{channum}:BURSt:INTernal:PERiod {{}}",
             get_cmd=f"SOURce{channum}:BURSt:INTernal:PERiod?",
             unit="s",
@@ -311,6 +324,68 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
             ),
         )
         """The burst period is the time between the starts of consecutive bursts when trigger is immediate."""
+
+        self.output_load: Parameter = self.add_parameter(
+            "output_load",
+            label=f"Channel {channum} output load",
+            set_cmd=f"OUTPut{channum}:LOAD {{}}",
+            get_cmd=f"OUTPut{channum}:LOAD?",
+            get_parser=partial(val_parser, float),
+            unit="ohms",
+            vals=vals.MultiType(vals.Numbers(1, 10000), vals.Enum("INF", "MIN", "MAX")),
+        )
+        """Sets expected output termination. Should equal the load impedance attached to the output."""
+
+        self.auto_range: Parameter = self.add_parameter(
+            "auto_range",
+            label=f"Channel {channum} range mode",
+            set_cmd=f"SOURce{channum}:VOLTage:RANGe:AUTO {{}}",
+            get_cmd=f"SOURce{channum}:VOLTage:RANGe:AUTO?",
+            val_mapping={"ON": 1, "OFF": 0},
+            vals=vals.Enum("ON", "OFF"),
+        )
+        """Disables or enables voltage autoranging for all functions."""
+
+        # Arbitrary waveforms
+        if self._parent.model[2] in [
+            "5",
+            "6",
+        ]:  # Older models do not support all arbitrary options
+            max_srate = self._parent._max_srate[self.model]
+            self.srate: Parameter = self.add_parameter(
+                "srate",
+                label=f"Channel {channum} sample rate",
+                set_cmd=f"SOURce{channum}:FUNCtion:ARBitrary:SRATe {{}}",
+                get_cmd=f"SOURce{channum}:FUNCtion:ARBitrary:SRATe?",
+                get_parser=float,
+                unit="Sa/s",
+                vals=vals.MultiType(
+                    vals.Numbers(1e-6, max_srate), vals.Enum("MIN", "MAX", "DEF")
+                ),
+            )
+            """Sets the sample rate for the arbitrary waveform."""
+
+            self.add_function(
+                "load_arb",
+                call_cmd=f"SOURce{channum}:DATA:ARBitrary {{}}, {{}}",
+                args=[vals.Strings(), vals.Arrays()],
+                arg_parser=lambda sig_name, arr: (sig_name, ",".join(map(str, arr))),
+            )
+            """Downloads integer values representing floating point values into waveform volatile memory."""
+            # TODO: add DAC (Digital-to-Analog Converter) support.
+
+            self.add_function(
+                "set_arb",
+                call_cmd=f"SOURce{channum}:FUNCtion:ARBitrary {{}}",
+                args=[vals.Strings()],
+            )
+            """Selects an arbitrary waveform that has previously been loaded into volatile memory."""
+
+            self.add_function(
+                "clear_arb",
+                call_cmd=f"SOURce{channum}:DATA:VOLatile:CLEar",
+            )
+            """Clears waveform memory and reloads the default waveform."""
 
 
 OutputChannel = Keysight33xxxOutputChannel
@@ -402,23 +477,44 @@ class Keysight33xxx(KeysightErrorQueueMixin, VisaInstrument):
         no_of_channels = {
             "33210A": 1,
             "33250A": 1,
+            "33510B": 2,
             "33511B": 1,
             "33512B": 2,
+            "33521B": 1,
             "33522B": 2,
             "33611A": 1,
+            "33612A": 2,
+            "33621A": 1,
             "33622A": 2,
-            "33510B": 2,
         }
 
         self._max_freqs = {
             "33210A": 10e6,
+            "33250A": 80e6,
+            "33510B": 20e6,
             "33511B": 20e6,
             "33512B": 20e6,
-            "33250A": 80e6,
+            "33521B": 30e6,
             "33522B": 30e6,
             "33611A": 80e6,
+            "33612A": 80e6,
+            "33621A": 120e6,
             "33622A": 120e6,
-            "33510B": 20e6,
+        }
+
+        # Refer to instruments User's guides
+        self._max_srate = {
+            "33210A": 50e6,
+            "33250A": 200e6,
+            "33510B": 160e6,
+            "33511B": 160e6,
+            "33512B": 160e6,
+            "33521B": 250e6,
+            "33522B": 250e6,
+            "33611A": 660e6,
+            "33612A": 660e6,
+            "33621A": 1e9,
+            "33622A": 1e9,
         }
 
         self.num_channels = no_of_channels[self.model]
