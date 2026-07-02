@@ -209,9 +209,7 @@ def update_raw_data_paths(
     if not db_path.is_file():
         raise FileNotFoundError(f"Database file not found: {db_path}")
     if not new_raw_data_folder.is_dir():
-        raise FileNotFoundError(
-            f"New raw data folder not found: {new_raw_data_folder}"
-        )
+        raise FileNotFoundError(f"New raw data folder not found: {new_raw_data_folder}")
 
     conn = connect(str(db_path))
 
@@ -221,8 +219,7 @@ def update_raw_data_paths(
         return []
 
     cursor = conn.execute(
-        "SELECT run_id, raw_data_db_path FROM runs "
-        "WHERE raw_data_db_path IS NOT NULL"
+        "SELECT run_id, raw_data_db_path FROM runs WHERE raw_data_db_path IS NOT NULL"
     )
     rows = cursor.fetchall()
 
@@ -251,7 +248,12 @@ def update_raw_data_paths(
                 (new_path_str, run_id),
             )
         updated.append((run_id, old_path_str, new_path_str))
-        log.info("Run %d: updated raw_data_db_path from %s to %s", run_id, old_path_str, new_path_str)
+        log.info(
+            "Run %d: updated raw_data_db_path from %s to %s",
+            run_id,
+            old_path_str,
+            new_path_str,
+        )
 
     conn.close()
     log.info("Updated %d raw data paths in %s", len(updated), db_path)
