@@ -365,6 +365,7 @@ class TestUpdateRawDataPaths:
 
         raw_path = Path(ds.metadata["raw_data_db_path"])
         db_path = ds.path_to_db
+        assert db_path is not None
         self._close_ds(ds)
 
         # Move the raw data file to a new folder
@@ -401,6 +402,7 @@ class TestUpdateRawDataPaths:
         ds.mark_completed()
 
         db_path = ds.path_to_db
+        assert db_path is not None
         self._close_ds(ds)
 
         # Point to an empty folder — file not there
