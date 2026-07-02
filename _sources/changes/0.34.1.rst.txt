@@ -1,0 +1,8 @@
+QCoDeS 0.34.1 (2022-06-14)
+==========================
+
+Breaking Changes:
+-----------------
+
+- Restrictions on instrument names are now less strict than in ``0.34.0``. Submodules are allowed
+  to have names that are not valid identifier as long as the full name is an valid identifier. (:pr:`4257`)
