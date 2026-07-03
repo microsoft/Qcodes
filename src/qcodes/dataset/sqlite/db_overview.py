@@ -128,10 +128,13 @@ def get_db_overview(
     tables to fetch run metadata, avoiding the much more expensive
     ``experiments()`` + ``data_sets()`` enumeration that instantiates a
     ``DataSet`` object per run. It is therefore well suited for listing the
-    contents of databases with many runs.
+    contents of databases with many runs. The (potentially large) snapshot of
+    each run is deliberately not read, as it would slow down building the
+    overview significantly.
 
     The reported number of ``records`` is a best-effort estimate of the number
-    of data points in a run:
+    of data points in a run and may be less precise than
+    ``DataSet.number_of_results``:
 
     * For completed runs the shape information stored in the run description is
       preferred (it is the authoritative final count), falling back to the
