@@ -9,9 +9,6 @@ per run. This avoids the expensive ``experiments()`` + ``data_sets()``
 enumeration and makes it possible to list the contents of databases with many
 thousands of runs almost instantly. It is primarily intended for tools that
 need to display a table of runs (e.g. dataset browsers).
-
-The queries rely on the stable QCoDeS database schema (the ``runs`` and
-``experiments`` tables) which has been unchanged across many QCoDeS versions.
 """
 
 from __future__ import annotations
@@ -19,6 +16,7 @@ from __future__ import annotations
 import datetime
 import json
 import logging
+import sqlite3
 from contextlib import closing, nullcontext
 from typing import TYPE_CHECKING
 
@@ -118,6 +116,7 @@ def _records_from_run_description(run_description_json: str | None) -> int:
 
 def get_db_overview(
     path_to_db: str | Path | None = None,
+    *,
     conn: AtomicConnection | None = None,
     start_run_id: int = 0,
     extra_columns: Sequence[str] | None = None,
@@ -140,8 +139,7 @@ def get_db_overview(
     * For runs that are still in progress the number of rows in the results
       table is preferred (it grows as data is added), falling back to the run
       description shapes.
-    * If neither is available the ``result_counter`` of the run is used, which
-      counts the number of insertions rather than data points.
+    * If neither is available the count is reported as ``0`` (unknown).
 
     Only one of ``path_to_db`` and ``conn`` should be supplied. If a
     ``path_to_db`` is given the database is opened in read-only mode and the
@@ -184,7 +182,7 @@ def get_db_overview(
         query = f"""
             SELECT r.run_id, e.name, e.sample_name, r.name,
                    r.run_timestamp, r.completed_timestamp,
-                   r.result_counter, r.guid, r.result_table_name,
+                   r.guid, r.result_table_name,
                    r.run_description{extra_select}
             FROM runs r
             JOIN experiments e ON r.exp_id = e.exp_id
@@ -194,41 +192,44 @@ def get_db_overview(
 
         try:
             rows = c.execute(query, (start_run_id,)).fetchall()
-        except Exception as e:
+        except sqlite3.Error as e:
             log.warning("Could not query database overview: %s", e)
             return overview
 
-        # ``result_counter`` in the runs table counts INSERT calls, not data
-        # points. For the ``array`` paramtype a single INSERT can contain many
-        # data points, so the real row count of the results table is queried
-        # separately.
-        result_tables = {row[8] for row in rows if row[8]}
+        # ``result_counter`` in the runs table is the run's ordinal within its
+        # experiment, not a data-point count, so it is not usable here. For the
+        # ``array`` paramtype a single INSERT can also contain many data points.
+        # The real number of data points is therefore the row count of the
+        # results table, queried separately.
+        result_tables = {row[7] for row in rows if row[7]}
         row_counts: dict[str, int] = {}
         for table in result_tables:
             try:
-                count = c.execute(f'SELECT COUNT(*) FROM "{table}"').fetchone()
-            except Exception:
-                continue  # results table may not exist yet
-            row_counts[table] = count[0] if count else 0
+                (count,) = c.execute(f'SELECT COUNT(*) FROM "{table}"').fetchone()
+            except sqlite3.Error:
+                continue  # results table may not exist (yet)
+            row_counts[table] = count
 
-        n_fixed = 10  # number of columns selected before ``extra_columns``
+        n_fixed = 9  # number of columns selected before ``extra_columns``
         for row in rows:
             run_id = row[0]
             started_date, started_time = _format_timestamp(row[4])
             completed_date, completed_time = _format_timestamp(row[5])
-            result_table = row[8] or ""
+            result_table = row[7] or ""
             is_completed = row[5] is not None and row[5] != 0
 
+            # The record count is a best-effort data-point count. For completed
+            # runs the run-description shapes are the authoritative final count;
+            # for in-progress runs the live results-table row count is preferred
+            # as it grows while data is added. ``0`` means "unknown".
             if is_completed:
-                records = _records_from_run_description(row[9])
+                records = _records_from_run_description(row[8])
                 if records == 0:
                     records = row_counts.get(result_table, 0)
             else:
                 records = row_counts.get(result_table, 0)
                 if records == 0:
-                    records = _records_from_run_description(row[9])
-            if records == 0:
-                records = row[6] or 0
+                    records = _records_from_run_description(row[8])
 
             entry: RunOverviewDict = {
                 "run_id": run_id,
@@ -240,12 +241,15 @@ def get_db_overview(
                 "completed_date": completed_date,
                 "completed_time": completed_time,
                 "records": records,
-                "guid": row[7] or "",
+                "guid": row[6] or "",
             }
             if valid_extra_columns:
                 extra = {
                     col: row[n_fixed + i] for i, col in enumerate(valid_extra_columns)
                 }
+                # The keys of ``extra`` are only known at runtime (they are the
+                # user-supplied ``extra_columns``), so they cannot be part of
+                # the closed ``RunOverviewDict`` definition.
                 entry.update(extra)  # type: ignore[typeddict-item]
 
             overview[run_id] = entry
