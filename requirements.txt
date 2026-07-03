@@ -471,7 +471,7 @@ types-tabulate==0.10.0.20260508
     # via qcodes (pyproject.toml)
 types-tqdm==4.68.0.20260608
     # via qcodes (pyproject.toml)
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   qcodes (pyproject.toml)
     #   beautifulsoup4
