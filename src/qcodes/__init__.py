@@ -65,6 +65,7 @@ from qcodes.parameters import (
     Parameter,
     ParameterWithSetpoints,
     ScaledParameter,
+    StructParameter,
     SweepFixedValues,
     SweepValues,
     combine,
