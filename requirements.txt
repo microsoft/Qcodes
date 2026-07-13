@@ -7,7 +7,7 @@ alabaster==1.0.0
     # via sphinx
 ast-serialize==0.6.0
     # via mypy
-asttokens==3.0.1
+asttokens==3.0.2
     # via stack-data
 attrs==26.1.0
     # via
