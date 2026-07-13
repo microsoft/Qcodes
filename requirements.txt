@@ -293,7 +293,7 @@ psutil==7.2.2
     #   ipython
 pure-eval==0.2.3
     # via stack-data
-pyarrow==24.0.0
+pyarrow==25.0.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
