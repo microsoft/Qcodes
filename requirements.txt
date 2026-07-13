@@ -62,7 +62,7 @@ coverage==7.15.1
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2026.6.0
+dask==2026.7.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
