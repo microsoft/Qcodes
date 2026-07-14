@@ -1,4 +1,12 @@
-Importing the parameter classes (such as ``Parameter``, ``ManualParameter`` and
+Importing the short hand aliases (such as ``Parameter``, ``Measurement``,
+``Instrument``, ``Monitor`` and ``Station``) from the top level ``qcodes``
+namespace is now deprecated and emits a ``QCoDeSDeprecationWarning``. Import
+these names from their respective submodules (for example ``qcodes.parameters``,
+``qcodes.dataset`` or ``qcodes.station``) instead. The submodules themselves
+(such as ``qcodes.dataset`` and ``qcodes.instrument``) remain accessible from the
+top level ``qcodes`` namespace and are not deprecated.
+
+Similarly, importing the parameter classes (such as ``Parameter``, ``ManualParameter`` and
 ``DelegateParameter``) from ``qcodes.instrument`` is now deprecated and emits a
 ``QCoDeSDeprecationWarning``. Import these names from ``qcodes.parameters``
 instead. The names remain available from ``qcodes.instrument`` at runtime for

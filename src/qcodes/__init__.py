@@ -25,13 +25,13 @@ if config.core.import_legacy_api:
     )
 
 # The following names are re-exported for backwards compatibility as short hand
-# for the objects in their respective submodules. Importing them eagerly here
-# would pull ``qcodes.dataset``, ``qcodes.instrument``, ``qcodes.parameters``,
+# for the objects in their respective submodules. Importing them from the top
+# level ``qcodes`` namespace is deprecated (import them from the submodule
+# instead); they are provided lazily via a module level ``__getattr__`` that
+# emits a ``QCoDeSDeprecationWarning``. Importing them eagerly here would also
+# pull ``qcodes.dataset``, ``qcodes.instrument``, ``qcodes.parameters``,
 # ``qcodes.monitor`` and ``qcodes.station`` into a single large import cycle at
-# type-check time (which also triggers an internal error in mypy >= 2.2). These
-# short hands are discouraged anyway, so they are provided lazily via a module
-# level ``__getattr__`` and are intentionally not statically typed. Import the
-# names from their respective submodules to get proper type information.
+# type-check time (which triggers an internal error in mypy >= 2.2).
 _LAZY_NAME_TO_MODULE = (
     {
         name: "qcodes.dataset"
@@ -92,10 +92,22 @@ _LAZY_NAME_TO_MODULE = (
 )
 
 
-# ``qcodes.validators`` is a public submodule but importing it eagerly here is
-# not necessary; it is exposed lazily so that ``import qcodes`` stays cheap and
-# does not force the submodule (and its dependencies) to be imported.
-_LAZY_SUBMODULES = frozenset({"validators"})
+# These public submodules are exposed lazily so that ``import qcodes`` stays
+# cheap and does not force the submodules (and their dependencies) to be
+# imported. Accessing them is not deprecated. The submodules that the deprecated
+# short hands above live in are included here so that ``qcodes.dataset`` and
+# friends keep working as submodule accessors once the deprecated short hands are
+# eventually removed.
+_LAZY_SUBMODULES = frozenset(
+    {
+        "validators",
+        "dataset",
+        "instrument",
+        "parameters",
+        "monitor",
+        "station",
+    }
+)
 
 
 # The lazy ``__getattr__`` is intentionally hidden from static type checkers via
@@ -109,5 +121,11 @@ if not TYPE_CHECKING:
             return importlib.import_module(f"{__name__}.{name}")
         module_name = _LAZY_NAME_TO_MODULE.get(name)
         if module_name is not None:
+            warnings.warn(
+                f"Importing {name!r} from the top level {__name__!r} namespace "
+                f"is deprecated. Import it from {module_name!r} instead.",
+                QCoDeSDeprecationWarning,
+                stacklevel=2,
+            )
             return getattr(importlib.import_module(module_name), name)
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
