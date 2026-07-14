@@ -1,7 +1,7 @@
 import atexit
 import importlib
 import warnings
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from qcodes.utils import QCoDeSDeprecationWarning
 
@@ -53,13 +53,19 @@ _DEPRECATED_PARAMETER_NAMES = frozenset(
 )
 
 
-def __getattr__(name: str) -> Any:
-    if name in _DEPRECATED_PARAMETER_NAMES:
-        warnings.warn(
-            f"Importing {name!r} from {__name__!r} is deprecated. "
-            f"Import it from 'qcodes.parameters' instead.",
-            QCoDeSDeprecationWarning,
-            stacklevel=2,
-        )
-        return getattr(importlib.import_module("qcodes.parameters"), name)
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+# The lazy ``__getattr__`` is intentionally hidden from static type checkers via
+# ``if not TYPE_CHECKING`` so that importing these deprecated names from
+# ``qcodes.instrument`` is reported as an unknown attribute; import them from
+# ``qcodes.parameters`` instead.
+if not TYPE_CHECKING:
+
+    def __getattr__(name: str) -> Any:
+        if name in _DEPRECATED_PARAMETER_NAMES:
+            warnings.warn(
+                f"Importing {name!r} from {__name__!r} is deprecated. "
+                f"Import it from 'qcodes.parameters' instead.",
+                QCoDeSDeprecationWarning,
+                stacklevel=2,
+            )
+            return getattr(importlib.import_module("qcodes.parameters"), name)
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

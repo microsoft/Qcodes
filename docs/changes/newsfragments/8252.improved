@@ -2,4 +2,5 @@ Importing the parameter classes (such as ``Parameter``, ``ManualParameter`` and
 ``DelegateParameter``) from ``qcodes.instrument`` is now deprecated and emits a
 ``QCoDeSDeprecationWarning``. Import these names from ``qcodes.parameters``
 instead. The names remain available from ``qcodes.instrument`` at runtime for
-backwards compatibility.
+backwards compatibility but are hidden from static type checkers, so importing
+them from ``qcodes.instrument`` is reported as an unknown attribute.

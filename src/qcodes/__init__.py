@@ -2,7 +2,7 @@
 
 import importlib
 import warnings
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import qcodes._version
 import qcodes.configuration as qcconfig
@@ -98,10 +98,16 @@ _LAZY_NAME_TO_MODULE = (
 _LAZY_SUBMODULES = frozenset({"validators"})
 
 
-def __getattr__(name: str) -> Any:
-    if name in _LAZY_SUBMODULES:
-        return importlib.import_module(f"{__name__}.{name}")
-    module_name = _LAZY_NAME_TO_MODULE.get(name)
-    if module_name is not None:
-        return getattr(importlib.import_module(module_name), name)
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+# The lazy ``__getattr__`` is intentionally hidden from static type checkers via
+# ``if not TYPE_CHECKING`` so that these discouraged short hands are reported as
+# unknown attributes (rather than typed as ``Any``); import the names from their
+# respective submodules to get proper type information.
+if not TYPE_CHECKING:
+
+    def __getattr__(name: str) -> Any:
+        if name in _LAZY_SUBMODULES:
+            return importlib.import_module(f"{__name__}.{name}")
+        module_name = _LAZY_NAME_TO_MODULE.get(name)
+        if module_name is not None:
+            return getattr(importlib.import_module(module_name), name)
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
