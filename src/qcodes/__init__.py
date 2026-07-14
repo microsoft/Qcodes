@@ -1,12 +1,13 @@
 """Set up the main qcodes namespace."""
 
-# ruff: noqa: F401, E402
+# ruff: noqa: E402
 # This module still contains a lot of short hand imports
 # since these imports are discouraged and they are officially
 # added elsewhere under their respective submodules we cannot add
 # them to __all__ here so silence the warning.
 
 # config
+import importlib
 import warnings
 from typing import Any
 
@@ -22,57 +23,7 @@ config: qcconfig.Config = qcconfig.Config()
 
 conditionally_start_all_logging()
 
-import atexit
-
 import qcodes.validators
-from qcodes.dataset import (
-    Measurement,
-    ParamSpec,
-    SQLiteSettings,
-    experiments,
-    get_guids_by_run_spec,
-    initialise_database,
-    initialise_or_create_database_at,
-    initialised_database_at,
-    load_by_counter,
-    load_by_guid,
-    load_by_id,
-    load_by_run_spec,
-    load_experiment,
-    load_experiment_by_name,
-    load_last_experiment,
-    load_or_create_experiment,
-    new_data_set,
-    new_experiment,
-)
-from qcodes.instrument import (
-    ChannelList,
-    ChannelTuple,
-    Instrument,
-    InstrumentChannel,
-    IPInstrument,
-    VisaInstrument,
-    find_or_create_instrument,
-)
-from qcodes.monitor import Monitor
-from qcodes.parameters import (
-    ArrayParameter,
-    CombinedParameter,
-    DelegateParameter,
-    Function,
-    ManualParameter,
-    MultiParameter,
-    Parameter,
-    ParameterWithSetpoints,
-    ScaledParameter,
-    SweepFixedValues,
-    SweepValues,
-    combine,
-)
-from qcodes.station import Station
-
-# ensure to close all instruments when interpreter is closed
-atexit.register(Instrument.close_all)
 
 if config.core.import_legacy_api:
     warnings.warn(
@@ -81,3 +32,77 @@ if config.core.import_legacy_api:
         "Please avoid setting this in your `qcodesrc.json` config file.",
         QCoDeSDeprecationWarning,
     )
+
+# The following names are re-exported for backwards compatibility as short hand
+# for the objects in their respective submodules. Importing them eagerly here
+# would pull ``qcodes.dataset``, ``qcodes.instrument``, ``qcodes.parameters``,
+# ``qcodes.monitor`` and ``qcodes.station`` into a single large import cycle at
+# type-check time (which also triggers an internal error in mypy >= 2.2). These
+# short hands are discouraged anyway, so they are provided lazily via a module
+# level ``__getattr__`` and are intentionally not statically typed. Import the
+# names from their respective submodules to get proper type information.
+_LAZY_NAME_TO_MODULE = (
+    {
+        name: "qcodes.dataset"
+        for name in (
+            "Measurement",
+            "ParamSpec",
+            "SQLiteSettings",
+            "experiments",
+            "get_guids_by_run_spec",
+            "initialise_database",
+            "initialise_or_create_database_at",
+            "initialised_database_at",
+            "load_by_counter",
+            "load_by_guid",
+            "load_by_id",
+            "load_by_run_spec",
+            "load_experiment",
+            "load_experiment_by_name",
+            "load_last_experiment",
+            "load_or_create_experiment",
+            "new_data_set",
+            "new_experiment",
+        )
+    }
+    | {
+        name: "qcodes.instrument"
+        for name in (
+            "ChannelList",
+            "ChannelTuple",
+            "Instrument",
+            "InstrumentChannel",
+            "IPInstrument",
+            "VisaInstrument",
+            "find_or_create_instrument",
+        )
+    }
+    | {
+        name: "qcodes.parameters"
+        for name in (
+            "ArrayParameter",
+            "CombinedParameter",
+            "DelegateParameter",
+            "Function",
+            "ManualParameter",
+            "MultiParameter",
+            "Parameter",
+            "ParameterWithSetpoints",
+            "ScaledParameter",
+            "SweepFixedValues",
+            "SweepValues",
+            "combine",
+        )
+    }
+    | {
+        "Monitor": "qcodes.monitor",
+        "Station": "qcodes.station",
+    }
+)
+
+
+def __getattr__(name: str) -> Any:
+    module_name = _LAZY_NAME_TO_MODULE.get(name)
+    if module_name is not None:
+        return getattr(importlib.import_module(module_name), name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -1,0 +1,8 @@
+Importing the top level ``qcodes`` namespace no longer eagerly imports the
+``dataset``, ``instrument``, ``parameters``, ``monitor`` and ``station``
+submodules. The discouraged short hand aliases (such as ``qcodes.Parameter``
+and ``qcodes.Measurement``) are still available at runtime via a lazy module
+level ``__getattr__`` but are intentionally no longer seen by static type
+checkers; import the names from their respective submodules to retain type
+information. This breaks a large import cycle spanning the parameters, dataset
+and instrument packages that triggered an internal error in ``mypy`` 2.2.

@@ -1,5 +1,7 @@
 # left here for backwards compatibility
 # but not part of the api officially
+import atexit
+
 from qcodes.parameters import (  # noqa: F401
     ArrayParameter,
     CombinedParameter,
@@ -20,6 +22,11 @@ from .instrument import Instrument, find_or_create_instrument
 from .instrument_base import InstrumentBase, InstrumentBaseKWArgs
 from .ip import IPInstrument
 from .visa import VisaInstrument, VisaInstrumentKWArgs
+
+# ensure that all instruments are closed when the interpreter is shut down.
+# this is registered here rather than in ``qcodes.__init__`` so that importing
+# the top level ``qcodes`` package does not eagerly import ``qcodes.instrument``.
+atexit.register(Instrument.close_all)
 
 __all__ = [
     "ChannelList",
