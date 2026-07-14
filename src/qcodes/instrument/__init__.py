@@ -1,21 +1,9 @@
-# left here for backwards compatibility
-# but not part of the api officially
 import atexit
+import importlib
+import warnings
+from typing import Any
 
-from qcodes.parameters import (  # noqa: F401
-    ArrayParameter,
-    CombinedParameter,
-    DelegateParameter,
-    Function,
-    ManualParameter,
-    MultiParameter,
-    Parameter,
-    ParameterWithSetpoints,
-    ScaledParameter,
-    SweepFixedValues,
-    SweepValues,
-    combine,
-)
+from qcodes.utils import QCoDeSDeprecationWarning
 
 from .channel import ChannelList, ChannelTuple, InstrumentChannel, InstrumentModule
 from .instrument import Instrument, find_or_create_instrument
@@ -41,3 +29,37 @@ __all__ = [
     "VisaInstrumentKWArgs",
     "find_or_create_instrument",
 ]
+
+# The following parameter classes used to be re-exported from
+# ``qcodes.instrument`` for backwards compatibility. They now live in
+# ``qcodes.parameters`` and importing them from here is deprecated. They are
+# provided lazily via a module level ``__getattr__`` that emits a deprecation
+# warning; import them from ``qcodes.parameters`` instead.
+_DEPRECATED_PARAMETER_NAMES = frozenset(
+    {
+        "ArrayParameter",
+        "CombinedParameter",
+        "DelegateParameter",
+        "Function",
+        "ManualParameter",
+        "MultiParameter",
+        "Parameter",
+        "ParameterWithSetpoints",
+        "ScaledParameter",
+        "SweepFixedValues",
+        "SweepValues",
+        "combine",
+    }
+)
+
+
+def __getattr__(name: str) -> Any:
+    if name in _DEPRECATED_PARAMETER_NAMES:
+        warnings.warn(
+            f"Importing {name!r} from {__name__!r} is deprecated. "
+            f"Import it from 'qcodes.parameters' instead.",
+            QCoDeSDeprecationWarning,
+            stacklevel=2,
+        )
+        return getattr(importlib.import_module("qcodes.parameters"), name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
