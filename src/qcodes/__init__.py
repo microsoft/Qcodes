@@ -1,12 +1,5 @@
 """Set up the main qcodes namespace."""
 
-# ruff: noqa: E402
-# This module still contains a lot of short hand imports
-# since these imports are discouraged and they are officially
-# added elsewhere under their respective submodules we cannot add
-# them to __all__ here so silence the warning.
-
-# config
 import importlib
 import warnings
 from typing import Any
@@ -22,8 +15,6 @@ __version__ = qcodes._version.__version__
 config: qcconfig.Config = qcconfig.Config()
 
 conditionally_start_all_logging()
-
-import qcodes.validators
 
 if config.core.import_legacy_api:
     warnings.warn(
@@ -101,7 +92,15 @@ _LAZY_NAME_TO_MODULE = (
 )
 
 
+# ``qcodes.validators`` is a public submodule but importing it eagerly here is
+# not necessary; it is exposed lazily so that ``import qcodes`` stays cheap and
+# does not force the submodule (and its dependencies) to be imported.
+_LAZY_SUBMODULES = frozenset({"validators"})
+
+
 def __getattr__(name: str) -> Any:
+    if name in _LAZY_SUBMODULES:
+        return importlib.import_module(f"{__name__}.{name}")
     module_name = _LAZY_NAME_TO_MODULE.get(name)
     if module_name is not None:
         return getattr(importlib.import_module(module_name), name)
