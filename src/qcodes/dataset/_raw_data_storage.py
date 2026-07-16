@@ -15,6 +15,7 @@ from __future__ import annotations
 import logging
 import os
 import sqlite3
+from contextlib import closing
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -33,6 +34,10 @@ from qcodes.dataset.sqlite.database import (
     _convert_complex,
     _convert_numeric,
     connect,
+)
+from qcodes.dataset.sqlite.queries import (
+    get_datasets_with_raw_data_path,
+    remove_dataset_from_db,
 )
 from qcodes.dataset.sqlite.query_helpers import is_column_in_table
 from qcodes.utils.types import complex_types, numpy_floats, numpy_ints
@@ -306,37 +311,23 @@ class CleanupResult:
     errors: list[tuple[int, Exception]] = field(default_factory=list)
 
 
-def _get_datasets_with_raw_data(
+def _build_dataset_info_list(
     conn: AtomicConnection,
 ) -> list[DatasetInfo]:
-    """Query all datasets that have a raw_data_db_path metadata entry."""
-    if not is_column_in_table(conn, "runs", "raw_data_db_path"):
-        return []
-
-    sql = """
-    SELECT r.run_id, r.guid, e.name, e.sample_name,
-           r.run_timestamp, r.completed_timestamp,
-           r.result_table_name, r.raw_data_db_path
-    FROM runs r
-    JOIN experiments e ON r.exp_id = e.exp_id
-    WHERE r.raw_data_db_path IS NOT NULL
-    """
-    cursor = conn.execute(sql)
-    rows = cursor.fetchall()
+    """Query datasets with raw data paths and enrich with file size info."""
+    rows = get_datasets_with_raw_data_path(conn)
 
     datasets: list[DatasetInfo] = []
-    for row in rows:
-        (
-            run_id,
-            guid,
-            exp_name,
-            sample_name,
-            run_ts,
-            completed_ts,
-            table_name,
-            raw_path,
-        ) = row
-
+    for (
+        run_id,
+        guid,
+        exp_name,
+        sample_name,
+        run_ts,
+        completed_ts,
+        table_name,
+        raw_path,
+    ) in rows:
         raw_size: int | None = None
         if raw_path and Path(raw_path).is_file():
             raw_size = Path(raw_path).stat().st_size
@@ -355,41 +346,6 @@ def _get_datasets_with_raw_data(
             )
         )
     return datasets
-
-
-def _remove_dataset_from_db(conn: AtomicConnection, ds_info: DatasetInfo) -> None:
-    """Remove a single dataset's records from the main database.
-
-    Deletes the run row, associated layouts, dependencies, and drops
-    the results table (if it exists in the main DB).
-    """
-    run_id = ds_info.run_id
-    table_name = ds_info.result_table_name
-
-    with atomic(conn) as aconn:
-        # Get layout_ids for this run (needed for dependencies)
-        cursor = aconn.execute(
-            "SELECT layout_id FROM layouts WHERE run_id = ?", (run_id,)
-        )
-        layout_ids = [row[0] for row in cursor.fetchall()]
-
-        # Delete dependencies referencing these layouts
-        if layout_ids:
-            placeholders = ",".join("?" * len(layout_ids))
-            aconn.execute(
-                f"DELETE FROM dependencies WHERE dependent IN ({placeholders})"
-                f" OR independent IN ({placeholders})",
-                (*layout_ids, *layout_ids),
-            )
-
-        # Delete layouts
-        aconn.execute("DELETE FROM layouts WHERE run_id = ?", (run_id,))
-
-        # Drop the results table in the main DB (if it exists)
-        aconn.execute(f'DROP TABLE IF EXISTS "{table_name}"')
-
-        # Delete the run row
-        aconn.execute("DELETE FROM runs WHERE run_id = ?", (run_id,))
 
 
 def purge_orphaned_datasets(
@@ -423,40 +379,38 @@ def purge_orphaned_datasets(
     if not db_path.is_file():
         raise FileNotFoundError(f"Database file not found: {db_path}")
 
-    conn = connect(str(db_path))
-    all_datasets = _get_datasets_with_raw_data(conn)
+    with closing(connect(str(db_path))) as conn:
+        all_datasets = _build_dataset_info_list(conn)
 
-    # Find orphaned datasets: raw_data_db_path is set but the file is missing
-    orphaned = [
-        ds
-        for ds in all_datasets
-        if ds.raw_data_db_path and not Path(ds.raw_data_db_path).is_file()
-    ]
+        # Orphaned = raw_data_size_bytes is None (file not found on disk)
+        orphaned = [ds for ds in all_datasets if ds.raw_data_size_bytes is None]
 
-    log.info(
-        "Found %d datasets with raw data references, %d orphaned (file missing).",
-        len(all_datasets),
-        len(orphaned),
-    )
+        msg = (
+            f"Found {len(all_datasets)} datasets with raw data references in {db_path}, "
+            f"{len(orphaned)} orphaned (file missing)."
+        )
+        log.info(msg)
+        print(msg)
 
-    removed: list[DatasetInfo] = []
-    errors: list[tuple[int, Exception]] = []
+        removed: list[DatasetInfo] = []
+        errors: list[tuple[int, Exception]] = []
 
-    if not dry_run and orphaned:
-        for ds_info in orphaned:
-            try:
-                _remove_dataset_from_db(conn, ds_info)
-                removed.append(ds_info)
-                log.info(
-                    "Removed orphaned dataset run_id=%d (guid=%s) from database.",
-                    ds_info.run_id,
-                    ds_info.guid,
-                )
-            except Exception as exc:
-                log.error("Failed to remove run_id=%d: %s", ds_info.run_id, exc)
-                errors.append((ds_info.run_id, exc))
-
-    conn.close()
+        if not dry_run and orphaned:
+            for ds_info in orphaned:
+                try:
+                    remove_dataset_from_db(
+                        conn, ds_info.run_id, ds_info.result_table_name
+                    )
+                    removed.append(ds_info)
+                    log.info(
+                        "Removed orphaned dataset run_id=%d (guid=%s) from %s.",
+                        ds_info.run_id,
+                        ds_info.guid,
+                        db_path,
+                    )
+                except Exception as exc:
+                    log.error("Failed to remove run_id=%d: %s", ds_info.run_id, exc)
+                    errors.append((ds_info.run_id, exc))
 
     result = PurgeResult(
         total_datasets_with_raw_data=len(all_datasets),
@@ -467,9 +421,11 @@ def purge_orphaned_datasets(
     )
 
     if dry_run:
-        log.info("Dry run: %d orphaned datasets would be removed.", len(orphaned))
+        msg = f"Dry run: {len(orphaned)} orphaned datasets would be removed from {db_path}."
     else:
-        log.info("Removed %d orphaned datasets.", len(removed))
+        msg = f"Removed {len(removed)} orphaned datasets from {db_path}."
+    log.info(msg)
+    print(msg)
 
     return result
 
@@ -482,12 +438,11 @@ def cleanup_datasets(
     larger_than_mb: float | None = None,
     dry_run: bool = True,
 ) -> CleanupResult:
-    """Remove datasets (DB records and raw data files) matching given criteria.
+    """Remove datasets and their raw data files matching given criteria.
 
     This function helps manage disk space by removing datasets that match
     one or more of the specified criteria. It removes both the raw data
-    SQLite file on disk and the corresponding records in the main database
-    (run metadata, layouts, dependencies, results table schema).
+    SQLite file on disk and the corresponding records in the main database.
 
     Criteria are combined with AND logic: a dataset must match **all**
     specified criteria to be selected for removal. Specify at least one
@@ -521,77 +476,79 @@ def cleanup_datasets(
     if older_than_days is None and sample_name is None and larger_than_mb is None:
         raise ValueError("At least one cleanup criterion must be specified.")
 
-    conn = connect(str(db_path))
-    all_datasets = _get_datasets_with_raw_data(conn)
+    with closing(connect(str(db_path))) as conn:
+        all_datasets = _build_dataset_info_list(conn)
 
-    # Apply filters (AND logic)
-    matching: list[DatasetInfo] = []
-    cutoff_ts: float | None = None
-    if older_than_days is not None:
-        cutoff_dt = datetime.now(tz=UTC) - timedelta(days=older_than_days)
-        cutoff_ts = cutoff_dt.timestamp()
+        # Apply filters (AND logic)
+        matching: list[DatasetInfo] = []
+        cutoff_ts: float | None = None
+        if older_than_days is not None:
+            cutoff_dt = datetime.now(tz=UTC) - timedelta(days=older_than_days)
+            cutoff_ts = cutoff_dt.timestamp()
 
-    size_threshold_bytes: int | None = None
-    if larger_than_mb is not None:
-        size_threshold_bytes = int(larger_than_mb * 1024 * 1024)
+        size_threshold_bytes: int | None = None
+        if larger_than_mb is not None:
+            size_threshold_bytes = int(larger_than_mb * 1024 * 1024)
 
-    for ds in all_datasets:
-        # Age filter
-        if cutoff_ts is not None:
-            ts = ds.completed_timestamp or ds.run_timestamp
-            if ts is None or ts >= cutoff_ts:
-                continue
+        for ds in all_datasets:
+            # Age filter
+            if cutoff_ts is not None:
+                ts = ds.completed_timestamp or ds.run_timestamp
+                if ts is None or ts >= cutoff_ts:
+                    continue
 
-        # Sample name filter
-        if sample_name is not None:
-            if ds.sample_name != sample_name:
-                continue
+            # Sample name filter
+            if sample_name is not None:
+                if ds.sample_name != sample_name:
+                    continue
 
-        # Size filter
-        if size_threshold_bytes is not None:
-            if (
-                ds.raw_data_size_bytes is None
-                or ds.raw_data_size_bytes <= size_threshold_bytes
-            ):
-                continue
+            # Size filter
+            if size_threshold_bytes is not None:
+                if (
+                    ds.raw_data_size_bytes is None
+                    or ds.raw_data_size_bytes <= size_threshold_bytes
+                ):
+                    continue
 
-        matching.append(ds)
+            matching.append(ds)
 
-    log.info(
-        "Found %d datasets with raw data, %d match cleanup criteria.",
-        len(all_datasets),
-        len(matching),
-    )
+        msg = (
+            f"Found {len(all_datasets)} datasets with raw data in {db_path}, "
+            f"{len(matching)} match cleanup criteria."
+        )
+        log.info(msg)
+        print(msg)
 
-    removed: list[DatasetInfo] = []
-    errors: list[tuple[int, Exception]] = []
-    total_freed: int = 0
+        removed: list[DatasetInfo] = []
+        errors: list[tuple[int, Exception]] = []
+        total_freed: int = 0
 
-    if not dry_run and matching:
-        for ds_info in matching:
-            try:
-                # Delete the raw data file from disk
-                if ds_info.raw_data_db_path:
-                    raw_path = Path(ds_info.raw_data_db_path)
-                    if raw_path.is_file():
-                        file_size = raw_path.stat().st_size
-                        os.remove(raw_path)
-                        total_freed += file_size
-                        log.info("Deleted raw data file: %s", raw_path)
+        if not dry_run and matching:
+            for ds_info in matching:
+                try:
+                    # Delete the raw data file from disk
+                    if ds_info.raw_data_db_path:
+                        raw_path = Path(ds_info.raw_data_db_path)
+                        if raw_path.is_file():
+                            file_size = raw_path.stat().st_size
+                            os.remove(raw_path)
+                            total_freed += file_size
+                            log.info("Deleted raw data file: %s", raw_path)
 
-                # Remove dataset records from the main DB
-                _remove_dataset_from_db(conn, ds_info)
-                removed.append(ds_info)
-                log.info(
-                    "Removed dataset run_id=%d (guid=%s) from database.",
-                    ds_info.run_id,
-                    ds_info.guid,
-                )
-            except Exception as exc:
-                log.error("Failed to remove run_id=%d: %s", ds_info.run_id, exc)
-                errors.append((ds_info.run_id, exc))
-
-    conn.close()
+                    # Remove dataset records from the main DB
+                    remove_dataset_from_db(
+                        conn, ds_info.run_id, ds_info.result_table_name
+                    )
+                    removed.append(ds_info)
+                    log.info(
+                        "Removed dataset run_id=%d (guid=%s) from %s.",
+                        ds_info.run_id,
+                        ds_info.guid,
+                        db_path,
+                    )
+                except Exception as exc:
+                    log.error("Failed to remove run_id=%d: %s", ds_info.run_id, exc)
+                    errors.append((ds_info.run_id, exc))
 
     result = CleanupResult(
         total_datasets_scanned=len(all_datasets),
@@ -606,12 +563,10 @@ def cleanup_datasets(
         total_size = sum(
             ds.raw_data_size_bytes for ds in matching if ds.raw_data_size_bytes
         )
-        log.info(
-            "Dry run: %d datasets (%d bytes) would be removed.",
-            len(matching),
-            total_size,
-        )
+        msg = f"Dry run: {len(matching)} datasets ({total_size} bytes) would be removed from {db_path}."
     else:
-        log.info("Removed %d datasets, freed %d bytes.", len(removed), total_freed)
+        msg = f"Removed {len(removed)} datasets from {db_path}, freed {total_freed} bytes."
+    log.info(msg)
+    print(msg)
 
     return result
