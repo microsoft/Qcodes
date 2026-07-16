@@ -13,7 +13,6 @@ The per-dataset files are stored in the folder given by
 from __future__ import annotations
 
 import logging
-import os
 import sqlite3
 from contextlib import closing
 from dataclasses import dataclass, field
@@ -256,7 +255,7 @@ def update_raw_data_paths(
                 (new_path_str, run_id),
             )
         updated.append((run_id, old_path_str, new_path_str))
-        log.info(
+        log.debug(
             "Run %d: updated raw_data_db_path from %s to %s",
             run_id,
             old_path_str,
@@ -402,7 +401,7 @@ def purge_orphaned_datasets(
                         conn, ds_info.run_id, ds_info.result_table_name
                     )
                     removed.append(ds_info)
-                    log.info(
+                    log.debug(
                         "Removed orphaned dataset run_id=%d (guid=%s) from %s.",
                         ds_info.run_id,
                         ds_info.guid,
@@ -531,16 +530,16 @@ def cleanup_datasets(
                         raw_path = Path(ds_info.raw_data_db_path)
                         if raw_path.is_file():
                             file_size = raw_path.stat().st_size
-                            os.remove(raw_path)
+                            raw_path.unlink()
                             total_freed += file_size
-                            log.info("Deleted raw data file: %s", raw_path)
+                            log.debug("Deleted raw data file: %s", raw_path)
 
                     # Remove dataset records from the main DB
                     remove_dataset_from_db(
                         conn, ds_info.run_id, ds_info.result_table_name
                     )
                     removed.append(ds_info)
-                    log.info(
+                    log.debug(
                         "Removed dataset run_id=%d (guid=%s) from %s.",
                         ds_info.run_id,
                         ds_info.guid,
