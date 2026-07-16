@@ -115,4 +115,37 @@ If the per-dataset raw data files are moved to a different folder (e.g. during d
 
 This scans all datasets with a ``raw_data_db_path`` metadata entry, checks whether the corresponding ``.db`` file exists in the new folder, and updates the stored path accordingly.
 
+Purging Orphaned Datasets
+-------------------------
+
+After archiving or deleting selected raw data files, some dataset records in the main database may reference files that no longer exist on disk. Use :func:`~qcodes.dataset.purge_orphaned_datasets` to identify and remove those orphaned records::
+
+    from qcodes.dataset import purge_orphaned_datasets
+
+    # First, see what would be removed (dry run — the default)
+    result = purge_orphaned_datasets("/path/to/main_database.db")
+    print(f"{len(result.orphaned_datasets)} orphaned datasets found")
+
+    # Then actually remove them
+    result = purge_orphaned_datasets("/path/to/main_database.db", dry_run=False)
+
+Cleaning Up Datasets by Criteria
+---------------------------------
+
+To free disk space by removing datasets (both the raw data files **and** their records in the main database) based on age, sample name, or file size, use :func:`~qcodes.dataset.cleanup_datasets`::
+
+    from qcodes.dataset import cleanup_datasets
+
+    # Remove datasets older than 30 days (dry run first)
+    result = cleanup_datasets("/path/to/db.db", older_than_days=30)
+    print(f"{len(result.matching_datasets)} datasets would be removed")
+
+    # Remove datasets for a specific sample
+    result = cleanup_datasets("/path/to/db.db", sample_name="old-sample", dry_run=False)
+
+    # Remove datasets with raw data larger than 500 MB
+    result = cleanup_datasets("/path/to/db.db", larger_than_mb=500, dry_run=False)
+
+Criteria are combined with AND logic — a dataset must match **all** specified criteria to be selected for removal.
+
 For more details on database management, see the :doc:`Database notebook <../examples/DataSet/Database>`.

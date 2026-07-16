@@ -11,6 +11,7 @@ from __future__ import annotations
 import gc
 import shutil
 import sqlite3
+import time
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -20,16 +21,18 @@ import pytest
 import qcodes as qc
 from qcodes.dataset import new_data_set, new_experiment
 from qcodes.dataset._raw_data_storage import (
+    cleanup_datasets,
     connect_to_raw_data_db,
     create_raw_data_db,
     get_raw_data_db_path,
     get_raw_data_folder,
     is_raw_data_storage_enabled,
+    purge_orphaned_datasets,
     update_raw_data_paths,
 )
 from qcodes.dataset.data_set import DataSet, load_by_id
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.sqlite.database import initialise_database
+from qcodes.dataset.sqlite.database import connect, initialise_database
 from qcodes.parameters import ParamSpecBase
 
 if TYPE_CHECKING:
@@ -423,3 +426,254 @@ class TestUpdateRawDataPaths:
         db_path.touch()
         with pytest.raises(FileNotFoundError, match="New raw data folder not found"):
             update_raw_data_paths(db_path, tmp_path / "no_such_folder")
+
+
+# ---------------------------------------------------------------------------
+# purge_orphaned_datasets and cleanup_datasets tests
+# ---------------------------------------------------------------------------
+
+
+class TestPurgeOrphanedDatasets:
+    """Tests for purge_orphaned_datasets."""
+
+    @staticmethod
+    def _close_ds(ds: DataSet) -> None:
+        if ds._raw_data_conn is not None:
+            ds._raw_data_conn.close()
+        ds.conn.close()
+
+    @pytest.mark.usefixtures("_raw_data_db")
+    def test_dry_run_reports_orphans(self, tmp_path: Path) -> None:
+        """Dry run should report orphaned datasets without removing them."""
+
+        new_experiment("test-exp", sample_name="test-sample")
+        ds = new_data_set("test-purge")
+        x = ParamSpecBase("x", "numeric")
+        y = ParamSpecBase("y", "numeric")
+        idps = InterDependencies_(dependencies={y: (x,)})
+        ds.set_interdependencies(idps)
+        ds.mark_started()
+        ds.add_results([{"x": 1.0, "y": 2.0}])
+        ds.mark_completed()
+
+        raw_path = Path(ds.metadata["raw_data_db_path"])
+        db_path = ds.path_to_db
+        assert db_path is not None
+        self._close_ds(ds)
+
+        # Delete the raw data file to create an orphan
+        raw_path.unlink()
+
+        result = purge_orphaned_datasets(db_path, dry_run=True)
+        assert result.total_datasets_with_raw_data == 1
+        assert len(result.orphaned_datasets) == 1
+        assert len(result.removed_datasets) == 0
+        assert result.dry_run is True
+
+        # Verify the dataset is still in the DB (direct query since load_by_id
+        # will raise FileNotFoundError due to missing raw data file)
+
+        conn = connect(db_path)
+        cursor = conn.execute("SELECT COUNT(*) FROM runs WHERE run_id = 1")
+        assert cursor.fetchone()[0] == 1
+        conn.close()
+
+    @pytest.mark.usefixtures("_raw_data_db")
+    def test_removes_orphans_when_not_dry_run(self, tmp_path: Path) -> None:
+        """With dry_run=False, orphaned datasets should be removed."""
+
+        new_experiment("test-exp", sample_name="test-sample")
+        ds = new_data_set("test-purge-remove")
+        x = ParamSpecBase("x", "numeric")
+        y = ParamSpecBase("y", "numeric")
+        idps = InterDependencies_(dependencies={y: (x,)})
+        ds.set_interdependencies(idps)
+        ds.mark_started()
+        ds.add_results([{"x": 1.0, "y": 2.0}])
+        ds.mark_completed()
+
+        raw_path = Path(ds.metadata["raw_data_db_path"])
+        db_path = ds.path_to_db
+        assert db_path is not None
+        run_id = ds.run_id
+        self._close_ds(ds)
+
+        # Delete the raw data file
+        raw_path.unlink()
+
+        result = purge_orphaned_datasets(db_path, dry_run=False)
+        assert len(result.orphaned_datasets) == 1
+        assert len(result.removed_datasets) == 1
+        assert result.removed_datasets[0].run_id == run_id
+        assert result.dry_run is False
+
+        # Verify the dataset no longer exists in the DB
+
+        conn = connect(db_path)
+        cursor = conn.execute("SELECT COUNT(*) FROM runs WHERE run_id = ?", (run_id,))
+        assert cursor.fetchone()[0] == 0
+        conn.close()
+
+    @pytest.mark.usefixtures("_raw_data_db")
+    def test_skips_datasets_with_existing_files(self, tmp_path: Path) -> None:
+        """Datasets whose raw data files exist should not be purged."""
+
+        new_experiment("test-exp", sample_name="test-sample")
+        ds = new_data_set("test-no-purge")
+        x = ParamSpecBase("x", "numeric")
+        y = ParamSpecBase("y", "numeric")
+        idps = InterDependencies_(dependencies={y: (x,)})
+        ds.set_interdependencies(idps)
+        ds.mark_started()
+        ds.add_results([{"x": 1.0, "y": 2.0}])
+        ds.mark_completed()
+
+        db_path = ds.path_to_db
+        assert db_path is not None
+        self._close_ds(ds)
+
+        # Don't delete the file — should not be orphaned
+        result = purge_orphaned_datasets(db_path, dry_run=False)
+        assert len(result.orphaned_datasets) == 0
+        assert len(result.removed_datasets) == 0
+
+    def test_nonexistent_db_raises(self, tmp_path: Path) -> None:
+        """Should raise if the DB file doesn't exist."""
+
+        with pytest.raises(FileNotFoundError, match="Database file not found"):
+            purge_orphaned_datasets(tmp_path / "nonexistent.db")
+
+
+class TestCleanupDatasets:
+    """Tests for cleanup_datasets."""
+
+    @staticmethod
+    def _close_ds(ds: DataSet) -> None:
+        if ds._raw_data_conn is not None:
+            ds._raw_data_conn.close()
+        ds.conn.close()
+
+    @pytest.mark.usefixtures("_raw_data_db")
+    def test_cleanup_by_sample_name(self, tmp_path: Path) -> None:
+        """Should remove datasets matching exact sample name."""
+
+        new_experiment("exp1", sample_name="sample-A")
+        ds1 = new_data_set("ds1")
+        x = ParamSpecBase("x", "numeric")
+        y = ParamSpecBase("y", "numeric")
+        idps = InterDependencies_(dependencies={y: (x,)})
+        ds1.set_interdependencies(idps)
+        ds1.mark_started()
+        ds1.add_results([{"x": 1.0, "y": 2.0}])
+        ds1.mark_completed()
+        raw_path1 = Path(ds1.metadata["raw_data_db_path"])
+        db_path = ds1.path_to_db
+        assert db_path is not None
+        self._close_ds(ds1)
+
+        # Create another dataset with a different sample
+        new_experiment("exp2", sample_name="sample-B")
+        ds2 = new_data_set("ds2")
+        ds2.set_interdependencies(idps)
+        ds2.mark_started()
+        ds2.add_results([{"x": 3.0, "y": 4.0}])
+        ds2.mark_completed()
+        raw_path2 = Path(ds2.metadata["raw_data_db_path"])
+        self._close_ds(ds2)
+
+        # Dry run first
+        result = cleanup_datasets(db_path, sample_name="sample-A", dry_run=True)
+        assert len(result.matching_datasets) == 1
+        assert len(result.removed_datasets) == 0
+        assert raw_path1.is_file()
+
+        # Actual removal
+        result = cleanup_datasets(db_path, sample_name="sample-A", dry_run=False)
+        assert len(result.matching_datasets) == 1
+        assert len(result.removed_datasets) == 1
+        assert not raw_path1.is_file()
+        assert raw_path2.is_file()  # other sample untouched
+
+    @pytest.mark.usefixtures("_raw_data_db")
+    def test_cleanup_by_size(self, tmp_path: Path) -> None:
+        """Should remove datasets larger than the specified threshold."""
+
+        new_experiment("exp1", sample_name="test-sample")
+        ds = new_data_set("ds-large")
+        x = ParamSpecBase("x", "numeric")
+        y = ParamSpecBase("y", "numeric")
+        idps = InterDependencies_(dependencies={y: (x,)})
+        ds.set_interdependencies(idps)
+        ds.mark_started()
+        # Add enough data so the file has some size
+        for i in range(100):
+            ds.add_results([{"x": float(i), "y": float(i * 2)}])
+        ds.mark_completed()
+        raw_path = Path(ds.metadata["raw_data_db_path"])
+        db_path = ds.path_to_db
+        assert db_path is not None
+        self._close_ds(ds)
+
+        file_size_mb = raw_path.stat().st_size / (1024 * 1024)
+
+        # Set threshold below actual size — should match
+        result = cleanup_datasets(
+            db_path, larger_than_mb=file_size_mb * 0.5, dry_run=True
+        )
+        assert len(result.matching_datasets) == 1
+
+        # Set threshold above actual size — should not match
+        result = cleanup_datasets(
+            db_path, larger_than_mb=file_size_mb * 2, dry_run=True
+        )
+        assert len(result.matching_datasets) == 0
+
+    @pytest.mark.usefixtures("_raw_data_db")
+    def test_cleanup_by_age(self, tmp_path: Path) -> None:
+        """Should remove datasets older than the specified number of days."""
+
+        new_experiment("exp1", sample_name="test-sample")
+        ds = new_data_set("ds-old")
+        x = ParamSpecBase("x", "numeric")
+        y = ParamSpecBase("y", "numeric")
+        idps = InterDependencies_(dependencies={y: (x,)})
+        ds.set_interdependencies(idps)
+        ds.mark_started()
+        ds.add_results([{"x": 1.0, "y": 2.0}])
+        ds.mark_completed()
+        db_path = ds.path_to_db
+        assert db_path is not None
+        run_id = ds.run_id
+        self._close_ds(ds)
+
+        # Set the completed_timestamp to 10 days ago
+        old_ts = time.time() - (10 * 86400)
+        conn = connect(db_path)
+        conn.execute(
+            "UPDATE runs SET completed_timestamp = ? WHERE run_id = ?",
+            (old_ts, run_id),
+        )
+        conn.commit()
+        conn.close()
+
+        # older_than_days=5 should match (ds is 10 days old)
+        result = cleanup_datasets(db_path, older_than_days=5, dry_run=True)
+        assert len(result.matching_datasets) == 1
+
+        # older_than_days=15 should NOT match (ds is only 10 days old)
+        result = cleanup_datasets(db_path, older_than_days=15, dry_run=True)
+        assert len(result.matching_datasets) == 0
+
+    def test_no_criteria_raises(self, tmp_path: Path) -> None:
+        """Should raise if no criteria are specified."""
+
+        db_path = tmp_path / "test.db"
+        db_path.touch()
+        with pytest.raises(ValueError, match="At least one cleanup criterion"):
+            cleanup_datasets(db_path)
+
+    def test_nonexistent_db_raises(self, tmp_path: Path) -> None:
+        """Should raise if the DB file doesn't exist."""
+
+        with pytest.raises(FileNotFoundError, match="Database file not found"):
+            cleanup_datasets(tmp_path / "nonexistent.db", older_than_days=1)
