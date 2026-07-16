@@ -61,6 +61,7 @@ from .sqlite.database import (
     initialise_or_create_database_at,
     initialised_database_at,
 )
+from .sqlite.db_overview import RunOverviewDict, get_db_overview
 from .sqlite.settings import SQLiteSettings
 from .threading import (
     SequentialParamsCaller,
@@ -84,6 +85,7 @@ __all__ = [
     "ParamSpec",
     "ParamSpecTree",
     "RunDescriber",
+    "RunOverviewDict",
     "SQLiteSettings",
     "SequentialParamsCaller",
     "ThreadPoolParamsCaller",
@@ -101,6 +103,7 @@ __all__ = [
     "export_datasets_and_create_metadata_db",
     "extract_runs_into_db",
     "get_data_export_path",
+    "get_db_overview",
     "get_default_experiment_id",
     "get_guids_by_run_spec",
     "guids_from_dbs",

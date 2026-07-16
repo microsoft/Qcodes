@@ -1,0 +1,12 @@
+Added :func:`qcodes.dataset.get_db_overview`, a fast way to list the runs in a
+QCoDeS database. It fetches run metadata (experiment/sample names, timestamps,
+record counts and guids) via a single ``JOIN`` query on the ``runs`` and
+``experiments`` tables, without instantiating a ``DataSet`` object per run,
+making it possible to list databases with many thousands of runs almost
+instantly. The returned :class:`qcodes.dataset.RunOverviewDict` is also exported
+on the public ``qcodes.dataset`` namespace. The function does not return
+snapshots as they can be large and slow down building the database overview.
+The number of results in each dataset is taken from shape information when
+available, and otherwise falls back to a best-effort count of the rows in the
+so-called results table that exists for every dataset, which may NOT be as
+precise as ``DataSet.number_of_results``.
