@@ -3,7 +3,11 @@ The dataset module contains code related to storage and retrieval of data to
 and from disk
 """
 
-from ._raw_data_storage import update_raw_data_paths
+from ._raw_data_storage import (
+    cleanup_datasets,
+    purge_orphaned_datasets,
+    update_raw_data_paths,
+)
 from .data_set import (
     get_guids_by_run_spec,
     load_by_counter,
@@ -85,6 +89,7 @@ __all__ = [
     "ThreadPoolParamsCaller",
     "TogetherSweep",
     "call_params_threaded",
+    "cleanup_datasets",
     "connect",
     "datasaver_builder",
     "do0d",
@@ -119,6 +124,7 @@ __all__ = [
     "new_experiment",
     "plot_by_id",
     "plot_dataset",
+    "purge_orphaned_datasets",
     "reset_default_experiment_id",
     "rundescriber_from_json",
     "update_raw_data_paths",
