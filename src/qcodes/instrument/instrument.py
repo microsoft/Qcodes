@@ -180,7 +180,10 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         self.remove_instance(self)
 
     @classmethod
-    def close_all(cls) -> None:
+    def close_all(
+        cls,
+        log_status: bool = False,
+    ) -> None:
         """
         Try to close all instruments registered in
         ``_all_instruments`` This is handy for use with atexit to
@@ -190,15 +193,22 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         Examples:
             >>> atexit.register(qc.Instrument.close_all())
 
+        Args:
+            log_status: If True, log the status of closing each instrument. Set this to False
+              if you want to avoid logging during interpreter shutdown, which can cause errors.
+
         """
-        log.info("Closing all registered instruments")
+        if log_status:
+            log.info("Closing all registered instruments")
         for inststr in list(cls._all_instruments):
             try:
                 inst: Instrument = cls.find_instrument(inststr)
-                log.info("Closing %s", inststr)
+                if log_status:
+                    log.info("Closing %s", inststr)
                 inst.close()
             except Exception:
-                log.exception("Failed to close %s, ignored", inststr)
+                if log_status:
+                    log.exception("Failed to close %s, ignored", inststr)
 
     @classmethod
     def record_instance(cls, instance: Instrument) -> None:
