@@ -101,7 +101,7 @@ From a design perspective, this feature adds a thin routing layer inside the
   data connection so that they fire regardless of which database holds the
   results table.
 
-The implementation is contained in ``qcodes.dataset.raw_data_storage`` (helper
+The implementation is contained in ``qcodes.dataset._raw_data_storage`` (helper
 functions) and a handful of additions to ``qcodes.dataset.data_set`` (routing
 logic). The ``Measurement`` context manager, ``DataSaver``, and all export
 functions work without modification.

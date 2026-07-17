@@ -124,5 +124,3 @@ QCoDeS provides helpers for managing per-dataset raw data files over time:
 - :func:`~qcodes.dataset.cleanup_datasets` — remove datasets (DB records and raw data files) by age, sample name, or file size.
 
 For usage examples, see the :doc:`Database notebook <../examples/DataSet/Database>`.
-
-For more details on database management, see the :doc:`Database notebook <../examples/DataSet/Database>`.

@@ -2372,6 +2372,7 @@ def remove_dataset_from_db(
         transaction(aconn, "DELETE FROM layouts WHERE run_id = ?", run_id)
 
         # Drop the results table in the DB (if it exists)
+        _validate_table_name(result_table_name)  # raises if name not valid
         transaction(aconn, f'DROP TABLE IF EXISTS "{result_table_name}"')
 
         # Delete the run row

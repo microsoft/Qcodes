@@ -190,7 +190,7 @@ def update_raw_data_paths(
     """Update raw data file paths in the main database after files have moved.
 
     Use this when per-dataset raw data files have been relocated to a new
-    folder but the main database still references the old paths3.
+    folder but the main database still references the old paths.
 
     The function scans all runs that have a ``raw_data_db_path`` metadata
     entry, verifies that a file with the expected GUID-based name exists in
@@ -347,32 +347,16 @@ def _build_dataset_info_list(
     return datasets
 
 
-def purge_orphaned_datasets(
+def _purge_orphaned_datasets(
     db_path: str | Path,
     *,
     dry_run: bool = True,
 ) -> PurgeResult:
-    """Find and optionally remove dataset records whose raw data files are missing.
+    """Library helper for :func:`purge_orphaned_datasets`.
 
-    When using split raw data storage, users may archive and delete
-    individual per-dataset SQLite files.  This function identifies
-    datasets in the main database that reference raw data files which
-    no longer exist on disk, and optionally removes those dataset
-    records from the main database.
-
-    Args:
-        db_path: Path to the main QCoDeS database file.
-        dry_run: If *True* (default), only report which datasets would
-            be removed without making any changes. Set to *False* to
-            actually delete the orphaned dataset records.
-
-    Returns:
-        A :class:`PurgeResult` with the list of orphaned datasets and,
-        if *dry_run* is False, the list of datasets that were removed.
-
-    Raises:
-        FileNotFoundError: If the main database file does not exist.
-
+    Performs the actual work and logging without printing to stdout so that
+    it can be used programmatically. The public :func:`purge_orphaned_datasets`
+    wrapper is responsible for user-facing console output.
     """
     db_path = Path(db_path)
     if not db_path.is_file():
@@ -384,12 +368,13 @@ def purge_orphaned_datasets(
         # Orphaned = raw_data_size_bytes is None (file not found on disk)
         orphaned = [ds for ds in all_datasets if ds.raw_data_size_bytes is None]
 
-        msg = (
-            f"Found {len(all_datasets)} datasets with raw data references in {db_path}, "
-            f"{len(orphaned)} orphaned (file missing)."
+        log.info(
+            "Found %d datasets with raw data references in %s, %d orphaned "
+            "(file missing).",
+            len(all_datasets),
+            db_path,
+            len(orphaned),
         )
-        log.info(msg)
-        print(msg)
 
         removed: list[DatasetInfo] = []
         errors: list[tuple[int, Exception]] = []
@@ -420,16 +405,65 @@ def purge_orphaned_datasets(
     )
 
     if dry_run:
-        msg = f"Dry run: {len(orphaned)} orphaned datasets would be removed from {db_path}."
+        log.info(
+            "Dry run: %d orphaned datasets would be removed from %s.",
+            len(orphaned),
+            db_path,
+        )
     else:
-        msg = f"Removed {len(removed)} orphaned datasets from {db_path}."
-    log.info(msg)
-    print(msg)
+        log.info("Removed %d orphaned datasets from %s.", len(removed), db_path)
 
     return result
 
 
-def cleanup_datasets(
+def purge_orphaned_datasets(
+    db_path: str | Path,
+    *,
+    dry_run: bool = True,
+) -> PurgeResult:
+    """Find and optionally remove dataset records whose raw data files are missing.
+
+    When using split raw data storage, users may archive and delete
+    individual per-dataset SQLite files.  This function identifies
+    datasets in the main database that reference raw data files which
+    no longer exist on disk, and optionally removes those dataset
+    records from the main database.
+
+    Args:
+        db_path: Path to the main QCoDeS database file.
+        dry_run: If *True* (default), only report which datasets would
+            be removed without making any changes. Set to *False* to
+            actually delete the orphaned dataset records.
+
+    Returns:
+        A :class:`PurgeResult` with the list of orphaned datasets and,
+        if *dry_run* is False, the list of datasets that were removed.
+
+    Raises:
+        FileNotFoundError: If the main database file does not exist.
+
+    """
+    result = _purge_orphaned_datasets(db_path, dry_run=dry_run)
+
+    print(
+        f"Found {result.total_datasets_with_raw_data} datasets with raw data "
+        f"references in {db_path}, {len(result.orphaned_datasets)} orphaned "
+        f"(file missing)."
+    )
+    if result.dry_run:
+        print(
+            f"Dry run: {len(result.orphaned_datasets)} orphaned datasets "
+            f"would be removed from {db_path}."
+        )
+    else:
+        print(
+            f"Removed {len(result.removed_datasets)} orphaned datasets from {db_path}."
+        )
+
+    return result
+
+
+def _cleanup_datasets(
     db_path: str | Path,
     *,
     older_than_days: int | None = None,
@@ -437,36 +471,11 @@ def cleanup_datasets(
     larger_than_mb: float | None = None,
     dry_run: bool = True,
 ) -> CleanupResult:
-    """Remove datasets and their raw data files matching given criteria.
+    """Library helper for :func:`cleanup_datasets`.
 
-    This function helps manage disk space by removing datasets that match
-    one or more of the specified criteria. It removes both the raw data
-    SQLite file on disk and the corresponding records in the main database.
-
-    Criteria are combined with AND logic: a dataset must match **all**
-    specified criteria to be selected for removal. Specify at least one
-    criterion.
-
-    Args:
-        db_path: Path to the main QCoDeS database file.
-        older_than_days: Remove datasets whose *completed_timestamp*
-            (or *run_timestamp* if not completed) is older than this
-            many days ago.
-        sample_name: Remove datasets belonging to experiments with this
-            exact sample name.
-        larger_than_mb: Remove datasets whose raw data file is larger
-            than this many megabytes.
-        dry_run: If *True* (default), only report which datasets would
-            be removed without making any changes. Set to *False* to
-            actually delete datasets and their raw data files.
-
-    Returns:
-        A :class:`CleanupResult` with details of the operation.
-
-    Raises:
-        FileNotFoundError: If the main database file does not exist.
-        ValueError: If no criteria are specified.
-
+    Performs the actual work and logging without printing to stdout so that
+    it can be used programmatically. The public :func:`cleanup_datasets`
+    wrapper is responsible for user-facing console output.
     """
     db_path = Path(db_path)
     if not db_path.is_file():
@@ -511,12 +520,12 @@ def cleanup_datasets(
 
             matching.append(ds)
 
-        msg = (
-            f"Found {len(all_datasets)} datasets with raw data in {db_path}, "
-            f"{len(matching)} match cleanup criteria."
+        log.info(
+            "Found %d datasets with raw data in %s, %d match cleanup criteria.",
+            len(all_datasets),
+            db_path,
+            len(matching),
         )
-        log.info(msg)
-        print(msg)
 
         removed: list[DatasetInfo] = []
         errors: list[tuple[int, Exception]] = []
@@ -562,10 +571,88 @@ def cleanup_datasets(
         total_size = sum(
             ds.raw_data_size_bytes for ds in matching if ds.raw_data_size_bytes
         )
-        msg = f"Dry run: {len(matching)} datasets ({total_size} bytes) would be removed from {db_path}."
+        log.info(
+            "Dry run: %d datasets (%d bytes) would be removed from %s.",
+            len(matching),
+            total_size,
+            db_path,
+        )
     else:
-        msg = f"Removed {len(removed)} datasets from {db_path}, freed {total_freed} bytes."
-    log.info(msg)
-    print(msg)
+        log.info(
+            "Removed %d datasets from %s, freed %d bytes.",
+            len(removed),
+            db_path,
+            total_freed,
+        )
+
+    return result
+
+
+def cleanup_datasets(
+    db_path: str | Path,
+    *,
+    older_than_days: int | None = None,
+    sample_name: str | None = None,
+    larger_than_mb: float | None = None,
+    dry_run: bool = True,
+) -> CleanupResult:
+    """Remove datasets and their raw data files matching given criteria.
+
+    This function helps manage disk space by removing datasets that match
+    one or more of the specified criteria. It removes both the raw data
+    SQLite file on disk and the corresponding records in the main database.
+
+    Criteria are combined with AND logic: a dataset must match **all**
+    specified criteria to be selected for removal. Specify at least one
+    criterion.
+
+    Args:
+        db_path: Path to the main QCoDeS database file.
+        older_than_days: Remove datasets whose *completed_timestamp*
+            (or *run_timestamp* if not completed) is older than this
+            many days ago.
+        sample_name: Remove datasets belonging to experiments with this
+            exact sample name.
+        larger_than_mb: Remove datasets whose raw data file is larger
+            than this many megabytes.
+        dry_run: If *True* (default), only report which datasets would
+            be removed without making any changes. Set to *False* to
+            actually delete datasets and their raw data files.
+
+    Returns:
+        A :class:`CleanupResult` with details of the operation.
+
+    Raises:
+        FileNotFoundError: If the main database file does not exist.
+        ValueError: If no criteria are specified.
+
+    """
+    result = _cleanup_datasets(
+        db_path,
+        older_than_days=older_than_days,
+        sample_name=sample_name,
+        larger_than_mb=larger_than_mb,
+        dry_run=dry_run,
+    )
+
+    print(
+        f"Found {result.total_datasets_scanned} datasets with raw data in "
+        f"{db_path}, {len(result.matching_datasets)} match cleanup criteria."
+    )
+    if result.dry_run:
+        total_size = sum(
+            ds.raw_data_size_bytes
+            for ds in result.matching_datasets
+            if ds.raw_data_size_bytes
+        )
+        print(
+            f"Dry run: {len(result.matching_datasets)} datasets ({total_size} "
+            f"bytes) would be removed from {db_path}."
+        )
+    else:
+        print(
+            f"Removed {len(result.removed_datasets)} datasets from {db_path}, "
+            f"freed {result.total_size_freed_bytes} bytes."
+        )
 
     return result
