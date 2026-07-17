@@ -1292,7 +1292,7 @@ class DataSet(BaseDataSet):
         """
         Remove subscriber with the provided uuid
         """
-        with atomic(self.conn) as conn:
+        with atomic(self._data_conn) as conn:
             sub = self.subscribers[uuid]
             remove_trigger(conn, sub.trigger_id)
             sub.schedule_stop()
@@ -1307,8 +1307,9 @@ class DataSet(BaseDataSet):
         SELECT name FROM sqlite_master
         WHERE type = 'trigger'
         """
-        triggers = atomic_transaction(self.conn, sql).fetchall()
-        with atomic(self.conn) as conn:
+        data_conn = self._data_conn
+        triggers = atomic_transaction(data_conn, sql).fetchall()
+        with atomic(data_conn) as conn:
             for (trigger,) in triggers:
                 remove_trigger(conn, trigger)
             for sub in self.subscribers.values():
