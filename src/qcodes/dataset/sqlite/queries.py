@@ -2307,3 +2307,72 @@ def _get_result_table_name_by_guid(conn: AtomicConnection, guid: str) -> str:
     sql = "SELECT result_table_name FROM runs WHERE guid=?"
     formatted_name = one(transaction(conn, sql, guid), "result_table_name")
     return formatted_name
+
+
+def get_datasets_with_raw_data_path(
+    conn: AtomicConnection,
+) -> list[tuple[int, str, str, str, float | None, float | None, str, str]]:
+    """Get all datasets that have a raw_data_db_path metadata column set.
+
+    Returns:
+        A list of tuples:
+        ``(run_id, guid, experiment_name, sample_name, run_timestamp,
+        completed_timestamp, result_table_name, raw_data_db_path)``.
+        Returns an empty list if the column does not exist.
+
+    """
+    if not is_column_in_table(conn, "runs", "raw_data_db_path"):
+        return []
+
+    sql = """
+    SELECT r.run_id, r.guid, e.name, e.sample_name,
+           r.run_timestamp, r.completed_timestamp,
+           r.result_table_name, r.raw_data_db_path
+    FROM runs r
+    JOIN experiments e ON r.exp_id = e.exp_id
+    WHERE r.raw_data_db_path IS NOT NULL
+    """
+    cursor = atomic_transaction(conn, sql)
+    return cursor.fetchall()
+
+
+def remove_dataset_from_db(
+    conn: AtomicConnection, run_id: int, result_table_name: str
+) -> None:
+    """Remove a single dataset's records from the database.
+
+    Deletes the run row, associated layouts and dependencies, and drops
+    the results table (if it exists).
+
+    Args:
+        conn: Connection to the database.
+        run_id: The run_id of the dataset to remove.
+        result_table_name: Name of the dataset's results table.
+
+    """
+    with atomic(conn) as aconn:
+        # Get layout_ids for this run (needed for dependencies)
+        cursor = transaction(
+            aconn, "SELECT layout_id FROM layouts WHERE run_id = ?", run_id
+        )
+        layout_ids = [row[0] for row in cursor.fetchall()]
+
+        # Delete dependencies referencing these layouts
+        if layout_ids:
+            placeholders = ",".join("?" * len(layout_ids))
+            transaction(
+                aconn,
+                f"DELETE FROM dependencies WHERE dependent IN ({placeholders})"
+                f" OR independent IN ({placeholders})",
+                *layout_ids,
+                *layout_ids,
+            )
+
+        # Delete layouts
+        transaction(aconn, "DELETE FROM layouts WHERE run_id = ?", run_id)
+
+        # Drop the results table in the DB (if it exists)
+        transaction(aconn, f'DROP TABLE IF EXISTS "{result_table_name}"')
+
+        # Delete the run row
+        transaction(aconn, "DELETE FROM runs WHERE run_id = ?", run_id)
