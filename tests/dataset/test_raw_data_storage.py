@@ -31,6 +31,10 @@ from qcodes.dataset._raw_data_storage import (
     update_raw_data_paths,
 )
 from qcodes.dataset.data_set import DataSet, load_by_id
+from qcodes.dataset.database_extract_runs import (
+    export_datasets_and_create_metadata_db,
+    extract_runs_into_db,
+)
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.sqlite.database import connect, initialise_database
 from qcodes.parameters import ParamSpecBase
@@ -677,3 +681,76 @@ class TestCleanupDatasets:
 
         with pytest.raises(FileNotFoundError, match="Database file not found"):
             cleanup_datasets(tmp_path / "nonexistent.db", older_than_days=1)
+
+
+# ---------------------------------------------------------------------------
+# Integration tests - extract/export with split raw data
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.usefixtures("_raw_data_experiment")
+class TestExtractExportWithSplitRawData:
+    """Verify that extract_runs_into_db and export_datasets_and_create_metadata_db
+    work correctly when raw data is stored in separate per-dataset SQLite files."""
+
+    @staticmethod
+    def _make_dataset_with_data(
+        n_rows: int = 10,
+    ) -> tuple[DataSet, list[dict[str, float]]]:
+        ds = new_data_set("test-split")
+        x = ParamSpecBase("x", "numeric")
+        y = ParamSpecBase("y", "numeric")
+        idps = InterDependencies_(dependencies={y: (x,)})
+        ds.set_interdependencies(idps)
+        ds.mark_started()
+        results = [{"x": float(i), "y": float(i**2)} for i in range(n_rows)]
+        ds.add_results(results)
+        ds.mark_completed()
+        return ds, results
+
+    @staticmethod
+    def _close_ds(ds: DataSet) -> None:
+        if ds._raw_data_conn is not None:
+            ds._raw_data_conn.close()
+        ds.conn.close()
+
+    def test_extract_runs_into_db_with_split_data(self, tmp_path: Path) -> None:
+        """extract_runs_into_db should copy data from external raw data file."""
+        ds, results = self._make_dataset_with_data(n_rows=5)
+        run_id = ds.run_id
+        source_db = ds.path_to_db
+        assert source_db is not None
+        self._close_ds(ds)
+
+        target_db = str(tmp_path / "target.db")
+        extract_runs_into_db(source_db, target_db, run_id)
+
+        # Verify data was copied to target DB
+        target_conn = connect(target_db)
+        target_ds = load_by_id(1, conn=target_conn)
+        data = target_ds.get_parameter_data()
+        np.testing.assert_array_almost_equal(
+            data["y"]["y"], np.array([r["y"] for r in results])
+        )
+        assert target_ds.number_of_results == 5
+        target_conn.close()
+
+    def test_export_and_create_metadata_db_with_split_data(
+        self, tmp_path: Path
+    ) -> None:
+        """export_datasets_and_create_metadata_db should work with split data."""
+        ds, _results = self._make_dataset_with_data(n_rows=5)
+        source_db = ds.path_to_db
+        assert source_db is not None
+        self._close_ds(ds)
+
+        target_db = tmp_path / "metadata_only.db"
+        export_path = tmp_path / "netcdf_exports"
+
+        statuses = export_datasets_and_create_metadata_db(
+            source_db, target_db, export_path=export_path
+        )
+
+        assert len(statuses) == 1
+        # Should either be exported to NetCDF or copied as-is
+        assert next(iter(statuses.values())) in ("exported", "copied_as_is")
