@@ -81,7 +81,7 @@ For dataset operations, QCoDeS provides functions for:
 Split Raw Data Storage
 ======================
 
-By default, all measurement data (the results table rows) is stored in the same SQLite database alongside metadata such as experiments, runs, parameter layouts, and dependencies. Over time, the main database file can grow very large, which can slow down operations like browsing experiments and loading metadata.
+By default, all measurement data (the results table rows) is stored in the same SQLite database alongside metadata such as experiments, runs, parameters and their dependencies. Over time, the main database file can grow very large, which can slow down operations like browsing experiments and make managing a large database file inconvenient.
 
 QCoDeS supports an optional **split raw data storage** mode in which the actual measurement data for each ``DataSet`` is written to an individual, per-dataset SQLite file while all metadata remains in the main database. Each per-dataset file is named after the dataset's GUID (e.g. ``<guid>.db``) and is stored in a configurable folder.
 
@@ -123,6 +123,4 @@ QCoDeS provides helpers for managing per-dataset raw data files over time:
 - :func:`~qcodes.dataset.purge_orphaned_datasets` — remove dataset records whose raw data files no longer exist on disk.
 - :func:`~qcodes.dataset.cleanup_datasets` — remove datasets (DB records and raw data files) by age, sample name, or file size.
 
-For usage examples, see the :doc:`Database notebook <../examples/DataSet/Database>`.
-
-For more details on database management, see the :doc:`Database notebook <../examples/DataSet/Database>`.
+For usage examples and more details on database management, see the :doc:`Database notebook <../examples/DataSet/Database>`.

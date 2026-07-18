@@ -4,7 +4,7 @@ Module for managing per-dataset raw data SQLite files.
 When the ``dataset.raw_data_to_separate_db`` config option is enabled,
 measurement data (results tables) are written to individual SQLite files
 - one per dataset - instead of the main QCoDeS database file.  All metadata
-(runs, experiments, layouts, dependencies) remains in the main database.
+(runs, experiments, parameters) remains in the main database.
 
 The per-dataset files are stored in the folder given by
 ``dataset.raw_data_path`` and are named ``<guid>.db``.
