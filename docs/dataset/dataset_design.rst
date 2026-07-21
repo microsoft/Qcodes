@@ -82,7 +82,7 @@ Split Raw Data Storage
 ======================
 
 As the main SQLite database grows with many datasets, browsing experiments and
-loading metadata can become slower due to the file size. To address this,
+managing the database file can become inconvenient due to the file size. To address this,
 QCoDeS supports an optional **split raw data storage** mode (see
 :ref:`sec:intro_split_raw_data` for user-facing details).
 
