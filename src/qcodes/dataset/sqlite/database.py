@@ -120,6 +120,70 @@ def _adapt_complex(value: complex | np.complexfloating) -> sqlite3.Binary:
     return sqlite3.Binary(out.read())
 
 
+def _register_numpy_sqlite_adapters_and_converters() -> None:
+    """
+    Register the numpy/sqlite type adapters and converters that QCoDeS needs
+    to round-trip array, numeric and complex data. The registrations are
+    global to the ``sqlite3`` module and idempotent, so calling this multiple
+    times is safe.
+    """
+    # register numpy->binary(TEXT) adapter
+    sqlite3.register_adapter(np.ndarray, _adapt_array)
+    # register binary(TEXT) -> numpy converter
+    sqlite3.register_converter("array", _convert_array)
+
+    # Make sure numpy ints and floats types are inserted properly
+    for numpy_int in numpy_ints:
+        sqlite3.register_adapter(numpy_int, int)
+
+    sqlite3.register_converter("numeric", _convert_numeric)
+
+    for numpy_float in (float, *numpy_floats):
+        sqlite3.register_adapter(numpy_float, _adapt_float)
+
+    for complex_type in complex_types:
+        # https://github.com/python/typeshed/issues/2429
+        sqlite3.register_adapter(complex_type, _adapt_complex)  # type: ignore[arg-type]
+    sqlite3.register_converter("complex", _convert_complex)
+
+
+def connect_to_sqlite_file(
+    name: str | Path, read_only: bool = False
+) -> AtomicConnection:
+    """
+    Open a bare :class:`AtomicConnection` to an sqlite file with the settings
+    that QCoDeS relies on (URI mode, ``PARSE_DECLTYPES``) and the numpy type
+    adapters/converters registered.
+
+    Unlike :func:`connect`, this does **not** create or upgrade any QCoDeS
+    schema; it is the low-level building block shared by :func:`connect` and
+    the per-dataset raw-data connection helper.
+
+    Args:
+        name: name or path to the sqlite file
+        read_only: Should the database be opened in read only mode.
+
+    Returns:
+        connection object to the database (note, it is
+        :class:`AtomicConnection`, which is a subclass of :class:`sqlite3.Connection`)
+
+    """
+    _register_numpy_sqlite_adapters_and_converters()
+
+    path = f"file:{name!s}"
+
+    if read_only:
+        path = path + "?mode=ro"
+
+    return sqlite3.connect(
+        path,
+        detect_types=sqlite3.PARSE_DECLTYPES,
+        check_same_thread=True,
+        uri=True,
+        factory=AtomicConnection,
+    )
+
+
 def connect(
     name: str | Path, debug: bool = False, version: int = -1, read_only: bool = False
 ) -> AtomicConnection:
@@ -140,23 +204,7 @@ def connect(
         :class:`AtomicConnection`, which is a subclass of :class:`sqlite3.Connection`)
 
     """
-    # register numpy->binary(TEXT) adapter
-    sqlite3.register_adapter(np.ndarray, _adapt_array)
-    # register binary(TEXT) -> numpy converter
-    sqlite3.register_converter("array", _convert_array)
-
-    path = f"file:{name!s}"
-
-    if read_only:
-        path = path + "?mode=ro"
-
-    conn = sqlite3.connect(
-        path,
-        detect_types=sqlite3.PARSE_DECLTYPES,
-        check_same_thread=True,
-        uri=True,
-        factory=AtomicConnection,
-    )
+    conn = connect_to_sqlite_file(name, read_only=read_only)
 
     latest_supported_version = _latest_available_version()
     db_version = get_user_version(conn)
@@ -167,20 +215,6 @@ def connect(
             f"version of QCoDeS supports up to "
             f"version {latest_supported_version}"
         )
-
-    # Make sure numpy ints and floats types are inserted properly
-    for numpy_int in numpy_ints:
-        sqlite3.register_adapter(numpy_int, int)
-
-    sqlite3.register_converter("numeric", _convert_numeric)
-
-    for numpy_float in (float, *numpy_floats):
-        sqlite3.register_adapter(numpy_float, _adapt_float)
-
-    for complex_type in complex_types:
-        # https://github.com/python/typeshed/issues/2429
-        sqlite3.register_adapter(complex_type, _adapt_complex)  # type: ignore[arg-type]
-    sqlite3.register_converter("complex", _convert_complex)
 
     if debug:
         conn.set_trace_callback(print)
