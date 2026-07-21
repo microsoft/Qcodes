@@ -2351,6 +2351,10 @@ def remove_dataset_from_db(
 
     """
     with atomic(conn) as aconn:
+        # Guard against dropping an unintended table if result_table_name is
+        # malformed, reusing the same validation used when creating tables.
+        _validate_table_name(result_table_name)
+
         # Get layout_ids for this run (needed for dependencies)
         cursor = transaction(
             aconn, "SELECT layout_id FROM layouts WHERE run_id = ?", run_id

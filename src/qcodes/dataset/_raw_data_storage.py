@@ -13,33 +13,25 @@ The per-dataset files are stored in the folder given by
 from __future__ import annotations
 
 import logging
-import sqlite3
 from contextlib import closing
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import numpy as np
-
 import qcodes
 from qcodes.dataset.export_config import _expand_export_path
 from qcodes.dataset.sqlite.connection import AtomicConnection, atomic
 from qcodes.dataset.sqlite.database import (
-    _adapt_array,
-    _adapt_complex,
-    _adapt_float,
-    _convert_array,
-    _convert_complex,
-    _convert_numeric,
     connect,
+    connect_to_sqlite_file,
 )
 from qcodes.dataset.sqlite.queries import (
+    _create_run_table,
     get_datasets_with_raw_data_path,
     remove_dataset_from_db,
 )
 from qcodes.dataset.sqlite.query_helpers import is_column_in_table
-from qcodes.utils.types import complex_types, numpy_floats, numpy_ints
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -95,8 +87,10 @@ def connect_to_raw_data_db(
 
     Unlike the main QCoDeS :func:`~qcodes.dataset.sqlite.database.connect`,
     this does **not** create the full metadata schema (experiments, runs, ...).
-    It only registers the numpy/sqlite type adapters that QCoDeS needs to
-    round-trip array and numeric data.
+    It reuses the shared
+    :func:`~qcodes.dataset.sqlite.database.connect_to_sqlite_file` helper so
+    that the numpy/sqlite type adapters and connection settings are identical
+    to the main database connection.
 
     Args:
         path: Path to the raw-data SQLite file.
@@ -106,30 +100,7 @@ def connect_to_raw_data_db(
         An :class:`AtomicConnection` to the raw-data database.
 
     """
-    # Register adapters/converters (idempotent calls)
-    sqlite3.register_adapter(np.ndarray, _adapt_array)
-    sqlite3.register_converter("array", _convert_array)
-    for numpy_int in numpy_ints:
-        sqlite3.register_adapter(numpy_int, int)
-    sqlite3.register_converter("numeric", _convert_numeric)
-    for numpy_float in (float, *numpy_floats):
-        sqlite3.register_adapter(numpy_float, _adapt_float)
-    for complex_type in complex_types:
-        sqlite3.register_adapter(complex_type, _adapt_complex)  # type: ignore[arg-type]
-    sqlite3.register_converter("complex", _convert_complex)
-
-    uri = f"file:{path!s}"
-    if read_only:
-        uri += "?mode=ro"
-
-    conn = sqlite3.connect(
-        uri,
-        detect_types=sqlite3.PARSE_DECLTYPES,
-        check_same_thread=True,
-        uri=True,
-        factory=AtomicConnection,
-    )
-    return conn
+    return connect_to_sqlite_file(path, read_only=read_only)
 
 
 def create_raw_data_db(
@@ -157,23 +128,10 @@ def create_raw_data_db(
 
     conn = connect_to_raw_data_db(path)
 
-    if paramspecs:
-        columns = ",".join(f'"{p.name}" {p.type}' for p in paramspecs)
-        sql = f"""
-        CREATE TABLE IF NOT EXISTS "{table_name}" (
-            id INTEGER PRIMARY KEY,
-            {columns}
-        );
-        """
-    else:
-        sql = f"""
-        CREATE TABLE IF NOT EXISTS "{table_name}" (
-            id INTEGER PRIMARY KEY
-        );
-        """
-
-    conn.execute(sql)
-    conn.commit()
+    # Reuse the same results-table creation logic as the main database so
+    # the raw-data table schema (column definitions, table-name validation)
+    # stays consistent with the rest of QCoDeS.
+    _create_run_table(conn, table_name, paramspecs or None)
 
     log.info(
         "Created raw data database at %s with table %s",
