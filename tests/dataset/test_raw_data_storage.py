@@ -37,10 +37,19 @@ from qcodes.dataset.database_extract_runs import (
 )
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.sqlite.database import connect, initialise_database
+from qcodes.dataset.sqlite.queries import get_raw_data_db_path_for_run
+from qcodes.dataset.sqlite.query_helpers import select_one_where
 from qcodes.parameters import ParamSpecBase
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+
+
+def _raw_file(ds: DataSet) -> Path:
+    """Return the per-dataset raw data file path, asserting it is set."""
+    raw_path = ds._raw_data_db_path
+    assert raw_path is not None
+    return Path(raw_path)
 
 
 # ---------------------------------------------------------------------------
@@ -191,27 +200,37 @@ class TestDataSetWithSplitRawData:
         assert raw_file.is_file()
         self._close_ds(ds)
 
-    def test_raw_data_db_path_in_metadata(self) -> None:
-        """The path to the raw data file should be stored in metadata."""
+    def test_raw_data_db_path_recorded(self) -> None:
+        """The path to the raw data file should be recorded in the runs table
+        (in a dedicated column) but kept out of the user-facing metadata."""
         ds, _ = self._make_dataset_with_data()
-        assert "raw_data_db_path" in ds.metadata
-        assert Path(ds.metadata["raw_data_db_path"]).is_file()
+        # Not exposed as user metadata ...
+        assert "raw_data_db_path" not in ds.metadata
+        # ... but recorded internally and pointing at the real file.
+        assert ds._raw_data_db_path is not None
+        assert _raw_file(ds).is_file()
+        assert ds._raw_data_db_path == get_raw_data_db_path_for_run(ds.conn, ds.run_id)
         self._close_ds(ds)
 
     def test_data_is_in_raw_db_not_main(self) -> None:
-        """Data should be in the raw data file, not the main DB."""
+        """Data should be in the raw data file, and the main DB should not
+        contain a results table at all."""
         ds, _ = self._make_dataset_with_data(n_rows=5)
         table_name = ds.table_name
         main_conn = ds.conn
 
-        # Main DB should have the results table (schema) but no data rows
+        # Main DB should NOT contain the results table - only metadata is kept
+        # there when raw data storage is enabled.
         cursor = main_conn.execute(
             "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
             (table_name,),
         )
-        assert cursor.fetchone() is not None
-        cursor = main_conn.execute(f'SELECT COUNT(*) FROM "{table_name}"')
-        assert cursor.fetchone()[0] == 0
+        assert cursor.fetchone() is None
+
+        # The result_table_name identifier is still recorded in the runs table.
+        assert table_name == select_one_where(
+            main_conn, "runs", "result_table_name", "run_id", ds.run_id
+        )
 
         # Raw data DB should have the actual data
         raw_conn = ds._raw_data_conn
@@ -227,7 +246,58 @@ class TestDataSetWithSplitRawData:
         assert ds.number_of_results == 7
         self._close_ds(ds)
 
-    def test_get_parameter_data(self) -> None:
+    def test_no_results_table_in_main_db_before_started(self) -> None:
+        """A pristine split dataset has no results table anywhere, and
+        counting results returns 0 without raising."""
+        ds = new_data_set("test-split")
+        x = ParamSpecBase("x", "numeric")
+        y = ParamSpecBase("y", "numeric")
+        idps = InterDependencies_(dependencies={y: (x,)})
+        ds.set_interdependencies(idps)
+
+        # Not started yet: no raw data file, and no table in the main DB.
+        assert ds._raw_data_conn is None
+        cursor = ds.conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+            (ds.table_name,),
+        )
+        assert cursor.fetchone() is None
+
+        # Counting must not raise even though the table does not exist.
+        assert ds.number_of_results == 0
+        assert len(ds) == 0
+        self._close_ds(ds)
+
+    def test_subscribe_before_start_defers_and_fires(self) -> None:
+        """Subscribing before the dataset is started (before the raw data
+        table exists) should be deferred and then fire once data is added."""
+        ds = new_data_set("test-split")
+        x = ParamSpecBase("x", "numeric")
+        y = ParamSpecBase("y", "numeric")
+        idps = InterDependencies_(dependencies={y: (x,)})
+        ds.set_interdependencies(idps)
+
+        received: list[int] = []
+
+        def callback(results, length, state):
+            received.append(length)
+
+        # Subscribe while still pristine - no results table exists yet.
+        sub_id = ds.subscribe(callback, min_wait=0, min_count=1)
+        assert sub_id in ds._pending_subscribers
+        assert ds.subscribers == {}
+
+        ds.mark_started()
+        # Deferred subscriber has now been materialised.
+        assert ds._pending_subscribers == {}
+        assert sub_id in ds.subscribers
+
+        ds.add_results([{"x": float(i), "y": float(i**2)} for i in range(5)])
+        ds.mark_completed()
+
+        assert len(received) > 0
+        assert received[-1] == 5
+        self._close_ds(ds)
         """get_parameter_data should read from the raw data file."""
         ds, results = self._make_dataset_with_data(n_rows=5)
         data = ds.get_parameter_data()
@@ -299,7 +369,7 @@ class TestDataSetWithSplitRawData:
         """Loading a dataset whose raw data file is missing should raise."""
         ds, _ = self._make_dataset_with_data(n_rows=3)
         run_id = ds.run_id
-        raw_path = Path(ds.metadata["raw_data_db_path"])
+        raw_path = _raw_file(ds)
         self._close_ds(ds)
 
         # Delete the raw data file
@@ -370,7 +440,7 @@ class TestUpdateRawDataPaths:
         ds.add_results([{"x": 1.0, "y": 2.0}])
         ds.mark_completed()
 
-        raw_path = Path(ds.metadata["raw_data_db_path"])
+        raw_path = _raw_file(ds)
         db_path = ds.path_to_db
         assert db_path is not None
         self._close_ds(ds)
@@ -460,7 +530,7 @@ class TestPurgeOrphanedDatasets:
         ds.add_results([{"x": 1.0, "y": 2.0}])
         ds.mark_completed()
 
-        raw_path = Path(ds.metadata["raw_data_db_path"])
+        raw_path = _raw_file(ds)
         db_path = ds.path_to_db
         assert db_path is not None
         self._close_ds(ds)
@@ -496,7 +566,7 @@ class TestPurgeOrphanedDatasets:
         ds.add_results([{"x": 1.0, "y": 2.0}])
         ds.mark_completed()
 
-        raw_path = Path(ds.metadata["raw_data_db_path"])
+        raw_path = _raw_file(ds)
         db_path = ds.path_to_db
         assert db_path is not None
         run_id = ds.run_id
@@ -570,7 +640,7 @@ class TestCleanupDatasets:
         ds1.mark_started()
         ds1.add_results([{"x": 1.0, "y": 2.0}])
         ds1.mark_completed()
-        raw_path1 = Path(ds1.metadata["raw_data_db_path"])
+        raw_path1 = _raw_file(ds1)
         db_path = ds1.path_to_db
         assert db_path is not None
         self._close_ds(ds1)
@@ -582,7 +652,7 @@ class TestCleanupDatasets:
         ds2.mark_started()
         ds2.add_results([{"x": 3.0, "y": 4.0}])
         ds2.mark_completed()
-        raw_path2 = Path(ds2.metadata["raw_data_db_path"])
+        raw_path2 = _raw_file(ds2)
         self._close_ds(ds2)
 
         # Dry run first
@@ -613,7 +683,7 @@ class TestCleanupDatasets:
         for i in range(100):
             ds.add_results([{"x": float(i), "y": float(i * 2)}])
         ds.mark_completed()
-        raw_path = Path(ds.metadata["raw_data_db_path"])
+        raw_path = _raw_file(ds)
         db_path = ds.path_to_db
         assert db_path is not None
         self._close_ds(ds)
@@ -733,6 +803,10 @@ class TestExtractExportWithSplitRawData:
             data["y"]["y"], np.array([r["y"] for r in results])
         )
         assert target_ds.number_of_results == 5
+        # The extracted dataset owns its data in the target DB and must not
+        # keep referring to the source's per-dataset raw data file.
+        assert get_raw_data_db_path_for_run(target_conn, target_ds.run_id) is None
+        assert "raw_data_db_path" not in target_ds.metadata
         target_conn.close()
 
     def test_export_and_create_metadata_db_with_split_data(
