@@ -1,0 +1,16 @@
+Added **split raw data storage** for the DataSet: an opt-in feature
+enabled via the ``dataset.raw_data_to_separate_db`` config option that
+writes raw measurement data into individual per-dataset SQLite files
+while keeping all metadata in the main database.  This prevents the
+main DB file from growing excessively large and allows users to have a
+single main SQLite QCoDeS database on their PC as opposed to many that
+grow infinitely.
+
+Management helpers included:
+
+- ``update_raw_data_paths()``: update stored paths after raw data files
+  have been moved to a new folder.
+- ``purge_orphaned_datasets()``: find and remove dataset records whose
+  raw data files no longer exist on disk (``dry_run=True`` by default).
+- ``cleanup_datasets()``: remove datasets (DB records and raw data files)
+  by age, sample name, or file size (``dry_run=True`` by default).

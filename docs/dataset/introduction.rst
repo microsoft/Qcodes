@@ -75,3 +75,52 @@ For dataset operations, QCoDeS provides functions for:
 - **Exporting datasets**: :doc:`Exporting data to other file formats <../examples/DataSet/Exporting-data-to-other-file-formats>`
 - **Extracting runs between databases**: :doc:`Extracting runs from one DB file to another <../examples/DataSet/Extracting-runs-from-one-DB-file-to-another>` and :func:`qcodes.dataset.extract_runs_into_db`
 - **Bulk export and metadata-only databases**: :func:`qcodes.dataset.export_datasets_and_create_metadata_db` for creating lightweight metadata-only databases while exporting all data to NetCDF files
+
+.. _sec:intro_split_raw_data:
+
+Split Raw Data Storage
+======================
+
+By default, all measurement data (the results table rows) is stored in the same SQLite database alongside metadata such as experiments, runs, parameters and their dependencies. Over time, the main database file can grow very large, which can slow down operations like browsing experiments and make managing a large database file inconvenient.
+
+QCoDeS supports an optional **split raw data storage** mode in which the actual measurement data for each ``DataSet`` is written to an individual, per-dataset SQLite file while all metadata remains in the main database. Each per-dataset file is named after the dataset's GUID (e.g. ``<guid>.db``) and is stored in a configurable folder.
+
+This feature is controlled by two configuration options in ``qcodesrc.json``:
+
+- ``dataset.raw_data_to_separate_db`` (bool, default ``false``): enables or disables split storage.
+- ``dataset.raw_data_path`` (string, default ``"{db_location}"``): the folder where per-dataset files are created. The ``{db_location}`` placeholder is expanded to a folder derived from the main database path (e.g. ``~/experiments.db`` becomes ``~/experiments_db/``).
+
+When enabled:
+
+- The main database retains the full results table schema (column definitions) but no data rows are written to it, keeping it lightweight.
+- All ``INSERT`` and ``SELECT`` operations on results data are transparently routed to the per-dataset file.
+- The path to the per-dataset file is persisted in the run's metadata (``raw_data_db_path``), so ``load_by_id`` and related loading functions automatically reconnect to the correct file.
+- All public ``DataSet`` APIs (``get_parameter_data``, ``to_pandas_dataframe``, ``to_xarray_dataset``, ``cache``, ``export``, etc.) work identically whether split storage is enabled or not.
+
+Example runtime configuration::
+
+    import qcodes as qc
+
+    qc.config.dataset.raw_data_to_separate_db = True
+    qc.config.dataset.raw_data_path = "/data/raw_measurements/"
+
+If the per-dataset raw data files are moved to a different folder (e.g. during data migration or archival), the stored paths in the main database will become stale. Use the :func:`~qcodes.dataset.update_raw_data_paths` helper to update them::
+
+    from qcodes.dataset import update_raw_data_paths
+
+    update_raw_data_paths(
+        db_path="/path/to/main_database.db",
+        new_raw_data_folder="/new/location/of/raw_files/"
+    )
+
+This scans all datasets with a ``raw_data_db_path`` metadata entry, checks whether the corresponding ``.db`` file exists in the new folder, and updates the stored path accordingly.
+
+Managing Datasets
+-----------------
+
+QCoDeS provides helpers for managing per-dataset raw data files over time:
+
+- :func:`~qcodes.dataset.purge_orphaned_datasets` — remove dataset records whose raw data files no longer exist on disk.
+- :func:`~qcodes.dataset.cleanup_datasets` — remove datasets (DB records and raw data files) by age, sample name, or file size.
+
+For usage examples and more details on database management, see the :doc:`Database notebook <../examples/DataSet/Database>`.
