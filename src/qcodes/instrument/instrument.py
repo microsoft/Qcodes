@@ -182,7 +182,9 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
     @classmethod
     def close_all(
         cls,
+        *,
         log_status: bool = False,
+        only_subclasses: bool = False,
     ) -> None:
         """
         Try to close all instruments registered in
@@ -196,6 +198,8 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         Args:
             log_status: If True, log the status of closing each instrument. Set this to False
               if you want to avoid logging during interpreter shutdown, which can cause errors.
+            only_subclasses: If True, only close instruments that are subclasses of the class
+              on which this method is called. If False, close all instruments regardless of class.
 
         """
         if log_status:
@@ -203,9 +207,16 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         for inststr in list(cls._all_instruments):
             try:
                 inst: Instrument = cls.find_instrument(inststr)
-                if log_status:
-                    log.info("Closing %s", inststr)
-                inst.close()
+                if only_subclasses and issubclass(type(inst), cls):
+                    should_be_closed = True
+                elif not only_subclasses:
+                    should_be_closed = True
+                else:
+                    should_be_closed = False
+                if should_be_closed:
+                    if log_status:
+                        log.info("Closing %s", inststr)
+                    inst.close()
             except Exception:
                 if log_status:
                     log.exception("Failed to close %s, ignored", inststr)
