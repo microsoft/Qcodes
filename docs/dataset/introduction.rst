@@ -92,9 +92,9 @@ This feature is controlled by two configuration options in ``qcodesrc.json``:
 
 When enabled:
 
-- The main database retains the full results table schema (column definitions) but no data rows are written to it, keeping it lightweight.
+- No results table is created in the main database; it stores only the run metadata, keeping it lightweight.
 - All ``INSERT`` and ``SELECT`` operations on results data are transparently routed to the per-dataset file.
-- The path to the per-dataset file is persisted in the run's metadata (``raw_data_db_path``), so ``load_by_id`` and related loading functions automatically reconnect to the correct file.
+- The path to the per-dataset file is recorded in the ``runs`` table, so ``load_by_id`` and related loading functions automatically reconnect to the correct file.
 - All public ``DataSet`` APIs (``get_parameter_data``, ``to_pandas_dataframe``, ``to_xarray_dataset``, ``cache``, ``export``, etc.) work identically whether split storage is enabled or not.
 
 Example runtime configuration::
