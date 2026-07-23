@@ -89,6 +89,12 @@ RUNS_TABLE_COLUMNS = (
     "captured_counter",
 )
 
+#: Name of the ``runs``-table column used to record the location of a dataset's
+#: raw data when it is stored outside the main database (e.g. in a per-dataset
+#: SQLite file). It is an internal storage detail and is deliberately excluded
+#: from the user-facing dataset metadata.
+RAW_DATA_DB_PATH_COLUMN = "raw_data_db_path"
+
 
 def is_run_id_in_database(conn: AtomicConnection, *run_ids: int) -> dict[int, bool]:
     """
@@ -1838,7 +1844,7 @@ def get_metadata_from_run_id(conn: AtomicConnection, run_id: int) -> dict[str, A
     """
     Get all metadata associated with the specified run
     """
-    non_metadata = RUNS_TABLE_COLUMNS
+    non_metadata = (*RUNS_TABLE_COLUMNS, RAW_DATA_DB_PATH_COLUMN)
 
     metadata = {}
     possible_tags = []
@@ -2309,10 +2315,41 @@ def _get_result_table_name_by_guid(conn: AtomicConnection, guid: str) -> str:
     return formatted_name
 
 
+def get_raw_data_db_path_for_run(conn: AtomicConnection, run_id: int) -> str | None:
+    """Return the stored raw-data file path for a run.
+
+    The path is read directly from the ``raw_data_db_path`` column of the
+    ``runs`` table (which is kept out of the user-facing metadata). Returns
+    ``None`` if the column does not exist or is not set for the run.
+    """
+    if not is_column_in_table(conn, "runs", RAW_DATA_DB_PATH_COLUMN):
+        return None
+    cursor = conn.execute(
+        f'SELECT "{RAW_DATA_DB_PATH_COLUMN}" FROM runs WHERE run_id = ?', (run_id,)
+    )
+    row = cursor.fetchone()
+    if row is None:
+        return None
+    return row[0]
+
+
+def set_raw_data_db_path_for_run(
+    conn: AtomicConnection, run_id: int, raw_data_db_path: str
+) -> None:
+    """Record the raw-data file path for a run in the ``runs`` table."""
+    add_data_to_dynamic_columns(
+        conn, run_id, {RAW_DATA_DB_PATH_COLUMN: raw_data_db_path}
+    )
+
+
 def get_datasets_with_raw_data_path(
     conn: AtomicConnection,
 ) -> list[tuple[int, str, str, str, float | None, float | None, str, str]]:
     """Get all datasets that have a raw_data_db_path metadata column set.
+
+    Only datasets that have been started (``run_timestamp`` is set) are
+    returned, since an unstarted run records the intended raw-data path but
+    never creates the corresponding file.
 
     Returns:
         A list of tuples:
@@ -2331,6 +2368,7 @@ def get_datasets_with_raw_data_path(
     FROM runs r
     JOIN experiments e ON r.exp_id = e.exp_id
     WHERE r.raw_data_db_path IS NOT NULL
+      AND r.run_timestamp IS NOT NULL
     """
     cursor = atomic_transaction(conn, sql)
     return cursor.fetchall()
