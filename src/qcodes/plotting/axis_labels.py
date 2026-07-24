@@ -27,7 +27,6 @@ _UNITS_FOR_RESCALING: set[str] = {
     "ohm",
     "Ohm",
     "Ω",
-    "\N{GREEK CAPITAL LETTER OMEGA}",
     "S",
     "Wb",
     "T",
