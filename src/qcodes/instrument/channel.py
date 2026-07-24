@@ -440,11 +440,10 @@ class ChannelTuple[InstrumentModuleType: "InstrumentModule"](
             AttributeError: If no parameter with the given name exists.
 
         """
-        if len(self) > 0:
-            # Check if this is a valid parameter
-            if name in self._channels[0].parameters:
-                param = self._construct_multiparam(name)
-                return param
+        # Check if this is a valid parameter
+        if len(self) > 0 and name in self._channels[0].parameters:
+            param = self._construct_multiparam(name)
+            return param
         raise AttributeError(
             f"'{self.__class__.__name__}' object has no parameter '{name}'"
         )

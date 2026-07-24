@@ -835,9 +835,8 @@ def dond(
                         *additional_setpoints_data,
                     )
 
-                if callable(break_condition):
-                    if break_condition():
-                        raise BreakConditionInterrupt("Break condition was met.")
+                if callable(break_condition) and break_condition():
+                    raise BreakConditionInterrupt("Break condition was met.")
     finally:
         for datasaver in datasavers:
             ds, plot_axis, plot_color = _handle_plotting(

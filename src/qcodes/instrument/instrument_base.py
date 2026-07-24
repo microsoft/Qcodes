@@ -385,9 +385,8 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
                 component = component.get_component(remaining_name)
                 remaining_name_parts = []
 
-        if component is not None:
-            if len(remaining_name_parts) == 0:
-                return component
+        if component is not None and len(remaining_name_parts) == 0:
+            return component
 
         if len(remaining_name_parts) == 0:
             raise KeyError(

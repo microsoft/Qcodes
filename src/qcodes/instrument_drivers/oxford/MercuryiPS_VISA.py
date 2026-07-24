@@ -678,9 +678,8 @@ class OxfordMercuryiPS(VisaInstrument):
                 raise RuntimeError(
                     f"Expected an OxfordMercuryWorkerPS but got {type(worker)}"
                 )
-            if worker.field_target() != cur:
-                if worker.field_ramp_rate() == 0:
-                    raise ValueError(f"Can not ramp {worker}; ramp rate set to zero!")
+            if worker.field_target() != cur and worker.field_ramp_rate() == 0:
+                raise ValueError(f"Can not ramp {worker}; ramp rate set to zero!")
 
         # then the actual ramp
         {
