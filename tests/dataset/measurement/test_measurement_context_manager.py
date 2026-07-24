@@ -489,7 +489,9 @@ def test_enter_and_exit_actions(DAC, words) -> None:
         meas.add_after_run(action, testlist)
 
 
-def test_subscriptions(experiment, DAC, DMM) -> None:
+def test_subscriptions(
+    experiment: Experiment, DAC: DummyInstrument, DMM: DummyInstrument
+) -> None:
     """
     Test that subscribers are called at the moment the data is flushed to
     database
@@ -579,13 +581,18 @@ def test_subscriptions(experiment, DAC, DMM) -> None:
             @retry_until_does_not_throw(
                 exception_class_to_expect=AssertionError, delay=0.5, tries=20
             )
-            def assert_states_updated_from_callbacks() -> None:
-                assert values_larger_than_7 == values_larger_than_7__expected
+            def assert_states_updated_from_callbacks(
+                num: int, expected_values: list[int]
+            ) -> None:
+                assert values_larger_than_7 == expected_values
                 assert list(all_results_dict.keys()) == [
                     result_index for result_index in range(1, num + 1 + 1)
                 ]
 
-            assert_states_updated_from_callbacks()
+            assert_states_updated_from_callbacks(
+                num=num,
+                expected_values=values_larger_than_7__expected,
+            )
 
     # Ensure that after exiting the "run()" context,
     # all subscribers get unsubscribed from the dataset
