@@ -191,7 +191,7 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         closed.
 
         Examples:
-            >>> atexit.register(qc.Instrument.close_all())
+            >>> atexit.register(qc.Instrument.close_all())  # doctest: +SKIP
 
         Args:
             log_status: If True, log the status of closing each instrument. Set this to False

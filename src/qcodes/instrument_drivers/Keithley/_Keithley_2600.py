@@ -920,41 +920,49 @@ class Keithley2600Channel(InstrumentChannel["Keithley2600"]):
 
         **Direct usage (returns ndarray)**
 
-        Example 1D::
+        Example 1D:
 
-            >>> from qcodes.dataset import LinSweep
-            >>> keith.smua.setup_fastsweep(LinSweep(keith.smua.volt, 0, 1, 100))
-            >>> data = keith.smua.fastsweep()  # or: keith.smua.fastsweep.get()
-            >>> data.shape
+        .. code-block:: python
+
+            from qcodes.dataset import LinSweep
+            keith.smua.setup_fastsweep(LinSweep(keith.smua.volt, 0, 1, 100))
+            data = keith.smua.fastsweep()  # or: keith.smua.fastsweep.get()
+            data.shape
             (100,)
 
-        Example 2D (inner=smub, outer=smua)::
+        Example 2D (inner=smub, outer=smua):
 
-            >>> from qcodes.dataset import LinSweep
-            >>> keith.smua.setup_fastsweep(
-            ...     LinSweep(keith.smub.volt, 0, 1, 100),   # inner
-            ...     LinSweep(keith.smua.volt, 0, 0.5, 20),  # outer
-            ... )
-            >>> data = keith.smub.fastsweep()  # call on inner channel
-            >>> data.shape
+        .. code-block:: python
+
+            from qcodes.dataset import LinSweep
+            keith.smua.setup_fastsweep(
+                LinSweep(keith.smub.volt, 0, 1, 100),   # inner
+                LinSweep(keith.smua.volt, 0, 0.5, 20),  # outer
+            )
+            data = keith.smub.fastsweep()  # call on inner channel
+            data.shape
             (20, 100)
 
         **Dataset logging with do0d**
 
         To log the fast sweep into a QCoDeS dataset, use :func:`do0d`
-        with the ``fastsweep`` parameter::
+        with the ``fastsweep`` parameter:
 
-            >>> from qcodes.dataset import LinSweep, do0d
-            >>> keith.smua.setup_fastsweep(LinSweep(keith.smua.volt, 0, 1, 100))
-            >>> ds, _, _ = do0d(keith.smua.fastsweep)
+        .. code-block:: python
 
-        For a 2D sweep (inner=smub, outer=smua)::
+            from qcodes.dataset import LinSweep, do0d
+            keith.smua.setup_fastsweep(LinSweep(keith.smua.volt, 0, 1, 100))
+            ds, _, _ = do0d(keith.smua.fastsweep)
 
-            >>> from qcodes.dataset import LinSweep, do0d
-            >>> keith.smua.setup_fastsweep(
-            ...     LinSweep(keith.smub.volt, 0, 1, 100),   # inner
-            ...     LinSweep(keith.smua.volt, 0, 0.5, 20),  # outer
-            ... )
+        For a 2D sweep (inner=smub, outer=smua):
+
+        .. code-block:: python
+
+            from qcodes.dataset import LinSweep, do0d
+            keith.smua.setup_fastsweep(
+                LinSweep(keith.smub.volt, 0, 1, 100),   # inner
+                LinSweep(keith.smua.volt, 0, 0.5, 20),  # outer
+            )
         """
 
         self.timetrace_npts: Parameter = self.add_parameter(
@@ -1063,25 +1071,31 @@ class Keithley2600Channel(InstrumentChannel["Keithley2600"]):
 
         Example 1D:
 
-            >>> from qcodes.dataset import LinSweep
-            >>> keith.smua.setup_fastsweep(LinSweep(keith.smua.volt, 0, 1, 100))
-            >>> ds, _, _ = do0d(keith.smua.fastsweep)
+        .. code-block:: python
+
+            from qcodes.dataset import LinSweep
+            keith.smua.setup_fastsweep(LinSweep(keith.smua.volt, 0, 1, 100))
+            ds, _, _ = do0d(keith.smua.fastsweep)
 
         Example 2D (inner=smua, outer=smub):
 
-            >>> keith.smua.setup_fastsweep(
-            ...     LinSweep(keith.smua.volt, 0, 1, 100),  # inner
-            ...     LinSweep(keith.smub.volt, 0, 0.5, 20),  # outer
-            ... )
-            >>> ds, _, _ = do0d(keith.smua.fastsweep)  # call on inner channel
+        .. code-block:: python
+
+            keith.smua.setup_fastsweep(
+                LinSweep(keith.smua.volt, 0, 1, 100),  # inner
+                LinSweep(keith.smub.volt, 0, 0.5, 20),  # outer
+            )
+            ds, _, _ = do0d(keith.smua.fastsweep)  # call on inner channel
 
         Example 2D (inner=smub, outer=smua):
 
-            >>> keith.smua.setup_fastsweep(
-            ...     LinSweep(keith.smub.volt, 0, 1, 100),  # inner
-            ...     LinSweep(keith.smua.volt, 0, 0.5, 20),  # outer
-            ... )
-            >>> ds, _, _ = do0d(keith.smub.fastsweep)  # call on inner channel
+        .. code-block:: python
+
+            keith.smua.setup_fastsweep(
+                LinSweep(keith.smub.volt, 0, 1, 100),  # inner
+                LinSweep(keith.smua.volt, 0, 0.5, 20),  # outer
+            )
+            ds, _, _ = do0d(keith.smub.fastsweep)  # call on inner channel
 
         """
 
