@@ -94,7 +94,7 @@ class DelegateAttributes:
         for name in self.delegate_attr_dicts:
             d = getattr(self, name, None)
             if d is not None:
-                names += [k for k in d.keys() if k not in self.omit_delegate_attrs]
+                names += [k for k in d if k not in self.omit_delegate_attrs]
 
         for name in self.delegate_attr_objects:
             obj = getattr(self, name, None)

@@ -630,7 +630,7 @@ def plot_2d_scatterplot(
     """
     import matplotlib
 
-    if "rasterized" in kwargs.keys():
+    if "rasterized" in kwargs:
         rasterized = kwargs.pop("rasterized")
     else:
         rasterized = len(z) > qc.config.plotting.rasterize_threshold
@@ -739,7 +739,7 @@ def plot_on_a_plain_grid(
         x_to_plot, y_to_plot, z_to_plot = reshape_2D_data(x, y, z)
         num_points = x_to_plot.size * y_to_plot.size
 
-    if "rasterized" in kwargs.keys():
+    if "rasterized" in kwargs:
         rasterized = kwargs.pop("rasterized")
     else:
         rasterized = num_points > qc.config.plotting.rasterize_threshold

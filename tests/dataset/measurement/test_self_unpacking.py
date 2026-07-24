@@ -31,7 +31,7 @@ class ControllingParameter(Parameter):
         super().__init__(name=name, get_cmd=False)
         # dict of Parameter to (slope, offset) of components
         self._components_dict: dict[Parameter, tuple[float, float]] = components
-        for param in self._components_dict.keys():
+        for param in self._components_dict:
             self._has_control_of.add(param)
             param.is_controlled_by.add(self)
 
@@ -84,7 +84,7 @@ def test_add_result_self_unpack(controlling_parameters, experiment):
     meas1_data = dataset_data.get("meas1", None)
     assert meas1_data is not None
     assert all(
-        param_name in meas1_data.keys()
+        param_name in meas1_data
         for param_name in ("meas1", "comp1", "comp2", "control1")
     )
     assert meas1_data["meas1"] == pytest.approx(np.linspace(1, 2, 11))
@@ -125,7 +125,7 @@ def test_add_result_self_unpack_with_PWS(controlling_parameters, experiment):
     pws_data = dataset_data.get("pws", None)
     assert (pws_data) is not None
     assert all(
-        param_name in pws_data.keys()
+        param_name in pws_data
         for param_name in ("pws", "comp1", "comp2", "control1", "pws_setpoints")
     )
     expected_setpoints, expected_control = np.meshgrid(

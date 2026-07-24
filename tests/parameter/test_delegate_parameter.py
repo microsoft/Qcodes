@@ -442,7 +442,7 @@ def _assert_none_source_is_correct(delegate_param: DelegateParameter) -> None:
         delegate_param.set(1)
     snapshot = delegate_param.snapshot()
     assert snapshot["source_parameter"] is None
-    assert "value" not in snapshot.keys()
+    assert "value" not in snapshot
     snapshot.pop("ts")
     updated_snapshot = delegate_param.snapshot(update=True)
     updated_snapshot.pop("ts")

@@ -82,7 +82,7 @@ class LakeshoreModel336Mock(MockVisaInstrument, LakeshoreModel336):
                 compensation_enabled=0,  # False,
                 units=1,  # 'kelvin'
             )
-            for i in self.channel_name_command.keys()
+            for i in self.channel_name_command
         }
 
         # simulate delayed heating

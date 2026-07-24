@@ -480,7 +480,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel["RohdeSchwarzZNBBase"]):
             "ZNLE14": 0,
             "ZNLE18": 0,
         }
-        if model not in self._model_min_source_power.keys():
+        if model not in self._model_min_source_power:
             raise RuntimeError(f"Unsupported ZNB model: {model}")
         self._min_source_power: float
         self._min_source_power = self._model_min_source_power[model]
@@ -1101,7 +1101,7 @@ class RohdeSchwarzZNBBase(VisaInstrument):
             "ZNLE14": (1e6, 14e9),
             "ZNLE18": (1e6, 18e9),
         }
-        if model not in m_frequency.keys():
+        if model not in m_frequency:
             raise RuntimeError(f"Unsupported ZNB model {model}")
         self._min_freq: float
         self._max_freq: float

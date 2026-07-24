@@ -28,7 +28,7 @@ def _parse_output_string(string_value: str) -> str:
         s = s[1:-1]
 
     conversions = {"mov": "moving", "rep": "repeat"}
-    if s in conversions.keys():
+    if s in conversions:
         s = conversions[s]
     return s
 

@@ -1097,9 +1097,9 @@ class TektronixAWG70000Base(VisaInstrument):
             raise InvalidForgedSequenceError(e)
 
         chan_list: list[str | int] = []
-        for pos1 in seq.keys():
-            for pos2 in seq[pos1]["content"].keys():
-                for ch in seq[pos1]["content"][pos2]["data"].keys():
+        for pos1 in seq:
+            for pos2 in seq[pos1]["content"]:
+                for ch in seq[pos1]["content"][pos2]["data"]:
                     if ch not in chan_list:
                         chan_list.append(ch)
 
@@ -1130,14 +1130,14 @@ class TektronixAWG70000Base(VisaInstrument):
         wfmx_files: list[bytes] = []
         wfmx_filenames: list[str] = []
 
-        for pos1 in seq.keys():
-            for pos2 in seq[pos1]["content"].keys():
+        for pos1 in seq:
+            for pos2 in seq[pos1]["content"]:
                 for ch, data in seq[pos1]["content"][pos2]["data"].items():
                     wfm = data["wfm"]
 
                     markerdata = []
                     for mkey in ["m1", "m2", "m3", "m4"]:
-                        if mkey in data.keys():
+                        if mkey in data:
                             markerdata.append(data.get(mkey))
                     wfm_data = np.stack((wfm, *markerdata))
 
@@ -1157,7 +1157,7 @@ class TektronixAWG70000Base(VisaInstrument):
         subseqsml_files: list[str] = []
         subseqsml_filenames: list[str] = []
 
-        for pos1 in seq.keys():
+        for pos1 in seq:
             if seq[pos1]["type"] == "subsequence":
                 ss_wfm_names: list[list[str]] = []
 
@@ -1166,7 +1166,7 @@ class TektronixAWG70000Base(VisaInstrument):
                 # and we must also provide default values if nothing
                 # is specified
                 seqings: list[dict[str, int]] = []
-                for pos2 in seq[pos1]["content"].keys():
+                for pos2 in seq[pos1]["content"]:
                     pos_seqs = seq[pos1]["content"][pos2]["sequencing"]
                     pos_seqs["twait"] = pos_seqs.get("twait", 0)
                     pos_seqs["nrep"] = pos_seqs.get("nrep", 1)
@@ -1179,7 +1179,7 @@ class TektronixAWG70000Base(VisaInstrument):
                         [n for n in wfmx_filenames if f"wfm_{pos1}_{pos2}" in n]
                     )
 
-                seqing = {k: [d[k] for d in seqings] for k in seqings[0].keys()}
+                seqing = {k: [d[k] for d in seqings] for k in seqings[0]}
 
                 subseqname = f"subsequence_{pos1}"
 
@@ -1206,7 +1206,7 @@ class TektronixAWG70000Base(VisaInstrument):
         asset_names: list[list[str]] = []
         seqings = []
         subseq_positions: list[int] = []
-        for pos1 in seq.keys():
+        for pos1 in seq:
             pos_seqs = seq[pos1]["sequencing"]
 
             pos_seqs["twait"] = pos_seqs.get("twait", 0)
@@ -1222,7 +1222,7 @@ class TektronixAWG70000Base(VisaInstrument):
                 )
             else:
                 asset_names.append([wn for wn in wfmx_filenames if f"wfm_{pos1}" in wn])
-        seqing = {k: [d[k] for d in seqings] for k in seqings[0].keys()}
+        seqing = {k: [d[k] for d in seqings] for k in seqings[0]}
 
         log.debug(f"Assets for SML file: {asset_names}")
 

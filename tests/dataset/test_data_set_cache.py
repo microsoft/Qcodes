@@ -1078,7 +1078,7 @@ def _assert_parameter_data_is_identical(
         expected_inner = outer_val
         actual_inner = actual[outer_key]
         assert expected_inner.keys() == actual_inner.keys()
-        for inner_key in expected_inner.keys():
+        for inner_key in expected_inner:
             expected_np_array = expected_inner[inner_key]
             actual_np_array = actual_inner[inner_key]
             if shaped_partial:

@@ -28,7 +28,7 @@ def _parse_output_string(s: str) -> str:
         "rep": "repeat",
     }
 
-    if s in conversions.keys():
+    if s in conversions:
         s = conversions[s]
 
     return s

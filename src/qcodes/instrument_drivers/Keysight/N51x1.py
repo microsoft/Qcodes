@@ -39,7 +39,7 @@ class KeysightN51x1(VisaInstrument):
         }
 
         frequency_option = None
-        for f_option in freq_dict.keys():
+        for f_option in freq_dict:
             if f_option in self._options:
                 frequency_option = f_option
         if frequency_option is None:

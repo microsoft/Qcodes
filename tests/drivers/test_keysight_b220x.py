@@ -1,13 +1,17 @@
 import itertools
+from typing import TYPE_CHECKING
 
 import pytest
 from pyvisa.errors import VisaIOError
 
 from qcodes.instrument_drivers.Keysight.keysight_b220x import KeysightB220X
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 
 @pytest.fixture
-def uut():
+def uut() -> "Generator[KeysightB220X, None, None]":
     try:
         resource_name = "insert_Keysight_B2200_VISA_resource_name_here"
         instance = KeysightB220X("switch_matrix", address=resource_name)
@@ -65,9 +69,9 @@ def test_connect_emits_warning_on_statusbyte_not_null(uut) -> None:
     with pytest.warns(UserWarning):
         uut.connect(12, 33)
 
-        # The simulated instrument does not reset the settings to default
-        # values, so gnd mode is explicitly disabled here:
-        uut.gnd_mode(False)
+    # The simulated instrument does not reset the settings to default
+    # values, so gnd mode is explicitly disabled here:
+    uut.gnd_mode(False)
 
 
 def test_disconnect_throws_at_invalid_channel_number(uut) -> None:

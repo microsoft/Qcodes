@@ -1902,7 +1902,7 @@ def insert_data_in_dynamic_columns(
 
     """
     validate_dynamic_column_data(data)
-    for key in data.keys():
+    for key in data:
         insert_column(conn, table_name, key)
     update_columns(conn, row_id, table_name, data)
 

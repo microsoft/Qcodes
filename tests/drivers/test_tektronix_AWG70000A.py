@@ -84,7 +84,7 @@ def _make_forged_sequence():
         """
         data = {n: {} for n in range(1, 1 + num_chans)}
         rng = np.random.default_rng()
-        for key in data.keys():
+        for key in data:
             data[key] = {
                 "wfm": rng.standard_normal(2400),
                 "m1": rng.integers(0, 2, 2400),

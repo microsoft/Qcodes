@@ -147,17 +147,18 @@ def test_adding_dependent_parameter_later(
     assert callback_flag["called"], "dependency_update_method was not called."
 
 
-def test_error_on_non_interdependent_dependency(store, mock_instr) -> None:
-    mock_instr.not_interdependent_param = cast(
-        "InterdependentParameter",
-        mock_instr.add_parameter(
-            name="not_interdependent_param",
-            set_cmd=lambda x: store.update({"not_interdep": x}),
-            get_cmd=lambda: store.get("not_interdep"),
-            docstring="A non-interdependent parameter.",
-        ),
+def test_error_on_non_interdependent_dependency(
+    store, mock_instr: MockInstrument
+) -> None:
+
+    mock_instr.add_parameter(
+        name="not_interdependent_param",
+        set_cmd=lambda x: store.update({"not_interdep": x}),
+        get_cmd=lambda: store.get("not_interdep"),
+        docstring="A non-interdependent parameter.",
     )
-    """A non-interdependent parameter."""
+
+    # A non-interdependent parameter.
 
     with (
         pytest.warns(QCoDeSDeprecationWarning, match="does not correctly pass kwargs"),
@@ -168,18 +169,15 @@ def test_error_on_non_interdependent_dependency(store, mock_instr) -> None:
             TypeError, match="must be an instance of InterdependentParameterMixin"
         ),
     ):
-        mock_instr.managed_param = cast(
-            "InterdependentParameter",
-            mock_instr.add_parameter(
-                name="managed_param",
-                parameter_class=InterdependentParameter,
-                dependent_on=["not_interdependent_param"],
-                set_cmd=lambda x: store.update({"managed": x}),
-                get_cmd=lambda: store.get("managed"),
-                docstring="Parameter managed_param depends on a non-interdependent param.",
-            ),
+        _ = mock_instr.add_parameter(
+            name="managed_param",
+            parameter_class=InterdependentParameter,
+            dependent_on=["not_interdependent_param"],
+            set_cmd=lambda x: store.update({"managed": x}),
+            get_cmd=lambda: store.get("managed"),
+            docstring="Parameter managed_param depends on a non-interdependent param.",
         )
-        """Parameter managed_param depends on a non-interdependent param."""
+        # Parameter managed_param depends on a non-interdependent param
 
 
 def test_parsers_and_dependency_propagation(store, mock_instr) -> None:

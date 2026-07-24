@@ -379,7 +379,7 @@ def test_channel_tuple_snapshot_enabled(empty_instrument: Instrument) -> None:
     snapshot = empty_instrument.channels.snapshot()
     assert snapshot["snapshotable"] is True
     assert len(snapshot.keys()) == 3
-    assert "channels" in snapshot.keys()
+    assert "channels" in snapshot
 
 
 def test_channel_tuple_dir(dci: DummyChannelInstrument) -> None:
@@ -829,36 +829,36 @@ def test_multi_function_on_empty_channel_tuple_raises(
 
 
 def _verify_multiparam_data(data) -> None:
-    assert "multi_setpoint_param_this_setpoint_set" in data.arrays.keys()
+    assert "multi_setpoint_param_this_setpoint_set" in data.arrays
     assert_array_equal(
         data.arrays["multi_setpoint_param_this_setpoint_set"].ndarray,
         np.repeat(np.arange(5.0, 10).reshape(1, 5), 11, axis=0),
     )
-    assert "dci_ChanA_multi_setpoint_param_this" in data.arrays.keys()
+    assert "dci_ChanA_multi_setpoint_param_this" in data.arrays
     assert_array_equal(
         data.arrays["dci_ChanA_multi_setpoint_param_this"].ndarray, np.zeros((11, 5))
     )
-    assert "dci_ChanA_multi_setpoint_param_this" in data.arrays.keys()
+    assert "dci_ChanA_multi_setpoint_param_this" in data.arrays
     assert_array_equal(
         data.arrays["dci_ChanA_multi_setpoint_param_that"].ndarray, np.ones((11, 5))
     )
-    assert "dci_ChanA_temperature_set" in data.arrays.keys()
+    assert "dci_ChanA_temperature_set" in data.arrays
     assert_array_equal(
         data.arrays["dci_ChanA_temperature_set"].ndarray, np.arange(0, 10.1, 1)
     )
 
 
 def _verify_array_data(data, channels=("A",)) -> None:
-    assert "array_setpoint_param_this_setpoint_set" in data.arrays.keys()
+    assert "array_setpoint_param_this_setpoint_set" in data.arrays
     assert_array_equal(
         data.arrays["array_setpoint_param_this_setpoint_set"].ndarray,
         np.repeat(np.arange(5.0, 10).reshape(1, 5), 11, axis=0),
     )
     for channel in channels:
         aname = f"dci_Chan{channel}_dummy_array_parameter"
-        assert aname in data.arrays.keys()
+        assert aname in data.arrays
         assert_array_equal(data.arrays[aname].ndarray, np.ones((11, 5)) + 1)
-    assert "dci_ChanA_temperature_set" in data.arrays.keys()
+    assert "dci_ChanA_temperature_set" in data.arrays
     assert_array_equal(
         data.arrays["dci_ChanA_temperature_set"].ndarray, np.arange(0, 10.1, 1)
     )

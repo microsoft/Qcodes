@@ -104,7 +104,7 @@ def calibrate_keithley_smu_v_single(
     time_delay: float = 3.0,
 ) -> None:
     assert channel in {smu_channel.channel for smu_channel in smu.channels}
-    assert v_range in src_FS_map.keys()
+    assert v_range in src_FS_map
     src_FS = src_FS_map[v_range]
 
     sense_modes = ["SENSE_LOCAL"]

@@ -268,7 +268,7 @@ class AimTTi(VisaInstrument):
 
         _model = self.get_idn()["model"]
 
-        if (_model not in self._numOutputChannels.keys()) or (_model is None):
+        if (_model not in self._numOutputChannels) or (_model is None):
             raise NotKnownModel("Unknown model, connection cannot be established.")
 
         self.numOfChannels = self._numOutputChannels[_model]

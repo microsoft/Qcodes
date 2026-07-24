@@ -66,7 +66,7 @@ def _read_settings() -> tuple[dict[str, str | int], dict[str, bool | int | str]]
             param = lst[0]
             val = None
 
-        if param in DEFAULT_LIMITS.keys():
+        if param in DEFAULT_LIMITS:
             # we are only expecting
             # None val for a setting
             assert val is not None

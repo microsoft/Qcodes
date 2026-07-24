@@ -60,7 +60,7 @@ _ENGINEERING_PREFIXES: dict[int, str] = OrderedDict(
 )
 
 _THRESHOLDS: dict[float, int] = OrderedDict(
-    {10 ** (scale + 3): scale for scale in _ENGINEERING_PREFIXES.keys()}
+    {10 ** (scale + 3): scale for scale in _ENGINEERING_PREFIXES}
 )
 
 

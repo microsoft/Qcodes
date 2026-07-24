@@ -754,15 +754,15 @@ def test_old_versions_not_touched(
 
     with raise_if_file_changed(fixturepath), pytest.warns(UserWarning) as warning:
         extract_runs_into_db(fixturepath, target_path, 1)
-        expected_mssg = (
-            "Source DB version is 2, but this "
-            f"function needs it to be in version {new_v}. "
-            "Run this function again with "
-            "upgrade_source_db=True to auto-upgrade "
-            "the source DB file."
-        )
-        assert isinstance(warning[0].message, Warning)
-        assert warning[0].message.args[0] == expected_mssg
+    expected_mssg = (
+        "Source DB version is 2, but this "
+        f"function needs it to be in version {new_v}. "
+        "Run this function again with "
+        "upgrade_source_db=True to auto-upgrade "
+        "the source DB file."
+    )
+    assert isinstance(warning[0].message, Warning)
+    assert warning[0].message.args[0] == expected_mssg
 
     # Then test that we cannot use an old version as target
 
@@ -778,15 +778,15 @@ def test_old_versions_not_touched(
 
     with raise_if_file_changed(fixturepath), pytest.warns(UserWarning) as warning:
         extract_runs_into_db(source_path, fixturepath, 1)
-        expected_mssg = (
-            "Target DB version is 2, but this "
-            f"function needs it to be in version {new_v}. "
-            "Run this function again with "
-            "upgrade_target_db=True to auto-upgrade "
-            "the target DB file."
-        )
-        assert isinstance(warning[0].message, Warning)
-        assert warning[0].message.args[0] == expected_mssg
+    expected_mssg = (
+        "Target DB version is 2, but this "
+        f"function needs it to be in version {new_v}. "
+        "Run this function again with "
+        "upgrade_target_db=True to auto-upgrade "
+        "the target DB file."
+    )
+    assert isinstance(warning[0].message, Warning)
+    assert warning[0].message.args[0] == expected_mssg
 
 
 def test_experiments_with_NULL_sample_name(

@@ -124,7 +124,7 @@ class Keysight34980A(VisaInstrument):
         Scan the occupied slots and make an object for each switch matrix
         module installed
         """
-        for slot in self.system_slots_info.keys():
+        for slot in self.system_slots_info:
             model_string = self.system_slots_info[slot]["model"]
             for model, model_class in KEYSIGHT_MODELS.items():
                 if model in model_string:

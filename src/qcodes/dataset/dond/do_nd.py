@@ -208,7 +208,7 @@ class _Sweeper:
 
         if index == 0:
             previous_setpoints: dict[str, SweepVarType | None] = {}
-            for key in setpoints.keys():
+            for key in setpoints:
                 previous_setpoints[key] = None
         else:
             previous_setpoints = self._make_single_point_setpoints_dict(index - 1)

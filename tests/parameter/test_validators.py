@@ -139,7 +139,7 @@ def test_validator_snapshot() -> None:
     snapshot = p.snapshot()
     assert "<Ints 0<=v<=10>" not in snapshot["validators"]
     assert "<Ints 3<=v<=7>" not in snapshot["validators"]
-    assert "vals" not in snapshot.keys()
+    assert "vals" not in snapshot
     p.vals = Ints(min_value=4, max_value=6)
     snapshot = p.snapshot()
     assert "<Ints 0<=v<=10>" not in snapshot["validators"]

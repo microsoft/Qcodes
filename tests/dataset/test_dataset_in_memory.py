@@ -452,9 +452,9 @@ def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path) -> None:
     assert loaded_ds.export_info == ds.export_info
     assert loaded_ds.metadata == ds.metadata
 
-    assert "foo" in loaded_ds.metadata.keys()
-    assert "export_info" in loaded_ds.metadata.keys()
-    assert "metadata_added_after_export" in loaded_ds.metadata.keys()
+    assert "foo" in loaded_ds.metadata
+    assert "export_info" in loaded_ds.metadata
+    assert "metadata_added_after_export" in loaded_ds.metadata
     assert loaded_ds.metadata["metadata_added_after_export"] == 69
 
     compare_datasets(ds, loaded_ds)
@@ -487,8 +487,8 @@ def test_load_from_file(meas_with_registered_param, DMM, DAC, tmp_path) -> None:
     assert loaded_ds.export_info == ds.export_info
     assert loaded_ds.metadata == ds.metadata
 
-    assert "export_info" in loaded_ds.metadata.keys()
-    assert "metadata_added_after_export" in loaded_ds.metadata.keys()
+    assert "export_info" in loaded_ds.metadata
+    assert "metadata_added_after_export" in loaded_ds.metadata
     assert loaded_ds.metadata["foo"] == "bar"
     assert loaded_ds.metadata["metadata_added_after_export"] == "42"
 
@@ -642,9 +642,9 @@ def test_load_from_db_dataset_moved(
     assert loaded_ds.export_info == ds.export_info
     assert loaded_ds.metadata == ds.metadata
 
-    assert "foo" in loaded_ds.metadata.keys()
-    assert "export_info" in loaded_ds.metadata.keys()
-    assert "metadata_added_after_export" in loaded_ds.metadata.keys()
+    assert "foo" in loaded_ds.metadata
+    assert "export_info" in loaded_ds.metadata
+    assert "metadata_added_after_export" in loaded_ds.metadata
 
     assert loaded_ds.cache.data() == {}
 

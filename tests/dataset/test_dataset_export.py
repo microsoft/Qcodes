@@ -893,7 +893,7 @@ def test_export_to_xarray_non_unique_dependent_parameter(
     _assert_xarray_metadata_is_as_expected(ds, mock_dataset_nonunique)
 
     for array_name in ds.data_vars:
-        assert "snapshot" not in ds[array_name].attrs.keys()
+        assert "snapshot" not in ds[array_name].attrs
 
 
 def test_export_to_xarray_extra_metadata(mock_dataset: DataSet) -> None:
@@ -904,7 +904,7 @@ def test_export_to_xarray_extra_metadata(mock_dataset: DataSet) -> None:
     _assert_xarray_metadata_is_as_expected(ds, mock_dataset)
 
     for array_name in ds.data_vars:
-        assert "snapshot" not in ds[array_name].attrs.keys()
+        assert "snapshot" not in ds[array_name].attrs
 
 
 def test_export_to_xarray_ds_dict_extra_metadata(mock_dataset: DataSet) -> None:
@@ -941,7 +941,7 @@ def test_export_to_xarray_extra_metadata_can_be_stored(
     # dataset
     # export info is only set after the export so its not part of
     # the exported metadata so skip it here.
-    for key in mock_dataset.metadata.keys():
+    for key in mock_dataset.metadata:
         if key != "export_info":
             assert mock_dataset.metadata[key] == loaded_data.attrs[key]
     # check that the added metadata roundtrip correctly

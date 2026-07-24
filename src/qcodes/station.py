@@ -267,7 +267,7 @@ class Station(Metadatable, DelegateAttributes):
         if name is None:
             name = getattr(component, "name", f"component{len(self.components)}")
         namestr = str(name)
-        if namestr in self.components.keys():
+        if namestr in self.components:
             raise RuntimeError(
                 f'Cannot add component "{namestr}", because a '
                 "component of that name is already registered to the station"
@@ -476,7 +476,7 @@ class Station(Metadatable, DelegateAttributes):
                 delattr(self, self._added_methods.pop())
 
             # add shortcut methods
-            for instrument_name in self._instrument_config.keys():
+            for instrument_name in self._instrument_config:
                 method_name = f"load_{instrument_name}"
                 if method_name.isidentifier():
                     setattr(
@@ -562,7 +562,7 @@ class Station(Metadatable, DelegateAttributes):
         self.load_config_files(*self.config_file)
 
         # load from config
-        if identifier not in self._instrument_config.keys():
+        if identifier not in self._instrument_config:
             raise RuntimeError(
                 f"Instrument {identifier} not found in instrument config file"
             )
@@ -783,7 +783,7 @@ class Station(Metadatable, DelegateAttributes):
             instrument_names_to_load = set(only_names)
         elif only_types is not None and only_names is None:
             for inst_name, inst_dict in config["instruments"].items():
-                if "driver" in inst_dict.keys():
+                if "driver" in inst_dict:
                     # fallback for old format where type was used
                     # together with the driver key.
                     inst_type = inst_dict["type"]
@@ -905,7 +905,7 @@ def _merge_yamls(*yamls: str | Path) -> str:
     while len(deq) > 1:
         data2, data1 = deq[0], deq[1]
         for entry in data2[top_key]:
-            if entry not in data1[top_key].keys():
+            if entry not in data1[top_key]:
                 data1[top_key].update({entry: data2[top_key][entry]})
             else:
                 raise KeyError(
