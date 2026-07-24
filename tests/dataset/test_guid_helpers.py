@@ -75,7 +75,7 @@ def test_guids_from_list_str() -> None:
     assert guids_from_list_str(str(tuple(guids))) == tuple(guids)
     extracted_guids = guids_from_list_str(str(set(guids)))
     assert extracted_guids is not None
-    assert sorted(extracted_guids) == sorted(tuple(guids))
+    assert sorted(extracted_guids) == sorted(guids)
 
 
 def test_many_guids_from_list_str() -> None:

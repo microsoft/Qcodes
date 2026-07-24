@@ -38,7 +38,7 @@ def pytest_configure(config: pytest.Config) -> None:
 
 
 def pytest_runtest_setup(item: pytest.Item) -> None:
-    ALL = set(["darwin", "linux", "win32"])
+    ALL = {"darwin", "linux", "win32"}
     supported_platforms = ALL.intersection(mark.name for mark in item.iter_markers())
     if supported_platforms and sys.platform not in supported_platforms:
         pytest.skip(f"cannot run on platform {sys.platform}")
