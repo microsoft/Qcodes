@@ -258,7 +258,9 @@ def test_appropriate_kwargs() -> None:
 
     assert kwargs == check
 
-    with _appropriate_kwargs("2D_point", False, **{}) as ap_kwargs:
+    my_args = {}
+
+    with _appropriate_kwargs("2D_point", False, **my_args) as ap_kwargs:
         assert len(ap_kwargs) == 1
         assert ap_kwargs["cmap"] == qc.config.plotting.default_color_map
 
