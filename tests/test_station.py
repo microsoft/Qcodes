@@ -619,7 +619,7 @@ instruments:
     """
     )
     mock = st.load_instrument("mock")
-    p = getattr(mock, "gate_a")
+    p = mock.gate_a
     assert isinstance(p, Parameter)
     assert p.unit == "mV"
     assert p.label == "main gate"
@@ -665,7 +665,7 @@ instruments:
     """
     )
     mock = st.load_instrument("mock")
-    p = getattr(mock, "gate_a")
+    p = mock.gate_a
     assert isinstance(p, DelegateParameter)
     assert p.unit == "mV"
     assert p.label == "main gate"

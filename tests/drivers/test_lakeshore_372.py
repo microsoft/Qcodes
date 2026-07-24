@@ -62,9 +62,9 @@ class MockVisaInstrument:
                 f = getattr(self, func_name)
                 # only add for methods that have such an attribute
                 with suppress(AttributeError):
-                    self.queries[getattr(f, "query_name")] = f
+                    self.queries[f.query_name] = f
                 with suppress(AttributeError):
-                    self.cmds[getattr(f, "command_name")] = f
+                    self.cmds[f.command_name] = f
 
     def write_raw(self, cmd) -> None:
         cmd_parts = cmd.split(" ")

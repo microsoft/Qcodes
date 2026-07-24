@@ -61,7 +61,7 @@ class NumpyJSONEncoder(json.JSONEncoder):
             }
         elif hasattr(o, "_JSONEncoder"):
             # Use object's custom JSON encoder
-            jsosencode = getattr(o, "_JSONEncoder")
+            jsosencode = o._JSONEncoder
             return jsosencode()
         else:
             try:
@@ -82,7 +82,7 @@ class NumpyJSONEncoder(json.JSONEncoder):
                 ):
                     return {
                         "__class__": type(o).__name__,
-                        "__args__": getattr(o, "__getnewargs__")(),
+                        "__args__": o.__getnewargs__(),
                     }
                 else:
                     # we cannot convert the object to JSON, just take a string
