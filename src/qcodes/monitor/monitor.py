@@ -46,6 +46,8 @@ if TYPE_CHECKING:
 
     from websockets.asyncio.server import ServerConnection
 
+    from qcodes.instrument import InstrumentBase
+
 WEBSOCKET_PORT = 5678
 SERVER_PORT = 3000
 
@@ -78,7 +80,7 @@ def _get_metadata(
 
         # find the base instrument that this parameter belongs to
         if use_root_instrument:
-            baseinst = parameter.root_instrument
+            baseinst: InstrumentBase | None = parameter.root_instrument
         else:
             baseinst = parameter.instrument
         if baseinst is None:

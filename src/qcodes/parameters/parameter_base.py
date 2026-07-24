@@ -8,7 +8,7 @@ from collections.abc import Iterator, MutableSet
 from contextlib import contextmanager
 from datetime import datetime
 from functools import cached_property, wraps
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, cast, overload
 
 import numpy as np
 from typing_extensions import TypedDict, TypeVar
@@ -47,7 +47,7 @@ if TYPE_CHECKING:
     from typing import NotRequired
 
     from qcodes.dataset.data_set_protocol import ValuesType
-    from qcodes.instrument import InstrumentBase
+    from qcodes.instrument import Instrument, InstrumentBase
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 # Cannot convert to PEP 695: uses default= which requires PEP 696 (Python 3.13+).
 ParameterDataTypeVar = TypeVar("ParameterDataTypeVar", default=Any)
@@ -1204,7 +1204,7 @@ class ParameterBase(
         return self._instrument
 
     @property
-    def root_instrument(self) -> InstrumentBase | None:
+    def root_instrument(self) -> Instrument | None:
         """
         Return the fundamental instrument that this parameter belongs too.
         E.g if the parameter is bound to a channel this will return the
@@ -1212,7 +1212,7 @@ class ParameterBase(
         :meth:`instrument` to get the channel.
         """
         if self._instrument is not None:
-            return self._instrument.root_instrument
+            return cast("Instrument | None", self._instrument.root_instrument)
         else:
             return None
 
