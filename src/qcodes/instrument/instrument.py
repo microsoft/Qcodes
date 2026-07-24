@@ -379,16 +379,15 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
             instr_instance: Instance of an Instrument class or its subclass.
 
         """
-        if (
+        is_valid = (
             isinstance(instr_instance, Instrument)
             and instr_instance in instr_instance.instances()
-        ):
-            # note that it is important to call `instances` on the instance
-            # object instead of `Instrument` class, because instances of
-            # Instrument subclasses are recorded inside their subclasses; see
-            # `instances` for more information
-            return True
-        return False
+        )
+        # note that it is important to call `instances` on the instance
+        # object instead of `Instrument` class, because instances of
+        # Instrument subclasses are recorded inside their subclasses; see
+        # `instances` for more information
+        return is_valid
 
     # `write_raw` and `ask_raw` are the interface to hardware                #
     # `write` and `ask` are standard wrappers to help with error reporting   #

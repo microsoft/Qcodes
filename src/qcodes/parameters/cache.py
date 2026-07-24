@@ -202,13 +202,8 @@ class _Cache(Generic[ParameterDataTypeVar]):
         oldest_accepted_timestamp = datetime.now() - timedelta(
             seconds=self._max_val_age
         )
-        if self._timestamp < oldest_accepted_timestamp:
-            # Time of last get exceeds max_val_age seconds, need to
-            # perform new .get()
-            return True
-        else:
-            # parameter is still valid
-            return False
+        too_old = self._timestamp < oldest_accepted_timestamp
+        return too_old
 
     @overload
     def get(self, get_if_invalid: Literal[True]) -> ParameterDataTypeVar: ...

@@ -108,9 +108,7 @@ class RunDescriber:  # noqa: PLW1641
             return False
         if self.interdeps != other.interdeps:
             return False
-        if self.shapes != other.shapes:
-            return False
-        return True
+        return self.shapes == other.shapes
 
     def __repr__(self) -> str:
         return f"RunDescriber({self.interdeps}, Shapes: {self._shapes})"
