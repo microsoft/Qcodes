@@ -215,7 +215,7 @@ def test_cv_sweep_voltages(cmu: KeysightB1520A) -> None:
     cmu.cv_sweep.sweep_steps(steps)
     voltages = cmu.cv_sweep_voltages()
 
-    assert all([a == b for a, b in zip(np.linspace(start, end, steps), voltages)])
+    assert all(a == b for a, b in zip(np.linspace(start, end, steps), voltages))
 
 
 def test_sweep_modes(cmu: KeysightB1520A) -> None:
@@ -234,7 +234,7 @@ def test_sweep_modes(cmu: KeysightB1520A) -> None:
     cmu.cv_sweep.sweep_mode(mode)
     voltages = cmu.cv_sweep_voltages()
 
-    assert all([a == b for a, b in zip((-1.0, 0.0, 1.0, 0.0, -1.0), voltages)])
+    assert all(a == b for a, b in zip((-1.0, 0.0, 1.0, 0.0, -1.0), voltages))
 
 
 def test_run_sweep(cmu: KeysightB1520A) -> None:

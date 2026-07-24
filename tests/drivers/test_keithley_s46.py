@@ -23,7 +23,7 @@ def test_aliases_dict() -> None:
         return offset_dict[alias[0]] + int(alias[1:])
 
     assert all(
-        [nr == calc_channel_nr(al) for al, nr in KeithleyS46.channel_numbers.items()]
+        nr == calc_channel_nr(al) for al, nr in KeithleyS46.channel_numbers.items()
     )
 
 
