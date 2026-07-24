@@ -14,7 +14,7 @@ def test_delegate_dict() -> None:
     td = ToDict()
     # td.d doesn't exist yet
     with pytest.raises(AttributeError):
-        td.d
+        _ = td.d
 
     # but you can still get other attributes
     assert td.apples == "green"
@@ -39,7 +39,7 @@ def test_delegate_dict() -> None:
 
     # missing items still raise AttributeError, not KeyError
     with pytest.raises(AttributeError):
-        td.kiwis
+        _ = td.kiwis
 
     # all appropriate items are in dir() exactly once
     for attr in ["apples", "oranges", "bananas"]:
@@ -56,7 +56,7 @@ def test_delegate_dicts() -> None:
 
     # you can still access the second one when the first doesn't exist
     with pytest.raises(AttributeError):
-        td.d
+        _ = td.d
     assert td.e == e
     assert td.cats == 12
 
@@ -86,7 +86,7 @@ def test_delegate_object() -> None:
 
     # recipient not connected yet but you can look at other attributes
     with pytest.raises(AttributeError):
-        to_obj.recipient
+        _ = to_obj.recipient
     assert to_obj.gray == "#888"
 
     to_obj.recipient = recipient  # type: ignore[attr-defined]
@@ -138,7 +138,7 @@ def test_delegate_objects() -> None:
 
     # missing attributes still raise correctly
     with pytest.raises(AttributeError):
-        to_objs.f
+        _ = to_objs.f
 
     # all appropriate items are in dir() exactly once
     for attr in "abcde":
@@ -176,7 +176,7 @@ def test_delegate_both() -> None:
 
     # missing attributes still raise correctly
     with pytest.raises(AttributeError):
-        tb.ninja
+        _ = tb.ninja
 
     # all appropriate items are in dir() exactly once
     for attr in ["rock", "paper", "scissors", "year", "water"]:
@@ -199,7 +199,7 @@ def test_faulty_property_surfaces_original_attribute_error() -> None:
 
     obj = WithFaultyProperty()
     with pytest.raises(AttributeError, match="missing"):
-        obj.prop
+        _ = obj.prop
 
 
 def test_faulty_property_preserves_inner_traceback() -> None:
@@ -215,7 +215,7 @@ def test_faulty_property_preserves_inner_traceback() -> None:
 
     obj = WithFaultyProperty()
     with pytest.raises(AttributeError, match="specific underlying failure") as excinfo:
-        obj.prop
+        _ = obj.prop
     assert any(entry.name == "prop" for entry in excinfo.traceback)
 
 
@@ -238,7 +238,7 @@ def test_inapplicable_descriptor_does_not_raise_type_error() -> None:
     # ``__name__`` is not defined on ``Plain`` instances, so accessing it
     # should raise ``AttributeError``, never ``TypeError``.
     with pytest.raises(AttributeError):
-        obj.__name__  # type: ignore[attr-defined]
+        _ = obj.__name__  # type: ignore[attr-defined]
 
     # ``inspect.iscoroutinefunction`` internally does
     # ``getattr(obj, '__name__', None)`` — this must not raise.

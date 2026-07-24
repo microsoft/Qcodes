@@ -60,7 +60,7 @@ def test_errors(c0, c1, c2) -> None:
 
     # SweepValue object has no getter, even if the parameter does
     with pytest.raises(AttributeError):
-        c0[0.1].get
+        _ = c0[0.1].get
 
 
 def test_valid(c0) -> None:
