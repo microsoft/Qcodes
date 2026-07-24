@@ -25,7 +25,7 @@ def strip_outer_tags(sml: str) -> str:
     complies with the schema provided by tektronix
     """
     # make function idempotent
-    if not sml[1:9] == "DataFile":
+    if sml[1:9] != "DataFile":
         print("Incorrect file format or outer tags already stripped")
         return sml
 
