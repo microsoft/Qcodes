@@ -1,5 +1,4 @@
 import configparser
-import logging
 import re
 from functools import partial
 from time import sleep
@@ -274,7 +273,7 @@ class OxfordTriton(IPInstrument):
         try:
             self._get_named_channels()
         except Exception:
-            logging.warning("Ignored an error in _get_named_channels\n", exc_info=True)
+            self.log.warning("Ignored an error in _get_named_channels\n", exc_info=True)
 
         self.connect_message()
 
