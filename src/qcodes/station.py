@@ -436,7 +436,7 @@ class Station(Metadatable, DelegateAttributes):
         if len(filenames) == 0:
             self.load_config_file()
         else:
-            paths = list()
+            paths = []
             for filename in filenames:
                 assert isinstance(filename, str)
                 path = self._get_config_file_path(filename)

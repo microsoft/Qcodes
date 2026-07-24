@@ -68,7 +68,7 @@ def do2d(
     flush_columns: bool = False,
     do_plot: bool | None = None,
     use_threads: bool | None = None,
-    additional_setpoints: Sequence[ParameterBase] = tuple(),
+    additional_setpoints: Sequence[ParameterBase] = (),
     show_progress: bool | None = None,
     log_info: str | None = None,
     break_condition: BreakConditionT | None = None,

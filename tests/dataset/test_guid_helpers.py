@@ -63,11 +63,11 @@ def test_guids_from_list_str() -> None:
         "07fd7195-c51e-44d6-a085-fa8274cf00d6",
         "070d7195-c51e-44d6-a085-fa8274cf00d6",
     ]
-    assert guids_from_list_str("") == tuple()
-    assert guids_from_list_str("''") == tuple()
-    assert guids_from_list_str('""') == tuple()
-    assert guids_from_list_str(str(tuple())) == tuple()
-    assert guids_from_list_str(str(list())) == tuple()
+    assert guids_from_list_str("") == ()
+    assert guids_from_list_str("''") == ()
+    assert guids_from_list_str('""') == ()
+    assert guids_from_list_str(str(())) == ()
+    assert guids_from_list_str(str([])) == ()
     assert guids_from_list_str(str({})) is None
     assert guids_from_list_str(str(guids)) == tuple(guids)
     assert guids_from_list_str(str([guids[0]])) == (guids[0],)
