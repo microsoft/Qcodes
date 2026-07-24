@@ -23,7 +23,6 @@ class AbstractSweep[T: np.generic](ABC):
         """
         Returns an array of setpoint values for this sweep.
         """
-        pass
 
     @property
     @abstractmethod
@@ -31,7 +30,6 @@ class AbstractSweep[T: np.generic](ABC):
         """
         Returns the Qcodes sweep parameter.
         """
-        pass
 
     @property
     @abstractmethod
@@ -39,7 +37,6 @@ class AbstractSweep[T: np.generic](ABC):
         """
         Delay between two consecutive sweep points.
         """
-        pass
 
     @property
     @abstractmethod
@@ -47,7 +44,6 @@ class AbstractSweep[T: np.generic](ABC):
         """
         Number of sweep points.
         """
-        pass
 
     @property
     @abstractmethod
@@ -55,7 +51,6 @@ class AbstractSweep[T: np.generic](ABC):
         """
         Actions to be performed after setting param to its setpoint.
         """
-        pass
 
     @property
     def get_after_set(self) -> bool:

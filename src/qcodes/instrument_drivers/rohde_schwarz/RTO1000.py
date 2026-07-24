@@ -1123,5 +1123,3 @@ class RTO1000(RohdeSchwarzRTO1000):
     """
     Backwards compatibility alias for RohdeSchwarzRTO1000
     """
-
-    pass

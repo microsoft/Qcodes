@@ -99,7 +99,6 @@ class DemodulationAcquisitionController(AcquisitionController[float]):
         # this could be used to start an Arbitrary Waveform Generator, etc...
         # using this method ensures that the contents are executed AFTER the
         # Alazar card starts listening for a trigger pulse
-        pass
 
     def handle_buffer(
         self, buffer: npt.NDArray, buffer_number: int | None = None

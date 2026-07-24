@@ -48,8 +48,6 @@ class TektronixDPOModeError(Exception):
     perform an action
     """
 
-    pass
-
 
 class TektronixDPO7000xx(VisaInstrument):
     """

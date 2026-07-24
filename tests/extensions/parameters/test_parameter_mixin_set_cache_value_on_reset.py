@@ -27,8 +27,6 @@ class ResetTestParameter(SetCacheValueOnResetParameterMixin, Parameter):
     A parameter resetting its cache value on instrument reset.
     """
 
-    pass
-
 
 @pytest.fixture
 def store():

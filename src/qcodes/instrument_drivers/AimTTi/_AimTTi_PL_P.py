@@ -20,8 +20,6 @@ class NotKnownModel(Exception):
     An Error thrown when connecting to an unknown Aim TTi model
     """
 
-    pass
-
 
 class AimTTiChannel(InstrumentChannel):
     """
