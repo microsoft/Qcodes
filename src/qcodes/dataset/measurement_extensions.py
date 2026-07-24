@@ -151,9 +151,7 @@ def parse_dond_into_args(
             raise ValueError("dond_into does not support TogetherSweeps")
         elif isinstance(par, Sequence):
             raise ValueError("dond_into does not support multiple datasets")
-        elif isinstance(par, ParameterBase) and par.gettable:
-            params_meas.append(par)
-        elif callable(par):
+        elif (isinstance(par, ParameterBase) and par.gettable) or callable(par):
             params_meas.append(par)
     return sweep_instances, params_meas
 
