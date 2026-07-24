@@ -196,7 +196,7 @@ def fixed_negative_float(response: str) -> float:
 
     decimal = decimal.replace("-", "")
 
-    output = ".".join([number, decimal])
+    output = f"{number}.{decimal}"
     return float(output)
 
 
