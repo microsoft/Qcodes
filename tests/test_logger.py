@@ -149,9 +149,8 @@ def test_start_logger_twice() -> None:
 
 
 def test_set_level_without_starting_raises() -> None:
-    with pytest.raises(RuntimeError):
-        with logger.console_level("DEBUG"):
-            pass
+    with pytest.raises(RuntimeError), logger.console_level("DEBUG"):
+        pass
     assert len(logging.getLogger().handlers) == NUM_PYTEST_LOGGERS
 
 
@@ -161,10 +160,12 @@ def test_handler_level() -> None:
         logging.debug(TEST_LOG_MESSAGE)
     assert logs.value == ""
 
-    with logger.LogCapture(level=logging.INFO) as logs:
-        with logger.handler_level(level=logging.DEBUG, handler=logs.string_handler):
-            print(logs.string_handler)
-            logging.debug(TEST_LOG_MESSAGE)
+    with (
+        logger.LogCapture(level=logging.INFO) as logs,
+        logger.handler_level(level=logging.DEBUG, handler=logs.string_handler),
+    ):
+        print(logs.string_handler)
+        logging.debug(TEST_LOG_MESSAGE)
     assert logs.value.strip() == TEST_LOG_MESSAGE
 
 
@@ -177,9 +178,11 @@ def test_filter_instrument(
 
     # filter one instrument
     driver.cartesian((0, 0, 0))
-    with logger.LogCapture(level=logging.DEBUG) as logs:
-        with logger.filter_instrument(mag_x, handler=logs.string_handler):
-            driver.cartesian((0, 0, 1))
+    with (
+        logger.LogCapture(level=logging.DEBUG) as logs,
+        logger.filter_instrument(mag_x, handler=logs.string_handler),
+    ):
+        driver.cartesian((0, 0, 1))
     for line in logs.value.splitlines():
         assert "[x(AMIModel430)]" in line
         assert "[y(AMIModel430)]" not in line
@@ -187,9 +190,11 @@ def test_filter_instrument(
 
     # filter multiple instruments
     driver.cartesian((0, 0, 0))
-    with logger.LogCapture(level=logging.DEBUG) as logs:
-        with logger.filter_instrument((mag_x, mag_y), handler=logs.string_handler):
-            driver.cartesian((0, 0, 1))
+    with (
+        logger.LogCapture(level=logging.DEBUG) as logs,
+        logger.filter_instrument((mag_x, mag_y), handler=logs.string_handler),
+    ):
+        driver.cartesian((0, 0, 1))
 
     any_x = False
     any_y = False
@@ -214,9 +219,8 @@ def test_filter_without_started_logger_raises(
 
     # filter one instrument
     driver.cartesian((0, 0, 0))
-    with pytest.raises(RuntimeError):
-        with logger.filter_instrument(mag_x):
-            pass
+    with pytest.raises(RuntimeError), logger.filter_instrument(mag_x):
+        pass
 
 
 def test_capture_dataframe() -> None:

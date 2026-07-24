@@ -614,11 +614,13 @@ class DataSetInMem(BaseDataSet):
 
     def _add_to_dyn_column_if_in_db(self, tag: str, data: Any) -> None:
         if self._dataset_is_in_runs_table():
-            with contextlib.closing(
-                conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
-            ) as conn:
-                with atomic(conn) as aconn:
-                    add_data_to_dynamic_columns(aconn, self.run_id, {tag: data})
+            with (
+                contextlib.closing(
+                    conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
+                ) as conn,
+                atomic(conn) as aconn,
+            ):
+                add_data_to_dynamic_columns(aconn, self.run_id, {tag: data})
 
     @property
     def metadata(self) -> dict[str, Any]:

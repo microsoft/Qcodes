@@ -325,17 +325,19 @@ def test_dond_into_fails_with_together_sweeps(
     core_test_measurement = Measurement(name="core_test_1", exp=experiment)
     core_test_measurement.register_parameter(set1)
     core_test_measurement.register_parameter(meas1, setpoints=[set1])
-    with pytest.raises(ValueError, match="dond_into does not support TogetherSweeps"):
-        with core_test_measurement.run() as datasaver:
-            sweep1 = LinSweep(set1, 0, 5, 11, 0.001)
-            sweep2 = LinSweep(set2, 10, 20, 11, 0.001)
+    with (
+        pytest.raises(ValueError, match="dond_into does not support TogetherSweeps"),
+        core_test_measurement.run() as datasaver,
+    ):
+        sweep1 = LinSweep(set1, 0, 5, 11, 0.001)
+        sweep2 = LinSweep(set2, 10, 20, 11, 0.001)
 
-            dond_into(
-                datasaver,
-                TogetherSweep(sweep1, sweep2),  # pyright: ignore [reportArgumentType]
-                meas1,
-            )
-            _ = datasaver.dataset
+        dond_into(
+            datasaver,
+            TogetherSweep(sweep1, sweep2),  # pyright: ignore [reportArgumentType]
+            meas1,
+        )
+        _ = datasaver.dataset
 
 
 def test_dond_into_fails_with_groups(default_params, default_database_and_experiment):
@@ -345,18 +347,18 @@ def test_dond_into_fails_with_groups(default_params, default_database_and_experi
     core_test_measurement = Measurement(name="core_test_1", exp=experiment)
     core_test_measurement.register_parameter(set1)
     core_test_measurement.register_parameter(meas1, setpoints=[set1])
-    with pytest.raises(
-        ValueError, match="dond_into does not support multiple datasets"
+    with (
+        pytest.raises(ValueError, match="dond_into does not support multiple datasets"),
+        core_test_measurement.run() as datasaver,
     ):
-        with core_test_measurement.run() as datasaver:
-            sweep1 = LinSweep(set1, 0, 5, 11, 0.001)
-            dond_into(
-                datasaver,
-                sweep1,
-                [meas1],  # pyright: ignore [reportArgumentType]
-                [meas2],  # pyright: ignore [reportArgumentType]
-            )
-            _ = datasaver.dataset
+        sweep1 = LinSweep(set1, 0, 5, 11, 0.001)
+        dond_into(
+            datasaver,
+            sweep1,
+            [meas1],  # pyright: ignore [reportArgumentType]
+            [meas2],  # pyright: ignore [reportArgumentType]
+        )
+        _ = datasaver.dataset
 
 
 def test_context_with_multiple_experiments(

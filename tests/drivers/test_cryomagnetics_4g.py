@@ -95,16 +95,16 @@ def test_set_field_successful(
 ) -> None:
     with (
         patch.object(cryo_instrument, "write") as mock_write,
+        caplog.at_level(logging.WARNING),
     ):
-        with caplog.at_level(logging.WARNING):
-            cryo_instrument.set_field(0.1, block=False)
-            calls = [
-                call
-                for call in mock_write.call_args_list
-                if "LLIM" in call[0][0] or "SWEEP" in call[0][0]
-            ]
-            assert any("SWEEP UP" in str(call) for call in calls)
-            assert "Magnetic field is ramping but not currently blocked!" in caplog.text
+        cryo_instrument.set_field(0.1, block=False)
+        calls = [
+            call
+            for call in mock_write.call_args_list
+            if "LLIM" in call[0][0] or "SWEEP" in call[0][0]
+        ]
+        assert any("SWEEP UP" in str(call) for call in calls)
+        assert "Magnetic field is ramping but not currently blocked!" in caplog.text
 
 
 def test_set_field_blocking(cryo_instrument: CryomagneticsModel4G) -> None:
@@ -153,9 +153,9 @@ def test_wait_while_ramping_timeout(cryo_instrument: CryomagneticsModel4G) -> No
             "qcodes.instrument_drivers.cryomagnetics._cryomagnetics4g._time",
             side_effect=mock_time,
         ),
+        pytest.raises(Cryomagnetics4GException, match=r"Timeout|stabilized"),
     ):
-        with pytest.raises(Cryomagnetics4GException, match=r"Timeout|stabilized"):
-            cryo_instrument.wait_while_ramping(1.0, threshold=1e-4)
+        cryo_instrument.wait_while_ramping(1.0, threshold=1e-4)
 
 
 def test_wait_while_ramping_success(cryo_instrument: CryomagneticsModel4G) -> None:

@@ -9,9 +9,8 @@ def test_catch_interrupts():
         assert get_interrupt() is None
 
     # Test KeyboardInterrupt
-    with pytest.raises(KeyboardInterrupt):
-        with catch_interrupts() as get_interrupt:
-            raise KeyboardInterrupt()
+    with pytest.raises(KeyboardInterrupt), catch_interrupts() as get_interrupt:
+        raise KeyboardInterrupt()
 
     # Test BreakConditionInterrupt
     with catch_interrupts() as get_interrupt:
@@ -20,12 +19,11 @@ def test_catch_interrupts():
 
     # Test that cleanup code runs for KeyboardInterrupt
     cleanup_ran = False
-    with pytest.raises(KeyboardInterrupt):
-        with catch_interrupts():
-            try:
-                raise KeyboardInterrupt()
-            finally:
-                cleanup_ran = True
+    with pytest.raises(KeyboardInterrupt), catch_interrupts():
+        try:
+            raise KeyboardInterrupt()
+        finally:
+            cleanup_ran = True
     assert cleanup_ran
 
     # Test that cleanup code runs for BreakConditionInterrupt
