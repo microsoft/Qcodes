@@ -41,7 +41,7 @@ def get_if_invalid(request: pytest.FixtureRequest) -> bool | Literal["NOT_PASSED
 
 
 @pytest.fixture(params=(True, False, None, NOT_PASSED))
-def update(request: pytest.FixtureRequest) -> bool | None | Literal["NOT_PASSED"]:
+def update(request: pytest.FixtureRequest) -> bool | Literal["NOT_PASSED"] | None:
     return request.param
 
 
@@ -151,7 +151,7 @@ class BookkeepingValidator(vals.Validator[T]):
 
 
 class MemoryParameter(Parameter):
-    def __init__(self, get_cmd: None | Callable[[], Any] = None, **kwargs: Any):
+    def __init__(self, get_cmd: Callable[[], Any] | None = None, **kwargs: Any):
         self.set_values: list[Any] = []
         self.get_values: list[Any] = []
         super().__init__(
@@ -162,7 +162,7 @@ class MemoryParameter(Parameter):
         self.set_values.append(value)
 
     def create_get_func(
-        self, func: None | Callable[[], ParamDataType]
+        self, func: Callable[[], ParamDataType] | None
     ) -> Callable[[], ParamDataType]:
         def get_func() -> ParamDataType:
             if func is not None:

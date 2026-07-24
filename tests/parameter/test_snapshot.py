@@ -20,7 +20,7 @@ def create_parameter(
     snapshot_get: bool | Literal["NOT_PASSED"],
     snapshot_value: bool | Literal["NOT_PASSED"],
     cache_is_valid: bool,
-    get_cmd: Callable[..., Any] | bool | None | Literal["NOT_PASSED"],
+    get_cmd: Callable[..., Any] | bool | Literal["NOT_PASSED"] | None,
     offset: float | Literal["NOT_PASSED"] = NOT_PASSED,
 ) -> Parameter:
     kwargs: dict[str, Any] = dict(
@@ -72,7 +72,7 @@ def create_parameter(
 def test_snapshot_contains_parameter_attributes(
     snapshot_get: bool | Literal["NOT_PASSED"],
     snapshot_value: bool | Literal["NOT_PASSED"],
-    get_cmd: None | Literal[False, "NOT_PASSED"],
+    get_cmd: Literal[False, "NOT_PASSED"] | None,
     cache_is_valid: bool,
     update: bool | Literal["NOT_PASSED"] | None,
 ) -> None:

@@ -151,7 +151,7 @@ class VisaInstrument(Instrument):
         self,
         name: str,
         address: str | None = None,
-        timeout: float | None | Literal["Unset"] = "Unset",
+        timeout: float | Literal["Unset"] | None = "Unset",
         terminator: str | Literal["Unset"] | None = "Unset",  # noqa: PYI051
         # while unset is redundant here we add it to communicate to the user that unset has special meaning
         device_clear: bool = True,

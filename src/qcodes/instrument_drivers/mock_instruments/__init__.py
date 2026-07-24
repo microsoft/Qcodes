@@ -1130,7 +1130,7 @@ class MockField(DummyBase):
             self._field = val
         return self._field
 
-    def set_field(self, value: float, block: bool = True) -> None | float:
+    def set_field(self, value: float, block: bool = True) -> float | None:
         if self._field == value:
             return value
 

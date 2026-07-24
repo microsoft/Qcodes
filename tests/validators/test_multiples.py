@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 divisors = (3, 7, 11, 13)
 not_divisors: tuple[
-    int | float | str | None | bytes | list | dict | type[AClass] | AClass | Callable,
+    int | float | str | bytes | list | dict | type[AClass] | AClass | Callable | None,
     ...,
 ] = (
     0,
@@ -64,7 +64,7 @@ multiples: list[int | np.integer | bool] = [
     np.int64(2),
 ]
 not_multiples: tuple[
-    float | None | str | list | dict | bytes | type[AClass] | AClass | Callable,
+    float | str | list | dict | bytes | type[AClass] | AClass | Callable | None,
     ...,
 ] = (
     0.1,
