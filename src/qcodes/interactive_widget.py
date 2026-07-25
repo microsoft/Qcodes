@@ -6,7 +6,7 @@ from __future__ import annotations
 import io
 import operator
 import traceback
-from datetime import datetime
+from datetime import UTC, datetime
 from functools import partial, reduce
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
@@ -389,8 +389,8 @@ def _get_timestamp_button(ds: DataSetProtocol) -> Box:
     end_timestamp = ds.completed_timestamp_raw
     if start_timestamp is not None and end_timestamp is not None:
         total_time = str(
-            datetime.fromtimestamp(end_timestamp)
-            - datetime.fromtimestamp(start_timestamp)
+            datetime.fromtimestamp(end_timestamp, tz=UTC)
+            - datetime.fromtimestamp(start_timestamp, tz=UTC)
         )
     else:
         total_time = "?"

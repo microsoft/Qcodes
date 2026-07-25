@@ -14,7 +14,7 @@ import sys
 from collections import OrderedDict
 from contextlib import contextmanager
 from copy import copy
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Self
 
 if TYPE_CHECKING:
@@ -163,7 +163,7 @@ def generate_log_file_name() -> str:
     """
 
     pid = str(os.getpid())
-    dt_str = datetime.now().strftime("%y%m%d")
+    dt_str = datetime.now(UTC).strftime("%y%m%d")
     python_log_name = f"{dt_str}-{pid}-{PYTHON_LOG_NAME}"
     return python_log_name
 

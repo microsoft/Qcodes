@@ -1,7 +1,7 @@
 import json
 import random
 import re
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import hypothesis.strategies as hst
 import pytest
@@ -27,7 +27,9 @@ def generate_some_links(N: int) -> list[Link]:
         Return a random timestamp that is approximately
         one day in the past.
         """
-        timestamp = datetime.now() - timedelta(days=1, seconds=random.randint(1, 1000))
+        timestamp = datetime.now(UTC) - timedelta(
+            days=1, seconds=random.randint(1, 1000)
+        )
         return round(timestamp.timestamp() * 1000)
 
     known_types = ("fit", "analysis", "step")

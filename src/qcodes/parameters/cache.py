@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any, Generic, Literal, Protocol, overload
 
 from typing_extensions import TypeVar
@@ -187,7 +187,7 @@ class _Cache(Generic[ParameterDataTypeVar]):
         self._value = value
         self._raw_value = raw_value
         if timestamp is None:
-            self._timestamp = datetime.now()
+            self._timestamp = datetime.now(UTC).astimezone()
         else:
             self._timestamp = timestamp
         self._marked_valid = True
@@ -199,7 +199,7 @@ class _Cache(Generic[ParameterDataTypeVar]):
         if self._max_val_age is None:
             # parameter cannot expire
             return False
-        oldest_accepted_timestamp = datetime.now() - timedelta(
+        oldest_accepted_timestamp = datetime.now(UTC).astimezone() - timedelta(
             seconds=self._max_val_age
         )
         too_old = self._timestamp < oldest_accepted_timestamp

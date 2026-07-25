@@ -1,5 +1,5 @@
 import time
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
@@ -15,11 +15,11 @@ def test_get_latest() -> None:
 
     # Create a gettable parameter
     local_parameter = Parameter("test_param", set_cmd=None, get_cmd=None)
-    before_set = datetime.now()
+    before_set = datetime.now(UTC)
     time.sleep(sleep_delta)
     local_parameter.set(1)
     time.sleep(sleep_delta)
-    after_set = datetime.now()
+    after_set = datetime.now(UTC)
 
     # Check we return last set value, with the correct timestamp
     assert local_parameter.get_latest() == 1
@@ -67,7 +67,7 @@ def test_get_latest_unknown() -> None:
     local_parameter.cache._value = value  # type: ignore[attr-defined]
     local_parameter.cache._raw_value = value  # type: ignore[attr-defined]
     assert local_parameter.get_latest.get_timestamp() is None
-    before_get = datetime.now()
+    before_get = datetime.now(UTC)
     assert local_parameter._get_count == 0
     assert local_parameter.get_latest() == value
     assert local_parameter._get_count == 1
@@ -89,7 +89,7 @@ def test_get_latest_known() -> None:
     value = 1
     local_parameter = BetterGettableParam("test_param", set_cmd=None, get_cmd=None)
     # fake a parameter that has a value acquired 10 sec ago
-    start = datetime.now()
+    start = datetime.now(UTC)
     set_time = start - timedelta(seconds=10)
     local_parameter.cache._update_with(value=value, raw_value=value, timestamp=set_time)
     assert local_parameter._get_count == 0
@@ -128,7 +128,7 @@ def test_get_latest_no_get() -> None:
 
 def test_max_val_age() -> None:
     value = 1
-    start = datetime.now()
+    start = datetime.now(UTC)
     local_parameter = BetterGettableParam(
         "test_param", set_cmd=None, max_val_age=1, initial_value=value
     )

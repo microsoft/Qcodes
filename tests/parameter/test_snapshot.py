@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 from typing_extensions import ParamSpec
@@ -137,7 +137,7 @@ def test_snapshot_timestamp_of_non_gettable_depends_only_on_cache_validity(
 
     if cache_is_valid:
         assert t0 is not None
-        ts = datetime.strptime(s["ts"], "%Y-%m-%d %H:%M:%S")
+        ts = datetime.fromisoformat(s["ts"])
         t0_up_to_seconds = t0.replace(microsecond=0)
         assert ts >= t0_up_to_seconds
     else:
@@ -159,7 +159,7 @@ def test_snapshot_timestamp_for_valid_cache_depends_on_cache_update(
     assert timestamp is not None
     p.cache._timestamp = timestamp - timedelta(days=31)  # type: ignore[attr-defined]
 
-    tu = datetime.now()
+    tu = datetime.now(UTC)
     assert p.cache.timestamp is not None
     assert p.cache.timestamp < tu  # pre-condition
     if update != NOT_PASSED:
@@ -167,7 +167,7 @@ def test_snapshot_timestamp_for_valid_cache_depends_on_cache_update(
     else:
         s = p.snapshot()
 
-    ts = datetime.strptime(s["ts"], "%Y-%m-%d %H:%M:%S")
+    ts = datetime.fromisoformat(s["ts"])
     tu_up_to_seconds = tu.replace(microsecond=0)
 
     cache_gets_updated_on_snapshot_call = (
@@ -197,7 +197,7 @@ def test_snapshot_timestamp_for_invalid_cache_depends_only_on_snapshot_flags(
     )
 
     if cache_gets_updated_on_snapshot_call:
-        tu = datetime.now()
+        tu = datetime.now(UTC)
     else:
         tu = None
 
@@ -207,7 +207,7 @@ def test_snapshot_timestamp_for_invalid_cache_depends_only_on_snapshot_flags(
         s = p.snapshot()
 
     if cache_gets_updated_on_snapshot_call:
-        ts = datetime.strptime(s["ts"], "%Y-%m-%d %H:%M:%S")
+        ts = datetime.fromisoformat(s["ts"])
         assert tu is not None
         tu_up_to_seconds = tu.replace(microsecond=0)
         assert ts >= tu_up_to_seconds
