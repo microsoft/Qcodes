@@ -365,7 +365,7 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
             if instrument_is_not_found:
                 instrument_exists = False
             else:
-                raise exception
+                raise
 
         return instrument_exists
 
@@ -416,7 +416,7 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
                 *e.args,
                 f"writing {cmd!r} to {self!r}",
             )
-            raise e
+            raise
 
     def write_raw(self, cmd: str) -> None:
         """
@@ -460,7 +460,7 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
 
         except Exception as e:
             e.args = (*e.args, f"asking {cmd!r} to {self!r}")
-            raise e
+            raise
 
     def ask_raw(self, cmd: str) -> str:
         """
