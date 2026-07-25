@@ -97,7 +97,9 @@ def test_validate_function(testdummy: DummyInstrument) -> None:
 
     testdummy.dac1.cache._value = 1000  # overrule the validator
     testdummy.dac1.cache._raw_value = 1000  # overrule the validator
-    with pytest.raises(Exception):
+    with pytest.raises(
+        ValueError, match=r"1000 is invalid: must be between -800 and 400 inclusive"
+    ):
         testdummy.validate_status()
 
 
