@@ -80,7 +80,9 @@ def test_catch_interrupts_simulated_sweeps():
     results = []
     with pytest.raises(KeyboardInterrupt):
         for value in simulated_sweep(interrupt_at=3):
-            results.append(value)
+            results.append(value)  # noqa: PERF402
+            # simulate adding numbers one by one using copy
+            # so its ok here
     assert results == [0, 1, 2]
 
     # Test interruption in nested sweeps
@@ -92,6 +94,8 @@ def test_catch_interrupts_simulated_sweeps():
             for inner_value in simulated_sweep(
                 interrupt_at=2 if outer_value == 1 else None
             ):
-                inner_results.append(inner_value)
+                inner_results.append(inner_value)  # noqa: PERF402
+                # simulate adding numbers one by one using copy
+                # so its ok here
     assert outer_results == [0, 1]
     assert inner_results == [0, 1, 2, 3, 4, 0, 1]
