@@ -539,7 +539,7 @@ class Runner:
         experiment: Experiment | None = None,
         station: Station | None = None,
         write_period: float | None = None,
-        interdeps: InterDependencies_ = InterDependencies_(),
+        interdeps: InterDependencies_ | None = None,
         name: str = "",
         subscribers: Sequence[SubscriberType] | None = None,
         parent_datasets: Sequence[Mapping[Any, Any]] = (),
@@ -554,6 +554,8 @@ class Runner:
         if in_memory_cache is None:
             in_memory_cache = qc.config.dataset.in_memory_cache
             in_memory_cache = cast("bool", in_memory_cache)
+        if interdeps is None:
+            interdeps = InterDependencies_()
 
         self._dataset_class = dataset_class
         self.write_period = self._calculate_write_period(

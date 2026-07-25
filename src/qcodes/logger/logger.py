@@ -412,9 +412,11 @@ class LogCapture:
 
     def __init__(
         self,
-        logger: logging.Logger = logging.getLogger(),
+        logger: logging.Logger | None = None,
         level: LevelType | None = None,
     ) -> None:
+        if logger is None:
+            logger = logging.getLogger()
         self.logger = logger
         self.level = level or logging.NOTSET
 

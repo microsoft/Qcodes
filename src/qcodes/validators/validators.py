@@ -1064,6 +1064,9 @@ class Arrays(Validator[npt.NDArray]):
         return float(self._max_value) if self._max_value is not None else None
 
 
+anything = Anything()  # singleton instance of Anything
+
+
 class Lists[T](Validator[list[T]]):
     """
     Validator for lists
@@ -1073,13 +1076,12 @@ class Lists[T](Validator[list[T]]):
 
     """
 
-    def __init__(self, elt_validator: Validator[T] = Anything()) -> None:
+    def __init__(self, elt_validator: Validator[T] = anything) -> None:
         self._elt_validator = elt_validator
         self._valid_values = ([vval for vval in elt_validator._valid_values],)
 
     def __repr__(self) -> str:
-        msg = "<Lists : "
-        msg += self._elt_validator.__repr__() + ">"
+        msg = f"<Lists : {self._elt_validator!r} >"
         return msg
 
     def validate(self, value: list[T], context: str = "") -> None:
@@ -1120,7 +1122,7 @@ class Sequence(Validator[typing.Sequence[Any]]):
 
     def __init__(
         self,
-        elt_validator: Validator[Any] = Anything(),
+        elt_validator: Validator[Any] = anything,
         length: int | None = None,
         require_sorted: bool = False,
     ) -> None:
