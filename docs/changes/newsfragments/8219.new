@@ -4,7 +4,9 @@ writes raw measurement data into individual per-dataset SQLite files
 while keeping all metadata in the main database.  This prevents the
 main DB file from growing excessively large and allows users to have a
 single main SQLite QCoDeS database on their PC as opposed to many that
-grow infinitely.
+grow infinitely.  When enabled, no results table is created in the main
+database at all - it holds only metadata - and all public ``DataSet``
+APIs continue to work unchanged.
 
 Management helpers included:
 
