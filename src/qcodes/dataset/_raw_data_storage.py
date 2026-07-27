@@ -23,8 +23,8 @@ import qcodes
 from qcodes.dataset.export_config import _expand_export_path
 from qcodes.dataset.sqlite.connection import AtomicConnection, atomic
 from qcodes.dataset.sqlite.database import (
+    _connect_to_sqlite_file,
     connect,
-    connect_to_sqlite_file,
 )
 from qcodes.dataset.sqlite.queries import (
     _create_run_table,
@@ -88,7 +88,7 @@ def connect_to_raw_data_db(
     Unlike the main QCoDeS :func:`~qcodes.dataset.sqlite.database.connect`,
     this does **not** create the full metadata schema (experiments, runs, ...).
     It reuses the shared
-    :func:`~qcodes.dataset.sqlite.database.connect_to_sqlite_file` helper so
+    :func:`~qcodes.dataset.sqlite.database._connect_to_sqlite_file` helper so
     that the numpy/sqlite type adapters and connection settings are identical
     to the main database connection.
 
@@ -100,7 +100,7 @@ def connect_to_raw_data_db(
         An :class:`AtomicConnection` to the raw-data database.
 
     """
-    return connect_to_sqlite_file(path, read_only=read_only)
+    return _connect_to_sqlite_file(path, read_only=read_only)
 
 
 def create_raw_data_db(
@@ -275,29 +275,21 @@ def _build_dataset_info_list(
     rows = get_datasets_with_raw_data_path(conn)
 
     datasets: list[DatasetInfo] = []
-    for (
-        run_id,
-        guid,
-        exp_name,
-        sample_name,
-        run_ts,
-        completed_ts,
-        table_name,
-        raw_path,
-    ) in rows:
+    for row in rows:
+        raw_path = row.raw_data_db_path
         raw_size: int | None = None
         if raw_path and Path(raw_path).is_file():
             raw_size = Path(raw_path).stat().st_size
 
         datasets.append(
             DatasetInfo(
-                run_id=run_id,
-                guid=guid,
-                experiment_name=exp_name,
-                sample_name=sample_name,
-                run_timestamp=run_ts,
-                completed_timestamp=completed_ts,
-                result_table_name=table_name,
+                run_id=row.run_id,
+                guid=row.guid,
+                experiment_name=row.experiment_name,
+                sample_name=row.sample_name,
+                run_timestamp=row.run_timestamp,
+                completed_timestamp=row.completed_timestamp,
+                result_table_name=row.result_table_name,
                 raw_data_db_path=raw_path,
                 raw_data_size_bytes=raw_size,
             )

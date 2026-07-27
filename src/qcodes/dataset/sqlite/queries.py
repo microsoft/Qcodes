@@ -10,6 +10,7 @@ import sqlite3
 import time
 import unicodedata
 import warnings
+from dataclasses import dataclass
 from itertools import zip_longest
 from typing import TYPE_CHECKING, Any, Literal, cast
 
@@ -2342,9 +2343,27 @@ def set_raw_data_db_path_for_run(
     )
 
 
+@dataclass(frozen=True)
+class RawDataDatasetRecord:
+    """A run in the main database whose raw data is stored in a separate file.
+
+    Returned by :func:`get_datasets_with_raw_data_path` for each started run
+    that records a ``raw_data_db_path``.
+    """
+
+    run_id: int
+    guid: str
+    experiment_name: str
+    sample_name: str
+    run_timestamp: float | None
+    completed_timestamp: float | None
+    result_table_name: str
+    raw_data_db_path: str
+
+
 def get_datasets_with_raw_data_path(
     conn: AtomicConnection,
-) -> list[tuple[int, str, str, str, float | None, float | None, str, str]]:
+) -> list[RawDataDatasetRecord]:
     """Get all datasets that have a raw_data_db_path metadata column set.
 
     Only datasets that have been started (``run_timestamp`` is set) are
@@ -2352,10 +2371,8 @@ def get_datasets_with_raw_data_path(
     never creates the corresponding file.
 
     Returns:
-        A list of tuples:
-        ``(run_id, guid, experiment_name, sample_name, run_timestamp,
-        completed_timestamp, result_table_name, raw_data_db_path)``.
-        Returns an empty list if the column does not exist.
+        A list of :class:`RawDataDatasetRecord`. Returns an empty list if the
+        ``raw_data_db_path`` column does not exist.
 
     """
     if not is_column_in_table(conn, "runs", "raw_data_db_path"):
@@ -2371,7 +2388,7 @@ def get_datasets_with_raw_data_path(
       AND r.run_timestamp IS NOT NULL
     """
     cursor = atomic_transaction(conn, sql)
-    return cursor.fetchall()
+    return [RawDataDatasetRecord(*row) for row in cursor.fetchall()]
 
 
 def remove_dataset_from_db(
