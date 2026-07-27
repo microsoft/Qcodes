@@ -62,6 +62,7 @@ from qcodes.dataset.sqlite.queries import (
     get_metadata_from_run_id,
     get_parameter_data,
     get_parent_dataset_links,
+    get_raw_data_db_path_for_run,
     get_run_description,
     get_run_timestamp_from_run_id,
     get_runid_from_guid,
@@ -70,6 +71,7 @@ from qcodes.dataset.sqlite.queries import (
     mark_run_complete,
     remove_trigger,
     run_exists,
+    set_raw_data_db_path_for_run,
     set_run_timestamp,
     update_parent_datasets,
     update_run_description,
@@ -292,12 +294,18 @@ class DataSet(BaseDataSet):
 
         self._debug = False
         self.subscribers: dict[str, _Subscriber] = {}
+        #: Subscriptions requested before the dataset was started, and thus
+        #: before the results table exists. They are materialised into real
+        #: subscribers (with their SQL triggers) once the dataset is started.
+        self._pending_subscribers: dict[str, dict[str, Any]] = {}
         self._parent_dataset_links: list[Link]
         #: In memory representation of the data in the dataset.
         self._cache: DataSetCacheWithDBBackend = DataSetCacheWithDBBackend(self)
         self._results: list[dict[str, VALUE]] = []
         self._in_memory_cache = in_memory_cache
         self._raw_data_conn: AtomicConnection | None = None
+        #: Path to the per-dataset raw data file when raw data storage is used.
+        self._raw_data_db_path: str | None = None
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -317,19 +325,23 @@ class DataSet(BaseDataSet):
                 self.metadata.get("export_info", "")
             )
             # If this dataset was saved with raw data in a separate db,
-            # re-open that connection for reads.
-            raw_db_path = self._metadata.get("raw_data_db_path")
+            # re-open that connection for reads. The path is stored in a
+            # dedicated runs-table column, not in the user-facing metadata.
+            raw_db_path = get_raw_data_db_path_for_run(self.conn, self.run_id)
+            self._raw_data_db_path = raw_db_path
             if raw_db_path is not None:
                 if Path(raw_db_path).is_file():
                     self._raw_data_conn = connect_to_raw_data_db(
                         raw_db_path, read_only=read_only
                     )
-                else:
+                elif self._started:
                     raise FileNotFoundError(
                         f"Raw data file for dataset {self.guid} not found at "
                         f"'{raw_db_path}'. The per-dataset SQLite file may "
                         f"have been moved or deleted."
                     )
+                # else: the dataset was never started, so the raw data file has
+                # not been created yet - there is simply no data to connect to.
         else:
             # Actually perform all the side effects needed for the creation
             # of a new dataset. Note that a dataset is created (in the DB)
@@ -338,6 +350,10 @@ class DataSet(BaseDataSet):
             if exp_id is None:
                 exp_id = get_default_experiment_id(self.conn)
             name = name or "dataset"
+            # When raw data is stored in a separate backend (e.g. a per-dataset
+            # SQLite file), no results table is created in the main database -
+            # only the run metadata is kept there. This mirrors how
+            # ``DataSetInMem`` records runs without a results table.
             _, run_id, __ = create_run(
                 self.conn,
                 exp_id,
@@ -346,6 +362,7 @@ class DataSet(BaseDataSet):
                 parameters=None,
                 values=values,
                 metadata=metadata,
+                create_run_table=not is_raw_data_storage_enabled(),
             )
             # this is really the UUID (an ever increasing count in the db)
             self._run_id = run_id
@@ -364,6 +381,18 @@ class DataSet(BaseDataSet):
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._parent_dataset_links = []
             self._export_info = ExportInfo({})
+
+            if is_raw_data_storage_enabled():
+                # Record the raw-data backend location up front. This marks the
+                # run as a split-storage dataset (so it can be told apart from a
+                # ``DataSetInMem`` run, which also has no results table) even
+                # before it is started and before the raw data file is created.
+                # The path is stored in a dedicated column, not in the
+                # user-facing metadata.
+                raw_path_str = str(get_raw_data_db_path(self.guid))
+                self._raw_data_db_path = raw_path_str
+                with atomic(self.conn) as aconn:
+                    set_raw_data_db_path_for_run(aconn, self.run_id, raw_path_str)
         assert self.path_to_db is not None
         if _WRITERS.get(self.path_to_db) is None:
             queue: Queue[Any] = Queue()
@@ -408,6 +437,17 @@ class DataSet(BaseDataSet):
         if self._raw_data_conn is not None:
             return self._raw_data_conn
         return self.conn
+
+    @property
+    def _results_table_exists(self) -> bool:
+        """Whether the physical results table exists on the data connection.
+
+        When raw data storage is enabled the results table is created in the
+        per-dataset raw data file only once the dataset has been started, so
+        before that (and in the main database in general) no results table
+        exists. Callers that count rows must handle this case.
+        """
+        return _check_if_table_found(self._data_conn, self.table_name)
 
     @property
     def run_id(self) -> int:
@@ -470,6 +510,8 @@ class DataSet(BaseDataSet):
 
     @property
     def number_of_results(self) -> int:
+        if not self._results_table_exists:
+            return 0
         sql = f'SELECT COUNT(*) FROM "{self.table_name}"'
         cursor = atomic_transaction(self._data_conn, sql)
         return one(cursor, "COUNT(*)")
@@ -740,26 +782,30 @@ class DataSet(BaseDataSet):
                 spec,
                 conn=self.conn,
                 run_id=self.run_id,
-                insert_into_results_table=True,
+                # The results table only lives in the main database when raw
+                # data storage is disabled; with it enabled the parameter
+                # columns are created in the per-dataset raw data file below.
+                insert_into_results_table=not raw_data_enabled,
             )
 
         # When raw data split is enabled, create a per-dataset SQLite file
         # for results data with the full results table.
         if raw_data_enabled:
-            raw_db_path = get_raw_data_db_path(self.guid)
+            # The raw-data path was already recorded at dataset creation time;
+            # reuse it so both locations stay in sync.
+            raw_path_str = self._raw_data_db_path or str(
+                get_raw_data_db_path(self.guid)
+            )
+            raw_db_path = Path(raw_path_str)
             self._raw_data_conn = create_raw_data_db(
                 raw_db_path,
                 self.table_name,
                 self._rundescriber.interdeps.paramspecs,
             )
-            # Persist the raw data path in metadata so we can find it when
-            # loading the dataset later.
-            raw_path_str = str(raw_db_path)
-            self._metadata["raw_data_db_path"] = raw_path_str
-            with atomic(self.conn) as aconn:
-                add_data_to_dynamic_columns(
-                    aconn, self.run_id, {"raw_data_db_path": raw_path_str}
-                )
+            if self._raw_data_db_path != raw_path_str:
+                self._raw_data_db_path = raw_path_str
+                with atomic(self.conn) as aconn:
+                    set_raw_data_db_path_for_run(aconn, self.run_id, raw_path_str)
 
         desc_str = serial.to_json_for_storage(self.description)
 
@@ -795,6 +841,11 @@ class DataSet(BaseDataSet):
 
         writer_status.active_datasets.add(self.run_id)
         self.cache.prepare()
+
+        # Now that the dataset is started (and, for split raw data storage, the
+        # results table exists in the per-dataset file), create any subscribers
+        # that were requested while the dataset was still pristine.
+        self._start_pending_subscribers()
 
     def mark_completed(self) -> None:
         """
@@ -1247,12 +1298,70 @@ class DataSet(BaseDataSet):
         callback_kwargs: Mapping[str, Any] | None = None,
     ) -> str:
         subscriber_id = uuid.uuid4().hex
+        if not self._results_table_exists:
+            # The results table does not exist yet - this happens with split
+            # raw data storage, where the table lives in the per-dataset file
+            # created only when the dataset is started. A subscriber has
+            # nothing to observe before the dataset is started, so defer
+            # creating it (and its SQL trigger) until then.
+            self._queue_pending_subscriber(
+                subscriber_id, callback, min_wait, min_count, state, callback_kwargs
+            )
+            return subscriber_id
+        self._create_and_start_subscriber(
+            subscriber_id, callback, min_wait, min_count, state, callback_kwargs
+        )
+        return subscriber_id
+
+    def _create_and_start_subscriber(
+        self,
+        subscriber_id: str,
+        callback: Callable[[Any, int, Any | None], None],
+        min_wait: int,
+        min_count: int,
+        state: Any | None,
+        callback_kwargs: Mapping[str, Any] | None,
+    ) -> None:
+        """Create a :class:`_Subscriber` (and its SQL trigger) and start it."""
         subscriber = _Subscriber(
             self, subscriber_id, callback, state, min_wait, min_count, callback_kwargs
         )
         self.subscribers[subscriber_id] = subscriber
         subscriber.start()
-        return subscriber_id
+
+    def _queue_pending_subscriber(
+        self,
+        subscriber_id: str,
+        callback: Callable[[Any, int, Any | None], None],
+        min_wait: int,
+        min_count: int,
+        state: Any | None,
+        callback_kwargs: Mapping[str, Any] | None,
+    ) -> None:
+        """Record a subscription requested before the dataset was started, to
+        be materialised once the results table exists (see
+        :meth:`_start_pending_subscribers`)."""
+        self._pending_subscribers[subscriber_id] = {
+            "callback": callback,
+            "min_wait": min_wait,
+            "min_count": min_count,
+            "state": state,
+            "callback_kwargs": callback_kwargs,
+        }
+
+    def _start_pending_subscribers(self) -> None:
+        """Materialise subscriptions that were requested before the dataset was
+        started (and thus before the results table existed)."""
+        for subscriber_id, kwargs in self._pending_subscribers.items():
+            self._create_and_start_subscriber(
+                subscriber_id,
+                kwargs["callback"],
+                kwargs["min_wait"],
+                kwargs["min_count"],
+                kwargs["state"],
+                kwargs["callback_kwargs"],
+            )
+        self._pending_subscribers.clear()
 
     def subscribe_from_config(self, name: str) -> str:
         """
@@ -1292,6 +1401,10 @@ class DataSet(BaseDataSet):
         """
         Remove subscriber with the provided uuid
         """
+        if uuid in self._pending_subscribers:
+            # Not yet materialised into a real subscriber/trigger.
+            del self._pending_subscribers[uuid]
+            return
         with atomic(self._data_conn) as conn:
             sub = self.subscribers[uuid]
             remove_trigger(conn, sub.trigger_id)
@@ -1322,6 +1435,8 @@ class DataSet(BaseDataSet):
         return get_data_by_tag_and_table_name(self.conn, tag, self.table_name)
 
     def __len__(self) -> int:
+        if not self._results_table_exists:
+            return 0
         return length(self._data_conn, self.table_name)
 
     def __repr__(self) -> str:
@@ -1974,14 +2089,14 @@ def _get_datasetprotocol_from_guid(
     result_table_name = _get_result_table_name_by_guid(conn, guid)
     if _check_if_table_found(conn, result_table_name):
         d = DataSet(conn=conn, run_id=run_id)
+    # The results table is absent from the main DB when raw data is stored
+    # in a separate per-dataset SQLite file. Such runs are marked with a
+    # raw_data_db_path; anything else without a results table is an
+    # in-memory (netcdf-backed) dataset.
+    elif get_raw_data_db_path_for_run(conn, run_id) is not None:
+        d = DataSet(conn=conn, run_id=run_id)
     else:
-        # The results table may be absent from the main DB when raw data
-        # is stored in a separate per-dataset SQLite file.
-        metadata = get_metadata_from_run_id(conn, run_id)
-        if metadata.get("raw_data_db_path") is not None:
-            d = DataSet(conn=conn, run_id=run_id)
-        else:
-            d = DataSetInMem._load_from_db(conn=conn, guid=guid)
+        d = DataSetInMem._load_from_db(conn=conn, guid=guid)
 
     return d
 

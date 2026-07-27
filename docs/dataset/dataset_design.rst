@@ -97,9 +97,18 @@ From a design perspective, this feature adds a thin routing layer inside the
   ``__len__``) all go through this single routing point.
 - The per-dataset SQLite file is a lightweight database containing only the
   results table and numpy type adapters -- no QCoDeS metadata schema.
+- When raw data storage is enabled, **no results table is created in the main
+  database** at all -- only the run metadata is stored there. This mirrors how
+  ``DataSetInMem`` records runs (with ``create_run_table=False``). A run is
+  identified as a split-storage dataset by the ``raw_data_db_path`` column in
+  the ``runs`` table (recorded at dataset creation), which is used both to
+  reconnect to the raw data file and to distinguish such runs from
+  ``DataSetInMem`` runs (which also have no results table). This column is an
+  internal storage detail and is kept out of the user-facing metadata.
 - Subscriber triggers (used for real-time data callbacks) are created on the
-  data connection so that they fire regardless of which database holds the
-  results table.
+  data connection. Because the results table only exists once the dataset is
+  started (in the per-dataset file), subscriptions requested before the dataset
+  is started are deferred and materialised at start time.
 
 The implementation is contained in ``qcodes.dataset._raw_data_storage`` (helper
 functions) and a handful of additions to ``qcodes.dataset.data_set`` (routing
