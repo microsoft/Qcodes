@@ -1304,36 +1304,63 @@ class DataSet(BaseDataSet):
             # created only when the dataset is started. A subscriber has
             # nothing to observe before the dataset is started, so defer
             # creating it (and its SQL trigger) until then.
-            self._pending_subscribers[subscriber_id] = {
-                "callback": callback,
-                "min_wait": min_wait,
-                "min_count": min_count,
-                "state": state,
-                "callback_kwargs": callback_kwargs,
-            }
+            self._queue_pending_subscriber(
+                subscriber_id, callback, min_wait, min_count, state, callback_kwargs
+            )
             return subscriber_id
+        self._create_and_start_subscriber(
+            subscriber_id, callback, min_wait, min_count, state, callback_kwargs
+        )
+        return subscriber_id
+
+    def _create_and_start_subscriber(
+        self,
+        subscriber_id: str,
+        callback: Callable[[Any, int, Any | None], None],
+        min_wait: int,
+        min_count: int,
+        state: Any | None,
+        callback_kwargs: Mapping[str, Any] | None,
+    ) -> None:
+        """Create a :class:`_Subscriber` (and its SQL trigger) and start it."""
         subscriber = _Subscriber(
             self, subscriber_id, callback, state, min_wait, min_count, callback_kwargs
         )
         self.subscribers[subscriber_id] = subscriber
         subscriber.start()
-        return subscriber_id
+
+    def _queue_pending_subscriber(
+        self,
+        subscriber_id: str,
+        callback: Callable[[Any, int, Any | None], None],
+        min_wait: int,
+        min_count: int,
+        state: Any | None,
+        callback_kwargs: Mapping[str, Any] | None,
+    ) -> None:
+        """Record a subscription requested before the dataset was started, to
+        be materialised once the results table exists (see
+        :meth:`_start_pending_subscribers`)."""
+        self._pending_subscribers[subscriber_id] = {
+            "callback": callback,
+            "min_wait": min_wait,
+            "min_count": min_count,
+            "state": state,
+            "callback_kwargs": callback_kwargs,
+        }
 
     def _start_pending_subscribers(self) -> None:
         """Materialise subscriptions that were requested before the dataset was
         started (and thus before the results table existed)."""
         for subscriber_id, kwargs in self._pending_subscribers.items():
-            subscriber = _Subscriber(
-                self,
+            self._create_and_start_subscriber(
                 subscriber_id,
                 kwargs["callback"],
-                kwargs["state"],
                 kwargs["min_wait"],
                 kwargs["min_count"],
+                kwargs["state"],
                 kwargs["callback_kwargs"],
             )
-            self.subscribers[subscriber_id] = subscriber
-            subscriber.start()
         self._pending_subscribers.clear()
 
     def subscribe_from_config(self, name: str) -> str:
