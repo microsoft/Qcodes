@@ -1,5 +1,3 @@
-#! /usr/bin/env python
-# vim:fenc=utf-8
 #
 # Copyright © 2017 unga <giulioungaretti@me.com>
 #
