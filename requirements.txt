@@ -83,7 +83,7 @@ execnet==2.1.2
     # via pytest-xdist
 executing==2.2.1
     # via stack-data
-fastjsonschema==2.21.2
+fastjsonschema==2.22.0
     # via nbformat
 fonttools==4.63.0
     # via matplotlib
