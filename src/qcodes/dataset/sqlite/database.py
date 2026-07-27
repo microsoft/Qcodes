@@ -147,7 +147,7 @@ def _register_numpy_sqlite_adapters_and_converters() -> None:
     sqlite3.register_converter("complex", _convert_complex)
 
 
-def connect_to_sqlite_file(
+def _connect_to_sqlite_file(
     name: str | Path, read_only: bool = False
 ) -> AtomicConnection:
     """
@@ -204,7 +204,7 @@ def connect(
         :class:`AtomicConnection`, which is a subclass of :class:`sqlite3.Connection`)
 
     """
-    conn = connect_to_sqlite_file(name, read_only=read_only)
+    conn = _connect_to_sqlite_file(name, read_only=read_only)
 
     latest_supported_version = _latest_available_version()
     db_version = get_user_version(conn)
