@@ -207,9 +207,9 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         for inststr in list(cls._all_instruments):
             try:
                 inst: Instrument = cls.find_instrument(inststr)
-                if only_subclasses and issubclass(type(inst), cls):
-                    should_be_closed = True
-                elif not only_subclasses:
+                if (
+                    only_subclasses and issubclass(type(inst), cls)
+                ) or not only_subclasses:
                     should_be_closed = True
                 else:
                     should_be_closed = False
