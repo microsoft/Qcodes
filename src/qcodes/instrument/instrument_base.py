@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 
     from qcodes.instrument.channel import ChannelTuple, InstrumentModule
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
+    from qcodes.metadatable import SnapshotUpdate
 
 from qcodes.utils import QCoDeSDeprecationWarning
 
@@ -407,7 +408,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
 
     def snapshot_base(
         self,
-        update: bool | None = False,
+        update: bool | SnapshotUpdate | None = False,
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         """
@@ -417,10 +418,11 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         supports).
 
         Args:
-            update: If ``True``, update the state by querying the
-                instrument. If None update the state if known to be invalid.
-                If ``False``, just use the latest values in memory and never
-                update state.
+            update: If ``"All"`` (or legacy ``True``), update the state by
+                querying the instrument. If ``"Only_invalid"`` (or legacy
+                ``None``) update the state only for values known to be invalid.
+                If ``"Never"`` (or legacy ``False``), just use the latest
+                values in memory and never update state.
             params_to_skip_update: List of parameter names that will be skipped
                 in update even if update is True. This is useful if you have
                 parameters that are slow to update but can be updated in a
@@ -453,7 +455,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
             if param.snapshot_exclude:
                 continue
             if params_to_skip_update and name in params_to_skip_update:
-                update_par: bool | None = False
+                update_par: bool | SnapshotUpdate | None = False
             else:
                 update_par = update
             try:

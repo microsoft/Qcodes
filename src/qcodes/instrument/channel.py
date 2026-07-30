@@ -23,6 +23,8 @@ from .instrument_base import InstrumentBase
 if TYPE_CHECKING:
     from typing import Unpack
 
+    from qcodes.metadatable import SnapshotUpdate
+
     from .instrument_base import InstrumentBaseKWArgs
 
 
@@ -380,7 +382,7 @@ class ChannelTuple[InstrumentModuleType: "InstrumentModule"](
 
     def snapshot_base(
         self,
-        update: bool | None = True,
+        update: bool | SnapshotUpdate | None = True,
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         """

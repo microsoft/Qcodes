@@ -1,3 +1,3 @@
-from .metadatable_base import Metadatable, MetadatableWithName
+from .metadatable_base import Metadatable, MetadatableWithName, SnapshotUpdate
 
-__all__ = ["Metadatable", "MetadatableWithName"]
+__all__ = ["Metadatable", "MetadatableWithName", "SnapshotUpdate"]

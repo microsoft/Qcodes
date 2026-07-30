@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
     from typing import Self
 
+    from qcodes.metadatable import SnapshotUpdate
     from qcodes.parameters import ParameterBase
 
 
@@ -348,7 +349,7 @@ class SweepFixedValues(SweepValues):
 
     def snapshot_base(
         self,
-        update: bool | None = False,
+        update: bool | SnapshotUpdate | None = False,
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         """

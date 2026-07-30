@@ -3,8 +3,10 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
+import pytest
 from typing_extensions import ParamSpec
 
+from qcodes.metadatable.metadatable_base import _normalize_snapshot_update
 from qcodes.parameters import Parameter
 
 from .conftest import NOT_PASSED
@@ -363,3 +365,111 @@ def test_snapshot_value() -> None:
     assert "value" not in snap
     assert "raw_value" not in snap
     assert "ts" in snap
+
+
+def test_normalize_snapshot_update_maps_strings_to_legacy_values() -> None:
+    assert _normalize_snapshot_update("All") is True
+    assert _normalize_snapshot_update("Only_invalid") is None
+    assert _normalize_snapshot_update("Never") is False
+    # legacy values are passed through unchanged
+    assert _normalize_snapshot_update(True) is True
+    assert _normalize_snapshot_update(False) is False
+    assert _normalize_snapshot_update(None) is None
+
+
+def test_normalize_snapshot_update_rejects_unknown_string() -> None:
+    with pytest.raises(ValueError, match="Invalid value for snapshot"):
+        _normalize_snapshot_update("bogus")  # type: ignore[arg-type]
+
+
+def test_snapshot_update_all_always_calls_get() -> None:
+    p = create_parameter(
+        snapshot_get=True,
+        snapshot_value=True,
+        get_cmd=lambda: 69,
+        cache_is_valid=True,
+    )
+    s = p.snapshot(update="All")
+    assert s["value"] == 69
+    assert p.get.call_count() == 1  # type: ignore[attr-defined]
+
+
+def test_snapshot_update_never_never_calls_get() -> None:
+    p = create_parameter(
+        snapshot_get=True,
+        snapshot_value=True,
+        get_cmd=lambda: 69,
+        cache_is_valid=False,
+    )
+    s = p.snapshot(update="Never")
+    assert s["value"] is None
+    assert p.get.call_count() == 0  # type: ignore[attr-defined]
+
+
+def test_snapshot_update_only_invalid_calls_get_when_cache_invalid() -> None:
+    p = create_parameter(
+        snapshot_get=True,
+        snapshot_value=True,
+        get_cmd=lambda: 69,
+        cache_is_valid=False,
+    )
+    s = p.snapshot(update="Only_invalid")
+    assert s["value"] == 69
+    assert p.get.call_count() == 1  # type: ignore[attr-defined]
+
+
+def test_snapshot_update_only_invalid_skips_get_when_cache_valid() -> None:
+    p = create_parameter(
+        snapshot_get=True,
+        snapshot_value=True,
+        get_cmd=lambda: 69,
+        cache_is_valid=True,
+    )
+    s = p.snapshot(update="Only_invalid")
+    # the cached (set) value is used, ``get`` is not called
+    assert s["value"] == 42
+    assert p.get.call_count() == 0  # type: ignore[attr-defined]
+
+
+@pytest.mark.parametrize(
+    ("legacy", "string"),
+    ((True, "All"), (None, "Only_invalid"), (False, "Never")),
+)
+def test_snapshot_update_string_matches_legacy_value(
+    legacy: bool | None,
+    string: Literal["All", "Only_invalid", "Never"],
+    cache_is_valid: bool,
+) -> None:
+    p_legacy = create_parameter(
+        snapshot_get=True,
+        snapshot_value=True,
+        get_cmd=lambda: 69,
+        cache_is_valid=cache_is_valid,
+    )
+    p_string = create_parameter(
+        snapshot_get=True,
+        snapshot_value=True,
+        get_cmd=lambda: 69,
+        cache_is_valid=cache_is_valid,
+    )
+
+    s_legacy = p_legacy.snapshot(update=legacy)
+    s_string = p_string.snapshot(update=string)
+
+    assert s_legacy["value"] == s_string["value"]
+    assert s_legacy["raw_value"] == s_string["raw_value"]
+    assert (
+        p_legacy.get.call_count()  # type: ignore[attr-defined]
+        == p_string.get.call_count()  # type: ignore[attr-defined]
+    )
+
+
+def test_snapshot_rejects_unknown_update_value() -> None:
+    p = create_parameter(
+        snapshot_get=True,
+        snapshot_value=True,
+        get_cmd=lambda: 69,
+        cache_is_valid=True,
+    )
+    with pytest.raises(ValueError, match="Invalid value for snapshot"):
+        p.snapshot(update="bogus")  # type: ignore[arg-type]

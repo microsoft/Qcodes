@@ -17,12 +17,14 @@ from qcodes.instrument import (
     VisaInstrument,
     VisaInstrumentKWArgs,
 )
+from qcodes.metadatable.metadatable_base import _normalize_snapshot_update
 from qcodes.parameters import MultiChannelInstrumentParameter, ParamRawDataType
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from typing import Unpack
 
+    from qcodes.metadatable import SnapshotUpdate
     from qcodes.parameters import Parameter
 
 log = logging.getLogger(__name__)
@@ -139,9 +141,10 @@ class QDevQDacChannel(InstrumentChannel["QDevQDac"]):
 
     def snapshot_base(
         self,
-        update: bool | None = False,
+        update: "bool | SnapshotUpdate | None" = False,
         params_to_skip_update: "Sequence[str] | None" = None,
     ) -> dict[Any, Any]:
+        update = _normalize_snapshot_update(update)
         # setting update not None will override parent setting
         # otherwise we use parent setting
         # parent._update | update | do update
@@ -337,9 +340,10 @@ class QDevQDac(VisaInstrument):
 
     def snapshot_base(
         self,
-        update: bool | None = False,
+        update: "bool | SnapshotUpdate | None" = False,
         params_to_skip_update: "Sequence[str] | None" = None,
     ) -> dict[Any, Any]:
+        update = _normalize_snapshot_update(update)
         update_currents = self._update_currents and update is True
         if update:
             self._update_cache(readcurrents=update_currents)

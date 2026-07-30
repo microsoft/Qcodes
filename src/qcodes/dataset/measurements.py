@@ -663,7 +663,7 @@ class Runner:
             station = self.station
 
         if station is not None:
-            snapshot = {"station": station.snapshot()}
+            snapshot = {"station": station.snapshot(update="Only_invalid")}
         else:
             snapshot = {}
         if self._registered_parameters is not None:

@@ -13,7 +13,8 @@ from typing import TYPE_CHECKING, Any, ClassVar, Generic, overload
 import numpy as np
 from typing_extensions import TypedDict, TypeVar
 
-from qcodes.metadatable import Metadatable, MetadatableWithName
+from qcodes.metadatable import Metadatable, MetadatableWithName, SnapshotUpdate
+from qcodes.metadatable.metadatable_base import _normalize_snapshot_update
 from qcodes.parameters import ParamSpecBase
 from qcodes.utils import (
     DelegateAttributes,
@@ -699,7 +700,7 @@ class ParameterBase(
 
     def snapshot_base(
         self,
-        update: bool | None = True,
+        update: bool | SnapshotUpdate | None = True,
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         """
@@ -712,17 +713,26 @@ class ParameterBase(
         parameter.
 
         Args:
-            update: If True, update the state by calling ``parameter.get()``
-                unless ``snapshot_get`` of the parameter is ``False``.
-                If ``update`` is ``None``, use the current value from the
-                ``cache`` unless the cache is invalid. If ``False``, never call
-                ``parameter.get()``.
+            update: What to do about the value stored in the snapshot.
+
+                * ``"All"`` (or legacy ``True``): update the state by calling
+                  ``parameter.get()`` unless ``snapshot_get`` of the parameter
+                  is ``False``.
+                * ``"Only_invalid"`` (or legacy ``None``): call
+                  ``parameter.get()`` only if the parameter's cache is invalid,
+                  i.e. use ``cache.get(get_if_invalid=True)``, otherwise use the
+                  cached value. This never calls ``get()`` if ``snapshot_get``
+                  is ``False`` or the parameter is not gettable.
+                * ``"Never"`` (or legacy ``False``): never call
+                  ``parameter.get()``, always use the latest cached value.
             params_to_skip_update: No effect but may be passed from superclass
 
         Returns:
             base snapshot
 
         """
+        update = _normalize_snapshot_update(update)
+
         if self.snapshot_exclude:
             warnings.warn(
                 f"Parameter ({self.full_name}) is used in the snapshot while it "

@@ -56,6 +56,8 @@ if TYPE_CHECKING:
     from pathlib import Path
     from types import ModuleType
 
+    from qcodes.metadatable import SnapshotUpdate
+
 log = logging.getLogger(__name__)
 
 PARAMETER_ATTRIBUTES = [
@@ -185,7 +187,7 @@ class Station(Metadatable, DelegateAttributes):
 
     def snapshot_base(
         self,
-        update: bool | None = True,
+        update: bool | SnapshotUpdate | None = True,
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         """
@@ -198,12 +200,12 @@ class Station(Metadatable, DelegateAttributes):
         from the station during the execution of this function.
 
         Args:
-            update: If ``True``, update the state by querying the
-                all the children: f.ex. instruments, parameters,
-                components, etc. If None only update if the state
-                is known to be invalid.
-                If ``False``, just use the latest
-                values in memory and never update the state.
+            update: What to do about the values stored in the snapshot of the
+                children (f.ex. instruments, parameters, components, etc.).
+                ``"All"`` (or legacy ``True``) updates every value,
+                ``"Only_invalid"`` (or legacy ``None``) only updates values
+                whose cache is invalid, and ``"Never"`` (or legacy ``False``)
+                never updates and uses the latest values in memory.
             params_to_skip_update: Not used.
 
         Returns:

@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from typing import Unpack
 
     from qcodes.instrument import InstrumentBase
+    from qcodes.metadatable import SnapshotUpdate
     from qcodes.validators.validators import Validator
 
     from .parameter_base import (
@@ -324,7 +325,7 @@ class DelegateParameter(
 
     def snapshot_base(
         self,
-        update: bool | None = True,
+        update: bool | SnapshotUpdate | None = True,
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         snapshot = super().snapshot_base(

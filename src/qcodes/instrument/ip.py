@@ -13,6 +13,8 @@ if TYPE_CHECKING:
     from types import TracebackType
     from typing import Unpack
 
+    from qcodes.metadatable import SnapshotUpdate
+
     from .instrument_base import InstrumentBaseKWArgs
 
 log = logging.getLogger(__name__)
@@ -213,7 +215,7 @@ class IPInstrument(Instrument):
 
     def snapshot_base(
         self,
-        update: bool | None = False,
+        update: bool | SnapshotUpdate | None = False,
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         """

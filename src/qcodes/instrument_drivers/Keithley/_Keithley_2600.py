@@ -29,6 +29,8 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
     from typing import Unpack, assert_never
 
+    from qcodes.metadatable import SnapshotUpdate
+
 
 log = logging.getLogger(__name__)
 
@@ -566,7 +568,7 @@ class _ParameterWithStatus(Parameter):
 
     def snapshot_base(
         self,
-        update: bool | None = True,
+        update: bool | SnapshotUpdate | None = True,
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         snapshot = super().snapshot_base(

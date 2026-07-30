@@ -14,6 +14,8 @@ from qcodes.utils import full_class
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Sequence
 
+    from qcodes.metadatable import SnapshotUpdate
+
     from .parameter import Parameter
 
 _LOG = logging.getLogger(__name__)
@@ -194,7 +196,7 @@ class CombinedParameter(Metadatable):
 
     def snapshot_base(
         self,
-        update: bool | None = False,
+        update: bool | SnapshotUpdate | None = False,
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         """
@@ -203,7 +205,8 @@ class CombinedParameter(Metadatable):
         :class:`.NumpyJSONEncoder` supports).
 
         Args:
-            update: ``True`` or ``False``.
+            update: ``"All"``, ``"Only_invalid"`` or ``"Never"`` (or the legacy
+                ``True`` / ``None`` / ``False``).
             params_to_skip_update: Unused in this subclass.
 
         Returns:
