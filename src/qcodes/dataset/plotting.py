@@ -269,11 +269,12 @@ def plot_dataset(
 
         indices_to_remove = []
         for i, data in enumerate(alldata):
-            if len(data) == 2:  # 1D PLOTTING
-                if data[1]["name"] not in parameters:
-                    indices_to_remove.append(i)
-            elif len(data) == 3 and data[2]["name"] not in parameters:
-                # 2D PLOTTING
+            # the last element of the data list is the dependent parameter,
+            # so we check if it is in the list of parameters to plot
+            deselected_in_1D_plot = len(data) == 2 and data[1]["name"] not in parameters
+            deselected_in_2D_plot = len(data) == 3 and data[2]["name"] not in parameters
+
+            if deselected_in_1D_plot or deselected_in_2D_plot:
                 indices_to_remove.append(i)
         alldata = [d for (i, d) in enumerate(alldata) if i not in indices_to_remove]
 

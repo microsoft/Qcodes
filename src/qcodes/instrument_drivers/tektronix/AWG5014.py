@@ -1372,7 +1372,6 @@ class TektronixAWG5014(VisaInstrument):
             )
 
         # sequence
-        kk = 1
         seq_record_str = BytesIO()
 
         for kk, segment in enumerate(wfname_l.transpose(), start=1):
