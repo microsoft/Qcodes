@@ -17,7 +17,7 @@ from qcodes.instrument import (
     VisaInstrument,
     VisaInstrumentKWArgs,
 )
-from qcodes.metadatable.metadatable_base import _normalize_snapshot_update
+from qcodes.metadatable import normalize_snapshot_update
 from qcodes.parameters import MultiChannelInstrumentParameter, ParamRawDataType
 
 if TYPE_CHECKING:
@@ -141,23 +141,23 @@ class QDevQDacChannel(InstrumentChannel["QDevQDac"]):
 
     def snapshot_base(
         self,
-        update: "bool | SnapshotUpdate | None" = False,
+        update: "bool | SnapshotUpdate | None" = "Only_invalid",
         params_to_skip_update: "Sequence[str] | None" = None,
     ) -> dict[Any, Any]:
-        update = _normalize_snapshot_update(update)
-        # setting update not None will override parent setting
-        # otherwise we use parent setting
-        # parent._update | update | do update
-        # True           | True   | True
-        # True           | None   | True
-        # True           | False  | False
-        # False          | True   | True
-        # False          | None   | False
-        # False          | False  | False
+        update = normalize_snapshot_update(update)
+        # setting update to "All"/"Only_invalid" (i.e. not "Never") will
+        # override parent setting; otherwise we use the parent setting
+        # parent._update | update          | do update
+        # True           | "All"           | True
+        # True           | "Only_invalid"  | True
+        # True           | "Never"         | False
+        # False          | "All"           | True
+        # False          | "Only_invalid"  | False
+        # False          | "Never"         | False
         update_currents = (
-            self.parent._update_currents and update is not False
-        ) or update is True
-        if update and not self.parent._get_status_performed:
+            self.parent._update_currents and update != "Never"
+        ) or update == "All"
+        if update != "Never" and not self.parent._get_status_performed:
             self.parent._update_cache(readcurrents=update_currents)
         # call get_status rather than getting the status individually for
         # each parameter. This is only done if _get_status_performed is False
@@ -340,12 +340,12 @@ class QDevQDac(VisaInstrument):
 
     def snapshot_base(
         self,
-        update: "bool | SnapshotUpdate | None" = False,
+        update: "bool | SnapshotUpdate | None" = "Only_invalid",
         params_to_skip_update: "Sequence[str] | None" = None,
     ) -> dict[Any, Any]:
-        update = _normalize_snapshot_update(update)
-        update_currents = self._update_currents and update is True
-        if update:
+        update = normalize_snapshot_update(update)
+        update_currents = self._update_currents and update == "All"
+        if update != "Never":
             self._update_cache(readcurrents=update_currents)
             self._get_status_performed = True
         # call get_status rather than getting the status individually for

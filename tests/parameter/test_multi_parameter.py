@@ -45,7 +45,7 @@ def test_default_attributes() -> None:
     assert str(p) == name
 
     assert p._get_count == 0
-    snap = p.snapshot(update=True)
+    snap = p.snapshot(update="All")
     assert p._get_count == 0
     snap_expected = {
         "name": name,
@@ -71,7 +71,7 @@ def test_snapshot_value_default_false() -> None:
     """snapshot_value defaults to False for MultiParameter."""
     p = SimpleMultiParam([0], "mp", names=("x",), shapes=((),))
     assert p._snapshot_value is False
-    snap = p.snapshot(update=True)
+    snap = p.snapshot(update="All")
     assert "value" not in snap
     assert "raw_value" not in snap
 
@@ -80,7 +80,7 @@ def test_snapshot_value_explicit_true() -> None:
     """snapshot_value=True includes value in snapshot for MultiParameter."""
     p = SimpleMultiParam([0], "mp", names=("x",), shapes=((),), snapshot_value=True)
     assert p._snapshot_value is True
-    snap = p.snapshot(update=True)
+    snap = p.snapshot(update="All")
     assert snap["value"] == [0]
 
 
@@ -88,7 +88,7 @@ def test_snapshot_value_explicit_false() -> None:
     """snapshot_value=False excludes value from snapshot for MultiParameter."""
     p = SimpleMultiParam([0], "mp", names=("x",), shapes=((),), snapshot_value=False)
     assert p._snapshot_value is False
-    snap = p.snapshot(update=True)
+    snap = p.snapshot(update="All")
     assert "value" not in snap
 
 
@@ -132,7 +132,7 @@ def test_explicit_attributes() -> None:
     assert p.setpoint_labels == setpoint_labels
 
     assert p._get_count == 0
-    snap = p.snapshot(update=True)
+    snap = p.snapshot(update="All")
     assert p._get_count == 1
     snap_expected = {
         "name": name,

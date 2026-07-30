@@ -196,7 +196,7 @@ class CombinedParameter(Metadatable):
 
     def snapshot_base(
         self,
-        update: bool | SnapshotUpdate | None = False,
+        update: bool | SnapshotUpdate | None = "Only_invalid",
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         """
@@ -205,8 +205,7 @@ class CombinedParameter(Metadatable):
         :class:`.NumpyJSONEncoder` supports).
 
         Args:
-            update: ``"All"``, ``"Only_invalid"`` or ``"Never"`` (or the legacy
-                ``True`` / ``None`` / ``False``).
+            update: One of ``"All"``, ``"Only_invalid"`` or ``"Never"``.
             params_to_skip_update: Unused in this subclass.
 
         Returns:

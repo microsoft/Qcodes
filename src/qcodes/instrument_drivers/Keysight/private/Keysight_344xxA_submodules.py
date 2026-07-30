@@ -1122,7 +1122,7 @@ mode."""
         self.write("*RST")
         # before we can update the snapshot, the reset must complete
         self.ask("*OPC?")
-        self.snapshot(update=True)
+        self.snapshot(update="All")
 
     def abort_measurement(self) -> None:
         """

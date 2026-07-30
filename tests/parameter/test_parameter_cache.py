@@ -385,7 +385,7 @@ def test_marking_invalid_via_instrument(
         for instrument_module in dummy_instrument.instrument_modules.values():
             for param in instrument_module.parameters.values():
                 # parameters not snapshotted will not have a cache
-                # updated when calling snapshot(update=None) os
+                # updated when calling snapshot(update="Only_invalid") os
                 # exclude them
                 if (
                     param._snapshot_get is True
@@ -394,7 +394,7 @@ def test_marking_invalid_via_instrument(
                 ):
                     assert param.cache.valid is valid, param.full_name
 
-    dummy_instrument.snapshot(update=None)
+    dummy_instrument.snapshot(update="Only_invalid")
 
     _assert_cache_status(True)
 
@@ -402,7 +402,7 @@ def test_marking_invalid_via_instrument(
 
     _assert_cache_status(False)
 
-    dummy_instrument.snapshot(update=None)
+    dummy_instrument.snapshot(update="Only_invalid")
 
     _assert_cache_status(True)
 

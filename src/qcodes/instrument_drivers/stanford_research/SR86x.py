@@ -211,7 +211,7 @@ class SR86xBuffer(InstrumentChannel["SR86x"]):
 
     def snapshot_base(
         self,
-        update: bool | SnapshotUpdate | None = False,
+        update: bool | SnapshotUpdate | None = "Only_invalid",
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         if params_to_skip_update is None:

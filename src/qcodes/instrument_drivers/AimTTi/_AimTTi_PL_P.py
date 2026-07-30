@@ -215,7 +215,7 @@ class AimTTiChannel(InstrumentChannel):
         channel_id = self.channel
         self.write(f"RCL{channel_id} {slot}")
         # Update snapshot after load.
-        _ = self.snapshot(update=True)
+        _ = self.snapshot(update="All")
 
     def set_damping(self, val: int) -> None:
         """

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from qcodes.metadatable import Metadatable
+from qcodes.metadatable import Metadatable, normalize_snapshot_update
 
 from .named_repr import named_repr
 from .permissive_range import permissive_range
@@ -349,7 +349,7 @@ class SweepFixedValues(SweepValues):
 
     def snapshot_base(
         self,
-        update: bool | SnapshotUpdate | None = False,
+        update: bool | SnapshotUpdate | None = "Only_invalid",
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         """
@@ -363,7 +363,9 @@ class SweepFixedValues(SweepValues):
             dict: base snapshot
 
         """
-        self._snapshot["parameter"] = self.parameter.snapshot(update=update)
+        self._snapshot["parameter"] = self.parameter.snapshot(
+            update=normalize_snapshot_update(update)
+        )
         self._snapshot["values"] = self._value_snapshot
         return self._snapshot
 

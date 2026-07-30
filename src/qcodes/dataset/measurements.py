@@ -668,12 +668,12 @@ class Runner:
             snapshot = {}
         if self._registered_parameters is not None:
             parameter_snapshot = {
-                param.short_name: param.snapshot()
+                param.short_name: param.snapshot(update="Never")
                 for param in self._registered_parameters
             }
             parameter_snapshot.update(
                 {
-                    param.register_name: param.snapshot()
+                    param.register_name: param.snapshot(update="Never")
                     for param in self._registered_parameters
                 }
             )

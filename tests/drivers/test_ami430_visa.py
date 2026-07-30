@@ -1445,7 +1445,7 @@ def test_switch_heater_enabled(ami430: AMIModel430, caplog: LogCaptureFixture) -
     # make sure that getting snapshot with heater disabled works without warning
     caplog.clear()
     with caplog.at_level(logging.WARNING, logger=ami430.log.name):
-        snap = ami430.snapshot(update=True)
+        snap = ami430.snapshot(update="All")
     assert len(caplog.records) == 0
 
     # When heater is disabled, heater-specific parameters should not be updated
@@ -1463,7 +1463,7 @@ def test_switch_heater_enabled(ami430: AMIModel430, caplog: LogCaptureFixture) -
 
     # When heater is enabled, snapshot should update all parameters
     ami430.switch_heater.enabled(True)
-    snap_enabled = ami430.snapshot(update=True)
+    snap_enabled = ami430.snapshot(update="All")
     heater_snap_enabled = snap_enabled["submodules"]["switch_heater"]["parameters"]
     for param_name in (
         "state",

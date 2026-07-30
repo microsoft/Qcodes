@@ -13,8 +13,12 @@ from typing import TYPE_CHECKING, Any, ClassVar, Generic, overload
 import numpy as np
 from typing_extensions import TypedDict, TypeVar
 
-from qcodes.metadatable import Metadatable, MetadatableWithName, SnapshotUpdate
-from qcodes.metadatable.metadatable_base import _normalize_snapshot_update
+from qcodes.metadatable import (
+    Metadatable,
+    MetadatableWithName,
+    SnapshotUpdate,
+    normalize_snapshot_update,
+)
 from qcodes.parameters import ParamSpecBase
 from qcodes.utils import (
     DelegateAttributes,
@@ -700,7 +704,7 @@ class ParameterBase(
 
     def snapshot_base(
         self,
-        update: bool | SnapshotUpdate | None = True,
+        update: bool | SnapshotUpdate | None = "Only_invalid",
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         """
@@ -715,23 +719,22 @@ class ParameterBase(
         Args:
             update: What to do about the value stored in the snapshot.
 
-                * ``"All"`` (or legacy ``True``): update the state by calling
-                  ``parameter.get()`` unless ``snapshot_get`` of the parameter
-                  is ``False``.
-                * ``"Only_invalid"`` (or legacy ``None``): call
-                  ``parameter.get()`` only if the parameter's cache is invalid,
-                  i.e. use ``cache.get(get_if_invalid=True)``, otherwise use the
-                  cached value. This never calls ``get()`` if ``snapshot_get``
-                  is ``False`` or the parameter is not gettable.
-                * ``"Never"`` (or legacy ``False``): never call
-                  ``parameter.get()``, always use the latest cached value.
+                * ``"All"``: update the state by calling ``parameter.get()``
+                  unless ``snapshot_get`` of the parameter is ``False``.
+                * ``"Only_invalid"`` (the default): call ``parameter.get()``
+                  only if the parameter's cache is invalid, i.e. use
+                  ``cache.get(get_if_invalid=True)``, otherwise use the cached
+                  value. This never calls ``get()`` if ``snapshot_get`` is
+                  ``False`` or the parameter is not gettable.
+                * ``"Never"``: never call ``parameter.get()``, always use the
+                  latest cached value.
             params_to_skip_update: No effect but may be passed from superclass
 
         Returns:
             base snapshot
 
         """
-        update = _normalize_snapshot_update(update)
+        update = normalize_snapshot_update(update)
 
         if self.snapshot_exclude:
             warnings.warn(
@@ -745,15 +748,18 @@ class ParameterBase(
         if self.snapshot_value:
             has_get = self.gettable
             allowed_to_call_get_when_snapshotting = (
-                self._snapshot_get and update is not False
+                self._snapshot_get and update != "Never"
             )
             can_call_get_when_snapshotting = (
                 allowed_to_call_get_when_snapshotting and has_get
             )
 
-            if can_call_get_when_snapshotting and update:
+            if can_call_get_when_snapshotting and update == "All":
                 state["value"] = self.get()
             else:
+                # ``get_if_invalid`` is True only for ``"Only_invalid"`` (when
+                # the parameter is gettable and ``snapshot_get`` is True), so
+                # that only parameters with an invalid cache are refreshed.
                 state["value"] = self.cache.get(
                     get_if_invalid=can_call_get_when_snapshotting
                 )

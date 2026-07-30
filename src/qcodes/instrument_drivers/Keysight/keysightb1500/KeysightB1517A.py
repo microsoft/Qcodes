@@ -714,7 +714,7 @@ class _ParameterWithStatus(
 
     def snapshot_base(
         self,
-        update: "bool | SnapshotUpdate | None" = True,
+        update: "bool | SnapshotUpdate | None" = "Only_invalid",
         params_to_skip_update: "Sequence[str] | None" = None,
     ) -> dict[Any, Any]:
         snapshot = super().snapshot_base(

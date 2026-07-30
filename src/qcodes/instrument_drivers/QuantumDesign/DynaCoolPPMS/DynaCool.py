@@ -261,7 +261,7 @@ class DynaCool(VisaInstrument):
         self._error_code = 0
 
         # we must know all parameter values because of interlinked parameters
-        self.snapshot(update=True)
+        self.snapshot(update="All")
 
         # it is a safe default to set the target to the current value
         self.field_target(self.field_measured())

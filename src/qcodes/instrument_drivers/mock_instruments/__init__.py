@@ -1069,7 +1069,7 @@ class SnapShotTestInstrument(DummyBase):
 
     def snapshot_base(
         self,
-        update: bool | SnapshotUpdate | None = True,
+        update: bool | SnapshotUpdate | None = "Only_invalid",
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         if params_to_skip_update is None:
