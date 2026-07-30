@@ -1,0 +1,4 @@
+:meth:`.Instrument.close_all` gained an ``only_subclasses`` keyword argument. When
+set to ``True``, only instruments that are instances of the class (or its subclasses)
+on which ``close_all`` is called are closed, leaving other registered instruments open.
+The ``log_status`` and ``only_subclasses`` arguments are now keyword-only.
