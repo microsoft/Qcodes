@@ -1,0 +1,12 @@
+Added a new set of values for the ``update`` argument of ``snapshot`` and
+``snapshot_base`` (available on every :class:`.Metadatable`, including
+instruments, channels and parameters): ``"All"``, ``"Only_invalid"`` and
+``"Never"``. The legacy ``True`` / ``None`` / ``False`` values remain supported
+as aliases for ``"All"`` / ``"Only_invalid"`` / ``"Never"`` respectively, so the
+change is backwards compatible. With ``"Only_invalid"`` only parameters whose
+cache is invalid are refreshed via a ``get`` (i.e.
+``cache.get(get_if_invalid=True)``), which makes snapshotting more performant
+when only some parameter caches are stale. The station snapshot taken by
+:class:`.Measurement` now uses ``"Only_invalid"`` (previously the equivalent of
+``"Never"``), so parameters with an invalid cache get refreshed while the others
+are not queried.
