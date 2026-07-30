@@ -36,15 +36,15 @@ def test_nested_measurement_basic(DAC, DMM, bg_writing) -> None:
 
     data1 = ds1.dataset.get_parameter_data()["dummy_dmm_v1"]
     assert len(data1.keys()) == 2
-    assert "dummy_dmm_v1" in data1.keys()
-    assert "dummy_dac_ch1" in data1.keys()
+    assert "dummy_dmm_v1" in data1
+    assert "dummy_dac_ch1" in data1
     assert_allclose(data1["dummy_dmm_v1"], np.zeros(10))
     assert_allclose(data1["dummy_dac_ch1"], np.arange(10))
 
     data2 = ds2.dataset.get_parameter_data()["dummy_dmm_v2"]
     assert len(data2.keys()) == 2
-    assert "dummy_dmm_v2" in data2.keys()
-    assert "dummy_dac_ch2" in data2.keys()
+    assert "dummy_dmm_v2" in data2
+    assert "dummy_dac_ch2" in data2
     assert_allclose(data2["dummy_dmm_v2"], np.zeros(10))
     assert_allclose(data2["dummy_dac_ch2"], np.arange(10))
 
@@ -70,16 +70,16 @@ def test_nested_measurement(bg_writing) -> None:
 
     data1 = ds1.dataset.get_parameter_data()["bar1"]
     assert len(data1.keys()) == 2
-    assert "foo1" in data1.keys()
-    assert "bar1" in data1.keys()
+    assert "foo1" in data1
+    assert "bar1" in data1
 
     assert_allclose(data1["foo1"], np.arange(10))
     assert_allclose(data1["bar1"], np.arange(10) ** 2)
 
     data2 = ds2.dataset.get_parameter_data()["bar2"]
     assert len(data2.keys()) == 2
-    assert "foo2" in data2.keys()
-    assert "bar2" in data2.keys()
+    assert "foo2" in data2
+    assert "bar2" in data2
     assert_allclose(data2["foo2"], np.arange(0, 20, 2))
     assert_allclose(data2["bar2"], np.arange(0, 20, 2) ** 2)
 
@@ -134,9 +134,9 @@ def test_nested_measurement_array(
 
     data1 = ds1.dataset.get_parameter_data()["bar1"]
     assert len(data1.keys()) == 3
-    assert "foo1" in data1.keys()
-    assert "bar1spt" in data1.keys()
-    assert "bar1" in data1.keys()
+    assert "foo1" in data1
+    assert "bar1spt" in data1
+    assert "bar1" in data1
 
     expected_foo1_data = np.repeat(np.arange(outer_len), inner_len1).reshape(
         outer_len, inner_len1
@@ -149,9 +149,9 @@ def test_nested_measurement_array(
 
     data2 = ds2.dataset.get_parameter_data()["bar2"]
     assert len(data2.keys()) == 3
-    assert "foo2" in data2.keys()
-    assert "bar2spt" in data2.keys()
-    assert "bar2" in data2.keys()
+    assert "foo2" in data2
+    assert "bar2spt" in data2
+    assert "bar2" in data2
 
     expected_foo2_data = np.repeat(np.arange(outer_len), inner_len2).reshape(
         outer_len, inner_len2

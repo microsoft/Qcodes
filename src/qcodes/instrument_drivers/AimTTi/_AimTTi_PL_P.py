@@ -20,8 +20,6 @@ class NotKnownModel(Exception):
     An Error thrown when connecting to an unknown Aim TTi model
     """
 
-    pass
-
 
 class AimTTiChannel(InstrumentChannel):
     """
@@ -50,7 +48,7 @@ class AimTTiChannel(InstrumentChannel):
         self.channel = channel
         # The instrument can store up to ten configurations
         # internally.
-        self.set_up_store_slots = [i for i in range(0, 10)]
+        self.set_up_store_slots = [i for i in range(10)]
 
         self.volt: Parameter = self.add_parameter(
             "volt",
@@ -268,7 +266,7 @@ class AimTTi(VisaInstrument):
 
         _model = self.get_idn()["model"]
 
-        if (_model not in self._numOutputChannels.keys()) or (_model is None):
+        if (_model not in self._numOutputChannels) or (_model is None):
             raise NotKnownModel("Unknown model, connection cannot be established.")
 
         self.numOfChannels = self._numOutputChannels[_model]

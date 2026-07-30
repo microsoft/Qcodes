@@ -8,5 +8,3 @@ class RohdeSchwarzZNB8(RohdeSchwarzZNBBase):
     QCoDeS driver for Rohde & Schwarz ZNB8
 
     """
-
-    pass

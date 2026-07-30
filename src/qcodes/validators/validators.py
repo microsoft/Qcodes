@@ -1017,20 +1017,26 @@ class Arrays(Validator[npt.NDArray]):
                 )
 
         # Only check if max is not inf as it can be expensive for large arrays
-        if self._max_value != (float("inf")) and self._max_value is not None:
-            if not (np.max(value) <= self._max_value):
-                raise ValueError(
-                    f"{value!r} is invalid: all values must be between "
-                    f"{self._min_value} and {self._max_value} inclusive; {context}"
-                )
+        if (
+            self._max_value != (float("inf"))
+            and self._max_value is not None
+            and not (np.max(value) <= self._max_value)
+        ):
+            raise ValueError(
+                f"{value!r} is invalid: all values must be between "
+                f"{self._min_value} and {self._max_value} inclusive; {context}"
+            )
 
         # Only check if min is not -inf as it can be expensive for large arrays
-        if self._min_value != (-float("inf")) and self._min_value is not None:
-            if not (self._min_value <= np.min(value)):
-                raise ValueError(
-                    f"{value!r} is invalid: all values must be between "
-                    f"{self._min_value} and {self._max_value} inclusive; {context}"
-                )
+        if (
+            self._min_value != (-float("inf"))
+            and self._min_value is not None
+            and not (self._min_value <= np.min(value))
+        ):
+            raise ValueError(
+                f"{value!r} is invalid: all values must be between "
+                f"{self._min_value} and {self._max_value} inclusive; {context}"
+            )
 
     is_numeric = True
 
@@ -1058,6 +1064,9 @@ class Arrays(Validator[npt.NDArray]):
         return float(self._max_value) if self._max_value is not None else None
 
 
+_anything = Anything()  # singleton instance of Anything
+
+
 class Lists[T](Validator[list[T]]):
     """
     Validator for lists
@@ -1067,13 +1076,12 @@ class Lists[T](Validator[list[T]]):
 
     """
 
-    def __init__(self, elt_validator: Validator[T] = Anything()) -> None:
+    def __init__(self, elt_validator: Validator[T] = _anything) -> None:
         self._elt_validator = elt_validator
         self._valid_values = ([vval for vval in elt_validator._valid_values],)
 
     def __repr__(self) -> str:
-        msg = "<Lists : "
-        msg += self._elt_validator.__repr__() + ">"
+        msg = f"<Lists : {self._elt_validator!r} >"
         return msg
 
     def validate(self, value: list[T], context: str = "") -> None:
@@ -1114,7 +1122,7 @@ class Sequence(Validator[typing.Sequence[Any]]):
 
     def __init__(
         self,
-        elt_validator: Validator[Any] = Anything(),
+        elt_validator: Validator[Any] = _anything,
         length: int | None = None,
         require_sorted: bool = False,
     ) -> None:

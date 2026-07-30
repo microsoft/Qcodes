@@ -445,7 +445,7 @@ class CryomagneticsModel4G(VisaInstrument):
     def write_raw(self, cmd: str) -> None:
         try:
             super().write_raw(cmd)
-        except VisaIOError as err:
+        except VisaIOError:
             # The ami communication has found to be unstable
             # so we retry the communication here
             msg = f"Got VisaIOError while writing {cmd} to instrument."
@@ -457,12 +457,12 @@ class CryomagneticsModel4G(VisaInstrument):
                 self.device_clear()
                 super().write_raw(cmd)
             else:
-                raise err
+                raise
 
     def ask_raw(self, cmd: str) -> str:
         try:
             result = super().ask_raw(cmd)
-        except VisaIOError as err:
+        except VisaIOError:
             # The communication has found to be unstable
             # so we retry the communication here
             msg = f"Got VisaIOError while asking the instrument: {cmd}"
@@ -474,5 +474,5 @@ class CryomagneticsModel4G(VisaInstrument):
                 self.device_clear()
                 result = super().ask_raw(cmd)
             else:
-                raise err
+                raise
         return result

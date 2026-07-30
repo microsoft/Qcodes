@@ -808,14 +808,13 @@ class KeysightB1520A(KeysightB1500Module):
         end_value = self.cv_sweep.sweep_end()
         step_value = self.cv_sweep.sweep_steps()
         mode = self.cv_sweep.sweep_mode()
-        if mode in (2, 4):
-            if not sign(start_value) == sign(end_value):
-                if sign(start_value) == 0:
-                    start_value = sign(start_value) * 0.005  # resolution
-                elif sign(end_value) == 0:
-                    end_value = sign(end_value) * 0.005  # resolution
-                else:
-                    raise AssertionError("Polarity of start and end is not same.")
+        if mode in (2, 4) and sign(start_value) != sign(end_value):
+            if sign(start_value) == 0:
+                start_value = sign(start_value) * 0.005  # resolution
+            elif sign(end_value) == 0:
+                end_value = sign(end_value) * 0.005  # resolution
+            else:
+                raise AssertionError("Polarity of start and end is not same.")
 
         def linear_sweep(start: float, end: float, steps: int) -> tuple[float, ...]:
             sweep_val = np.linspace(start, end, steps).flatten().tolist()
@@ -1207,16 +1206,16 @@ class KeysightB1500CVSweepMeasurement(
             parsed_data = fmt_response_base_parser(raw_data)
 
         if len(set(parsed_data.type)) == 2:
-            self.param1 = _FMTResponse(*(parsed_data[i][::2] for i in range(0, 4)))
-            self.param2 = _FMTResponse(*(parsed_data[i][1::2] for i in range(0, 4)))
+            self.param1 = _FMTResponse(*(parsed_data[i][::2] for i in range(4)))
+            self.param2 = _FMTResponse(*(parsed_data[i][1::2] for i in range(4)))
 
             self.shapes = ((num_steps,),) * 2
             self.setpoints = ((self.instrument.cv_sweep_voltages(),),) * 2
         else:
-            self.param1 = _FMTResponse(*(parsed_data[i][::4] for i in range(0, 4)))
-            self.param2 = _FMTResponse(*(parsed_data[i][1::4] for i in range(0, 4)))
-            self.ac_voltage = _FMTResponse(*(parsed_data[i][2::4] for i in range(0, 4)))
-            self.dc_voltage = _FMTResponse(*(parsed_data[i][3::4] for i in range(0, 4)))
+            self.param1 = _FMTResponse(*(parsed_data[i][::4] for i in range(4)))
+            self.param2 = _FMTResponse(*(parsed_data[i][1::4] for i in range(4)))
+            self.ac_voltage = _FMTResponse(*(parsed_data[i][2::4] for i in range(4)))
+            self.dc_voltage = _FMTResponse(*(parsed_data[i][3::4] for i in range(4)))
 
             self.shapes = ((len(self.dc_voltage.value),),) * 2
             self.setpoints = ((self.dc_voltage.value,),) * 2

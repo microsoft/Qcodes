@@ -279,7 +279,6 @@ def test_reset_at_exit_with_allow_changes_false(
 ) -> None:
     p = instrument.a
     p.set(2)
-    with p.restore_at_exit(allow_changes=False):
-        with pytest.raises(TypeError):
-            p.set(5)
+    with p.restore_at_exit(allow_changes=False), pytest.raises(TypeError):
+        p.set(5)
     assert p() == 2

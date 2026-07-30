@@ -566,14 +566,13 @@ class AlazarTechATS(Instrument):
         time_done_free_mem = time.perf_counter()
         # check if all parameters are up to date
         # Getting IDN is very slow so skip that
-        for _, p in self.parameters.items():
-            if isinstance(p, TraceParameter):
-                if p.synced_to_card is False:
-                    raise RuntimeError(
-                        f"TraceParameter {p} not synced to "
-                        f"Alazar card detected. Aborting. Data "
-                        f"may be corrupt"
-                    )
+        for p in self.parameters.values():
+            if isinstance(p, TraceParameter) and p.synced_to_card is False:
+                raise RuntimeError(
+                    f"TraceParameter {p} not synced to "
+                    f"Alazar card detected. Aborting. Data "
+                    f"may be corrupt"
+                )
 
         # Compute the total transfer time, and display performance information.
         end_time = time.perf_counter()
@@ -851,13 +850,11 @@ class AcquisitionInterface[OutputType]:
         The Alazar instrument will call this method right before
         'AlazarStartCapture' is called
         """
-        pass
 
     def pre_acquire(self) -> None:
         """
         This method is called immediately after 'AlazarStartCapture' is called
         """
-        pass
 
     def handle_buffer(
         self, buffer: npt.NDArray, buffer_number: int | None = None
@@ -898,7 +895,6 @@ class AcquisitionInterface[OutputType]:
                 to local memory at the time of this callback.
 
         """
-        pass
 
 
 class AcquisitionController[OutputType](Instrument, AcquisitionInterface[Any]):

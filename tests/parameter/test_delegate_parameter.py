@@ -123,7 +123,7 @@ def test_same_label_and_unit_on_init(simple_param: Parameter) -> None:
 def test_overwritten_unit_on_init(simple_param: Parameter) -> None:
     d = DelegateParameter("test_delegate_parameter", source=simple_param, unit="Ohm")
     assert d.label == simple_param.label
-    assert not d.unit == simple_param.unit
+    assert d.unit != simple_param.unit
     assert d.unit == "Ohm"
 
 
@@ -132,7 +132,7 @@ def test_overwritten_label_on_init(simple_param: Parameter) -> None:
         "test_delegate_parameter", source=simple_param, label="Physical parameter"
     )
     assert d.unit == simple_param.unit
-    assert not d.label == simple_param.label
+    assert d.label != simple_param.label
     assert d.label == "Physical parameter"
 
 
@@ -442,7 +442,7 @@ def _assert_none_source_is_correct(delegate_param: DelegateParameter) -> None:
         delegate_param.set(1)
     snapshot = delegate_param.snapshot()
     assert snapshot["source_parameter"] is None
-    assert "value" not in snapshot.keys()
+    assert "value" not in snapshot
     snapshot.pop("ts")
     updated_snapshot = delegate_param.snapshot(update=True)
     updated_snapshot.pop("ts")
@@ -455,7 +455,7 @@ def _assert_delegate_cache_none_source(delegate_param: DelegateParameter) -> Non
     with pytest.raises(TypeError):
         delegate_param.cache.get()
     with pytest.raises(TypeError):
-        delegate_param.cache.raw_value
+        _ = delegate_param.cache.raw_value
     assert delegate_param.cache.max_val_age is None
     assert delegate_param.cache.timestamp is None
 

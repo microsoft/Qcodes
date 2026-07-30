@@ -45,7 +45,7 @@ def _read_curve_file(curve_file: TextIO) -> dict[Any, Any]:
     # Meta data lines contain a colon
     metadata_lines = takewhile(lambda s: ":" in s, lines)
     # Data from the file is collected in the following dict
-    file_data: dict[str, dict[str, Any]] = dict()
+    file_data: dict[str, dict[str, Any]] = {}
     # Capture meta data
     parsed_lines = [strip(line.split(":")) for line in metadata_lines]
     file_data["metadata"] = {key: value for key, value in parsed_lines}
@@ -185,7 +185,7 @@ class LakeshoreModel325Curve(InstrumentChannel):
                 f"At least {cls.temperature_key} needed in the data dictionary"
             )
 
-        sensor_units = [i for i in data_dict.keys() if i != cls.temperature_key]
+        sensor_units = [i for i in data_dict if i != cls.temperature_key]
 
         if len(sensor_units) != 1:
             raise ValueError(

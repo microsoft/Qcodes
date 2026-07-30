@@ -1078,11 +1078,14 @@ class SnapShotTestInstrument(DummyBase):
         return snap
 
 
+_default_numbers = Numbers(min_value=-1.0, max_value=1.0)
+
+
 class MockField(DummyBase):
     def __init__(
         self,
         name: str,
-        vals: Numbers = Numbers(min_value=-1.0, max_value=1.0),
+        vals: Numbers = _default_numbers,
         **kwargs: Unpack[InstrumentBaseKWArgs],
     ):
         """Mock instrument for emulating a magnetic field axis

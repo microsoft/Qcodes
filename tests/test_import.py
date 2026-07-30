@@ -85,7 +85,7 @@ def test_top_level_submodule_access_not_deprecated() -> None:
 
 def test_top_level_unknown_attribute_raises() -> None:
     with pytest.raises(AttributeError, match="definitely_not_a_qcodes_attribute"):
-        qcodes.definitely_not_a_qcodes_attribute  # type: ignore[attr-defined]
+        _ = qcodes.definitely_not_a_qcodes_attribute  # type: ignore[attr-defined]
 
 
 def test_instrument_parameter_reexport_deprecated() -> None:
@@ -127,4 +127,4 @@ def test_instrument_parameter_reexport_deprecated_all(name: str) -> None:
 
 def test_instrument_unknown_attribute_raises() -> None:
     with pytest.raises(AttributeError, match="definitely_not_a_qcodes_attribute"):
-        qcodes.instrument.definitely_not_a_qcodes_attribute  # type: ignore[attr-defined]
+        _ = qcodes.instrument.definitely_not_a_qcodes_attribute  # type: ignore[attr-defined]

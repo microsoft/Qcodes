@@ -23,7 +23,7 @@ def test_aliases_dict() -> None:
         return offset_dict[alias[0]] + int(alias[1:])
 
     assert all(
-        [nr == calc_channel_nr(al) for al, nr in KeithleyS46.channel_numbers.items()]
+        nr == calc_channel_nr(al) for al, nr in KeithleyS46.channel_numbers.items()
     )
 
 
@@ -136,7 +136,7 @@ def test_channel_number_invariance(s46_four: KeithleyS46, s46_six: KeithleyS46) 
     channel aliases should represent the same channel. See also page 2-5 of the
     manual (e.g. B1 is *always* channel 7)
     """
-    for alias in KeithleyS46.channel_numbers.keys():
+    for alias in KeithleyS46.channel_numbers:
         if hasattr(s46_four, alias) and hasattr(s46_six, alias):
             channel_four = getattr(s46_four, alias)
             channel_six = getattr(s46_six, alias)

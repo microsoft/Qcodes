@@ -13,7 +13,7 @@ from .test_lakeshore_372 import (
 
 log = logging.getLogger(__name__)
 
-VISA_LOGGER = ".".join((InstrumentBase.__module__, "com", "visa"))
+VISA_LOGGER = f"{InstrumentBase.__module__}.com.visa"
 
 
 class LakeshoreModel335Mock(MockVisaInstrument, LakeshoreModel335):
@@ -60,7 +60,7 @@ class LakeshoreModel335Mock(MockVisaInstrument, LakeshoreModel335):
                 compensation_enabled=0,  # False,
                 units=1,
             )  # 'kelvin')
-            for i in self.channel_name_command.keys()
+            for i in self.channel_name_command
         }
 
         # simulate delayed heating

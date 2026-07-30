@@ -908,7 +908,7 @@ class ParameterBase(
 
             except Exception as e:
                 e.args = (*e.args, f"getting {self}")
-                raise e
+                raise
 
         return get_wrapper
 
@@ -966,7 +966,7 @@ class ParameterBase(
 
             except Exception as e:
                 e.args = (*e.args, f"setting {self} to {value}")
-                raise e
+                raise
 
         return set_wrapper
 
@@ -1372,7 +1372,7 @@ class ParameterBase(
         if self.vals is None:
             self.vals = new_vals
         elif type(self.vals) is not type(new_vals):
-            logging.warning(
+            LOG.warning(
                 f"Tried to set a new paramtype {paramtype}, but this parameter already has paramtype {self.paramtype} which does not match"
             )
         self.param_spec.type = paramtype

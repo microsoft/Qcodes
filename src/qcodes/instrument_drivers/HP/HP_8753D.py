@@ -336,7 +336,7 @@ class HP8753D(VisaInstrument):
             "SWR": "SWR",
         }
 
-        if fmt not in val_mapping.keys():
+        if fmt not in val_mapping:
             raise ValueError(f"Cannot set display_format to {fmt}.")
 
         self._traceready = False
@@ -363,7 +363,7 @@ class HP8753D(VisaInstrument):
 
         cmd = ""
         # keep asking until we find the currently used format
-        for cmd in val_mapping.keys():
+        for cmd in val_mapping:
             resp = self.ask(f"{cmd}?")
             if resp in ["1", "1\n"]:
                 break

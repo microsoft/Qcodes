@@ -94,7 +94,7 @@ def new_to_old(idps: InterDependencies_) -> InterDependencies:
                 }
             )
 
-    for ps_base in idps._paramspec_to_id.keys():
+    for ps_base in idps._paramspec_to_id:
         paramspecs.update(
             {
                 ps_base.name: ParamSpec(

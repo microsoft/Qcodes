@@ -1,4 +1,3 @@
-import logging
 import re
 import warnings
 from functools import wraps
@@ -124,7 +123,7 @@ class Keysight34980A(VisaInstrument):
         Scan the occupied slots and make an object for each switch matrix
         module installed
         """
-        for slot in self.system_slots_info.keys():
+        for slot in self.system_slots_info:
             model_string = self.system_slots_info[slot]["model"]
             for model, model_class in KEYSIGHT_MODELS.items():
                 if model in model_string:
@@ -140,7 +139,7 @@ class Keysight34980A(VisaInstrument):
                 )
                 self.module[slot] = sub_module_no_driver
                 self.add_submodule(sub_module_name, sub_module_no_driver)
-                logging.warning(
+                self.log.warning(
                     f"can not find driver for {model_string} in slot {slot}"
                 )
 

@@ -56,7 +56,7 @@ def _signal_parser(our_scaling: float, response: str) -> float:
     scale_and_unit = response[len(digits) :]
     if scale_and_unit == "":
         their_scaling: float = 1
-    elif scale_and_unit[0] in scale_to_factor.keys():
+    elif scale_and_unit[0] in scale_to_factor:
         their_scaling = scale_to_factor[scale_and_unit[0]]
     else:
         their_scaling = 1
@@ -678,9 +678,8 @@ class OxfordMercuryiPS(VisaInstrument):
                 raise RuntimeError(
                     f"Expected an OxfordMercuryWorkerPS but got {type(worker)}"
                 )
-            if worker.field_target() != cur:
-                if worker.field_ramp_rate() == 0:
-                    raise ValueError(f"Can not ramp {worker}; ramp rate set to zero!")
+            if worker.field_target() != cur and worker.field_ramp_rate() == 0:
+                raise ValueError(f"Can not ramp {worker}; ramp rate set to zero!")
 
         # then the actual ramp
         {

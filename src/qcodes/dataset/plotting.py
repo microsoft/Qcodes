@@ -269,12 +269,13 @@ def plot_dataset(
 
         indices_to_remove = []
         for i, data in enumerate(alldata):
-            if len(data) == 2:  # 1D PLOTTING
-                if data[1]["name"] not in parameters:
-                    indices_to_remove.append(i)
-            elif len(data) == 3:  # 2D PLOTTING
-                if data[2]["name"] not in parameters:
-                    indices_to_remove.append(i)
+            # the last element of the data list is the dependent parameter,
+            # so we check if it is in the list of parameters to plot
+            deselected_in_1D_plot = len(data) == 2 and data[1]["name"] not in parameters
+            deselected_in_2D_plot = len(data) == 3 and data[2]["name"] not in parameters
+
+            if deselected_in_1D_plot or deselected_in_2D_plot:
+                indices_to_remove.append(i)
         alldata = [d for (i, d) in enumerate(alldata) if i not in indices_to_remove]
 
     for data, ax, colorbar in zip(alldata, axeslist, colorbars):
@@ -630,7 +631,7 @@ def plot_2d_scatterplot(
     """
     import matplotlib
 
-    if "rasterized" in kwargs.keys():
+    if "rasterized" in kwargs:
         rasterized = kwargs.pop("rasterized")
     else:
         rasterized = len(z) > qc.config.plotting.rasterize_threshold
@@ -739,7 +740,7 @@ def plot_on_a_plain_grid(
         x_to_plot, y_to_plot, z_to_plot = reshape_2D_data(x, y, z)
         num_points = x_to_plot.size * y_to_plot.size
 
-    if "rasterized" in kwargs.keys():
+    if "rasterized" in kwargs:
         rasterized = kwargs.pop("rasterized")
     else:
         rasterized = num_points > qc.config.plotting.rasterize_threshold
@@ -904,12 +905,15 @@ def _rescale_ticks_and_units(
         ax.set_ylabel(new_y_label)
 
     # for z aka colorbar axis
-    if cax is not None and len(data) > 2:
-        if not _is_string_valued_array(data[2]["data"]):
-            z_ticks_formatter, new_z_label = _make_rescaled_ticks_and_units(data[2])
-            cax.set_label(new_z_label)
-            cax.formatter = z_ticks_formatter
-            cax.update_ticks()
+    if (
+        cax is not None
+        and len(data) > 2
+        and not _is_string_valued_array(data[2]["data"])
+    ):
+        z_ticks_formatter, new_z_label = _make_rescaled_ticks_and_units(data[2])
+        cax.set_label(new_z_label)
+        cax.formatter = z_ticks_formatter
+        cax.update_ticks()
 
 
 def _is_string_valued_array(values: npt.NDArray) -> bool:

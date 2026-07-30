@@ -24,7 +24,7 @@ good_args = [
 
 @pytest.mark.parametrize("args", bad_args)
 def test_bad_calls(args) -> None:
-    with pytest.raises(Exception):
+    with pytest.raises(TypeError):
         permissive_range(*args)
 
 

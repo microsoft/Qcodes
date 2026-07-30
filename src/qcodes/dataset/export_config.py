@@ -80,9 +80,8 @@ def get_data_export_type(
 
     if isinstance(export_type, DataExportType):
         return export_type
-    elif export_type:
-        if hasattr(DataExportType, export_type.upper()):
-            return getattr(DataExportType, export_type.upper())
+    elif export_type and hasattr(DataExportType, export_type.upper()):
+        return getattr(DataExportType, export_type.upper())
     return None
 
 

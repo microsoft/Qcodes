@@ -28,14 +28,14 @@ def _parse_output_string(s: str) -> str:
         "rep": "repeat",
     }
 
-    if s in conversions.keys():
+    if s in conversions:
         s = conversions[s]
 
     return s
 
 
 def _parse_output_bool(value: str) -> bool:
-    return True if int(value) == 1 else False
+    return int(value) == 1
 
 
 class Keithley2000(VisaInstrument):

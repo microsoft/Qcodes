@@ -103,7 +103,7 @@ def test_registering_dependent_param_with_setpoints(dependent_parameters) -> Non
 
     dependency_tree = meas._interdeps.dependencies
     assert len(dependency_tree) == 1
-    assert dep1.param_spec in dependency_tree.keys()
+    assert dep1.param_spec in dependency_tree
 
     # Ensure that order in the dependency spec tree is preserved
     # Explicit Setpoints first, then internal depends_on parameters

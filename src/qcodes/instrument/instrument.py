@@ -207,9 +207,9 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         for inststr in list(cls._all_instruments):
             try:
                 inst: Instrument = cls.find_instrument(inststr)
-                if only_subclasses and issubclass(type(inst), cls):
-                    should_be_closed = True
-                elif not only_subclasses:
+                if (
+                    only_subclasses and issubclass(type(inst), cls)
+                ) or not only_subclasses:
                     should_be_closed = True
                 else:
                     should_be_closed = False
@@ -365,7 +365,7 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
             if instrument_is_not_found:
                 instrument_exists = False
             else:
-                raise exception
+                raise
 
         return instrument_exists
 
@@ -379,16 +379,15 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
             instr_instance: Instance of an Instrument class or its subclass.
 
         """
-        if (
+        is_valid = (
             isinstance(instr_instance, Instrument)
             and instr_instance in instr_instance.instances()
-        ):
-            # note that it is important to call `instances` on the instance
-            # object instead of `Instrument` class, because instances of
-            # Instrument subclasses are recorded inside their subclasses; see
-            # `instances` for more information
-            return True
-        return False
+        )
+        # note that it is important to call `instances` on the instance
+        # object instead of `Instrument` class, because instances of
+        # Instrument subclasses are recorded inside their subclasses; see
+        # `instances` for more information
+        return is_valid
 
     # `write_raw` and `ask_raw` are the interface to hardware                #
     # `write` and `ask` are standard wrappers to help with error reporting   #
@@ -417,7 +416,7 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
                 *e.args,
                 f"writing {cmd!r} to {self!r}",
             )
-            raise e
+            raise
 
     def write_raw(self, cmd: str) -> None:
         """
@@ -461,7 +460,7 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
 
         except Exception as e:
             e.args = (*e.args, f"asking {cmd!r} to {self!r}")
-            raise e
+            raise
 
     def ask_raw(self, cmd: str) -> str:
         """

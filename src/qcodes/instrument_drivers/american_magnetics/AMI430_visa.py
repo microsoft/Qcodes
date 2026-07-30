@@ -417,24 +417,22 @@ class AMIModel430(VisaInstrument):
         Check the current state of the magnet to see if we can start ramping
         """
         if self.is_quenched():
-            logging.error(f"{__name__}: Could not ramp because of quench")
+            self.log.error(f"{__name__}: Could not ramp because of quench")
             return False
 
         if self.switch_heater.in_persistent_mode():
-            logging.error(f"{__name__}: Could not ramp because persistent")
+            self.log.error(f"{__name__}: Could not ramp because persistent")
             return False
 
         state = self.ramping_state()
         if state == "ramping":
             # If we don't have a persistent switch, or it's warm
-            if not self.switch_heater.enabled():
-                return True
-            elif self.switch_heater.state():
+            if not self.switch_heater.enabled() or self.switch_heater.state():
                 return True
         elif state in ["holding", "paused", "at zero current"]:
             return True
 
-        logging.error(f"{__name__}: Could not ramp, state: {state}")
+        self.log.error(f"{__name__}: Could not ramp, state: {state}")
         return False
 
     def set_field(
@@ -474,9 +472,8 @@ class AMIModel430(VisaInstrument):
         self.write(f"CONF:FIELD:TARG {value}")
 
         # If we have a persistent switch, make sure it is resistive
-        if self.switch_heater.enabled():
-            if not self.switch_heater.state():
-                raise AMI430Exception("Switch heater is not on")
+        if self.switch_heater.enabled() and not self.switch_heater.state():
+            raise AMI430Exception("Switch heater is not on")
         self.ramp()
 
         # Check if we want to block
@@ -601,7 +598,7 @@ class AMIModel430(VisaInstrument):
     def write_raw(self, cmd: str) -> None:
         try:
             super().write_raw(cmd)
-        except VisaIOError as err:
+        except VisaIOError:
             # The ami communication has found to be unstable
             # so we retry the communication here
             msg = f"Got VisaIOError while writing {cmd} to instrument."
@@ -613,12 +610,12 @@ class AMIModel430(VisaInstrument):
                 self.device_clear()
                 super().write_raw(cmd)
             else:
-                raise err
+                raise
 
     def ask_raw(self, cmd: str) -> str:
         try:
             result = super().ask_raw(cmd)
-        except VisaIOError as err:
+        except VisaIOError:
             # The ami communication has found to be unstable
             # so we retry the communication here
             msg = f"Got VisaIOError while asking the instrument: {cmd}"
@@ -630,7 +627,7 @@ class AMIModel430(VisaInstrument):
                 self.device_clear()
                 result = super().ask_raw(cmd)
             else:
-                raise err
+                raise
         return result
 
 
@@ -1059,7 +1056,7 @@ class AMIModel4303D(Instrument):
             return bool(np.linalg.norm(setpoint_values) < self._field_limit)
 
         answer = any(
-            [limit_function(*setpoint_values) for limit_function in self._field_limit]
+            limit_function(*setpoint_values) for limit_function in self._field_limit
         )
 
         return answer

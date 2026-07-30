@@ -219,15 +219,12 @@ def filter_guids_by_parts(
     for guid in guids:
         guid_dict = parse_guid(guid)
         match = True
-        if sample_id is not None:
-            if guid_dict["sample"] != sample_id:
-                match = False
-        if location is not None:
-            if guid_dict["location"] != location:
-                match = False
-        if work_station is not None:
-            if guid_dict["work_station"] != work_station:
-                match = False
+        if sample_id is not None and guid_dict["sample"] != sample_id:
+            match = False
+        if location is not None and guid_dict["location"] != location:
+            match = False
+        if work_station is not None and guid_dict["work_station"] != work_station:
+            match = False
 
         if match:
             matched_guids.append(guid)

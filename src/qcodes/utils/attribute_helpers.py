@@ -94,7 +94,7 @@ class DelegateAttributes:
         for name in self.delegate_attr_dicts:
             d = getattr(self, name, None)
             if d is not None:
-                names += [k for k in d.keys() if k not in self.omit_delegate_attrs]
+                names += [k for k in d if k not in self.omit_delegate_attrs]
 
         for name in self.delegate_attr_objects:
             obj = getattr(self, name, None)
@@ -115,7 +115,7 @@ def strip_attrs(obj: object, whitelist: "Sequence[str]" = ()) -> None:
 
     """
     try:
-        lst = set(list(obj.__dict__.keys())) - set(whitelist)
+        lst = set(obj.__dict__.keys()) - set(whitelist)
         for key in lst:
             try:
                 del obj.__dict__[key]

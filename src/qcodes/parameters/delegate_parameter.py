@@ -176,7 +176,6 @@ class DelegateParameter(
             delegate parameter mirrors the cache of the source parameter by
             design, this method is just a noop.
             """
-            pass
 
         def __call__(self) -> _local_ParameterDataTypeVar:
             return self.get(get_if_invalid=True)

@@ -1141,7 +1141,7 @@ mode."""
             licenses_raw = self.ask("SYST:LIC:CAT?")
             licenses_list = [x.strip('"') for x in licenses_raw.split(",")]
             return licenses_list
-        return tuple()
+        return ()
 
     def _options(self) -> tuple[str, ...]:
         """
@@ -1157,7 +1157,7 @@ mode."""
             options_raw = self.ask("*OPT?")
             options_list = [opt for opt in options_raw.split(",") if opt != "0"]
             return tuple(options_list)
-        return tuple()
+        return ()
 
     def _get_parameter(self, sense_function: str = "DC Voltage") -> float:
         """
@@ -1172,9 +1172,8 @@ mode."""
             The float value of the parameter.
 
         """
-        with self.sense_function.set_to(sense_function):
-            with self.sample.count.set_to(1):
-                response = self.ask("READ?")
+        with self.sense_function.set_to(sense_function), self.sample.count.set_to(1):
+            response = self.ask("READ?")
 
         if float(response) >= 9.9e37:
             return np.inf

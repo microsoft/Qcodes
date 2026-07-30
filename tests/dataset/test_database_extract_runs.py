@@ -752,18 +752,17 @@ def test_old_versions_not_touched(
 
     # First test that we cannot use an old version as source
 
-    with raise_if_file_changed(fixturepath):
-        with pytest.warns(UserWarning) as warning:
-            extract_runs_into_db(fixturepath, target_path, 1)
-            expected_mssg = (
-                "Source DB version is 2, but this "
-                f"function needs it to be in version {new_v}. "
-                "Run this function again with "
-                "upgrade_source_db=True to auto-upgrade "
-                "the source DB file."
-            )
-            assert isinstance(warning[0].message, Warning)
-            assert warning[0].message.args[0] == expected_mssg
+    with raise_if_file_changed(fixturepath), pytest.warns(UserWarning) as warning:
+        extract_runs_into_db(fixturepath, target_path, 1)
+    expected_mssg = (
+        "Source DB version is 2, but this "
+        f"function needs it to be in version {new_v}. "
+        "Run this function again with "
+        "upgrade_source_db=True to auto-upgrade "
+        "the source DB file."
+    )
+    assert isinstance(warning[0].message, Warning)
+    assert warning[0].message.args[0] == expected_mssg
 
     # Then test that we cannot use an old version as target
 
@@ -777,18 +776,17 @@ def test_old_versions_not_touched(
     source_ds.add_results([{name: 0.0 for name in some_interdeps[1].names}])
     source_ds.mark_completed()
 
-    with raise_if_file_changed(fixturepath):
-        with pytest.warns(UserWarning) as warning:
-            extract_runs_into_db(source_path, fixturepath, 1)
-            expected_mssg = (
-                "Target DB version is 2, but this "
-                f"function needs it to be in version {new_v}. "
-                "Run this function again with "
-                "upgrade_target_db=True to auto-upgrade "
-                "the target DB file."
-            )
-            assert isinstance(warning[0].message, Warning)
-            assert warning[0].message.args[0] == expected_mssg
+    with raise_if_file_changed(fixturepath), pytest.warns(UserWarning) as warning:
+        extract_runs_into_db(source_path, fixturepath, 1)
+    expected_mssg = (
+        "Target DB version is 2, but this "
+        f"function needs it to be in version {new_v}. "
+        "Run this function again with "
+        "upgrade_target_db=True to auto-upgrade "
+        "the target DB file."
+    )
+    assert isinstance(warning[0].message, Warning)
+    assert warning[0].message.args[0] == expected_mssg
 
 
 def test_experiments_with_NULL_sample_name(
@@ -909,11 +907,10 @@ def test_atomicity(two_empty_temp_db_connections, some_interdeps) -> None:
     source_ds_1.mark_completed()
 
     # now check that the target file is untouched
-    with raise_if_file_changed(target_path):
+    with raise_if_file_changed(target_path), pytest.raises(RuntimeError):
         # although the not completed error is a ValueError, we get the
         # RuntimeError from SQLite
-        with pytest.raises(RuntimeError):
-            extract_runs_into_db(source_path, target_path, 1, 2)
+        extract_runs_into_db(source_path, target_path, 1, 2)
 
 
 def test_column_mismatch(two_empty_temp_db_connections, some_interdeps, inst) -> None:

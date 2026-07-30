@@ -528,12 +528,12 @@ instruments:
     )
     mock = st.load_instrument("mock")
     for ch in ["ch1", "ch2"]:
-        assert ch in mock.parameters.keys()
+        assert ch in mock.parameters
     assert len(mock.parameters) == 4  # there is also IDN and a fixed param
 
     # Overwrite parameter
     mock = st.load_instrument("mock", gates=["TestGate"])
-    assert "TestGate" in mock.parameters.keys()
+    assert "TestGate" in mock.parameters
     assert len(mock.parameters) == 3  # there is also IDN and a fixed param
     # test address
     sims_path = get_qcodes_path("instrument", "sims")
@@ -619,7 +619,7 @@ instruments:
     """
     )
     mock = st.load_instrument("mock")
-    p = getattr(mock, "gate_a")
+    p = mock.gate_a
     assert isinstance(p, Parameter)
     assert p.unit == "mV"
     assert p.label == "main gate"
@@ -665,7 +665,7 @@ instruments:
     """
     )
     mock = st.load_instrument("mock")
-    p = getattr(mock, "gate_a")
+    p = mock.gate_a
     assert isinstance(p, DelegateParameter)
     assert p.unit == "mV"
     assert p.label == "main gate"

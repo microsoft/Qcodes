@@ -7,7 +7,7 @@ import re
 import traceback
 from functools import reduce
 from time import sleep
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -25,7 +25,7 @@ from qcodes.dataset.descriptions.dependencies import (
     FrozenInterDependencies_,
     InterDependencies_,
 )
-from qcodes.dataset.experiment_container import new_experiment
+from qcodes.dataset.experiment_container import Experiment, new_experiment
 from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.connection import atomic_transaction
@@ -39,6 +39,9 @@ from qcodes.parameters import (
 from qcodes.station import Station
 from qcodes.validators import Arrays, ComplexNumbers
 from tests.common import retry_until_does_not_throw
+
+if TYPE_CHECKING:
+    from qcodes.instrument_drivers.mock_instruments import DummyInstrument
 
 
 def test_log_messages(caplog: LogCaptureFixture, meas_with_registered_param) -> None:
@@ -413,10 +416,7 @@ def test_setting_write_period(wp) -> None:
 def test_setting_write_period_from_config(wp) -> None:
     qc.config.dataset.write_period = wp
 
-    if isinstance(wp, str):
-        with pytest.raises(ValueError):
-            Measurement()
-    elif wp < 1e-3:
+    if isinstance(wp, str) or wp < 1e-3:
         with pytest.raises(ValueError):
             Measurement()
     else:
@@ -489,7 +489,9 @@ def test_enter_and_exit_actions(DAC, words) -> None:
         meas.add_after_run(action, testlist)
 
 
-def test_subscriptions(experiment, DAC, DMM) -> None:
+def test_subscriptions(
+    experiment: Experiment, DAC: DummyInstrument, DMM: DummyInstrument
+) -> None:
     """
     Test that subscribers are called at the moment the data is flushed to
     database
@@ -579,13 +581,18 @@ def test_subscriptions(experiment, DAC, DMM) -> None:
             @retry_until_does_not_throw(
                 exception_class_to_expect=AssertionError, delay=0.5, tries=20
             )
-            def assert_states_updated_from_callbacks() -> None:
-                assert values_larger_than_7 == values_larger_than_7__expected
+            def assert_states_updated_from_callbacks(
+                num: int, expected_values: list[int]
+            ) -> None:
+                assert values_larger_than_7 == expected_values
                 assert list(all_results_dict.keys()) == [
                     result_index for result_index in range(1, num + 1 + 1)
                 ]
 
-            assert_states_updated_from_callbacks()
+            assert_states_updated_from_callbacks(
+                num=num,
+                expected_values=values_larger_than_7__expected,
+            )
 
     # Ensure that after exiting the "run()" context,
     # all subscribers get unsubscribed from the dataset
@@ -722,7 +729,7 @@ def test_datasaver_scalars(
         # so we add a bit more wait time here if the expected number
         # of points have not been written
         for _ in range(10):
-            if not datasaver.points_written == breakpoint + 1:
+            if datasaver.points_written != breakpoint + 1:
                 sleep(write_period * 1.1)
         assert datasaver.points_written == breakpoint + 1
 
@@ -747,7 +754,9 @@ def test_datasaver_scalars(
     # More assertions of setpoints, labels and units in the DB!
 
 
-def test_datasaver_inst_metadata(experiment, DAC_with_metadata, DMM) -> None:
+def test_datasaver_inst_metadata(
+    experiment: Experiment, DAC_with_metadata: DummyInstrument, DMM: DummyInstrument
+) -> None:
     """
     Check that additional instrument metadata is captured into the dataset snapshot
     """
@@ -770,7 +779,7 @@ def test_datasaver_inst_metadata(experiment, DAC_with_metadata, DMM) -> None:
 
 
 def test_exception_happened_during_measurement_is_stored_in_dataset_metadata(
-    experiment,
+    experiment: Experiment,
 ) -> None:
     meas = Measurement()
     meas.register_custom_parameter(name="nodata")
@@ -780,11 +789,13 @@ def test_exception_happened_during_measurement_is_stored_in_dataset_metadata(
 
     dataset = None
     # `pytest.raises`` is used here instead of custom try-except for convenience
-    with pytest.raises(SomeMeasurementException, match="foo") as e:
-        with meas.run() as datasaver:
-            dataset = datasaver.dataset
+    with (
+        pytest.raises(SomeMeasurementException, match="foo") as e,
+        meas.run() as datasaver,
+    ):
+        dataset = datasaver.dataset
 
-            raise SomeMeasurementException("foo")
+        raise SomeMeasurementException("foo")
     assert dataset is not None
     metadata = dataset.metadata
     assert "measurement_exception" in metadata
@@ -1355,10 +1366,12 @@ def test_datasaver_parameter_with_setpoints_that_are_different_raises(
 
     assert dep_ps in meas._interdeps.dependencies[param_ps]
 
-    with meas.run() as datasaver:
+    with (
+        meas.run() as datasaver,
+        pytest.raises(ValueError, match="Multiple distinct values found for"),
+    ):
         # This fails because a 2D PWS expects 2D setpoints parameter values (ie a grid)
-        with pytest.raises(ValueError, match="Multiple distinct values found for"):
-            datasaver.add_result((param, param.get()), (sp_param_1, sp_param_1.get()))
+        datasaver.add_result((param, param.get()), (sp_param_1, sp_param_1.get()))
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
@@ -1542,8 +1555,9 @@ def test_datasaver_parameter_with_setpoints_reg_but_missing_validator(
 
     param.setpoints = ()
 
-    with meas.run(write_in_background=bg_writing) as datasaver:
-        with pytest.raises(
+    with (
+        meas.run(write_in_background=bg_writing) as datasaver,
+        pytest.raises(
             ValueError,
             match=r"Shape of output is not"
             r" consistent with setpoints."
@@ -1554,11 +1568,13 @@ def test_datasaver_parameter_with_setpoints_reg_but_missing_validator(
             r"shape \(\)', 'getting dummy_"
             r"channel_inst_ChanA_dummy_"
             r"parameter_with_setpoints",
-        ):
-            datasaver.add_result(*expand_setpoints_helper(param))
+        ),
+    ):
+        datasaver.add_result(*expand_setpoints_helper(param))
 
-    with meas.run(write_in_background=bg_writing) as datasaver:
-        with pytest.raises(
+    with (
+        meas.run(write_in_background=bg_writing) as datasaver,
+        pytest.raises(
             ValueError,
             match=r"Shape of output is not"
             r" consistent with setpoints."
@@ -1569,8 +1585,9 @@ def test_datasaver_parameter_with_setpoints_reg_but_missing_validator(
             r"shape \(\)', 'getting dummy_"
             r"channel_inst_ChanA_dummy_"
             r"parameter_with_setpoints",
-        ):
-            datasaver.add_result((param, param.get()))
+        ),
+    ):
+        datasaver.add_result((param, param.get()))
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
@@ -2169,13 +2186,13 @@ def test_datasaver_arrays_of_different_length(storage_type, Ns, bg_writing) -> N
 
     with meas.run(write_in_background=bg_writing) as datasaver:
         result_t = ("temperature", 70)
-        result_freqs = list(
+        result_freqs = [
             (f"freqs{n}", np.linspace(0, 1, Ns[n])) for n in range(no_of_signals)
-        )
-        result_sigs = list(
+        ]
+        result_sigs = [
             (f"signal{n}", np.random.default_rng().standard_normal(Ns[n]))
             for n in range(no_of_signals)
-        )
+        ]
         full_result: tuple[tuple[str, int | np.ndarray | str], ...] = tuple(
             result_freqs + result_sigs + [result_t]
         )

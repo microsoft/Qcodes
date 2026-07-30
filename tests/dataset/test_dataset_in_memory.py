@@ -178,19 +178,21 @@ def test_dataset_in_memory_reload_from_db_3d(
 def test_dataset_in_memory_without_cache_raises(
     meas_with_registered_param, DMM, DAC, tmp_path
 ) -> None:
-    with pytest.raises(
-        RuntimeError,
-        match=re.escape(
-            "Cannot disable the in memory cache for a dataset that is only in memory."
+    with (
+        pytest.raises(
+            RuntimeError,
+            match=re.escape(
+                "Cannot disable the in memory cache for a dataset that is only in memory."
+            ),
         ),
-    ):
-        with meas_with_registered_param.run(
+        meas_with_registered_param.run(
             dataset_class=DataSetType.DataSetInMem, in_memory_cache=False
-        ) as datasaver:
-            for set_v in np.linspace(0, 25, 10):
-                DAC.ch1.set(set_v)
-                get_v = DMM.v1()
-                datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
+        ) as datasaver,
+    ):
+        for set_v in np.linspace(0, 25, 10):
+            DAC.ch1.set(set_v)
+            get_v = DMM.v1()
+            datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
 
 
 def test_dataset_in_memory_reload_from_db_complex(
@@ -450,9 +452,9 @@ def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path) -> None:
     assert loaded_ds.export_info == ds.export_info
     assert loaded_ds.metadata == ds.metadata
 
-    assert "foo" in loaded_ds.metadata.keys()
-    assert "export_info" in loaded_ds.metadata.keys()
-    assert "metadata_added_after_export" in loaded_ds.metadata.keys()
+    assert "foo" in loaded_ds.metadata
+    assert "export_info" in loaded_ds.metadata
+    assert "metadata_added_after_export" in loaded_ds.metadata
     assert loaded_ds.metadata["metadata_added_after_export"] == 69
 
     compare_datasets(ds, loaded_ds)
@@ -485,8 +487,8 @@ def test_load_from_file(meas_with_registered_param, DMM, DAC, tmp_path) -> None:
     assert loaded_ds.export_info == ds.export_info
     assert loaded_ds.metadata == ds.metadata
 
-    assert "export_info" in loaded_ds.metadata.keys()
-    assert "metadata_added_after_export" in loaded_ds.metadata.keys()
+    assert "export_info" in loaded_ds.metadata
+    assert "metadata_added_after_export" in loaded_ds.metadata
     assert loaded_ds.metadata["foo"] == "bar"
     assert loaded_ds.metadata["metadata_added_after_export"] == "42"
 
@@ -640,9 +642,9 @@ def test_load_from_db_dataset_moved(
     assert loaded_ds.export_info == ds.export_info
     assert loaded_ds.metadata == ds.metadata
 
-    assert "foo" in loaded_ds.metadata.keys()
-    assert "export_info" in loaded_ds.metadata.keys()
-    assert "metadata_added_after_export" in loaded_ds.metadata.keys()
+    assert "foo" in loaded_ds.metadata
+    assert "export_info" in loaded_ds.metadata
+    assert "metadata_added_after_export" in loaded_ds.metadata
 
     assert loaded_ds.cache.data() == {}
 

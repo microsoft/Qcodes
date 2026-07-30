@@ -167,9 +167,8 @@ def test_atomic_raises(experiment) -> None:
 
     bad_sql = '""'
 
-    with pytest.raises(RuntimeError) as excinfo:
-        with mut_conn.atomic(conn):
-            mut_conn.transaction(conn, bad_sql)
+    with pytest.raises(RuntimeError) as excinfo, mut_conn.atomic(conn):
+        mut_conn.transaction(conn, bad_sql)
     assert error_caused_by(excinfo, "syntax error")
 
 
@@ -404,20 +403,22 @@ def test_atomic_creation(experiment, simple_run_describer) -> None:
     # first we patch add_data_to_dynamic_columns to throw an exception
     # if create_data is not atomic this would create a partial
     # run in the db. Causing the next create_run to fail
-    with patch(
-        "qcodes.dataset.sqlite.queries.add_data_to_dynamic_columns", new=just_throw
-    ):
-        with pytest.raises(
+    with (
+        patch(
+            "qcodes.dataset.sqlite.queries.add_data_to_dynamic_columns", new=just_throw
+        ),
+        pytest.raises(
             RuntimeError, match="Rolling back due to unhandled exception"
-        ) as e:
-            mut_queries.create_run(
-                experiment.conn,
-                experiment.exp_id,
-                name="testrun",
-                guid=generate_guid(),
-                description=simple_run_describer,
-                metadata={"a": 1},
-            )
+        ) as e,
+    ):
+        mut_queries.create_run(
+            experiment.conn,
+            experiment.exp_id,
+            name="testrun",
+            guid=generate_guid(),
+            description=simple_run_describer,
+            metadata={"a": 1},
+        )
     assert error_caused_by(e, "This breaks adding metadata")
     # since we are starting from an empty database and the above transaction
     # should be rolled back there should be no runs in the run table

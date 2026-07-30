@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
     from qcodes.parameters.parameter import Parameter
 
-VISA_LOGGER = ".".join((InstrumentBase.__module__, "com", "visa"))
+VISA_LOGGER = f"{InstrumentBase.__module__}.com.visa"
 
 log = logging.getLogger(__name__)
 
@@ -267,10 +267,10 @@ class VisaInstrument(Instrument):
     ) -> pyvisa.resources.MessageBasedResource:
         try:
             visa_handle = self._open_resource(address, visalib)
-        except Exception as e:
+        except Exception:
             self.visa_log.exception(f"Could not connect at {address}")
             self.close()
-            raise e
+            raise
         return visa_handle
 
     def _open_resource(

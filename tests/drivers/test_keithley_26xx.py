@@ -28,7 +28,7 @@ def _make_driver():
 @pytest.fixture(scope="function", name="smus")
 def _make_smus(driver):
     smu_names = {"smua", "smub"}
-    assert smu_names == set(list(driver.submodules.keys()))
+    assert smu_names == set(driver.submodules.keys())
 
     yield tuple(getattr(driver, smu_name) for smu_name in smu_names)
 
@@ -43,7 +43,7 @@ def test_idn(driver) -> None:
 
 
 def test_smu_channels_and_their_parameters(driver) -> None:
-    assert {"smua", "smub"} == set(list(driver.submodules.keys()))
+    assert {"smua", "smub"} == set(driver.submodules.keys())
 
     for smu_name in ("smua", "smub"):
         smu = getattr(driver, smu_name)
