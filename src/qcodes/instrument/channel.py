@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Generic, Self, cast, overload
 
 from typing_extensions import TypeVar
 
-from qcodes.metadatable import MetadatableWithName
+from qcodes.metadatable import MetadatableWithName, normalize_snapshot_update
 from qcodes.parameters import (
     ArrayParameter,
     MultiChannelInstrumentParameter,
@@ -22,6 +22,8 @@ from .instrument_base import InstrumentBase
 
 if TYPE_CHECKING:
     from typing import Unpack
+
+    from qcodes.metadatable import SnapshotUpdate
 
     from .instrument_base import InstrumentBaseKWArgs
 
@@ -380,7 +382,7 @@ class ChannelTuple[InstrumentModuleType: "InstrumentModule"](
 
     def snapshot_base(
         self,
-        update: bool | None = True,
+        update: bool | SnapshotUpdate | None = "Only_invalid",
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         """
@@ -389,13 +391,13 @@ class ChannelTuple[InstrumentModuleType: "InstrumentModule"](
         :class:`.NumpyJSONEncoder` supports).
 
         Args:
-            update: If True, update the state by querying the
-                instrument. If None only update if the state is known to be
-                invalid. If False, just use the latest values in memory
-                and never update.
+            update: If ``"All"``, update the state by querying the instrument.
+                If ``"Only_invalid"`` (the default) only update values whose
+                cache is invalid. If ``"Never"``, just use the latest values in
+                memory and never update.
             params_to_skip_update: List of parameter names that will be skipped
-                in update even if update is True. This is useful if you have
-                parameters that are slow to update but can be updated in a
+                in update even if update is ``"All"``. This is useful if you
+                have parameters that are slow to update but can be updated in a
                 different way (as in the qdac). If you want to skip the
                 update of certain parameters in all snapshots, use the
                 ``snapshot_get``  attribute of those parameters instead.
@@ -404,6 +406,7 @@ class ChannelTuple[InstrumentModuleType: "InstrumentModule"](
             dict: base snapshot
 
         """
+        update = normalize_snapshot_update(update)
         if self._snapshotable:
             snap = {
                 "channels": {
@@ -610,7 +613,9 @@ class ChannelTuple[InstrumentModuleType: "InstrumentModule"](
         return sorted(set(names))
 
     def print_readable_snapshot(
-        self, update: bool = False, max_chars: int = 80
+        self,
+        update: bool | SnapshotUpdate | None = "Only_invalid",
+        max_chars: int = 80,
     ) -> None:
         if self._snapshotable:
             for channel in self._channels:

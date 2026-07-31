@@ -33,6 +33,7 @@ if TYPE_CHECKING:
     from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base import (
         KeysightB1500,
     )
+    from qcodes.metadatable import SnapshotUpdate
 
 
 class SweepSteps(TypedDict):
@@ -713,7 +714,7 @@ class _ParameterWithStatus(
 
     def snapshot_base(
         self,
-        update: bool | None = True,
+        update: "bool | SnapshotUpdate | None" = "Only_invalid",
         params_to_skip_update: "Sequence[str] | None" = None,
     ) -> dict[Any, Any]:
         snapshot = super().snapshot_base(

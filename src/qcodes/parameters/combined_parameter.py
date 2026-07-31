@@ -8,11 +8,13 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import numpy.typing as npt
 
-from qcodes.metadatable import Metadatable
+from qcodes.metadatable import Metadatable, normalize_snapshot_update
 from qcodes.utils import full_class
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Sequence
+
+    from qcodes.metadatable import SnapshotUpdate
 
     from .parameter import Parameter
 
@@ -194,7 +196,7 @@ class CombinedParameter(Metadatable):
 
     def snapshot_base(
         self,
-        update: bool | None = False,
+        update: bool | SnapshotUpdate | None = "Only_invalid",
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         """
@@ -203,7 +205,7 @@ class CombinedParameter(Metadatable):
         :class:`.NumpyJSONEncoder` supports).
 
         Args:
-            update: ``True`` or ``False``.
+            update: One of ``"All"``, ``"Only_invalid"`` or ``"Never"``.
             params_to_skip_update: Unused in this subclass.
 
         Returns:
@@ -217,7 +219,8 @@ class CombinedParameter(Metadatable):
         meta_data["label"] = param.label  # type: ignore[attr-defined]
         meta_data["full_name"] = param.full_name  # type: ignore[attr-defined]
         meta_data["aggregator"] = repr(getattr(self, "f", None))
+        update = normalize_snapshot_update(update)
         for parameter in self.parameters:
-            meta_data[str(parameter)] = parameter.snapshot()
+            meta_data[str(parameter)] = parameter.snapshot(update=update)
 
         return meta_data

@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Generator
 
     from qcodes.instrument import InstrumentBase
+    from qcodes.metadatable import SnapshotUpdate
 
 T = TypeVar("T")
 
@@ -40,8 +41,10 @@ def get_if_invalid(request: pytest.FixtureRequest) -> bool | Literal["NOT_PASSED
     return request.param
 
 
-@pytest.fixture(params=(True, False, None, NOT_PASSED))
-def update(request: pytest.FixtureRequest) -> bool | Literal["NOT_PASSED"] | None:
+@pytest.fixture(params=("All", "Never", "Only_invalid", NOT_PASSED))
+def update(
+    request: pytest.FixtureRequest,
+) -> SnapshotUpdate | Literal["NOT_PASSED"]:
     return request.param
 
 

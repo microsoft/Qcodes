@@ -41,7 +41,7 @@ def test_default_attributes() -> None:
     assert str(p) == name
 
     assert p._get_count == 0
-    snap = p.snapshot(update=True)
+    snap = p.snapshot(update="All")
     assert p._get_count == 0
     snap_expected = {"name": name, "label": name, "unit": ""}
     for k, v in snap_expected.items():
@@ -58,7 +58,7 @@ def test_snapshot_value_default_false() -> None:
     """snapshot_value defaults to False for ArrayParameter."""
     p = SimpleArrayParam([1, 2, 3], "arr", shape=(3,))
     assert p._snapshot_value is False
-    snap = p.snapshot(update=True)
+    snap = p.snapshot(update="All")
     assert "value" not in snap
     assert "raw_value" not in snap
 
@@ -67,7 +67,7 @@ def test_snapshot_value_explicit_true() -> None:
     """snapshot_value=True includes value in snapshot for ArrayParameter."""
     p = SimpleArrayParam([1, 2, 3], "arr", shape=(3,), snapshot_value=True)
     assert p._snapshot_value is True
-    snap = p.snapshot(update=True)
+    snap = p.snapshot(update="All")
     assert snap["value"] == [1, 2, 3]
 
 
@@ -75,7 +75,7 @@ def test_snapshot_value_explicit_false() -> None:
     """snapshot_value=False excludes value from snapshot for ArrayParameter."""
     p = SimpleArrayParam([1, 2, 3], "arr", shape=(3,), snapshot_value=False)
     assert p._snapshot_value is False
-    snap = p.snapshot(update=True)
+    snap = p.snapshot(update="All")
     assert "value" not in snap
 
 
@@ -113,7 +113,7 @@ def test_explicit_attributes() -> None:
     assert p.setpoint_labels == setpoint_labels
 
     assert p._get_count == 0
-    snap = p.snapshot(update=True)
+    snap = p.snapshot(update="All")
     assert p._get_count == 1
     snap_expected = {
         "name": name,

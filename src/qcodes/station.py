@@ -36,7 +36,11 @@ import qcodes.instrument_drivers
 from qcodes import validators
 from qcodes.instrument import Instrument, InstrumentBase
 from qcodes.instrument.channel import ChannelTuple
-from qcodes.metadatable import Metadatable, MetadatableWithName
+from qcodes.metadatable import (
+    Metadatable,
+    MetadatableWithName,
+    normalize_snapshot_update,
+)
 from qcodes.monitor.monitor import Monitor
 from qcodes.parameters import (
     DelegateParameter,
@@ -55,6 +59,8 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
     from pathlib import Path
     from types import ModuleType
+
+    from qcodes.metadatable import SnapshotUpdate
 
 log = logging.getLogger(__name__)
 
@@ -183,7 +189,7 @@ class Station(Metadatable, DelegateAttributes):
 
     def snapshot_base(
         self,
-        update: bool | None = True,
+        update: bool | SnapshotUpdate | None = "Only_invalid",
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         """
@@ -196,18 +202,18 @@ class Station(Metadatable, DelegateAttributes):
         from the station during the execution of this function.
 
         Args:
-            update: If ``True``, update the state by querying the
-                all the children: f.ex. instruments, parameters,
-                components, etc. If None only update if the state
-                is known to be invalid.
-                If ``False``, just use the latest
-                values in memory and never update the state.
+            update: What to do about the values stored in the snapshot of the
+                children (f.ex. instruments, parameters, components, etc.).
+                ``"All"`` updates every value, ``"Only_invalid"`` (the default)
+                only updates values whose cache is invalid, and ``"Never"``
+                never updates and uses the latest values in memory.
             params_to_skip_update: Not used.
 
         Returns:
             dict: Base snapshot.
 
         """
+        update = normalize_snapshot_update(update)
         snap: dict[str, Any] = {
             "instruments": {},
             "parameters": {},
@@ -259,7 +265,7 @@ class Station(Metadatable, DelegateAttributes):
         """
         try:
             if not (isinstance(component, Parameter) and component.snapshot_exclude):
-                component.snapshot(update=update_snapshot)
+                component.snapshot(update="All" if update_snapshot else "Never")
         except Exception:
             pass
         if name is None:

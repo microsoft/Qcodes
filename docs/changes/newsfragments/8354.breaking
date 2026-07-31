@@ -1,0 +1,19 @@
+The default value of the ``update`` argument of ``snapshot``, ``snapshot_base``
+and ``print_readable_snapshot`` (on every :class:`.Metadatable`, including
+instruments, channels and parameters) is now ``"Only_invalid"``. Previously
+calling e.g. ``instrument.snapshot()`` or ``parameter.snapshot()`` without an
+argument effectively defaulted to the equivalent of ``"Never"`` and never
+refreshed anything. As a result, ``snapshot()`` (and ``print_readable_snapshot()``)
+will now call ``get()`` on parameters whose cache is invalid, which may query the
+underlying instrument. Pass ``update="Never"`` explicitly to restore the previous
+"do not update" behavior, or ``update="All"`` to force a full update.
+
+Relatedly, the station snapshot that :class:`.Measurement` stores before a
+measurement starts is now taken with ``update="Only_invalid"`` (previously the
+equivalent of ``"Never"``), so parameters with an invalid cache are refreshed via
+a single ``get`` while parameters with a valid cache keep their cached value.
+
+The legacy ``True`` / ``None`` / ``False`` values of the ``update`` argument are
+now deprecated aliases for ``"All"`` / ``"Only_invalid"`` / ``"Never"``. They keep
+working (no runtime warning is raised), but type checkers will flag their use;
+prefer the string values instead.

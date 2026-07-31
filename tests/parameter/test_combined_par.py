@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
 
-from qcodes.parameters import ManualParameter, combine
+from qcodes.parameters import ManualParameter, Parameter, combine
 from qcodes.utils import full_class
 
 if TYPE_CHECKING:
@@ -125,6 +125,29 @@ def test_meta(parameters: list[ManualParameter]) -> None:
     for param in sweep_values.parameters:
         out[param.full_name] = param.snapshot()
     assert out == snap
+
+
+def test_snapshot_forwards_update_to_underlying_parameters() -> None:
+    calls = {"n": 0}
+
+    def getter() -> int:
+        calls["n"] += 1
+        return 5
+
+    gettable = Parameter("gettable", get_cmd=getter, set_cmd=None)
+    other = ManualParameter("other", initial_value=1)
+    combined = combine(gettable, other, name="combined")
+
+    # cache of ``gettable`` is invalid; ``"Never"`` must not call ``get``
+    assert not gettable.cache.valid
+    calls["n"] = 0
+    combined.snapshot(update="Never")
+    assert calls["n"] == 0
+
+    # ``"Only_invalid"`` refreshes the invalid cache via a single ``get``
+    calls["n"] = 0
+    combined.snapshot(update="Only_invalid")
+    assert calls["n"] == 1
 
 
 def test_mutable(parameters: list[ManualParameter]) -> None:

@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING, Any, Generic
 
 from typing_extensions import TypeVar
 
+from qcodes.metadatable import normalize_snapshot_update
+
 from .parameter import Parameter, ParameterKWArgs
 from .parameter_base import InstrumentTypeVar_co, ParameterDataTypeVar
 
@@ -13,6 +15,7 @@ if TYPE_CHECKING:
     from typing import Unpack
 
     from qcodes.instrument import InstrumentBase
+    from qcodes.metadatable import SnapshotUpdate
     from qcodes.validators.validators import Validator
 
     from .parameter_base import (
@@ -323,9 +326,10 @@ class DelegateParameter(
 
     def snapshot_base(
         self,
-        update: bool | None = True,
+        update: bool | SnapshotUpdate | None = "Only_invalid",
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
+        update = normalize_snapshot_update(update)
         snapshot = super().snapshot_base(
             update=update, params_to_skip_update=params_to_skip_update
         )

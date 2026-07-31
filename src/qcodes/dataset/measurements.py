@@ -665,17 +665,17 @@ class Runner:
             station = self.station
 
         if station is not None:
-            snapshot = {"station": station.snapshot()}
+            snapshot = {"station": station.snapshot(update="Only_invalid")}
         else:
             snapshot = {}
         if self._registered_parameters is not None:
             parameter_snapshot = {
-                param.short_name: param.snapshot()
+                param.short_name: param.snapshot(update="Never")
                 for param in self._registered_parameters
             }
             parameter_snapshot.update(
                 {
-                    param.register_name: param.snapshot()
+                    param.register_name: param.snapshot(update="Never")
                     for param in self._registered_parameters
                 }
             )

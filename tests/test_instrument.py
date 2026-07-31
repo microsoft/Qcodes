@@ -361,7 +361,7 @@ def test_meta_instrument(parabola) -> None:
     assert mock_instrument.parabola() == parabola.parabola() * 2
 
     # Check snapshots
-    snap = mock_instrument.snapshot(update=True)
+    snap = mock_instrument.snapshot(update="All")
     assert "parameters" in snap
     assert "gain" in snap["parameters"]
     assert snap["parameters"]["gain"]["value"] == 2

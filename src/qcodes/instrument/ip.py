@@ -13,6 +13,8 @@ if TYPE_CHECKING:
     from types import TracebackType
     from typing import Unpack
 
+    from qcodes.metadatable import SnapshotUpdate
+
     from .instrument_base import InstrumentBaseKWArgs
 
 log = logging.getLogger(__name__)
@@ -213,7 +215,7 @@ class IPInstrument(Instrument):
 
     def snapshot_base(
         self,
-        update: bool | None = False,
+        update: bool | SnapshotUpdate | None = "Only_invalid",
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         """
@@ -223,12 +225,12 @@ class IPInstrument(Instrument):
         supports).
 
         Args:
-            update: If True, update the state by querying the
-                instrument. If None only update if the state is known to be
-                invalid. If False, just use the latest values in memory and
-                never update.
+            update: If ``"All"``, update the state by querying the instrument.
+                If ``"Only_invalid"`` (the default) only update values whose
+                cache is invalid. If ``"Never"``, just use the latest values in
+                memory and never update.
             params_to_skip_update: List of parameter names that will be
-                skipped in update even if update is True. This is useful
+                skipped in update even if update is ``"All"``. This is useful
                 if you have parameters that are slow to update but can
                 be updated in a different way (as in the qdac). If you
                 want to skip the update of certain parameters in all

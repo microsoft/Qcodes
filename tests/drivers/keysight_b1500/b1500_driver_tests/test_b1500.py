@@ -63,7 +63,7 @@ def test_init(b1500: KeysightB1500) -> None:
 def test_snapshot_does_not_raise_warnings(b1500: KeysightB1500) -> None:
     with warnings.catch_warnings():
         warnings.simplefilter("error")
-        b1500.snapshot(update=True)
+        b1500.snapshot(update="All")
 
 
 def test_submodule_access_by_class(b1500: KeysightB1500) -> None:

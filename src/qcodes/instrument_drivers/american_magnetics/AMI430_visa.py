@@ -19,12 +19,15 @@ from qcodes.instrument import (
     VisaInstrumentKWArgs,
 )
 from qcodes.math_utils import FieldVector
+from qcodes.metadatable import normalize_snapshot_update
 from qcodes.parameters import Parameter
 from qcodes.utils.types import NumberType
 from qcodes.validators import Anything, Bool, Enum, Ints, Numbers
 
 if TYPE_CHECKING:
     from typing import Unpack
+
+    from qcodes.metadatable import SnapshotUpdate
 
 
 log = logging.getLogger(__name__)
@@ -149,13 +152,14 @@ class AMI430SwitchHeater(InstrumentChannel["AMIModel430"]):
 
     def snapshot_base(
         self,
-        update: bool | None = False,
+        update: bool | SnapshotUpdate | None = "Only_invalid",
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[str, Any]:
+        update = normalize_snapshot_update(update)
         if params_to_skip_update is None:
             params_to_skip_update = []
 
-        if update is True:
+        if update == "All":
             enabled = self.enabled.get()
         else:
             enabled = self.enabled.cache.get()

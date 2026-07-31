@@ -29,6 +29,8 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
     from typing import Unpack, assert_never
 
+    from qcodes.metadatable import SnapshotUpdate
+
 
 log = logging.getLogger(__name__)
 
@@ -566,7 +568,7 @@ class _ParameterWithStatus(Parameter):
 
     def snapshot_base(
         self,
-        update: bool | None = True,
+        update: bool | SnapshotUpdate | None = "Only_invalid",
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         snapshot = super().snapshot_base(
@@ -1019,7 +1021,7 @@ class Keithley2600Channel(InstrumentChannel["Keithley2600"]):
         self.write(f"{self.channel}.reset()")
         # remember to update all the metadata
         log.debug(f"Reset channel {self.channel}. Updating settings...")
-        self.snapshot(update=True)
+        self.snapshot(update="All")
 
     def setup_fastsweep(
         self,
@@ -1401,7 +1403,7 @@ class Keithley2600(VisaInstrument):
         self.write("reset()")
         # remember to update all the metadata
         log.debug("Reset instrument. Re-querying settings...")
-        self.snapshot(update=True)
+        self.snapshot(update="All")
 
     def ask(self, cmd: str) -> str:
         """
