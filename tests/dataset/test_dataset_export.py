@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import json
 import logging
 import os
@@ -1438,6 +1439,115 @@ def _assert_xarray_metadata_is_as_expected(
     assert xarray_ds.parent_dataset_links == links_to_str(
         qc_dataset.parent_dataset_links
     )
+
+
+def _assert_timestamp_str_matches_raw(
+    timestamp_str: object, raw_timestamp: float
+) -> None:
+    """
+    Assert that an exported timestamp string is timezone aware and describes the
+    same instant as the raw (POSIX) timestamp it was generated from.
+    """
+    assert isinstance(timestamp_str, str)
+    # parsing with an explicit ``%z`` fails unless the string carries a UTC offset
+    parsed = datetime.datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S%z")
+    assert parsed.tzinfo is not None
+    expected_offset = (
+        datetime.datetime.fromtimestamp(raw_timestamp, tz=datetime.UTC)
+        .astimezone()
+        .utcoffset()
+    )
+    assert parsed.utcoffset() == expected_offset
+    # the exported string is truncated to whole seconds
+    assert 0 <= raw_timestamp - parsed.timestamp() < 1
+
+
+def test_export_to_xarray_timestamps_are_timezone_aware(
+    mock_dataset: DataSet,
+) -> None:
+    run_timestamp_raw = mock_dataset.run_timestamp_raw
+    completed_timestamp_raw = mock_dataset.completed_timestamp_raw
+    assert run_timestamp_raw is not None
+    assert completed_timestamp_raw is not None
+
+    xr_ds = mock_dataset.to_xarray_dataset()
+
+    _assert_timestamp_str_matches_raw(xr_ds.attrs["run_timestamp"], run_timestamp_raw)
+    _assert_timestamp_str_matches_raw(
+        xr_ds.attrs["completed_timestamp"], completed_timestamp_raw
+    )
+    assert xr_ds.attrs["run_timestamp_raw"] == run_timestamp_raw
+    assert xr_ds.attrs["completed_timestamp_raw"] == completed_timestamp_raw
+
+
+def test_export_to_xarray_dataset_dict_timestamps_are_timezone_aware(
+    mock_dataset: DataSet,
+) -> None:
+    run_timestamp_raw = mock_dataset.run_timestamp_raw
+    completed_timestamp_raw = mock_dataset.completed_timestamp_raw
+    assert run_timestamp_raw is not None
+    assert completed_timestamp_raw is not None
+
+    xr_dss = mock_dataset.to_xarray_dataset_dict()
+
+    for xr_ds in xr_dss.values():
+        _assert_timestamp_str_matches_raw(
+            xr_ds.attrs["run_timestamp"], run_timestamp_raw
+        )
+        _assert_timestamp_str_matches_raw(
+            xr_ds.attrs["completed_timestamp"], completed_timestamp_raw
+        )
+
+
+def test_export_netcdf_timestamps_are_timezone_aware(
+    tmp_path_factory: TempPathFactory, mock_dataset: DataSet
+) -> None:
+    run_timestamp_raw = mock_dataset.run_timestamp_raw
+    completed_timestamp_raw = mock_dataset.completed_timestamp_raw
+    assert run_timestamp_raw is not None
+    assert completed_timestamp_raw is not None
+
+    path = str(tmp_path_factory.mktemp("export_netcdf_timestamps"))
+    mock_dataset.export(export_type="netcdf", path=path, prefix="qcodes_")
+    file_path = os.path.join(
+        path, f"qcodes_{mock_dataset.captured_run_id}_{mock_dataset.guid}.nc"
+    )
+
+    loaded_ds = xr.open_dataset(file_path)
+    _assert_timestamp_str_matches_raw(
+        loaded_ds.attrs["run_timestamp"], run_timestamp_raw
+    )
+    _assert_timestamp_str_matches_raw(
+        loaded_ds.attrs["completed_timestamp"], completed_timestamp_raw
+    )
+
+    reloaded_dataset = load_from_netcdf(file_path)
+    assert reloaded_dataset.run_timestamp_raw == run_timestamp_raw
+    assert reloaded_dataset.completed_timestamp_raw == completed_timestamp_raw
+    assert reloaded_dataset.run_timestamp() == mock_dataset.run_timestamp()
+    assert reloaded_dataset.completed_timestamp() == mock_dataset.completed_timestamp()
+
+
+def test_export_to_xarray_timestamps_of_incomplete_dataset(
+    experiment: Experiment,
+) -> None:
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    idps = InterDependencies_(dependencies={yparam: (xparam,)})
+    dataset.set_interdependencies(idps)
+    dataset.mark_started()
+    dataset.add_results([{"x": 0, "y": 1}])
+
+    run_timestamp_raw = dataset.run_timestamp_raw
+    assert run_timestamp_raw is not None
+    assert dataset.completed_timestamp_raw is None
+
+    xr_ds = dataset.to_xarray_dataset()
+
+    _assert_timestamp_str_matches_raw(xr_ds.attrs["run_timestamp"], run_timestamp_raw)
+    assert xr_ds.attrs["completed_timestamp"] == ""
+    assert xr_ds.attrs["completed_timestamp_raw"] == -1
 
 
 def test_multi_index_options_grid(mock_dataset_grid: DataSet) -> None:

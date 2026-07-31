@@ -79,7 +79,7 @@ def _format_timestamp(ts: float | None) -> tuple[str, str]:
     if ts is None or ts == 0:
         return "", ""
     try:
-        dt = datetime.datetime.fromtimestamp(ts)
+        dt = datetime.datetime.fromtimestamp(ts, tz=datetime.UTC).astimezone()
     except (OSError, ValueError, OverflowError):
         return "", ""
     return dt.strftime("%Y-%m-%d"), dt.strftime("%H:%M:%S")

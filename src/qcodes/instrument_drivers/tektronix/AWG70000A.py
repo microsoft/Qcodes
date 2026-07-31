@@ -923,17 +923,10 @@ class TektronixAWG70000Base(VisaInstrument):
             raise ValueError("num_samples must be at least 2400.")
 
         # form the timestamp string
-        timezone = time.timezone
-        tz_m, _ = divmod(timezone, 60)  # returns (minutes, seconds)
-        tz_h, tz_m = divmod(tz_m, 60)
-        if np.sign(tz_h) == -1:
-            signstr = "-"
-            tz_h *= -1
-        else:
-            signstr = "+"
-        timestr = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        timestr += signstr
-        timestr += f"{tz_h:02.0f}:{tz_m:02.0f}"
+        now = dt.datetime.now(dt.UTC).astimezone()
+        tz_str = now.strftime("%z")  # e.g. "+0100"
+        timestr = now.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        timestr += tz_str[:3] + ":" + tz_str[3:]  # "+01:00"
 
         hdr = ET.Element(
             "DataFile", attrib={"offset": "0" * offsetdigits, "version": "0.1"}
@@ -1485,17 +1478,10 @@ class TektronixAWG70000Base(VisaInstrument):
         N = lstlens[0]
 
         # form the timestamp string
-        timezone = time.timezone
-        tz_m, _ = divmod(timezone, 60)
-        tz_h, tz_m = divmod(tz_m, 60)
-        if np.sign(tz_h) == -1:
-            signstr = "-"
-            tz_h *= -1
-        else:
-            signstr = "+"
-        timestr = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        timestr += signstr
-        timestr += f"{tz_h:02.0f}:{tz_m:02.0f}"
+        now = dt.datetime.now(dt.UTC).astimezone()
+        tz_str = now.strftime("%z")  # e.g. "+0100"
+        timestr = now.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        timestr += tz_str[:3] + ":" + tz_str[3:]  # "+01:00"
 
         datafile = ET.Element(
             "DataFile", attrib={"offset": "0" * offsetdigits, "version": "0.1"}

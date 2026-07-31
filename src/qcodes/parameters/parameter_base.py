@@ -770,7 +770,7 @@ class ParameterBase(
 
         if isinstance(state["ts"], datetime):
             dttime: datetime = state["ts"]
-            state["ts"] = dttime.strftime("%Y-%m-%d %H:%M:%S")
+            state["ts"] = dttime.isoformat(sep=" ", timespec="seconds")
 
         for attr in set(self._meta_attrs):
             if attr == "instrument" and self._instrument is not None:
