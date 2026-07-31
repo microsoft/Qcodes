@@ -1522,6 +1522,9 @@ class DataSet(BaseDataSet):
                     xarray_to_h5netcdf_with_complex_numbers(
                         self.to_xarray_dataset(start=i + 1, end=i + 1),
                         temp_path / file_name_template.format(i),
+                        # these files are temporary and immediately recombined
+                        # into the final file so compressing them only costs time
+                        compression_level=0,
                     )
                 files = tuple(temp_path.glob("*.nc"))
                 data = xr.open_mfdataset(files)

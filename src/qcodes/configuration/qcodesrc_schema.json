@@ -373,6 +373,13 @@
                     "default": 1000,
                     "description": "Estimated size in MB above which the dataset will be exported in chuncks and recombined."
                 },
+                "export_netcdf_compression_level": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9,
+                    "default": 4,
+                    "description": "Deflate (gzip) compression level used when exporting datasets to netcdf. Set to 0 to write uncompressed files. Higher levels are slower with almost no additional size reduction, so the default of 4 is recommended."
+                },
                 "load_from_exported_file": {
                     "description": "Flag to load metadata and raw data from exported file of type specified in export_type. If set to true, qcodes will try to import from file first, if it exists.",
                     "type": "boolean",
