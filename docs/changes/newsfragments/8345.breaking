@@ -13,3 +13,14 @@ the resulting string is no longer ambiguous. This also applies to the
 a dataset to NetCDF or xarray.
 
 Pass an explicit ``fmt`` argument to restore the previous behaviour.
+
+Parameter cache timestamps are now timezone aware. ``ParameterBase.cache.timestamp``
+(and therefore ``Parameter.get_latest.get_timestamp()``) returns a
+``datetime`` with ``tzinfo`` set to the local timezone rather than a naive
+``datetime``. Code that compares these timestamps to naive ``datetime`` objects
+will raise ``TypeError`` and must be updated to use timezone aware datetimes.
+
+Consequently the ``"ts"`` field of a parameter snapshot changed from
+``"%Y-%m-%d %H:%M:%S"`` to ISO 8601 format including the UTC offset, e.g.
+``"2026-07-31 10:27:25+02:00"``. Snapshots can be parsed with
+``datetime.datetime.fromisoformat``.
