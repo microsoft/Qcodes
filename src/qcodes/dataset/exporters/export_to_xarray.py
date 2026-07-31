@@ -357,11 +357,10 @@ def load_to_xarray_dataset(
         dataset, data, use_multi_index=use_multi_index
     )
 
-    # When two data variables do not share the same setpoints, one may be
+    # When two data variables do not share the same full set of setpoints, one may be
     # exported using a pandas MultiIndex (non-grid data) while another uses a
-    # standalone dimension for a shared setpoint coordinate.  xr.merge raises
-    # an AlignmentError in that case because the same coordinate name has
-    # different Index objects in the two sub-datasets.  Resolve this by
+    # standalone dimension for a shared setpoint coordinate. xr.merge raises
+    # an AlignmentError in that case because the shared coordinate name has
     # unstacking the multi_index into proper independent dimensions (accepting
     # NaN for missing grid points) so that the shared coordinate becomes a
     # plain 1-D dimension in all sub-datasets.

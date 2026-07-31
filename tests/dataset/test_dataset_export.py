@@ -2444,11 +2444,11 @@ def test_export_to_xarray_dataset_different_setpoints(
     """
     Regression test for https://github.com/microsoft/Qcodes/issues/8232
 
-    Export to xarray should succeed when two data variables do not share the
-    same setpoints.  Specifically, this covers the case where one parameter is
+    Export to xarray should succeed when two data variables do not share the same
+    full set of setpoints. Specifically, this covers the case where one parameter is
     an array-type with setpoints (f_stop, freq) that are NOT on a regular grid
     (so the multi_index path is used), while a second parameter has only the
-    scalar setpoint (f_stop,).  Previously this raised an AlignmentError
+    scalar setpoint (f_stop,). Previously this raised an AlignmentError
     because xr.merge could not reconcile the different Index objects for the
     shared 'f_stop' coordinate.
     """
