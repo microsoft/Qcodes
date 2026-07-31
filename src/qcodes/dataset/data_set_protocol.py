@@ -149,12 +149,12 @@ class DataSetProtocol(Protocol):
     @property
     def sample_name(self) -> str: ...
 
-    def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> str | None: ...
+    def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S%z") -> str | None: ...
 
     @property
     def run_timestamp_raw(self) -> float | None: ...
 
-    def completed_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> str | None: ...
+    def completed_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S%z") -> str | None: ...
 
     @property
     def completed_timestamp_raw(self) -> float | None: ...
@@ -505,7 +505,7 @@ class BaseDataSet(DataSetProtocol, Protocol):
             new_data = param_data.ravel()
         return new_data
 
-    def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> str | None:
+    def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S%z") -> str | None:
         """
         Returns run timestamp in a human-readable format
 
@@ -513,18 +513,30 @@ class BaseDataSet(DataSetProtocol, Protocol):
         started. If the run has not yet been started, this function returns
         None.
 
-        Consult with :func:`time.strftime` for information about the format.
+        The timestamp is rendered in the local timezone of the machine reading
+        the dataset since the raw timestamp stored in the dataset is a POSIX
+        timestamp which does not capture the timezone of the measurement. The
+        default format therefore includes the UTC offset.
+
+        Consult with :meth:`datetime.datetime.strftime` for information about
+        the format.
         """
         return raw_time_to_str_time(self.run_timestamp_raw, fmt)
 
-    def completed_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> str | None:
+    def completed_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S%z") -> str | None:
         """
         Returns timestamp when measurement run was completed
         in a human-readable format
 
         If the run (or the dataset) is not completed, then returns None.
 
-        Consult with ``time.strftime`` for information about the format.
+        The timestamp is rendered in the local timezone of the machine reading
+        the dataset since the raw timestamp stored in the dataset is a POSIX
+        timestamp which does not capture the timezone of the measurement. The
+        default format therefore includes the UTC offset.
+
+        Consult with :meth:`datetime.datetime.strftime` for information about
+        the format.
         """
         return raw_time_to_str_time(self.completed_timestamp_raw, fmt)
 

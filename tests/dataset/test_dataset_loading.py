@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import time
 from math import floor
 
@@ -175,7 +176,9 @@ def test_run_timestamp_with_default_format() -> None:
     run_ts = ds.run_timestamp()
     assert run_ts is not None
     # Note that here we also test the default format of `run_timestamp`
-    actual_run_timestamp_raw = time.mktime(time.strptime(run_ts, "%Y-%m-%d %H:%M:%S"))
+    actual_run_timestamp_raw = datetime.datetime.strptime(
+        run_ts, "%Y-%m-%d %H:%M:%S%z"
+    ).timestamp()
 
     # Note that because the default format precision is 1 second, we add this
     # second to the right side of the comparison
@@ -231,9 +234,9 @@ def test_completed_timestamp_with_default_format() -> None:
     assert completed_ts is not None
 
     # Note that here we also test the default format of `completed_timestamp`
-    actual_completed_timestamp_raw = time.mktime(
-        time.strptime(completed_ts, "%Y-%m-%d %H:%M:%S")
-    )
+    actual_completed_timestamp_raw = datetime.datetime.strptime(
+        completed_ts, "%Y-%m-%d %H:%M:%S%z"
+    ).timestamp()
 
     # Note that because the default format precision is 1 second, we add this
     # second to the right side of the comparison

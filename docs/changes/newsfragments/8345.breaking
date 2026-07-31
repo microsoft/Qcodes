@@ -1,0 +1,15 @@
+The default format of ``DataSetProtocol.run_timestamp``,
+``DataSetProtocol.completed_timestamp`` and
+``qcodes.dataset.sqlite.queries.raw_time_to_str_time`` changed from
+``"%Y-%m-%d %H:%M:%S"`` to ``"%Y-%m-%d %H:%M:%S%z"``, i.e. the rendered
+timestamps now include the UTC offset of the local timezone, e.g.
+``"2026-07-31 10:27:25+0200"``.
+
+Timestamps are stored in the QCoDeS database as POSIX timestamps, which do not
+capture the timezone in which the measurement was performed. They are therefore
+still rendered in the local timezone of the machine reading the dataset, but
+the resulting string is no longer ambiguous. This also applies to the
+``run_timestamp`` and ``completed_timestamp`` attributes written when exporting
+a dataset to NetCDF or xarray.
+
+Pass an explicit ``fmt`` argument to restore the previous behaviour.

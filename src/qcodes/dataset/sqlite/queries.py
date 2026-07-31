@@ -5,6 +5,7 @@ specific to the domain of QCoDeS database.
 
 from __future__ import annotations
 
+import datetime
 import logging
 import sqlite3
 import time
@@ -2288,12 +2289,33 @@ def get_raw_run_attributes(
 
 
 def raw_time_to_str_time(
-    raw_timestamp: float | None, fmt: str = "%Y-%m-%d %H:%M:%S"
+    raw_timestamp: float | None, fmt: str = "%Y-%m-%d %H:%M:%S%z"
 ) -> str | None:
+    """
+    Convert a raw (POSIX) timestamp into a human readable string.
+
+    The timestamp is rendered in the local timezone of the machine that reads
+    the dataset. Note that raw timestamps stored in the database are POSIX
+    timestamps and therefore do not capture the timezone in which the
+    measurement was performed. The default format therefore includes the UTC
+    offset of the local timezone to make the resulting string unambiguous.
+
+    Args:
+        raw_timestamp: POSIX timestamp to convert or None.
+        fmt: Format to render the timestamp in.
+            Consult :meth:`datetime.datetime.strftime` for the format options.
+
+    Returns:
+        The formatted timestamp or None if the raw timestamp was None.
+
+    """
     if raw_timestamp is None:
         return None
     else:
-        return time.strftime(fmt, time.localtime(raw_timestamp))
+        local_time = datetime.datetime.fromtimestamp(
+            raw_timestamp, tz=datetime.UTC
+        ).astimezone()
+        return local_time.strftime(fmt)
 
 
 def _check_if_table_found(conn: AtomicConnection, table_name: str) -> bool:
