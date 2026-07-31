@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import numpy.typing as npt
 
-from qcodes.metadatable import Metadatable
+from qcodes.metadatable import Metadatable, normalize_snapshot_update
 from qcodes.utils import full_class
 
 if TYPE_CHECKING:
@@ -219,7 +219,8 @@ class CombinedParameter(Metadatable):
         meta_data["label"] = param.label  # type: ignore[attr-defined]
         meta_data["full_name"] = param.full_name  # type: ignore[attr-defined]
         meta_data["aggregator"] = repr(getattr(self, "f", None))
+        update = normalize_snapshot_update(update)
         for parameter in self.parameters:
-            meta_data[str(parameter)] = parameter.snapshot()
+            meta_data[str(parameter)] = parameter.snapshot(update=update)
 
         return meta_data
