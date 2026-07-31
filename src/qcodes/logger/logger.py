@@ -163,7 +163,7 @@ def generate_log_file_name() -> str:
     """
 
     pid = str(os.getpid())
-    dt_str = datetime.now(UTC).strftime("%y%m%d")
+    dt_str = datetime.now(UTC).astimezone().strftime("%y%m%d")
     python_log_name = f"{dt_str}-{pid}-{PYTHON_LOG_NAME}"
     return python_log_name
 

@@ -1266,7 +1266,9 @@ class KeysightInfiniium(VisaInstrument):
         if isinstance(path, Path):
             path = str(path)
 
-        time_str = datetime.now(UTC).strftime(time_fmt) if with_time else ""
+        time_str = (
+            datetime.now(UTC).astimezone().strftime(time_fmt) if with_time else ""
+        )
         img_name, img_type = splitext(path)
         img_path = (
             f"{img_name}{divider if with_time else ''}{time_str}{img_type.lower()}"
