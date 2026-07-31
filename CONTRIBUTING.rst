@@ -244,6 +244,14 @@ Coding Style
 -  Use `PEP8 <http://legacy.python.org/dev/peps/pep-0008/>`__ style. Not
    only is this style good for readability in an absolute sense, but
    consistent styling helps us all read each other's code.
+-  This includes module names: all modules, including instrument driver
+   modules, should be named using lower case ``snake_case``, e.g.
+   ``weinschel_8320.py`` and not ``Weinschel_8320.py``. Vendor and model
+   capitalization belongs in the class name (``Weinschel8320``), not in the
+   module name. This is enforced by the ruff rule ``N999``
+   (``invalid-module-name``). A number of existing driver modules predate this
+   rule and are exempted in ``pyproject.toml`` because renaming them would
+   break user code; new modules should not be added to that exemption list.
 -  There is a command-line tool (``pip install pycodestyle``) you can run after
    writing code to validate its style.
 -  A lot of editors have plugins that will check this for you
