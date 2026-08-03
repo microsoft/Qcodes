@@ -150,9 +150,12 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
 
     def __del__(self) -> None:
         """Close the instrument and remove its instance record."""
+        # `__del__` must never raise and may run during interpreter shutdown
+        # where other modules are already torn down, so this deliberately
+        # swallows everything without logging.
         try:
             self.close()
-        except BaseException:  # noqa: BLE001 __del__ must never raise
+        except BaseException:  # noqa: BLE001, S110
             pass
 
     def close(self) -> None:

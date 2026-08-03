@@ -266,8 +266,8 @@ class Station(Metadatable, DelegateAttributes):
         try:
             if not (isinstance(component, Parameter) and component.snapshot_exclude):
                 component.snapshot(update="All" if update_snapshot else "Never")
-        except Exception:  # noqa: BLE001 a failing snapshot must not prevent adding the component
-            pass
+        except Exception:
+            log.exception("Failed to snapshot component while adding it to the station")
         if name is None:
             name = getattr(component, "name", f"component{len(self.components)}")
         namestr = str(name)

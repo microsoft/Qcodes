@@ -3,7 +3,7 @@ import sqlite3
 import threading
 import time
 from collections import Counter
-from contextlib import nullcontext
+from contextlib import nullcontext, suppress
 from typing import TYPE_CHECKING, Any
 
 import pytest
@@ -68,10 +68,8 @@ def cleanup_db_connections():
     ]
 
     for conn in open_connections:
-        try:
+        with suppress(Exception):
             conn.close()
-        except Exception:  # noqa: BLE001 best effort cleanup, never fail the test
-            pass
 
     gc.collect()
 
