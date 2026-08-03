@@ -119,9 +119,9 @@ def strip_attrs(obj: object, whitelist: "Sequence[str]" = ()) -> None:
         for key in lst:
             try:
                 del obj.__dict__[key]
-            except Exception:
+            except Exception:  # noqa: BLE001 best effort cleanup, never raise
                 pass
-    except Exception:
+    except Exception:  # noqa: BLE001 best effort cleanup, never raise
         pass
 
 

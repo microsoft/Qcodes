@@ -152,7 +152,7 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         """Close the instrument and remove its instance record."""
         try:
             self.close()
-        except BaseException:
+        except BaseException:  # noqa: BLE001 __del__ must never raise
             pass
 
     def close(self) -> None:

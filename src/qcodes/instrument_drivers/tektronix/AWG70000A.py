@@ -1087,7 +1087,7 @@ class TektronixAWG70000Base(VisaInstrument):
         try:
             fs_schema.validate(seq)
         except Exception as e:
-            raise InvalidForgedSequenceError(e)
+            raise InvalidForgedSequenceError(e) from e
 
         chan_list: list[str | int] = []
         for pos1 in seq:

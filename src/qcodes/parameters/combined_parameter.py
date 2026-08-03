@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
     from .parameter import Parameter
 
-_LOG = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
 def combine(
@@ -97,7 +97,7 @@ class CombinedParameter(Metadatable):
         self.parameter.label = label  # type: ignore[attr-defined]
 
         if units is not None:
-            _LOG.warning(
+            _LOGGER.warning(
                 f"`units` is deprecated for the "
                 f"`CombinedParameter` class, use `unit` instead. {self!r}"
             )

@@ -1,0 +1,4 @@
+Enable the ruff rule ``BLE001`` (``blind-except``). Places where QCoDeS intentionally catches a
+broad exception are now explicitly marked, and several catch-all handlers now log the full traceback
+using ``Logger.exception`` rather than only the exception message. The private module level loggers
+named ``_LOG`` have been renamed to ``_LOGGER``.

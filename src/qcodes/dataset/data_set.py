@@ -1452,11 +1452,11 @@ class DataSet(BaseDataSet):
                 else:
                     log.debug("Successfully wrote result to disk")
                 self._results = []
-            except Exception as e:
+            except Exception:
                 if writer_status.write_in_background:
-                    log.warning(f"Could not enqueue result; {e}")
+                    log.exception("Could not enqueue result")
                 else:
-                    log.warning(f"Could not commit to database; {e}")
+                    log.exception("Could not commit to database")
         else:
             log.debug("No results to flush")
 

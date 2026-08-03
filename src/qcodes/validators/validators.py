@@ -758,7 +758,7 @@ class MultiType(Validator[Any]):
                 v.validate(value, context)
                 if self._combiner == "OR":
                     return
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 validators may raise any exception type
                 # collect the args from all validators so you can see why
                 # each one that was tested failed
                 args = args + list(e.args)
