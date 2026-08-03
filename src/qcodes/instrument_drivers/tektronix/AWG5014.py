@@ -1865,9 +1865,8 @@ class TektronixAWG5014(VisaInstrument):
         try:
             self.ask("*OPC?")
         # makes the awg read again if there is a timeout
-        except Exception as e:
-            log.warning(e)
-            log.warning("AWG is not ready")
+        except Exception:
+            log.exception("AWG is not ready")
             self.visa_handle.read()
         return True
 

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Optional
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
-_LOG = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
 class RespondingThread[T](threading.Thread):
@@ -45,10 +45,10 @@ class RespondingThread[T](threading.Thread):
         self._output: T | None = None
 
     def run(self) -> None:
-        _LOG.debug(f"Executing {self._target} on thread: {threading.get_ident()}")
+        _LOGGER.debug(f"Executing {self._target} on thread: {threading.get_ident()}")
         try:
             self._output = self._target(*self._args, **self._kwargs)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 re-raised in the calling thread
             self._exception = e
 
     def output(self, timeout: float | None = None) -> T | None:

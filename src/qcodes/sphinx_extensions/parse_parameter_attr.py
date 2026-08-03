@@ -118,7 +118,7 @@ def eval_params_from_code(code: str, classname: str) -> dict[str, ParameterProxy
         try:
             name_code = extract_code_as_repr(stm)
         except Exception:
-            LOGGER.warning(f"Error while trying to parse attribute from {classname}")
+            LOGGER.exception(f"Error while trying to parse attribute from {classname}")
             continue
         if name_code is not None:
             name, proxy_param = name_code

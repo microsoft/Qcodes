@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
     from qcodes.dataset.data_set_protocol import DataSetProtocol, ParameterData
 
-_LOG = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
 def _calculate_index_shape(idx: pd.Index | pd.MultiIndex) -> dict[Hashable, int]:
@@ -108,7 +108,7 @@ def _add_inferred_data_vars(
         if flat.shape[0] == expected_size:
             xr_dataset[inf.name] = (dims, flat.reshape(expected_shape))
         else:
-            _LOG.warning(
+            _LOGGER.warning(
                 "Cannot add inferred parameter '%s' to xarray dataset for '%s' "
                 "(run_id=%s): data size %d does not match the dataset "
                 "dimensions %s (size %d). This is likely a user error in the "
@@ -145,10 +145,10 @@ def _load_to_xarray_dataset_dict_no_metadata(
         )
 
         if shape_is_consistent and use_multi_index != "always":
-            _LOG.info("Exporting %s to xarray using direct method", name)
+            _LOGGER.info("Exporting %s to xarray using direct method", name)
             xr_dataset_dict[name] = _xarray_data_set_direct(dataset, name, sub_dict)
         else:
-            _LOG.info("Exporting %s to xarray via pandas index", name)
+            _LOGGER.info("Exporting %s to xarray via pandas index", name)
             index = _generate_pandas_index(
                 sub_dict, dataset.description.interdeps, top_level_param_name=name
             )
@@ -217,7 +217,7 @@ def _xarray_data_set_from_pandas_multi_index(
 
     if export_with_multi_index:
         assert isinstance(df.index, pd.MultiIndex)
-        _LOG.info(
+        _LOGGER.info(
             "Exporting %s to xarray using a MultiIndex since on_grid=%s, shape=%s, use_multi_index=%s",
             name,
             on_grid,
@@ -476,7 +476,7 @@ def xarray_to_h5netcdf_with_complex_numbers(
             from tqdm.dask import TqdmCallback
 
             with TqdmCallback(desc="Combining files"):
-                _LOG.info(
+                _LOGGER.info(
                     "Writing netcdf file using Dask delayed writer.",
                     extra={"file_name": str(file_path)},
                 )
