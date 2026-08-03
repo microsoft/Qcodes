@@ -1362,7 +1362,7 @@ class MockCustomChannel(InstrumentChannel):
         elif isinstance(channel, InstrumentChannel):
             self._dac_channel = channel
         else:
-            raise ValueError('Unknown input type for "channel".')
+            raise ValueError('Unknown input type for "channel".')  # noqa: TRY004
 
         super().__init__(parent, name, **kwargs)
 

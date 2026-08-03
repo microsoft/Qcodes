@@ -204,7 +204,7 @@ class DelegateInstrument(InstrumentBase):
             elif isinstance(paths, abc.Sequence):
                 path_list = paths
             else:
-                raise ValueError(
+                raise ValueError(  # noqa: TRY004
                     "Parameter paths should be either a string or Sequence of \
                         strings."
                 )

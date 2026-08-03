@@ -63,7 +63,7 @@ class ParameterWithSetpoints(
         kwargs.setdefault("snapshot_value", False)
         vals = kwargs.get("vals")
         if not isinstance(vals, Arrays):
-            raise ValueError(
+            raise ValueError(  # noqa: TRY004
                 f"A ParameterWithSetpoints must have an Arrays "
                 f"validator got {type(vals)}"
             )
@@ -114,7 +114,7 @@ class ParameterWithSetpoints(
         """
 
         if not isinstance(self.vals, Arrays):
-            raise ValueError(
+            raise ValueError(  # noqa: TRY004
                 f"Can only validate shapes for parameters "
                 f"with Arrays validator. {self.name} does "
                 f"not have an Arrays validator."
@@ -123,7 +123,7 @@ class ParameterWithSetpoints(
         setpoints_shape_list: list[int | Callable[[], int] | None] = []
         for sp in self.setpoints:
             if not isinstance(sp.vals, Arrays):
-                raise ValueError(
+                raise ValueError(  # noqa: TRY004
                     f"Can only validate shapes for parameters "
                     f"with Arrays validator. {sp.name} is "
                     f"a setpoint vector but does not have an "

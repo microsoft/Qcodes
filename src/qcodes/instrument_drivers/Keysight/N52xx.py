@@ -686,7 +686,7 @@ class KeysightPNABase(VisaInstrument):
         trace1 = self.traces[0]
         params = trace1.parameters
         if not isinstance(params, dict):
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY004
                 f"Expected trace.parameters to be a dict got {type(params)}"
             )
         for param in params.values():
