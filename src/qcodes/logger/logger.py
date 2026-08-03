@@ -129,7 +129,7 @@ def get_level_name(level: str | int) -> str:
     elif isinstance(level, int):
         return logging.getLevelName(level)
     else:
-        raise RuntimeError(
+        raise RuntimeError(  # noqa: TRY004
             "get_level_name: "
             f"Cannot to convert level {level} of type "
             f"{type(level)} to logging level name. Need "
@@ -148,7 +148,7 @@ def get_level_code(level: str | int) -> int:
     elif isinstance(level, str):
         return logging.getLevelNamesMapping()[level]
     else:
-        raise RuntimeError(
+        raise RuntimeError(  # noqa: TRY004
             "get_level_code: "
             f"Cannot to convert level {level} of type "
             f"{type(level)} to logging level code. Need "

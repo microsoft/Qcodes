@@ -93,7 +93,7 @@ def apply_color_scale_limits(
     # browse the input data and make sure that `data_lim` and `new_lim` are
     # available
     if not isinstance(colorbar.mappable, matplotlib.collections.QuadMesh):
-        raise RuntimeError(
+        raise RuntimeError(  # noqa: TRY004
             "Can only scale mesh data, but received "
             f'"{type(colorbar.mappable)}" instead'
         )

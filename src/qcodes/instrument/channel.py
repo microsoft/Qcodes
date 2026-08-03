@@ -162,13 +162,13 @@ class ChannelTuple[InstrumentModuleType: "InstrumentModule"](
         if not isinstance(chan_type, type) or not issubclass(
             chan_type, InstrumentModule
         ):
-            raise ValueError(
+            raise ValueError(  # noqa: TRY004
                 "ChannelTuple can only hold instances of type InstrumentModule"
             )
         if not isinstance(multichan_paramclass, type) or not issubclass(
             multichan_paramclass, MultiChannelInstrumentParameter
         ):
-            raise ValueError(
+            raise ValueError(  # noqa: TRY004
                 "multichan_paramclass must be a (subclass of) "
                 "MultiChannelInstrumentParameter"
             )
@@ -896,7 +896,7 @@ class ChannelTupleValidator(Validator[InstrumentChannel]):
     def __init__(self, channel_list: ChannelTuple) -> None:
         # Save the base parameter list
         if not isinstance(channel_list, ChannelTuple):
-            raise ValueError(
+            raise ValueError(  # noqa: TRY004
                 "channel_list must be a ChannelTuple "
                 "object containing the "
                 "channels that should be validated"

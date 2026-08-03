@@ -63,7 +63,7 @@ def atomic(conn: AtomicConnection) -> Generator[AtomicConnection, None, None]:
     """
     with DelayedKeyboardInterrupt(context={"reason": "sqlite atomic operation"}):
         if not isinstance(conn, AtomicConnection):
-            raise ValueError(
+            raise ValueError(  # noqa: TRY004
                 "atomic context manager only accepts "
                 "AtomicConnection database connection objects."
             )

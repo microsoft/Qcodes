@@ -36,7 +36,7 @@ class RunDescriber:  # noqa: PLW1641
         self, interdeps: InterDependencies_, shapes: Shapes | None = None
     ) -> None:
         if not isinstance(interdeps, InterDependencies_):
-            raise ValueError(
+            raise ValueError(  # noqa: TRY004
                 "The interdeps arg must be of type: "
                 "InterDependencies_. "
                 f"Got {type(interdeps)}."

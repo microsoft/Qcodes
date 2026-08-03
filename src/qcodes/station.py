@@ -716,7 +716,7 @@ class Station(Metadatable, DelegateAttributes):
                 else resolve_instrument_identifier(instr, ".".join(parts[:-1]))
             )
             if isinstance(local_instr, ChannelTuple):
-                raise RuntimeError("A parameter cannot be added to an ChannelTuple")
+                raise RuntimeError("A parameter cannot be added to an ChannelTuple")  # noqa: TRY004
             add_parameter_from_dict(local_instr, parts[-1], options)
         self.add_component(instr, update_snapshot=update_snapshot)
         update_monitor()

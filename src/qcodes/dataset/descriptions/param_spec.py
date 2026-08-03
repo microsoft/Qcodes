@@ -62,7 +62,7 @@ class ParamSpec(_ParamSpecBase):
         depends_on = [] if depends_on is None else depends_on
 
         if isinstance(inferred_from, str):
-            raise ValueError(
+            raise ValueError(  # noqa: TRY004
                 f"ParamSpec {self.name} got "
                 f"string {inferred_from} as inferred_from. "
                 f"It needs a "
@@ -73,7 +73,7 @@ class ParamSpec(_ParamSpecBase):
         )
 
         if isinstance(depends_on, str):
-            raise ValueError(
+            raise ValueError(  # noqa: TRY004
                 f"ParamSpec {self.name} got "
                 f"string {depends_on} as depends_on. It needs a "
                 f"Sequence of ParamSpecs or strings"

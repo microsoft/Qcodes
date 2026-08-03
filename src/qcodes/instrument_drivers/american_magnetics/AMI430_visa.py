@@ -670,14 +670,14 @@ class AMIModel4303D(Instrument):
         super().__init__(name, **kwargs)
 
         if not isinstance(name, str):
-            raise ValueError("Name should be a string")
+            raise ValueError("Name should be a string")  # noqa: TRY004
 
         for instrument, arg_name in zip(
             (instrument_x, instrument_y, instrument_z),
             ("instrument_x", "instrument_y", "instrument_z"),
         ):
             if not isinstance(instrument, (AMIModel430, str)):
-                raise ValueError(
+                raise ValueError(  # noqa: TRY004
                     f"Instruments need to be instances of the class AMIModel430 "
                     f"or be valid names of already instantiated instances "
                     f"of AMIModel430 class; {arg_name} argument is "
@@ -717,7 +717,7 @@ class AMIModel4303D(Instrument):
             # Conversion to float makes related driver logic simpler
             self._field_limit = float(field_limit)
         else:
-            raise ValueError(
+            raise ValueError(  # noqa: TRY004
                 "field limit should either be a number or "
                 "an iterable of callable field limit functions."
             )
