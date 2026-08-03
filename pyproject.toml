@@ -257,8 +257,14 @@ extend-select = [
 # PLxxxx are pylint lints that generate a fair amount of warnings
 # it may be worth fixing some or these in the future
 # PYI036 disable until https://github.com/astral-sh/ruff/issues/9794 is fixed
-ignore = ["E501", "G004", "PLR2004", "PLR0913", "PLR0911", "PLR0912", "PLR0915", "PLW0602", "PLW0603", "PLW2901", "PYI036", "PLR0917",
- "TRY004"] # new defaults of 0.16.0 that we don't want to enable yet
+ignore = ["E501", "G004", "PLR2004", "PLR0913", "PLR0911", "PLR0912", "PLR0915", "PLW0602", "PLW0603", "PLW2901", "PYI036", "PLR0917"]
+
+# TRY004 (type-check-without-type-error) is enabled but a number of pre-existing
+# type checks raise ValueError or RuntimeError rather than TypeError. Since
+# TypeError is not a subclass of those, changing them would break user code that
+# catches the current exception, so those call sites carry an explicit
+# `# noqa: TRY004` instead. New code should raise TypeError for an invalid type.
+# RUF100 will flag the noqa as unused if such a call site is ever changed.
 
 # we want to explicitly use the micro symbol
 # not the greek letter

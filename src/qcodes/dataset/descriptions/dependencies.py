@@ -107,7 +107,7 @@ class InterDependencies_:  # noqa: PLW1641
     def add_standalones(self, standalones: tuple[ParamSpecBase, ...]) -> None:
         for ps in standalones:
             if not isinstance(ps, ParamSpecBase):
-                raise ValueError("Invalid standalones") from TypeError(
+                raise ValueError("Invalid standalones") from TypeError(  # noqa: TRY004
                     "Standalones must be a sequence of ParamSpecs"
                 )
         self.add_paramspecs(list(standalones))

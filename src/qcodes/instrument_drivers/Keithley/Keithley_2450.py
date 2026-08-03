@@ -703,7 +703,7 @@ class Keithley2450(VisaInstrument):
         sense_function = self.sense_function.inverse_val_mapping[value]
         sense = self.submodules[f"_sense_{sense_function}"]
         if not isinstance(sense, Keithley2450Sense):
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY004
                 f"Expect Sense Module to be of type Keithley2450Sense got {type(sense)}"
             )
         sense.sweep.setpoints = (self.source.sweep_axis,)
@@ -736,7 +736,7 @@ class Keithley2450(VisaInstrument):
         )
         self.sense.sweep.setpoints = (source.sweep_axis,)
         if not isinstance(source, Keithley2450Source):
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY004
                 f"Expect Source Module to be of type "
                 f"Keithley2450Source got {type(source)}"
             )

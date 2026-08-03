@@ -917,7 +917,7 @@ class TektronixAWG70000Base(VisaInstrument):
         offsetdigits = 9
 
         if not isinstance(num_samples, int):
-            raise ValueError("num_samples must be of type int.")
+            raise ValueError("num_samples must be of type int.")  # noqa: TRY004
 
         if num_samples < 2400:
             raise ValueError("num_samples must be at least 2400.")

@@ -252,6 +252,12 @@ Coding Style
    (``invalid-module-name``). A number of existing driver modules predate this
    rule and are exempted in ``pyproject.toml`` because renaming them would
    break user code; new modules should not be added to that exemption list.
+-  Raise a specific exception rather than a bare ``Exception``, and raise
+   ``TypeError`` when rejecting a value because of its type. These are enforced
+   by the ruff rules ``TRY002`` and ``TRY004``. Some pre-existing type checks
+   raise ``ValueError`` or ``RuntimeError`` instead; those carry an explicit
+   ``# noqa: TRY004`` because ``TypeError`` is not a subclass of either, so
+   changing them would break user code that catches the current exception.
 -  There is a command-line tool (``pip install pycodestyle``) you can run after
    writing code to validate its style.
 -  A lot of editors have plugins that will check this for you
