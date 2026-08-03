@@ -1,0 +1,4 @@
+Several catch-all exception handlers have been narrowed to the specific exceptions that the guarded
+code can actually raise. Notably reading a screenshot from the Keysight Infiniium, aborting an
+acquisition on the SignalHound USB SA124B, waiting for the Tektronix AWG5014 to become ready and
+querying pip in :func:`qcodes.utils.is_qcodes_installed_editably` no longer swallow unrelated errors.

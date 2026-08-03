@@ -829,7 +829,7 @@ def update_config_schema(
                 ms = inspect.getmembers(
                     importlib.import_module(s.name), inspect.isclass
                 )
-            except Exception:  # noqa: BLE001 an uninspectable submodule should not abort the scan
+            except Exception:  # noqa: BLE001 importing an arbitrary third party module may raise anything
                 ms = []
             new_members = [
                 f"{instr[1].__module__}.{instr[1].__name__}"
