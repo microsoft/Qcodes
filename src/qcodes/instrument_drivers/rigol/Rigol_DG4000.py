@@ -759,7 +759,7 @@ class RigolDG4000(VisaInstrument):
 
             self.write("DATA VOLATILE," + string)
         else:
-            raise Exception(
+            raise ValueError(
                 "Data length of "
                 + str(len(data))
                 + " is not in the range of 1 to 16384"

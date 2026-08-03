@@ -664,7 +664,7 @@ class IVSweepMeasurement(
         smu = cast("KeysightB1517A", smu)
 
         if not smu.setup_fnc_already_run:
-            raise Exception(
+            raise RuntimeError(
                 f"Sweep setup has not yet been run successfully on {smu.full_name}"
             )
 
