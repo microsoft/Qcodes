@@ -1,0 +1,5 @@
+Enable the ruff rule ``TRY002`` (``raise-vanilla-class``). A number of drivers raised a bare
+``Exception``; these now raise a specific builtin exception instead. Invalid arguments raise
+``ValueError``, using the instrument in an unsupported state raises ``RuntimeError`` and selecting an
+unimplemented acquisition mode on the AlazarTech ATS raises ``NotImplementedError``. Code that
+catches ``Exception`` is unaffected since all of these are subclasses of ``Exception``.
