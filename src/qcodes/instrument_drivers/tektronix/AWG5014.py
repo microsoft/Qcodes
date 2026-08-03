@@ -1753,7 +1753,7 @@ class TektronixAWG5014(VisaInstrument):
             An array of unsigned 16 bit integers.
 
         Raises:
-            Exception: if the lengths of w, m1, and m2 don't match
+            ValueError: if the lengths of w, m1, and m2 don't match
             TypeError: if the waveform contains values outside (-1, 1)
             TypeError: if the markers contain values that are not 0 or 1
 
@@ -1761,7 +1761,7 @@ class TektronixAWG5014(VisaInstrument):
 
         # Input validation
         if not ((len(wf) == len(m1)) and (len(m1) == len(m2))):
-            raise Exception("error: sizes of the waveforms do not match")
+            raise ValueError("error: sizes of the waveforms do not match")
         if np.min(wf) < -1 or np.max(wf) > 1:
             raise TypeError(
                 "Waveform values out of bonds. Allowed values: -1 to 1 (inclusive)"
@@ -1886,7 +1886,7 @@ class TektronixAWG5014(VisaInstrument):
             wfmname: waveform name
 
         Raises:
-            Exception: if the lengths of w, m1, and m2 don't match
+            ValueError: if the lengths of w, m1, and m2 don't match
             TypeError: if the waveform contains values outside (-1, 1)
             TypeError: if the markers contain values that are not 0 or 1
 
@@ -1897,7 +1897,7 @@ class TektronixAWG5014(VisaInstrument):
 
         # Input validation
         if not ((len(w) == len(m1)) and (len(m1) == len(m2))):
-            raise Exception("error: sizes of the waveforms do not match")
+            raise ValueError("error: sizes of the waveforms do not match")
         if min(w) < -1 or max(w) > 1:
             raise TypeError(
                 "Waveform values out of bonds. Allowed values: -1 to 1 (inclusive)"

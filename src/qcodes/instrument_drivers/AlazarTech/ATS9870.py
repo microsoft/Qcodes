@@ -400,6 +400,6 @@ class AlazarTechATS9870(AlazarTechATS):
 
         model = self.get_idn()["model"]
         if model != "ATS9870":
-            raise Exception(
+            raise RuntimeError(
                 f"The Alazar board kind is not 'ATS9870', found '{model!s}' instead."
             )
