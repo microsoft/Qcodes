@@ -445,7 +445,7 @@ tqdm==4.70.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-traitlets==5.15.1
+traitlets==5.16.0
     # via
     #   ipykernel
     #   ipython
