@@ -1189,7 +1189,7 @@ class KeysightB1500CVSweepMeasurement(
 
     def get_raw(self) -> tuple[tuple[float, ...], tuple[float, ...]]:
         if not self.instrument.setup_fnc_already_run:
-            raise Exception("Sweep setup has not yet been run successfully")
+            raise RuntimeError("Sweep setup has not yet been run successfully")
 
         delay_time = self.instrument.cv_sweep.step_delay()
 

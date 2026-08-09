@@ -99,7 +99,7 @@ def test_atomic_with_exception() -> None:
         atomic(sqlite_conn) as atomic_conn,
     ):
         atomic_conn.execute("PRAGMA user_version(42)")
-        raise Exception("intended exception")
+        raise RuntimeError("intended exception")
     assert error_caused_by(e, "intended exception")
 
     assert 25 == sqlite_conn.execute("PRAGMA user_version").fetchall()[0][0]

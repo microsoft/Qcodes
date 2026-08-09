@@ -276,7 +276,7 @@ def load_experiment(exp_id: int, conn: AtomicConnection | None = None) -> Experi
     """
     conn = conn_from_dbpath_or_conn(conn=conn, path_to_db=None)
     if not isinstance(exp_id, int):
-        raise ValueError("Experiment ID must be an integer")
+        raise ValueError("Experiment ID must be an integer")  # noqa: TRY004
     experiment = Experiment(exp_id=exp_id, conn=conn)
     _set_default_experiment_id(path_to_dbfile(conn), experiment.exp_id)
     return experiment

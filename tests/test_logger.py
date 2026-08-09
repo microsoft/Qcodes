@@ -26,7 +26,7 @@ TEST_LOG_MESSAGE = "test log message"
 
 NUM_PYTEST_LOGGERS = 4
 
-_LOG = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
 @pytest.fixture(autouse=True)
@@ -159,7 +159,7 @@ def test_set_level_without_starting_raises() -> None:
 def test_handler_level() -> None:
     logger.start_logger()
     with logger.LogCapture(level=logging.INFO) as logs:
-        _LOG.debug(TEST_LOG_MESSAGE)
+        _LOGGER.debug(TEST_LOG_MESSAGE)
     assert logs.value == ""
 
     with (
@@ -167,7 +167,7 @@ def test_handler_level() -> None:
         logger.handler_level(level=logging.DEBUG, handler=logs.string_handler),
     ):
         print(logs.string_handler)
-        _LOG.debug(TEST_LOG_MESSAGE)
+        _LOGGER.debug(TEST_LOG_MESSAGE)
     assert logs.value.strip() == TEST_LOG_MESSAGE
 
 

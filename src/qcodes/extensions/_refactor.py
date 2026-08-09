@@ -17,7 +17,7 @@ except ImportError as er:
         "qcodes-refactor requires that QCoDeS is installed with refactor extra dependencies."
     ) from er
 
-_LOG = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
@@ -90,7 +90,7 @@ class AddParameterTransformer(VisitorBasedCodemodCommand):
                 # arg is parameter class
                 self.annotations.parameter_class = e_value
             case cst.Arg():
-                _LOG.info("Unexpected node %s", str(node))
+                _LOGGER.info("Unexpected node %s", str(node))
 
     def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
         call_name = _get_call_name(updated_node)
@@ -144,7 +144,7 @@ class AddParameterTransformer(VisitorBasedCodemodCommand):
         if isinstance(stm.body, cst.BaseSuite) or isinstance(
             comment.body, cst.BaseSuite
         ):
-            raise RuntimeError("Unexpected result from parsing code.")
+            raise RuntimeError("Unexpected result from parsing code.")  # noqa: TRY004
 
         new_node = stm.body[0]
         new_node = new_node.with_changes(value=call_node)
@@ -169,7 +169,7 @@ def transform_files_in_folder(folder_path: Path) -> None:
                     with open(file_name, "w", encoding="utf-8") as file:
                         print(f"Modified {file_name}")
                         file.write(modified_tree.code)
-            except Exception as ex:
+            except Exception as ex:  # noqa: BLE001 a single unparsable file should not abort the refactor
                 print(f"could not parse {filename}. Got {ex}")
 
 

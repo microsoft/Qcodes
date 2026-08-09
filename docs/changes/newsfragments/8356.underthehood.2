@@ -1,0 +1,4 @@
+Enable the ruff rule ``S110`` (``try-except-pass``). ``Station.add_component`` no longer silently
+swallows an error raised while snapshotting a component but logs it including the traceback. The
+remaining silent handlers are in teardown paths that must never raise or log and are explicitly
+marked as intentional.

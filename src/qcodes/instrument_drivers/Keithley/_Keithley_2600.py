@@ -1094,7 +1094,7 @@ class Keithley2600Channel(InstrumentChannel["Keithley2600"]):
         inner_param = cast("Parameter", inner.param)
         inner_channel = infer_channel(inner_param)
         if not isinstance(inner_channel, Keithley2600Channel):
-            raise ValueError(
+            raise ValueError(  # noqa: TRY004
                 "Inner sweep parameter must belong to a Keithley2600Channel."
             )
         inner_channel_name = inner_channel.channel

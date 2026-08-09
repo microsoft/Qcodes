@@ -1084,7 +1084,7 @@ class KeysightB1517A(KeysightB1500Module):
             sample_number = self._timing_parameters["number"]
             return sample_number
         else:
-            raise Exception("set timing parameters first")
+            raise RuntimeError("set timing parameters first")
 
     def _get_time_axis(self) -> npt.NDArray:
         sample_rate = self._timing_parameters["interval"]
@@ -1097,7 +1097,7 @@ class KeysightB1517A(KeysightB1500Module):
             self._timing_parameters["interval"] is None
             or self._timing_parameters["number"] is None
         ):
-            raise Exception("set timing parameters first")
+            raise RuntimeError("set timing parameters first")
 
         sample_number = self._timing_parameters["number"]
         sample_rate = self._timing_parameters["interval"]

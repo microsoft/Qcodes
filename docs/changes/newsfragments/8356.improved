@@ -1,0 +1,4 @@
+The documentation on naming instrument drivers (in the Contributor guide and in the
+"Creating Instrument Drivers" example notebook) has been updated to state that instrument driver
+modules should be named using lower case ``snake_case``, e.g. ``weinschel_8320.py``. Vendor and
+model capitalization belongs in the class name (``Weinschel8320``) and not in the module name.

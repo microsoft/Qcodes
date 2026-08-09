@@ -332,7 +332,7 @@ class OxfordTriton(IPInstrument):
             ]
         try:
             return float(re.findall(r"[-+]?\d*\.\d+|\d+", msg)[0])
-        except Exception:
+        except (ValueError, IndexError):
             return msg
 
     def get_idn(self) -> dict[str, str | None]:
