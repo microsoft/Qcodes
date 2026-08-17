@@ -357,8 +357,10 @@ def handler_level(
     Context manager to temporarily change the level of handlers.
 
     Example:
-        >>> with logger.handler_level(level=logging.DEBUG, handler=[h1, h1]):
-        >>>     root_logger.debug('this is now visible')
+        .. code-block:: python
+
+            with logger.handler_level(level=logging.DEBUG, handler=[h1, h1]):
+                root_logger.debug('this is now visible')
 
     Args:
         level: Level to set the handlers to.
@@ -384,8 +386,10 @@ def console_level(level: LevelType) -> "Generator[None, None, None]":
     handler.
 
     Example:
-        >>> with logger.console_level(level=logging.DEBUG):
-        >>>     root_logger.debug('this is now visible')
+        .. code-block:: python
+
+            with logger.console_level(level=logging.DEBUG):
+                root_logger.debug('this is now visible')
 
     Args:
         level: Level to set the console handler to.
@@ -404,9 +408,11 @@ class LogCapture:
     from a specific logger.
 
     Example:
+        >>> import logging
         >>> with LogCapture() as logs:
-        >>>     code_that_makes_logs(...)
-        >>> log_str = logs.value
+        ...     logging.warning("test message")
+        >>> isinstance(logs.value, str)
+        True
 
     """
 
