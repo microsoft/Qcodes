@@ -11,6 +11,7 @@ import sqlite3
 import time
 import unicodedata
 import warnings
+from dataclasses import dataclass
 from itertools import zip_longest
 from typing import TYPE_CHECKING, Any, Literal, cast
 
@@ -89,6 +90,12 @@ RUNS_TABLE_COLUMNS = (
     "captured_run_id",
     "captured_counter",
 )
+
+#: Name of the ``runs``-table column used to record the location of a dataset's
+#: raw data when it is stored outside the main database (e.g. in a per-dataset
+#: SQLite file). It is an internal storage detail and is deliberately excluded
+#: from the user-facing dataset metadata.
+RAW_DATA_DB_PATH_COLUMN = "raw_data_db_path"
 
 
 def is_run_id_in_database(conn: AtomicConnection, *run_ids: int) -> dict[int, bool]:
@@ -1838,7 +1845,7 @@ def get_metadata_from_run_id(conn: AtomicConnection, run_id: int) -> dict[str, A
     """
     Get all metadata associated with the specified run
     """
-    non_metadata = RUNS_TABLE_COLUMNS
+    non_metadata = (*RUNS_TABLE_COLUMNS, RAW_DATA_DB_PATH_COLUMN)
 
     metadata = {}
     possible_tags = []
@@ -2328,3 +2335,124 @@ def _get_result_table_name_by_guid(conn: AtomicConnection, guid: str) -> str:
     sql = "SELECT result_table_name FROM runs WHERE guid=?"
     formatted_name = one(transaction(conn, sql, guid), "result_table_name")
     return formatted_name
+
+
+def get_raw_data_db_path_for_run(conn: AtomicConnection, run_id: int) -> str | None:
+    """Return the stored raw-data file path for a run.
+
+    The path is read directly from the ``raw_data_db_path`` column of the
+    ``runs`` table (which is kept out of the user-facing metadata). Returns
+    ``None`` if the column does not exist or is not set for the run.
+    """
+    if not is_column_in_table(conn, "runs", RAW_DATA_DB_PATH_COLUMN):
+        return None
+    cursor = conn.execute(
+        f'SELECT "{RAW_DATA_DB_PATH_COLUMN}" FROM runs WHERE run_id = ?', (run_id,)
+    )
+    row = cursor.fetchone()
+    if row is None:
+        return None
+    return row[0]
+
+
+def set_raw_data_db_path_for_run(
+    conn: AtomicConnection, run_id: int, raw_data_db_path: str
+) -> None:
+    """Record the raw-data file path for a run in the ``runs`` table."""
+    add_data_to_dynamic_columns(
+        conn, run_id, {RAW_DATA_DB_PATH_COLUMN: raw_data_db_path}
+    )
+
+
+@dataclass(frozen=True)
+class RawDataDatasetRecord:
+    """A run in the main database whose raw data is stored in a separate file.
+
+    Returned by :func:`get_datasets_with_raw_data_path` for each started run
+    that records a ``raw_data_db_path``.
+    """
+
+    run_id: int
+    guid: str
+    experiment_name: str
+    sample_name: str
+    run_timestamp: float | None
+    completed_timestamp: float | None
+    result_table_name: str
+    raw_data_db_path: str
+
+
+def get_datasets_with_raw_data_path(
+    conn: AtomicConnection,
+) -> list[RawDataDatasetRecord]:
+    """Get all datasets that have a raw_data_db_path metadata column set.
+
+    Only datasets that have been started (``run_timestamp`` is set) are
+    returned, since an unstarted run records the intended raw-data path but
+    never creates the corresponding file.
+
+    Returns:
+        A list of :class:`RawDataDatasetRecord`. Returns an empty list if the
+        ``raw_data_db_path`` column does not exist.
+
+    """
+    if not is_column_in_table(conn, "runs", "raw_data_db_path"):
+        return []
+
+    sql = """
+    SELECT r.run_id, r.guid, e.name, e.sample_name,
+           r.run_timestamp, r.completed_timestamp,
+           r.result_table_name, r.raw_data_db_path
+    FROM runs r
+    JOIN experiments e ON r.exp_id = e.exp_id
+    WHERE r.raw_data_db_path IS NOT NULL
+      AND r.run_timestamp IS NOT NULL
+    """
+    cursor = atomic_transaction(conn, sql)
+    return [RawDataDatasetRecord(*row) for row in cursor.fetchall()]
+
+
+def remove_dataset_from_db(
+    conn: AtomicConnection, run_id: int, result_table_name: str
+) -> None:
+    """Remove a single dataset's records from the database.
+
+    Deletes the run row, associated layouts and dependencies, and drops
+    the results table (if it exists).
+
+    Args:
+        conn: Connection to the database.
+        run_id: The run_id of the dataset to remove.
+        result_table_name: Name of the dataset's results table.
+
+    """
+    with atomic(conn) as aconn:
+        # Guard against dropping an unintended table if result_table_name is
+        # malformed, reusing the same validation used when creating tables.
+        _validate_table_name(result_table_name)
+
+        # Get layout_ids for this run (needed for dependencies)
+        cursor = transaction(
+            aconn, "SELECT layout_id FROM layouts WHERE run_id = ?", run_id
+        )
+        layout_ids = [row[0] for row in cursor.fetchall()]
+
+        # Delete dependencies referencing these layouts
+        if layout_ids:
+            placeholders = ",".join("?" * len(layout_ids))
+            transaction(
+                aconn,
+                f"DELETE FROM dependencies WHERE dependent IN ({placeholders})"
+                f" OR independent IN ({placeholders})",
+                *layout_ids,
+                *layout_ids,
+            )
+
+        # Delete layouts
+        transaction(aconn, "DELETE FROM layouts WHERE run_id = ?", run_id)
+
+        # Drop the results table in the DB (if it exists)
+        transaction(aconn, f'DROP TABLE IF EXISTS "{result_table_name}"')
+
+        # Delete the run row
+        transaction(aconn, "DELETE FROM runs WHERE run_id = ?", run_id)
