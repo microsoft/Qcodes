@@ -4,6 +4,8 @@ updates:
   directory: "/"
   schedule:
     interval: daily
+  cooldown:
+    default-days: 7
   open-pull-requests-limit: 20
   rebase-strategy: "disabled"
   versioning-strategy: increase-if-necessary
@@ -27,17 +29,17 @@ updates:
   schedule:
     interval: "daily"
 
-- package-ecosystem: pip
-  directory: /.binder
-  schedule:
-    interval: daily
-
 - package-ecosystem: npm
   directory: /.github
   schedule:
     interval: daily
+  cooldown:
+    default-days: 7
+
 
 - package-ecosystem: "pre-commit"
   directory: "/"
   schedule:
     interval: daily
+  cooldown:
+    default-days: 7
