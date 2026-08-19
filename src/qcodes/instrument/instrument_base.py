@@ -32,7 +32,13 @@ from qcodes.utils import QCoDeSDeprecationWarning
 log = logging.getLogger(__name__)
 
 # Cannot convert to PEP 695: uses default= which requires PEP 696 (Python 3.13+).
-TParameter = TypeVar("TParameter", bound="ParameterBase", default="Parameter")
+# The default is `Parameter[Any, Any]` rather than a bare `Parameter`: when
+# `add_parameter` is called without a `parameter_class` the returned parameter is
+# bound to `self`, so spelling the default as `Parameter` (which expands to
+# `Parameter[Any, InstrumentBase | None]`) would wrongly claim that the
+# instrument is `InstrumentBase | None` and make the result unassignable to the
+# `Parameter[SomeType, Self]` annotations that drivers use.
+TParameter = TypeVar("TParameter", bound="ParameterBase", default="Parameter[Any, Any]")
 TSubmodule = TypeVar(
     "TSubmodule", bound="InstrumentModule | ChannelTuple", default="InstrumentModule"
 )

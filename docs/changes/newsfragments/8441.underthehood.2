@@ -1,0 +1,9 @@
+The ``TParameter`` type variable used by :meth:`.InstrumentBase.add_parameter`
+now defaults to ``Parameter[Any, Any]`` rather than to a bare ``Parameter``.
+When ``add_parameter`` is called without an explicit ``parameter_class`` the
+returned parameter is bound to the instrument it is added to, so the previous
+default (which expands to ``Parameter[Any, InstrumentBase | None]``) wrongly
+claimed that the instrument was ``InstrumentBase | None``. This made the result
+unassignable to the ``Parameter[SomeType, Self]`` annotations that drivers use.
+Code that relies on the inferred type of an unannotated
+``instrument.add_parameter("name")`` will now see ``Parameter[Any, Any]``.
