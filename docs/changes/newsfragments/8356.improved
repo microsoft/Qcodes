@@ -1,0 +1,10 @@
+Datasets exported to NetCDF are now compressed using the deflate (gzip) compression
+built into NetCDF4/HDF5. Depending on the data this reduces the size of the exported
+files by a factor of roughly 1.3 to 3.3 with no measurable slowdown of the export, and
+no loss of precision since the compression is lossless. Compressed files remain regular
+NetCDF files that can be read by any NetCDF client without any special handling.
+
+The compression level can be controlled with the new
+``qcodes.config.dataset.export_netcdf_compression_level`` config option. It defaults to
+``4`` and can be set to ``0`` to write uncompressed files as before. Higher levels are
+significantly slower while giving almost no additional size reduction.
