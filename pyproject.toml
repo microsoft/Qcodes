@@ -293,6 +293,38 @@ quote-annotations = true
 sdist = "versioningit.cmdclass.sdist"
 build_py = "versioningit.cmdclass.build_py"
 
+[tool.ty.environment]
+# a number of drivers are only usable on Windows. Checking against all
+# platforms means that these are type checked no matter which platform ty
+# runs on, and that the result does not depend on the platform of the developer.
+python-platform = "all"
+
+[tool.ty.src]
+# mirrors the include and ignore settings of pyright above
+include = ["src", "tests"]
+exclude = [
+    "src/qcodes/instrument_drivers/Harvard/Decadac.py",
+    ]
+
+# these are packages that we import
+# but don't have installed by default.
+# Compare with ignore_missing_imports in the mypy config above
+[[tool.ty.overrides]]
+include = [
+    "src/qcodes/instrument_drivers/Galil/dmc_41x3.py",
+    "src/qcodes/instrument_drivers/Minicircuits/USBHIDMixin.py",
+    "src/qcodes/instrument_drivers/Minicircuits/_minicircuits_usb_spdt.py",
+]
+[tool.ty.overrides.rules]
+unresolved-import = "ignore"
+
+# clr is provided by pythonnet which is not installed by default
+# so its members cannot be resolved either
+[[tool.ty.overrides]]
+include = ["src/qcodes/instrument_drivers/Minicircuits/_minicircuits_usb_spdt.py"]
+[tool.ty.overrides.rules]
+unresolved-attribute = "ignore"
+
 [tool.towncrier]
 package = "qcodes"
 name = "QCoDeS"
