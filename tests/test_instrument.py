@@ -212,8 +212,10 @@ def test_attr_access(testdummy: DummyInstrument) -> None:
 def test_parameter_property(testdummy: DummyInstrument) -> None:
     # since this is added dynamically we cannot know the type statically
     assert_type(testdummy.dac1, Any)
-    # this is an assigned attribute so we know it statically
-    assert_type(testdummy.fixed_parameter, Parameter)
+    # this is an assigned attribute so we know it statically. Without an
+    # explicit ``parameter_class`` the data and instrument types of the
+    # returned parameter are unknown, hence ``Parameter[Any, Any]``.
+    assert_type(testdummy.fixed_parameter, Parameter[Any, Any])
 
     assert testdummy.fixed_parameter.get() == 5
     testdummy.fixed_parameter.set(10)
