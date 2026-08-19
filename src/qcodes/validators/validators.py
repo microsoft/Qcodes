@@ -987,12 +987,12 @@ class Arrays(Validator[npt.NDArray]):
     def shape(self) -> tuple[int, ...] | None:
         if self._shape is None:
             return None
-        shape_array = []
+        shape_array: list[int] = []
         for s in self._shape:
-            if callable(s):
-                shape_array.append(s())
-            else:
+            if isinstance(s, int):
                 shape_array.append(s)
+            else:
+                shape_array.append(s())
         shape = tuple(shape_array)
         return shape
 
