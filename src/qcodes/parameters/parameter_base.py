@@ -148,6 +148,12 @@ class ParameterBaseKWArgs(
     ``**kwargs: Unpack[ParameterBaseKWArgs]`` as input and forward this to
     the super class to ensure that it can accept all the arguments
     defined here.
+
+    Note that forwarding the kwargs on requires a
+    ``ty: ignore[invalid-argument-type]``. ty does not recognise a TypedDict
+    that is generic over more than one type variable as a mapping when one of
+    those type variables has a PEP 696 default, so it rejects re-expanding the
+    kwargs with ``**``.
     """
 
     instrument: NotRequired[InstrumentTypeVar_co]

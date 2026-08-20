@@ -362,7 +362,8 @@ class Parameter(
 
         super().__init__(
             name=name,
-            **kwargs,
+            # see the note on ParameterBaseKWArgs
+            **kwargs,  # ty: ignore[invalid-argument-type]
         )
 
         no_instrument_get = not self._implements_get_raw and (
