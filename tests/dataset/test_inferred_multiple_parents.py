@@ -70,7 +70,7 @@ class TestSingleParentBaseline:
             coords={"sp": sub_dict["sp"]},
         )
 
-        result = _add_inferred_data_vars(ds, "meas", sub_dict, xr_ds)
+        result = _add_inferred_data_vars(ds, "meas", sub_dict, xr_ds, index=None)
 
         assert "inf_param" in result.data_vars
         npt.assert_array_almost_equal(result["inf_param"].values, sub_dict["inf_param"])
@@ -110,7 +110,7 @@ class TestMultipleParentsAllMatch:
             coords={"sp": sub_dict["sp"]},
         )
 
-        result = _add_inferred_data_vars(ds, "parent1", sub_dict, xr_ds)
+        result = _add_inferred_data_vars(ds, "parent1", sub_dict, xr_ds, index=None)
 
         assert "inf_param" in result.data_vars
         npt.assert_array_almost_equal(result["inf_param"].values, sub_dict["inf_param"])
@@ -155,7 +155,7 @@ class TestMultipleParentsOnlyFirstMatches:
             coords={"sp1": sub_dict["sp1"]},
         )
 
-        result = _add_inferred_data_vars(ds, "parent1", sub_dict, xr_ds)
+        result = _add_inferred_data_vars(ds, "parent1", sub_dict, xr_ds, index=None)
 
         # Current behavior: included because it matches parent1
         assert "inf_param" in result.data_vars
@@ -206,7 +206,7 @@ class TestMultipleParentsOnlySecondMatches:
         with caplog.at_level(
             logging.WARNING, logger="qcodes.dataset.exporters.export_to_xarray"
         ):
-            result = _add_inferred_data_vars(ds, "parent1", sub_dict, xr_ds)
+            result = _add_inferred_data_vars(ds, "parent1", sub_dict, xr_ds, index=None)
 
         assert "inf_param" not in result.data_vars
         assert any(
@@ -252,7 +252,7 @@ class TestMultipleParentsNoneMatch:
         with caplog.at_level(
             logging.WARNING, logger="qcodes.dataset.exporters.export_to_xarray"
         ):
-            result = _add_inferred_data_vars(ds, "parent1", sub_dict, xr_ds)
+            result = _add_inferred_data_vars(ds, "parent1", sub_dict, xr_ds, index=None)
 
         assert "inf_param" not in result.data_vars
         assert any(
@@ -292,7 +292,7 @@ class TestMultipleParentsOneUnavailable:
             coords={"sp": sub_dict["sp"]},
         )
 
-        result = _add_inferred_data_vars(ds, "parent1", sub_dict, xr_ds)
+        result = _add_inferred_data_vars(ds, "parent1", sub_dict, xr_ds, index=None)
 
         assert "inf_param" in result.data_vars
         npt.assert_array_almost_equal(result["inf_param"].values, sub_dict["inf_param"])
@@ -328,7 +328,7 @@ class TestMultipleParentsOneUnavailable:
         with caplog.at_level(
             logging.WARNING, logger="qcodes.dataset.exporters.export_to_xarray"
         ):
-            result = _add_inferred_data_vars(ds, "parent1", sub_dict, xr_ds)
+            result = _add_inferred_data_vars(ds, "parent1", sub_dict, xr_ds, index=None)
 
         assert "inf_param" not in result.data_vars
         assert any(
@@ -368,7 +368,7 @@ class TestMultipleParentsSameSizeAllMatch:
             coords={"sp": sub_dict["sp"]},
         )
 
-        result = _add_inferred_data_vars(ds, "parent1", sub_dict, xr_ds)
+        result = _add_inferred_data_vars(ds, "parent1", sub_dict, xr_ds, index=None)
 
         assert "inf_param" in result.data_vars
         npt.assert_array_almost_equal(result["inf_param"].values, sub_dict["inf_param"])

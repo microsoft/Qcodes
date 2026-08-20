@@ -187,7 +187,9 @@ def test_parameter_with_setpoints_has_control_size_mismatch_warns(
     with caplog.at_level(
         logging.WARNING, logger="qcodes.dataset.exporters.export_to_xarray"
     ):
-        result = _add_inferred_data_vars(ds.dataset, "p2", sub_dict, xr_dataset)
+        result = _add_inferred_data_vars(
+            ds.dataset, "p2", sub_dict, xr_dataset, index=None
+        )
 
     assert "p1" not in result.data_vars
     assert any(

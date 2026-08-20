@@ -67,6 +67,7 @@ def _add_inferred_data_vars(
     name: str,
     sub_dict: Mapping[str, npt.NDArray],
     xr_dataset: xr.Dataset,
+    index: pd.Index | pd.MultiIndex | None,
 ) -> xr.Dataset:
     """Add inferred parameters as data variables to an xarray dataset.
 
@@ -74,6 +75,7 @@ def _add_inferred_data_vars(
     and present in sub_dict but not yet in the dataset are added as data
     variables along the existing dimensions.
     """
+    from pandas import Series
 
     interdeps = dataset.description.interdeps
     meas_paramspec = interdeps.graph.nodes[name]["value"]
@@ -106,7 +108,14 @@ def _add_inferred_data_vars(
         expected_shape = tuple(xr_dataset.sizes[d] for d in dims)
         expected_size = prod(expected_shape)
         if flat.shape[0] == expected_size:
-            xr_dataset[inf.name] = (dims, flat.reshape(expected_shape))
+            if index is not None:
+                # If an index is provided, we should align the inferred data with the index.
+                # This is necessary because data may be reordered when transforming from a pandas DataFrame to an xarray Dataset.
+                # Passing an index allows the original data ordering to be preserved on reconstruction.
+                indexed_data = Series(flat, index=index, name=inf.name).to_xarray()
+                xr_dataset[inf.name] = indexed_data
+            else:
+                xr_dataset[inf.name] = (dims, flat.reshape(expected_shape))
         else:
             _LOG.warning(
                 "Cannot add inferred parameter '%s' to xarray dataset for '%s' "
@@ -164,7 +173,7 @@ def _load_to_xarray_dataset_dict_no_metadata(
                     dependent_parameter=name,
                 ).to_xarray()
                 xr_dataset_dict[name] = _add_inferred_data_vars(
-                    dataset, name, sub_dict, xr_dataset
+                    dataset, name, sub_dict, xr_dataset, index
                 )
             elif index_is_unique:
                 df = _data_to_dataframe(
@@ -177,7 +186,7 @@ def _load_to_xarray_dataset_dict_no_metadata(
                     dataset, use_multi_index, name, df, index
                 )
                 xr_dataset_dict[name] = _add_inferred_data_vars(
-                    dataset, name, sub_dict, xr_dataset
+                    dataset, name, sub_dict, xr_dataset, index
                 )
             else:
                 df = _data_to_dataframe(
@@ -188,7 +197,7 @@ def _load_to_xarray_dataset_dict_no_metadata(
                 )
                 xr_dataset = df.reset_index().to_xarray()
                 xr_dataset_dict[name] = _add_inferred_data_vars(
-                    dataset, name, sub_dict, xr_dataset
+                    dataset, name, sub_dict, xr_dataset, index
                 )
 
     return xr_dataset_dict
@@ -234,7 +243,9 @@ def _xarray_data_set_from_pandas_multi_index(
 
 
 def _xarray_data_set_direct(
-    dataset: DataSetProtocol, name: str, sub_dict: Mapping[str, npt.NDArray]
+    dataset: DataSetProtocol,
+    name: str,
+    sub_dict: Mapping[str, npt.NDArray],
 ) -> xr.Dataset:
     import xarray as xr
 
@@ -242,56 +253,109 @@ def _xarray_data_set_direct(
     _, deps, inferred = dataset.description.interdeps.all_parameters_in_tree_by_group(
         meas_paramspec
     )
-    # Build coordinate axes from direct dependencies preserving their order
+
+    shape = sub_dict[name].shape
+    expected_size = prod(shape)
+
+    if len(deps) != len(shape):
+        raise ValueError(
+            f"Parameter {name!r} has shape {shape}, but has {len(deps)} dependencies"
+        )
+
     dep_axis: dict[str, npt.NDArray] = {}
-    for axis, dep in enumerate(deps):
-        dep_array = sub_dict[dep.name]
-        dep_axis[dep.name] = dep_array[
-            tuple(slice(None) if i == axis else 0 for i in range(dep_array.ndim))
-        ]
+    destination = np.zeros(expected_size, dtype=np.intp)
+
+    for dimension, dep in enumerate(deps):
+        dep_data = sub_dict[dep.name].ravel()
+
+        if dep_data.size != expected_size:
+            raise ValueError(
+                f"Dependency {dep.name!r} contains {dep_data.size} values, "
+                f"but {expected_size} were expected"
+            )
+
+        values, first_indices, sorted_codes = np.unique(
+            dep_data,
+            return_index=True,
+            return_inverse=True,
+            equal_nan=True,
+        )
+
+        if values.size != shape[dimension]:
+            raise ValueError(
+                f"Dependency {dep.name!r} does not define an axis of length "
+                f"{shape[dimension]}: found {values.size} unique values"
+            )
+
+        # Restore first-seen order because np.unique sorts its output.
+        first_seen_order = np.argsort(first_indices)
+        dep_axis[dep.name] = values[first_seen_order]
+
+        code_remapping = np.empty(values.size, dtype=np.intp)
+        code_remapping[first_seen_order] = np.arange(values.size)
+        codes = code_remapping[sorted_codes]
+
+        # Encode the multidimensional coordinate using C-order mixed radix.
+        destination = destination * shape[dimension] + codes
+
+    if not np.array_equal(
+        np.sort(destination),
+        np.arange(expected_size, dtype=np.intp),
+    ):
+        raise ValueError(
+            f"Dependencies for {name!r} do not form a complete Cartesian "
+            "grid without duplicate points"
+        )
+
+    permutation = np.argsort(destination)
+
+    def reorder(data: npt.NDArray) -> npt.NDArray:
+        if data.size != expected_size:
+            raise ValueError(
+                f"Parameter contains {data.size} values, "
+                f"but {expected_size} were expected"
+            )
+        return data.ravel()[permutation].reshape(shape)
+
+    reordered_data = {
+        parameter_name: reorder(parameter_data)
+        for parameter_name, parameter_data in sub_dict.items()
+    }
 
     extra_coords: dict[str, tuple[tuple[str, ...], npt.NDArray]] = {}
     extra_data_vars: dict[str, tuple[tuple[str, ...], npt.NDArray]] = {}
+
     for inf in inferred:
-        # skip parameters already used as primary coordinate axes
-        if inf.name in dep_axis:
-            continue
-        # add only if data for this parameter is available
-        if inf.name not in sub_dict:
+        if inf.name in dep_axis or inf.name not in reordered_data:
             continue
 
         inf_related = dataset.description.interdeps.find_all_parameters_in_tree(inf)
-
         related_deps = inf_related.intersection(set(deps))
         related_top_level = inf_related.intersection({meas_paramspec})
 
-        if len(related_top_level) > 0:
-            # If inferred param is related to the top-level measurement parameter,
-            # add it as a data variable with the full dependency dimensions
-            inf_data_full = sub_dict[inf.name]
-            inf_dims_full = tuple(dep_axis.keys())
-            extra_data_vars[inf.name] = (inf_dims_full, inf_data_full)
+        if related_top_level:
+            extra_data_vars[inf.name] = (
+                tuple(dep_axis),
+                reordered_data[inf.name],
+            )
         else:
-            # Otherwise, add as a coordinate along the related dependency axes only
-            inf_data = sub_dict[inf.name][
+            inf_data = reordered_data[inf.name][
                 tuple(slice(None) if dep in related_deps else 0 for dep in deps)
             ]
-            inf_coords = [dep.name for dep in deps if dep in related_deps]
+            inf_dims = tuple(dep.name for dep in deps if dep in related_deps)
+            extra_coords[inf.name] = (inf_dims, inf_data)
 
-            extra_coords[inf.name] = (tuple(inf_coords), inf_data)
+    coords: dict[
+        str,
+        tuple[tuple[str, ...], npt.NDArray] | npt.NDArray,
+    ] = {**dep_axis, **extra_coords}
 
-    # Compose coordinates dict including dependency axes and extra inferred coords
-    coords: dict[str, tuple[tuple[str, ...], npt.NDArray] | npt.NDArray]
-    coords = {**dep_axis, **extra_coords}
-
-    # Compose data variables dict including measured var and any inferred data vars
     data_vars: dict[str, tuple[tuple[str, ...], npt.NDArray]] = {
-        name: (tuple(dep_axis.keys()), sub_dict[name])
+        name: (tuple(dep_axis), reordered_data[name]),
+        **extra_data_vars,
     }
-    data_vars.update(extra_data_vars)
 
-    ds = xr.Dataset(data_vars, coords=coords)
-    return ds
+    return xr.Dataset(data_vars, coords=coords)
 
 
 def load_to_xarray_dataset_dict(
