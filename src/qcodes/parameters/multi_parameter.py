@@ -153,7 +153,8 @@ class MultiParameter(
         kwargs.setdefault("snapshot_value", False)
         super().__init__(
             name,
-            **kwargs,
+            # see the note on ParameterBaseKWArgs
+            **kwargs,  # ty: ignore[invalid-argument-type]
         )
 
         self._meta_attrs.extend(

@@ -142,7 +142,8 @@ class ArrayParameter(
         kwargs.setdefault("snapshot_value", False)
         super().__init__(
             name,
-            **kwargs,
+            # see the note on ParameterBaseKWArgs
+            **kwargs,  # ty: ignore[invalid-argument-type]
         )
 
         if self.settable:
