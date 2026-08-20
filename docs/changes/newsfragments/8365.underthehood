@@ -1,5 +1,6 @@
 Subclasses of ``ParameterBase`` that forward ``**kwargs`` on to their super
-class now carry a ``ty: ignore[invalid-argument-type]``. ty does not recognise a
-TypedDict that is generic over more than one type variable as a mapping when one
-of those type variables has a PEP 696 default, so it rejects re-expanding the
-kwargs with ``**``. The reason is documented on ``ParameterBaseKWArgs``.
+class now carry a ``ty: ignore[invalid-argument-type]``. When a generic TypedDict
+declares a PEP 696 default for a type parameter, ty computes the upper bound of
+the synthesized ``Self`` as the default specialization, so every other
+specialization is rejected by the members that bind ``Self``, including expanding
+with ``**``. The reason is documented on ``ParameterBaseKWArgs``.
