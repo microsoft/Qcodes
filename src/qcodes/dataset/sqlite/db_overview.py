@@ -253,7 +253,7 @@ def get_db_overview(
                 # The keys of ``extra`` are only known at runtime (they are the
                 # user-supplied ``extra_columns``), so they cannot be part of
                 # the closed ``RunOverviewDict`` definition.
-                entry.update(extra)  # type: ignore[typeddict-item]
+                entry.update(extra)  # type: ignore[typeddict-item]  # ty: ignore[invalid-argument-type]
 
             overview[run_id] = entry
 
