@@ -555,7 +555,7 @@ class Parameter(
         """
         # this method only works with parameters that support addition
         # however we don't currently enforce that via typing
-        self.set(self.get() + value)  # type: ignore[operator]
+        self.set(self.get() + value)  # type: ignore[operator]  # ty: ignore[unsupported-operator]
 
     def sweep(
         self,
