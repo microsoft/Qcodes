@@ -1215,7 +1215,9 @@ class AutoLoadableChannelList[TAUTORELOADCHANNEL: AutoLoadableInstrumentChannel]
         chan_type: type[TAUTORELOADCHANNEL],
         chan_list: Sequence[TAUTORELOADCHANNEL] | None = None,
         snapshotable: bool = True,
-        multichan_paramclass: type = MultiChannelInstrumentParameter,
+        multichan_paramclass: type[MultiChannelInstrumentParameter] = (
+            MultiChannelInstrumentParameter
+        ),
         **kwargs: Any,
     ) -> None:
         super().__init__(
