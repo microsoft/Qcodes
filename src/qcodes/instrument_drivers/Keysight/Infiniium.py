@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from io import BytesIO
 from os.path import splitext
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -134,8 +134,7 @@ class DSOTraceParam(
         """
         instrument = self.instrument
         if isinstance(instrument, KeysightInfiniiumChannel):
-            root_instrument: KeysightInfiniium
-            root_instrument = self.root_instrument  # type: ignore[assignment]
+            root_instrument = cast("KeysightInfiniium", self.root_instrument)
             cache_setpoints = root_instrument.cache_setpoints()
             if not cache_setpoints:
                 self.update_setpoints()
@@ -201,7 +200,8 @@ class DSOTraceParam(
         """
         Update waveform parameters for an FFT.
         """
-        instrument: KeysightInfiniiumFunction = self.instrument  # type: ignore[assignment]
+        # only reached for a function parameter, see the caller in ``setpoints``
+        instrument = cast("KeysightInfiniiumFunction", self.instrument)
         instrument.write(f":WAV:SOUR {self._channel}")
         preamble = instrument.ask(":WAV:PRE?").strip().split(",")
         self.update_setpoints(preamble)
@@ -215,7 +215,7 @@ class DSOTraceParam(
         """
         if self.instrument is None:
             raise RuntimeError("Cannot get data without instrument")
-        root_instr: KeysightInfiniium = self.root_instrument  # type: ignore[assignment]
+        root_instr = cast("KeysightInfiniium", self.root_instrument)
         # Check if we can use cached trace parameters
         if not root_instr.cache_setpoints():
             self.update_setpoints()
@@ -234,13 +234,16 @@ class DSOTraceParam(
         root_instr.write(":WAV:DATA?")
         # Ignore first two bytes, which should be "#0"
         _ = root_instr.visa_handle.read_bytes(2)
-        data: npt.NDArray
-        data = root_instr.visa_handle.read_binary_values(  # type: ignore[assignment]
-            "h",
-            container=np.ndarray,
-            header_fmt="empty",
-            expect_termination=True,
-            data_points=self._points,
+        # pyvisa types the return as a Sequence[float] regardless of ``container``
+        data = cast(
+            "npt.NDArray",
+            root_instr.visa_handle.read_binary_values(
+                "h",
+                container=np.ndarray,
+                header_fmt="empty",
+                expect_termination=True,
+                data_points=self._points,
+            ),
         )
         data = data.astype(np.float64)
         data = (data * self._yincrement) + self._yoffset
@@ -1275,15 +1278,20 @@ class KeysightInfiniium(VisaInstrument):
         )
         try:
             with open(img_path, "wb") as f:
-                screen_bytes = self.visa_handle.query_binary_values(
-                    f":DISPlay:DATA? {img_type.upper()[1:]}",  # without .
-                    # https://docs.python.org/3/library/struct.html#format-characters
-                    datatype="B",  # Capitcal B for unsigned byte
-                    container=bytes,
+                # pyvisa types the return as a Sequence[float] regardless of
+                # ``container``
+                screen_bytes = cast(
+                    "bytes",
+                    self.visa_handle.query_binary_values(
+                        f":DISPlay:DATA? {img_type.upper()[1:]}",  # without .
+                        # https://docs.python.org/3/library/struct.html#format-characters
+                        datatype="B",  # Capitcal B for unsigned byte
+                        container=bytes,
+                    ),
                 )
-                f.write(screen_bytes)  # type: ignore[arg-type]
+                f.write(screen_bytes)
             print(f"Screen image written to {img_path}")
-            return np.asarray(pil_open(BytesIO(screen_bytes)))  # type: ignore[arg-type]
+            return np.asarray(pil_open(BytesIO(screen_bytes)))
         except Exception as e:
             self.log.error(f"Failed to save screenshot, Error occurred: \n{e}")
             return None

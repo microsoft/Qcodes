@@ -1,0 +1,5 @@
+The Infiniium driver now uses ``cast`` where it narrows ``root_instrument`` and
+``instrument`` to the concrete driver classes, and where ``pyvisa`` types the
+return of ``read_binary_values``/``query_binary_values`` as a ``Sequence[float]``
+regardless of the requested ``container``. This replaces five type checker
+suppressions and has no effect at runtime.
