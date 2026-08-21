@@ -24,7 +24,7 @@ from .visa import VISA_LOGGER, VisaInstrument
 # Such a driver is just a two-line class definition.
 
 
-class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore[misc]
+class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore[misc]  # ty: ignore[invalid-method-override]
     """
     Class to inject an VisaInstrument like behaviour in an
     IPInstrument that we'd like to use as a VISAInstrument with the
