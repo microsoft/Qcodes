@@ -1,0 +1,5 @@
+``DataSet._finalize_res_dict_standalones`` now appends to its result list
+directly instead of building intermediate lists. The intermediate lists took
+their element type from the branch that built them rather than from the
+declaration, and ``dict`` is invariant in its value type, so the result was not
+assignable back. There is no change in behaviour.
