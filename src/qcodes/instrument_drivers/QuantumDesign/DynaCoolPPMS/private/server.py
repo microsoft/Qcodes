@@ -31,7 +31,7 @@ def run_server() -> None:
     # Dictionary to keep track of sockets and addresses.
     # Keys are sockets and values are addresses.
     # Add server socket to the dictionary first.
-    socket_dict = {server_socket: (ADDRESS, PORT)}
+    socket_dict: dict[socket.socket, tuple[str, int]] = {server_socket: (ADDRESS, PORT)}
 
     print(f"Server started on port {PORT}.")
     print("Press ESC to exit.")
