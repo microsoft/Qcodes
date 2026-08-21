@@ -731,9 +731,10 @@ class ChannelList[InstrumentModuleType: "InstrumentModule"](  #  pyright: ignore
         # asserts added to work around https://github.com/python/mypy/issues/7858
         if isinstance(index, int):
             assert isinstance(value, InstrumentModule)
-            self._channels[index] = value  # type: ignore[assignment]
-            # mypy does not know that InstrumentModuleType is a TypeVar bound to
-            # InstrumentModule so complains here
+            # neither mypy nor ty knows that InstrumentModuleType is a TypeVar
+            # bound to InstrumentModule, so narrowing value with the isinstance
+            # above does not give them the element type of the list
+            self._channels[index] = value  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
         else:
             assert not isinstance(value, InstrumentModule)
             self._channels[index] = value
