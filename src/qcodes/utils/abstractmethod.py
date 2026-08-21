@@ -16,7 +16,7 @@ def qcodes_abstractmethod[**input, output](
     instantiated and we will use this property to detect if the
     method is abstract and should be overwritten.
     """
-    funcobj.__qcodes_is_abstract_method__ = True  # type: ignore[attr-defined]
+    funcobj.__qcodes_is_abstract_method__ = True  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     return funcobj
 
 
