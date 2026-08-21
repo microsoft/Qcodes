@@ -105,7 +105,7 @@ def _convert_numeric(value: bytes) -> float | int | str:
         return numeric_int
 
 
-def _adapt_float(fl: float) -> float | str:
+def _adapt_float(fl: float | np.floating) -> float | str:
     # For a single value, math.isnan is 10 times faster than np.isnan
     # Overall, saving floats with numeric format is 2 times faster with math.isnan
     if math.isnan(fl):
