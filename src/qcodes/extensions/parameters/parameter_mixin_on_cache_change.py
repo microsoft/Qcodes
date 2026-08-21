@@ -143,7 +143,7 @@ class OnCacheChangeParameterMixin(ParameterMixin):
                     raw_value_new=raw_value_new,
                 )
 
-        parameter.cache._update_with = wrapped_cache_update  # type: ignore[method-assign]
+        parameter.cache._update_with = wrapped_cache_update  # type: ignore[method-assign]  # ty: ignore[invalid-assignment]
 
     def _handle_on_cache_change(
         self, *, value_old: Any, value_new: Any, raw_value_old: Any, raw_value_new: Any
