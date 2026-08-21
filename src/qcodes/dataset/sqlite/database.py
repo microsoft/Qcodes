@@ -174,7 +174,10 @@ def connect(
 
     sqlite3.register_converter("numeric", _convert_numeric)
 
-    for numpy_float in (float, *numpy_floats):
+    # registered separately from the numpy floats below, so that the element
+    # type of the loop stays a numpy float rather than widening to object
+    sqlite3.register_adapter(float, _adapt_float)
+    for numpy_float in numpy_floats:
         sqlite3.register_adapter(numpy_float, _adapt_float)
 
     for complex_type in complex_types:
