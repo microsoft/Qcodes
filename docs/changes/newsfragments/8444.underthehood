@@ -1,0 +1,4 @@
+``qcodes.utils.numpy_utils`` now imports ``VisibleDeprecationWarning`` from
+``numpy.exceptions`` unconditionally. The fallback to importing it from the top
+level ``numpy`` namespace was for numpy older than the minimum supported
+version, so it could never be taken.
