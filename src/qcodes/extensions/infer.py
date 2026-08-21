@@ -226,7 +226,10 @@ def get_chain_links_of_type[C: ParameterBase](
     link_param_type: type[C] | tuple[type[C], ...], parameter: Parameter
 ) -> tuple[C, ...]:
     """Gets all parameters in a chain of linked parameters that match a given type"""
-    chain_links: list[C] = [
+    # ty does not narrow the element type to C here: for a generic parameter
+    # class it widens the isinstance narrowing to a union with the unnarrowed
+    # type. The equivalent non generic code narrows correctly.
+    chain_links: list[C] = [  # ty: ignore[invalid-assignment]
         param
         for param in get_parameter_chain(parameter)
         if isinstance(param, link_param_type)
