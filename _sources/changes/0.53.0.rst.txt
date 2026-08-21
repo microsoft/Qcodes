@@ -1,0 +1,45 @@
+QCoDeS 0.53.0 (2025-06-16)
+==========================
+
+Breaking Changes:
+-----------------
+
+- QCoDeS has dropped support for python 3.10. QCoDeS now supports Python 3.11, 3.12 and 3.13. (:pr:`7038`)
+- The deprecated aliases to Lakeshore modules in `qcodes.instrument_drivers.Lakeshore.lakeshore_base` have been removed.
+  The aliases to lakeshore drivers in `qcodes.instrument_drivers.Lakeshore.Model_325`, `qcodes.instrument_drivers.Lakeshore.Model_336` and `qcodes.instrument_drivers.Lakeshore.Model_372`
+  have been removed. Please make sure that all Lakeshore related imports are from `qcodes.instrument_drivers.Lakeshore` avoiding any submodules. (:pr:`7187`)
+
+
+Improved:
+---------
+
+- The implementation of ``do0d`` and ``do1d`` have been replaced with a wrapper around `dond`.
+  This aligns the keyword arguments with ``dond`` and ensures that these function support
+  the same features as ``dond``. The same change is planned for ``do2d`` in the future. (:pr:`7065`)
+- `InstrumentLoggerAdapter` now merges the extra dict from the log record with information
+  inserted by the LoggerAdapter. This makes it possible to add additional information to a
+  log message logged via the instruments log attribute e.g. `myinst.visa_log.info("message", extra={"this": "that"})` (:pr:`7186`)
+- `qcodes.dataset.descriptions.detect_shapes` and `qcodes.dataset.dond.do_nd_utils` have been updated
+  to use `parameter.register_name` when creating shape dictionaries for storage in the dataset
+
+  Previously, these methods used `parameter.full_name` which could result in shapes not being stored
+  or used correctly for parameters that use `parameter.register_name`
+
+  closes #7198 (:pr:`7199`)
+
+
+Improved Drivers:
+-----------------
+
+- The Keysight 344xxA drivers have been updated to ensure that ``NPLC``, ``autorange``, ``autozero``, ``apature_time`` and ```apature_mode``
+  parameters use the correct instrument commends for the sense mode selected by the ``sense_function`` parameter. (:pr:`6723`)
+
+
+New:
+----
+
+- ``InstrumentBase.add_submodule`` now returns the added submodule. This similar to changes made in ``add_parameter`` earlier.
+  This makes it possible to assign this to an attribute which enables static code checkers, IDEs and documentation to
+  discover submodules. The ``Galil`` drivers have been updated to make use of this. Consult the ``Galil`` driver or ``Creating-Instrument-Drivers``
+  notebook for examples of how to use this. It is planed that QCoDeS in the future will ship with a tool to automatically perform this refactor
+  and updates to all included drivers. (:pr:`7017`)

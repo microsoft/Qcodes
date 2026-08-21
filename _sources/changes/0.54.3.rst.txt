@@ -1,0 +1,18 @@
+QCoDeS 0.54.3 (2025-11-11)
+==========================
+
+Improved:
+---------
+
+- - Improved pyvisa-sim YAMLs for Lakeshore Models 335, 336, and 372.
+  - Updated Lakeshore tests to use pyvisa-sim backend instead of mocked classes.
+  - Updated lakeshore_base.py to bypass waiting when using blocking_t in sim mode. (:pr:`7606`)
+- Fixes a bug in the LinSweeper iterator that caused it to always raise StopIteration after
+  completing a single sweep. This bug meant LinSweeper could not be used in a nested measurement function. (:pr:`7607`)
+
+Improved Drivers:
+-----------------
+
+- The Stanford SR86x drivers now statically assign attributes statically
+  for more member InstrumentModules and parameters enabling better documentation,
+  type checking and IDE integration. (:pr:`7542`)

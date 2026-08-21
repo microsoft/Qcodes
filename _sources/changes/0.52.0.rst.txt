@@ -1,0 +1,54 @@
+QCoDeS 0.52.0 (2025-04-03)
+==========================
+
+**Note** This will be the last version of QCoDeS to support Python 3.10.
+
+
+Breaking Changes:
+-----------------
+
+- QCoDeS no longer ships a ``setup.py`` script and all package config is done in ``pyproject.toml``
+  A version of `pip` or other package manager supporting ``PEP621`` is required to build from source. (:pr:`6919`)
+- The QCoDeS dataset sqlite connection class `ConnectionPlus` has been deprecated and replace with `AtomicConnection`.
+  Unlike `ConnectionPlus` `AtomicConnection` is a direct subclass of `sqlite3.Connection` which enables better type checking
+  and will allow QCoDeS to drop the dependency on `wrapt`. The function `make_connection_plus_from` is also deprecated and
+  it is no longer supported to convert a connection from a sqlite3 connection to a QCoDeS specific connection. (:pr:`6942`)
+- The QCoDeS deprecation utils including ``qcodes.utils.deprecate.deprecation_message``,
+  ``qcodes.utils.deprecate.issue_deprecation_warning``,  ``qcodes.utils.deprecate.deprecate``  ``qcodes.utils.deprecate.assert_not_deprecated``
+  and ``qcodes.utils.deprecate.assert_deprecated`` along with their reexports in `qcodes`, `qcodes.utils` and `qcodes.utils.helpers`
+  are all deprecated and will be removed in QCoDeS 0.54.0. We recommend using `typing_extensions.deprecate` as an alternative. (:pr:`6946`)
+
+
+Improved:
+---------
+
+- Added 'parameters' argument to the 'plot_dataset' (and 'plot_by_id')
+  functions. This enables a choice of which dependent parameters to plot
+  (in the case that the plotting of all dependent parameters is not
+  desired). (:pr:`6931`)
+- Save the parameter snapshot under the `register_name` key in the parameters snapshot in datasets (not the station snapshot), to avoid overwritting the snapshot multiple parameters have identical `short_name`s.
+  The parameter snapshot saved under the short name key is kept for backwards compatibility, but will be removed at a later time. (:pr:`7012`)
+
+
+Improved Drivers:
+-----------------
+
+- Added several parameters into the oxford MercuryiPS driver,
+  enabling the control of the heaters and the sensing of internal temperatures
+  (magnet, PT1, and PT2 stage of cryogenic system).
+  Added `heater_switch` parameter to manage the heater switch status and settings.
+  The heater switch control is bound to each WorkerPS, accepting "ON" and "OFF" as inputs.
+  Added `magnet_temp`, `pt1_temp`, and `pt2_temp` parameters for reading temperatures
+  from different sensors, utilizing the new `_temp_parser` function.
+  Currently, the addresses of temperature sensors are written statically in the driver. (:pr:`6889`)
+
+
+New:
+----
+
+- Added a global callback mechanism to `ParameterBase` that enables users to
+  supply custom callback functions to handle parameter changes. This new feature
+  allows for flexible integrations—such as logging changes, updating dashboards, or
+  other custom processing—without modifying full snapshot behavior.
+  See the PR for details on a usage example. (:pr:`6934`)
+- A new Validator ``LiteralValidator`` was added. This allows validating against the members of a ``typing.Literal``. (:pr:`7009`)
