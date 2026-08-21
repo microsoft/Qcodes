@@ -181,7 +181,7 @@ class ParamSpec(_ParamSpecBase):
         )
 
     @classmethod
-    def _from_dict(cls, ser: ParamSpecDict) -> ParamSpec:  # type: ignore[override]
+    def _from_dict(cls, ser: ParamSpecDict) -> ParamSpec:  # type: ignore[override]  # ty: ignore[invalid-method-override]
         """
         Create a ParamSpec instance of the current version
         from a dictionary representation of ParamSpec of some version
