@@ -1,0 +1,4 @@
+The Alazar DLL wrapper no longer assumes that the callable handed to a ctypes
+``errcheck`` has a ``__name__``, which a plain ``Callable`` does not guarantee.
+The error message falls back to the repr of the callable instead. This only
+affects the text of an error that should not occur in practice.

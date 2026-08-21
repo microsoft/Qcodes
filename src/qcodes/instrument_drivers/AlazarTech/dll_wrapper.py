@@ -64,17 +64,21 @@ def _check_error_code(
         if len(argrepr) > 100:
             argrepr = argrepr[:96] + "...]"
 
+        # ``errcheck`` is always handed a ctypes foreign function, which has a
+        # ``__name__``, but a plain ``Callable`` is not guaranteed to.
+        func_name = getattr(func, "__name__", repr(func))
+
         logger.error(
             f"Alazar API returned code {return_code} from function "
-            f"{func.__name__} with args {argrepr}"
+            f"{func_name} with args {argrepr}"
         )
 
         if return_code not in ERROR_CODES:
             raise RuntimeError(
-                f"unknown error {return_code} from function {func.__name__} with args: {argrepr}"
+                f"unknown error {return_code} from function {func_name} with args: {argrepr}"
             )
         raise RuntimeError(
-            f"error {return_code}: {ERROR_CODES[ReturnCode(return_code)]} from function {func.__name__} with args: {argrepr}"
+            f"error {return_code}: {ERROR_CODES[ReturnCode(return_code)]} from function {func_name} with args: {argrepr}"
         )
 
     return arguments
