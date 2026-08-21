@@ -1,0 +1,5 @@
+``numpy_ints`` and ``numpy_floats`` in ``qcodes.utils.types`` are now annotated
+as tuples of ``type[np.integer]`` and ``type[np.floating]`` rather than of bare
+``type``. As a consequence ``_adapt_float``, which is registered as a sqlite
+adapter for the numpy float types as well as for ``float``, now declares that it
+accepts ``np.floating`` too. Its behaviour is unchanged.
