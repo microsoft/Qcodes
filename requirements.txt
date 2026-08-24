@@ -299,7 +299,7 @@ pyarrow==25.0.1
     #   qcodes
 pyelftools==0.33
     # via zhinst-toolkit
-pygments==2.20.0
+pygments==2.21.0
     # via
     #   accessible-pygments
     #   furo
