@@ -26,8 +26,13 @@ updates:
 - package-ecosystem: github-actions
   directory: "/"
   rebase-strategy: "disabled"
+  groups:
+    codeql:
+      patterns:
+        - "*codeql*"
   schedule:
     interval: "daily"
+
 
 - package-ecosystem: npm
   directory: /.github
