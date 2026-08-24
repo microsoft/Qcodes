@@ -1033,7 +1033,7 @@ class ParameterBase(
                 # a list containing only `value`.
                 # The steps are deliberately untyped: ``get_ramp_values`` works
                 # in terms of numbers rather than the parameter's data type.
-                steps: Sequence[Any] = self.get_ramp_values(value, step=self.step)  # type: ignore[arg-type]
+                steps: Sequence[Any] = self.get_ramp_values(value, step=self.step)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
                 for val_step in steps:
                     # even if the final value is valid we may be generating
