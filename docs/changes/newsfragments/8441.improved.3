@@ -1,0 +1,6 @@
+The return type of :func:`.parse_awg_file` has been corrected. The waveform and
+marker entries were declared as lists of dicts, but the parser returns the arrays
+from inside those dicts, and the loop counts and sequencing values were declared
+as possibly ``str`` when they are always ``int``. The type now matches the call
+signature of :meth:`.TektronixAWG5014.make_send_and_load_awg_file`, which the
+docstring already promised and which is how the function is meant to be used.
