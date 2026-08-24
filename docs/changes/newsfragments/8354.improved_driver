@@ -1,7 +1,0 @@
-The QDev QDac driver now honors the ``"Only_invalid"`` snapshot ``update`` mode:
-when snapshotting, the bulk status read that refreshes the channel
-``v``/``i``/``irange``/``vrange`` caches is only performed for ``update="All"``,
-or for ``update="Only_invalid"`` when one of those channel caches is actually
-invalid. Previously the bulk read was performed on every snapshot that was not
-``"Never"``, which made repeated snapshots unnecessarily expensive even when the
-channel caches were already valid.
