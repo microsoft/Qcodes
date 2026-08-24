@@ -1,0 +1,6 @@
+The ``callback`` argument of :meth:`.DataSet.subscribe` is now typed as
+``Callable[..., None]``. The previous annotation described a callback taking
+exactly three arguments, which contradicted ``callback_kwargs``: those are bound
+onto the callback with ``functools.partial``, so a callback using them takes
+further arguments. ``_Subscriber``, which ``subscribe`` forwards to, already
+typed it this way.
