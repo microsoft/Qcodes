@@ -295,14 +295,18 @@ AWG_TRANSLATER = {
     "WAIT_VALUE": {1: "First", 2: "Last"},
 }
 
+# The tuple returned by ``_parser3``, and therefore by ``parse_awg_file``. It
+# deliberately matches the call signature of
+# ``TektronixAWG5014.make_send_and_load_awg_file``, so that the output of the
+# parser can be passed straight back in.
 _parser3_output = tuple[
-    list[list[dict[Any, Any]]],
-    list[list[dict[Any, Any]]],
-    list[list[dict[Any, Any]]],
-    list[str | int],
-    list[str | int],
-    list[str | int],
-    list[str | int],
+    list[list[npt.NDArray]],
+    list[list[npt.NDArray]],
+    list[list[npt.NDArray]],
+    list[int],
+    list[int],
+    list[int],
+    list[int],
     list[int],
 ]
 
