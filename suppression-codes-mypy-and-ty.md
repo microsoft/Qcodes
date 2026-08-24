@@ -33,9 +33,88 @@ Note that the `arg-type` half of the combined form *is* honoured by mypy. It is
 only the `ty:` prefixed code that mypy does not recognise, and therefore reports
 as unused.
 
-pyright honours a `# type: ignore` comment regardless of the codes in it, so it
-accepts all three forms. That is also why removing a mypy suppression can
-surface a pyright error on the same line.
+## How pyright fits in
+
+pyright has its own suppression comment and also honours mypy's, which is why it
+accepts all three forms above.
+
+| comment | pyright |
+| --- | --- |
+| `# type: ignore` | suppressed |
+| `# type: ignore[arg-type]` | suppressed |
+| `# type: ignore[arg-type, ty:invalid-argument-type]` | suppressed |
+| `# pyright: ignore` | suppressed |
+| `# pyright: ignore[reportArgumentType]` | suppressed |
+| `# pyright: ignore[reportGeneralTypeIssues]` | **not** suppressed, wrong rule |
+| `# ty: ignore[invalid-argument-type]` | **not** suppressed |
+
+Two things follow from this.
+
+**`# type: ignore` is a blanket suppression for pyright.** pyright does not parse
+the codes in it, so `# type: ignore[arg-type]` silences *every* pyright rule on
+that line, not just the argument type one. A consequence that came up repeatedly
+during the ty migration: removing a mypy suppression can surface a pyright error
+on the same line that was never visible before. `# pyright: ignore[rule]` is the
+precise form, and unlike `# type: ignore` it only suppresses the rules listed.
+
+**A ty only suppression does not silence pyright.** `# ty: ignore[...]` is just a
+comment as far as pyright is concerned. That is what makes the two comment form
+safe: the mypy half keeps pyright quiet as a side effect, and the ty half is
+inert for both of the others.
+
+## Unused suppression detection
+
+The three checkers differ in whether they tell you a suppression has gone stale.
+
+| checker | setting | default | reports unused |
+| --- | --- | --- | --- |
+| mypy | `warn_unused_ignores` | off | enabled in `pyproject.toml` |
+| ty | `unused-ignore-comment` | on | yes, for `ty: ignore` directives |
+| pyright | `reportUnnecessaryTypeIgnoreComment` | off | not enabled, see below |
+
+With the pyright setting enabled it reports all of these:
+
+```python
+def g(a: int) -> None: ...
+
+
+g(1)  # type: ignore
+g(1)  # pyright: ignore
+g(1)  # pyright: ignore[reportArgumentType]
+```
+
+```
+Unnecessary "# type: ignore" comment
+Unnecessary "# type: ignore" comment
+Unnecessary "# pyright: ignore" rule: "reportArgumentType"
+```
+
+**We cannot enable it while we also run mypy.** Because pyright treats
+`# type: ignore` as a blanket suppression of *its own* rules, it calls the
+comment unnecessary whenever pyright itself has nothing to report on the line,
+with no knowledge of whether mypy needed it. Every mypy only suppression in the
+code base would be reported as unnecessary. For example:
+
+```python
+from typing import Any
+
+
+class A:
+    def m(self) -> None: ...
+
+
+def make(a: A, replacement: Any) -> None:
+    # mypy reports method-assign here, pyright has no equivalent check
+    a.m = replacement  # type: ignore[method-assign]
+```
+
+mypy needs that suppression: removing it gives
+`error: Cannot assign to a method  [method-assign]`. pyright with
+`reportUnnecessaryTypeIgnoreComment` enabled reports the very same line as
+`Unnecessary "# type: ignore" comment`.
+
+So mypy's `warn_unused_ignores` and ty's `unused-ignore-comment` are the two
+stale suppression checks we can actually rely on.
 
 ## Test case
 
@@ -56,6 +135,25 @@ f("one")  # type: ignore[ty:invalid-argument-type]
 f("one")
 ```
 
+And for the pyright specific forms:
+
+```python
+def h(a: int) -> None: ...
+
+
+# 5. pyright: ignore, blanket
+h("one")  # pyright: ignore
+
+# 6. pyright: ignore with the matching rule
+h("one")  # pyright: ignore[reportArgumentType]
+
+# 7. pyright: ignore with a non matching rule
+h("one")  # pyright: ignore[reportGeneralTypeIssues]
+
+# 8. ty: ignore only
+h("one")  # ty: ignore[invalid-argument-type]
+```
+
 Run from the repository root so that the mypy configuration in `pyproject.toml`
 is picked up:
 
@@ -66,14 +164,27 @@ uv run --extra test mypy --no-warn-unused-ignores <file>
 uv run pyright <file>
 ```
 
-Only case 4 should be reported. Every checker reporting anything on cases 1 to 3
-tells you which form is currently supported.
+Expected results:
+
+| block | ty | mypy | pyright |
+| --- | --- | --- | --- |
+| first, cases 1 to 4 | 4 | 1, 3, 4 and two unused directives | 4 |
+| second, cases 5 to 8 | 5, 6, 7 | 5, 6, 7, 8 | 7, 8 |
+
+The second block deliberately exercises comments that only one checker
+understands, so most cases are reported by the other two. That is the point: it
+shows that `pyright: ignore` is inert for mypy and ty, and that `ty: ignore` is
+inert for mypy and pyright.
+
+Any deviation from this table tells you that one of the checkers has changed how
+it reads these comments.
 
 ## Why we keep `warn_unused_ignores`
 
 Dropping `warn_unused_ignores` would make the combined form work, but that
-setting is worth more than the shorter comments. It is what tells us when a
-suppression has become obsolete. During the ty migration it caught:
+setting is worth more than the shorter comments. As shown above it is, together
+with ty's `unused-ignore-comment`, one of only two stale suppression checks
+available to us. During the ty migration it caught:
 
 - the `issuperset` suppression becoming redundant once
   [astral-sh/ty#4303](https://github.com/astral-sh/ty/issues/4303) was fixed in
