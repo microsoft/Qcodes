@@ -1,0 +1,5 @@
+``json_template_linear`` and ``json_template_heatmap`` in
+``qcodes.dataset.json_exporter`` are now annotated as ``dict[str, Any]``. They
+are templates for a JSON document, so their values are deliberately
+heterogeneous, and without the annotation the inferred value type made indexing
+into them an error for callers filling the template in.
