@@ -1,0 +1,7 @@
+``Keysight34980A.module`` is now a ``dict`` of
+``Keysight34980ASwitchMatrixSubModule`` rather than one built with
+``dict.fromkeys``, whose values were typed as possibly ``None``. ``scan_slots``
+puts an entry in for every slot, either the driver for the installed module or a
+generic submodule, so the values were never ``None`` once the instrument was
+constructed. Code using ``instrument.module[slot]`` no longer has to account for
+a ``None`` that cannot occur.
