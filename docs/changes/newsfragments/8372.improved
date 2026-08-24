@@ -1,0 +1,4 @@
+The example notebooks no longer use the deprecated short hand aliases in the top
+level ``qcodes`` namespace, such as ``qcodes.Station`` and ``qcodes.Measurement``.
+They import the names from their respective submodules instead, which is what
+the deprecation warning asks users to do and what keeps type information.
