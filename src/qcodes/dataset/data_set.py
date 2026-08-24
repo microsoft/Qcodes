@@ -1144,7 +1144,11 @@ class DataSet(BaseDataSet):
 
     def subscribe(
         self,
-        callback: Callable[[Any, int, Any | None], None],
+        # ``Callable[..., None]`` rather than a three argument callable because
+        # ``callback_kwargs`` below is bound onto the callback with
+        # ``functools.partial``, so it may take further keyword arguments. This
+        # matches how ``_Subscriber`` types the same callback.
+        callback: Callable[..., None],
         min_wait: int = 0,
         min_count: int = 1,
         state: Any | None = None,
