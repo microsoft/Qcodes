@@ -68,9 +68,7 @@ def test_station_snapshot_during_measurement(
     assert expected_snapshot == snapshot_from_dataset
 
     # 2. Test `snapshot_raw` property
-    # this is not part of the DatasetProtocol interface
-    # but we test it anyway
-    assert json_snapshot_from_dataset == data_saver.dataset.snapshot_raw  # type: ignore[attr-defined]
+    assert json_snapshot_from_dataset == data_saver.dataset.snapshot_raw
 
     # 3. Test `snapshot` property
 
