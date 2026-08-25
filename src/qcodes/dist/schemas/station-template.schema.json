@@ -12,22 +12,69 @@
         "parameter_base": {
             "$comment": "A common base for the properties shared by 'add_parameters' and 'parameters' can first be implemented with the new json-schema draft 2019-09, for which there is no implementation at this point. The new feature is called 'unevaluatedProperties'."
         },
+        "parameter_settings": {
+            "$comment": "Settings applied to an existing parameter: a mapping of parameter attributes such as 'initial_value', 'label', 'unit', 'limits'. Used both in the 'parameters' section and when configuring parameters nested under a submodule or channel list/tuple.",
+            "type": "object",
+            "properties": {
+                "alias": {
+                    "type": "string",
+                    "pattern": "^\\w+$"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "unit": {
+                    "type": "string"
+                },
+                "scale": {
+                    "type": "number"
+                },
+                "post_delay": {
+                    "type": "number"
+                },
+                "inter_delay": {
+                    "type": "number"
+                },
+                "step": {
+                    "type": "number"
+                },
+                "offset": {
+                    "type": "number"
+                },
+                "limits": {
+                    "type": [
+                        "array",
+                        "string"
+                    ],
+                    "items": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "number"
+                        }
+                    ],
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "additionalItems": false
+                },
+                "initial_value": {},
+                "monitor": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false
+        },
         "component_settings": {
-            "$comment": "Settings for a submodule or channel list/tuple of an instrument. Keys are names of parameters (mapped to the value they should be set to) or of nested submodules/channel list/tuples (mapped to a nested settings object).",
+            "$comment": "Settings for a submodule or channel list/tuple of an instrument. Each key is the name of either a parameter (mapped to its settings, see 'parameter_settings') or a nested submodule/channel list/tuple (mapped to another 'component_settings' object).",
             "type": "object",
             "additionalProperties": {
                 "anyOf": [
                     {
-                        "$ref": "#/definitions/component_settings"
+                        "$ref": "#/definitions/parameter_settings"
                     },
                     {
-                        "type": [
-                            "number",
-                            "string",
-                            "boolean",
-                            "array",
-                            "null"
-                        ]
+                        "$ref": "#/definitions/component_settings"
                     }
                 ]
             }
@@ -133,56 +180,7 @@
                             "type": "object",
                             "patternProperties": {
                                 "^(\\w+(\\[\\d+\\])*)(\\.\\w+(\\[\\d+\\])*)*$": {
-                                    "type": "object",
-                                    "properties": {
-                                        "alias": {
-                                            "type": "string",
-                                            "pattern": "^\\w+$"
-                                        },
-                                        "label": {
-                                            "type": "string"
-                                        },
-                                        "unit": {
-                                            "type": "string"
-                                        },
-                                        "scale": {
-                                            "type": "number"
-                                        },
-                                        "post_delay": {
-                                            "type": "number"
-                                        },
-                                        "inter_delay": {
-                                            "type": "number"
-                                        },
-                                        "step": {
-                                            "type": "number"
-                                        },
-                                        "offset": {
-                                            "type": "number"
-                                        },
-                                        "limits": {
-                                            "type": [
-                                                "array",
-                                                "string"
-                                            ],
-                                            "items": [
-                                                {
-                                                    "type": "number"
-                                                },
-                                                {
-                                                    "type": "number"
-                                                }
-                                            ],
-                                            "minItems": 2,
-                                            "maxItems": 2,
-                                            "additionalItems": false
-                                        },
-                                        "initial_value": {},
-                                        "monitor": {
-                                            "type": "boolean"
-                                        }
-                                    },
-                                    "additionalProperties": false
+                                    "$ref": "#/definitions/parameter_settings"
                                 }
                             },
                             "additionalProperties": false

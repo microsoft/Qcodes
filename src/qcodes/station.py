@@ -568,19 +568,29 @@ class Station(Metadatable, DelegateAttributes):
         ``port``, ``enable_forced_reconnect``, ``parameters`` and
         ``add_parameters``), an instrument section may contain keys naming a
         submodule or channel list/tuple of the instrument. The value of such a
-        key is a mapping of parameter names to the values they should be set
-        to (setting a value on a channel list/tuple sets it on every channel
-        in the container). These mappings can be nested to reach submodules of
+        key is a mapping of parameter names to their settings, in the same form
+        as the ``parameters`` section (e.g. ``initial_value: 27``). Configuring
+        a parameter of a channel list/tuple applies it to every channel in the
+        container. These mappings can be nested to reach submodules of
         submodules. For example::
 
             instruments:
               instr1:
                 type: ...
                 mychannels:
-                  myparam: 27
+                  myparam:
+                    initial_value: 27
 
         sets ``myparam`` to ``27`` on every channel of the ``mychannels``
-        channel list/tuple of ``instr1``.
+        channel list/tuple of ``instr1``. This is equivalent to using a dotted
+        path in the ``parameters`` section::
+
+            instruments:
+              instr1:
+                type: ...
+                parameters:
+                  mychannels.myparam:
+                    initial_value: 27
 
         Args:
             identifier: The identifying string that is looked up in the yaml
@@ -685,7 +695,7 @@ class Station(Metadatable, DelegateAttributes):
                 )
 
         def setup_parameter_from_dict(
-            parameter: ParameterBase, options: dict[str, Any]
+            parameter: ParameterBase, options: Mapping[str, Any]
         ) -> None:
             for attr, val in options.items():
                 if attr in PARAMETER_ATTRIBUTES:
@@ -741,16 +751,19 @@ class Station(Metadatable, DelegateAttributes):
             path: str,
         ) -> None:
             """
-            Set parameters on a submodule or channel list/tuple of an
+            Configure parameters on a submodule or channel list/tuple of an
             instrument from a nested mapping in the station configuration.
 
             For every ``name: value`` pair in ``settings`` the attribute
             ``name`` is looked up on ``component``:
 
-            * if it is a parameter, it is set to ``value`` (setting a value on
-              a channel list/tuple sets it on every channel in the container);
-            * if it is a submodule or channel list/tuple, ``value`` must itself
-              be a mapping which is applied recursively.
+            * if it is a parameter, ``value`` must be a mapping of parameter
+              attributes (the same form as the ``parameters`` section, e.g.
+              ``initial_value: 27``) and is applied to it. Configuring a
+              parameter of a channel list/tuple applies it to every channel in
+              the container;
+            * if it is a submodule or channel list/tuple, ``value`` must be a
+              mapping which is applied recursively.
             """
             for name, value in settings.items():
                 child_path = f"{path}.{name}"
@@ -769,19 +782,19 @@ class Station(Metadatable, DelegateAttributes):
                             f"{component!r} is a submodule or channel "
                             f"list/tuple, so its configuration must be a "
                             f"mapping of parameter names (or nested "
-                            f"submodules) to values, but got a "
+                            f"submodules) to their settings, but got a "
                             f"{type(value).__name__}."
                         )
                     set_component_parameters_from_dict(attribute, value, child_path)
                 elif isinstance(attribute, ParameterBase):
-                    if isinstance(value, Mapping):
+                    if not isinstance(value, Mapping):
                         raise RuntimeError(
-                            f"Cannot set parameter `{child_path}` to "
-                            f"{value!r}: a mapping is only allowed when "
-                            f"configuring a submodule or channel list/tuple, "
-                            f"not a parameter."
+                            f"Cannot configure parameter `{child_path}`: its "
+                            f"settings must be a mapping of parameter "
+                            f"attributes (e.g. `initial_value: ...`), but got "
+                            f"a {type(value).__name__}."
                         )
-                    attribute.set(value)
+                    setup_parameter_from_dict(attribute, value)
                 else:
                     raise RuntimeError(
                         f"Cannot configure `{child_path}`: `{name}` on "
