@@ -168,6 +168,9 @@ class DataSetProtocol(Protocol):
     @property
     def _snapshot_raw(self) -> str | None: ...
 
+    @property
+    def snapshot_raw(self) -> str | None: ...
+
     def add_metadata(self, tag: str, metadata: Any) -> None: ...
 
     @property
