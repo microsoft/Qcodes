@@ -715,6 +715,9 @@ instruments:
 
 
 def test_setting_channel_parameter() -> None:
+    """The ``parameters`` section resolves dotted paths to a parameter on a
+    channel list/tuple; the verbose ``initial_value`` mapping sets it on every
+    channel."""
     st = station_from_config_str(
         """
 instruments:
@@ -727,6 +730,252 @@ instruments:
     )
     mock = st.load_instrument("mock")
     assert mock.channels.temperature() == (10,) * 6
+
+
+def test_setting_channeltuple_parameter_via_nested_config() -> None:
+    """Configure a parameter on every channel of a channel list/tuple by
+    nesting its settings under the channel container's name."""
+    st = station_from_config_str(
+        """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    channels:
+      temperature:
+        initial_value: 27
+    """
+    )
+    mock = st.load_instrument("mock")
+    assert mock.channels.temperature() == (27,) * 6
+
+
+def test_setting_submodule_parameter_via_nested_config() -> None:
+    """Configure a parameter on a single submodule (channel) by nesting its
+    settings under the submodule's name. Parameter attributes such as ``unit``
+    behave as in the ``parameters`` section."""
+    st = station_from_config_str(
+        """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    A:
+      temperature:
+        initial_value: 15
+        unit: mK
+    """
+    )
+    mock = st.load_instrument("mock")
+    assert mock.A.temperature() == 15
+    assert mock.A.temperature.unit == "mK"
+    # other channels are untouched
+    assert mock.B.temperature() == 0
+
+
+def test_setting_parameter_on_submodule_and_channeltuple_combined() -> None:
+    """A per-channel override applied after a channel-list-wide value wins."""
+    st = station_from_config_str(
+        """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    channels:
+      temperature:
+        initial_value: 5
+    A:
+      temperature:
+        initial_value: 99
+    """
+    )
+    mock = st.load_instrument("mock")
+    assert mock.A.temperature() == 99
+    assert mock.B.temperature() == 5
+
+
+def test_setting_nested_submodule_parameter_from_config() -> None:
+    """Nested mappings descend into submodules of submodules."""
+    st = station_from_config_str(
+        """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    channels:
+      ChanA:
+        temperature:
+          initial_value: 3
+    """
+    )
+    mock = st.load_instrument("mock")
+    assert mock.A.temperature() == 3
+
+
+def test_nested_config_equivalent_to_dotted_path_in_parameters() -> None:
+    """The nested form and the dotted-path ``parameters`` form are equivalent."""
+    nested = station_from_config_str(
+        """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    channels:
+      temperature:
+        initial_value: 12
+    """
+    ).load_instrument("mock")
+    assert nested.channels.temperature() == (12,) * 6
+    Instrument.close_all()
+
+    dotted = station_from_config_str(
+        """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    parameters:
+      channels.temperature:
+        initial_value: 12
+    """
+    ).load_instrument("mock")
+    assert dotted.channels.temperature() == (12,) * 6
+
+
+def test_nested_config_unknown_component_raises() -> None:
+    st = station_from_config_str(
+        """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    not_a_submodule:
+      temperature:
+        initial_value: 1
+    """
+    )
+    with pytest.raises(
+        RuntimeError,
+        match=r"Cannot resolve `not_a_submodule`.*has no parameter, submodule",
+    ):
+        st.load_instrument("mock")
+
+
+def test_nested_config_scalar_parameter_value_rejected_by_schema() -> None:
+    """A bare (scalar) value for a parameter is not allowed; it must be a
+    mapping of parameter attributes, consistent with the ``parameters``
+    section. This is rejected early at schema-validation time."""
+    with pytest.raises(ValidationWarning):
+        station_from_config_str(
+            """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    A:
+      temperature: 5
+    """
+        )
+
+
+def test_nested_config_scalar_top_level_rejected_by_schema() -> None:
+    with pytest.raises(ValidationWarning):
+        station_from_config_str(
+            """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    channels: 5
+    """
+        )
+
+
+def test_nested_config_applied_after_parameters_section() -> None:
+    """The nested submodule/channel settings are applied after the
+    ``parameters`` section, so when the same parameter is configured in both,
+    the nested value wins."""
+    st = station_from_config_str(
+        """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    parameters:
+      A.temperature:
+        initial_value: 5
+    A:
+      temperature:
+        initial_value: 99
+    """
+    )
+    mock = st.load_instrument("mock")
+    assert mock.A.temperature() == 99
+
+
+def test_nested_config_non_component_non_parameter_attribute_raises() -> None:
+    """A key that resolves to an attribute that is neither a parameter nor a
+    submodule/channel list/tuple raises a clear error."""
+    st = station_from_config_str(
+        """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    metadata:
+      foo:
+        initial_value: 1
+    """
+    )
+    with pytest.raises(
+        RuntimeError,
+        match=r"Cannot configure `mock.metadata`.*is neither a parameter nor a",
+    ):
+        st.load_instrument("mock")
+
+
+def test_nested_config_scalar_parameter_value_runtime_error() -> None:
+    """If schema validation is only a warning (as in production), a bare scalar
+    for a parameter is still caught at load time with a clear error."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", ValidationWarning)
+        st = station_from_config_str(
+            """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    A:
+      temperature: 5
+    """
+        )
+        with pytest.raises(
+            RuntimeError,
+            match=r"Cannot configure parameter `mock.A.temperature`.*must be a "
+            r"mapping",
+        ):
+            st.load_instrument("mock")
+
+
+def test_nested_config_scalar_submodule_value_runtime_error() -> None:
+    """As above, but for a bare scalar given to a submodule/channel."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", ValidationWarning)
+        st = station_from_config_str(
+            """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    channels:
+      ChanA: 5
+    """
+        )
+        with pytest.raises(
+            RuntimeError,
+            match=r"Cannot configure `mock.channels.ChanA`.*must be a mapping",
+        ):
+            st.load_instrument("mock")
 
 
 def test_monitor_not_loaded_by_default(example_station_config) -> None:

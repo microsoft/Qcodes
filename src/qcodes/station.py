@@ -13,6 +13,7 @@ import os
 import pkgutil
 import warnings
 from collections import deque
+from collections.abc import Mapping
 from contextlib import suppress
 from copy import copy, deepcopy
 from functools import partial
@@ -35,7 +36,7 @@ import qcodes
 import qcodes.instrument_drivers
 from qcodes import validators
 from qcodes.instrument import Instrument, InstrumentBase
-from qcodes.instrument.channel import ChannelTuple
+from qcodes.instrument.channel import ChannelTuple, InstrumentModule
 from qcodes.metadatable import (
     Metadatable,
     MetadatableWithName,
@@ -73,6 +74,24 @@ PARAMETER_ATTRIBUTES = [
     "step",
     "offset",
 ]
+
+# Keys of a per-instrument section in the station configuration that are
+# handled explicitly by :meth:`Station.load_instrument`. Any other key in an
+# instrument section is interpreted as the name of a submodule or channel
+# list/tuple on the instrument on which parameters should be set. See
+# :meth:`Station.load_instrument` for details.
+INSTRUMENT_CONFIG_RESERVED_KEYS = frozenset(
+    {
+        "type",
+        "driver",
+        "address",
+        "port",
+        "enable_forced_reconnect",
+        "init",
+        "parameters",
+        "add_parameters",
+    }
+)
 
 SCHEMA_TEMPLATE_PATH = os.path.join(
     get_qcodes_path("dist", "schemas"), "station-template.schema.json"
@@ -545,6 +564,41 @@ class Station(Metadatable, DelegateAttributes):
         Creates an :class:`~.Instrument` instance as described by the
         loaded configuration file.
 
+        In addition to the reserved keys (``type``, ``init``, ``address``,
+        ``port``, ``enable_forced_reconnect``, ``parameters`` and
+        ``add_parameters``), an instrument section may contain keys naming a
+        submodule or channel list/tuple of the instrument. The value of such a
+        key is a mapping of parameter names to their settings, in the same form
+        as the ``parameters`` section (e.g. ``initial_value: 27``). Configuring
+        a parameter of a channel list/tuple applies it to every channel in the
+        container. These mappings can be nested to reach submodules of
+        submodules. For example::
+
+            instruments:
+              instr1:
+                type: ...
+                mychannels:
+                  myparam:
+                    initial_value: 27
+
+        sets ``myparam`` to ``27`` on every channel of the ``mychannels``
+        channel list/tuple of ``instr1``. This is equivalent to using a dotted
+        path in the ``parameters`` section::
+
+            instruments:
+              instr1:
+                type: ...
+                parameters:
+                  mychannels.myparam:
+                    initial_value: 27
+
+        The configuration is applied in a well-defined order: the
+        ``parameters`` section first, then the ``add_parameters`` section, and
+        finally the nested submodule/channel list/tuple settings. This means
+        that when the same parameter is configured in more than one of these,
+        the nested submodule/channel settings take precedence (they are applied
+        last).
+
         Args:
             identifier: The identifying string that is looked up in the yaml
                 configuration file, which identifies the instrument to be added.
@@ -648,7 +702,7 @@ class Station(Metadatable, DelegateAttributes):
                 )
 
         def setup_parameter_from_dict(
-            parameter: ParameterBase, options: dict[str, Any]
+            parameter: ParameterBase, options: Mapping[str, Any]
         ) -> None:
             for attr, val in options.items():
                 if attr in PARAMETER_ATTRIBUTES:
@@ -698,6 +752,64 @@ class Station(Metadatable, DelegateAttributes):
             instr.add_parameter(name, param_type, **kwargs)
             setup_parameter_from_dict(instr.parameters[name], options)
 
+        def set_component_parameters_from_dict(
+            component: ChannelOrInstrumentBase,
+            settings: Mapping[str, Any],
+            path: str,
+        ) -> None:
+            """
+            Configure parameters on a submodule or channel list/tuple of an
+            instrument from a nested mapping in the station configuration.
+
+            For every ``name: value`` pair in ``settings`` the attribute
+            ``name`` is looked up on ``component``:
+
+            * if it is a parameter, ``value`` must be a mapping of parameter
+              attributes (the same form as the ``parameters`` section, e.g.
+              ``initial_value: 27``) and is applied to it. Configuring a
+              parameter of a channel list/tuple applies it to every channel in
+              the container;
+            * if it is a submodule or channel list/tuple, ``value`` must be a
+              mapping which is applied recursively.
+            """
+            for name, value in settings.items():
+                child_path = f"{path}.{name}"
+                try:
+                    attribute = getattr(component, name)
+                except AttributeError:
+                    raise RuntimeError(
+                        f"Cannot resolve `{name}` in `{child_path}`: "
+                        f"{component!r} has no parameter, submodule or "
+                        f"channel list/tuple with that name."
+                    ) from None
+                if isinstance(attribute, (InstrumentModule, ChannelTuple)):
+                    if not isinstance(value, Mapping):
+                        raise RuntimeError(
+                            f"Cannot configure `{child_path}`: `{name}` on "
+                            f"{component!r} is a submodule or channel "
+                            f"list/tuple, so its configuration must be a "
+                            f"mapping of parameter names (or nested "
+                            f"submodules) to their settings, but got a "
+                            f"{type(value).__name__}."
+                        )
+                    set_component_parameters_from_dict(attribute, value, child_path)
+                elif isinstance(attribute, ParameterBase):
+                    if not isinstance(value, Mapping):
+                        raise RuntimeError(
+                            f"Cannot configure parameter `{child_path}`: its "
+                            f"settings must be a mapping of parameter "
+                            f"attributes (e.g. `initial_value: ...`), but got "
+                            f"a {type(value).__name__}."
+                        )
+                    setup_parameter_from_dict(attribute, value)
+                else:
+                    raise RuntimeError(
+                        f"Cannot configure `{child_path}`: `{name}` on "
+                        f"{component!r} is neither a parameter nor a "
+                        f"submodule/channel list/tuple but a "
+                        f"{type(attribute).__name__}."
+                    )
+
         def update_monitor() -> None:
             if (
                 self.use_monitor is None and get_config_use_monitor()
@@ -718,6 +830,13 @@ class Station(Metadatable, DelegateAttributes):
             if isinstance(local_instr, ChannelTuple):
                 raise RuntimeError("A parameter cannot be added to an ChannelTuple")
             add_parameter_from_dict(local_instr, parts[-1], options)
+        component_settings = {
+            name: settings
+            for name, settings in instr_cfg.items()
+            if name not in INSTRUMENT_CONFIG_RESERVED_KEYS
+        }
+        if component_settings:
+            set_component_parameters_from_dict(instr, component_settings, identifier)
         self.add_component(instr, update_snapshot=update_snapshot)
         update_monitor()
         return instr
