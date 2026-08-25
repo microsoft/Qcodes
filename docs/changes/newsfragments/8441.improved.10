@@ -1,0 +1,3 @@
+The offline plotting tutorial now checks the optional values it gets back from
+:func:`.plot_dataset` before using them, and asks for the root figure when
+saving. ``Axes.figure`` may be a ``SubFigure``, which has no ``savefig``.
