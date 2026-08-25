@@ -326,7 +326,7 @@ def _xarray_data_set_direct(
     extra_data_vars: dict[str, tuple[tuple[str, ...], npt.NDArray]] = {}
 
     for inf in inferred:
-        if inf.name in dep_axis or inf.name not in reordered_data:
+        if inf.name not in reordered_data:
             continue
 
         inf_related = dataset.description.interdeps.find_all_parameters_in_tree(inf)

@@ -35,7 +35,10 @@ from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.versioning import serialization as serial
 from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.exporters.export_to_pandas import _generate_pandas_index
-from qcodes.dataset.exporters.export_to_xarray import _calculate_index_shape
+from qcodes.dataset.exporters.export_to_xarray import (
+    _calculate_index_shape,
+    _xarray_data_set_direct,
+)
 from qcodes.dataset.linked_datasets.links import links_to_str
 from qcodes.parameters import ManualParameter, Parameter, ParamSpecBase
 
@@ -173,6 +176,21 @@ def _make_mock_dataset_grid_with_shapes(experiment: Experiment) -> DataSet:
             results = [{"x": x, "y": y, "z": x + y}]
             dataset.add_results(results)
     dataset.mark_completed()
+    return dataset
+
+
+@pytest.fixture(name="direct_export_dataset")
+def _make_direct_export_dataset(experiment: Experiment) -> DataSet:
+    dataset = new_data_set("direct_export_dataset")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    signalparam = ParamSpecBase("signal", "numeric")
+    inferredparam = ParamSpecBase("inferred", "numeric")
+    idps = InterDependencies_(
+        dependencies={signalparam: (xparam, yparam)},
+        inferences={inferredparam: (xparam,)},
+    )
+    dataset.set_interdependencies(idps, shapes={"signal": (2, 2)})
     return dataset
 
 
@@ -1584,6 +1602,102 @@ def test_multi_index_options_grid_with_shape(
         use_multi_index="always"
     )
     assert xds_always.sizes == {"multi_index": 50}
+
+
+def test_export_to_xarray_dataset_permuted_grid(experiment: Experiment) -> None:
+    dataset = new_data_set("permuted_grid")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    signalparam = ParamSpecBase("signal", "numeric")
+    idps = InterDependencies_(dependencies={signalparam: (xparam, yparam)})
+    dataset.set_interdependencies(idps, shapes={"signal": (3, 3)})
+
+    x_values = np.array([[1, 0, 2], [1, 1, 2], [0, 2, 0]])
+    y_values = np.array([[0, 0, 0], [1, 2, 1], [1, 2, 2]])
+
+    dataset.mark_started()
+    for x, y in zip(x_values.ravel(), y_values.ravel()):
+        dataset.add_results([{"x": x, "y": y, "signal": 10 * x + y}])
+    dataset.mark_completed()
+
+    xarray_dataset = dataset.to_xarray_dataset()
+
+    assert_array_equal(xarray_dataset.coords["x"], [1, 0, 2])
+    assert_array_equal(xarray_dataset.coords["y"], [0, 1, 2])
+    assert_array_equal(
+        xarray_dataset["signal"],
+        np.array([[10, 11, 12], [0, 1, 2], [20, 21, 22]]),
+    )
+
+
+@pytest.mark.parametrize(
+    ("data", "error"),
+    [
+        (
+            {
+                "signal": np.arange(4),
+                "x": np.array([0, 0, 1, 1]),
+                "y": np.array([0, 1, 0, 1]),
+            },
+            "has shape .* but has 2 dependencies",
+        ),
+        (
+            {
+                "signal": np.arange(4).reshape(2, 2),
+                "x": np.array([0, 0, 1]),
+                "y": np.array([[0, 1], [0, 1]]),
+            },
+            "Dependency 'x' contains 3 values, but 4 were expected",
+        ),
+        (
+            {
+                "signal": np.arange(4).reshape(2, 2),
+                "x": np.array([[0, 1], [2, 3]]),
+                "y": np.array([[0, 1], [0, 1]]),
+            },
+            "Dependency 'x' does not define an axis of length 2",
+        ),
+        (
+            {
+                "signal": np.arange(4).reshape(2, 2),
+                "x": np.array([[0, 0], [1, 1]]),
+                "y": np.array([[0, 0], [1, 1]]),
+            },
+            "do not form a complete Cartesian grid",
+        ),
+        (
+            {
+                "signal": np.arange(4).reshape(2, 2),
+                "x": np.array([[0, 0], [1, 1]]),
+                "y": np.array([[0, 1], [0, 1]]),
+                "inferred": np.arange(3),
+            },
+            "Parameter contains 3 values, but 4 were expected",
+        ),
+    ],
+)
+def test_xarray_data_set_direct_rejects_invalid_grid(
+    direct_export_dataset: DataSet,
+    data: dict[str, np.ndarray],
+    error: str,
+) -> None:
+    with pytest.raises(ValueError, match=error):
+        _xarray_data_set_direct(direct_export_dataset, "signal", data)
+
+
+def test_xarray_data_set_direct_skips_missing_inferred_data(
+    direct_export_dataset: DataSet,
+) -> None:
+    data = {
+        "signal": np.arange(4).reshape(2, 2),
+        "x": np.array([[0, 0], [1, 1]]),
+        "y": np.array([[0, 1], [0, 1]]),
+    }
+
+    xarray_dataset = _xarray_data_set_direct(direct_export_dataset, "signal", data)
+
+    assert set(xarray_dataset.coords) == {"x", "y"}
+    assert set(xarray_dataset.data_vars) == {"signal"}
 
 
 def test_multi_index_options_incomplete_grid(
