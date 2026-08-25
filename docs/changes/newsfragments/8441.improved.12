@@ -1,0 +1,3 @@
+The snapshot example notebook now checks that the snapshots it reads back from
+the datasets are present before using them. A run only has a snapshot if one was
+recorded, so both ``snapshot`` and ``snapshot_raw`` are optional.
