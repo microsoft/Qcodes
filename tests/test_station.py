@@ -891,6 +891,93 @@ instruments:
         )
 
 
+def test_nested_config_applied_after_parameters_section() -> None:
+    """The nested submodule/channel settings are applied after the
+    ``parameters`` section, so when the same parameter is configured in both,
+    the nested value wins."""
+    st = station_from_config_str(
+        """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    parameters:
+      A.temperature:
+        initial_value: 5
+    A:
+      temperature:
+        initial_value: 99
+    """
+    )
+    mock = st.load_instrument("mock")
+    assert mock.A.temperature() == 99
+
+
+def test_nested_config_non_component_non_parameter_attribute_raises() -> None:
+    """A key that resolves to an attribute that is neither a parameter nor a
+    submodule/channel list/tuple raises a clear error."""
+    st = station_from_config_str(
+        """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    metadata:
+      foo:
+        initial_value: 1
+    """
+    )
+    with pytest.raises(
+        RuntimeError,
+        match=r"Cannot configure `mock.metadata`.*is neither a parameter nor a",
+    ):
+        st.load_instrument("mock")
+
+
+def test_nested_config_scalar_parameter_value_runtime_error() -> None:
+    """If schema validation is only a warning (as in production), a bare scalar
+    for a parameter is still caught at load time with a clear error."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", ValidationWarning)
+        st = station_from_config_str(
+            """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    A:
+      temperature: 5
+    """
+        )
+        with pytest.raises(
+            RuntimeError,
+            match=r"Cannot configure parameter `mock.A.temperature`.*must be a "
+            r"mapping",
+        ):
+            st.load_instrument("mock")
+
+
+def test_nested_config_scalar_submodule_value_runtime_error() -> None:
+    """As above, but for a bare scalar given to a submodule/channel."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", ValidationWarning)
+        st = station_from_config_str(
+            """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    channels:
+      ChanA: 5
+    """
+        )
+        with pytest.raises(
+            RuntimeError,
+            match=r"Cannot configure `mock.channels.ChanA`.*must be a mapping",
+        ):
+            st.load_instrument("mock")
+
+
 def test_monitor_not_loaded_by_default(example_station_config) -> None:
     st = Station(config_file=example_station_config)
     st.load_instrument("mock_dac")

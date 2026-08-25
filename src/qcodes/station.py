@@ -36,7 +36,7 @@ import qcodes
 import qcodes.instrument_drivers
 from qcodes import validators
 from qcodes.instrument import Instrument, InstrumentBase
-from qcodes.instrument.channel import ChannelTuple
+from qcodes.instrument.channel import ChannelTuple, InstrumentModule
 from qcodes.metadatable import (
     Metadatable,
     MetadatableWithName,
@@ -592,6 +592,13 @@ class Station(Metadatable, DelegateAttributes):
                   mychannels.myparam:
                     initial_value: 27
 
+        The configuration is applied in a well-defined order: the
+        ``parameters`` section first, then the ``add_parameters`` section, and
+        finally the nested submodule/channel list/tuple settings. This means
+        that when the same parameter is configured in more than one of these,
+        the nested submodule/channel settings take precedence (they are applied
+        last).
+
         Args:
             identifier: The identifying string that is looked up in the yaml
                 configuration file, which identifies the instrument to be added.
@@ -775,7 +782,7 @@ class Station(Metadatable, DelegateAttributes):
                         f"{component!r} has no parameter, submodule or "
                         f"channel list/tuple with that name."
                     ) from None
-                if isinstance(attribute, (InstrumentBase, ChannelTuple)):
+                if isinstance(attribute, (InstrumentModule, ChannelTuple)):
                     if not isinstance(value, Mapping):
                         raise RuntimeError(
                             f"Cannot configure `{child_path}`: `{name}` on "
