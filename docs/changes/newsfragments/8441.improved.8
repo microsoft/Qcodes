@@ -1,0 +1,6 @@
+The path arguments of ``connect_paths``, ``disconnect_paths``, ``are_closed``,
+``are_open`` and ``to_channel_list`` on the Keysight 34980A switch matrix
+submodules are now typed as a ``Collection`` rather than a ``list``, so a set or
+a tuple of paths is accepted as well. A ``Collection`` rather than an
+``Iterable`` because these methods walk the paths twice, once to validate them
+and once to build the channel list, which a one shot iterator would not survive.
