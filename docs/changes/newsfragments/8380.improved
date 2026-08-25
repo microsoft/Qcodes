@@ -1,0 +1,5 @@
+Two example notebooks imported ``Measure`` from ``qcodes.measure`` and
+``MatPlot`` from ``qcodes.plots.qcmatplotlib``. Those modules moved to the
+``qcodes_loop`` package and the deprecated aliases in QCoDeS have since been
+removed, so the notebooks failed at their import cell. They now import from
+``qcodes_loop``, which is installed by the ``loop`` extra.
