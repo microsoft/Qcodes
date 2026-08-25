@@ -5,15 +5,10 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import numpy.typing as npt
+from numpy.exceptions import VisibleDeprecationWarning
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
-try:
-    from numpy.exceptions import VisibleDeprecationWarning
-except ImportError:
-    # numpy < 2.0
-    from numpy import VisibleDeprecationWarning  # type: ignore[attr-defined, no-redef]
 
 
 def list_of_data_to_maybe_ragged_nd_array(
