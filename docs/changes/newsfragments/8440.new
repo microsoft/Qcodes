@@ -1,0 +1,18 @@
+The station (YAML) configuration file now supports setting parameters on
+channel lists/tuples and submodules of an instrument. In addition to the
+reserved keys of an instrument section (``type``, ``init``, ``address``,
+``port``, ``enable_forced_reconnect``, ``parameters`` and ``add_parameters``),
+a section may now contain keys naming a submodule or channel list/tuple of the
+instrument, mapped to ``parameter: value`` pairs (which can be nested to reach
+submodules of submodules). Setting a value on a channel list/tuple sets it on
+every channel in the container, exactly like calling
+``instrument.channels.myparam(27)`` in code. For example::
+
+    instruments:
+      instr1:
+        type: ...
+        mychannels:
+          myparam: 27
+
+sets ``myparam`` to ``27`` on every channel of the ``mychannels`` channel
+list/tuple of ``instr1``.
