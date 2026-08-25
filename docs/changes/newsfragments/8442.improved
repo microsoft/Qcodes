@@ -1,0 +1,29 @@
+The example notebooks have been brought up to date so that they import names
+that actually exist and follow the documented import style.
+
+The notebooks no longer use the deprecated short hand aliases in the top level
+``qcodes`` namespace, such as ``qcodes.Station`` and ``qcodes.Measurement``.
+They import the names from their respective submodules instead, which is what
+the deprecation warning asks users to do and what keeps type information. Driver
+classes are now imported from the documented package level, for example ``from
+qcodes.instrument_drivers.stanford_research import SR830`` rather than reaching
+into the module that happens to define the class. Most notebooks already did
+this.
+
+Several notebooks previously failed at their import cell. ``Example
+Measurements with Real Instruments`` used ``Infiniium`` and
+``WaveformGenerator_33XXX``, which were renamed to ``KeysightInfiniium`` and
+``Keysight33xxx``; it now uses ``KeysightInfiniium`` and the model specific
+``Keysight33522B``, matching the instrument the example connects to. The
+``Tektronix DPO 72004C`` notebook imported ``TekronixDPOWaveform``, which is a
+misspelling of ``TektronixDPOWaveform``. Two notebooks imported ``Measure`` from
+``qcodes.measure`` and ``MatPlot`` from ``qcodes.plots.qcmatplotlib``; those
+modules moved to the ``qcodes_loop`` package and the deprecated aliases in
+QCoDeS have since been removed, so they now import from ``qcodes_loop``, which
+is installed by the ``loop`` extra.
+
+The Tektronix AWG5208 broadbean example notebook has also been updated.
+``Sequence.plotSequence`` no longer exists in broadbean, so it now uses
+``broadbean.plotting.plotter``, and ``makeSEQXFileFromForgedSequence`` was
+renamed to ``make_SEQX_from_forged_sequence`` when the driver moved to snake
+case. Both cells raised ``AttributeError`` before this.

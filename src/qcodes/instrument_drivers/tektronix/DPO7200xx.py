@@ -411,7 +411,7 @@ class TektronixDPOWaveformFormat(InstrumentChannel):
     formatting data. Please note that parameters
     defined in this submodule effects all
     waveform sources, whereas parameters defined in the
-    submodule 'TekronixDPOWaveform' apply to
+    submodule 'TektronixDPOWaveform' apply to
     specific waveform sources (e.g. channel1 or math2)
     """
 
