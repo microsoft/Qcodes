@@ -1,0 +1,5 @@
+The live temperature plot helper in the two Lakeshore example notebooks keeps
+the appended y data in a local variable instead of reading it back with
+``Line2D.get_ydata``. The return of ``get_ydata`` is typed as ``ArrayLike``,
+which is not necessarily sized, so taking its length was a type error. This also
+avoids reading the data back from the line on every iteration.
