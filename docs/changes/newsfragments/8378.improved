@@ -1,8 +1,0 @@
-Two example notebooks referred to driver classes under names that no longer
-exist. ``Example Measurements with Real Instruments`` used ``Infiniium`` and
-``WaveformGenerator_33XXX``, which were renamed to ``KeysightInfiniium`` and
-``Keysight33xxx``; it now uses ``KeysightInfiniium`` and the model specific
-``Keysight33522B``, matching the instrument the example connects to. The
-``Tektronix DPO 72004C`` notebook imported ``TekronixDPOWaveform``, which is a
-misspelling of ``TektronixDPOWaveform``. Both notebooks failed at their import
-cell before this.

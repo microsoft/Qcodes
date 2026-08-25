@@ -1,4 +1,0 @@
-The example notebooks now import driver classes from the documented package
-level, for example ``from qcodes.instrument_drivers.stanford_research import
-SR830`` rather than reaching into the module that happens to define the class.
-Most notebooks already did this.

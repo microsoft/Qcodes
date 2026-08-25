@@ -1,5 +1,0 @@
-The Tektronix AWG5208 broadbean example notebook has been brought up to date.
-``Sequence.plotSequence`` no longer exists in broadbean, so it now uses
-``broadbean.plotting.plotter``, and ``makeSEQXFileFromForgedSequence`` was
-renamed to ``make_SEQX_from_forged_sequence`` when the driver moved to snake
-case. Both cells raised ``AttributeError`` before this.
