@@ -595,6 +595,11 @@ class DataSetInMem(BaseDataSet):
         """Snapshot of the run as a JSON-formatted string (or None)."""
         return self._snapshot_raw_data
 
+    @property
+    def snapshot_raw(self) -> str | None:
+        """Snapshot of the run as a JSON-formatted string (or None)."""
+        return self._snapshot_raw
+
     def add_metadata(self, tag: str, metadata: Any) -> None:
         """
         Adds metadata to the :class:`.DataSet`.
