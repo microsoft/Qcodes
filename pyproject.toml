@@ -300,8 +300,9 @@ build_py = "versioningit.cmdclass.build_py"
 python-platform = "all"
 
 [tool.ty.src]
-# mirrors the include and ignore settings of pyright above
-include = ["src", "tests"]
+# unlike pyright above, ty also understands Jupyter notebooks, so the example
+# notebooks in docs are checked too. That is coverage we get from ty alone.
+include = ["src", "tests", "docs"]
 exclude = [
     "src/qcodes/instrument_drivers/Harvard/Decadac.py",
     ]
@@ -324,6 +325,15 @@ unresolved-import = "ignore"
 include = ["src/qcodes/instrument_drivers/Minicircuits/_minicircuits_usb_spdt.py"]
 [tool.ty.overrides.rules]
 unresolved-attribute = "ignore"
+
+# plottr is a separate package that this notebook demonstrates integrating with,
+# it is not a dependency of qcodes
+[[tool.ty.overrides]]
+include = [
+    "docs/examples/plotting/How-to-use-Plottr-with-QCoDeS-for-live-plotting.ipynb",
+]
+[tool.ty.overrides.rules]
+unresolved-import = "ignore"
 
 [tool.towncrier]
 package = "qcodes"
