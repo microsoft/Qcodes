@@ -1,0 +1,4 @@
+The Stanford SR86x buffered readout example notebook now packs the waveforms for
+:meth:`.TektronixAWG70000Base.makeSEQXFile` in lists rather than wrapping them in
+further numpy arrays, which is the shape the method documents. The two forms
+behave the same at runtime.
