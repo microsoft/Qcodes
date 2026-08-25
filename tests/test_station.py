@@ -729,6 +729,146 @@ instruments:
     assert mock.channels.temperature() == (10,) * 6
 
 
+def test_setting_channeltuple_parameter_via_nested_config() -> None:
+    """Set a parameter on every channel of a channel list/tuple by nesting
+    parameter-value pairs under the channel container's name."""
+    st = station_from_config_str(
+        """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    channels:
+      temperature: 27
+    """
+    )
+    mock = st.load_instrument("mock")
+    assert mock.channels.temperature() == (27,) * 6
+
+
+def test_setting_submodule_parameter_via_nested_config() -> None:
+    """Set a parameter on a single submodule (channel) by nesting
+    parameter-value pairs under the submodule's name."""
+    st = station_from_config_str(
+        """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    A:
+      temperature: 15
+    """
+    )
+    mock = st.load_instrument("mock")
+    assert mock.A.temperature() == 15
+    # other channels are untouched
+    assert mock.B.temperature() == 0
+
+
+def test_setting_parameter_on_submodule_and_channeltuple_combined() -> None:
+    """A per-channel override applied after a channel-list-wide value wins."""
+    st = station_from_config_str(
+        """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    channels:
+      temperature: 5
+    A:
+      temperature: 99
+    """
+    )
+    mock = st.load_instrument("mock")
+    assert mock.A.temperature() == 99
+    assert mock.B.temperature() == 5
+
+
+def test_setting_nested_submodule_parameter_from_config() -> None:
+    """Nested mappings descend into submodules of submodules."""
+    st = station_from_config_str(
+        """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    channels:
+      ChanA:
+        temperature: 3
+    """
+    )
+    mock = st.load_instrument("mock")
+    assert mock.A.temperature() == 3
+
+
+def test_nested_config_unknown_component_raises() -> None:
+    st = station_from_config_str(
+        """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    not_a_submodule:
+      temperature: 1
+    """
+    )
+    with pytest.raises(
+        RuntimeError,
+        match=r"Cannot resolve `not_a_submodule`.*has no parameter, submodule",
+    ):
+        st.load_instrument("mock")
+
+
+def test_nested_config_mapping_on_parameter_raises() -> None:
+    st = station_from_config_str(
+        """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    A:
+      temperature:
+        initial_value: 1
+    """
+    )
+    with pytest.raises(
+        RuntimeError,
+        match=r"Cannot set parameter `mock.A.temperature`.*mapping is only allowed",
+    ):
+        st.load_instrument("mock")
+
+
+def test_nested_config_scalar_on_submodule_raises() -> None:
+    st = station_from_config_str(
+        """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    channels:
+      ChanA: 5
+    """
+    )
+    with pytest.raises(
+        RuntimeError,
+        match=r"Cannot configure `mock.channels.ChanA`.*must be a mapping",
+    ):
+        st.load_instrument("mock")
+
+
+def test_nested_config_scalar_top_level_rejected_by_schema() -> None:
+    with pytest.raises(ValidationWarning):
+        station_from_config_str(
+            """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    channels: 5
+    """
+        )
+
+
 def test_monitor_not_loaded_by_default(example_station_config) -> None:
     st = Station(config_file=example_station_config)
     st.load_instrument("mock_dac")
