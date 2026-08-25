@@ -1,0 +1,7 @@
+``KeysightE4980AMeasurementPair`` now declares a ``__getattr__`` for type
+checkers. The two measured values are exposed as attributes named after the
+``names`` of the measurement function, for example ``capacitance`` for ``CPD``
+and ``inductance`` for ``LPD``, so which attributes exist is only known at
+runtime. The declaration lets this documented usage be written in typed code. It
+is not defined at runtime, so accessing an attribute that the current
+measurement function does not provide still raises the usual ``AttributeError``.
