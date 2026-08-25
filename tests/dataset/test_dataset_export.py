@@ -1496,11 +1496,8 @@ def _assert_xarray_metadata_is_as_expected(
     assert xarray_ds.ds_name == qc_dataset.name
     assert xarray_ds.sample_name == qc_dataset.sample_name
     assert xarray_ds.exp_name == qc_dataset.exp_name
-    assert (
-        xarray_ds.snapshot == qc_dataset.snapshot_raw
-        if qc_dataset.snapshot_raw is not None
-        else "null"
-    )
+    if qc_dataset.snapshot_raw is not None:
+        assert xarray_ds.snapshot == qc_dataset.snapshot_raw
     assert xarray_ds.guid == qc_dataset.guid
     assert xarray_ds.run_timestamp == qc_dataset.run_timestamp()
     assert xarray_ds.completed_timestamp == qc_dataset.completed_timestamp()
