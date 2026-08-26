@@ -1,0 +1,7 @@
+Fixed applying a scalar ``scale`` or ``offset`` when setting a parameter to a
+sequence such as a ``list`` or a ``tuple``. Multiplying a sequence by a number
+repeats it rather than scaling its elements, so ``param([10, 20])`` with
+``param.scale = 2`` used to set the raw value to ``[10, 20, 10, 20]``, and a
+scalar ``offset`` raised a ``TypeError``. Sequences are now converted element
+wise, matching how the values are converted back when the parameter is read.
+Numpy arrays are unaffected since they scale and offset element wise already.

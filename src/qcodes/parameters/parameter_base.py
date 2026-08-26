@@ -270,6 +270,10 @@ def _scale_raw_value(raw_value: Any, scale: float | Iterable[float]) -> Any:
     if isinstance(scale, collections.abc.Iterable):
         # Scale contains multiple elements, one for each value
         return tuple(val * sub_scale for val, sub_scale in zip(raw_value, scale))
+    if isinstance(raw_value, collections.abc.Sequence):
+        # Multiplying a sequence by a number repeats it rather than
+        # scaling its elements, so these must be handled element wise.
+        return tuple(val * scale for val in raw_value)
     # Use single scale for all values
     return raw_value * scale
 
@@ -279,6 +283,10 @@ def _offset_raw_value(raw_value: Any, offset: float | Iterable[float]) -> Any:
     if isinstance(offset, collections.abc.Iterable):
         # offset contains multiple elements, one for each value
         return tuple(val + sub_offset for val, sub_offset in zip(raw_value, offset))
+    if isinstance(raw_value, collections.abc.Sequence):
+        # Adding a number to a sequence is an error, so these must be
+        # handled element wise.
+        return tuple(val + offset for val in raw_value)
     # Use single offset for all values
     return raw_value + offset
 

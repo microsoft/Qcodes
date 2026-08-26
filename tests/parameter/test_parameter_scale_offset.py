@@ -261,6 +261,63 @@ def test_set_numpy_array_with_scalar_scale_and_offset() -> None:
     np.testing.assert_allclose(param.get(), [10, 20])
 
 
+@pytest.mark.parametrize("container", [list, tuple])
+def test_set_sequence_with_scalar_scale_and_offset(container: type) -> None:
+    """A list or tuple must be scaled element wise, not repeated."""
+    param = Parameter(name="test_param", set_cmd=None, get_cmd=None)
+    param.scale = 2
+    param.offset = 1
+
+    param(container([10, 20]))
+
+    assert param.raw_value == (21, 41)
+    assert param.get() == (10, 20)
+
+
+@pytest.mark.parametrize("container", [list, tuple])
+def test_set_sequence_with_scalar_scale_only(container: type) -> None:
+    param = Parameter(name="test_param", set_cmd=None, get_cmd=None)
+    param.scale = 2
+
+    param(container([10, 20]))
+
+    assert param.raw_value == (20, 40)
+    assert param.get() == (10, 20)
+
+
+@pytest.mark.parametrize("container", [list, tuple])
+def test_set_sequence_with_scalar_offset_only(container: type) -> None:
+    param = Parameter(name="test_param", set_cmd=None, get_cmd=None)
+    param.offset = 1
+
+    param(container([10, 20]))
+
+    assert param.raw_value == (11, 21)
+    assert param.get() == (10, 20)
+
+
+def test_set_sequence_with_scalar_scale_and_iterable_offset() -> None:
+    param = Parameter(name="test_param", set_cmd=None, get_cmd=None)
+    param.scale = 2
+    param.offset = [1, 2]
+
+    param([10, 20])
+
+    assert param.raw_value == (21, 42)
+    assert param.get() == (10, 20)
+
+
+def test_set_sequence_with_iterable_scale_and_scalar_offset() -> None:
+    param = Parameter(name="test_param", set_cmd=None, get_cmd=None)
+    param.scale = [2, 4]
+    param.offset = 1
+
+    param([10, 20])
+
+    assert param.raw_value == (21, 81)
+    assert param.get() == (10, 20)
+
+
 def test_get_sequence_with_scalar_scale_and_offset() -> None:
     """A list valued raw value falls back on element wise arithmetic."""
     param = Parameter(name="test_param", set_cmd=None, get_cmd=lambda: [10, 20])
@@ -294,12 +351,20 @@ def test_get_raises_for_non_numeric_value(attribute: str) -> None:
 def test_scale_raw_value_helper() -> None:
     assert _scale_raw_value(10, 2) == 20
     assert _scale_raw_value([10, 20], [2, 4]) == (20, 80)
+    assert _scale_raw_value([10, 20], 2) == (20, 40)
+    assert _scale_raw_value((10, 20), 2) == (20, 40)
+    # any sequence, not just list and tuple
+    assert _scale_raw_value(range(10, 30, 10), 2) == (20, 40)
     np.testing.assert_allclose(_scale_raw_value(np.array([10, 20]), 2), [20, 40])
 
 
 def test_offset_raw_value_helper() -> None:
     assert _offset_raw_value(10, 2) == 12
     assert _offset_raw_value([10, 20], [2, 4]) == (12, 24)
+    assert _offset_raw_value([10, 20], 2) == (12, 22)
+    assert _offset_raw_value((10, 20), 2) == (12, 22)
+    # any sequence, not just list and tuple
+    assert _offset_raw_value(range(10, 30, 10), 2) == (12, 22)
     np.testing.assert_allclose(_offset_raw_value(np.array([10, 20]), 2), [12, 22])
 
 
