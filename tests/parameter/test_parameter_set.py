@@ -86,3 +86,30 @@ def test_parameter_set_operations(
     intersection_set = ParameterSet([param1, param2]) & ParameterSet([param2, param3])
     assert len(intersection_set) == 1
     assert param2 in intersection_set
+
+
+def test_parameter_set_issubset_and_issuperset(
+    manual_parameters: tuple[ManualParameter, ...],
+) -> None:
+    param1, param2, param3 = manual_parameters
+    full_set = ParameterSet((param1, param2, param3))
+    subset = ParameterSet((param1, param2))
+    disjoint = ParameterSet((param3,))
+
+    assert subset.issubset(full_set)
+    assert full_set.issuperset(subset)
+    assert full_set.issuperset(full_set)
+    assert subset.issubset(subset)
+
+    assert not full_set.issubset(subset)
+    assert not subset.issuperset(full_set)
+    assert not subset.issuperset(disjoint)
+
+    # plain sets are accepted on both sides
+    assert full_set.issuperset({param1, param3})
+    assert subset.issubset({param1, param2, param3})
+
+    empty: ParameterSet[ManualParameter] = ParameterSet()
+    assert empty.issubset(full_set)
+    assert full_set.issuperset(empty)
+    assert not empty.issuperset(full_set)
