@@ -84,6 +84,17 @@ def _add_inferred_data_vars(
     dep_names = {dep.name for dep in deps}
     dims = tuple(d for d in xr_dataset.dims)
 
+    # ``Series.to_xarray()`` expands the index into one dimension per index
+    # level. That is only compatible with the target dataset if the dataset
+    # dimensions are exactly the levels of the index. It is not the case when
+    # the dataset uses a single ``multi_index`` dimension or the flat index
+    # created by ``DataFrame.reset_index()``. A non unique MultiIndex cannot be
+    # converted at all. In those cases the data is already in index order so it
+    # can be reshaped directly.
+    index_is_expandable = (
+        index is not None and index.is_unique and set(dims) == set(index.names)
+    )
+
     for inf in inferred:
         if inf.name in dep_names:
             continue
@@ -108,7 +119,7 @@ def _add_inferred_data_vars(
         expected_shape = tuple(xr_dataset.sizes[d] for d in dims)
         expected_size = prod(expected_shape)
         if flat.shape[0] == expected_size:
-            if index is not None:
+            if index is not None and index_is_expandable:
                 # If an index is provided, we should align the inferred data with the index.
                 # This is necessary because data may be reordered when transforming from a pandas DataFrame to an xarray Dataset.
                 # Passing an index allows the original data ordering to be preserved on reconstruction.

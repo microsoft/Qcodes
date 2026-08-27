@@ -305,6 +305,62 @@ def _make_mock_dataset_non_grid(experiment: Experiment) -> DataSet:
     return dataset
 
 
+@pytest.fixture(name="mock_dataset_non_grid_inferred")
+def _make_mock_dataset_non_grid_inferred(experiment: Experiment) -> DataSet:
+    """Non grid dataset where an inferred parameter is inferred from z."""
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    zparam = ParamSpecBase("z", "numeric")
+    tparam = ParamSpecBase("t", "numeric")
+    idps = InterDependencies_(
+        dependencies={zparam: (xparam, yparam)},
+        inferences={tparam: (zparam,)},
+    )
+    dataset.set_interdependencies(idps)
+
+    num_samples = 50
+
+    rng = np.random.default_rng(1234)
+
+    x_vals = rng.random(num_samples) * 10
+    y_vals = 20 + rng.random(num_samples) * 5
+
+    dataset.mark_started()
+
+    for i, (x, y) in enumerate(zip(x_vals, y_vals)):
+        dataset.add_results([{"x": x, "y": y, "z": x + y, "t": float(i)}])
+    dataset.mark_completed()
+    return dataset
+
+
+@pytest.fixture(name="mock_dataset_non_unique_index_inferred")
+def _make_mock_dataset_non_unique_index_inferred(experiment: Experiment) -> DataSet:
+    """Dataset with a non unique MultiIndex and an inferred parameter."""
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    zparam = ParamSpecBase("z", "numeric")
+    tparam = ParamSpecBase("t", "numeric")
+    idps = InterDependencies_(
+        dependencies={zparam: (xparam, yparam)},
+        inferences={tparam: (zparam,)},
+    )
+    dataset.set_interdependencies(idps)
+
+    num_samples = 20
+    # every (x, y) pair is measured twice making the index non unique
+    x_vals = np.repeat(np.arange(num_samples // 2, dtype=float), 2)
+    y_vals = np.repeat(np.arange(num_samples // 2, dtype=float), 2)
+
+    dataset.mark_started()
+
+    for i, (x, y) in enumerate(zip(x_vals, y_vals)):
+        dataset.add_results([{"x": x, "y": y, "z": x + y, "t": float(i)}])
+    dataset.mark_completed()
+    return dataset
+
+
 @pytest.fixture(name="mock_dataset_non_grid_in_mem")
 def _make_mock_dataset_non_grid_in_mem(experiment: Experiment) -> DataSetProtocol:
     meas = Measurement(exp=experiment, name="in_mem_ds")
@@ -1758,6 +1814,34 @@ def test_multi_index_options_non_grid(mock_dataset_non_grid: DataSet) -> None:
 
     xds_always = mock_dataset_non_grid.to_xarray_dataset(use_multi_index="always")
     assert xds_always.sizes == {"multi_index": 50}
+
+
+@pytest.mark.parametrize("use_multi_index", ["auto", "always"])
+def test_multi_index_export_with_inferred_parameter(
+    mock_dataset_non_grid_inferred: DataSet, use_multi_index: str
+) -> None:
+    """Inferred parameters must export correctly when a MultiIndex dim is used."""
+    xds = mock_dataset_non_grid_inferred.to_xarray_dataset(
+        use_multi_index=use_multi_index  # pyright: ignore[reportArgumentType]
+    )
+
+    assert xds.sizes == {"multi_index": 50}
+    assert "t" in xds.data_vars
+    assert xds["t"].dims == ("multi_index",)
+    np.testing.assert_array_equal(xds["t"].values, np.arange(50, dtype=float))
+
+
+def test_non_unique_multi_index_export_with_inferred_parameter(
+    mock_dataset_non_unique_index_inferred: DataSet,
+) -> None:
+    """A non unique MultiIndex must not break export of inferred parameters."""
+    xds = mock_dataset_non_unique_index_inferred.to_xarray_dataset()
+
+    assert "t" in xds.data_vars
+    assert xds["t"].dims == xds["z"].dims
+    np.testing.assert_array_equal(
+        np.asarray(xds["t"].values).ravel(), np.arange(20, dtype=float)
+    )
 
 
 def test_multi_index_wrong_option(mock_dataset_non_grid: DataSet) -> None:
