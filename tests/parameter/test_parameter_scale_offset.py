@@ -1,10 +1,18 @@
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
+from typing import Any
 
 import hypothesis.strategies as hst
 import numpy as np
+import pytest
 from hypothesis import event, given, settings
 
 from qcodes.parameters import Parameter
+from qcodes.parameters.parameter_base import (
+    _offset_raw_value,
+    _scale_raw_value,
+    _unoffset_value,
+    _unscale_value,
+)
 
 
 def test_scale_raw_value() -> None:
@@ -215,3 +223,113 @@ def test_setting_numpy_array_valued_param_if_scale_and_offset_are_not_none() -> 
     param(values)
 
     assert isinstance(param.raw_value, np.ndarray)
+
+
+def test_set_with_iterable_scale_and_offset() -> None:
+    """Setting a sequence with per element scale and offset."""
+    param = Parameter(name="test_param", set_cmd=None, get_cmd=None)
+    param.scale = [2, 4]
+    param.offset = [1, 2]
+
+    param([10, 20])
+
+    # scale is applied first, offset second
+    assert param.raw_value == (21, 82)
+    # and reversed on the way back out
+    assert param.get() == (10, 20)
+
+
+def test_set_with_iterable_scale_and_scalar_offset() -> None:
+    param = Parameter(name="test_param", set_cmd=None, get_cmd=None)
+    param.scale = [2, 4]
+    param.offset = np.array([1, 1])
+
+    param(np.array([10, 20]))
+
+    np.testing.assert_allclose(np.array(param.raw_value), [21, 81])
+    np.testing.assert_allclose(np.array(param.get()), [10, 20])
+
+
+def test_set_numpy_array_with_scalar_scale_and_offset() -> None:
+    param = Parameter(name="test_param", set_cmd=None, get_cmd=None)
+    param.scale = 2
+    param.offset = 1
+
+    param(np.array([10, 20]))
+
+    np.testing.assert_allclose(param.raw_value, [21, 41])
+    np.testing.assert_allclose(param.get(), [10, 20])
+
+
+def test_get_sequence_with_scalar_scale_and_offset() -> None:
+    """A list valued raw value falls back on element wise arithmetic."""
+    param = Parameter(name="test_param", set_cmd=None, get_cmd=lambda: [10, 20])
+    param.scale = 2
+    param.offset = 4
+
+    assert param.get() == (3.0, 8.0)
+
+
+def test_get_sequence_with_iterable_scale_and_offset() -> None:
+    param = Parameter(name="test_param", set_cmd=None, get_cmd=lambda: [10, 20])
+    param.scale = [2, 4]
+    param.offset = [4, 8]
+
+    assert param.get() == (3.0, 3.0)
+
+
+@pytest.mark.parametrize("attribute", ["scale", "offset"])
+def test_get_raises_for_non_numeric_value(attribute: str) -> None:
+    """A non iterable value that cannot be scaled/offset re-raises TypeError."""
+    sentinel = object()
+    param: Parameter = Parameter(
+        name="test_param", set_cmd=None, get_cmd=lambda: sentinel
+    )
+    setattr(param, attribute, 2)
+
+    with pytest.raises(TypeError):
+        param.get()
+
+
+def test_scale_raw_value_helper() -> None:
+    assert _scale_raw_value(10, 2) == 20
+    assert _scale_raw_value([10, 20], [2, 4]) == (20, 80)
+    np.testing.assert_allclose(_scale_raw_value(np.array([10, 20]), 2), [20, 40])
+
+
+def test_offset_raw_value_helper() -> None:
+    assert _offset_raw_value(10, 2) == 12
+    assert _offset_raw_value([10, 20], [2, 4]) == (12, 24)
+    np.testing.assert_allclose(_offset_raw_value(np.array([10, 20]), 2), [12, 22])
+
+
+def test_unoffset_value_helper() -> None:
+    assert _unoffset_value(10, 2) == 8
+    assert _unoffset_value([10, 20], [2, 4]) == (8, 16)
+    assert _unoffset_value([10, 20], 2) == (8, 18)
+    np.testing.assert_allclose(_unoffset_value(np.array([10, 20]), 2), [8, 18])
+
+    with pytest.raises(TypeError):
+        _unoffset_value(object(), 2)
+
+
+def test_unscale_value_helper() -> None:
+    assert _unscale_value(10, 2) == 5
+    assert _unscale_value([10, 20], [2, 4]) == (5, 5)
+    assert _unscale_value([10, 20], 2) == (5, 10)
+    np.testing.assert_allclose(_unscale_value(np.array([10, 20]), 2), [5, 10])
+
+    with pytest.raises(TypeError):
+        _unscale_value(object(), 2)
+
+
+@pytest.mark.parametrize(
+    "helper", [_scale_raw_value, _offset_raw_value, _unoffset_value, _unscale_value]
+)
+def test_helpers_do_not_mutate_their_input(
+    helper: Callable[[Any, Any], Any],
+) -> None:
+    """The helpers must not mutate the value they are handed."""
+    value = [10.0, 20.0]
+    helper(value, [2.0, 4.0])
+    assert value == [10.0, 20.0]
