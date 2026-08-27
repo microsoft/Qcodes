@@ -175,7 +175,7 @@ librt==0.15.0
     # via mypy
 locket==1.0.0
     # via partd
-lxml==6.1.1
+lxml==6.1.2
     # via qcodes (pyproject.toml)
 lxml-stubs==0.5.1
     # via qcodes (pyproject.toml)
