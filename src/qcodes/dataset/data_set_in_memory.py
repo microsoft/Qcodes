@@ -904,7 +904,7 @@ class DataSetInMem(BaseDataSet):
 
     def get_parameter_data(
         self,
-        *params: str | ParamSpec | ParameterBase,
+        *params: str | ParamSpecBase | ParameterBase,
         start: int | None = None,
         end: int | None = None,
         callback: Callable[[float], None] | None = None,
@@ -914,7 +914,7 @@ class DataSetInMem(BaseDataSet):
 
     @staticmethod
     def _warn_if_set(
-        *params: str | ParamSpec | ParameterBase,
+        *params: str | ParamSpecBase | ParameterBase,
         start: int | None = None,
         end: int | None,
     ) -> None:
