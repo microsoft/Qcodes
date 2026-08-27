@@ -398,3 +398,95 @@ def test_helpers_do_not_mutate_their_input(
     value = [10.0, 20.0]
     helper(value, [2.0, 4.0])
     assert value == [10.0, 20.0]
+
+
+@pytest.mark.parametrize("attribute", ["scale", "offset"])
+def test_set_raises_on_length_mismatch(attribute: str) -> None:
+    """A scale/offset that does not match the length of the value is an error."""
+    param = Parameter(name="test_param", set_cmd=None, get_cmd=None)
+    setattr(param, attribute, [2, 4])
+
+    with pytest.raises(
+        ValueError,
+        match=f"Cannot apply {attribute} of length 2 to a value of length 3",
+    ):
+        param([10, 20, 30])
+
+
+@pytest.mark.parametrize("attribute", ["scale", "offset"])
+def test_set_raises_on_length_mismatch_for_numpy_value(attribute: str) -> None:
+    param = Parameter(name="test_param", set_cmd=None, get_cmd=None)
+    setattr(param, attribute, [2, 4])
+
+    with pytest.raises(
+        ValueError,
+        match=f"Cannot apply {attribute} of length 2 to a value of length 3",
+    ):
+        param(np.array([10, 20, 30]))
+
+
+@pytest.mark.parametrize("attribute", ["scale", "offset"])
+def test_get_raises_on_length_mismatch(attribute: str) -> None:
+    param = Parameter(name="test_param", set_cmd=None, get_cmd=lambda: [10, 20, 30])
+    setattr(param, attribute, [2, 4])
+
+    with pytest.raises(
+        ValueError,
+        match=f"Cannot apply {attribute} of length 2 to a value of length 3",
+    ):
+        param.get()
+
+
+@pytest.mark.parametrize("attribute", ["scale", "offset"])
+def test_get_raises_on_length_mismatch_for_numpy_value(attribute: str) -> None:
+    """Numpy raises its own error before the element wise fallback is reached."""
+    param = Parameter(
+        name="test_param", set_cmd=None, get_cmd=lambda: np.array([10.0, 20.0, 30.0])
+    )
+    setattr(param, attribute, [2, 4])
+
+    with pytest.raises(ValueError, match="could not be broadcast together"):
+        param.get()
+
+
+@pytest.mark.parametrize(
+    ("helper", "kind"),
+    [
+        (_scale_raw_value, "scale"),
+        (_offset_raw_value, "offset"),
+        (_unoffset_value, "offset"),
+        (_unscale_value, "scale"),
+    ],
+)
+def test_helpers_raise_on_length_mismatch(
+    helper: Callable[[Any, Any], Any], kind: str
+) -> None:
+    with pytest.raises(
+        ValueError, match=f"Cannot apply {kind} of length 2 to a value of length 3"
+    ):
+        helper([10, 20, 30], [2, 4])
+
+    with pytest.raises(
+        ValueError, match=f"Cannot apply {kind} of length 3 to a value of length 2"
+    ):
+        helper([10, 20], [2, 4, 6])
+
+
+@pytest.mark.parametrize(
+    ("helper", "kind"),
+    [
+        (_scale_raw_value, "scale"),
+        (_offset_raw_value, "offset"),
+        (_unoffset_value, "offset"),
+        (_unscale_value, "scale"),
+    ],
+)
+def test_helpers_report_unknown_length_for_iterators(
+    helper: Callable[[Any, Any], Any], kind: str
+) -> None:
+    """An iterable that has no length is reported as unknown."""
+    with pytest.raises(
+        ValueError,
+        match=f"Cannot apply {kind} of length unknown to a value of length 3",
+    ):
+        helper([10, 20, 30], iter([2, 4]))

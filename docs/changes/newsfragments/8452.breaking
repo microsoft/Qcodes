@@ -1,0 +1,5 @@
+Applying a ``scale`` or ``offset`` that does not match the length of the value
+now raises a ``ValueError``. Previously the value and the scale/offset were
+zipped together without checking their lengths, so a mismatch silently dropped
+the extra elements, e.g. setting a parameter with ``scale = [2, 4]`` to
+``[10, 20, 30]`` used to set the raw value to ``(20, 80)``. See :pr:`8450`.
