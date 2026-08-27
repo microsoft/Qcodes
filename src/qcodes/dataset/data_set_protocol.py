@@ -207,7 +207,7 @@ class DataSetProtocol(Protocol):
 
     def get_parameter_data(
         self,
-        *params: str | ParamSpec | ParameterBase,
+        *params: str | ParamSpecBase | ParameterBase,
         start: int | None = None,
         end: int | None = None,
         callback: Callable[[float], None] | None = None,
@@ -470,11 +470,11 @@ class BaseDataSet(DataSetProtocol, Protocol):
                 )
 
     @staticmethod
-    def _validate_parameters(*params: str | ParamSpec | ParameterBase) -> list[str]:
+    def _validate_parameters(*params: str | ParamSpecBase | ParameterBase) -> list[str]:
         """
         Validate that the provided parameters have a name and return those
         names as a list.
-        The Parameters may be a mix of strings, ParamSpecs or ordinary
+        The Parameters may be a mix of strings, ParamSpecsBase or ordinary
         QCoDeS parameters.
         """
 
