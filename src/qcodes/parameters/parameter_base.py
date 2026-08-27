@@ -1567,10 +1567,7 @@ class ParameterSet[P: ParameterBase](MutableSet[P]):  # noqa: PLW1641
         return all(item in other for item in self)
 
     def issuperset(self, other: ParameterSet[P] | set) -> bool:
-        # ``item in self._dict`` rather than ``item in self`` because ty fails to
-        # resolve ``__contains__`` on ``Self`` when the class type parameter has
-        # a bound. ``__contains__`` delegates to ``_dict`` anyway.
-        return all(item in self._dict for item in other)
+        return all(item in self for item in other)
 
     def update(self, other: Iterable[P]) -> None:
         for item in other:
