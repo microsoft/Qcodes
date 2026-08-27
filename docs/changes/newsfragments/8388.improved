@@ -1,0 +1,5 @@
+The ``colorbars`` argument of :func:`.plot_dataset` and :func:`.plot_by_id` now
+accepts a sequence that may contain ``None``. Both functions return a list of
+colorbars in which the entries for 1D plots are ``None``, so passing the result
+back in, which is how you plot into the same axes again, did not match the
+declared argument type. A sequence of colorbars is still accepted.
