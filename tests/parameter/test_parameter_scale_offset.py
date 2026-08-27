@@ -261,6 +261,63 @@ def test_set_numpy_array_with_scalar_scale_and_offset() -> None:
     np.testing.assert_allclose(param.get(), [10, 20])
 
 
+@pytest.mark.parametrize("container", [list, tuple])
+def test_set_sequence_with_scalar_scale_and_offset(container: type) -> None:
+    """A list or tuple must be scaled element wise, not repeated."""
+    param = Parameter(name="test_param", set_cmd=None, get_cmd=None)
+    param.scale = 2
+    param.offset = 1
+
+    param(container([10, 20]))
+
+    assert param.raw_value == (21, 41)
+    assert param.get() == (10, 20)
+
+
+@pytest.mark.parametrize("container", [list, tuple])
+def test_set_sequence_with_scalar_scale_only(container: type) -> None:
+    param = Parameter(name="test_param", set_cmd=None, get_cmd=None)
+    param.scale = 2
+
+    param(container([10, 20]))
+
+    assert param.raw_value == (20, 40)
+    assert param.get() == (10, 20)
+
+
+@pytest.mark.parametrize("container", [list, tuple])
+def test_set_sequence_with_scalar_offset_only(container: type) -> None:
+    param = Parameter(name="test_param", set_cmd=None, get_cmd=None)
+    param.offset = 1
+
+    param(container([10, 20]))
+
+    assert param.raw_value == (11, 21)
+    assert param.get() == (10, 20)
+
+
+def test_set_sequence_with_scalar_scale_and_iterable_offset() -> None:
+    param = Parameter(name="test_param", set_cmd=None, get_cmd=None)
+    param.scale = 2
+    param.offset = [1, 2]
+
+    param([10, 20])
+
+    assert param.raw_value == (21, 42)
+    assert param.get() == (10, 20)
+
+
+def test_set_sequence_with_iterable_scale_and_scalar_offset() -> None:
+    param = Parameter(name="test_param", set_cmd=None, get_cmd=None)
+    param.scale = [2, 4]
+    param.offset = 1
+
+    param([10, 20])
+
+    assert param.raw_value == (21, 81)
+    assert param.get() == (10, 20)
+
+
 def test_get_sequence_with_scalar_scale_and_offset() -> None:
     """A list valued raw value falls back on element wise arithmetic."""
     param = Parameter(name="test_param", set_cmd=None, get_cmd=lambda: [10, 20])
@@ -294,12 +351,20 @@ def test_get_raises_for_non_numeric_value(attribute: str) -> None:
 def test_scale_raw_value_helper() -> None:
     assert _scale_raw_value(10, 2) == 20
     assert _scale_raw_value([10, 20], [2, 4]) == (20, 80)
+    assert _scale_raw_value([10, 20], 2) == (20, 40)
+    assert _scale_raw_value((10, 20), 2) == (20, 40)
+    # any sequence, not just list and tuple
+    assert _scale_raw_value(range(10, 30, 10), 2) == (20, 40)
     np.testing.assert_allclose(_scale_raw_value(np.array([10, 20]), 2), [20, 40])
 
 
 def test_offset_raw_value_helper() -> None:
     assert _offset_raw_value(10, 2) == 12
     assert _offset_raw_value([10, 20], [2, 4]) == (12, 24)
+    assert _offset_raw_value([10, 20], 2) == (12, 22)
+    assert _offset_raw_value((10, 20), 2) == (12, 22)
+    # any sequence, not just list and tuple
+    assert _offset_raw_value(range(10, 30, 10), 2) == (12, 22)
     np.testing.assert_allclose(_offset_raw_value(np.array([10, 20]), 2), [12, 22])
 
 
@@ -333,3 +398,95 @@ def test_helpers_do_not_mutate_their_input(
     value = [10.0, 20.0]
     helper(value, [2.0, 4.0])
     assert value == [10.0, 20.0]
+
+
+@pytest.mark.parametrize("attribute", ["scale", "offset"])
+def test_set_raises_on_length_mismatch(attribute: str) -> None:
+    """A scale/offset that does not match the length of the value is an error."""
+    param = Parameter(name="test_param", set_cmd=None, get_cmd=None)
+    setattr(param, attribute, [2, 4])
+
+    with pytest.raises(
+        ValueError,
+        match=f"Cannot apply {attribute} of length 2 to a value of length 3",
+    ):
+        param([10, 20, 30])
+
+
+@pytest.mark.parametrize("attribute", ["scale", "offset"])
+def test_set_raises_on_length_mismatch_for_numpy_value(attribute: str) -> None:
+    param = Parameter(name="test_param", set_cmd=None, get_cmd=None)
+    setattr(param, attribute, [2, 4])
+
+    with pytest.raises(
+        ValueError,
+        match=f"Cannot apply {attribute} of length 2 to a value of length 3",
+    ):
+        param(np.array([10, 20, 30]))
+
+
+@pytest.mark.parametrize("attribute", ["scale", "offset"])
+def test_get_raises_on_length_mismatch(attribute: str) -> None:
+    param = Parameter(name="test_param", set_cmd=None, get_cmd=lambda: [10, 20, 30])
+    setattr(param, attribute, [2, 4])
+
+    with pytest.raises(
+        ValueError,
+        match=f"Cannot apply {attribute} of length 2 to a value of length 3",
+    ):
+        param.get()
+
+
+@pytest.mark.parametrize("attribute", ["scale", "offset"])
+def test_get_raises_on_length_mismatch_for_numpy_value(attribute: str) -> None:
+    """Numpy raises its own error before the element wise fallback is reached."""
+    param = Parameter(
+        name="test_param", set_cmd=None, get_cmd=lambda: np.array([10.0, 20.0, 30.0])
+    )
+    setattr(param, attribute, [2, 4])
+
+    with pytest.raises(ValueError, match="could not be broadcast together"):
+        param.get()
+
+
+@pytest.mark.parametrize(
+    ("helper", "kind"),
+    [
+        (_scale_raw_value, "scale"),
+        (_offset_raw_value, "offset"),
+        (_unoffset_value, "offset"),
+        (_unscale_value, "scale"),
+    ],
+)
+def test_helpers_raise_on_length_mismatch(
+    helper: Callable[[Any, Any], Any], kind: str
+) -> None:
+    with pytest.raises(
+        ValueError, match=f"Cannot apply {kind} of length 2 to a value of length 3"
+    ):
+        helper([10, 20, 30], [2, 4])
+
+    with pytest.raises(
+        ValueError, match=f"Cannot apply {kind} of length 3 to a value of length 2"
+    ):
+        helper([10, 20], [2, 4, 6])
+
+
+@pytest.mark.parametrize(
+    ("helper", "kind"),
+    [
+        (_scale_raw_value, "scale"),
+        (_offset_raw_value, "offset"),
+        (_unoffset_value, "offset"),
+        (_unscale_value, "scale"),
+    ],
+)
+def test_helpers_report_unknown_length_for_iterators(
+    helper: Callable[[Any, Any], Any], kind: str
+) -> None:
+    """An iterable that has no length is reported as unknown."""
+    with pytest.raises(
+        ValueError,
+        match=f"Cannot apply {kind} of length unknown to a value of length 3",
+    ):
+        helper([10, 20, 30], iter([2, 4]))
