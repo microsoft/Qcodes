@@ -810,7 +810,7 @@ class DataSet(BaseDataSet):
 
     def get_parameter_data(
         self,
-        *params: str | ParamSpec | ParameterBase,
+        *params: str | ParamSpecBase | ParameterBase,
         start: int | None = None,
         end: int | None = None,
         callback: Callable[[float], None] | None = None,
