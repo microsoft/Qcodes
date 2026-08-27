@@ -266,11 +266,18 @@ class ParameterBaseKWArgs(
 # generic ``ParameterDataTypeVar`` out of the arithmetic.
 
 
+_CONVERSION_KIND: dict[Callable[[Any, Any], Any], str] = {
+    operator.mul: "scale",
+    operator.truediv: "scale",
+    operator.add: "offset",
+    operator.sub: "offset",
+}
+
+
 def _apply_elementwise(
     value: Any,
     conversion: Iterable[float],
     operation: Callable[[Any, Any], Any],
-    kind: str,
 ) -> tuple[Any, ...]:
     """Combine ``value`` and ``conversion`` element by element.
 
@@ -278,7 +285,8 @@ def _apply_elementwise(
         value: The (iterable) value to convert.
         conversion: The scale or offset to apply, one element per value.
         operation: The arithmetic operation to apply to each pair of elements.
-        kind: The name of the conversion, used in the error message.
+            The operation also determines the name of the conversion used in
+            the error message.
 
     Returns:
         The converted values.
@@ -293,6 +301,7 @@ def _apply_elementwise(
             for val, sub_value in zip(value, conversion, strict=True)
         )
     except ValueError as err:
+        kind = _CONVERSION_KIND[operation]
         raise ValueError(
             f"Cannot apply {kind} of length {_length_for_error(conversion)} "
             f"to a value of length {_length_for_error(value)}."
@@ -310,7 +319,7 @@ def _scale_raw_value(raw_value: Any, scale: float | Iterable[float]) -> Any:
     """Multiply a value by ``scale`` on the way to the instrument."""
     if isinstance(scale, collections.abc.Iterable):
         # Scale contains multiple elements, one for each value
-        return _apply_elementwise(raw_value, scale, operator.mul, "scale")
+        return _apply_elementwise(raw_value, scale, operator.mul)
     if isinstance(raw_value, collections.abc.Sequence):
         # Multiplying a sequence by a number repeats it rather than
         # scaling its elements, so these must be handled element wise.
@@ -323,7 +332,7 @@ def _offset_raw_value(raw_value: Any, offset: float | Iterable[float]) -> Any:
     """Add ``offset`` to a value on the way to the instrument."""
     if isinstance(offset, collections.abc.Iterable):
         # offset contains multiple elements, one for each value
-        return _apply_elementwise(raw_value, offset, operator.add, "offset")
+        return _apply_elementwise(raw_value, offset, operator.add)
     if isinstance(raw_value, collections.abc.Sequence):
         # Adding a number to a sequence is an error, so these must be
         # handled element wise.
@@ -339,7 +348,7 @@ def _unoffset_value(value: Any, offset: float | Iterable[float]) -> Any:
     except TypeError:
         if isinstance(offset, collections.abc.Iterable):
             # offset contains multiple elements, one for each value
-            return _apply_elementwise(value, offset, operator.sub, "offset")
+            return _apply_elementwise(value, offset, operator.sub)
         elif isinstance(value, collections.abc.Iterable):
             # Use single offset for all values
             return tuple(val - offset for val in value)
@@ -354,7 +363,7 @@ def _unscale_value(value: Any, scale: float | Iterable[float]) -> Any:
     except TypeError:
         if isinstance(scale, collections.abc.Iterable):
             # Scale contains multiple elements, one for each value
-            return _apply_elementwise(value, scale, operator.truediv, "scale")
+            return _apply_elementwise(value, scale, operator.truediv)
         elif isinstance(value, collections.abc.Iterable):
             # Use single scale for all values
             return tuple(val / scale for val in value)
