@@ -1,0 +1,5 @@
+The type alias ``ValuesType``, used by ``DataSaver.add_result`` and related
+methods, now also accepts a sequence of numpy arrays. This is what a
+``MultiParameter`` measuring more than one array returns, so passing such a
+result to ``DataSaver.add_result`` no longer produces a type checking error.
+The behavior at runtime is unchanged since this was already supported.

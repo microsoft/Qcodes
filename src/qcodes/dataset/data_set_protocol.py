@@ -55,6 +55,7 @@ type ValuesType = (
     | npt.NDArray
     | Sequence[ScalarResTypes]
     | Sequence[Sequence[ScalarResTypes]]
+    | Sequence[npt.NDArray]
 )
 type ResType = "tuple[ParameterBase | str, ValuesType]"
 type SetpointsType = "Sequence[str | ParameterBase]"
