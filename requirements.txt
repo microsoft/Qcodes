@@ -347,7 +347,7 @@ pyyaml==6.0.3
     #   pyvisa-sim
     #   sphinx-jsonschema
     #   zhinst-timing-models
-pyzmq==27.1.0
+pyzmq==27.2.0
     # via
     #   ipykernel
     #   jupyter-client
