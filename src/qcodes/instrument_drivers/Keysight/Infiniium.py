@@ -128,14 +128,22 @@ class DSOTraceParam(
         self._unit = 0
 
     @property
+    def root_instrument(self) -> "KeysightInfiniium":
+        root_instrument = super().root_instrument
+        if not isinstance(root_instrument, KeysightInfiniium):
+            raise RuntimeError(
+                f"Trace parameter is not bound to a KeysightInfiniium instrument but {type(root_instrument)}"
+            )
+        return root_instrument
+
+    @property
     def setpoints(self) -> "Sequence[ParameterBase]":
         """
         Overwrite setpoint parameter to update setpoints if auto_digitize is true
         """
         instrument = self.instrument
         if isinstance(instrument, KeysightInfiniiumChannel):
-            root_instrument = cast("KeysightInfiniium", self.root_instrument)
-            cache_setpoints = root_instrument.cache_setpoints()
+            cache_setpoints = self.root_instrument.cache_setpoints()
             if not cache_setpoints:
                 self.update_setpoints()
             return (instrument.time_axis,)
@@ -201,7 +209,11 @@ class DSOTraceParam(
         Update waveform parameters for an FFT.
         """
         # only reached for a function parameter, see the caller in ``setpoints``
-        instrument = cast("KeysightInfiniiumFunction", self.instrument)
+        instrument = self.instrument
+        if not isinstance(instrument, KeysightInfiniiumFunction):
+            raise RuntimeError(
+                "FFT setpoints can only be updated for a function parameter."
+            )
         instrument.write(f":WAV:SOUR {self._channel}")
         preamble = instrument.ask(":WAV:PRE?").strip().split(",")
         self.update_setpoints(preamble)
@@ -215,7 +227,7 @@ class DSOTraceParam(
         """
         if self.instrument is None:
             raise RuntimeError("Cannot get data without instrument")
-        root_instr = cast("KeysightInfiniium", self.root_instrument)
+        root_instr = self.root_instrument
         # Check if we can use cached trace parameters
         if not root_instr.cache_setpoints():
             self.update_setpoints()
