@@ -33,7 +33,7 @@ from packaging.version import parse
 # this should happen as early as possible
 import qcodes.instrument.instrument_meta
 
-qcodes.instrument.instrument_meta.InstrumentMeta = ABCMeta
+qcodes.instrument.instrument_meta.InstrumentMeta = ABCMeta  # ty: ignore[invalid-assignment]
 # we need to reload any module that has been imported and
 # makes use of this metaclass. The modules below are all imported
 # by importing qcodes.instrument so we need to reload them
