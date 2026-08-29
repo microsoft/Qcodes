@@ -139,7 +139,7 @@ def test_range() -> None:
 
 def test_failed_numbers() -> None:
     with pytest.raises(TypeError):
-        Numbers(1, 2, 3)  # type: ignore[call-arg]
+        Numbers(1, 2, 3)  # type: ignore[call-arg]  # ty: ignore[too-many-positional-arguments]
 
     with pytest.raises(TypeError):
         Numbers(1, 1)  # min >= max

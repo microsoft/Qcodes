@@ -24,7 +24,7 @@ def _make_instrument() -> "Generator[DummyInstrument, None, None]":
             get_cmd=None,
             set_cmd=None,
         )
-        instrument.scaler = ScaledParameter(  # type: ignore[attr-defined]
+        instrument.scaler = ScaledParameter(  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
             instrument.target_parameter, division=1
         )
         yield instrument
@@ -37,7 +37,7 @@ def test_constructor(instrument: DummyInstrument) -> None:
 
     # Require a wrapped parameter
     with pytest.raises(TypeError):
-        ScaledParameter()  # type: ignore[call-arg]
+        ScaledParameter()  # type: ignore[call-arg]  # ty: ignore[missing-argument]
 
     # Require a scaling factor
     with pytest.raises(ValueError):

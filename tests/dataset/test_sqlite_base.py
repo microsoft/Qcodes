@@ -236,7 +236,7 @@ def test_get_layout_id_with_invalid_parameter_type(dataset: "DataSet") -> None:
     with pytest.raises(ValueError, match="Wrong parameter type, must be ParamSpec"):
         mut_queries._get_layout_id(
             dataset.conn,
-            42,  # type: ignore[arg-type]
+            42,  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
             dataset.run_id,
         )
 

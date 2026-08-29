@@ -148,7 +148,7 @@ def test_get_db_overview_extra_columns(db_conn: AtomicConnection) -> None:
 
     # An existing ad-hoc metadata column is returned ...
     overview = get_db_overview(conn=db_conn, extra_columns=["my_tag"])
-    assert overview[1]["my_tag"] == "hello"  # type: ignore[typeddict-item]
+    assert overview[1]["my_tag"] == "hello"  # type: ignore[typeddict-item]  # ty: ignore[invalid-key]
 
     # ... while a non-existent column is silently skipped.
     overview = get_db_overview(conn=db_conn, extra_columns=["does_not_exist"])
