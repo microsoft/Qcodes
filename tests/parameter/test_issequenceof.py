@@ -39,9 +39,9 @@ def test_simple_bad(args: tuple[Any, ...]) -> None:
 
 def test_examples_raises() -> None:
     with pytest.raises(TypeError):
-        is_sequence_of([1], 1)  # type: ignore[arg-type]
+        is_sequence_of([1], 1)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
     with pytest.raises(TypeError):
-        is_sequence_of([1], (1, 2))  # type: ignore[arg-type]
+        is_sequence_of([1], (1, 2))  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 good_depth = [
