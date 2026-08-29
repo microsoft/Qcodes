@@ -87,15 +87,15 @@ def test_bad() -> None:
     # combiner == 'OR'
     for args in [[], [1], [Strings(), True]]:
         with pytest.raises(TypeError):
-            MultiType(*args)  # type: ignore[misc]
+            MultiType(*args)  # type: ignore[misc]  # ty: ignore[invalid-argument-type]
     # combiner == 'OR'
     for args in [[], [1], [Strings(), True]]:
         with pytest.raises(TypeError):
-            MultiType(*args, combiner="OR")  # type: ignore[misc]
+            MultiType(*args, combiner="OR")  # type: ignore[misc]  # ty: ignore[invalid-argument-type]
     # combiner == 'AND'
     for args in [[], [1], [Strings(), True]]:
         with pytest.raises(TypeError):
-            MultiType(*args, combiner="AND")  # type: ignore[misc]
+            MultiType(*args, combiner="AND")  # type: ignore[misc]  # ty: ignore[invalid-argument-type]
 
 
 def test_valid_values() -> None:

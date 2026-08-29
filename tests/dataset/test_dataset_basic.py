@@ -312,7 +312,7 @@ def test_load_by_id_for_none() -> None:
     with pytest.raises(
         ValueError, match=re.escape("run_id has to be a positive integer, not None.")
     ):
-        _ = load_by_id(None)  # type: ignore[arg-type]
+        _ = load_by_id(None)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 @settings(deadline=None, max_examples=6)
@@ -809,7 +809,7 @@ def test_parent_dataset_links_invalid_input() -> None:
 
     match = re.escape("Invalid input. Did not receive a list of Links")
     with pytest.raises(ValueError, match=match):
-        ds.parent_dataset_links = [ds.guid]  # type: ignore[list-item]
+        ds.parent_dataset_links = [ds.guid]  # type: ignore[list-item]  # ty: ignore[invalid-assignment]
 
     match = re.escape(
         "Invalid input. All links must point to this dataset. "
