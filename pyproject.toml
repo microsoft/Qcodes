@@ -89,6 +89,7 @@ test = [
     "qcodes_loop>=0.2.3",
     "zhinst.qcodes>=0.5", # typecheck zhinst driver alias
     "libcst>=1.2.0", # refactor tests
+    "intersphinx_registry>=0.2603.16" # typecheck docs/conf.py
 ]
 docs = [
     "autodocsumm>=0.2.9",
