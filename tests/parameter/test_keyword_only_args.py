@@ -157,8 +157,8 @@ class TestMultiChannelInstrumentParameterKeywordOnly:
 
     def test_positional_args_rejected(self) -> None:
         with pytest.raises(TypeError):
-            MultiChannelInstrumentParameter(
-                [],  # pyright: ignore[reportCallIssue]
+            MultiChannelInstrumentParameter(  # ty: ignore[missing-argument]
+                [],  # pyright: ignore[reportCallIssue]  # ty: ignore[too-many-positional-arguments]
                 "x",
                 name="test",
                 names=("a",),
