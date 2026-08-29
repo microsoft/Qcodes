@@ -199,7 +199,7 @@ def test_list_of_strings(experiment) -> None:
 
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,), deadline=None)
 @given(
-    p_values=hypnumpy.arrays(
+    p_values=hypnumpy.arrays(  # ty: ignore[no-matching-overload]
         dtype=hst.sampled_from(
             (
                 hypnumpy.unicode_string_dtypes(),
