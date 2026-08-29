@@ -11,25 +11,25 @@ class CustomError(Exception):
 
 def test_bad_calls() -> None:
     with pytest.raises(TypeError):
-        Command()  # type: ignore[call-arg]
+        Command()  # type: ignore[call-arg]  # ty: ignore[missing-argument]
 
     with pytest.raises(TypeError):
-        Command(cmd="")  # type: ignore[call-arg]
+        Command(cmd="")  # type: ignore[call-arg]  # ty: ignore[missing-argument]
 
     with pytest.raises(TypeError):
-        Command(0, "", output_parser=lambda: 1)  # type: ignore[arg-type, misc]
+        Command(0, "", output_parser=lambda: 1)  # type: ignore[arg-type, misc]  # ty: ignore[invalid-argument-type]
 
     with pytest.raises(TypeError):
         Command(1, "", input_parser=lambda: 1)
 
     with pytest.raises(TypeError):
-        Command(0, cmd="", exec_str="not a function")  # type: ignore[arg-type]
+        Command(0, cmd="", exec_str="not a function")  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
     with pytest.raises(TypeError):
         Command(
             0,
             cmd=lambda: 1,
-            no_cmd_function="not a function",  # type: ignore[arg-type]
+            no_cmd_function="not a function",  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
         )
 
 

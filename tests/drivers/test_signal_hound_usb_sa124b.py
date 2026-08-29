@@ -75,7 +75,7 @@ def test_frequency_sweep_requires_signal_hound(
     ):
         FrequencySweep(
             "frequency_sweep",
-            instrument=not_a_signal_hound,  # type: ignore[arg-type]
+            instrument=not_a_signal_hound,  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
             sweep_len=10,
             start_freq=1e9,
             stepsize=1e6,

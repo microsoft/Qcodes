@@ -15,7 +15,7 @@ from .conftest import (
 
 def test_no_name() -> None:
     with pytest.raises(TypeError):
-        Parameter()  # type: ignore[call-arg]
+        Parameter()  # type: ignore[call-arg]  # ty: ignore[missing-argument]
 
 
 def test_default_attributes() -> None:
@@ -155,12 +155,12 @@ def test_str_representation() -> None:
     # three cases where only name gets used for full_name
     for instrument in blank_instruments:
         p = Parameter(name="fred")
-        p._instrument = instrument  # type: ignore[assignment]
+        p._instrument = instrument  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
         assert str(p) == "fred"
 
     # and finally an instrument that really has a name
     p = Parameter(name="wilma")
-    p._instrument = named_instrument  # type: ignore[assignment]
+    p._instrument = named_instrument  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
     assert str(p) == "astro_wilma"
 
 
@@ -196,14 +196,14 @@ def test_parameter_call() -> None:
     assert p() == 1
 
     with pytest.raises(TypeError, match="takes 1 positional argument but 2 were given"):
-        p(1, 2)  # type: ignore[call-overload]
+        p(1, 2)  # type: ignore[call-overload]  # ty: ignore[no-matching-overload]
 
     p(value=2)
 
     assert p() == 2
 
     with pytest.raises(TypeError, match="got multiple values for argument"):
-        p(2, value=2)  # type: ignore[call-overload]
+        p(2, value=2)  # type: ignore[call-overload]  # ty: ignore[no-matching-overload]
 
 
 def test_parameter_set_extra_kwargs() -> None:
@@ -243,13 +243,13 @@ def test_unknown_args_to_baseparameter_raises() -> None:
         _ = ParameterBase(
             name="Foo",
             instrument=None,
-            snapshotable=False,  # type: ignore[call-arg]
+            snapshotable=False,  # type: ignore[call-arg]  # ty: ignore[unknown-argument]
         )
 
 
 def test_underlying_instrument_for_virtual_parameter() -> None:
     p = GettableParam("base_param", vals=vals.Numbers())
-    p._instrument = named_instrument  # type: ignore[assignment]
+    p._instrument = named_instrument  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
     vp = VirtualParameter("test_param", param=p)
 
     assert vp.underlying_instrument is named_instrument  # type: ignore[comparison-overlap]
