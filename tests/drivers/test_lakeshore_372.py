@@ -36,7 +36,7 @@ class MockVisaInstrument:
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.visa_log = get_instrument_logger(self, VISA_LOGGER)  # type: ignore[arg-type]
+        self.visa_log = get_instrument_logger(self, VISA_LOGGER)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
         # This base class mixin holds two dictionaries associated with the
         # pyvisa_instrument.write()
@@ -74,7 +74,7 @@ class MockVisaInstrument:
             self.visa_log.debug(f"Query: {cmd} for command {cmd_str} with args {args}")
             self.cmds[cmd_str](args)
         else:
-            super().write_raw(cmd)  # type: ignore[misc]
+            super().write_raw(cmd)  # type: ignore[misc]  # ty: ignore[unresolved-attribute]
 
     def ask_raw(self, cmd) -> Any:
         query_parts = cmd.split(" ")
@@ -88,12 +88,12 @@ class MockVisaInstrument:
             self.visa_log.debug(f"Response: {response}")
             return response
         else:
-            return super().ask_raw(cmd)  # type: ignore[misc]
+            return super().ask_raw(cmd)  # type: ignore[misc]  # ty: ignore[unresolved-attribute]
 
 
 def query(name: str) -> Callable[[Callable[P, T]], Callable[P, T]]:
     def wrapper(func: Callable[P, T]) -> Callable[P, T]:
-        func.query_name = name.upper()  # type: ignore[attr-defined]
+        func.query_name = name.upper()  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
         return func
 
     return wrapper
@@ -101,7 +101,7 @@ def query(name: str) -> Callable[[Callable[P, T]], Callable[P, T]]:
 
 def command(name: str) -> Callable[[Callable[P, T]], Callable[P, T]]:
     def wrapper(func: Callable[P, T]) -> Callable[P, T]:
-        func.command_name = name.upper()  # type: ignore[attr-defined]
+        func.command_name = name.upper()  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
         return func
 
     return wrapper

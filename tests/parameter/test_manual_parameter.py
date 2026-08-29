@@ -27,4 +27,4 @@ def test_manual_parameter_forbidden_kwargs() -> None:
     for fk in forbidden_kwargs:
         match = f'It is not allowed to set "{fk}" for a ManualParameter'
         with pytest.raises(ValueError, match=match):
-            ManualParameter("test", **{fk: None})  # type: ignore[arg-type]
+            ManualParameter("test", **{fk: None})  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]

@@ -32,7 +32,7 @@ def test_top_level_parameter_shorthand_deprecated() -> None:
     with pytest.warns(
         QCoDeSDeprecationWarning, match=r"top level.*'qcodes\.parameters'"
     ):
-        obj = qcodes.Parameter  # type: ignore[attr-defined]
+        obj = qcodes.Parameter  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     assert obj is qcodes.parameters.Parameter
 
 
@@ -40,13 +40,13 @@ def test_top_level_combine_shorthand_deprecated() -> None:
     with pytest.warns(
         QCoDeSDeprecationWarning, match=r"top level.*'qcodes\.parameters'"
     ):
-        obj = qcodes.combine  # type: ignore[attr-defined]
+        obj = qcodes.combine  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     assert obj is qcodes.parameters.combine
 
 
 def test_top_level_measurement_shorthand_deprecated() -> None:
     with pytest.warns(QCoDeSDeprecationWarning, match=r"top level.*'qcodes\.dataset'"):
-        obj = qcodes.Measurement  # type: ignore[attr-defined]
+        obj = qcodes.Measurement  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     assert obj is qcodes.dataset.Measurement
 
 
@@ -54,19 +54,19 @@ def test_top_level_instrument_shorthand_deprecated() -> None:
     with pytest.warns(
         QCoDeSDeprecationWarning, match=r"top level.*'qcodes\.instrument'"
     ):
-        obj = qcodes.Instrument  # type: ignore[attr-defined]
+        obj = qcodes.Instrument  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     assert obj is qcodes.instrument.Instrument
 
 
 def test_top_level_monitor_shorthand_deprecated() -> None:
     with pytest.warns(QCoDeSDeprecationWarning, match=r"top level.*'qcodes\.monitor'"):
-        obj = qcodes.Monitor  # type: ignore[attr-defined]
+        obj = qcodes.Monitor  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     assert obj is qcodes.monitor.Monitor
 
 
 def test_top_level_station_shorthand_deprecated() -> None:
     with pytest.warns(QCoDeSDeprecationWarning, match=r"top level.*'qcodes\.station'"):
-        obj = qcodes.Station  # type: ignore[attr-defined]
+        obj = qcodes.Station  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     assert obj is qcodes.station.Station
 
 
@@ -85,7 +85,7 @@ def test_top_level_submodule_access_not_deprecated() -> None:
 
 def test_top_level_unknown_attribute_raises() -> None:
     with pytest.raises(AttributeError, match="definitely_not_a_qcodes_attribute"):
-        _ = qcodes.definitely_not_a_qcodes_attribute  # type: ignore[attr-defined]
+        _ = qcodes.definitely_not_a_qcodes_attribute  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
 
 
 def test_instrument_parameter_reexport_deprecated() -> None:
@@ -94,7 +94,7 @@ def test_instrument_parameter_reexport_deprecated() -> None:
     with pytest.warns(
         QCoDeSDeprecationWarning, match=r"'ManualParameter'.*'qcodes\.parameters'"
     ):
-        obj = qcodes.instrument.ManualParameter  # type: ignore[attr-defined]
+        obj = qcodes.instrument.ManualParameter  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     assert obj is qcodes.parameters.ManualParameter
 
 
@@ -127,4 +127,4 @@ def test_instrument_parameter_reexport_deprecated_all(name: str) -> None:
 
 def test_instrument_unknown_attribute_raises() -> None:
     with pytest.raises(AttributeError, match="definitely_not_a_qcodes_attribute"):
-        _ = qcodes.instrument.definitely_not_a_qcodes_attribute  # type: ignore[attr-defined]
+        _ = qcodes.instrument.definitely_not_a_qcodes_attribute  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]

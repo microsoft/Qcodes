@@ -29,7 +29,7 @@ def _make_controlled_setpoints(
             res.append((controlled, controlled()))
             return res
 
-    p = _ControlledSetpoints(name, **kwargs)  # type: ignore[arg-type]
+    p = _ControlledSetpoints(name, **kwargs)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
     p.has_control_of.add(controlled)
     return p
 

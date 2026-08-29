@@ -64,8 +64,8 @@ def test_get_latest_unknown() -> None:
     local_parameter = BetterGettableParam("test_param", set_cmd=None, get_cmd=None)
     # fake a parameter that has a value but never been get/set to mock
     # an instrument.
-    local_parameter.cache._value = value  # type: ignore[attr-defined]
-    local_parameter.cache._raw_value = value  # type: ignore[attr-defined]
+    local_parameter.cache._value = value  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
+    local_parameter.cache._raw_value = value  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     assert local_parameter.get_latest.get_timestamp() is None
     before_get = datetime.now(UTC)
     assert local_parameter._get_count == 0
@@ -169,7 +169,7 @@ def test_no_get_max_val_age() -> None:
     class LocalParameter(ParameterBase):
         def __init__(self, *args: Any, **kwargs: Any):
             super().__init__(*args, **kwargs)
-            self.set_raw = lambda x: x  # type: ignore[method-assign]
+            self.set_raw = lambda x: x  # type: ignore[method-assign]  # ty: ignore[invalid-assignment]
             self.set = self._wrap_set(self.set_raw)
 
     localparameter = LocalParameter("test_param", instrument=None, max_val_age=1)

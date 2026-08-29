@@ -107,7 +107,7 @@ def test_creation(name, sp1, sp2, inff1, inff2, paramtype) -> None:
     invalid_types = ("np.array", "ndarray", "lala", "", Number, ndarray, 0, None)
     for inv_type in invalid_types:
         with pytest.raises(ValueError):
-            ParamSpec(name, inv_type)  # type: ignore[arg-type]
+            ParamSpec(name, inv_type)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
     if not inff1.isidentifier():
         inff1 = "inff1"

@@ -84,7 +84,7 @@ def make_observable_parameter(
                 get_cmd=get_cmd,
             )
             param = cast("ObservableParam", p)
-            param.get_instr_val = get_cmd  # type: ignore[method-assign]
+            param.get_instr_val = get_cmd  # type: ignore[method-assign]  # ty: ignore[invalid-assignment]
         return param
 
     yield make_parameter
@@ -142,7 +142,7 @@ def test_get_set_raises(simple_param: Parameter) -> None:
     """
     for kwargs in ({"set_cmd": None}, {"get_cmd": None}):
         with pytest.raises(KeyError) as e:
-            DelegateParameter("test_delegate_parameter", source=simple_param, **kwargs)  # type: ignore[arg-type]
+            DelegateParameter("test_delegate_parameter", source=simple_param, **kwargs)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
         assert str(e.value).startswith("'It is not allowed to set")
 
 
@@ -320,7 +320,7 @@ def test_delegate_parameter_get_and_snapshot_with_none_source() -> None:
     assert delegate_param.get() is None
     assert delegate_param.snapshot()["value"] is None
 
-    parameter = delegate_param.cache._parameter  # type: ignore[attr-defined]
+    parameter = delegate_param.cache._parameter  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     assert parameter.source.cache is none_param.cache
     delegate_param.source = source_param
     assert delegate_param.get() == 1

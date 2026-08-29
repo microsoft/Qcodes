@@ -414,7 +414,7 @@ def test_instantiation_from_badly_typed_argument(
             "AMI430_3D",
             mag_x.name,
             mag_y,
-            badly_typed_instrument_z_argument,  # type: ignore[arg-type]
+            badly_typed_instrument_z_argument,  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
             field_limit,
         )
 
@@ -1867,7 +1867,7 @@ def test_3d_driver_invalid_field_limit_type(
     mag_x, mag_y, mag_z = magnet_axes_instances
     request.addfinalizer(Instrument.close_all)
     with pytest.raises(ValueError, match="field limit should either be a number"):
-        AMIModel4303D("AMI430_3D", mag_x, mag_y, mag_z, None)  # type: ignore[arg-type]
+        AMIModel4303D("AMI430_3D", mag_x, mag_y, mag_z, None)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 def test_ramp_simultaneously(current_driver: AMIModel4303D) -> None:

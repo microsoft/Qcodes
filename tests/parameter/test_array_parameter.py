@@ -167,13 +167,13 @@ def test_full_name() -> None:
         # this is not allowed since instrument
         # here is not actually an instrument
         # but useful for testing
-        p._instrument = instrument  # type: ignore[assignment]
+        p._instrument = instrument  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
         assert str(p) == "fred"
         assert p.setpoint_full_names == ("barney",)
 
     # and then an instrument that really has a name
     p = SimpleArrayParam([6, 7], "wilma", shape=(2,), setpoint_names=("betty",))
-    p._instrument = named_instrument  # type: ignore[assignment]
+    p._instrument = named_instrument  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
     assert str(p) == "astro_wilma"
     assert p.setpoint_full_names == ("astro_betty",)
 
@@ -181,7 +181,7 @@ def test_full_name() -> None:
     p = SimpleArrayParam(
         [[6, 7, 8], [1, 2, 3]], "wilma", shape=(3, 2), setpoint_names=("betty", None)
     )
-    p._instrument = named_instrument  # type: ignore[assignment]
+    p._instrument = named_instrument  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
     assert p.setpoint_full_names == ("astro_betty", None)
 
 
