@@ -104,7 +104,7 @@ jobs:
       if: ${{ !matrix.min-version && always() }}
       id: mypy
     - name: Run ty
-      run: ty check --output-format github src docs
+      run: ty check --output-format github
       if: ${{ !matrix.min-version && always() }}
       id: ty
     - name: Set pytest basetemp
