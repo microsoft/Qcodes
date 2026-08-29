@@ -30,7 +30,7 @@ class DummyParameterIsAttrInstr(Instrument):
         This instrument errors because it tries to override an attribute with a parameter.
         """
         super().__init__(name, **kwargs)
-        self.voltage = self.add_parameter("voltage", set_cmd=None, get_cmd=None)
+        self.voltage = self.add_parameter("voltage", set_cmd=None, get_cmd=None)  # ty: ignore[invalid-assignment]
 
     def voltage(self):
         return 0
