@@ -971,7 +971,7 @@ def test_get_array_parameter_data_no_nulls(array_dataset_with_nulls) -> None:
     expected_names = {}
     expected_names["val1"] = ["val1", "sp1", "sp2"]
     expected_names["val2"] = ["val2", "sp1"]
-    expected_shapes = {}
+    expected_shapes: dict[str, list[tuple[int, ...]]] = {}
     expected_values = {}
 
     if "array" in types:
