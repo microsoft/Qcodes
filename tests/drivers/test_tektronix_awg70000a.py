@@ -175,7 +175,7 @@ def test_seqxfilefromfs_failing(forged_sequence) -> None:
             forged_sequence,
             [1, 1, 1],
             seqname="dummyname",
-            channel_mapping={1: None, 3: None},  # type: ignore[dict-item]
+            channel_mapping={1: None, 3: None},  # type: ignore[dict-item]  # ty: ignore[invalid-argument-type]
         )
 
     # wrong channel mapping values

@@ -20,7 +20,7 @@ def test_delegate_dict() -> None:
     assert td.apples == "green"
 
     d = {"apples": "red", "oranges": "orange"}
-    td.d = d  # type: ignore[attr-defined]
+    td.d = d  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
 
     # you can get the whole dict still
     assert td.d == d
@@ -52,7 +52,7 @@ def test_delegate_dicts() -> None:
 
     td = ToDicts()
     e = {"cats": 12, "dogs": 3}
-    td.e = e  # type: ignore[attr-defined]
+    td.e = e  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
 
     # you can still access the second one when the first doesn't exist
     with pytest.raises(AttributeError):
@@ -61,7 +61,7 @@ def test_delegate_dicts() -> None:
     assert td.cats == 12
 
     # the first beats out the second
-    td.d = {"cats": 42, "chickens": 1000}  # type: ignore[attr-defined]
+    td.d = {"cats": 42, "chickens": 1000}  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     assert td.cats == 42
 
     # but you can still access things only in the second
@@ -89,14 +89,14 @@ def test_delegate_object() -> None:
         _ = to_obj.recipient
     assert to_obj.gray == "#888"
 
-    to_obj.recipient = recipient  # type: ignore[attr-defined]
+    to_obj.recipient = recipient  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
 
     # now you can access recipient through to_obj
     assert to_obj.black == "#000"
 
     # to_obj overrides but you can still access other recipient attributes
     #  "soft" black
-    to_obj.black = "#444"  # type: ignore[attr-defined]
+    to_obj.black = "#444"  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     assert to_obj.black == "#444"
     assert to_obj.white == "#fff"
 

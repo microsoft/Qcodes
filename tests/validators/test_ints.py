@@ -91,7 +91,7 @@ def test_unlimited() -> None:
 
     for vv in not_ints:
         with pytest.raises(TypeError):
-            n.validate(vv)  # type: ignore[arg-type]
+            n.validate(vv)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 def test_min() -> None:
@@ -109,7 +109,7 @@ def test_min_raises() -> None:
     n = Ints(min_value=ints[-1])
     for v in not_ints:
         with pytest.raises(TypeError):
-            n.validate(v)  # type: ignore[arg-type]
+            n.validate(v)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 def test_max() -> None:
@@ -127,7 +127,7 @@ def test_max_raises() -> None:
     n = Ints(max_value=ints[-1])
     for v in not_ints:
         with pytest.raises(TypeError):
-            n.validate(v)  # type: ignore[arg-type]
+            n.validate(v)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 def test_range() -> None:
@@ -142,7 +142,7 @@ def test_range() -> None:
 
     for vv in not_ints:
         with pytest.raises(TypeError):
-            n.validate(vv)  # type: ignore[arg-type]
+            n.validate(vv)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
     assert repr(n) == "<Ints 0<=v<=10>"
     assert n.is_numeric
@@ -150,17 +150,17 @@ def test_range() -> None:
 
 def test_failed_numbers() -> None:
     with pytest.raises(TypeError):
-        Ints(1, 2, 3)  # type: ignore[call-arg]
+        Ints(1, 2, 3)  # type: ignore[call-arg]  # ty: ignore[too-many-positional-arguments]
 
     with pytest.raises(TypeError):
         Ints(1, 1)  # min >= max
 
     for val in not_ints:
         with pytest.raises((TypeError, OverflowError)):
-            Ints(max_value=val)  # type: ignore[arg-type]
+            Ints(max_value=val)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
         with pytest.raises((TypeError, OverflowError)):
-            Ints(min_value=val)  # type: ignore[arg-type]
+            Ints(min_value=val)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 def test_valid_values() -> None:
