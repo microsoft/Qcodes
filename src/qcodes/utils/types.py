@@ -75,7 +75,7 @@ numpy_c_complex = (np.csingle, np.cdouble)
 Complex types that matches C types.
 """
 
-numpy_complex: tuple[type[complex_type_union], ...] = (
+numpy_complex: tuple[type[np.complexfloating], ...] = (
     numpy_concrete_complex + numpy_c_complex
 )
 """
