@@ -61,7 +61,7 @@ Changelog = "https://microsoft.github.io/Qcodes/changes/index.html"
 [project.optional-dependencies]
 zurichinstruments = ["zhinst-qcodes>=0.3"]
 minicircuits_usb_spdt = ["pythonnet>3.0.4"]
-loop = ["qcodes_loop>=0.1.2"]
+loop = ["qcodes_loop>=0.2.3"]
 test = [
     "coverage[toml]>=7.10.5",
     "deepdiff>=8.6.1",
@@ -86,7 +86,7 @@ test = [
     "types-tabulate>=0.1.0",
     "types-tqdm>=4.64.6",
     "types_pywin32>=305.0.0.7",
-    "qcodes_loop>=0.1.1",
+    "qcodes_loop>=0.2.3",
     "zhinst.qcodes>=0.5", # typecheck zhinst driver alias
     "libcst>=1.2.0", # refactor tests
 ]
