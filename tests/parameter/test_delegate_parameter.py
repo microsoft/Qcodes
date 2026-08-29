@@ -420,6 +420,7 @@ def test_delegate_parameter_with_changed_source_snapshot_matches_value(
     delegate_param.source = source_parameter
     calc_value = (value - offset) / scale
     assert delegate_param.cache.get(get_if_invalid=False) == calc_value
+    assert delegate_param.source is not None
     assert delegate_param.source.cache.get(get_if_invalid=False) == value
     snapshot = delegate_param.snapshot()
     # disregard timestamp that might be slightly different
