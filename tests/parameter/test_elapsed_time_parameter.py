@@ -50,4 +50,4 @@ def test_elapsed_time_parameter_forbidden_kwargs() -> None:
     for fb_kwarg in forbidden_kwargs:
         match = f'Can not set "{fb_kwarg}" for an ElapsedTimeParameter'
         with pytest.raises(ValueError, match=match):
-            ElapsedTimeParameter("time", **{fb_kwarg: None})  # type: ignore[arg-type]
+            ElapsedTimeParameter("time", **{fb_kwarg: None})  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]

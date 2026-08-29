@@ -34,10 +34,10 @@ def test_snapshot() -> None:
     # We need to use `InstrumentBase` (not a bare mock) in order for
     # `snapshot` methods call resolution to work out
     mainframe = InstrumentBase(name="mainframe")
-    mainframe.write = MagicMock()  # type: ignore[attr-defined]
+    mainframe.write = MagicMock()  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     slot_nr = 1
     smu = KeysightB1517A(
-        parent=mainframe,  # type: ignore[arg-type]
+        parent=mainframe,  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
         name="B1517A",
         slot_nr=slot_nr,
     )
