@@ -39,7 +39,7 @@ def test_number_of_validations_for_set_cache() -> None:
 
 def test_bad_validator() -> None:
     with pytest.raises(TypeError):
-        Parameter("p", vals=[1, 2, 3])  # type:ignore[arg-type]
+        Parameter("p", vals=[1, 2, 3])  # type:ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 def test_setting_int_with_float() -> None:
