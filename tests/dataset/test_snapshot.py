@@ -58,7 +58,7 @@ def test_station_snapshot_during_measurement(
     # 1. Test `get_metadata('snapshot')` method
     # this is not part of the DatasetProtocol interface
     # but we test it anyway
-    json_snapshot_from_dataset = data_saver.dataset.get_metadata("snapshot")  # type: ignore[attr-defined]
+    json_snapshot_from_dataset = data_saver.dataset.get_metadata("snapshot")  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     snapshot_from_dataset = json.loads(json_snapshot_from_dataset)
 
     expected_snapshot = {

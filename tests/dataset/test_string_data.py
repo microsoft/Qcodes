@@ -138,7 +138,7 @@ def test_string_with_wrong_paramtype_via_datasaver() -> None:
         with pytest.raises(ValueError, match=msg):
             data_saver.add_result(("p", "some text"))
     finally:
-        data_saver.dataset.conn.close()  # type: ignore[attr-defined]
+        data_saver.dataset.conn.close()  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
 
 
 @pytest.mark.usefixtures("experiment")
@@ -194,7 +194,7 @@ def test_list_of_strings(experiment) -> None:
     try:
         np.testing.assert_array_equal(actual_data, expec_data)
     finally:
-        test_set.conn.close()  # type: ignore[attr-defined]
+        test_set.conn.close()  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
 
 
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,), deadline=None)

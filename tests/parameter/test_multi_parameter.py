@@ -211,7 +211,7 @@ def test_full_name_s() -> None:
             shapes=shapes,
             setpoint_names=setpoint_names,
         )
-        p._instrument = instrument  # type: ignore[assignment]
+        p._instrument = instrument  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
         assert str(p) == name
         assert p.full_names == names
         assert p.setpoint_full_names == (
@@ -228,7 +228,7 @@ def test_full_name_s() -> None:
         shapes=shapes,
         setpoint_names=setpoint_names,
     )
-    p._instrument = named_instrument  # type: ignore[assignment]
+    p._instrument = named_instrument  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
     assert str(p) == "astro_mixed_dimensions"
 
     assert p.full_names == ("astro_0D", "astro_1D", "astro_2D")

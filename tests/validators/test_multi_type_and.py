@@ -44,4 +44,4 @@ def test_good() -> None:
 def test_bad() -> None:
     for args in ([], [1], [Strings(), True]):
         with pytest.raises(TypeError):
-            MultiTypeAnd(*args)  # type: ignore[misc]
+            MultiTypeAnd(*args)  # type: ignore[misc]  # ty: ignore[invalid-argument-type]

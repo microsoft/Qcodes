@@ -49,7 +49,7 @@ def test_unlimited() -> None:
 
     for vv in not_strings:
         with pytest.raises(TypeError):
-            s.validate(vv)  # type: ignore[arg-type]
+            s.validate(vv)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
     assert repr(s) == "<Strings>"
 
@@ -66,7 +66,7 @@ def test_min() -> None:
 
         for vv in not_strings:
             with pytest.raises(TypeError):
-                s.validate(vv)  # type: ignore[arg-type]
+                s.validate(vv)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
     s = Strings(min_length=100)
     assert repr(s) == "<Strings len>=100>"
@@ -85,7 +85,7 @@ def test_max() -> None:
     s = Strings(max_length=100)
     for vv in not_strings:
         with pytest.raises(TypeError):
-            s.validate(vv)  # type: ignore[arg-type]
+            s.validate(vv)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
     assert repr(s) == "<Strings len<=100>"
 
@@ -102,7 +102,7 @@ def test_range() -> None:
 
     for vv in not_strings:
         with pytest.raises(TypeError):
-            s.validate(vv)  # type: ignore[arg-type]
+            s.validate(vv)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
     assert repr(s) == "<Strings 1<=len<=10>"
 
@@ -112,7 +112,7 @@ def test_range() -> None:
 
 def test_failed_strings() -> None:
     with pytest.raises(TypeError):
-        Strings(1, 2, 3)  # type: ignore[call-arg]
+        Strings(1, 2, 3)  # type: ignore[call-arg]  # ty: ignore[too-many-positional-arguments]
 
     with pytest.raises(TypeError):
         Strings(10, 9)
@@ -121,14 +121,14 @@ def test_failed_strings() -> None:
         Strings(max_length=0)
 
     with pytest.raises(TypeError):
-        Strings(min_length=1e12)  # type: ignore[arg-type]
+        Strings(min_length=1e12)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
     for length in [-1, 3.5, "2", None]:
         with pytest.raises(TypeError):
-            Strings(max_length=length)  # type: ignore[arg-type]
+            Strings(max_length=length)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
         with pytest.raises(TypeError):
-            Strings(min_length=length)  # type: ignore[arg-type]
+            Strings(min_length=length)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 def test_valid_values() -> None:

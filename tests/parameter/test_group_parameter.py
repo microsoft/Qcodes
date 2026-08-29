@@ -112,7 +112,7 @@ def test_raise_on_get_set_cmd() -> None:
         kwarg = {arg: ""}
 
         with pytest.raises(ValueError) as e:
-            GroupParameter(name="a", **kwarg)  # type: ignore[arg-type]
+            GroupParameter(name="a", **kwarg)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
         assert (
             str(e.value) == "A GroupParameter does not use 'set_cmd' or 'get_cmd' kwarg"

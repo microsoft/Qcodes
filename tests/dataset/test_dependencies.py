@@ -24,7 +24,7 @@ def test_wrong_input_raises() -> None:
         ["p1", ParamSpec("p2", paramtype="text")],
     ):
         with pytest.raises(ValueError):
-            InterDependencies(pspecs)  # type: ignore[arg-type]
+            InterDependencies(pspecs)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 def test_init(some_paramspecbases) -> None:
@@ -78,18 +78,18 @@ def test_init_validation_raises(some_paramspecbases) -> None:
 
     for tree, cause in zip(invalid_trees, causes):
         with pytest.raises(ValueError, match="Invalid dependencies") as ei:
-            InterDependencies_(dependencies=tree, inferences={})  # type: ignore[arg-type]
+            InterDependencies_(dependencies=tree, inferences={})  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
         assert error_caused_by(ei, cause=cause)
 
     for tree, cause in zip(invalid_trees, causes):
         with pytest.raises(ValueError, match="Invalid inferences") as ei:
-            InterDependencies_(dependencies={}, inferences=tree)  # type: ignore[arg-type]
+            InterDependencies_(dependencies={}, inferences=tree)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
         assert error_caused_by(ei, cause=cause)
 
     with pytest.raises(ValueError, match="Invalid standalones") as ei:
-        InterDependencies_(standalones=("ps1", "ps2"))  # type: ignore[arg-type]
+        InterDependencies_(standalones=("ps1", "ps2"))  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
     assert error_caused_by(ei, cause="Standalones must be a sequence of ParamSpecs")
 
@@ -101,8 +101,8 @@ def test_init_validation_raises(some_paramspecbases) -> None:
     for inv in invalid_trees_2:
         with pytest.raises(ValueError, match="already exists"):
             InterDependencies_(
-                dependencies=inv["deps"],  # type: ignore[arg-type]
-                inferences=inv["inffs"],  # type: ignore[arg-type]
+                dependencies=inv["deps"],  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
+                inferences=inv["inffs"],  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
             )
 
 
