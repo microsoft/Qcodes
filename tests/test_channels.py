@@ -516,7 +516,7 @@ def test_access_channels_by_name_empty_raises(dci: DummyChannelInstrument) -> No
 
 def test_access_channel_by_name_empty_raises(dci: DummyChannelInstrument) -> None:
     with pytest.raises(TypeError, match="missing 1 required positional argument"):
-        dci.channels.get_channel_by_name()  # pyright: ignore[reportCallIssue]
+        dci.channels.get_channel_by_name()  # pyright: ignore[reportCallIssue]  # ty: ignore[missing-argument]
 
 
 def test_delete_from_channel_list(dci_with_list: DCIWithList) -> None:
