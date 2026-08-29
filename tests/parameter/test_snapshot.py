@@ -58,13 +58,13 @@ def create_parameter(
                 call_count += 1
                 return get_func(*args, **kwargs)
 
-            wrapped_func.call_count = lambda: call_count  # type: ignore[attr-defined]
+            wrapped_func.call_count = lambda: call_count  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
 
             return wrapped_func
 
         p.get = wrap_in_call_counter(p.get)
         # pre-condition
-        assert p.get.call_count() == 0  # type: ignore[attr-defined]
+        assert p.get.call_count() == 0  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     else:
         # pre-condition
         assert not hasattr(p, "get")
@@ -161,7 +161,7 @@ def test_snapshot_timestamp_for_valid_cache_depends_on_cache_update(
     # Hack cache's timestamp to simplify this test
     timestamp = p.cache.timestamp
     assert timestamp is not None
-    p.cache._timestamp = timestamp - timedelta(days=31)  # type: ignore[attr-defined]
+    p.cache._timestamp = timestamp - timedelta(days=31)  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
 
     tu = datetime.now(UTC)
     assert p.cache.timestamp is not None
@@ -242,7 +242,7 @@ def test_snapshot_when_snapshot_value_is_false(
     assert "raw_value" not in s
 
     if get_cmd is not False:
-        assert p.get.call_count() == 0  # type: ignore[attr-defined]
+        assert p.get.call_count() == 0  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
 
 
 def test_snapshot_value_is_true_by_default(
@@ -297,7 +297,7 @@ def test_snapshot_when_snapshot_get_is_false(
         assert s["raw_value"] is None
 
     if get_cmd is not False:
-        assert p.get.call_count() == 0  # type: ignore[attr-defined]
+        assert p.get.call_count() == 0  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
 
 
 def test_snapshot_of_non_gettable_parameter_mirrors_cache(
@@ -348,15 +348,15 @@ def test_snapshot_of_gettable_parameter_depends_on_update(
     if should_get:
         assert s["value"] == 65
         assert s["raw_value"] == 69
-        assert p.get.call_count() == 1  # type: ignore[attr-defined]
+        assert p.get.call_count() == 1  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     elif cache_is_valid:
         assert s["value"] == 42
         assert s["raw_value"] == 46
-        assert p.get.call_count() == 0  # type: ignore[attr-defined]
+        assert p.get.call_count() == 0  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     else:
         assert s["value"] is None
         assert s["raw_value"] is None
-        assert p.get.call_count() == 0  # type: ignore[attr-defined]
+        assert p.get.call_count() == 0  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
 
 
 def test_snapshot_value() -> None:
@@ -391,7 +391,7 @@ def test_normalize_snapshot_update_maps_to_canonical_values() -> None:
 
 def test_normalize_snapshot_update_rejects_unknown_string() -> None:
     with pytest.raises(ValueError, match="Invalid value for snapshot"):
-        normalize_snapshot_update("bogus")  # type: ignore[arg-type]
+        normalize_snapshot_update("bogus")  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 def test_snapshot_update_all_always_calls_get() -> None:
@@ -403,7 +403,7 @@ def test_snapshot_update_all_always_calls_get() -> None:
     )
     s = p.snapshot(update="All")
     assert s["value"] == 69
-    assert p.get.call_count() == 1  # type: ignore[attr-defined]
+    assert p.get.call_count() == 1  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
 
 
 def test_snapshot_update_never_never_calls_get() -> None:
@@ -415,7 +415,7 @@ def test_snapshot_update_never_never_calls_get() -> None:
     )
     s = p.snapshot(update="Never")
     assert s["value"] is None
-    assert p.get.call_count() == 0  # type: ignore[attr-defined]
+    assert p.get.call_count() == 0  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
 
 
 def test_snapshot_update_only_invalid_calls_get_when_cache_invalid() -> None:
@@ -427,7 +427,7 @@ def test_snapshot_update_only_invalid_calls_get_when_cache_invalid() -> None:
     )
     s = p.snapshot(update="Only_invalid")
     assert s["value"] == 69
-    assert p.get.call_count() == 1  # type: ignore[attr-defined]
+    assert p.get.call_count() == 1  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
 
 
 def test_snapshot_update_only_invalid_skips_get_when_cache_valid() -> None:
@@ -440,7 +440,7 @@ def test_snapshot_update_only_invalid_skips_get_when_cache_valid() -> None:
     s = p.snapshot(update="Only_invalid")
     # the cached (set) value is used, ``get`` is not called
     assert s["value"] == 42
-    assert p.get.call_count() == 0  # type: ignore[attr-defined]
+    assert p.get.call_count() == 0  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
 
 
 @pytest.mark.parametrize(
@@ -473,8 +473,8 @@ def test_snapshot_update_string_matches_legacy_value(
     assert s_legacy["value"] == s_string["value"]
     assert s_legacy["raw_value"] == s_string["raw_value"]
     assert (
-        p_legacy.get.call_count()  # type: ignore[attr-defined]
-        == p_string.get.call_count()  # type: ignore[attr-defined]
+        p_legacy.get.call_count()  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
+        == p_string.get.call_count()  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     )
 
 
@@ -486,4 +486,4 @@ def test_snapshot_rejects_unknown_update_value() -> None:
         cache_is_valid=True,
     )
     with pytest.raises(ValueError, match="Invalid value for snapshot"):
-        p.snapshot(update="bogus")  # type: ignore[arg-type]
+        p.snapshot(update="bogus")  # type: ignore[arg-type]  # ty: ignore[no-matching-overload]

@@ -12,7 +12,7 @@ def test_type() -> None:
 
     v2 = 234
     with pytest.raises(TypeError):
-        sequence_validator.validate(v2)  # type: ignore[arg-type]
+        sequence_validator.validate(v2)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 def test_elt_vals() -> None:

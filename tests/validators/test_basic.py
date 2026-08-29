@@ -55,7 +55,7 @@ def test_real_anything() -> None:
 
 def test_failed_anything() -> None:
     with pytest.raises(TypeError):
-        Anything(1)  # type: ignore[call-arg]
+        Anything(1)  # type: ignore[call-arg]  # ty: ignore[too-many-positional-arguments]
 
     with pytest.raises(TypeError):
-        Anything(values=[1, 2, 3])  # type: ignore[call-arg]
+        Anything(values=[1, 2, 3])  # type: ignore[call-arg]  # ty: ignore[unknown-argument]
