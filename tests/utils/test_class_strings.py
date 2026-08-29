@@ -12,5 +12,5 @@ def test_full_class() -> None:
 def test_named_repr() -> None:
     j = json.JSONEncoder()
     id_ = id(j)
-    j.name = "Peppa"  # type: ignore[attr-defined]
+    j.name = "Peppa"  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     assert named_repr(j) == f"<json.encoder.JSONEncoder: Peppa at {id_}>"

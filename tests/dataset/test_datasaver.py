@@ -177,7 +177,7 @@ def test_saving_numeric_values_as_text(
             data_saver.add_result((p.name, value))
     finally:
         data_saver.dataset.mark_completed()
-        data_saver.dataset.conn.close()  # type: ignore[attr-defined]
+        data_saver.dataset.conn.close()  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
 
 
 @pytest.mark.usefixtures("experiment")
@@ -209,4 +209,4 @@ def test_duplicated_parameter_raises() -> None:
             data_saver.add_result((p.name, 1), (p.name, 1))
     finally:
         data_saver.dataset.mark_completed()
-        data_saver.dataset.conn.close()  # type: ignore[attr-defined]
+        data_saver.dataset.conn.close()  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]

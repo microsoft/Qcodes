@@ -372,7 +372,7 @@ def test_installation_info_logging() -> None:
 def test_get_level_name_with_invalid_type() -> None:
     """Only str and int can be converted to a logging level name."""
     with pytest.raises(RuntimeError, match="get_level_name: Cannot to convert level"):
-        logger.get_level_name(1.5)  # type: ignore[arg-type]
+        logger.get_level_name(1.5)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 def test_get_level_code_with_invalid_type() -> None:
@@ -661,7 +661,7 @@ def test_submodule_logger_is_not_replaced_without_instrument_scope() -> None:
 def test_nested_submodule_logger_is_child_of_its_parent_module() -> None:
     inst = ScopedDummyChannelInstrument("nested_modules")
     channel = inst.submodules["A"]
-    nested = InstrumentModule(channel, "nested")  # type: ignore[arg-type]
+    nested = InstrumentModule(channel, "nested")  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
     channel.add_submodule("nested", nested)  # type: ignore[union-attr]
 
     assert nested.name_parts == ["nested_modules", "ChanA", "nested"]
