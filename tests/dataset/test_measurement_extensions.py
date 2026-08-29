@@ -371,7 +371,7 @@ def test_dond_into_fails_with_together_sweeps(
     ):
         dond_into(
             datasaver,
-            TogetherSweep(sweep1, sweep2),  # pyright: ignore [reportArgumentType]
+            TogetherSweep(sweep1, sweep2),  # pyright: ignore [reportArgumentType]  # ty: ignore[invalid-argument-type]
             meas1,
         )
 
@@ -394,8 +394,8 @@ def test_dond_into_fails_with_groups(
         dond_into(
             datasaver,
             sweep1,
-            [meas1],  # pyright: ignore [reportArgumentType]
-            [meas2],  # pyright: ignore [reportArgumentType]
+            [meas1],  # pyright: ignore [reportArgumentType]  # ty: ignore[invalid-argument-type]
+            [meas2],  # pyright: ignore [reportArgumentType]  # ty: ignore[invalid-argument-type]
         )
 
 
