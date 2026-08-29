@@ -467,7 +467,7 @@ def test_snapshot_update_string_matches_legacy_value(
 
     # ``update=legacy`` intentionally uses the deprecated bool/None values to
     # confirm they still map to the new canonical behavior.
-    s_legacy = p_legacy.snapshot(update=legacy)  # pyright: ignore[reportDeprecated]
+    s_legacy = p_legacy.snapshot(update=legacy)  # pyright: ignore[reportDeprecated] # ty: ignore[deprecated]
     s_string = p_string.snapshot(update=string)
 
     assert s_legacy["value"] == s_string["value"]
