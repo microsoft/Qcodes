@@ -12,7 +12,7 @@ def test_callable() -> None:
     c.validate(test_func)
     test_int = 5
     with pytest.raises(TypeError):
-        c.validate(test_int)  # type: ignore[arg-type]
+        c.validate(test_int)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 def test_valid_values() -> None:
