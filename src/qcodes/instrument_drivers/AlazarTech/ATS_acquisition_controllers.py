@@ -143,7 +143,7 @@ class DemodulationAcquisitionController(AcquisitionController[float]):
             #        (r es1[1] - res2[1]) % 360]
             return alazar.signal_to_volt(1, res1[0] + 127.5)
         else:
-            raise Exception("Could not find CHANNEL_B during data extraction")
+            raise RuntimeError("Could not find CHANNEL_B during data extraction")
 
     def fit(self, buf: npt.NDArray) -> tuple[float, float]:
         """

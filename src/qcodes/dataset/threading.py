@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 type ParamMeasT = "ParameterBase | Callable[[], None]"
 type OutType = "list[tuple[ParameterBase, ValuesType]]"
 
-_LOG = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
 class _ParamCaller:

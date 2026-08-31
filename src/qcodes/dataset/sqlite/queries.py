@@ -731,7 +731,7 @@ def _get_layout_id(
     elif isinstance(parameter, str):
         name = parameter
     else:
-        raise ValueError(
+        raise ValueError(  # noqa: TRY004
             "Wrong parameter type, must be ParamSpec or str, "
             f"received {type(parameter)}."
         )

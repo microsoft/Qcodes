@@ -32,7 +32,7 @@ class ParamSpecBase:
         """
 
         if not isinstance(paramtype, str):
-            raise ValueError("Paramtype must be a string.")
+            raise ValueError("Paramtype must be a string.")  # noqa: TRY004
         if paramtype.lower() not in self.allowed_types:
             raise ValueError(f"Illegal paramtype. Must be on of {self.allowed_types}")
         if not name.isidentifier():
