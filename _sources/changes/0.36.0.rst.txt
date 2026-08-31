@@ -1,0 +1,49 @@
+QCoDeS 0.36.0 (2022-11-29)
+==========================
+
+Breaking Changes:
+-----------------
+
+- The `test_intrument` and `test_intruments` functions are no longer available
+  from the toplevel qcodes namespace.
+  If you require these functions they must be imported from
+  `qcodes.instrument_drivers.test`. (:pr:`4616`)
+- The deprecated imports of `Loop`, `Measure` and members of `qcodes.data` in the toplevel QCoDeS namespace has been
+  removed. (:pr:`4674`)
+- Explicitly setting a sample id in the `qcodesrc.json` config file has been deprecated. This feature is
+  expected to be very lightly used. Please do get in touch if you rely on it. This will eventually
+  be replaced by a random string. For the same reason `load_by_run_spec` will no longer print
+  `sample_id` as part of the output when more than one potential match is found.
+  Note that this is different from the sample_name set as part of an experiment which is still supported. (:pr:`4763`)
+
+
+Improved:
+---------
+
+- The sweeps used by doNd has gained the ability to perform a get call after setting the parameter and storing
+  that value in the dataset rather than the value set. (:pr:`4759`)
+- `plot_dataset` will now correctly wrap long titles into multiple lines. (:pr:`4770`)
+- Keithley calibration: adjust calibration date before saving new calibration (:pr:`4779`)
+- Visa insturments have gained the ``pyvisa_sim_file`` argument. This allows easier instantiation of
+  simulated visainstrments in tests (both in QCoDeS and external) as well as use of simulated instruments in
+  station yaml files. (:pr:`4790`)
+- dond functions now return the dataset after `KeyboardInterrupt` or `BreakConditionInterrupt`.
+  Instead of raising the interrupts, they are now logged as warning. (:pr:`4801`)
+- The function ``qcodes.dataset.load_from_netcdf`` now always perservers order of the dependent coordinates
+  when loading a netcdf file into memory. (:pr:`4802`)
+- Add ``rundescriber_from_json`` to dataset public API
+  for materializing ``RunDescriber`` objects from json strings (:pr:`4811`)
+- Add ``RunDescriber``, ``InterDependencies_``, ``ParamSpecTree`` to dataset public API (:pr:`4816`)
+- All public methods avilable in ``qcodes.dataset`` that takes a
+  path to a db or data file now accepts a ``pathlib.Path`` object in addition to a ``str``. (:pr:`4818`)
+
+
+New:
+----
+
+- Add a callback to ``dataset.get_parameter_data``.
+  This is usefull to track the progress of the data download.
+  Since sqlite3 does not allow to keep track of the data loading progress,
+  we compute how many sqlite requests correspond to a certain percentage of
+  progress which is dictated by a config parameter "callback_percent".
+  Then we perform x sql request instead of one, running the callback everytime. (:pr:`4688`)

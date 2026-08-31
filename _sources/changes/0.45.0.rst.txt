@@ -1,0 +1,92 @@
+QCoDeS 0.45.0 (2024-05-03)
+==========================
+
+Breaking Changes:
+-----------------
+
+- The AMI drivers in ``qcodes.instrument_drivers.american_magnetics.AMI430`` and their submodules has been deprecated. Use the ``AMIModel430`` and
+  ``AMIModel4303D`` drivers from ``qcodes.instrument_drivers.american_magnetics`` instead. (:pr:`5712`)
+- QCoDeS is now type checked to ensure that subclasses are implemented in a way consistent with the parent class.
+  This has resulted in a number of changes to the API. The following is a list of the changes that have been made
+  to the API to make subclasses match their parent class. These changes are not expected to break any existing code, since they are
+  primarily in positional arguments or unused arguments.
+
+  * The first argument to `NumpyJSONEncoder.default` has changed from `obj` to `o` to match the naming in the std library `json.JSONEncoder.default`.
+  * Unused args `idn_part` and `being_time` to `QDevQDac.connect_message` have been changed to `idn_param` and `begin_time` respectively to match the parent class.
+  * Unused arguments to stub methods `DSOTraceParam.setpoints`, `DSOTraceParam.unit` and `FormattedSweep.setpoints` have been changed to match the parent class.
+  * Alazar `DemodulationAcquisitionController.handle_buffer` the first argument has been renamed from `data` to `buffer` to match the parent class. (:pr:`5721`)
+- The `qcodes.tests` module has been deprecated and will be removed in a future release. Please import mock instruments from
+  `qcodes.instrument_drivers.mock_instruments` and `DriverTestCase` from `qcodes.extensions` instead. If you make use of
+  any other part of the tests module please open an issue on GitHub. (:pr:`5732`)
+- Fix spelling of the 2 incorrectly spelled classes
+  ```qcodes.instrument_drivers.tektronix.TekronixDPOTrigger``` and
+  ```qcodes.instrument_drivers.tektronix.TekronixDPOWaveform``` to
+  ```qcodes.instrument_drivers.tektronix.TektronixDPOTrigger```
+  and ```qcodes.instrument_drivers.tektronix.TektronixDPOWaveform``` .
+  The old names have been deprecated and will be removed in a future release. (:pr:`5932`)
+- QCoDeS no longer installs opencensus and opencensus-ext-azure are no longer installed by default and opencensus integration is deprecated.
+  This means that the option ``qcodes.config.telemetry.enabled`` to ``True`` is deprecated. For the time being opencensus and opencensus-ext-azure
+  can be installed by installing QCoDeS with the opencensus option e.g. ``pip install qcodes[opencensus]``. We however, recommend that any use
+  of this telemetry integration is replaced by the use of OpenTelemetry. QCoDeS will not include any telemetry integration but the codebase
+  has been instrumented using OpenTelemetry spans and python log messages enabling any user to collect telemetry if they should so wish. (:pr:`5991`)
+
+
+Improved:
+---------
+
+- An issue where simulated instruments powered by pyvisa-sim could raise an error during the teardown has been resolved. (:pr:`5737`)
+- Add support for integer indexing in parameter paths in Station Files,
+  e.g ``channel[0].voltage`` or ``sigouts[0].enables[1].value``. (:pr:`5887`)
+- Station.get_component and Instrument.get_component has gained the ability to lookup a component
+  on an instrument that is only added as a member of a chanellist/tuple and not added as an individual component. (:pr:`6009`)
+
+
+Improved Drivers:
+-----------------
+
+- Improved Stahl BS Voltage Source driver:
+  - accepts more floating-point formats in response from instrument
+  - allows connection to serial instrument over TCP/IP connection (:pr:`5888`)
+- The driver for ``Rohde&Schwarz SG100A`` has been extendend with parameters
+  controlling the optional pulse modulation and trigger modules. (:pr:`5889`)
+- The drivers for ``TektronixAWG5208``, ``TektronixAWG70001A``, ``TektronixAWG70001B``, ``TektronixAWG70002A`` and ``TektronixAWG70002B``
+  have gained the parameter ``all_output_off`` to disable / enable all outputs as well as the method ``channel.clear_asset`` to clear all asserts on a channel. (:pr:`5900`)
+- A number of new parameters are added to the Keysight N9030B Spectrum Analyzer to allow for Noise Spectral Density measurements.
+  In particular we add various parameters for switching the detectors into the appropriate modes, as well as allowing for
+  instrument parameters required for unit conversions to be saved in the snapshot.
+
+  In addition, we use binary readout of the data and the ability to read data from the instrument buffer
+  (without taking a new trace), and to read averaged data. (:pr:`5963`)
+- Adds trace manipulation commands to the Keysight PNA driver. (:pr:`6035`)
+
+
+New:
+----
+
+- Add a do2d_retrace function (:pr:`5780`)
+- Added a new QCoDeS driver for the Cryomagnetics Model 4G superconducting magnet power supply.
+
+  The `CryomagneticsModel4G` driver provides an interface to control and communicate with the Cryomagnetics Model 4G
+  superconducting magnet power supply using the VISA protocol. It allows setting and reading the magnetic field, ramp rate,
+  and various other parameters of the instrument.
+
+  Key features of the driver include:
+
+  * Setting and reading the magnetic field in Tesla, considering the coil constant and current limits.
+
+  * Controlling the ramp rate in Tesla per minute.
+
+  * Checking the operating state of the magnet and handling quench conditions and power module failures.
+
+  * Blocking and non-blocking ramping of the magnetic field.
+
+  * Handling communication errors and retrying failed operations.
+
+  The driver is located in ``qcodes/instrument_drivers/cryomagnetics/cryomagnetics_4g.py``.
+
+  For more details and usage examples, please refer to the driver's documentation:
+  https://qcodes.github.io/Qcodes/examples/driver_examples/Qcodes_example_with_cryomagnetics4g.html (:pr:`5968`)
+- Add methods to recursively search a chain of DelegateParameters and return either all the parameters in the chain or the 'root' parameter
+  These methods may also be used with custom Parameters which link to other parameters via different attribute names
+
+  Also add infer_channel and infer_instrument methods to find the InstrumentModule or Instrument of the root parameter (:pr:`5998`)

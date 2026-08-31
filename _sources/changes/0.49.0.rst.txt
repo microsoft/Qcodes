@@ -1,0 +1,34 @@
+QCoDeS 0.49.0 (2024-10-15)
+==========================
+
+Breaking Changes:
+-----------------
+
+- The methods `get`, `set`, `call` and `__getitem__` on the `InstrumentBase` class have been deprecated.
+  Parameters can be looked up by name using the `Instrument.parameters` dict and functions using `instrument.functions`
+  which is cleaner and fully equivalent. (:pr:`6086`)
+- The deprecated `qcodes.tests` module has been removed. Mock instruments can be found in `qcodes.instrument_drivers.mock_instruments` and
+  DriverTestCase as `qcodes.extensions.DriverTestCase`. (:pr:`6480`)
+
+
+Improved:
+---------
+
+- The deprecated support for enabling OpenCensus based telemetry has been removed.
+  QCoDeS will now warn if you try to enable OpenCensus based telemetry in the config.
+  Users are encouraged to roll out their own telemetry solution if they need it based
+  on OpenTelemetry. This also means that the `qcodes[opencensus]` install target has been removed.
+  The unused method `filter_out_telemetry_log_records` has been deprecated and will be removed in a future release. (:pr:`6439`)
+- Parameters registered in a qcodes Measurement are now snapshotted and stored in the resulting dataset under `dataset.snapshot["parameters"]` (:pr:`6487`)
+- Group parmeter now accepts a callable that returns a string command as its ``get_cmd``.
+  This is useful for the cases where the command string is dynamic; for example,
+  ``lambda: f"CMD {get_id_that_specifies_the_command()} ?"``. (:pr:`6520`)
+
+
+Improved Drivers:
+-----------------
+
+- LakeShore335: Fix typo in setpoint_ramp parameter group (:pr:`6430`)
+- Add curve header parameters to Lakeshore model 336 that allows query of the input channel curve header.
+  This is useful to verify remotely if the correct temperature calibration curve is selected. (:pr:`6520`)
+- Fix Rigol DG4000 value mappings for ``output_polarity`` parameters. (:pr:`6345`)

@@ -1,0 +1,81 @@
+Changelog for QCoDeS 0.3.0
+==========================
+
+The May 2019 release of QCoDeS contains a large backend re-structure of the Measurement.DataSaver logic
+as well a handful of driver improvements and some new data saving functionalities.
+
+New & Improved:
+_______________
+
+- New and Improved Drivers:
+
+  - Alazar Cards:
+
+    * All models; limit maximum buffer size as documented for AlazarBeforeAsyncRead (:pr:`1535`)
+    * All models; add api instance as initialization parameter (:pr:`1524`)
+
+  - Arbitraty Waveform Generators:
+
+    * Keysight 33510B: add support for this specific model (:pr:`1544`)
+    * Zurich Instruments HDAWG8; Remove warning when taking snapshot of ZIHDAWG8 (:pr:`1561`)
+
+  - Lock-in Amplifiers:
+
+    * Zurich Instruments UHF-LI; support all 8 oscillators with MF option (:pr:`1546`)
+    * Zurich Instruments UHF-LI; add parameter to UHFLI driver to select oscillator per demodulator (:pr:`1551`)
+
+  - Magnets:
+
+    * American Magnetics AMI430; allow a broader range of field limit values (:pr:`1558`)
+    * American Magnetics AMI430; fix coil-constant related bug (:pr:`1527`)
+
+  - Multimeters:
+
+    * Tektronix Keithley 6500; allow immediate triggering (:pr:`1576`)
+    * Tektronix Keithley 6500; fix invalid SCPI commands (:pr:`1541`)
+
+  - Source Meters:
+
+    * Tektronix Keithley 2450; add brand new driver! (:pr:`1533`, :pr:`1569`)
+
+  - Vector Generators:
+
+    * Keysight E8267D; extend frequency modulation features (:pr:`1554`)
+
+  - Vector Network Analyzers:
+
+    * Rohde&Schwarz ZNB; make initialization more fail-safe (:pr:`1564`)
+
+  - Others:
+
+    * Mj2; allow higher gain (:pr:`1575`)
+    * Cryocon; allow the setting of the termination character (:pr:`1559`)
+
+- Data Saving Features:
+
+  - Allow arrays of different lengths to be stored together (:pr:`1477`)
+  - Allow complex numbers (:pr:`1484`, :pr:`1489`, :pr:`1493`)
+  - Infer the SQLite storage type of parameters (:pr:`1494`)
+
+- Documentation:
+
+  - Increase title consistency (:pr:`1553`)
+
+- Database upgrades:
+
+  - Schema version bumped to 5; snapshot column always present (:pr:`1562`)
+
+- QCoDeS Workflow:
+
+  - Extend QCoDeS-Station to be configurable through yaml file (:pr:`1560`)
+
+Breaking Changes:
+_________________
+
+- The DataSet no longer has an `add_parameter` method (:pr:`1547`)
+
+Miscellaneous:
+______________
+
+- The python package dependencies have been updated (:pr:`1550`)
+- Our copyright is up to date :) (:pr:`1552`)

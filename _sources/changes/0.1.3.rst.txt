@@ -1,0 +1,30 @@
+Changelog for QCoDeS 0.1.3
+==========================
+
+Breaking Changes
+----------------
+
+- New and slightly improved parameter (:pr:`403`)
+- Units is deprecated (with a warning and a redirect to unit)
+
+New & Improved
+--------------
+
+- Human readable snapshot
+
+- Drivers:
+
+    - add yokogawa gs200 (:pr:`393`)
+    - add  SG384 (:pr:`318`)
+    - new awg5014 driver
+    - add  Spectrum M4i.44xx-x8 driver
+
+- Automatic build / test system
+
+Fixed
+-----
+- fix Keithely 2600 precision
+- Cosmetic issues
+
+
+-
