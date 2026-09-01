@@ -240,7 +240,7 @@ class Config:
             default: default value, stored only in the schema
 
         Examples:
-            >>> defaults.add("trace_color", "blue", "string", "description")
+            >>> defaults.add("trace_color", "blue", "string", "description")  # doctest: +SKIP
 
         will update the config:
 
@@ -477,7 +477,10 @@ class DotDict(dict[str, Any]):
         """
         Overwrite ``__getattr__`` to provide dot access
         """
-        return self.__getitem__(name)
+        try:
+            return self.__getitem__(name)
+        except KeyError:
+            raise AttributeError(name)
 
     def __setattr__(self, key: str, value: Any) -> None:
         """

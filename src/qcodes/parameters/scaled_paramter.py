@@ -24,14 +24,23 @@ class ScaledParameter(Parameter):
 
     Examples:
         Resistive voltage divider
-        >>> vd = ScaledParameter(dac.chan0, division = 10)
+
+        .. code-block:: python
+
+            vd = ScaledParameter(dac.chan0, division = 10)
 
         Voltage multiplier
-        >>> vb = ScaledParameter(dac.chan0, gain = 30, name = 'Vb')
+
+        .. code-block:: python
+
+            vb = ScaledParameter(dac.chan0, gain = 30, name = 'Vb')
 
         Transimpedance amplifier
-        >>> Id = ScaledParameter(multimeter.amplitude,
-        ...                      division = 1e6, name = 'Id', unit = 'A')
+
+        .. code-block:: python
+
+            Id = ScaledParameter(multimeter.amplitude,
+                                 division = 1e6, name = 'Id', unit = 'A')
 
     Args:
         output: Physical Parameter that need conversion.

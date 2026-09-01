@@ -628,8 +628,8 @@ class LakeshoreBaseSensorChannel(InstrumentChannel):
 
         Example:
         >>> terms = [1, 16, 32, 64, 128]
-        >>> get_sum_terms(terms, 96)
-        ... [64, 32]  # This is correct because 96=64+32
+        >>> [int(x) for x in LakeshoreBaseSensorChannel._get_sum_terms(terms, 96)]
+        [64, 32]
 
         """
         terms_in_number: list[int] = []

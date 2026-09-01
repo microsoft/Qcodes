@@ -186,7 +186,7 @@ class DataSaver:
         is four dimensional (v1, v2, c1, c2). The corresponding call
         to this function would be
 
-            >>> datasaver.add_result((v1, 0.1), (v2, 0.2), (c1, 5), (c2, -2.1))
+            >>> datasaver.add_result((v1, 0.1), (v2, 0.2), (c1, 5), (c2, -2.1))  # doctest: +SKIP
 
         For better performance, this function does not immediately write to
         the database, but keeps the results in memory. Writing happens every
