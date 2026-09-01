@@ -457,7 +457,7 @@ traitlets==5.16.1
     #   nbconvert
     #   nbformat
     #   nbsphinx
-ty==0.0.75
+ty==0.0.77
     # via qcodes (pyproject.toml)
 types-jsonschema==4.26.0.20260518
     # via qcodes (pyproject.toml)

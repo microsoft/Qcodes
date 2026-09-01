@@ -148,16 +148,6 @@ class ParameterBaseKWArgs(
     ``**kwargs: Unpack[ParameterBaseKWArgs]`` as input and forward this to
     the super class to ensure that it can accept all the arguments
     defined here.
-
-    Note that forwarding the kwargs on requires a
-    ``ty: ignore[invalid-argument-type]``. When a generic TypedDict declares a
-    PEP 696 default for a type parameter, ty computes the upper bound of the
-    synthesized ``Self`` as the default specialization, so every other
-    specialization is rejected by the members that bind ``Self``. Expanding
-    with ``**`` is one of those, and reports the rather misleading
-    ``must be a mapping type``. ``InstrumentTypeVar_co`` defaults to
-    ``InstrumentBase | None`` and so triggers this; ``ParameterDataTypeVar``
-    defaults to ``Any``, which happens to be the one default ty accepts.
     """
 
     instrument: NotRequired[InstrumentTypeVar_co]
