@@ -54,7 +54,7 @@ def test_bool() -> None:
 
     for vv in NOTBOOLS:
         with pytest.raises(TypeError):
-            b.validate(vv)  # type: ignore[arg-type]
+            b.validate(vv)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
         assert repr(b) == "<Boolean>"
 

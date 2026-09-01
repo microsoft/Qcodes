@@ -1,0 +1,5 @@
+The legacy dataset importer now raises a clear :class:`ValueError` when a
+setpoint array has no ``array_id``, instead of passing ``None`` on to
+``add_result`` where a parameter name is expected. This was found by annotating
+``DataArray`` in ``qcodes_loop``, which also removes the need for a ``pyright``
+suppression on the array shape.

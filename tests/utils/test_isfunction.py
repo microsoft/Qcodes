@@ -36,7 +36,7 @@ def test_function() -> None:
 
     # make sure we only accept valid arg_count
     with pytest.raises(TypeError):
-        is_function(f0, "lots")  # type: ignore[arg-type]
+        is_function(f0, "lots")  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
     with pytest.raises(TypeError):
         is_function(f0, -1)
 

@@ -100,8 +100,8 @@ def test_get_cache_unknown() -> None:
     local_parameter = BetterGettableParam("test_param", set_cmd=None, get_cmd=None)
     # fake a parameter that has a value but never been get/set to mock
     # an instrument.
-    local_parameter.cache._value = value  # type: ignore[attr-defined]
-    local_parameter.cache._raw_value = value  # type: ignore[attr-defined]
+    local_parameter.cache._value = value  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
+    local_parameter.cache._raw_value = value  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     assert local_parameter.cache.timestamp is None
     before_get = datetime.now(UTC)
     assert local_parameter._get_count == 0
@@ -228,7 +228,7 @@ def test_no_get_max_val_age_runtime_error(
     class LocalParameter(ParameterBase):
         def __init__(self, *args: Any, **kwargs: Any):
             super().__init__(*args, **kwargs)
-            self.set_raw = lambda x: x  # type: ignore[method-assign]
+            self.set_raw = lambda x: x  # type: ignore[method-assign]  # ty: ignore[invalid-assignment]
             self.set = self._wrap_set(self.set_raw)
 
     local_parameter = LocalParameter("test_param", instrument=None, max_val_age=1)
@@ -268,13 +268,13 @@ def test_no_get_timestamp_none_runtime_error(
 
 def test_latest_dictionary_gets_updated_upon_set_of_memory_parameter() -> None:
     p = Parameter("p", set_cmd=None, get_cmd=None)
-    assert p.cache._value is None  # type: ignore[attr-defined]
+    assert p.cache._value is None  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     assert p.cache.raw_value is None
     assert p.cache.timestamp is None
 
     p(42)
 
-    assert p.cache._value == 42  # type: ignore[attr-defined]
+    assert p.cache._value == 42  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     assert p.cache.raw_value == 42
     assert p.cache.timestamp is not None
 
@@ -320,7 +320,7 @@ def test_set_latest_works_for_plain_memory_parameter(
     assert p.raw_value == raw_value
 
     # Assert latest value and raw_value via private attributes for strictness
-    assert p.cache._value == value  # type: ignore[attr-defined]
+    assert p.cache._value == value  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     assert p.cache.raw_value == raw_value
 
     # Now let's get the value of the parameter to ensure that the value that
@@ -341,7 +341,7 @@ def test_set_latest_works_for_plain_memory_parameter(
     assert p.raw_value == raw_value
 
     # Assert latest value and raw_value via private attributes for strictness
-    assert p.cache._value == value  # type: ignore[attr-defined]
+    assert p.cache._value == value  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     assert p.cache.raw_value == raw_value
 
 

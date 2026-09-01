@@ -44,7 +44,7 @@ numpy_non_concrete_ints_instantiable = (np.int_, np.uint)
 Default integer types. The size may be platform dependent.
 """
 
-numpy_ints: tuple[type, ...] = (
+numpy_ints: tuple[type[np.integer], ...] = (
     numpy_concrete_ints + numpy_c_ints + numpy_non_concrete_ints_instantiable
 )
 """
@@ -61,7 +61,7 @@ numpy_c_floats = (np.half, np.single, np.double)
 Floating point types that matches C types.
 """
 
-numpy_floats: tuple[type, ...] = numpy_concrete_floats + numpy_c_floats
+numpy_floats: tuple[type[np.floating], ...] = numpy_concrete_floats + numpy_c_floats
 """
 All numpy float types
 """
@@ -75,7 +75,7 @@ numpy_c_complex = (np.csingle, np.cdouble)
 Complex types that matches C types.
 """
 
-numpy_complex: tuple[type[complex_type_union], ...] = (
+numpy_complex: tuple[type[np.complexfloating], ...] = (
     numpy_concrete_complex + numpy_c_complex
 )
 """

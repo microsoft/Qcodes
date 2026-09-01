@@ -17,9 +17,11 @@ _FixtureT = tuple[dict[str, TypeVar], Callable[[str], Any]]
 @pytest.fixture
 def deprecated_getattr() -> _FixtureT:
     """Create a __getattr__ with two deprecated TypeVars."""
+    # these TypeVars are values handed to the deprecation shim rather than
+    # type variables used to parametrize anything, which ty does not allow
     deprecated = {
-        "MyT": TypeVar("MyT"),
-        "MyK": TypeVar("MyK", bound=int),
+        "MyT": TypeVar("MyT"),  # ty: ignore[invalid-legacy-type-variable]
+        "MyK": TypeVar("MyK", bound=int),  # ty: ignore[invalid-legacy-type-variable]
     }
     getattr_fn = _make_deprecated_typevars_getattr("fake.module", deprecated)
     return deprecated, getattr_fn
@@ -64,7 +66,7 @@ def test_repeated_access_returns_same_object(
 
 
 def test_fallback_is_called_for_unknown_names() -> None:
-    deprecated: dict[str, TypeVar] = {"X": TypeVar("X")}
+    deprecated: dict[str, TypeVar] = {"X": TypeVar("X")}  # ty: ignore[invalid-legacy-type-variable]
 
     def fallback(name: str) -> str:
         return f"fallback:{name}"
@@ -74,7 +76,7 @@ def test_fallback_is_called_for_unknown_names() -> None:
 
 
 def test_fallback_not_called_for_deprecated_names() -> None:
-    deprecated: dict[str, TypeVar] = {"X": TypeVar("X")}
+    deprecated: dict[str, TypeVar] = {"X": TypeVar("X")}  # ty: ignore[invalid-legacy-type-variable]
     fallback_called = False
 
     def fallback(name: str) -> str:
@@ -92,6 +94,8 @@ def test_real_module_import_triggers_warning() -> None:
     """Test that importing a deprecated TypeVar from an actual module works."""
     mod = importlib.import_module("qcodes.utils.deep_update_utils")
     with pytest.warns(QCoDeSDeprecationWarning, match="'K'"):
-        k = mod.K
+        # K is only served by the module level __getattr__ that this test
+        # exercises, so it is invisible to a type checker
+        k = mod.K  # ty: ignore[unresolved-attribute]
 
     assert isinstance(k, TypeVar)

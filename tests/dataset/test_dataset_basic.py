@@ -312,7 +312,7 @@ def test_load_by_id_for_none() -> None:
     with pytest.raises(
         ValueError, match=re.escape("run_id has to be a positive integer, not None.")
     ):
-        _ = load_by_id(None)  # type: ignore[arg-type]
+        _ = load_by_id(None)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 @settings(deadline=None, max_examples=6)
@@ -809,7 +809,7 @@ def test_parent_dataset_links_invalid_input() -> None:
 
     match = re.escape("Invalid input. Did not receive a list of Links")
     with pytest.raises(ValueError, match=match):
-        ds.parent_dataset_links = [ds.guid]  # type: ignore[list-item]
+        ds.parent_dataset_links = [ds.guid]  # type: ignore[list-item]  # ty: ignore[invalid-assignment]
 
     match = re.escape(
         "Invalid input. All links must point to this dataset. "
@@ -971,7 +971,7 @@ def test_get_array_parameter_data_no_nulls(array_dataset_with_nulls) -> None:
     expected_names = {}
     expected_names["val1"] = ["val1", "sp1", "sp2"]
     expected_names["val2"] = ["val2", "sp1"]
-    expected_shapes = {}
+    expected_shapes: dict[str, list[tuple[int, ...]]] = {}
     expected_values = {}
 
     if "array" in types:
@@ -1010,7 +1010,7 @@ def test_get_array_parameter_data(array_dataset) -> None:
     expected_shapes: dict[str, list[tuple[int, ...]]] = {}
     expected_len = 5
     expected_shapes[par_name] = [(expected_len,), (expected_len,)]
-    expected_values = {}
+    expected_values: dict[str, list[np.ndarray]] = {}
     expected_values[par_name] = [
         np.ones(expected_len) + 1,
         np.linspace(5, 9, expected_len),

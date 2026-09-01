@@ -605,7 +605,7 @@ class TektronixAWG5014(VisaInstrument):
         r"^ch(?P<ch>[1-4])_(?:(?P<marker>m[12])_)?(?P<param>.+)$"
     )
 
-    def __getattr__(self, name: str) -> Any:
+    def __getattr__(self, key: str) -> Any:
         """
         Provide backwards-compatible access to the old flat parameter names
         like ``ch1_amp``, ``ch1_m1_high``, etc.
@@ -613,7 +613,7 @@ class TektronixAWG5014(VisaInstrument):
         These now live on channel / marker submodules but are still
         reachable via the old names with a deprecation warning.
         """
-        m = self._LEGACY_CHANNEL_RE.match(name)
+        m = self._LEGACY_CHANNEL_RE.match(key)
         if m is not None:
             ch_num = int(m.group("ch"))
             marker = m.group("marker")
@@ -629,7 +629,7 @@ class TektronixAWG5014(VisaInstrument):
                         if hasattr(mrk, new_param):
                             new_name = f"ch{ch_num}.{marker}.{new_param}"
                             warnings.warn(
-                                f"Accessing '{name}' is deprecated. "
+                                f"Accessing '{key}' is deprecated. "
                                 f"Use '{new_name}' instead.",
                                 category=QCoDeSDeprecationWarning,
                                 stacklevel=2,
@@ -638,12 +638,12 @@ class TektronixAWG5014(VisaInstrument):
                 elif hasattr(ch, param):
                     new_name = f"ch{ch_num}.{param}"
                     warnings.warn(
-                        f"Accessing '{name}' is deprecated. Use '{new_name}' instead.",
+                        f"Accessing '{key}' is deprecated. Use '{new_name}' instead.",
                         category=QCoDeSDeprecationWarning,
                         stacklevel=2,
                     )
                     return getattr(ch, param)
-        return super().__getattr__(name)
+        return super().__getattr__(key)
 
     # Convenience parser
     def newlinestripper(self, string: str) -> str:

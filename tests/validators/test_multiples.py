@@ -108,11 +108,11 @@ def test_divisors() -> None:
 
         for vvv in not_multiples:
             with pytest.raises(TypeError):
-                n.validate(vvv)  # type:ignore[arg-type]
+                n.validate(vvv)  # type:ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
     for dd in not_divisors:
         with pytest.raises(TypeError):
-            n = Multiples(divisor=dd)  # type:ignore[arg-type]
+            n = Multiples(divisor=dd)  # type:ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
     n = Multiples(divisor=3, min_value=1, max_value=10)
     assert repr(n) == "<Ints 1<=v<=10, Multiples of 3>"

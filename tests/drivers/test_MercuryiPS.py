@@ -92,7 +92,7 @@ def test_wrong_field_limit_raises() -> None:
             "mips",
             address="GPIB::1::INSTR",
             pyvisa_sim_file="MercuryiPS.yaml",
-            field_limits=0,  # type: ignore[arg-type]
+            field_limits=0,  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
         )
 
 

@@ -156,7 +156,7 @@ def test_invalid_channel_type_raises(empty_instrument: Instrument) -> None:
         ChannelList(
             parent=empty_instrument,
             name="empty",
-            chan_type=int,  # type: ignore[type-var]
+            chan_type=int,  # type: ignore[type-var]  # ty: ignore[invalid-argument-type]
         )
 
 
@@ -166,7 +166,7 @@ def test_invalid_multichan_type_raises(empty_instrument: Instrument) -> None:
             parent=empty_instrument,
             name="empty",
             chan_type=DummyChannel,
-            multichan_paramclass=int,  # type: ignore[arg-type]
+            multichan_paramclass=int,  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
         )
 
 
@@ -516,7 +516,7 @@ def test_access_channels_by_name_empty_raises(dci: DummyChannelInstrument) -> No
 
 def test_access_channel_by_name_empty_raises(dci: DummyChannelInstrument) -> None:
     with pytest.raises(TypeError, match="missing 1 required positional argument"):
-        dci.channels.get_channel_by_name()  # pyright: ignore[reportCallIssue]
+        dci.channels.get_channel_by_name()  # pyright: ignore[reportCallIssue]  # ty: ignore[missing-argument]
 
 
 def test_delete_from_channel_list(dci_with_list: DCIWithList) -> None:
@@ -728,7 +728,7 @@ def test_channel_tuple_call_method_called_as_expected(
     assert result is None
     for channel in dci.channels:
         # type inference ignores that this has been mocked
-        channel.turn_on.assert_called_with("bar")  # type: ignore[union-attr]
+        channel.turn_on.assert_called_with("bar")  # type: ignore[union-attr]  # ty: ignore[unresolved-attribute]
 
 
 def test_channel_tuple_names(dci: DummyChannelInstrument) -> None:
@@ -802,7 +802,7 @@ def test_multi_function_with_callable_method(
     result = multi_func("bar")
     assert result is None
     for channel in dci.channels:
-        channel.turn_on.assert_called_with("bar")  # type: ignore[union-attr]
+        channel.turn_on.assert_called_with("bar")  # type: ignore[union-attr]  # ty: ignore[unresolved-attribute]
 
 
 def test_multi_function_invalid_name_raises(dci: DummyChannelInstrument) -> None:

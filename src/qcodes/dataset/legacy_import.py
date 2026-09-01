@@ -44,23 +44,45 @@ def setup_measurement(
     return meas
 
 
+def _array_id(array: DataArray) -> str:
+    """
+    Return the ``array_id`` of a legacy ``DataArray``.
+
+    Args:
+        array: Legacy data array to read the id from.
+
+    Raises:
+        ValueError: If the array has no ``array_id``. Parameters are registered
+            by name, so an array without an id cannot be stored.
+
+    """
+    array_id = array.array_id
+    if array_id is None:
+        raise ValueError(f"Cannot store an array without an array_id: {array!r}")
+    return array_id
+
+
 def store_array_to_database(datasaver: DataSaver, array: DataArray) -> int:
     assert array.shape is not None
     dims = len(array.shape)
     assert array.array_id is not None
     if dims == 2:
-        for index1, i in enumerate(array.set_arrays[0]):
-            for index2, j in enumerate(array.set_arrays[1][index1]):
+        setpoints_outer = array.set_arrays[0]
+        setpoints_inner = array.set_arrays[1]
+        outer_id = _array_id(setpoints_outer)
+        inner_id = _array_id(setpoints_inner)
+        for index1, i in enumerate(setpoints_outer):
+            for index2, j in enumerate(setpoints_inner[index1]):
                 datasaver.add_result(
-                    (array.set_arrays[0].array_id, i),
-                    (array.set_arrays[1].array_id, j),
+                    (outer_id, i),
+                    (inner_id, j),
                     (array.array_id, array[index1, index2]),
                 )
     elif dims == 1:
-        for index, i in enumerate(array.set_arrays[0]):
-            datasaver.add_result(
-                (array.set_arrays[0].array_id, i), (array.array_id, array[index])
-            )
+        setpoints = array.set_arrays[0]
+        setpoints_id = _array_id(setpoints)
+        for index, i in enumerate(setpoints):
+            datasaver.add_result((setpoints_id, i), (array.array_id, array[index]))
     else:
         raise NotImplementedError(
             "The exporter only currently handles 1 and 2 Dimensional data"
@@ -73,23 +95,25 @@ def store_array_to_database_alt(meas: Measurement, array: DataArray) -> int:
     dims = len(array.shape)
     assert array.array_id is not None
     if dims == 2:
-        outer_data = np.empty(
-            array.shape[1]  # pyright: ignore[reportGeneralTypeIssues]
-        )
+        setpoints_outer = array.set_arrays[0]
+        setpoints_inner = array.set_arrays[1]
+        outer_id = _array_id(setpoints_outer)
+        inner_id = _array_id(setpoints_inner)
+        outer_data = np.empty(array.shape[1])
         with meas.run() as datasaver:
-            for index1, i in enumerate(array.set_arrays[0]):
+            for index1, i in enumerate(setpoints_outer):
                 outer_data[:] = i
                 datasaver.add_result(
-                    (array.set_arrays[0].array_id, outer_data),
-                    (array.set_arrays[1].array_id, array.set_arrays[1][index1, :]),
+                    (outer_id, outer_data),
+                    (inner_id, setpoints_inner[index1, :]),
                     (array.array_id, array[index1, :]),
                 )
     elif dims == 1:
+        setpoints = array.set_arrays[0]
+        setpoints_id = _array_id(setpoints)
         with meas.run() as datasaver:
-            for index, i in enumerate(array.set_arrays[0]):
-                datasaver.add_result(
-                    (array.set_arrays[0].array_id, i), (array.array_id, array[index])
-                )
+            for index, i in enumerate(setpoints):
+                datasaver.add_result((setpoints_id, i), (array.array_id, array[index]))
     else:
         raise NotImplementedError(
             "The exporter only currently handles 1 and 2 Dimensional data"

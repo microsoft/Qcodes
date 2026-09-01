@@ -1,0 +1,5 @@
+The annotation of ``qcodes.utils.types.numpy_complex`` now correctly
+describes its content as a tuple of numpy complex types. It was previously
+annotated as also containing the builtin ``complex``, which via the implicit
+numeric tower made type checkers treat it as possibly containing ``int`` or
+``float`` as well.

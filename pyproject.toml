@@ -61,7 +61,7 @@ Changelog = "https://microsoft.github.io/Qcodes/changes/index.html"
 [project.optional-dependencies]
 zurichinstruments = ["zhinst-qcodes>=0.3"]
 minicircuits_usb_spdt = ["pythonnet>3.0.4"]
-loop = ["qcodes_loop>=0.1.2"]
+loop = ["qcodes_loop>=0.2.3"]
 test = [
     "coverage[toml]>=7.10.5",
     "deepdiff>=8.6.1",
@@ -77,16 +77,19 @@ test = [
     "pytest-rerunfailures>=14.0",
     "pytest-xdist>=3.6.1",
     "PyVisa-sim>=0.6.0",
+    "scipy-stubs>=1.18.1.0",  # type check docs examples using scipy
     "sphinx>=4.5.0",  # sphinx extension tests
+    "ty>=0.0.77",
     "types-jsonschema>=4.16.0",
     "types-networkx >= 3.6.1.20260512", # minimum version required for generic data types in graph
     "types_requests>=0.1.8",
     "types-tabulate>=0.1.0",
     "types-tqdm>=4.64.6",
     "types_pywin32>=305.0.0.7",
-    "qcodes_loop>=0.1.1",
+    "qcodes_loop>=0.2.3",
     "zhinst.qcodes>=0.5", # typecheck zhinst driver alias
     "libcst>=1.2.0", # refactor tests
+    "intersphinx_registry>=0.2603.16" # typecheck docs/conf.py
 ]
 docs = [
     "autodocsumm>=0.2.9",
@@ -292,6 +295,48 @@ quote-annotations = true
 [tool.setuptools.cmdclass]
 sdist = "versioningit.cmdclass.sdist"
 build_py = "versioningit.cmdclass.build_py"
+
+[tool.ty.environment]
+# a number of drivers are only usable on Windows. Checking against all
+# platforms means that these are type checked no matter which platform ty
+# runs on, and that the result does not depend on the platform of the developer.
+python-platform = "all"
+
+[tool.ty.src]
+# unlike pyright above, ty also understands Jupyter notebooks, so the example
+# notebooks in docs are checked too. That is coverage we get from ty alone.
+include = ["src", "tests", "docs"]
+exclude = [
+    "src/qcodes/instrument_drivers/Harvard/Decadac.py",
+    ]
+
+# these are packages that we import
+# but don't have installed by default.
+# Compare with ignore_missing_imports in the mypy config above
+[[tool.ty.overrides]]
+include = [
+    "src/qcodes/instrument_drivers/Galil/dmc_41x3.py",
+    "src/qcodes/instrument_drivers/Minicircuits/USBHIDMixin.py",
+    "src/qcodes/instrument_drivers/Minicircuits/_minicircuits_usb_spdt.py",
+]
+[tool.ty.overrides.rules]
+unresolved-import = "ignore"
+
+# clr is provided by pythonnet which is not installed by default
+# so its members cannot be resolved either
+[[tool.ty.overrides]]
+include = ["src/qcodes/instrument_drivers/Minicircuits/_minicircuits_usb_spdt.py"]
+[tool.ty.overrides.rules]
+unresolved-attribute = "ignore"
+
+# plottr is a separate package that this notebook demonstrates integrating with,
+# it is not a dependency of qcodes
+[[tool.ty.overrides]]
+include = [
+    "docs/examples/plotting/How-to-use-Plottr-with-QCoDeS-for-live-plotting.ipynb",
+]
+[tool.ty.overrides.rules]
+unresolved-import = "ignore"
 
 [tool.towncrier]
 package = "qcodes"

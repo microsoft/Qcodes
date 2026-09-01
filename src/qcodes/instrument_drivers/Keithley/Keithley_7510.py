@@ -367,7 +367,8 @@ class Keithley7510Buffer(InstrumentChannel["Keithley7510"]):
         n_elements = len(elements)
 
         units = tuple(elements_units[element] for element in elements)
-        processed_data = dict.fromkeys(elements)
+        # every element is filled in by the loop below
+        processed_data: dict[str, npt.NDArray] = {}
         for i, (element, unit) in enumerate(zip(elements, units)):
             if unit == "str":
                 processed_data[element] = np.array(all_data[i::n_elements])
@@ -384,12 +385,9 @@ class Keithley7510Buffer(InstrumentChannel["Keithley7510"]):
             setpoint_units=((self.setpoints.unit,),) * n_elements,
             setpoint_names=((self.setpoints.label,),) * n_elements,
         )
-        data._data = tuple(
-            tuple(processed_data[element])  # type: ignore[arg-type]
-            for element in elements
-        )
+        data._data = tuple(tuple(processed_data[element]) for element in elements)
         for i in range(len(data.names)):
-            setattr(data, data.names[i], tuple(processed_data[data.names[i]]))  # type: ignore[arg-type]
+            setattr(data, data.names[i], tuple(processed_data[data.names[i]]))
         return data
 
     def clear_buffer(self) -> None:

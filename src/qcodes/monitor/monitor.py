@@ -44,8 +44,8 @@ if TYPE_CHECKING:
 
     from websockets.asyncio.server import ServerConnection
 
-WEBSOCKET_PORT = 5678
-SERVER_PORT = 3000
+WEBSOCKET_PORT: int = 5678
+SERVER_PORT: int = 3000
 
 log = logging.getLogger(__name__)
 

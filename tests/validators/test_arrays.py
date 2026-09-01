@@ -18,7 +18,7 @@ def test_type() -> None:
     m = Arrays(min_value=0.0, max_value=3.2, shape=(2, 2))
     for v in ["somestring", 4, 2, [[2, 0], [1, 2]]]:
         with pytest.raises(TypeError):
-            m.validate(v)  # type: ignore[arg-type]
+            m.validate(v)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 def test_complex_min_max_raises() -> None:
@@ -31,14 +31,14 @@ def test_complex_min_max_raises() -> None:
         r" It is \(1\+1j\) of type "
         r"<class 'complex'>",
     ):
-        Arrays(min_value=1 + 1j)  # type: ignore[arg-type]
+        Arrays(min_value=1 + 1j)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
     with pytest.raises(
         TypeError,
         match=r"max_value must be a real number. "
         r"It is \(1\+1j\) of type "
         r"<class 'complex'>",
     ):
-        Arrays(max_value=1 + 1j)  # type: ignore[arg-type]
+        Arrays(max_value=1 + 1j)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
     with pytest.raises(
         TypeError,
         match=r"Setting min_value or max_value is "
@@ -225,9 +225,9 @@ def test_valid_values() -> None:
 
 def test_shape_non_sequence_raises() -> None:
     with pytest.raises(ValueError):
-        _ = Arrays(shape=5)  # type: ignore[arg-type]
+        _ = Arrays(shape=5)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
     with pytest.raises(ValueError):
-        _ = Arrays(shape=lambda: 10)  # type: ignore[arg-type]
+        _ = Arrays(shape=lambda: 10)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 def test_repr() -> None:

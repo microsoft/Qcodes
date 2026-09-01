@@ -25,7 +25,7 @@ def test_good() -> None:
 
         for v in [22, "bad data", [44, 55]]:
             with pytest.raises((ValueError, TypeError)):
-                e.validate(v)  # pyright: ignore[reportArgumentType]
+                e.validate(v)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
         assert repr(e) == f"<Enum: {set(enum)!r}>"
 
@@ -37,7 +37,7 @@ def test_good() -> None:
 def test_bad() -> None:
     for enum in not_enums:
         with pytest.raises(TypeError):
-            vals.Enum(*enum)  # type: ignore[arg-type]
+            vals.Enum(*enum)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 def test_valid_values() -> None:
