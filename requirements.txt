@@ -107,7 +107,7 @@ hypothesis==6.165.10
     # via qcodes (pyproject.toml)
 idna==3.19
     # via requests
-imagesize==2.0.0
+imagesize==2.0.1
     # via
     #   sphinx
     #   sphinx-favicon
