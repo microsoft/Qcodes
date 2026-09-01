@@ -74,8 +74,7 @@ class ParameterWithSetpoints(
 
         super().__init__(
             name=name,
-            # see the note on ParameterBaseKWArgs
-            **kwargs,  # ty: ignore[invalid-argument-type]
+            **kwargs,
         )
         if setpoints is None:
             self.setpoints = []

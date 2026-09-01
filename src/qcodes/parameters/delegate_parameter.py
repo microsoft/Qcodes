@@ -210,8 +210,7 @@ class DelegateParameter(
 
         initial_cache_value = kwargs.pop("initial_cache_value", None)
         self.source = source
-        # see the note on ParameterBaseKWArgs
-        super().__init__(name, **kwargs)  # ty: ignore[invalid-argument-type]
+        super().__init__(name, **kwargs)
         self.label = kwargs.get("label", None)
         self.unit = kwargs.get("unit", None)
 
