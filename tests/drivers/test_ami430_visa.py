@@ -1068,7 +1068,7 @@ def test_current_and_field_params_interlink_at_init(ami430: AMIModel430) -> None
 
 
 def test_current_and_field_params_interlink__change_current_ramp_limit(
-    ami430: AMIModel430, factor: float = 0.9
+    ami430: AMIModel430,
 ) -> None:
     """
     Test that after changing ``current_ramp_limit``, the values of the
@@ -1077,6 +1077,7 @@ def test_current_and_field_params_interlink__change_current_ramp_limit(
     ``coil_constant``-dependent parameters are correctly proportional to each
     other.
     """
+    factor = 0.9
     coil_constant_old = ami430.coil_constant()
     current_ramp_limit_old = ami430.current_ramp_limit()
     field_ramp_limit_old = ami430.field_ramp_limit()
@@ -1110,7 +1111,7 @@ def test_current_and_field_params_interlink__change_current_ramp_limit(
 
 
 def test_current_and_field_params_interlink__change_field_ramp_limit(
-    ami430: AMIModel430, factor: float = 0.9
+    ami430: AMIModel430,
 ) -> None:
     """
     Test that after changing ``field_ramp_limit``, the values of the
@@ -1119,6 +1120,7 @@ def test_current_and_field_params_interlink__change_field_ramp_limit(
     ``coil_constant``-dependent parameters are correctly proportional to each
     other.
     """
+    factor = 0.9
     coil_constant_old = ami430.coil_constant()
     current_ramp_limit_old = ami430.current_ramp_limit()
     field_ramp_limit_old = ami430.field_ramp_limit()
@@ -1152,7 +1154,7 @@ def test_current_and_field_params_interlink__change_field_ramp_limit(
 
 
 def test_current_and_field_params_interlink__change_coil_constant(
-    ami430: AMIModel430, factor: float = 3
+    ami430: AMIModel430,
 ) -> None:
     """
     Test that after changing ``change_coil_constant``, the values of the
@@ -1161,6 +1163,7 @@ def test_current_and_field_params_interlink__change_coil_constant(
     the values of the ``coil_constant``-dependent parameters are correctly
     proportional to each other.
     """
+    factor = 3
     coil_constant_old = ami430.coil_constant()
     current_ramp_limit_old = ami430.current_ramp_limit()
     field_ramp_limit_old = ami430.field_ramp_limit()
