@@ -166,7 +166,7 @@ def test_set_raw_value_on_cache() -> None:
     scale = 10
     local_parameter = BetterGettableParam("test_param", set_cmd=None, scale=scale)
     before = datetime.now(UTC)
-    local_parameter.cache._set_from_raw_value(value * scale)
+    local_parameter.cache.set_from_raw_value(value * scale)
     after = datetime.now(UTC)
     assert local_parameter.cache.get(get_if_invalid=False) == value
     assert local_parameter.cache.raw_value == value * scale
@@ -174,6 +174,36 @@ def test_set_raw_value_on_cache() -> None:
     assert timestamp is not None
     assert timestamp >= before
     assert timestamp <= after
+
+
+def test_set_from_raw_value_deprecated_alias() -> None:
+    """The private ``_set_from_raw_value`` is kept as a backwards compatible
+    alias of the public ``set_from_raw_value`` and behaves identically."""
+    scale = 10
+    value = 2
+    public_param = BetterGettableParam("public", set_cmd=None, scale=scale)
+    alias_param = BetterGettableParam("alias", set_cmd=None, scale=scale)
+
+    public_param.cache.set_from_raw_value(value * scale)
+    alias_param.cache._set_from_raw_value(value * scale)
+
+    assert (
+        alias_param.cache.get(get_if_invalid=False)
+        == public_param.cache.get(get_if_invalid=False)
+        == value
+    )
+    assert alias_param.cache.raw_value == public_param.cache.raw_value == value * scale
+
+
+def test_set_from_raw_value_applies_val_mapping() -> None:
+    """``set_from_raw_value`` accepts the value as reported by the instrument
+    and applies the parameter's ``val_mapping`` to it, mirroring a ``get``."""
+    param = Parameter(
+        "relay", set_cmd=None, get_cmd=None, val_mapping={"open": 0, "close": 1}
+    )
+    param.cache.set_from_raw_value(1)
+    assert param.cache.get(get_if_invalid=False) == "close"
+    assert param.cache.raw_value == 1
 
 
 def test_max_val_age() -> None:

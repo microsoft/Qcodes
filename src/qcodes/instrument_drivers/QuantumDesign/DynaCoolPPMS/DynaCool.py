@@ -430,7 +430,7 @@ class DynaCool(VisaInstrument):
             while self.temperature_state() != "stable":
                 sleep(self.blocking_t_state_check_interval())
 
-        self.temperature_setpoint.cache._set_from_raw_value(values[0])
+        self.temperature_setpoint.cache.set_from_raw_value(values[0])
 
     def write(self, cmd: str) -> None:
         """

@@ -322,7 +322,7 @@ class Parameter(
             mylogger.debug(
                 "Setting raw value of parameter: %s to %s", self.full_name, x
             )
-            self.cache._set_from_raw_value(x)
+            self.cache.set_from_raw_value(x)
             return x
 
         instrument = kwargs.get("instrument")
