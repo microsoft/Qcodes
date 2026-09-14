@@ -37,7 +37,7 @@ def clean_string(s: str) -> str:
 
 
 def _parse_string_strip(s: str) -> str:
-    """Parse an output of the VISA instrument, remove redundant terminators like \n"""
+    r"""Parse an output of the VISA instrument, remove redundant terminators like \n"""
     return s.strip()
 
 

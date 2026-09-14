@@ -1567,9 +1567,9 @@ class TektronixAWG5014(VisaInstrument):
         filename: str = "customawgfile.awg",
         preservechannelsettings: bool = True,
     ) -> None:
-        """
+        r"""
         Makes an .awg-file, sends it to the AWG and loads it. The .awg-file
-        is uploaded to C:\\\\Users\\\\OEM\\\\Documents. The waveforms appear in
+        is uploaded to C:\Users\OEM\Documents. The waveforms appear in
         the user defined waveform list with names wfm001ch1, wfm002ch1, ...
 
         Args:
