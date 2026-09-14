@@ -42,7 +42,7 @@ def guids_from_dbs(
             gc.collect()
     guiddict = {}
     for dbpath, guids in dbdict.items():
-        guiddict.update({guid: dbpath for guid in guids})
+        guiddict.update(dict.fromkeys(guids, dbpath))
     return dbdict, guiddict
 
 

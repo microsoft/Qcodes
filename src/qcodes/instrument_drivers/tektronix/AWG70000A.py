@@ -44,7 +44,7 @@ def _parse_string_response(input_str: str) -> str:
     if the input is empty
     """
     output = input_str.replace('"', "")
-    output = output if output else "N/A"
+    output = output or "N/A"
 
     return output
 

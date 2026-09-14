@@ -573,7 +573,7 @@ class Runner:
         self.station = station
         self._interdependencies = interdeps
         self._shapes: Shapes | None = shapes
-        self.name = name if name else "results"
+        self.name = name or "results"
         self._parent_datasets = parent_datasets
         self._extra_log_info = extra_log_info
         self._write_in_background = write_in_background

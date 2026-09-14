@@ -133,10 +133,10 @@ class RigolDG1062Channel(InstrumentChannel["RigolDG1062"]):
     min_impedance = 1
     max_impedance = 10000
 
-    waveform_params: ClassVar[dict[str, tuple[str, ...]]] = {
-        waveform: ("freq", "ampl", "offset", "phase")
-        for waveform in ["HARM", "NOIS", "RAMP", "SIN", "SQU", "TRI", "USER", "PULS"]
-    }
+    waveform_params: ClassVar[dict[str, tuple[str, ...]]] = dict.fromkeys(
+        ["HARM", "NOIS", "RAMP", "SIN", "SQU", "TRI", "USER", "PULS"],
+        ("freq", "ampl", "offset", "phase"),
+    )
 
     waveform_params["DC"] = ("freq", "ampl", "offset")
     waveform_params["ARB"] = ("sample_rate", "ampl", "offset")
