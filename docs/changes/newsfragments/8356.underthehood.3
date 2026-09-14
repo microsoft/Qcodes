@@ -1,0 +1,5 @@
+Enable the ruff rule ``TRY004`` (``type-check-without-type-error``) so that new code raises
+``TypeError`` when rejecting a value because of its type. Existing type checks that raise
+``ValueError`` or ``RuntimeError`` are unchanged and carry an explicit ``noqa`` comment, since
+``TypeError`` is not a subclass of either and changing them would break user code that catches the
+current exception.

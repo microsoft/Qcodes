@@ -32,7 +32,7 @@ class TraceParameter(Parameter):
 
     def set_raw(self, value: Any) -> None:
         if not isinstance(self.instrument, SignalHoundUSBSA124B):
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY004
                 "TraceParameter only works with 'SignalHound_USB_SA124B'"
             )
         self.instrument._parameters_synced = False
@@ -67,7 +67,7 @@ class ScaleParameter(TraceParameter):
 
     def set_raw(self, value: str) -> None:
         if not isinstance(self.instrument, SignalHoundUSBSA124B):
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY004
                 "ScaleParameter only works with 'SignalHound_USB_SA124B'"
             )
         if value in ("log-scale", "log-full-scale"):
@@ -92,7 +92,7 @@ class SweepTraceParameter(TraceParameter):
 
     def set_raw(self, value: Any) -> None:
         if not isinstance(self.instrument, SignalHoundUSBSA124B):
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY004
                 "SweepTraceParameter only works with 'SignalHound_USB_SA124B'"
             )
         self.instrument._trace_updated = False
@@ -151,7 +151,7 @@ class FrequencySweep(ArrayParameter):
 
         """
         if not isinstance(self.instrument, SignalHoundUSBSA124B):
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY004
                 "'FrequencySweep' is only implemented for 'SignalHound_USB_SA124B'"
             )
         end_freq = start_freq + stepsize * (sweep_len - 1)
@@ -164,7 +164,7 @@ class FrequencySweep(ArrayParameter):
         if self.instrument is None:
             raise RuntimeError("No instrument is attached to 'FrequencySweep'")
         if not isinstance(self.instrument, SignalHoundUSBSA124B):
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY004
                 "'FrequencySweep' is only implemented for 'SignalHound_USB_SA124B'"
             )
         if not self.instrument._trace_updated:
@@ -640,11 +640,11 @@ class SignalHoundUSBSA124B(Instrument):
         try:
             self.abort()
             log.info("Running acquistion aborted.")
-        except Exception as e:
-            # it's ok to catch any exception here
-            # as we are tearing down the instrument we might
-            # as well try to continue
-            log.warning(f"Could not abort acquisition: {e}")
+        except (OSError, ValueError):
+            # `check_for_error` raises OSError if the dll reports a failure and
+            # `saStatus` raises ValueError for an unknown status code. As we are
+            # tearing down the instrument we might as well try to continue.
+            log.exception("Could not abort acquisition")
 
         err = self.dll.saCloseDevice(self.deviceHandle)
         self.check_for_error(err, "saCloseDevice")

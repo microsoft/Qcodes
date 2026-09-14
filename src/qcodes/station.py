@@ -286,7 +286,7 @@ class Station(Metadatable, DelegateAttributes):
             if not (isinstance(component, Parameter) and component.snapshot_exclude):
                 component.snapshot(update="All" if update_snapshot else "Never")
         except Exception:
-            pass
+            log.exception("Failed to snapshot component while adding it to the station")
         if name is None:
             name = getattr(component, "name", f"component{len(self.components)}")
         namestr = str(name)
@@ -828,7 +828,7 @@ class Station(Metadatable, DelegateAttributes):
                 else resolve_instrument_identifier(instr, ".".join(parts[:-1]))
             )
             if isinstance(local_instr, ChannelTuple):
-                raise RuntimeError("A parameter cannot be added to an ChannelTuple")
+                raise RuntimeError("A parameter cannot be added to an ChannelTuple")  # noqa: TRY004
             add_parameter_from_dict(local_instr, parts[-1], options)
         component_settings = {
             name: settings
@@ -948,7 +948,7 @@ def update_config_schema(
                 ms = inspect.getmembers(
                     importlib.import_module(s.name), inspect.isclass
                 )
-            except Exception:
+            except Exception:  # noqa: BLE001 importing an arbitrary third party module may raise anything
                 ms = []
             new_members = [
                 f"{instr[1].__module__}.{instr[1].__name__}"
