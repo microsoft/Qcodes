@@ -1050,9 +1050,9 @@ def test_blocking_ramp_parameter(
         assert len([mssg for mssg in messages if "blocking" in mssg]) == 0
 
 
-def test_current_and_field_params_interlink_at_init(ami430: AMIModel430) -> None:
+def _check_current_and_field_params_interlink_at_init(ami430: AMIModel430) -> None:
     """
-    Test that the values of the ``coil_constant``-dependent parameters
+    Check that the values of the ``coil_constant``-dependent parameters
     are correctly proportional to each other at the initialization of the
     instrument driver.
     """
@@ -1067,17 +1067,23 @@ def test_current_and_field_params_interlink_at_init(ami430: AMIModel430) -> None
     np.testing.assert_almost_equal(field_limit, current_limit * coil_constant)
 
 
-def test_current_and_field_params_interlink__change_current_ramp_limit(
-    ami430: AMIModel430,
-) -> None:
+def test_current_and_field_params_interlink_at_init(ami430: AMIModel430) -> None:
     """
-    Test that after changing ``current_ramp_limit``, the values of the
+    Test that the values of the ``coil_constant``-dependent parameters
+    are correctly proportional to each other at the initialization of the
+    instrument driver.
+    """
+    _check_current_and_field_params_interlink_at_init(ami430)
+
+
+def _check_change_current_ramp_limit(ami430: AMIModel430, factor: float) -> None:
+    """
+    Check that after changing ``current_ramp_limit``, the values of the
     ``field_*`` parameters change proportionally, ``coil__constant`` remains
     the same. At the end just ensure that the values of the
     ``coil_constant``-dependent parameters are correctly proportional to each
     other.
     """
-    factor = 0.9
     coil_constant_old = ami430.coil_constant()
     current_ramp_limit_old = ami430.current_ramp_limit()
     field_ramp_limit_old = ami430.field_ramp_limit()
@@ -1110,17 +1116,27 @@ def test_current_and_field_params_interlink__change_current_ramp_limit(
     np.testing.assert_almost_equal(field_limit, current_limit * coil_constant)
 
 
-def test_current_and_field_params_interlink__change_field_ramp_limit(
+def test_current_and_field_params_interlink__change_current_ramp_limit(
     ami430: AMIModel430,
 ) -> None:
     """
-    Test that after changing ``field_ramp_limit``, the values of the
+    Test that after changing ``current_ramp_limit``, the values of the
+    ``field_*`` parameters change proportionally, ``coil__constant`` remains
+    the same. At the end just ensure that the values of the
+    ``coil_constant``-dependent parameters are correctly proportional to each
+    other.
+    """
+    _check_change_current_ramp_limit(ami430, factor=0.9)
+
+
+def _check_change_field_ramp_limit(ami430: AMIModel430, factor: float) -> None:
+    """
+    Check that after changing ``field_ramp_limit``, the values of the
     ``current_*`` parameters change proportionally, ``coil__constant`` remains
     the same. At the end just ensure that the values of the
     ``coil_constant``-dependent parameters are correctly proportional to each
     other.
     """
-    factor = 0.9
     coil_constant_old = ami430.coil_constant()
     current_ramp_limit_old = ami430.current_ramp_limit()
     field_ramp_limit_old = ami430.field_ramp_limit()
@@ -1153,17 +1169,27 @@ def test_current_and_field_params_interlink__change_field_ramp_limit(
     np.testing.assert_almost_equal(field_limit, current_limit * coil_constant)
 
 
-def test_current_and_field_params_interlink__change_coil_constant(
+def test_current_and_field_params_interlink__change_field_ramp_limit(
     ami430: AMIModel430,
 ) -> None:
     """
-    Test that after changing ``change_coil_constant``, the values of the
+    Test that after changing ``field_ramp_limit``, the values of the
+    ``current_*`` parameters change proportionally, ``coil__constant`` remains
+    the same. At the end just ensure that the values of the
+    ``coil_constant``-dependent parameters are correctly proportional to each
+    other.
+    """
+    _check_change_field_ramp_limit(ami430, factor=0.9)
+
+
+def _check_change_coil_constant(ami430: AMIModel430, factor: float) -> None:
+    """
+    Check that after changing ``change_coil_constant``, the values of the
     ``current_*`` parameters remain the same while the values of the
     ``field_*`` parameters change proportionally. At the end just ensure that
     the values of the ``coil_constant``-dependent parameters are correctly
     proportional to each other.
     """
-    factor = 3
     coil_constant_old = ami430.coil_constant()
     current_ramp_limit_old = ami430.current_ramp_limit()
     field_ramp_limit_old = ami430.field_ramp_limit()
@@ -1197,11 +1223,24 @@ def test_current_and_field_params_interlink__change_coil_constant(
     np.testing.assert_almost_equal(field_limit, current_limit * coil_constant)
 
 
+def test_current_and_field_params_interlink__change_coil_constant(
+    ami430: AMIModel430,
+) -> None:
+    """
+    Test that after changing ``change_coil_constant``, the values of the
+    ``current_*`` parameters remain the same while the values of the
+    ``field_*`` parameters change proportionally. At the end just ensure that
+    the values of the ``coil_constant``-dependent parameters are correctly
+    proportional to each other.
+    """
+    _check_change_coil_constant(ami430, factor=3)
+
+
 def test_current_and_field_params_interlink__permutations_of_tests(
     ami430: AMIModel430,
 ) -> None:
     """
-    As per one of the user's request, the
+    As per one of the user's request, the checks behind the
     test_current_and_field_params_interlink__* tests are executed here with
     arbitrary 'factor's and with all permutations. This test ensures the
     robustness of the driver even more.
@@ -1214,67 +1253,31 @@ def test_current_and_field_params_interlink__permutations_of_tests(
         # may show up but is not relevant to this test
         warnings.simplefilter("ignore", category=AMI430Warning)
 
-        test_current_and_field_params_interlink_at_init(ami430)
+        _check_current_and_field_params_interlink_at_init(ami430)
 
-        test_current_and_field_params_interlink__change_coil_constant(
-            ami430, factor=1.2
-        )
-        test_current_and_field_params_interlink__change_field_ramp_limit(
-            ami430, factor=1.0023
-        )
-        test_current_and_field_params_interlink__change_current_ramp_limit(
-            ami430, factor=0.98
-        )
+        _check_change_coil_constant(ami430, factor=1.2)
+        _check_change_field_ramp_limit(ami430, factor=1.0023)
+        _check_change_current_ramp_limit(ami430, factor=0.98)
 
-        test_current_and_field_params_interlink__change_coil_constant(
-            ami430, factor=1.53
-        )
-        test_current_and_field_params_interlink__change_current_ramp_limit(
-            ami430, factor=2.0
-        )
-        test_current_and_field_params_interlink__change_field_ramp_limit(
-            ami430, factor=0.633
-        )
+        _check_change_coil_constant(ami430, factor=1.53)
+        _check_change_current_ramp_limit(ami430, factor=2.0)
+        _check_change_field_ramp_limit(ami430, factor=0.633)
 
-        test_current_and_field_params_interlink__change_field_ramp_limit(
-            ami430, factor=1.753
-        )
-        test_current_and_field_params_interlink__change_coil_constant(
-            ami430, factor=0.876
-        )
-        test_current_and_field_params_interlink__change_current_ramp_limit(
-            ami430, factor=4.6
-        )
+        _check_change_field_ramp_limit(ami430, factor=1.753)
+        _check_change_coil_constant(ami430, factor=0.876)
+        _check_change_current_ramp_limit(ami430, factor=4.6)
 
-        test_current_and_field_params_interlink__change_coil_constant(
-            ami430, factor=1.87
-        )
-        test_current_and_field_params_interlink__change_current_ramp_limit(
-            ami430, factor=2.11
-        )
-        test_current_and_field_params_interlink__change_field_ramp_limit(
-            ami430, factor=1.0020
-        )
+        _check_change_coil_constant(ami430, factor=1.87)
+        _check_change_current_ramp_limit(ami430, factor=2.11)
+        _check_change_field_ramp_limit(ami430, factor=1.0020)
 
-        test_current_and_field_params_interlink__change_field_ramp_limit(
-            ami430, factor=0.42
-        )
-        test_current_and_field_params_interlink__change_current_ramp_limit(
-            ami430, factor=3.1415
-        )
-        test_current_and_field_params_interlink__change_coil_constant(
-            ami430, factor=1.544
-        )
+        _check_change_field_ramp_limit(ami430, factor=0.42)
+        _check_change_current_ramp_limit(ami430, factor=3.1415)
+        _check_change_coil_constant(ami430, factor=1.544)
 
-        test_current_and_field_params_interlink__change_coil_constant(
-            ami430, factor=0.12
-        )
-        test_current_and_field_params_interlink__change_field_ramp_limit(
-            ami430, factor=0.4422
-        )
-        test_current_and_field_params_interlink__change_current_ramp_limit(
-            ami430, factor=0.00111
-        )
+        _check_change_coil_constant(ami430, factor=0.12)
+        _check_change_field_ramp_limit(ami430, factor=0.4422)
+        _check_change_current_ramp_limit(ami430, factor=0.00111)
 
 
 class PDict(TypedDict):
