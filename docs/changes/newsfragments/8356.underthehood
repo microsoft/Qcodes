@@ -1,0 +1,3 @@
+Enable the ruff rule ``N999`` (``invalid-module-name``). Instrument driver modules that are part of the
+public ``qcodes`` namespace are exempted via ``lint.pep8-naming.extend-ignore-names`` in ``pyproject.toml``
+so that no public module names change. Test modules with invalid names have been renamed to lower case.
