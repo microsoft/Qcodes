@@ -1,0 +1,56 @@
+spec: "1.0"
+devices:
+  KeysightInfiniium:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "Keysight Technologies,MSOS254A,MY00000000,06.60.00902"
+      - q: ":SYSTem:HEADer OFF"
+      - q: ":SYST:HEAD ON"
+      - q: ":SYST:HEAD OFF"
+      - q: ":WAVEFORM:FORMAT WORD"
+      - q: ":WAVEFORM:BYTEORDER LSBFirst"
+      - q: ":WAVEFORM:STREAMING ON"
+      # Capability queries issued during ``_query_capabilities``.
+      - q: ":ACQ:BAND:TESTLIMITS?"
+        r: "1,<numeric>1.0E+7:5.0E+10"
+      - q: ":ACQ:POIN:TESTLIMITS?"
+        r: "1,<numeric>16:2000000"
+      - q: ":ACQ:SRAT:TESTLIMITS?"
+        r: "1,<numeric>1.0E+3:2.0E+11"
+      # The driver reads the bandwidth, sets it to AUTO to query the sample rate
+      # limits and then restores it. Returning the max bandwidth means the
+      # driver detects AUTO and restores it with the same command.
+      - q: ":ACQ:BAND?"
+        r: "5.0E+10"
+      - q: ":ACQ:BAND AUTO"
+      # Waveform preamble. Fields used by the driver are (0 indexed):
+      # 2: points, 4: xincrement, 5: xorigin, 7: yincrement, 8: yorigin,
+      # 21: y units (1 == Volt).
+      - q: ":WAV:PRE?"
+        r: "2,2,1000,1,1.0E-10,-5.0E-08,0,1.0E-04,2.5E-02,0,DC,1.0E-07,-5.0E-08,1.0,0.0,2024-01-01,00:00:00,0,3,1,2,1"
+      - q: ":WAV:POIN?"
+        r: "1000"
+      # Function definitions read back with the response header on. func1 is an
+      # FFT, func2 is not.
+      - q: ":FUNC1?"
+        r: ":FUNC1:FFTMAGNITUDE CHAN1"
+      - q: ":FUNC2?"
+        r: ":FUNC2:ADD CHAN1,CHAN2"
+
+    properties:
+      wav_source:
+        default: "CHAN1"
+        getter:
+          q: ":WAV:SOUR?"
+          r: "{}"
+        setter:
+          q: ":WAV:SOUR {}"
+
+resources:
+  GPIB::1::INSTR:
+    device: KeysightInfiniium
