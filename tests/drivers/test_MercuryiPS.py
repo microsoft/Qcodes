@@ -123,7 +123,7 @@ def test_field_limits(x, y, z, driver_spher_lim, driver_cyl_lim) -> None:
             mip.z_target(z)
 
         else:
-            with pytest.raises(ValueError):
+            with pytest.raises(ValueError):  # noqa: PT012
                 mip.x_target(x)
                 mip.y_target(y)
                 mip.z_target(z)

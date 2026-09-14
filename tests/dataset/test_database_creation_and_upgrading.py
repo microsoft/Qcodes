@@ -246,7 +246,7 @@ def test_initialised_database_at_restores_db_location_on_error(tmp_path: Path) -
     db_location = str(tmp_path / "context_err.db")
     original_location = qc.config["core"]["db_location"]
 
-    with (
+    with (  # noqa: PT012
         pytest.raises(RuntimeError, match="intentional"),
         initialised_database_at(db_location),
     ):

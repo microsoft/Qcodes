@@ -19,7 +19,7 @@ def test_catch_interrupts():
 
     # Test that cleanup code runs for KeyboardInterrupt
     cleanup_ran = False
-    with pytest.raises(KeyboardInterrupt), catch_interrupts():
+    with pytest.raises(KeyboardInterrupt), catch_interrupts():  # noqa: PT012
         try:
             raise KeyboardInterrupt()
         finally:
@@ -44,7 +44,7 @@ def test_catch_interrupts():
 def test_catch_interrupts_in_loops():
     # Test interruption in a simple loop
     loop_count = 0
-    with pytest.raises(KeyboardInterrupt):
+    with pytest.raises(KeyboardInterrupt):  # noqa: PT012
         for i in range(5):
             with catch_interrupts():
                 loop_count += 1
@@ -55,7 +55,7 @@ def test_catch_interrupts_in_loops():
     # Test interruption in nested loops
     outer_count = 0
     inner_count = 0
-    with pytest.raises(KeyboardInterrupt):
+    with pytest.raises(KeyboardInterrupt):  # noqa: PT012
         for i in range(3):
             with catch_interrupts():
                 outer_count += 1
@@ -78,7 +78,7 @@ def test_catch_interrupts_simulated_sweeps():
 
     # Test interruption in a single sweep
     results = []
-    with pytest.raises(KeyboardInterrupt):
+    with pytest.raises(KeyboardInterrupt):  # noqa: PT012
         for value in simulated_sweep(interrupt_at=3):
             results.append(value)  # noqa: PERF402
             # simulate adding numbers one by one using copy
@@ -88,7 +88,7 @@ def test_catch_interrupts_simulated_sweeps():
     # Test interruption in nested sweeps
     outer_results = []
     inner_results = []
-    with pytest.raises(KeyboardInterrupt):
+    with pytest.raises(KeyboardInterrupt):  # noqa: PT012
         for outer_value in simulated_sweep(interrupt_at=None):
             outer_results.append(outer_value)
             for inner_value in simulated_sweep(
