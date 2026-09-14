@@ -1225,6 +1225,16 @@ def test_dond_together_sweep_sweeper_combined_2_in_1() -> None:
 
 
 def test_dond_together_sweep_sweeper_mixed_splitting() -> None:
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    d = ManualParameter("d", initial_value=1)
+    e = ManualParameter("e", initial_value=2)
+    f = ManualParameter("f", initial_value=3)
+    sweepA = LinSweep(a, 0, 3, 10)
+    sweepB = LinSweep(b, 5, 7, 10)
+    sweepC = LinSweep(c, 8, 12, 10)
+
     with pytest.raises(
         ValueError,
         match=re.escape(
@@ -1233,16 +1243,6 @@ def test_dond_together_sweep_sweeper_mixed_splitting() -> None:
             "group measurement parameters either in input or in dataset dependencies."
         ),
     ):
-        a = ManualParameter("a", initial_value=0)
-        b = ManualParameter("b", initial_value=0)
-        c = ManualParameter("c", initial_value=0)
-        d = ManualParameter("d", initial_value=1)
-        e = ManualParameter("e", initial_value=2)
-        f = ManualParameter("f", initial_value=3)
-        sweepA = LinSweep(a, 0, 3, 10)
-        sweepB = LinSweep(b, 5, 7, 10)
-        sweepC = LinSweep(c, 8, 12, 10)
-
         _datasets, _, _ = dond(
             TogetherSweep(sweepA, sweepB),
             sweepC,

@@ -194,9 +194,9 @@ def test_append_channel(dci_with_list: DCIWithList) -> None:
 
     dci_with_list.channels.lock()
     # after locking the channels it's not possible to add any more channels
+    name = "bar"
+    channel = DummyChannel(dci_with_list, "Chan" + name, name)
     with pytest.raises(AttributeError):
-        name = "bar"
-        channel = DummyChannel(dci_with_list, "Chan" + name, name)
         dci_with_list.channels.append(channel)
     assert len(dci_with_list.channels) == n_channels_post
 
@@ -274,9 +274,9 @@ def test_insert_channel(dci_with_list: DCIWithList) -> None:
     assert dci_with_list.channels[1] is channel
     dci_with_list.channels.lock()
     # after locking the channels it's not possible to add any more channels
+    name = "bar"
+    channel = DummyChannel(dci_with_list, "Chan" + name, name)
     with pytest.raises(AttributeError):
-        name = "bar"
-        channel = DummyChannel(dci_with_list, "Chan" + name, name)
         dci_with_list.channels.insert(2, channel)
     assert len(dci_with_list.channels) == n_channels_post
     assert len(dci_with_list.channels._channel_mapping) == n_channels_post

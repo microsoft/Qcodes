@@ -253,14 +253,14 @@ def initialise_database(
 def initialise_or_create_database_at(
     db_file_with_abs_path: str | Path, journal_mode: JournalMode | None = "WAL"
 ) -> None:
-    """
+    r"""
     Initialises or creates a database at the specified location and configures QCoDeS to use
     this as the default database for the duration of the session.
 
 
     Args:
         db_file_with_abs_path: Database file name with absolute path, for example
-            ``C:\\mydata\\majorana_experiments.db``
+            ``C:\mydata\majorana_experiments.db``
         journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
             Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
             no changes are made.
@@ -274,13 +274,13 @@ def initialise_or_create_database_at(
 def initialised_database_at(
     db_file_with_abs_path: str | Path, *, journal_mode: JournalMode | None = "WAL"
 ) -> Generator[None, None, None]:
-    """
+    r"""
     Initialises or creates a database at the specified location, configures QCoDeS to use this as the
     default database for the duration of the context, and restores the 'db_location' afterwards.
 
     Args:
         db_file_with_abs_path: Database file name with absolute path, for example
-            ``C:\\mydata\\majorana_experiments.db``
+            ``C:\mydata\majorana_experiments.db``
         journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
             Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
             no changes are made.

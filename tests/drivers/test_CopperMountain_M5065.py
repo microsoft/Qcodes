@@ -73,8 +73,8 @@ def test_frequency_params(vna):
 
 
 def test_setting_start_raises_error_when_larger_than_stop(vna):
+    vna.stop(1e6)
     with pytest.raises(ValueError, match="Stop frequency"):
-        vna.stop(1e6)
         vna.start(1e7)
 
 

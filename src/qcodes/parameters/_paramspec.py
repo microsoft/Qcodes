@@ -78,10 +78,7 @@ class ParamSpecBase:
         if not isinstance(other, ParamSpecBase):
             return False
         attrs = ["name", "type", "label", "unit"]
-        for attr in attrs:
-            if getattr(self, attr) != getattr(other, attr):
-                return False
-        return True
+        return all(getattr(self, attr) == getattr(other, attr) for attr in attrs)
 
     def __hash__(self) -> int:
         """

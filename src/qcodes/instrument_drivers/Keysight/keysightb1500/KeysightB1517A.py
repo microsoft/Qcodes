@@ -845,25 +845,15 @@ class KeysightB1517A(KeysightB1500Module):
     ):
         super().__init__(parent, name, slot_nr, **kwargs)
         self.channels = (ChNr(slot_nr),)
-        self._measure_config: dict[str, Any | None] = {
-            k: None
-            for k in (
-                "v_measure_range",
-                "i_measure_range",
-            )
-        }
-        self._source_config: dict[str, Any | None] = {
-            k: None
-            for k in (
-                "output_range",
-                "compliance",
-                "compl_polarity",
-                "min_compliance_range",
-            )
-        }
-        self._timing_parameters: dict[str, Any | None] = {
-            k: None for k in ("h_bias", "interval", "number", "h_base")
-        }
+        self._measure_config: dict[str, Any | None] = dict.fromkeys(
+            ("v_measure_range", "i_measure_range")
+        )
+        self._source_config: dict[str, Any | None] = dict.fromkeys(
+            ("output_range", "compliance", "compl_polarity", "min_compliance_range")
+        )
+        self._timing_parameters: dict[str, Any | None] = dict.fromkeys(
+            ("h_bias", "interval", "number", "h_base")
+        )
 
         # We want to snapshot these configuration dictionaries
         self._meta_attrs += ["_measure_config", "_source_config", "_timing_parameters"]

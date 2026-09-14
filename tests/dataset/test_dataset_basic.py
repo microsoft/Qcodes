@@ -281,13 +281,13 @@ def test_create_dataset_from_non_existing_run_id(non_existing_run_id) -> None:
 
 
 def test_create_dataset_pass_both_connection_and_path_to_db(experiment) -> None:
+    some_valid_connection = experiment.conn
     with pytest.raises(
         ValueError,
         match=re.escape(
             "Received BOTH conn and path_to_db. Please provide only one or the other."
         ),
     ):
-        some_valid_connection = experiment.conn
         _ = DataSet(path_to_db="some valid path", conn=some_valid_connection)
 
 

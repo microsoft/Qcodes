@@ -1027,16 +1027,18 @@ invalid_keyword:
 
 
 def test_config_validation_failure_on_file() -> None:
-    with pytest.raises(ValidationWarning):
-        test_config = """
+    test_config = """
 instruments:
   mock:
     driver: qcodes.instrument_drivers.mock_instruments.DummyInstrument
 invalid_keyword:
   more_errors: 42
     """
-        with config_file_context(test_config) as filename:
-            Station(config_file=filename)
+    with (
+        pytest.raises(ValidationWarning),
+        config_file_context(test_config) as filename,
+    ):
+        Station(config_file=filename)
 
 
 def test_config_validation_comprehensive_config() -> None:

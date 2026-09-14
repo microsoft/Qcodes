@@ -178,7 +178,7 @@ def test_dataset_in_memory_reload_from_db_3d(
 def test_dataset_in_memory_without_cache_raises(
     meas_with_registered_param, DMM, DAC, tmp_path
 ) -> None:
-    with (
+    with (  # noqa: PT012
         pytest.raises(
             RuntimeError,
             match=re.escape(
