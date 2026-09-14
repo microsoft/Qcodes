@@ -158,7 +158,7 @@ class Agilent344xxA(VisaInstrument):
         self.write("INIT")
 
     def display_clear(self) -> None:
-        if self.model in ["34401A"]:
+        if self.model == "34401A":
             lines = ["WIND"]
         elif self.model in ["34410A", "34411A"]:
             lines = ["WIND1", "WIND2"]
