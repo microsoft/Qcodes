@@ -216,7 +216,7 @@ networkx==3.6.1
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-numpy==2.5.2
+numpy==2.5.3
     # via
     #   qcodes (pyproject.toml)
     #   broadbean
