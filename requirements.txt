@@ -463,7 +463,7 @@ types-networkx==3.6.1.20260728
     # via qcodes (pyproject.toml)
 types-pywin32==312.0.0.20260827
     # via qcodes (pyproject.toml)
-types-requests==2.33.0.20260712
+types-requests==2.33.0.20260906
     # via
     #   qcodes (pyproject.toml)
     #   types-tqdm
