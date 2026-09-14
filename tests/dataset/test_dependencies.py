@@ -263,16 +263,14 @@ def test_validate_subset(some_paramspecbases) -> None:
     assert exc_info3.value._subset_params == {"psb3"}
     assert exc_info3.value._missing_params == {"psb4"}
 
+    idps2 = InterDependencies_(dependencies={ps1: (ps2, ps3)}, inferences={ps3: (ps4,)})
     with pytest.raises(IncompleteSubsetError) as exc_info4:
-        idps2 = InterDependencies_(
-            dependencies={ps1: (ps2, ps3)}, inferences={ps3: (ps4,)}
-        )
         idps2.validate_subset((ps1, ps2, ps3))
     assert exc_info4.value._subset_params == {"psb1", "psb2", "psb3"}
     assert exc_info4.value._missing_params == {"psb4"}
 
+    ps42 = ParamSpecBase("ps42", paramtype="text", label="", unit="it")
     with pytest.raises(NetworkXError, match="ps42"):
-        ps42 = ParamSpecBase("ps42", paramtype="text", label="", unit="it")
         idps.validate_subset((ps2, ps42, ps4))
 
 
