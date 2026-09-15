@@ -70,7 +70,7 @@ def cleanup_db_connections():
     for conn in open_connections:
         try:
             conn.close()
-        except Exception:  # noqa: BLE001 best effort cleanup, never fail the test
+        except sqlite3.Error:
             pass
 
     gc.collect()
