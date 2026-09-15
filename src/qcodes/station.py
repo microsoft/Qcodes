@@ -285,8 +285,11 @@ class Station(Metadatable, DelegateAttributes):
         try:
             if not (isinstance(component, Parameter) and component.snapshot_exclude):
                 component.snapshot(update="All" if update_snapshot else "Never")
-        except Exception:  # noqa: BLE001 a failing snapshot must not prevent adding the component
-            pass
+        except Exception:
+            log.exception(
+                "Failed to snapshot component %s when adding it to the station",
+                component,
+            )
         if name is None:
             name = getattr(component, "name", f"component{len(self.components)}")
         namestr = str(name)
@@ -948,7 +951,12 @@ def update_config_schema(
                 ms = inspect.getmembers(
                     importlib.import_module(s.name), inspect.isclass
                 )
-            except Exception:  # noqa: BLE001 an uninspectable submodule should not abort the scan
+            except Exception:
+                log.exception(
+                    "Failed to import submodule %s from module %s",
+                    s.name,
+                    module.__name__,
+                )
                 ms = []
             new_members = [
                 f"{instr[1].__module__}.{instr[1].__name__}"
