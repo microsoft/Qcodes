@@ -105,7 +105,7 @@ def _convert_numeric(value: bytes) -> float | int | str:
         return numeric_int
 
 
-def _adapt_float(fl: float) -> float | str:
+def _adapt_float(fl: float | np.floating) -> float | str:
     # For a single value, math.isnan is 10 times faster than np.isnan
     # Overall, saving floats with numeric format is 2 times faster with math.isnan
     if math.isnan(fl):
@@ -174,7 +174,10 @@ def connect(
 
     sqlite3.register_converter("numeric", _convert_numeric)
 
-    for numpy_float in (float, *numpy_floats):
+    # registered separately from the numpy floats below, so that the element
+    # type of the loop stays a numpy float rather than widening to object
+    sqlite3.register_adapter(float, _adapt_float)
+    for numpy_float in numpy_floats:
         sqlite3.register_adapter(numpy_float, _adapt_float)
 
     for complex_type in complex_types:

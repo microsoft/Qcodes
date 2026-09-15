@@ -54,7 +54,7 @@ def _make_simple_run_describer():
     t = ParamSpecBase("t", "numeric")
     y = ParamSpecBase("y", "numeric")
 
-    paramtree = {y: (x, t)}
+    paramtree: dict[ParamSpecBase, tuple[ParamSpecBase, ...]] = {y: (x, t)}
 
     interdependencies = InterDependencies_(dependencies=paramtree)
     rundescriber = RunDescriber(interdependencies)

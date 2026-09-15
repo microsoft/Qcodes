@@ -1,0 +1,3 @@
+``ty`` now also type checks the example notebooks in ``docs``. Unlike mypy and
+pyright it understands Jupyter notebooks, so this is coverage that the other two
+checkers do not provide.

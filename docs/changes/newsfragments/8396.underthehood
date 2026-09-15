@@ -1,0 +1,4 @@
+The suppressions needed to forward ``**kwargs: Unpack[ParameterBaseKWArgs]``
+to ``ParameterBase`` have been removed along with the note documenting them.
+They worked around a bug in ``ty`` that is fixed in 0.0.77, which is now the
+minimum version used to type check QCoDeS.

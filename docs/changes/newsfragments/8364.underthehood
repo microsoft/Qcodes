@@ -1,0 +1,4 @@
+``CombinedParameter.parameter`` is now a small dataclass holding the ``name``,
+``full_name``, ``label`` and ``unit`` of the combined parameter, replacing a
+lambda that had those attributes attached to it. It remains callable, and
+calling it returns ``None`` as before.
