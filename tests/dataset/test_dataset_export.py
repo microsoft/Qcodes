@@ -35,7 +35,10 @@ from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.versioning import serialization as serial
 from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.exporters.export_to_pandas import _generate_pandas_index
-from qcodes.dataset.exporters.export_to_xarray import _calculate_index_shape
+from qcodes.dataset.exporters.export_to_xarray import (
+    _calculate_index_shape,
+    _xarray_data_set_direct,
+)
 from qcodes.dataset.linked_datasets.links import links_to_str
 from qcodes.parameters import ManualParameter, Parameter, ParamSpecBase
 
@@ -176,6 +179,21 @@ def _make_mock_dataset_grid_with_shapes(experiment: Experiment) -> DataSet:
     return dataset
 
 
+@pytest.fixture(name="direct_export_dataset")
+def _make_direct_export_dataset(experiment: Experiment) -> DataSet:
+    dataset = new_data_set("direct_export_dataset")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    signalparam = ParamSpecBase("signal", "numeric")
+    inferredparam = ParamSpecBase("inferred", "numeric")
+    idps = InterDependencies_(
+        dependencies={signalparam: (xparam, yparam)},
+        inferences={inferredparam: (xparam,)},
+    )
+    dataset.set_interdependencies(idps, shapes={"signal": (2, 2)})
+    return dataset
+
+
 @pytest.fixture(name="mock_dataset_grid_incomplete")
 def _make_mock_dataset_grid_incomplete(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
@@ -283,6 +301,62 @@ def _make_mock_dataset_non_grid(experiment: Experiment) -> DataSet:
     for x, y in zip(x_vals, y_vals):
         results = [{"x": x, "y": y, "z": x + y}]
         dataset.add_results(results)
+    dataset.mark_completed()
+    return dataset
+
+
+@pytest.fixture(name="mock_dataset_non_grid_inferred")
+def _make_mock_dataset_non_grid_inferred(experiment: Experiment) -> DataSet:
+    """Non grid dataset where an inferred parameter is inferred from z."""
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    zparam = ParamSpecBase("z", "numeric")
+    tparam = ParamSpecBase("t", "numeric")
+    idps = InterDependencies_(
+        dependencies={zparam: (xparam, yparam)},
+        inferences={tparam: (zparam,)},
+    )
+    dataset.set_interdependencies(idps)
+
+    num_samples = 50
+
+    rng = np.random.default_rng(1234)
+
+    x_vals = rng.random(num_samples) * 10
+    y_vals = 20 + rng.random(num_samples) * 5
+
+    dataset.mark_started()
+
+    for i, (x, y) in enumerate(zip(x_vals, y_vals)):
+        dataset.add_results([{"x": x, "y": y, "z": x + y, "t": float(i)}])
+    dataset.mark_completed()
+    return dataset
+
+
+@pytest.fixture(name="mock_dataset_non_unique_index_inferred")
+def _make_mock_dataset_non_unique_index_inferred(experiment: Experiment) -> DataSet:
+    """Dataset with a non unique MultiIndex and an inferred parameter."""
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    zparam = ParamSpecBase("z", "numeric")
+    tparam = ParamSpecBase("t", "numeric")
+    idps = InterDependencies_(
+        dependencies={zparam: (xparam, yparam)},
+        inferences={tparam: (zparam,)},
+    )
+    dataset.set_interdependencies(idps)
+
+    num_samples = 20
+    # every (x, y) pair is measured twice making the index non unique
+    x_vals = np.repeat(np.arange(num_samples // 2, dtype=float), 2)
+    y_vals = np.repeat(np.arange(num_samples // 2, dtype=float), 2)
+
+    dataset.mark_started()
+
+    for i, (x, y) in enumerate(zip(x_vals, y_vals)):
+        dataset.add_results([{"x": x, "y": y, "z": x + y, "t": float(i)}])
     dataset.mark_completed()
     return dataset
 
@@ -1586,6 +1660,102 @@ def test_multi_index_options_grid_with_shape(
     assert xds_always.sizes == {"multi_index": 50}
 
 
+def test_export_to_xarray_dataset_permuted_grid(experiment: Experiment) -> None:
+    dataset = new_data_set("permuted_grid")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    signalparam = ParamSpecBase("signal", "numeric")
+    idps = InterDependencies_(dependencies={signalparam: (xparam, yparam)})
+    dataset.set_interdependencies(idps, shapes={"signal": (3, 3)})
+
+    x_values = np.array([[1, 0, 2], [1, 1, 2], [0, 2, 0]])
+    y_values = np.array([[0, 0, 0], [1, 2, 1], [1, 2, 2]])
+
+    dataset.mark_started()
+    for x, y in zip(x_values.ravel(), y_values.ravel()):
+        dataset.add_results([{"x": x, "y": y, "signal": 10 * x + y}])
+    dataset.mark_completed()
+
+    xarray_dataset = dataset.to_xarray_dataset()
+
+    assert_array_equal(xarray_dataset.coords["x"], [1, 0, 2])
+    assert_array_equal(xarray_dataset.coords["y"], [0, 1, 2])
+    assert_array_equal(
+        xarray_dataset["signal"],
+        np.array([[10, 11, 12], [0, 1, 2], [20, 21, 22]]),
+    )
+
+
+@pytest.mark.parametrize(
+    ("data", "error"),
+    [
+        (
+            {
+                "signal": np.arange(4),
+                "x": np.array([0, 0, 1, 1]),
+                "y": np.array([0, 1, 0, 1]),
+            },
+            "has shape .* but has 2 dependencies",
+        ),
+        (
+            {
+                "signal": np.arange(4).reshape(2, 2),
+                "x": np.array([0, 0, 1]),
+                "y": np.array([[0, 1], [0, 1]]),
+            },
+            "Dependency 'x' contains 3 values, but 4 were expected",
+        ),
+        (
+            {
+                "signal": np.arange(4).reshape(2, 2),
+                "x": np.array([[0, 1], [2, 3]]),
+                "y": np.array([[0, 1], [0, 1]]),
+            },
+            "Dependency 'x' does not define an axis of length 2",
+        ),
+        (
+            {
+                "signal": np.arange(4).reshape(2, 2),
+                "x": np.array([[0, 0], [1, 1]]),
+                "y": np.array([[0, 0], [1, 1]]),
+            },
+            "do not form a complete Cartesian grid",
+        ),
+        (
+            {
+                "signal": np.arange(4).reshape(2, 2),
+                "x": np.array([[0, 0], [1, 1]]),
+                "y": np.array([[0, 1], [0, 1]]),
+                "inferred": np.arange(3),
+            },
+            "Parameter contains 3 values, but 4 were expected",
+        ),
+    ],
+)
+def test_xarray_data_set_direct_rejects_invalid_grid(
+    direct_export_dataset: DataSet,
+    data: dict[str, np.ndarray],
+    error: str,
+) -> None:
+    with pytest.raises(ValueError, match=error):
+        _xarray_data_set_direct(direct_export_dataset, "signal", data)
+
+
+def test_xarray_data_set_direct_skips_missing_inferred_data(
+    direct_export_dataset: DataSet,
+) -> None:
+    data = {
+        "signal": np.arange(4).reshape(2, 2),
+        "x": np.array([[0, 0], [1, 1]]),
+        "y": np.array([[0, 1], [0, 1]]),
+    }
+
+    xarray_dataset = _xarray_data_set_direct(direct_export_dataset, "signal", data)
+
+    assert set(xarray_dataset.coords) == {"x", "y"}
+    assert set(xarray_dataset.data_vars) == {"signal"}
+
+
 def test_multi_index_options_incomplete_grid(
     mock_dataset_grid_incomplete: DataSet,
 ) -> None:
@@ -1644,6 +1814,34 @@ def test_multi_index_options_non_grid(mock_dataset_non_grid: DataSet) -> None:
 
     xds_always = mock_dataset_non_grid.to_xarray_dataset(use_multi_index="always")
     assert xds_always.sizes == {"multi_index": 50}
+
+
+@pytest.mark.parametrize("use_multi_index", ["auto", "always"])
+def test_multi_index_export_with_inferred_parameter(
+    mock_dataset_non_grid_inferred: DataSet, use_multi_index: str
+) -> None:
+    """Inferred parameters must export correctly when a MultiIndex dim is used."""
+    xds = mock_dataset_non_grid_inferred.to_xarray_dataset(
+        use_multi_index=use_multi_index  # pyright: ignore[reportArgumentType]
+    )
+
+    assert xds.sizes == {"multi_index": 50}
+    assert "t" in xds.data_vars
+    assert xds["t"].dims == ("multi_index",)
+    np.testing.assert_array_equal(xds["t"].values, np.arange(50, dtype=float))
+
+
+def test_non_unique_multi_index_export_with_inferred_parameter(
+    mock_dataset_non_unique_index_inferred: DataSet,
+) -> None:
+    """A non unique MultiIndex must not break export of inferred parameters."""
+    xds = mock_dataset_non_unique_index_inferred.to_xarray_dataset()
+
+    assert "t" in xds.data_vars
+    assert xds["t"].dims == xds["z"].dims
+    np.testing.assert_array_equal(
+        np.asarray(xds["t"].values).ravel(), np.arange(20, dtype=float)
+    )
 
 
 def test_multi_index_wrong_option(mock_dataset_non_grid: DataSet) -> None:
