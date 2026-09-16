@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import collections.abc
 import logging
+import operator
 import time
 import warnings
 from collections.abc import Iterator, MutableSet
@@ -257,6 +258,119 @@ class ParameterBaseKWArgs(
     """
 
 
+# The four helpers below convert between a parameter value and its raw
+# counterpart. They are deliberately duck typed: they assume that the caller
+# does not set ``scale``/``offset`` unless the data type is numeric, and either
+# check for an iterable up front or fall back on catching ``TypeError``.
+# Taking and returning ``Any`` keeps that boundary explicit, and keeps the
+# generic ``ParameterDataTypeVar`` out of the arithmetic.
+
+
+_CONVERSION_KIND: dict[Callable[[Any, Any], Any], str] = {
+    operator.mul: "scale",
+    operator.truediv: "scale",
+    operator.add: "offset",
+    operator.sub: "offset",
+}
+
+
+def _apply_elementwise(
+    value: Any,
+    conversion: Iterable[float],
+    operation: Callable[[Any, Any], Any],
+) -> tuple[Any, ...]:
+    """Combine ``value`` and ``conversion`` element by element.
+
+    Args:
+        value: The (iterable) value to convert.
+        conversion: The scale or offset to apply, one element per value.
+        operation: The arithmetic operation to apply to each pair of elements.
+            The operation also determines the name of the conversion used in
+            the error message.
+
+    Returns:
+        The converted values.
+
+    Raises:
+        ValueError: If ``value`` and ``conversion`` are of different length.
+
+    """
+    try:
+        return tuple(
+            operation(val, sub_value)
+            for val, sub_value in zip(value, conversion, strict=True)
+        )
+    except ValueError as err:
+        kind = _CONVERSION_KIND[operation]
+        raise ValueError(
+            f"Cannot apply {kind} of length {_length_for_error(conversion)} "
+            f"to a value of length {_length_for_error(value)}."
+        ) from err
+
+
+def _length_for_error(obj: Any) -> str:
+    """The length of ``obj`` for use in an error message."""
+    if isinstance(obj, collections.abc.Sized):
+        return str(len(obj))
+    return "unknown"
+
+
+def _scale_raw_value(raw_value: Any, scale: float | Iterable[float]) -> Any:
+    """Multiply a value by ``scale`` on the way to the instrument."""
+    if isinstance(scale, collections.abc.Iterable):
+        # Scale contains multiple elements, one for each value
+        return _apply_elementwise(raw_value, scale, operator.mul)
+    if isinstance(raw_value, collections.abc.Sequence):
+        # Multiplying a sequence by a number repeats it rather than
+        # scaling its elements, so these must be handled element wise.
+        return tuple(val * scale for val in raw_value)
+    # Use single scale for all values
+    return raw_value * scale
+
+
+def _offset_raw_value(raw_value: Any, offset: float | Iterable[float]) -> Any:
+    """Add ``offset`` to a value on the way to the instrument."""
+    if isinstance(offset, collections.abc.Iterable):
+        # offset contains multiple elements, one for each value
+        return _apply_elementwise(raw_value, offset, operator.add)
+    if isinstance(raw_value, collections.abc.Sequence):
+        # Adding a number to a sequence is an error, so these must be
+        # handled element wise.
+        return tuple(val + offset for val in raw_value)
+    # Use single offset for all values
+    return raw_value + offset
+
+
+def _unoffset_value(value: Any, offset: float | Iterable[float]) -> Any:
+    """Subtract ``offset`` from a value coming back from the instrument."""
+    try:
+        return value - offset
+    except TypeError:
+        if isinstance(offset, collections.abc.Iterable):
+            # offset contains multiple elements, one for each value
+            return _apply_elementwise(value, offset, operator.sub)
+        elif isinstance(value, collections.abc.Iterable):
+            # Use single offset for all values
+            return tuple(val - offset for val in value)
+        else:
+            raise
+
+
+def _unscale_value(value: Any, scale: float | Iterable[float]) -> Any:
+    """Divide a value coming back from the instrument by ``scale``."""
+    try:
+        return value / scale
+    except TypeError:
+        if isinstance(scale, collections.abc.Iterable):
+            # Scale contains multiple elements, one for each value
+            return _apply_elementwise(value, scale, operator.truediv)
+        elif isinstance(value, collections.abc.Iterable):
+            # Use single scale for all values
+            return tuple(val / scale for val in value)
+        else:
+            raise
+
+
 class ParameterBase(
     MetadatableWithName, Generic[ParameterDataTypeVar, InstrumentTypeVar_co]
 ):
@@ -363,9 +477,10 @@ class ParameterBase(
         self,
         name: str,
         *,
-        # mypy seems to be confused here. The bound and default for InstrumentTypeVar_co
-        # contains None but mypy will not allow None as a default as of v 1.19.0
-        instrument: InstrumentTypeVar_co = None,  # type: ignore[assignment]
+        # The bound and default for InstrumentTypeVar_co contain None, but
+        # neither mypy (as of v1.19.0) nor ty accept None as the default for a
+        # parameter annotated with the type variable itself.
+        instrument: InstrumentTypeVar_co = None,  # type: ignore[assignment]  # ty: ignore[invalid-parameter-default]
         snapshot_get: bool = True,
         metadata: Mapping[Any, Any] | None = None,
         step: float | None = None,
@@ -814,25 +929,11 @@ class ParameterBase(
         # transverse transformation in reverse order as compared to
         # getter: apply scale first
         if self.scale is not None:
-            if isinstance(self.scale, collections.abc.Iterable):
-                # Scale contains multiple elements, one for each value
-                raw_value = tuple(
-                    val * scale for val, scale in zip(raw_value, self.scale)
-                )
-            else:
-                # Use single scale for all values
-                raw_value = raw_value * self.scale
+            raw_value = _scale_raw_value(raw_value, self.scale)
 
         # apply offset next
         if self.offset is not None:
-            if isinstance(self.offset, collections.abc.Iterable):
-                # offset contains multiple elements, one for each value
-                raw_value = tuple(
-                    val + offset for val, offset in zip(raw_value, self.offset)
-                )
-            else:
-                # Use single offset for all values
-                raw_value = raw_value + self.offset
+            raw_value = _offset_raw_value(raw_value, self.offset)
 
         # parser last
         if self.set_parser is not None:
@@ -843,6 +944,9 @@ class ParameterBase(
     def _from_raw_value_to_value(
         self, raw_value: ParamRawDataType
     ) -> ParameterDataTypeVar:
+        # ``value`` keeps the parameter's data type as its declared type; the
+        # offset and scale transformations below rely on duck typing and are
+        # therefore delegated to the helpers at the top of this module.
         value: ParameterDataTypeVar
 
         if self.get_parser is not None:
@@ -850,42 +954,13 @@ class ParameterBase(
         else:
             value = raw_value
 
-        # the code below is not very type safe but relies on duck typing / try except
-        # and assumes the user does not set scale/offset unless the datatype is numeric
-        # this should probably be rewritten but for now we ignore type errors
         # apply offset first (native scale)
-
         if self.offset is not None and value is not None:
-            # offset values
-            try:
-                value = value - self.offset  # type: ignore[operator,assignment]
-            except TypeError:
-                if isinstance(self.offset, collections.abc.Iterable):
-                    # offset contains multiple elements, one for each value
-                    value = tuple(  # type: ignore[assignment]
-                        val - offset
-                        for val, offset in zip(value, self.offset)  # type: ignore[call-overload]
-                    )
-                elif isinstance(value, collections.abc.Iterable):
-                    # Use single offset for all values
-                    value = tuple(val - self.offset for val in value)  # type: ignore[assignment]
-                else:
-                    raise
+            value = _unoffset_value(value, self.offset)
 
         # scale second
         if self.scale is not None and value is not None:
-            # Scale values
-            try:
-                value = value / self.scale  # type: ignore[assignment,operator]
-            except TypeError:
-                if isinstance(self.scale, collections.abc.Iterable):
-                    # Scale contains multiple elements, one for each value
-                    value = tuple(val / scale for val, scale in zip(value, self.scale))  # type: ignore[call-overload,assignment]
-                elif isinstance(value, collections.abc.Iterable):
-                    # Use single scale for all values
-                    value = tuple(val / self.scale for val in value)  # type: ignore[assignment]
-                else:
-                    raise
+            value = _unscale_value(value, self.scale)
 
         if self.inverse_val_mapping is not None:
             if value in self.inverse_val_mapping:
@@ -896,7 +971,7 @@ class ParameterBase(
                 except (ValueError, KeyError):
                     raise KeyError(f"'{value}' not in val_mapping")
 
-        return value  # pyright: ignore[reportReturnType]
+        return value
 
     def _wrap_get(
         self, get_function: Callable[..., ParamRawDataType]
@@ -946,14 +1021,16 @@ class ParameterBase(
                 # In some cases intermediate sweep values must be used.
                 # Unless `self.step` is defined, get_sweep_values will return
                 # a list containing only `value`.
-                steps = self.get_ramp_values(value, step=self.step)  # type: ignore[arg-type]
+                # The steps are deliberately untyped: ``get_ramp_values`` works
+                # in terms of numbers rather than the parameter's data type.
+                steps: Sequence[Any] = self.get_ramp_values(value, step=self.step)  # type: ignore[arg-type]
 
                 for val_step in steps:
                     # even if the final value is valid we may be generating
                     # steps that are not so validate them too
-                    self.validate(val_step)  # type: ignore[arg-type]
+                    self.validate(val_step)
 
-                    raw_val_step = self._from_value_to_raw_value(val_step)  # type: ignore[arg-type]
+                    raw_val_step = self._from_value_to_raw_value(val_step)
 
                     # Check if delay between set operations is required
                     t_elapsed = time.perf_counter() - self._t_last_set
@@ -976,9 +1053,9 @@ class ParameterBase(
                         # Sleep until total time is larger than self.post_delay
                         time.sleep(self.post_delay - t_elapsed)
 
-                    self.cache._update_with(value=val_step, raw_value=raw_val_step)  # type: ignore[arg-type]
+                    self.cache._update_with(value=val_step, raw_value=raw_val_step)
 
-                    self._call_on_set_callback(val_step)  # type: ignore[arg-type]
+                    self._call_on_set_callback(val_step)
 
             except Exception as e:
                 e.args = (*e.args, f"setting {self} to {value}")

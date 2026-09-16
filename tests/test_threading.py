@@ -12,6 +12,7 @@ import pytest
 from qcodes.dataset.threading import ThreadPoolParamsCaller, call_params_threaded
 from qcodes.instrument_drivers.mock_instruments import DummyInstrument
 from qcodes.parameters import Parameter, ParamRawDataType
+from qcodes.utils.threading_utils import RespondingThread, thread_map
 
 
 class ParameterWithThreadKnowledge(Parameter):
@@ -104,3 +105,27 @@ def test_thread_pool_params_caller(dummy_1, dummy_2) -> None:
         assert {
             frozenset(value) for value in params_per_thread_id.values()
         } == expected_params_per_thread
+
+
+def test_responding_thread_reraises_exception_in_calling_thread() -> None:
+    """Exceptions in the target are captured and re-raised by ``output``."""
+
+    def raise_error() -> None:
+        raise RuntimeError("error in worker thread")
+
+    thread: RespondingThread[None] = RespondingThread(target=raise_error)
+    thread.start()
+
+    with pytest.raises(RuntimeError, match="error in worker thread"):
+        thread.output()
+
+    # the exception is cleared once it has been raised
+    assert thread.output() is None
+
+
+def test_thread_map_reraises_exception_in_calling_thread() -> None:
+    def raise_error() -> None:
+        raise ValueError("error in mapped thread")
+
+    with pytest.raises(ValueError, match="error in mapped thread"):
+        thread_map((raise_error,))

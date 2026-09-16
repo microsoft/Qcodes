@@ -95,7 +95,10 @@ def _appropriate_kwargs(plottype: str, colorbar_present: bool, **kwargs: Any) ->
 def plot_dataset(
     dataset: DataSetProtocol,
     axes: Axes | Sequence[Axes] | None = None,
-    colorbars: Colorbar | Sequence[Colorbar] | Sequence[None] | None = None,
+    # ``Sequence[Colorbar | None]`` so that the list of colorbars returned by
+    # this function can be passed straight back in, which is how you plot into
+    # the same axes again. A ``Sequence[Colorbar]`` is also one of these.
+    colorbars: Colorbar | Sequence[Colorbar | None] | None = None,
     rescale_axes: bool = True,
     auto_color_scale: bool | None = None,
     cutoff_percentile: tuple[float, float] | float | None = None,
@@ -417,7 +420,7 @@ def plot_and_save_image(
 def plot_by_id(
     run_id: int,
     axes: Axes | Sequence[Axes] | None = None,
-    colorbars: Colorbar | Sequence[Colorbar] | None = None,
+    colorbars: Colorbar | Sequence[Colorbar | None] | None = None,
     rescale_axes: bool = True,
     auto_color_scale: bool | None = None,
     cutoff_percentile: tuple[float, float] | float | None = None,

@@ -33,9 +33,8 @@ if config.core.import_legacy_api:
 # ``qcodes.monitor`` and ``qcodes.station`` into a single large import cycle at
 # type-check time (which triggers an internal error in mypy >= 2.2).
 _LAZY_NAME_TO_MODULE = (
-    {
-        name: "qcodes.dataset"
-        for name in (
+    dict.fromkeys(
+        (
             "Measurement",
             "ParamSpec",
             "SQLiteSettings",
@@ -54,11 +53,11 @@ _LAZY_NAME_TO_MODULE = (
             "load_or_create_experiment",
             "new_data_set",
             "new_experiment",
-        )
-    }
-    | {
-        name: "qcodes.instrument"
-        for name in (
+        ),
+        "qcodes.dataset",
+    )
+    | dict.fromkeys(
+        (
             "ChannelList",
             "ChannelTuple",
             "Instrument",
@@ -66,11 +65,11 @@ _LAZY_NAME_TO_MODULE = (
             "IPInstrument",
             "VisaInstrument",
             "find_or_create_instrument",
-        )
-    }
-    | {
-        name: "qcodes.parameters"
-        for name in (
+        ),
+        "qcodes.instrument",
+    )
+    | dict.fromkeys(
+        (
             "ArrayParameter",
             "CombinedParameter",
             "DelegateParameter",
@@ -83,8 +82,9 @@ _LAZY_NAME_TO_MODULE = (
             "SweepFixedValues",
             "SweepValues",
             "combine",
-        )
-    }
+        ),
+        "qcodes.parameters",
+    )
     | {
         "Monitor": "qcodes.monitor",
         "Station": "qcodes.station",

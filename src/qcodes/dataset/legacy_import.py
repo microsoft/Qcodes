@@ -49,18 +49,22 @@ def store_array_to_database(datasaver: DataSaver, array: DataArray) -> int:
     dims = len(array.shape)
     assert array.array_id is not None
     if dims == 2:
+        inner_setarray_id = array.set_arrays[0].array_id
+        outer_setarray_id = array.set_arrays[1].array_id
+        assert inner_setarray_id is not None
+        assert outer_setarray_id is not None
         for index1, i in enumerate(array.set_arrays[0]):
             for index2, j in enumerate(array.set_arrays[1][index1]):
                 datasaver.add_result(
-                    (array.set_arrays[0].array_id, i),
-                    (array.set_arrays[1].array_id, j),
+                    (inner_setarray_id, i),
+                    (outer_setarray_id, j),
                     (array.array_id, array[index1, index2]),
                 )
     elif dims == 1:
+        setarray_id = array.set_arrays[0].array_id
+        assert setarray_id is not None
         for index, i in enumerate(array.set_arrays[0]):
-            datasaver.add_result(
-                (array.set_arrays[0].array_id, i), (array.array_id, array[index])
-            )
+            datasaver.add_result((setarray_id, i), (array.array_id, array[index]))
     else:
         raise NotImplementedError(
             "The exporter only currently handles 1 and 2 Dimensional data"
@@ -76,20 +80,24 @@ def store_array_to_database_alt(meas: Measurement, array: DataArray) -> int:
         outer_data = np.empty(
             array.shape[1]  # pyright: ignore[reportGeneralTypeIssues]
         )
+        inner_setarray_id = array.set_arrays[0].array_id
+        outer_setarray_id = array.set_arrays[1].array_id
+        assert inner_setarray_id is not None
+        assert outer_setarray_id is not None
         with meas.run() as datasaver:
             for index1, i in enumerate(array.set_arrays[0]):
                 outer_data[:] = i
                 datasaver.add_result(
-                    (array.set_arrays[0].array_id, outer_data),
-                    (array.set_arrays[1].array_id, array.set_arrays[1][index1, :]),
+                    (inner_setarray_id, outer_data),
+                    (outer_setarray_id, array.set_arrays[1][index1, :]),
                     (array.array_id, array[index1, :]),
                 )
     elif dims == 1:
+        setarray_id = array.set_arrays[0].array_id
+        assert setarray_id is not None
         with meas.run() as datasaver:
             for index, i in enumerate(array.set_arrays[0]):
-                datasaver.add_result(
-                    (array.set_arrays[0].array_id, i), (array.array_id, array[index])
-                )
+                datasaver.add_result((setarray_id, i), (array.array_id, array[index]))
     else:
         raise NotImplementedError(
             "The exporter only currently handles 1 and 2 Dimensional data"

@@ -92,7 +92,7 @@ def test_atomic_with_exception() -> None:
 
     assert 25 == sqlite_conn.execute("PRAGMA user_version").fetchall()[0][0]
 
-    with (
+    with (  # noqa: PT012
         pytest.raises(
             RuntimeError, match="Rolling back due to unhandled exception"
         ) as e,

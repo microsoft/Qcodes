@@ -353,7 +353,7 @@ class OxfordMercuryiPS(VisaInstrument):
         GRPZ = OxfordMercuryWorkerPS(self, "GRPZ", "GRPZ")
         self.GRPZ: OxfordMercuryWorkerPS = self.add_submodule("GRPZ", GRPZ)
 
-        self._field_limits = field_limits if field_limits else lambda x, y, z: True
+        self._field_limits = field_limits or (lambda x, y, z: True)
 
         self._target_vector = FieldVector(
             x=self.GRPX.field(), y=self.GRPY.field(), z=self.GRPZ.field()

@@ -76,7 +76,7 @@ class MockBackend(MockBackendBase):
         super().__init__()
         self._channel_catalog: list[str] = ["1", "2", "4", "5"]  # Pre-existing
         # channels
-        self._greetings = {chn: "Hello" for chn in self._channel_catalog}
+        self._greetings = dict.fromkeys(self._channel_catalog, "Hello")
 
         self._command_dict = {
             r":INST:CHN(\d):HLO": lambda chn: (

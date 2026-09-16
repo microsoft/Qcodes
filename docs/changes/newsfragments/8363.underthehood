@@ -1,0 +1,6 @@
+The duck typed scale and offset conversions in ``ParameterBase`` have been
+factored out into dedicated module level helpers. The conversions assume the
+data type is numeric and rely on catching ``TypeError``, which does not fit the
+generic parameter data type. Giving them an explicit boundary lets the rest of
+the class stay properly typed and removes twelve type checker suppressions.
+There is no change in behaviour.

@@ -177,8 +177,8 @@ def test_bad_config_files(config, load_config) -> None:
     config.schema_cwd_file_name = None
     config.schema_home_file_name = None
     config.schema_env_file_name = None
+    config.defaults, _ = config.load_default()
     with pytest.raises(jsonschema.exceptions.ValidationError):
-        config.defaults, _ = config.load_default()
         config.update_config()
 
 
@@ -193,8 +193,8 @@ def test_user_schema(config, load_config, mocker) -> None:
 def test_bad_user_schema(config, load_config, mocker) -> None:
     mocker.patch("builtins.open", mock_open(read_data=USER_SCHEMA))
     load_config.side_effect = partial(side_effect, BAD_CONFIG_MAP)
+    config.defaults, _ = config.load_default()
     with pytest.raises(jsonschema.exceptions.ValidationError):
-        config.defaults, _ = config.load_default()
         config.update_config()
 
 

@@ -44,7 +44,7 @@ def _parse_string_response(input_str: str) -> str:
     if the input is empty
     """
     output = input_str.replace('"', "")
-    output = output if output else "N/A"
+    output = output or "N/A"
 
     return output
 
@@ -1087,7 +1087,7 @@ class TektronixAWG70000Base(VisaInstrument):
         try:
             fs_schema.validate(seq)
         except Exception as e:
-            raise InvalidForgedSequenceError(e)
+            raise InvalidForgedSequenceError(e) from e
 
         chan_list: list[str | int] = []
         for pos1 in seq:
