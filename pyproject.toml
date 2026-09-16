@@ -48,7 +48,7 @@ dependencies = [
     "pillow>=10.2.0",
     "dask>=2022.1.0", # we are making use of xarray features that requires dask implicitly
 ]
-
+import-names = ["qcodes"]
 dynamic = ["version"]
 
 [project.urls]
