@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+import logging
+from typing import TYPE_CHECKING
+
 from packaging import version
 
 from qcodes.utils import (
@@ -5,6 +10,10 @@ from qcodes.utils import (
     get_all_installed_package_versions,
     is_qcodes_installed_editably,
 )
+
+if TYPE_CHECKING:
+    import pytest
+    from pytest_mock import MockerFixture
 
 # The get_* functions from installation_info are hard to meaningfully test,
 # but we can at least test that they execute without errors
@@ -14,6 +23,23 @@ def test_is_qcodes_installed_editably() -> None:
     answer = is_qcodes_installed_editably()
 
     assert isinstance(answer, bool)
+
+
+def test_is_qcodes_installed_editably_when_pip_fails(
+    caplog: pytest.LogCaptureFixture, mocker: MockerFixture
+) -> None:
+    """If pip cannot be queried we return None and log the traceback."""
+    mocker.patch(
+        "qcodes.utils.installation_info.subprocess.run",
+        side_effect=OSError("pip could not be executed"),
+    )
+
+    with caplog.at_level(logging.ERROR, logger="qcodes.utils.installation_info"):
+        answer = is_qcodes_installed_editably()
+
+    assert answer is None
+    assert "Could not determine if QCoDeS is installed editably" in caplog.text
+    assert "pip could not be executed" in caplog.text
 
 
 def test_get_all_installed_package_versions() -> None:

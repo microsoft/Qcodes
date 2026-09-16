@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from collections import OrderedDict
 from typing import TYPE_CHECKING
 
@@ -26,6 +27,17 @@ def parameters() -> Generator[list[ManualParameter], None, None]:
 def test_combine(parameters: list[ManualParameter]) -> None:
     multipar = combine(*parameters, name="combined")
     assert multipar.dimensionality == len(parameters)
+
+
+def test_combine_with_deprecated_units_kwarg(
+    parameters: list[ManualParameter], caplog: pytest.LogCaptureFixture
+) -> None:
+    logger_name = "qcodes.parameters.combined_parameter"
+    with caplog.at_level(logging.WARNING, logger=logger_name):
+        multipar = combine(*parameters, name="combined", units="V")
+
+    assert "`units` is deprecated" in caplog.text
+    assert multipar.parameter.unit == "V"  # pyright: ignore[reportFunctionMemberAccess]
 
 
 def test_sweep_bad_setpoints(parameters: list[ManualParameter]) -> None:
