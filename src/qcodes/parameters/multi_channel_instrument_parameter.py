@@ -66,7 +66,9 @@ class MultiChannelInstrumentParameter[InstrumentModuleType: "InstrumentModule"](
                 # Catch wrong length of value before any setting is done
                 value_list = list(value)
                 if len(value_list) != len(self._channels):
-                    raise ValueError
+                    raise ValueError(
+                        "Length of value sequence does not match the number of channels"
+                    )
                 for chan, val in zip(self._channels, value_list):
                     getattr(chan, self._param_name).set(val)
             except (TypeError, ValueError):
