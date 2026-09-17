@@ -31,11 +31,7 @@ def is_qcodes_installed_editably() -> bool | None:
         answer = any(
             isinstance(pkg, dict) and pkg.get("name") == "qcodes" for pkg in e_pkgs
         )
-    except (OSError, subprocess.SubprocessError, ValueError, TypeError):
-        # OSError if python/pip cannot be executed, SubprocessError if pip
-        # returns a non zero exit code, ValueError (JSONDecodeError,
-        # UnicodeDecodeError) if the output cannot be decoded as json and
-        # TypeError if the decoded json is not a list of packages
+    except Exception:
         log.exception("Could not determine if QCoDeS is installed editably")
         answer = None
 
