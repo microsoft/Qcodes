@@ -241,7 +241,7 @@ Coding Style
    framework <https://github.com/falconry/falcon>`__ for best practices
    examples.
 
--  Use `PEP8 <http://legacy.python.org/dev/peps/pep-0008/>`__ style. Not
+-  Use `PEP8 <https://peps.python.org/pep-0008/>`__ style. Not
    only is this style good for readability in an absolute sense, but
    consistent styling helps us all read each other's code.
 -  This includes module names: all modules, including instrument driver
@@ -258,14 +258,23 @@ Coding Style
    raise ``ValueError`` or ``RuntimeError`` instead; those carry an explicit
    ``# noqa: TRY004`` because ``TypeError`` is not a subclass of either, so
    changing them would break user code that catches the current exception.
--  There is a command-line tool (``pip install pycodestyle``) you can run after
-   writing code to validate its style.
--  A lot of editors have plugins that will check this for you
-   automatically as you type. Sublime Text for example has
-   sublimelinter-pep8 and the even more powerful sublimelinter-flake8.
-   For Emacs, the elpy package is strongly recommended (https://github.com/jorgenschaefer/elpy).
--  BUT: do not change someone else's code to make it pep8-compliant
-   unless that code is fully tested.
+-  We use `ruff <https://docs.astral.sh/ruff/>`__ for both linting and
+   formatting. The enabled rules and any per-file exemptions are configured in
+   ``pyproject.toml``, which is the single source of truth for our style. To
+   check and format your code locally run::
+
+       ruff check --fix .
+       ruff format .
+
+   Both commands are also run automatically by our ``pre-commit`` hooks (see
+   `Automatic Testing (CI)`_ below), so installing the hooks means you rarely
+   need to run them by hand.
+-  Most editors have a ruff integration that will lint and format for you as you
+   type or on save, for example the
+   `Ruff extension <https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff>`__
+   for VS Code.
+-  BUT: do not reformat or re-lint someone else's code unless that code is
+   fully tested and the change is related to what you are working on.
 -  BUT: remove all trailing spaces.
 -  BUT: do not mix tabs and indentation for any reason.
 
@@ -350,8 +359,10 @@ on Linux and on Windows.
     - Check that YAML, JSON and Python files are syntactically valid.
     - Check that there are no trailing whitespace or blank lines at the end of python files.
     - Check that all files uses the correct line endings (``\n`` for all files except ``.bat``)
-    - Run `ruff <https://github.com/charliermarsh/ruff>`_  check and ruff format to check for comon style
-      issues in python code and format the code.
+    - Run ``ruff check`` and ``ruff format`` to check for common style issues in
+      python code and to format the code.
+    - Scan for accidentally committed secrets and check shell scripts for common
+      issues.
 
 
 Furthermore we also run our test suite with the minimum requirements stated to ensure that QCoDeS does work

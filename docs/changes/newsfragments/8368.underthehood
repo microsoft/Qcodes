@@ -1,0 +1,4 @@
+The contributor documentation has been updated to describe our current tooling:
+the coding style section now points at ``ruff check`` and ``ruff format``,
+configured in ``pyproject.toml``, rather than the long removed ``pycodestyle``
+and ``flake8`` based workflow.
