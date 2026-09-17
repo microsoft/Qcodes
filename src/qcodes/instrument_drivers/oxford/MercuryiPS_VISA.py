@@ -521,7 +521,7 @@ class OxfordMercuryiPS(VisaInstrument):
         cartesian_targ = self._target_vector.get_components("x", "y", "z")
         for targ, worker in zip(cartesian_targ, self.submodules.values()):
             if not isinstance(worker, OxfordMercuryWorkerPS):
-                raise RuntimeError(
+                raise RuntimeError(  # noqa: TRY004
                     f"Expected an OxfordMercuryWorkerPS but got {type(worker)}"
                 )
             worker.field_target(targ)
@@ -558,7 +558,7 @@ class OxfordMercuryiPS(VisaInstrument):
         """
         for worker in self.submodules.values():
             if not isinstance(worker, OxfordMercuryWorkerPS):
-                raise RuntimeError(
+                raise RuntimeError(  # noqa: TRY004
                     f"Expected an OxfordMercuryWorkerPS but got {type(worker)}"
                 )
             worker.ramp_to_target()
@@ -573,7 +573,7 @@ class OxfordMercuryiPS(VisaInstrument):
 
         for worker in self.submodules.values():
             if not isinstance(worker, OxfordMercuryWorkerPS):
-                raise RuntimeError(
+                raise RuntimeError(  # noqa: TRY004
                     f"Expected an OxfordMercuryWorkerPS but got {type(worker)}"
                 )
             # wait for the ramp to finish, we don't care about the order
@@ -675,7 +675,7 @@ class OxfordMercuryiPS(VisaInstrument):
 
         for cur, worker in zip(meas_vals, self.submodules.values()):
             if not isinstance(worker, OxfordMercuryWorkerPS):
-                raise RuntimeError(
+                raise RuntimeError(  # noqa: TRY004
                     f"Expected an OxfordMercuryWorkerPS but got {type(worker)}"
                 )
             if worker.field_target() != cur and worker.field_ramp_rate() == 0:

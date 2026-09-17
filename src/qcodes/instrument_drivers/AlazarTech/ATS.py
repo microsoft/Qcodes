@@ -145,7 +145,7 @@ class AlazarTechATS(Instrument):
         self._handle = self.api.get_board_by_system_id(system_id, board_id)
 
         if not self._handle:
-            raise Exception(
+            raise RuntimeError(
                 f"AlazarTech_ATS not found at system {system_id}, board {board_id}"
             )
 
@@ -380,7 +380,7 @@ class AlazarTechATS(Instrument):
         # endregion
         mode = self.mode.get()
         if mode not in ("TS", "NPT"):
-            raise Exception(
+            raise NotImplementedError(
                 "Only the 'TS' and 'NPT' modes are implemented at this point"
             )
 
@@ -681,7 +681,7 @@ class AlazarTechATS(Instrument):
             # is set as an integer and not value mapped so we use a different
             # parameter to represent it
         elif self.sample_rate.get() == "EXTERNAL_CLOCK":
-            raise Exception(
+            raise RuntimeError(
                 "External clock is used, alazar driver "
                 "could not determine sample speed."
             )

@@ -1,0 +1,10 @@
+Two additional ruff lint rules have been enabled.
+
+``TRY004`` (``type-check-without-type-error``) ensures that new code raises ``TypeError`` when
+rejecting a value because of its type. Existing type checks that raise ``ValueError`` or
+``RuntimeError`` are unchanged and carry an explicit ``noqa`` comment, since ``TypeError`` is not a
+subclass of either and changing them would break user code that catches the current exception.
+
+``S110`` (``try-except-pass``) flags exception handlers that silently pass. No behaviour changed as a
+result: the only remaining silent handlers are in teardown paths that must never raise or log, and
+they are now explicitly marked as intentional.

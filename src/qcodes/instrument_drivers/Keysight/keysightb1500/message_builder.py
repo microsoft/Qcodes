@@ -70,7 +70,7 @@ class MessageBuilder:
     def message(self) -> str:
         joined = str(self._msg)
         if len(joined) > 250:
-            raise Exception(
+            raise ValueError(
                 f"Command is too long ({len(joined)}>256-termchars) "
                 f"and will overflow input buffer of instrument. "
                 f"(Consider using the ST/END/DO/RU commands for very long "

@@ -144,7 +144,7 @@ class AddParameterTransformer(VisitorBasedCodemodCommand):
         if isinstance(stm.body, cst.BaseSuite) or isinstance(
             comment.body, cst.BaseSuite
         ):
-            raise RuntimeError("Unexpected result from parsing code.")
+            raise RuntimeError("Unexpected result from parsing code.")  # noqa: TRY004
 
         new_node = stm.body[0]
         new_node = new_node.with_changes(value=call_node)

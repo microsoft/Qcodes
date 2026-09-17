@@ -1,0 +1,16 @@
+Exceptions raised by QCoDeS drivers are now more specific.
+
+The ruff rule ``TRY002`` (``raise-vanilla-class``) has been enabled. A number of drivers raised a
+bare ``Exception``; these now raise a specific builtin exception instead. Invalid arguments raise
+``ValueError``, using the instrument in an unsupported state raises ``RuntimeError`` and selecting an
+unimplemented acquisition mode on the AlazarTech ATS raises ``NotImplementedError``. Code that
+catches ``Exception`` is unaffected since all of these are subclasses of ``Exception``.
+
+In addition, two catch-all exception handlers have been narrowed to the specific exceptions that the
+guarded code can actually raise: reading a screenshot from the Keysight Infiniium now only handles
+``OSError`` and ``VisaIOError``, and waiting for the Tektronix AWG5014 to become ready only handles
+``VisaIOError``. Both previously swallowed unrelated errors.
+
+Finally, the coding style section of the contributor documentation now points at ``ruff check`` and
+``ruff format``, configured in ``pyproject.toml``, rather than the long removed ``pycodestyle`` and
+``flake8`` based workflow.

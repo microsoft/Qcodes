@@ -44,7 +44,7 @@ class ChannelTrace(ParameterWithSetpoints):
             )
 
         if not isinstance(self.root_instrument, SR830):
-            raise ValueError(
+            raise ValueError(  # noqa: TRY004
                 "Invalid parent instrument. ChannelBuffer can only live on an SR830."
             )
 
@@ -112,7 +112,7 @@ class ChannelBuffer(ArrayParameter):
             )
 
         if not isinstance(instrument, SR830):
-            raise ValueError(
+            raise ValueError(  # noqa: TRY004
                 "Invalid parent instrument. ChannelBuffer can only live on an SR830."
             )
 

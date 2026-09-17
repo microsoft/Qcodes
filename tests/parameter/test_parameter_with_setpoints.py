@@ -450,3 +450,29 @@ def test_expand_setpoints_3d(parameters) -> None:
     for i in range(sp3.shape[0]):
         for j in range(sp3.shape[1]):
             np.testing.assert_array_equal(sp3[i, j, :], np.arange(sp3.shape[2]))
+
+
+def test_validate_consistent_shape_without_arrays_validator() -> None:
+    """The parameter itself must keep an Arrays validator for its shape to be
+    validated against the shape of its setpoints."""
+    n_points = Parameter("n_points", set_cmd=None, vals=vals.Ints())
+    n_points.set(10)
+    setpoints = Parameter(
+        "setpoints",
+        get_cmd=lambda: _rng.random(n_points()),
+        vals=vals.Arrays(shape=(n_points,)),
+    )
+    param = ParameterWithSetpoints(
+        "param",
+        get_cmd=lambda: _rng.random(n_points()),
+        setpoints=(setpoints,),
+        vals=vals.Arrays(shape=(n_points,)),
+    )
+    param.vals = vals.Ints()
+
+    with pytest.raises(
+        ValueError,
+        match=r"Can only validate shapes for parameters with Arrays validator. "
+        r"param does not have an Arrays validator.",
+    ):
+        param.validate_consistent_shape()

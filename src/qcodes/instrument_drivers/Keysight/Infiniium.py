@@ -131,7 +131,7 @@ class DSOTraceParam(
     def root_instrument(self) -> "KeysightInfiniium":
         root_instrument = super().root_instrument
         if not isinstance(root_instrument, KeysightInfiniium):
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY004
                 f"Trace parameter is not bound to a KeysightInfiniium instrument but {type(root_instrument)}"
             )
         return root_instrument
@@ -211,7 +211,7 @@ class DSOTraceParam(
         # only reached for a function parameter, see the caller in ``setpoints``
         instrument = self.instrument
         if not isinstance(instrument, KeysightInfiniiumFunction):
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY004
                 "FFT setpoints can only be updated for a function parameter."
             )
         instrument.write(f":WAV:SOUR {self._channel}")
@@ -1304,6 +1304,6 @@ class KeysightInfiniium(VisaInstrument):
                 f.write(screen_bytes)
             print(f"Screen image written to {img_path}")
             return np.asarray(pil_open(BytesIO(screen_bytes)))
-        except Exception:
+        except (OSError, VisaIOError):
             self.log.exception("Failed to save screenshot")
             return None
