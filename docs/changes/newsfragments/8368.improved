@@ -1,4 +1,4 @@
-Exceptions raised by QCoDeS are now more specific.
+Exceptions raised by QCoDeS are now more specific and errors are less likely to be silently swallowed.
 
 The ruff rule ``TRY002`` (``raise-vanilla-class``) has been enabled. A number of drivers raised a
 bare ``Exception``; these now raise a specific builtin exception instead. Invalid arguments raise
@@ -6,8 +6,16 @@ bare ``Exception``; these now raise a specific builtin exception instead. Invali
 unimplemented acquisition mode on the AlazarTech ATS raises ``NotImplementedError``. Code that
 catches ``Exception`` is unaffected since all of these are subclasses of ``Exception``.
 
-In addition, several catch-all exception handlers have been narrowed to the specific exceptions that
-the guarded code can actually raise. Notably reading a screenshot from the Keysight Infiniium,
-aborting an acquisition on the SignalHound USB SA124B, waiting for the Tektronix AWG5014 to become
-ready and querying pip in :func:`qcodes.utils.is_qcodes_installed_editably` no longer swallow
-unrelated errors.
+Several catch-all exception handlers have been narrowed to the specific exceptions that the guarded
+code can actually raise. Notably reading a screenshot from the Keysight Infiniium, aborting an
+acquisition on the SignalHound USB SA124B, waiting for the Tektronix AWG5014 to become ready and
+querying pip in :func:`qcodes.utils.is_qcodes_installed_editably` no longer swallow unrelated errors.
+
+The ruff rule ``S110`` (``try-except-pass``) has been enabled. ``Station.add_component`` no longer
+silently swallows an error raised while snapshotting a component but logs it including the traceback.
+The remaining silent handlers are in teardown paths that must never raise or log and are explicitly
+marked as intentional.
+
+Finally, the coding style section of the contributor documentation now points at ``ruff check`` and
+``ruff format``, configured in ``pyproject.toml``, rather than the long removed ``pycodestyle`` and
+``flake8`` based workflow.
