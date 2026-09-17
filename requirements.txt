@@ -5,7 +5,7 @@ accessible-pygments==0.0.5
     # via furo
 alabaster==1.0.0
     # via sphinx
-ast-serialize==0.11.0
+ast-serialize==0.11.1
     # via mypy
 asttokens==3.0.2
     # via stack-data
