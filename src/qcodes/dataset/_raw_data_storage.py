@@ -357,7 +357,7 @@ def purge_orphaned_datasets(
                         ds_info.guid,
                         db_path,
                     )
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001 collect any failure and continue purging the remaining datasets
                     log.error("Failed to remove run_id=%d: %s", ds_info.run_id, exc)
                     errors.append((ds_info.run_id, exc))
 
@@ -447,17 +447,15 @@ def cleanup_datasets(
                     continue
 
             # Sample name filter
-            if sample_name is not None:
-                if ds.sample_name != sample_name:
-                    continue
+            if sample_name is not None and ds.sample_name != sample_name:
+                continue
 
             # Size filter
-            if size_threshold_bytes is not None:
-                if (
-                    ds.raw_data_size_bytes is None
-                    or ds.raw_data_size_bytes <= size_threshold_bytes
-                ):
-                    continue
+            if size_threshold_bytes is not None and (
+                ds.raw_data_size_bytes is None
+                or ds.raw_data_size_bytes <= size_threshold_bytes
+            ):
+                continue
 
             matching.append(ds)
 
@@ -495,7 +493,7 @@ def cleanup_datasets(
                         ds_info.guid,
                         db_path,
                     )
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001 collect any failure and continue cleaning up the remaining datasets
                     log.error("Failed to remove run_id=%d: %s", ds_info.run_id, exc)
                     errors.append((ds_info.run_id, exc))
 

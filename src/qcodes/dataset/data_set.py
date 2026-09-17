@@ -2087,13 +2087,14 @@ def _get_datasetprotocol_from_guid(
                 return d
 
     result_table_name = _get_result_table_name_by_guid(conn, guid)
-    if _check_if_table_found(conn, result_table_name):
-        d = DataSet(conn=conn, run_id=run_id)
-    # The results table is absent from the main DB when raw data is stored
-    # in a separate per-dataset SQLite file. Such runs are marked with a
-    # raw_data_db_path; anything else without a results table is an
-    # in-memory (netcdf-backed) dataset.
-    elif get_raw_data_db_path_for_run(conn, run_id) is not None:
+    # The results table is absent from the main DB when raw data is stored in a
+    # separate per-dataset SQLite file. Such runs are marked with a
+    # raw_data_db_path; anything else without a results table is an in-memory
+    # (netcdf-backed) dataset.
+    if (
+        _check_if_table_found(conn, result_table_name)
+        or get_raw_data_db_path_for_run(conn, run_id) is not None
+    ):
         d = DataSet(conn=conn, run_id=run_id)
     else:
         d = DataSetInMem._load_from_db(conn=conn, guid=guid)
