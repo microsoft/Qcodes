@@ -1,0 +1,13 @@
+Exceptions raised by QCoDeS are now more specific.
+
+The ruff rule ``TRY002`` (``raise-vanilla-class``) has been enabled. A number of drivers raised a
+bare ``Exception``; these now raise a specific builtin exception instead. Invalid arguments raise
+``ValueError``, using the instrument in an unsupported state raises ``RuntimeError`` and selecting an
+unimplemented acquisition mode on the AlazarTech ATS raises ``NotImplementedError``. Code that
+catches ``Exception`` is unaffected since all of these are subclasses of ``Exception``.
+
+In addition, several catch-all exception handlers have been narrowed to the specific exceptions that
+the guarded code can actually raise. Notably reading a screenshot from the Keysight Infiniium,
+aborting an acquisition on the SignalHound USB SA124B, waiting for the Tektronix AWG5014 to become
+ready and querying pip in :func:`qcodes.utils.is_qcodes_installed_editably` no longer swallow
+unrelated errors.

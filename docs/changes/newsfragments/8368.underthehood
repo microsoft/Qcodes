@@ -1,4 +1,16 @@
-The contributor documentation has been updated to describe our current tooling:
-the coding style section now points at ``ruff check`` and ``ruff format``,
-configured in ``pyproject.toml``, rather than the long removed ``pycodestyle``
-and ``flake8`` based workflow.
+Additional ruff lint rules have been enabled and the contributor documentation updated to match.
+
+The rule ``S110`` (``try-except-pass``) has been enabled. ``Station.add_component`` no longer
+silently swallows an error raised while snapshotting a component but logs it including the traceback.
+The remaining silent handlers are in teardown paths that must never raise or log and are explicitly
+marked as intentional.
+
+The rule ``TRY004`` (``type-check-without-type-error``) has been enabled so that new code raises
+``TypeError`` when rejecting a value because of its type. Existing type checks that raise
+``ValueError`` or ``RuntimeError`` are unchanged and carry an explicit ``noqa`` comment, since
+``TypeError`` is not a subclass of either and changing them would break user code that catches the
+current exception.
+
+Finally, the coding style section of the contributor documentation now points at ``ruff check`` and
+``ruff format``, configured in ``pyproject.toml``, rather than the long removed ``pycodestyle`` and
+``flake8`` based workflow.
