@@ -19,7 +19,7 @@ class HasSnapshotBase(Metadatable):
 class HasSnapshot(Metadatable):
     # Users shouldn't do this... but we'll test its behavior
     # for completeness
-    def snapshot(self, update: bool | None = False) -> Snapshot:  # type: ignore[misc]
+    def snapshot(self, update: bool | None = False) -> Snapshot:  # type: ignore[misc]  # ty: ignore[invalid-method-override, override-of-final-method]
         return {"fruit": "kiwi"}
 
 
@@ -58,7 +58,7 @@ def test_load() -> None:
 
 def test_init() -> None:
     with pytest.raises(TypeError):
-        Metadatable(metadata={"2": 3}, not_metadata={4: 5})  # type: ignore[call-arg]
+        Metadatable(metadata={"2": 3}, not_metadata={4: 5})  # type: ignore[call-arg]  # ty: ignore[unknown-argument]
 
     m = Metadatable(metadata={"2": 3})
     assert m.metadata == {"2": 3}

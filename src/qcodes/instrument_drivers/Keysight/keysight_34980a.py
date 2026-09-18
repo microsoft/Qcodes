@@ -70,7 +70,8 @@ class Keysight34980A(VisaInstrument):
 
         self._total_slot = 8
         self._system_slots_info_dict: dict[int, dict[str, str]] | None = None
-        self.module = dict.fromkeys(self.system_slots_info.keys())
+        # populated by scan_slots below, which puts an entry in for every slot
+        self.module: dict[int, Keysight34980ASwitchMatrixSubModule] = {}
         self.scan_slots()
         self.connect_message()
 
@@ -132,7 +133,7 @@ class Keysight34980A(VisaInstrument):
                     self.module[slot] = sub_module
                     self.add_submodule(sub_module_name, sub_module)
                     break
-            if self.module[slot] is None:
+            if slot not in self.module:
                 sub_module_name = f"slot_{slot}_{model_string}_no_driver"
                 sub_module_no_driver = Keysight34980ASwitchMatrixSubModule(
                     self, sub_module_name, slot

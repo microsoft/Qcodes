@@ -6,7 +6,7 @@ from qcodes import validators
 from .keysight_34980a_submodules import Keysight34980ASwitchMatrixSubModule
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Collection
     from typing import Unpack
 
     from qcodes.instrument import (
@@ -105,7 +105,7 @@ class Keysight34934A(Keysight34980ASwitchMatrixSubModule):
         self.write(f"SYSTem:MODule:ROW:PROTection {self.slot}, {mode}")
 
     def to_channel_list(
-        self, paths: list[tuple[int, int]], wiring_config: str | None = ""
+        self, paths: "Collection[tuple[int, int]]", wiring_config: str | None = ""
     ) -> str:
         """
         Convert the (row, column) pair to a 4-digit channel number 'sxxx', where

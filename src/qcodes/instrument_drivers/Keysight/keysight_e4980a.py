@@ -50,6 +50,16 @@ class KeysightE4980AMeasurementPair(MultiParameter):
 
     value: tuple[float, float] = (0.0, 0.0)
 
+    if TYPE_CHECKING:
+        # The two measured values are exposed as attributes named after the
+        # ``names`` of the measurement function, so which attributes exist is
+        # only known at runtime. Declaring this for type checkers lets the
+        # documented usage, such as ``measurement.capacitance``, be written in
+        # typed code. It is not defined at runtime, so accessing an attribute
+        # that the current measurement function does not provide still raises
+        # the usual ``AttributeError``.
+        def __getattr__(self, name: str) -> float: ...
+
     def __init__(
         self, name: str, names: "Sequence[str]", units: "Sequence[str]", **kwargs: Any
     ):

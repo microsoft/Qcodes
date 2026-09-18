@@ -810,7 +810,7 @@ class DataSet(BaseDataSet):
 
     def get_parameter_data(
         self,
-        *params: str | ParamSpec | ParameterBase,
+        *params: str | ParamSpecBase | ParameterBase,
         start: int | None = None,
         end: int | None = None,
         callback: Callable[[float], None] | None = None,
@@ -1144,7 +1144,11 @@ class DataSet(BaseDataSet):
 
     def subscribe(
         self,
-        callback: Callable[[Any, int, Any | None], None],
+        # ``Callable[..., None]`` rather than a three argument callable because
+        # ``callback_kwargs`` below is bound onto the callback with
+        # ``functools.partial``, so it may take further keyword arguments. This
+        # matches how ``_Subscriber`` types the same callback.
+        callback: Callable[..., None],
         min_wait: int = 0,
         min_count: int = 1,
         state: Any | None = None,
@@ -1406,28 +1410,21 @@ class DataSet(BaseDataSet):
         for param, value in result_dict.items():
             if param.type == "text":
                 if value.shape:
-                    new_res: list[dict[str, VALUE]] = [
-                        {param.name: str(val)} for val in value
-                    ]
-                    res_list += new_res
+                    res_list.extend({param.name: str(val)} for val in value)
                 else:
-                    new_res = [{param.name: str(value)}]
-                    res_list += new_res
+                    res_list.append({param.name: str(value)})
             elif param.type == "numeric":
                 if value.shape:
-                    res_list += [{param.name: number} for number in value]
+                    res_list.extend({param.name: number} for number in value)
                 else:
-                    new_res = [{param.name: float(value)}]
-                    res_list += new_res
+                    res_list.append({param.name: float(value)})
             elif param.type == "complex":
                 if value.shape:
-                    res_list += [{param.name: number} for number in value]
+                    res_list.extend({param.name: number} for number in value)
                 else:
-                    new_res = [{param.name: complex(value)}]
-                    res_list += new_res
+                    res_list.append({param.name: complex(value)})
             else:
-                new_res = [{param.name: value}]
-                res_list += new_res
+                res_list.append({param.name: value})
 
         return res_list
 
