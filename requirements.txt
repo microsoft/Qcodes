@@ -291,7 +291,7 @@ psutil==7.2.2
     # via
     #   ipykernel
     #   ipython
-pure-eval==0.2.3
+pure-eval==0.2.4
     # via stack-data
 pyarrow==25.0.1
     # via
