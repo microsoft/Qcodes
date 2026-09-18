@@ -522,7 +522,7 @@ zhinst-core==26.7.2.5
     # via
     #   zhinst-toolkit
     #   zhinst-utils
-zhinst-qcodes==0.8.0
+zhinst-qcodes==0.8.1
     # via qcodes (pyproject.toml)
 zhinst-timing-models==26.7.0
     # via zhinst-utils
