@@ -59,7 +59,16 @@ class LakeshoreModel336CurrentSource(LakeshoreBaseOutput):
         output_index: int,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
-        super().__init__(parent, output_name, output_index, has_pid=True, **kwargs)
+        # The Model 336 HTRSET command has no output-type field (unlike the
+        # Model 335), so exclude ``output_type`` from the heater setup group.
+        super().__init__(
+            parent,
+            output_name,
+            output_index,
+            has_pid=True,
+            heater_output_has_output_type=False,
+            **kwargs,
+        )
 
         self.P.vals = vals.Numbers(0.1, 1000)
         self.I.vals = vals.Numbers(0.1, 1000)
@@ -96,7 +105,16 @@ class LakeshoreModel336VoltageSource(LakeshoreBaseOutput):
         output_index: int,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
-        super().__init__(parent, output_name, output_index, has_pid=False, **kwargs)
+        # Outputs 3 and 4 are unpowered analog voltage outputs that do not
+        # support the heater setup (HTRSET) command, so disable it entirely.
+        super().__init__(
+            parent,
+            output_name,
+            output_index,
+            has_pid=False,
+            has_heater_output_setup=False,
+            **kwargs,
+        )
 
 
 class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):
