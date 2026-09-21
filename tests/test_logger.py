@@ -14,7 +14,12 @@ from pytest import LogCaptureFixture
 import qcodes as qc
 from qcodes import logger
 from qcodes.instrument import Instrument
+from qcodes.instrument.visa import VISA_LOGGER
 from qcodes.instrument_drivers.american_magnetics import AMIModel430, AMIModel4303D
+from qcodes.instrument_drivers.mock_instruments import (
+    DummyChannelInstrument,
+    DummyInstrument,
+)
 from qcodes.instrument_drivers.tektronix import TektronixAWG5208
 from qcodes.logger.log_analysis import capture_dataframe
 from tests.drivers.test_lakeshore_372 import LakeshoreModel372Mock
@@ -22,9 +27,14 @@ from tests.drivers.test_lakeshore_372 import LakeshoreModel372Mock
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
 
+    from qcodes.instrument.instrument_base import LoggerScope
+
 TEST_LOG_MESSAGE = "test log message"
 
 NUM_PYTEST_LOGGERS = 4
+
+SHARED_INSTRUMENT_LOGGER_NAME = "qcodes.instrument.instrument_base"
+SHARED_VISA_LOGGER_NAME = VISA_LOGGER
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -351,3 +361,227 @@ def test_get_level_code_with_invalid_type() -> None:
     """Only str and int can be converted to a logging level code."""
     with pytest.raises(RuntimeError, match="get_level_code: Cannot to convert level"):
         logger.get_level_code(1.5)  # type: ignore[arg-type]
+
+
+class ScopedDummyInstrument(DummyInstrument):
+    """Dummy instrument that opts in to a per instrument logger."""
+
+    default_logger_scope: "LoggerScope" = "instrument"
+
+
+class ScopedDummyChannelInstrument(DummyChannelInstrument):
+    """Instrument with channels that opts in to a per instrument logger."""
+
+    default_logger_scope: "LoggerScope" = "instrument"
+
+
+class ScopedAMIModel430(AMIModel430):
+    """VISA instrument that opts in to a per instrument logger."""
+
+    default_logger_scope: "LoggerScope" = "instrument"
+
+
+@pytest.fixture(name="restore_shared_logger_levels", autouse=True)
+def _restore_shared_logger_levels() -> "Generator[None, None, None]":
+    """
+    Restore the level of the shared loggers and of every logger below them.
+
+    Scoped loggers stay in the logging registry for the lifetime of the
+    process, so a level set by one test would otherwise leak into the next.
+    """
+    roots = (SHARED_INSTRUMENT_LOGGER_NAME, SHARED_VISA_LOGGER_NAME)
+
+    def scoped_loggers() -> list[logging.Logger]:
+        return [
+            logging.getLogger(name)
+            for name in (*roots, *logging.Logger.manager.loggerDict)
+            if any(name == root or name.startswith(f"{root}.") for root in roots)
+        ]
+
+    levels = {logger_.name: logger_.level for logger_ in scoped_loggers()}
+    yield
+    for logger_ in scoped_loggers():
+        logger_.setLevel(levels.get(logger_.name, logging.NOTSET))
+
+
+def test_default_logger_scope_is_shared() -> None:
+    """By default all instruments keep sharing a single logger."""
+    inst_a = DummyInstrument("shared_scope_a")
+    inst_b = DummyInstrument("shared_scope_b")
+
+    assert inst_a.log.logger.name == SHARED_INSTRUMENT_LOGGER_NAME
+    assert inst_a.log.logger is inst_b.log.logger
+
+
+def test_instrument_scope_gives_one_logger_per_instrument() -> None:
+    inst_a = ScopedDummyInstrument("instrument_scope_a")
+    inst_b = ScopedDummyInstrument("instrument_scope_b")
+
+    assert (
+        inst_a.log.logger.name
+        == f"{SHARED_INSTRUMENT_LOGGER_NAME}.ScopedDummyInstrument.instrument_scope_a"
+    )
+    assert (
+        inst_b.log.logger.name
+        == f"{SHARED_INSTRUMENT_LOGGER_NAME}.ScopedDummyInstrument.instrument_scope_b"
+    )
+    assert inst_a.log.logger is not inst_b.log.logger
+
+
+def test_instrument_scope_isolates_logger_level() -> None:
+    """Changing the level of one scoped logger must not affect any other."""
+    shared_logger = logging.getLogger(SHARED_INSTRUMENT_LOGGER_NAME)
+    shared_level = shared_logger.level
+
+    inst_a = ScopedDummyInstrument("level_isolation_a")
+    inst_b = ScopedDummyInstrument("level_isolation_b")
+    inst_a.log.logger.setLevel(logging.DEBUG)
+
+    assert inst_a.log.logger.level == logging.DEBUG
+    assert inst_b.log.logger.level == logging.NOTSET
+    assert shared_logger.level == shared_level
+
+
+def test_scoped_logger_inherits_level_from_shared_logger() -> None:
+    """Opting in must not disconnect an instrument from existing configuration."""
+    logging.getLogger(SHARED_INSTRUMENT_LOGGER_NAME).setLevel(logging.ERROR)
+
+    inst = ScopedDummyInstrument("level_inheritance")
+
+    assert inst.log.logger.level == logging.NOTSET
+    assert inst.log.logger.getEffectiveLevel() == logging.ERROR
+
+
+def test_level_can_be_set_for_a_whole_driver_class() -> None:
+    """
+    A level configured on the driver class node applies to every instrument of
+    that driver, including ones created afterwards, and not to other drivers.
+    """
+    class_logger = logging.getLogger(
+        f"{SHARED_INSTRUMENT_LOGGER_NAME}.ScopedDummyInstrument"
+    )
+    class_logger.setLevel(logging.DEBUG)
+
+    # created only after the level was configured
+    inst_a = ScopedDummyInstrument("class_level_a")
+    inst_b = ScopedDummyInstrument("class_level_b")
+    other = ScopedDummyChannelInstrument("class_level_other")
+
+    assert inst_a.log.logger.getEffectiveLevel() == logging.DEBUG
+    assert inst_b.log.logger.getEffectiveLevel() == logging.DEBUG
+    assert other.log.logger.getEffectiveLevel() != logging.DEBUG
+
+
+def test_driver_class_level_applies_to_submodules() -> None:
+    class_logger = logging.getLogger(
+        f"{SHARED_INSTRUMENT_LOGGER_NAME}.ScopedDummyChannelInstrument"
+    )
+    class_logger.setLevel(logging.DEBUG)
+
+    inst = ScopedDummyChannelInstrument("class_level_channels")
+    channel = inst.submodules["A"]
+
+    assert channel.log.logger.getEffectiveLevel() == logging.DEBUG  # type: ignore[union-attr]
+
+
+def test_instrument_level_overrides_driver_class_level() -> None:
+    """The per instrument node must stay more specific than the class node."""
+    logging.getLogger(
+        f"{SHARED_INSTRUMENT_LOGGER_NAME}.ScopedDummyInstrument"
+    ).setLevel(logging.ERROR)
+
+    inst_a = ScopedDummyInstrument("override_a")
+    inst_b = ScopedDummyInstrument("override_b")
+    inst_a.log.logger.setLevel(logging.DEBUG)
+
+    assert inst_a.log.logger.getEffectiveLevel() == logging.DEBUG
+    assert inst_b.log.logger.getEffectiveLevel() == logging.ERROR
+
+
+def test_scoped_logger_keeps_instrument_extra_info(caplog: LogCaptureFixture) -> None:
+    """Records must keep the info that ``filter_instrument`` relies on."""
+    inst = ScopedDummyInstrument("extra_info")
+
+    with caplog.at_level(logging.INFO):
+        inst.log.info(TEST_LOG_MESSAGE)
+
+    record = caplog.records[-1]
+    assert record.name == inst.log.logger.name
+    assert record.__dict__["instrument_name"] == "extra_info"
+    assert record.__dict__["instrument_type"] == "ScopedDummyInstrument"
+
+
+def test_scoped_logger_is_filterable_by_instrument() -> None:
+    inst = ScopedDummyInstrument("filterable")
+    other = ScopedDummyInstrument("not_filterable")
+
+    with (
+        logger.LogCapture(level=logging.DEBUG) as logs,
+        logger.filter_instrument(inst, handler=logs.string_handler),
+    ):
+        inst.log.info(TEST_LOG_MESSAGE)
+        other.log.info(TEST_LOG_MESSAGE)
+
+    assert "[filterable(ScopedDummyInstrument)]" in logs.value
+    assert "[not_filterable(ScopedDummyInstrument)]" not in logs.value
+
+
+def test_submodule_logger_is_child_of_instrument_logger() -> None:
+    """A submodule must sit below its parent in the logger hierarchy."""
+    inst = ScopedDummyChannelInstrument("scoped_channels")
+    channel = inst.submodules["A"]
+
+    assert (
+        channel.log.logger.name  # type: ignore[union-attr]
+        == f"{SHARED_INSTRUMENT_LOGGER_NAME}.ScopedDummyChannelInstrument"
+        ".scoped_channels.ChanA"
+    )
+    assert channel.log.logger is not inst.log.logger  # type: ignore[union-attr]
+
+
+def test_instrument_level_applies_to_its_submodules() -> None:
+    """Setting the level on an instrument must also cover its channels."""
+    inst = ScopedDummyChannelInstrument("level_to_channels")
+    channel = inst.submodules["A"]
+
+    inst.log.logger.setLevel(logging.DEBUG)
+
+    assert channel.log.logger.getEffectiveLevel() == logging.DEBUG  # type: ignore[union-attr]
+
+
+def test_submodule_of_unscoped_instrument_uses_shared_logger() -> None:
+    inst = DummyChannelInstrument("unscoped_channels")
+    channel = inst.submodules["A"]
+
+    assert channel.log.logger.name == SHARED_INSTRUMENT_LOGGER_NAME  # type: ignore[union-attr]
+
+
+def test_visa_log_is_shared_by_default() -> None:
+    inst = AMIModel430(
+        "shared_visa_log",
+        address="GPIB::1::INSTR",
+        pyvisa_sim_file="AMI430.yaml",
+        terminator="\n",
+    )
+
+    assert inst.visa_log.logger.name == SHARED_VISA_LOGGER_NAME
+    assert inst.log.logger.name == SHARED_INSTRUMENT_LOGGER_NAME
+
+
+def test_visa_log_follows_instrument_scope() -> None:
+    inst = ScopedAMIModel430(
+        "scoped_visa_log",
+        address="GPIB::1::INSTR",
+        pyvisa_sim_file="AMI430.yaml",
+        terminator="\n",
+    )
+
+    assert (
+        inst.visa_log.logger.name
+        == f"{SHARED_VISA_LOGGER_NAME}.ScopedAMIModel430.scoped_visa_log"
+    )
+    assert (
+        inst.log.logger.name
+        == f"{SHARED_INSTRUMENT_LOGGER_NAME}.ScopedAMIModel430.scoped_visa_log"
+    )
+    assert inst.visa_log.logger is not inst.log.logger
