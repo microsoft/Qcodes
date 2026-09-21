@@ -26,7 +26,7 @@ TEST_LOG_MESSAGE = "test log message"
 
 NUM_PYTEST_LOGGERS = 4
 
-_LOG = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
 @pytest.fixture(autouse=True)
@@ -159,7 +159,7 @@ def test_set_level_without_starting_raises() -> None:
 def test_handler_level() -> None:
     logger.start_logger()
     with logger.LogCapture(level=logging.INFO) as logs:
-        _LOG.debug(TEST_LOG_MESSAGE)
+        _LOGGER.debug(TEST_LOG_MESSAGE)
     assert logs.value == ""
 
     with (
@@ -167,7 +167,7 @@ def test_handler_level() -> None:
         logger.handler_level(level=logging.DEBUG, handler=logs.string_handler),
     ):
         print(logs.string_handler)
-        _LOG.debug(TEST_LOG_MESSAGE)
+        _LOGGER.debug(TEST_LOG_MESSAGE)
     assert logs.value.strip() == TEST_LOG_MESSAGE
 
 
@@ -339,3 +339,15 @@ def test_installation_info_logging() -> None:
     assert "QCoDeS version:" in lines[-3]
     assert "QCoDeS installed in editable mode:" in lines[-2]
     assert "All installed package versions:" in lines[-1]
+
+
+def test_get_level_name_with_invalid_type() -> None:
+    """Only str and int can be converted to a logging level name."""
+    with pytest.raises(RuntimeError, match="get_level_name: Cannot to convert level"):
+        logger.get_level_name(1.5)  # type: ignore[arg-type]
+
+
+def test_get_level_code_with_invalid_type() -> None:
+    """Only str and int can be converted to a logging level code."""
+    with pytest.raises(RuntimeError, match="get_level_code: Cannot to convert level"):
+        logger.get_level_code(1.5)  # type: ignore[arg-type]

@@ -114,14 +114,16 @@ def strip_attrs(obj: object, whitelist: "Sequence[str]" = ()) -> None:
         whitelist: List of names that are not stripped from the object.
 
     """
+    # this is called during teardown/deletion so it must never raise and
+    # must not log: the logging machinery may already be torn down.
     try:
         lst = set(obj.__dict__.keys()) - set(whitelist)
         for key in lst:
             try:
                 del obj.__dict__[key]
-            except Exception:
+            except Exception:  # noqa: BLE001, S110
                 pass
-    except Exception:
+    except Exception:  # noqa: BLE001, S110
         pass
 
 

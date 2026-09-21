@@ -37,7 +37,7 @@ def clean_string(s: str) -> str:
 
 
 def _parse_string_strip(s: str) -> str:
-    """Parse an output of the VISA instrument, remove redundant terminators like \n"""
+    r"""Parse an output of the VISA instrument, remove redundant terminators like \n"""
     return s.strip()
 
 
@@ -759,7 +759,7 @@ class RigolDG4000(VisaInstrument):
 
             self.write("DATA VOLATILE," + string)
         else:
-            raise Exception(
+            raise ValueError(
                 "Data length of "
                 + str(len(data))
                 + " is not in the range of 1 to 16384"

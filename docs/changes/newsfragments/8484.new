@@ -1,0 +1,8 @@
+The method for setting a parameter's cache from a raw value as reported by the
+instrument is now public as ``Parameter.cache.set_from_raw_value``. It is the
+raw-side counterpart of ``Parameter.cache.set`` and applies the same
+conversions as a ``get`` (``get_parser``, ``scale``, ``offset`` and
+``val_mapping``). This is useful for drivers that populate the caches of many
+parameters from a single bulk instrument reply without issuing a ``get`` per
+parameter. The previous private ``_set_from_raw_value`` is kept as a
+backwards-compatible alias.

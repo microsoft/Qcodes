@@ -11,6 +11,7 @@ from numpy.testing import assert_array_equal
 from pytest import LogCaptureFixture
 
 from qcodes.instrument import ChannelList, ChannelTuple, Instrument, InstrumentChannel
+from qcodes.instrument.channel import ChannelTupleValidator
 from qcodes.instrument_drivers.mock_instruments import (
     DummyChannel,
     DummyChannelInstrument,
@@ -170,6 +171,13 @@ def test_invalid_multichan_type_raises(empty_instrument: Instrument) -> None:
         )
 
 
+def test_channel_tuple_validator_requires_channel_tuple(
+    dci: DummyChannelInstrument,
+) -> None:
+    with pytest.raises(ValueError, match="channel_list must be a ChannelTuple"):
+        ChannelTupleValidator(dci.A)  # type: ignore[arg-type]
+
+
 def test_wrong_chan_type_raises(empty_instrument: Instrument) -> None:
     with pytest.raises(TypeError, match="All items in this ChannelTuple must be of"):
         ChannelList(
@@ -194,9 +202,9 @@ def test_append_channel(dci_with_list: DCIWithList) -> None:
 
     dci_with_list.channels.lock()
     # after locking the channels it's not possible to add any more channels
+    name = "bar"
+    channel = DummyChannel(dci_with_list, "Chan" + name, name)
     with pytest.raises(AttributeError):
-        name = "bar"
-        channel = DummyChannel(dci_with_list, "Chan" + name, name)
         dci_with_list.channels.append(channel)
     assert len(dci_with_list.channels) == n_channels_post
 
@@ -274,9 +282,9 @@ def test_insert_channel(dci_with_list: DCIWithList) -> None:
     assert dci_with_list.channels[1] is channel
     dci_with_list.channels.lock()
     # after locking the channels it's not possible to add any more channels
+    name = "bar"
+    channel = DummyChannel(dci_with_list, "Chan" + name, name)
     with pytest.raises(AttributeError):
-        name = "bar"
-        channel = DummyChannel(dci_with_list, "Chan" + name, name)
         dci_with_list.channels.insert(2, channel)
     assert len(dci_with_list.channels) == n_channels_post
     assert len(dci_with_list.channels._channel_mapping) == n_channels_post

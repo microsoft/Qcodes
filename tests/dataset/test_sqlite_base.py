@@ -220,6 +220,15 @@ def test_get_dependents_simple(experiment, simple_run_describer) -> None:
     assert deps == [layout_id]
 
 
+def test_get_layout_id_with_invalid_parameter_type(dataset) -> None:
+    with pytest.raises(ValueError, match="Wrong parameter type, must be ParamSpec"):
+        mut_queries._get_layout_id(
+            dataset.conn,
+            42,  # type: ignore[arg-type]
+            dataset.run_id,
+        )
+
+
 def test_get_dependents(experiment) -> None:
     # more parameters, more complicated dependencies
     x = ParamSpecBase("x", "numeric")

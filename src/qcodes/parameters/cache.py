@@ -40,6 +40,8 @@ class _CacheProtocol(Protocol, Generic[ParameterDataTypeVar]):  # noqa: PYI046
 
     def set(self, value: ParameterDataTypeVar) -> None: ...
 
+    def set_from_raw_value(self, raw_value: ParamRawDataType) -> None: ...
+
     def _set_from_raw_value(self, raw_value: ParamRawDataType) -> None: ...
 
     @overload
@@ -160,11 +162,36 @@ class _Cache(Generic[ParameterDataTypeVar]):
         raw_value = self._parameter._from_value_to_raw_value(value)
         self._update_with(value=value, raw_value=raw_value)
 
-    def _set_from_raw_value(self, raw_value: ParamRawDataType) -> None:
+    def set_from_raw_value(self, raw_value: ParamRawDataType) -> None:
+        """
+        Set the cached value of the parameter from a raw value as returned by
+        the instrument, without invoking the ``get_cmd`` of the parameter.
+
+        This is the counterpart of :meth:`set`: where :meth:`set` takes a value
+        on the user/scaled side of the parameter, this method takes a value on
+        the instrument/raw side. It applies the same conversions that a regular
+        ``get`` would (``get_parser``, ``scale``, ``offset`` and
+        ``val_mapping``) to derive the user-facing value, and stores both the
+        raw value and the converted value in the cache.
+
+        This is useful for drivers that read the state of several parameters in
+        a single instrument query and want to populate the individual parameter
+        caches from that bulk reply without issuing a ``get`` per parameter.
+
+        Args:
+            raw_value: new raw value for the parameter (as returned by the
+                instrument)
+
+        """
         value = self._parameter._from_raw_value_to_value(raw_value)
         if self._parameter._validate_on_get:
             self._parameter.validate(value)
         self._update_with(value=value, raw_value=raw_value)
+
+    def _set_from_raw_value(self, raw_value: ParamRawDataType) -> None:
+        # Retained for backwards compatibility with code written before
+        # set_from_raw_value() was made public.
+        self.set_from_raw_value(raw_value)
 
     def _update_with(
         self,

@@ -286,7 +286,10 @@ class Station(Metadatable, DelegateAttributes):
             if not (isinstance(component, Parameter) and component.snapshot_exclude):
                 component.snapshot(update="All" if update_snapshot else "Never")
         except Exception:
-            pass
+            log.exception(
+                "Failed to snapshot component %s when adding it to the station",
+                component,
+            )
         if name is None:
             name = getattr(component, "name", f"component{len(self.components)}")
         namestr = str(name)
@@ -784,7 +787,7 @@ class Station(Metadatable, DelegateAttributes):
                     ) from None
                 if isinstance(attribute, (InstrumentModule, ChannelTuple)):
                     if not isinstance(value, Mapping):
-                        raise RuntimeError(
+                        raise RuntimeError(  # noqa: TRY004
                             f"Cannot configure `{child_path}`: `{name}` on "
                             f"{component!r} is a submodule or channel "
                             f"list/tuple, so its configuration must be a "
@@ -795,7 +798,7 @@ class Station(Metadatable, DelegateAttributes):
                     set_component_parameters_from_dict(attribute, value, child_path)
                 elif isinstance(attribute, ParameterBase):
                     if not isinstance(value, Mapping):
-                        raise RuntimeError(
+                        raise RuntimeError(  # noqa: TRY004
                             f"Cannot configure parameter `{child_path}`: its "
                             f"settings must be a mapping of parameter "
                             f"attributes (e.g. `initial_value: ...`), but got "
@@ -803,7 +806,7 @@ class Station(Metadatable, DelegateAttributes):
                         )
                     setup_parameter_from_dict(attribute, value)
                 else:
-                    raise RuntimeError(
+                    raise RuntimeError(  # noqa: TRY004
                         f"Cannot configure `{child_path}`: `{name}` on "
                         f"{component!r} is neither a parameter nor a "
                         f"submodule/channel list/tuple but a "
@@ -828,7 +831,7 @@ class Station(Metadatable, DelegateAttributes):
                 else resolve_instrument_identifier(instr, ".".join(parts[:-1]))
             )
             if isinstance(local_instr, ChannelTuple):
-                raise RuntimeError("A parameter cannot be added to an ChannelTuple")
+                raise RuntimeError("A parameter cannot be added to an ChannelTuple")  # noqa: TRY004
             add_parameter_from_dict(local_instr, parts[-1], options)
         component_settings = {
             name: settings
@@ -949,6 +952,11 @@ def update_config_schema(
                     importlib.import_module(s.name), inspect.isclass
                 )
             except Exception:
+                log.exception(
+                    "Failed to import submodule %s from module %s",
+                    s.name,
+                    module.__name__,
+                )
                 ms = []
             new_members = [
                 f"{instr[1].__module__}.{instr[1].__name__}"

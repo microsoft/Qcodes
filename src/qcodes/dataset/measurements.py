@@ -573,7 +573,7 @@ class Runner:
         self.station = station
         self._interdependencies = interdeps
         self._shapes: Shapes | None = shapes
-        self.name = name if name else "results"
+        self.name = name or "results"
         self._parent_datasets = parent_datasets
         self._extra_log_info = extra_log_info
         self._write_in_background = write_in_background
@@ -854,7 +854,7 @@ class Measurement:
     @write_period.setter
     def write_period(self, wp: float) -> None:
         if not isinstance(wp, Number):
-            raise ValueError("The write period must be a number (of seconds).")
+            raise ValueError("The write period must be a number (of seconds).")  # noqa: TRY004
         wp_float = float(wp)
         if wp_float < 1e-3:
             raise ValueError("The write period must be at least 1 ms.")
@@ -1267,7 +1267,7 @@ class Measurement:
         my_setpoints = list(setpoints) if setpoints else []
         for sp in parameter.setpoints:
             if not isinstance(sp, Parameter):
-                raise RuntimeError(
+                raise RuntimeError(  # noqa: TRY004
                     "The setpoints of a ParameterWithSetpoints must be a Parameter"
                 )
             spname = sp.register_name
@@ -1400,7 +1400,7 @@ class Measurement:
         elif isinstance(parameter, str):
             param_name = parameter
         else:
-            raise ValueError(
+            raise ValueError(  # noqa: TRY004
                 "Wrong input type. Must be a QCoDeS parameter or"
                 " the name (a string) of a parameter."
             )

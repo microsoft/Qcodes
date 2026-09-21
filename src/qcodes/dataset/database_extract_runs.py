@@ -33,7 +33,7 @@ from qcodes.dataset.sqlite.queries import (
 if TYPE_CHECKING:
     from qcodes.dataset.data_set_protocol import DataSetProtocol
 
-_LOG = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 _TRACER = trace.get_tracer(__name__)
 
 
@@ -219,9 +219,9 @@ def export_datasets_and_create_metadata_db(
 
     with closing(connect(source_db_path)) as source_con:
         run_ids = sorted(get_runs(source_con))
-        _LOG.debug(f"Found {len(run_ids)} datasets to process")
+        _LOGGER.debug(f"Found {len(run_ids)} datasets to process")
         if not run_ids:
-            _LOG.warning(
+            _LOGGER.warning(
                 f"No datasets found in source database {source_db_path}, nothing to export"
             )
             return {}
@@ -246,7 +246,7 @@ def export_datasets_and_create_metadata_db(
     except Exception as e:
         raise RuntimeError(f"Failed to create export directory {export_path}") from e
 
-    _LOG.info(
+    _LOGGER.info(
         f"Starting NetCDF export process from {source_db_path} to {export_path}, "
         f"and creating metadata-only database file {target_db_path}."
     )
@@ -279,7 +279,7 @@ def export_datasets_and_create_metadata_db(
                         )
 
                     processed_experiments[exp_id] = target_exp_id
-                    _LOG.info(
+                    _LOGGER.info(
                         f"Created experiment `{exp_attrs['name']}` on `{exp_attrs['sample_name']}` with ID {target_exp_id} in target database"
                     )
                 else:
@@ -292,10 +292,10 @@ def export_datasets_and_create_metadata_db(
                 result_status[run_id] = status
 
             except Exception:
-                _LOG.exception(f"Failed to process dataset {run_id}")
+                _LOGGER.exception(f"Failed to process dataset {run_id}")
                 result_status[run_id] = "failed"
 
-    _LOG.info("Exporting complete.")
+    _LOGGER.info("Exporting complete.")
     return result_status
 
 
@@ -331,16 +331,16 @@ def _process_single_dataset(
         existing_path = Path(existing_netcdf_path)
         # Check if the existing export path matches the desired export path
         if existing_path.exists() and existing_path.parent == export_path:
-            _LOG.debug(
+            _LOGGER.debug(
                 f"Dataset {run_id} already exported to NetCDF at {existing_netcdf_path}"
             )
             netcdf_export_path = existing_netcdf_path
         else:
-            _LOG.info(
+            _LOGGER.info(
                 f"Dataset {run_id} was exported to different location, re-exporting to {export_path}"
             )
     else:
-        _LOG.debug(f"Attempting to export dataset {run_id} to NetCDF")
+        _LOGGER.debug(f"Attempting to export dataset {run_id} to NetCDF")
 
     if netcdf_export_path is None:
         try:
@@ -352,19 +352,19 @@ def _process_single_dataset(
                     "Export appears to have succeeded but no path was recorded."
                 )
         except Exception:
-            _LOG.exception(
+            _LOGGER.exception(
                 f"Failed to export dataset {run_id} to NetCDF, copying as-is"
             )
             return _copy_dataset_as_is(dataset, source_conn, target_conn, target_exp_id)
 
-    _LOG.debug(f"Dataset {run_id} available as NetCDF at {netcdf_export_path}")
+    _LOGGER.debug(f"Dataset {run_id} available as NetCDF at {netcdf_export_path}")
 
     netcdf_dataset = load_from_netcdf(
         netcdf_export_path, path_to_db=target_conn.path_to_dbfile
     )
     netcdf_dataset.write_metadata_to_db()
 
-    _LOG.info(
+    _LOGGER.info(
         f"Successfully wrote dataset metadata of {run_id} to {target_conn.path_to_dbfile}"
     )
 
@@ -383,8 +383,8 @@ def _copy_dataset_as_is(
             _extract_single_dataset_into_db(
                 dataset_obj, target_conn_atomic, target_exp_id
             )
-        _LOG.debug(f"Successfully copied dataset {dataset.run_id} as-is")
+        _LOGGER.debug(f"Successfully copied dataset {dataset.run_id} as-is")
         return "copied_as_is"
     except Exception:
-        _LOG.exception(f"Failed to copy dataset {dataset.run_id} as-is")
+        _LOGGER.exception(f"Failed to copy dataset {dataset.run_id} as-is")
         return "failed"

@@ -290,7 +290,7 @@ class Group:
             )
         self.instrument.write(command_str)
         for name, p in list(self.parameters.items()):
-            p.cache._set_from_raw_value(calling_dict[name])
+            p.cache.set_from_raw_value(calling_dict[name])
 
     def update(self) -> None:
         """
@@ -313,7 +313,7 @@ class Group:
         )
         ret = self.get_parser(self.instrument.ask(get_command))
         for name, p in list(self.parameters.items()):
-            p.cache._set_from_raw_value(ret[name])
+            p.cache.set_from_raw_value(ret[name])
 
     @property
     def parameters(self) -> OrderedDict[str, GroupParameter]:

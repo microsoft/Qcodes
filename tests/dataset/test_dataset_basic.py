@@ -1,4 +1,5 @@
 import io
+import logging
 import random
 import re
 from copy import copy
@@ -37,7 +38,10 @@ from tests.dataset.test_links import generate_some_links
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from pytest_mock import MockerFixture
+
     from qcodes.dataset.experiment_container import Experiment
+    from qcodes.dataset.sqlite.query_helpers import VALUE
 
 n_experiments = 0
 
@@ -281,13 +285,13 @@ def test_create_dataset_from_non_existing_run_id(non_existing_run_id) -> None:
 
 
 def test_create_dataset_pass_both_connection_and_path_to_db(experiment) -> None:
+    some_valid_connection = experiment.conn
     with pytest.raises(
         ValueError,
         match=re.escape(
             "Received BOTH conn and path_to_db. Please provide only one or the other."
         ),
     ):
-        some_valid_connection = experiment.conn
         _ = DataSet(path_to_db="some valid path", conn=some_valid_connection)
 
 
@@ -1427,3 +1431,38 @@ def test_create_dataset_with_readonly_throws_error() -> None:
 @pytest.mark.usefixtures("experiment")
 def test_create_dataset_with_conn_ignores_readonly(experiment: "Experiment") -> None:
     DataSet(conn=experiment.conn, read_only=True)
+
+
+@pytest.mark.parametrize("write_in_background", [True, False])
+def test_flush_data_to_database_logs_failure(
+    dataset: DataSet,
+    mocker: "MockerFixture",
+    caplog: pytest.LogCaptureFixture,
+    write_in_background: bool,
+) -> None:
+    """A failing write is logged with a traceback and does not drop the results."""
+    xparam = ParamSpecBase("x", "numeric")
+    idps = InterDependencies_(standalones=(xparam,))
+    dataset.set_interdependencies(idps)
+    dataset.mark_started()
+
+    mocker.patch.object(
+        dataset._writer_status, "write_in_background", write_in_background
+    )
+    mocker.patch.object(
+        dataset, "add_results", side_effect=RuntimeError("could not write")
+    )
+    results: list[dict[str, VALUE]] = [{"x": 1}]
+    dataset._results = results
+
+    with caplog.at_level(logging.ERROR, logger="qcodes.dataset.data_set"):
+        dataset._flush_data_to_database()
+
+    expected_message = (
+        "Could not enqueue result"
+        if write_in_background
+        else "Could not commit to database"
+    )
+    assert expected_message in caplog.text
+    assert "could not write" in caplog.text
+    assert dataset._results == results

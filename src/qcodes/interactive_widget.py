@@ -263,7 +263,7 @@ def _do_in_tab(
                         display(nested_dict_browser(snapshot))
                     else:
                         print("This dataset has no snapshot")
-            except Exception:
+            except Exception:  # noqa: BLE001 the widget callback must never raise
                 traceback.print_exc()
         tab.selected_index = i
 

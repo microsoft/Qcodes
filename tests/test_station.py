@@ -714,6 +714,26 @@ instruments:
     assert mock.A.voltage.source is mock.A.temperature
 
 
+def test_add_parameter_to_channel_tuple_raises() -> None:
+    """``add_parameters`` cannot target a channel list/tuple, only an
+    instrument or a submodule of it."""
+    st = station_from_config_str(
+        """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    add_parameters:
+      channels.temperature_alias:
+        source: A.temperature
+    """
+    )
+    with pytest.raises(
+        RuntimeError, match="A parameter cannot be added to an ChannelTuple"
+    ):
+        st.load_instrument("mock")
+
+
 def test_setting_channel_parameter() -> None:
     """The ``parameters`` section resolves dotted paths to a parameter on a
     channel list/tuple; the verbose ``initial_value`` mapping sets it on every
@@ -1027,16 +1047,18 @@ invalid_keyword:
 
 
 def test_config_validation_failure_on_file() -> None:
-    with pytest.raises(ValidationWarning):
-        test_config = """
+    test_config = """
 instruments:
   mock:
     driver: qcodes.instrument_drivers.mock_instruments.DummyInstrument
 invalid_keyword:
   more_errors: 42
     """
-        with config_file_context(test_config) as filename:
-            Station(config_file=filename)
+    with (
+        pytest.raises(ValidationWarning),
+        config_file_context(test_config) as filename,
+    ):
+        Station(config_file=filename)
 
 
 def test_config_validation_comprehensive_config() -> None:

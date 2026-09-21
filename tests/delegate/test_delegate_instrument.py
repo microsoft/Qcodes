@@ -1,7 +1,10 @@
 from unittest.mock import patch
 
+import pytest
 from numpy.testing import assert_almost_equal
 
+from qcodes.instrument import Instrument
+from qcodes.instrument.delegate import DelegateInstrument
 from qcodes.instrument_drivers.mock_instruments import MockField
 
 
@@ -51,3 +54,25 @@ def test_delegate_channel_instrument(station, chip_config) -> None:
     assert state.smc == "off"
     assert state.bus == "off"
     assert state.gnd == "off"
+
+
+def test_invalid_parameter_paths_raise(station, request: pytest.FixtureRequest) -> None:
+    """A parameter must map to either a single path or a sequence of paths."""
+    name = "delegate_with_invalid_paths"
+
+    def close_partially_constructed_instrument() -> None:
+        # the instrument is registered by ``Instrument.__init__`` before the
+        # parameter paths are validated, so it outlives the failed construction
+        if Instrument.exist(name):
+            Instrument.find_instrument(name).close()
+
+    request.addfinalizer(close_partially_constructed_instrument)
+
+    with pytest.raises(
+        ValueError, match="Parameter paths should be either a string or Sequence"
+    ):
+        DelegateInstrument(
+            name=name,
+            station=station,
+            parameters={"X": 42},  # type: ignore[dict-item]
+        )

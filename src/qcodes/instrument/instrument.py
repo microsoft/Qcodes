@@ -152,7 +152,11 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         """Close the instrument and remove its instance record."""
         try:
             self.close()
-        except BaseException:
+        except BaseException:  # noqa: BLE001, S110
+            # we want to avoid __del__ raising any exceptions
+            # it might be possible to avoid this see
+            # https://docs.python.org/3/reference/datamodel.html#object.__del
+            # however that would require careful testing.
             pass
 
     def close(self) -> None:

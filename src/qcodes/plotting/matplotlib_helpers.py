@@ -16,7 +16,7 @@ from .auto_range import DEFAULT_PERCENTILE, auto_range_iqr
 DEFAULT_COLOR_OVER = "Magenta"
 DEFAULT_COLOR_UNDER = "Cyan"
 
-_LOG = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 _EXTEND_TYPE = Literal["neither", "both", "min", "max"]
 
@@ -93,7 +93,7 @@ def apply_color_scale_limits(
     # browse the input data and make sure that `data_lim` and `new_lim` are
     # available
     if not isinstance(colorbar.mappable, matplotlib.collections.QuadMesh):
-        raise RuntimeError(
+        raise RuntimeError(  # noqa: TRY004
             "Can only scale mesh data, but received "
             f'"{type(colorbar.mappable)}" instead'
         )
@@ -215,7 +215,7 @@ def auto_color_scale_from_config(
     """
 
     if colorbar is None:
-        _LOG.warning(
+        _LOGGER.warning(
             '"auto_color_scale_from_config" did not receive a colorbar '
             "for scaling. Are you trying to scale a plot without "
             "colorbar?"

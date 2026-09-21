@@ -789,7 +789,7 @@ def test_exception_happened_during_measurement_is_stored_in_dataset_metadata(
 
     dataset = None
     # `pytest.raises`` is used here instead of custom try-except for convenience
-    with (
+    with (  # noqa: PT012
         pytest.raises(SomeMeasurementException, match="foo") as e,
         meas.run() as datasaver,
     ):

@@ -21,7 +21,7 @@ def test_error_caused_by_try_catch() -> None:
     Test that `error_caused_by` will only match the root error and not
     the error raised for errors. For errors reraised in a try except chain.
     """
-    with pytest.raises(KeyError) as execinfo:
+    with pytest.raises(KeyError) as execinfo:  # noqa: PT012
         try:
             raise ValueError("bar")
         except ValueError as e:
@@ -37,7 +37,7 @@ def test_error_caused_by_3_level() -> None:
     of 3 exceptions
     """
 
-    with pytest.raises(RuntimeError) as execinfo:
+    with pytest.raises(RuntimeError) as execinfo:  # noqa: PT012
         try:
             raise ValueError("bar")
         except ValueError as e:

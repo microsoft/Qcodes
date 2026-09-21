@@ -1051,7 +1051,7 @@ class SnapShotTestInstrument(DummyBase):
 
         # dict to keep track of how many time 'get' has been called on each
         # parameter. Useful for testing params_to_skip_update in the snapshot
-        self._get_calls = {p: 0 for p in params}
+        self._get_calls = dict.fromkeys(params, 0)
 
         for p_name in params:
             self.add_parameter(
@@ -1362,7 +1362,7 @@ class MockCustomChannel(InstrumentChannel):
         elif isinstance(channel, InstrumentChannel):
             self._dac_channel = channel
         else:
-            raise ValueError('Unknown input type for "channel".')
+            raise ValueError('Unknown input type for "channel".')  # noqa: TRY004
 
         super().__init__(parent, name, **kwargs)
 
