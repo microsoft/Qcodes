@@ -13,7 +13,9 @@ class TestWeinschel8320(DriverTestCase[Weinschel8320]):
 
     def test_firmware_version(self) -> None:
         v = self.instrument.IDN.get()
-        self.assertTrue(v.startswith("API Weinschel, 8320,"))
+        self.assertIsInstance(v, dict)
+        self.assertTrue(v["vendor"] == "API Weinschel")
+        self.assertTrue(v["model"] == "8320")
 
     def test_attenuation(self) -> None:
         curr_val = self.instrument.attenuation.get()
