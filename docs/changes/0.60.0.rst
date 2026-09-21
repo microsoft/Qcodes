@@ -1,0 +1,109 @@
+QCoDeS 0.60.0 (2026-09-21)
+==========================
+
+Breaking Changes:
+-----------------
+
+- Fixed applying a scalar ``scale`` or ``offset`` when setting a parameter to a
+  sequence such as a ``list`` or a ``tuple``. Multiplying a sequence by a number
+  repeats it rather than scaling its elements, so ``param([10, 20])`` with
+  ``param.scale = 2`` used to set the raw value to ``[10, 20, 10, 20]``, and a
+  scalar ``offset`` raised a ``TypeError``. Sequences are now converted element
+  wise, matching how the values are converted back when the parameter is read.
+  Numpy arrays are unaffected since they scale and offset element wise already.
+
+  Additionally, applying a ``scale`` or ``offset`` that does not match the length
+  of the value now raises a ``ValueError``. Previously the value and the
+  scale/offset were zipped together without checking their lengths, so a mismatch
+  silently dropped the extra elements, e.g. setting a parameter with
+  ``scale = [2, 4]`` to ``[10, 20, 30]`` used to set the raw value to ``(20, 80)``.
+  See :pr:`8450`. (:pr:`8451`)
+
+
+Improved:
+---------
+
+- The ``colorbars`` argument of :func:`.plot_dataset` and :func:`.plot_by_id` now
+  accepts a sequence that may contain ``None``. Both functions return a list of
+  colorbars in which the entries for 1D plots are ``None``, so passing the result
+  back in, which is how you plot into the same axes again, did not match the
+  declared argument type. A sequence of colorbars is still accepted. (:pr:`8388`)
+- The example notebooks have been brought up to date so that they import names
+  that actually exist and follow the documented import style.
+
+  The notebooks no longer use the deprecated short hand aliases in the top level
+  ``qcodes`` namespace, such as ``qcodes.Station`` and ``qcodes.Measurement``.
+  They import the names from their respective submodules instead, which is what
+  the deprecation warning asks users to do and what keeps type information. Driver
+  classes are now imported from the documented package level, for example ``from
+  qcodes.instrument_drivers.stanford_research import SR830`` rather than reaching
+  into the module that happens to define the class. Most notebooks already did
+  this.
+
+  Several notebooks previously failed at their import cell. ``Example
+  Measurements with Real Instruments`` used ``Infiniium`` and
+  ``WaveformGenerator_33XXX``, which were renamed to ``KeysightInfiniium`` and
+  ``Keysight33xxx``; it now uses ``KeysightInfiniium`` and the model specific
+  ``Keysight33522B``, matching the instrument the example connects to. The
+  ``Tektronix DPO 72004C`` notebook imported ``TekronixDPOWaveform``, which is a
+  misspelling of ``TektronixDPOWaveform``. Two notebooks imported ``Measure`` from
+  ``qcodes.measure`` and ``MatPlot`` from ``qcodes.plots.qcmatplotlib``; those
+  modules moved to the ``qcodes_loop`` package and the deprecated aliases in
+  QCoDeS have since been removed, so they now import from ``qcodes_loop``, which
+  is installed by the ``loop`` extra.
+
+  The Tektronix AWG5208 broadbean example notebook has also been updated.
+  ``Sequence.plotSequence`` no longer exists in broadbean, so it now uses
+  ``broadbean.plotting.plotter``, and ``makeSEQXFileFromForgedSequence`` was
+  renamed to ``make_SEQX_from_forged_sequence`` when the driver moved to snake
+  case. Both cells raised ``AttributeError`` before this. (:pr:`8442`)
+
+
+New:
+----
+
+- The station (YAML) configuration file now supports configuring parameters on
+  channel lists/tuples and submodules of an instrument. In addition to the
+  reserved keys of an instrument section (``type``, ``init``, ``address``,
+  ``port``, ``enable_forced_reconnect``, ``parameters`` and ``add_parameters``),
+  a section may now contain keys naming a submodule or channel list/tuple of the
+  instrument, mapped to parameter settings (which can be nested to reach
+  submodules of submodules). Parameter settings use the same form as the
+  ``parameters`` section (e.g. ``initial_value``). Configuring a parameter of a
+  channel list/tuple applies it to every channel in the container, exactly like
+  calling ``instrument.channels.myparam(27)`` in code. For example::
+
+      instruments:
+        instr1:
+          type: ...
+          mychannels:
+            myparam:
+              initial_value: 27
+
+  sets ``myparam`` to ``27`` on every channel of the ``mychannels`` channel
+  list/tuple of ``instr1``. This is equivalent to using a dotted path in the
+  ``parameters`` section::
+
+      instruments:
+        instr1:
+          type: ...
+          parameters:
+            mychannels.myparam:
+              initial_value: 27
+
+  (:pr:`8440`)
+
+
+Under the hood:
+---------------
+
+- The duck typed scale and offset conversions in ``ParameterBase`` have been
+  factored out into dedicated module level helpers. The conversions assume the
+  data type is numeric and rely on catching ``TypeError``, which does not fit the
+  generic parameter data type. Giving them an explicit boundary lets the rest of
+  the class stay properly typed and removes twelve type checker suppressions.
+  There is no change in behaviour. (:pr:`8363`)
+- ``qcodes.utils.numpy_utils`` now imports ``VisibleDeprecationWarning`` from
+  ``numpy.exceptions`` unconditionally. The fallback to importing it from the top
+  level ``numpy`` namespace was for numpy older than the minimum supported
+  version, so it could never be taken. (:pr:`8444`)
