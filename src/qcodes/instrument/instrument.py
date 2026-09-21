@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from typing import Self, Unpack
 
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
+    from qcodes.parameters.parameter import Parameter
 
 log = logging.getLogger(__name__)
 
@@ -68,7 +69,11 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
 
         super().__init__(name=name, **kwargs)
 
-        self.IDN = self.add_parameter("IDN", get_cmd=self.get_idn, vals=Anything())
+        # the data type is strictly speaking dict[str, str | None]
+        # but we omit the | None since otherwise a lot of asserts would be required
+        self.IDN: Parameter[dict[str, str], Self] = self.add_parameter(
+            "IDN", get_cmd=self.get_idn, vals=Anything()
+        )
         """
         Standard IDN parameter, which queries the instrument for its ID
         """
