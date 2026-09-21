@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import collections
 import io
+import json
 import logging
 import traceback as tb_module
 import warnings
@@ -54,7 +55,7 @@ from qcodes.parameters import (
     ParamSpecBase,
 )
 from qcodes.station import Station
-from qcodes.utils import DelayedKeyboardInterrupt
+from qcodes.utils import DelayedKeyboardInterrupt, NumpyJSONEncoder
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -550,10 +551,13 @@ class Runner:
         dataset_class: DataSetType = DataSetType.DataSet,
         parent_span: trace.Span | None = None,
         registered_parameters: Sequence[ParameterBase] = (),
+        snapshot_at_end: bool | None = None,
     ) -> None:
         if in_memory_cache is None:
             in_memory_cache = qc.config.dataset.in_memory_cache
             in_memory_cache = cast("bool", in_memory_cache)
+        if snapshot_at_end is None:
+            snapshot_at_end = cast("bool", qc.config.dataset.snapshot_at_end)
         if interdeps is None:
             interdeps = InterDependencies_()
 
@@ -581,6 +585,7 @@ class Runner:
         self._parent_span = parent_span
         self.ds: DataSetProtocol
         self._registered_parameters = registered_parameters
+        self._snapshot_at_end = snapshot_at_end
 
     @staticmethod
     def _calculate_write_period(
@@ -601,8 +606,51 @@ class Runner:
             write_period = cast("float", qc.config.dataset.write_period)
         return float(write_period)
 
-    def __enter__(self) -> DataSaver:
-        # multiple runners can be active at the same time.
+    def _build_snapshot(self) -> dict[str, Any]:
+        """
+        Build a snapshot of the station (if any) and of the parameters
+        registered with this measurement.
+        """
+        if self.station is None:
+            station = Station.default
+        else:
+            station = self.station
+
+        snapshot: dict[str, Any] = {}
+        if station is not None:
+            snapshot["station"] = station.snapshot(update="Only_invalid")
+        if self._registered_parameters is not None:
+            parameter_snapshot = {
+                param.short_name: param.snapshot(update="Never")
+                for param in self._registered_parameters
+            }
+            parameter_snapshot.update(
+                {
+                    param.register_name: param.snapshot(update="Never")
+                    for param in self._registered_parameters
+                }
+            )
+            snapshot["parameters"] = parameter_snapshot
+        return snapshot
+
+    def _add_end_snapshot(self) -> None:
+        """
+        Snapshot the station at the end of the measurement and store it on the
+        dataset. Failures are logged but never abort the measurement.
+        """
+        try:
+            snapshot = self._build_snapshot()
+            self.ds.add_end_snapshot(json.dumps(snapshot, cls=NumpyJSONEncoder))
+        except Exception:
+            log.exception(
+                "Could not create a snapshot at the end of the measurement "
+                "with guid: %s",
+                self.ds.guid,
+            )
+
+    def __enter__(
+        self,
+    ) -> DataSaver:  # multiple runners can be active at the same time.
         # If we just activate them in order the first one
         # would be the parent of the next one but that is wrong
         # since they are siblings that should coexist with the
@@ -659,27 +707,7 @@ class Runner:
             raise RuntimeError("Does not support any other dataset classes")
 
         # .. and give the dataset a snapshot as metadata
-        if self.station is None:
-            station = Station.default
-        else:
-            station = self.station
-
-        if station is not None:
-            snapshot = {"station": station.snapshot(update="Only_invalid")}
-        else:
-            snapshot = {}
-        if self._registered_parameters is not None:
-            parameter_snapshot = {
-                param.short_name: param.snapshot(update="Never")
-                for param in self._registered_parameters
-            }
-            parameter_snapshot.update(
-                {
-                    param.register_name: param.snapshot(update="Never")
-                    for param in self._registered_parameters
-                }
-            )
-            snapshot["parameters"] = parameter_snapshot
+        snapshot = self._build_snapshot()
 
         self.ds.prepare(
             snapshot=snapshot,
@@ -748,6 +776,9 @@ class Runner:
             # perform the "teardown" events
             for func, args in self.exitactions:
                 func(*args)
+
+            if self._snapshot_at_end:
+                self._add_end_snapshot()
 
             if exception_type:
                 # if an exception happened during the measurement,
@@ -1509,6 +1540,7 @@ class Measurement:
         in_memory_cache: bool | None = True,
         dataset_class: DataSetType = DataSetType.DataSet,
         parent_span: trace.Span | None = None,
+        snapshot_at_end: bool | None = None,
     ) -> Runner:
         """
         Returns the context manager for the experimental run
@@ -1526,6 +1558,10 @@ class Measurement:
                 with.
             parent_span: An optional opentelemetry span that this should be registered a
                 a child of if using opentelemetry.
+            snapshot_at_end: Should a snapshot of the station be taken at the end
+                of the measurement in addition to the one taken at the start.
+                By default the setting is read from the ``snapshot_at_end`` key
+                in the ``dataset`` section of the ``qcodesrc.json`` config file.
 
         """
         if write_in_background is None:
@@ -1547,6 +1583,7 @@ class Measurement:
             dataset_class=dataset_class,
             parent_span=parent_span,
             registered_parameters=tuple(self._registered_parameters),
+            snapshot_at_end=snapshot_at_end,
         )
 
 

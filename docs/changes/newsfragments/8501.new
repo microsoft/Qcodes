@@ -1,0 +1,18 @@
+In addition to the snapshot taken when a measurement starts, QCoDeS now also
+takes a snapshot of the station when the measurement ends. The end snapshot is
+taken with the same settings as the start snapshot (``update="Only_invalid"``)
+and is stored in the metadata of the dataset under the ``end_snapshot`` key. It
+is available as the new ``end_snapshot`` property of the dataset. Snapshotting
+at the end can be disabled for a single measurement by passing
+``snapshot_at_end=False`` to ``Measurement.run``, or globally via the new
+``snapshot_at_end`` key in the ``dataset`` section of the QCoDeS config.
+
+Two new functions, ``qcodes.dataset.diff_start_end_snapshot`` and
+``qcodes.dataset.diff_start_end_snapshot_by_id``, return the differences
+between the parameter values of the start and the end snapshot of a dataset as
+a ``ParameterDiff``, complementing the existing
+``qcodes.dataset.diff_param_snapshots`` and
+``qcodes.dataset.diff_param_values_by_id`` which compare two datasets and which
+are now exported from ``qcodes.dataset``. A ``ParameterDiff`` can be rendered in
+a human-readable form with the new ``qcodes.utils.format_parameter_diff``, which
+is also used when printing a ``ParameterDiff``.
