@@ -107,3 +107,8 @@ Under the hood:
   ``numpy.exceptions`` unconditionally. The fallback to importing it from the top
   level ``numpy`` namespace was for numpy older than the minimum supported
   version, so it could never be taken. (:pr:`8444`)
+- Exporting datasets with array-valued parameters to xarray now preserves the
+  acquired data ordering for inferred-from relationships. The pandas-based
+  exporter propagates indexing to inferred coordinates, while the direct xarray
+  exporter derives axis values from the multidimensional data instead of
+  assuming that shape metadata implies their ordering. (:pr:`8445`)
