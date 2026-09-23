@@ -66,7 +66,7 @@ dask==2026.8.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-debugpy==1.8.21
+debugpy==1.8.22
     # via ipykernel
 decorator==5.3.1
     # via ipython
