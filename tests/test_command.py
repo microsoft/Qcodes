@@ -116,13 +116,9 @@ def test_cmd_function_2() -> None:
         return a**b
 
     # input parsing
-    # since the Command class is not generic
-    # in the input type this does not understand
-    # that this command should only be called with
-    # float/int. We ignore this below
     cmd: Command[float, float] = Command(
         1,
-        abs,  # pyright: ignore
+        abs,
         input_parser=lambda x: x + 1,
     )
     assert cmd(-10) == 9
@@ -130,9 +126,9 @@ def test_cmd_function_2() -> None:
     # input *and* output parsing
     cmd = Command(
         1,
-        abs,  # pyright: ignore
+        abs,
         input_parser=lambda x: x + 2,
-        output_parser=lambda y: 3 * y,  # pyright: ignore
+        output_parser=lambda y: 3 * y,
     )
     assert cmd(-6) == 12
 

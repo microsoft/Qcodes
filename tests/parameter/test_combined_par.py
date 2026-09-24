@@ -67,7 +67,7 @@ def test_set(parameters: list[ManualParameter], mocker: MockerFixture) -> None:
     for i in sweep_values:
         sweep_values.set(i)
 
-    mock_method.assert_has_calls([mocker.call(0), mocker.call(1)])  # pyright: ignore
+    mock_method.assert_has_calls([mocker.call(0), mocker.call(1)])  # pyright: ignore[reportArgumentType]
 
 
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))

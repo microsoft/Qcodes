@@ -51,7 +51,7 @@ def smu_sampling_measurement(
         else:
             return original_ask(cmd)
 
-    smu_sm.root_instrument.ask = Mock(spec_set=smu.root_instrument.ask)  # type: ignore
+    smu_sm.root_instrument.ask = Mock(spec_set=smu.root_instrument.ask)  # pyright: ignore[reportAttributeAccessIssue]
     smu_sm.root_instrument.ask.side_effect = return_predefined_data_on_xe
     return smu_sm, status, channel, type_
 

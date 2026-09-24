@@ -214,7 +214,7 @@ def test_append_channel_wrong_type_raises(dci_with_list: DCIWithList) -> None:
 
     channel = EmptyChannel(dci_with_list, "foo")
     with pytest.raises(TypeError, match="All items in a channel list must"):
-        dci_with_list.channels.append(channel)  # type: ignore
+        dci_with_list.channels.append(channel)  # pyright: ignore[reportArgumentType]
 
     assert len(dci_with_list.channels) == n_channels
 
@@ -244,7 +244,7 @@ def test_extend_wrong_type_raises(dci_with_list: DCIWithList) -> None:
         TypeError,
         match=re.escape("All items in a channel list must be of the same type."),
     ):
-        dci_with_list.channels.extend(channels)  # type: ignore
+        dci_with_list.channels.extend(channels)  # pyright: ignore[reportArgumentType]
 
 
 def test_extend_locked_list_raises(dci_with_list: DCIWithList) -> None:
@@ -252,7 +252,7 @@ def test_extend_locked_list_raises(dci_with_list: DCIWithList) -> None:
     names = ("foo", "bar", "foobar")
     channels = tuple(EmptyChannel(dci_with_list, "Chan" + name) for name in names)
     with pytest.raises(AttributeError, match="Cannot extend a locked channel list"):
-        dci_with_list.channels.extend(channels)  # type: ignore
+        dci_with_list.channels.extend(channels)  # pyright: ignore[reportArgumentType]
 
 
 def test_extend_then_remove(dci_with_list: DCIWithList) -> None:
@@ -292,7 +292,7 @@ def test_insert_channel(dci_with_list: DCIWithList) -> None:
 
 def test_insert_channel_wrong_type_raises(dci_with_list: DCIWithList) -> None:
     with pytest.raises(TypeError, match="All items in a channel list"):
-        dci_with_list.channels.insert(1, EmptyChannel(parent=dci_with_list, name="foo"))  # type: ignore
+        dci_with_list.channels.insert(1, EmptyChannel(parent=dci_with_list, name="foo"))  # pyright: ignore[reportArgumentType]
 
 
 def test_channel_type_can_be_inferred(
@@ -308,7 +308,7 @@ def test_add_none_channel_tuple_to_channel_tuple_raises(
     dci: DummyChannelInstrument,
 ) -> None:
     with pytest.raises(TypeError, match="Can't add objects of type"):
-        _ = dci.channels + [1]  # type: ignore  # noqa: RUF005
+        _ = dci.channels + [1]  # pyright: ignore[reportOperatorIssue]  # noqa: RUF005
 
 
 def test_add_channel_tuples_of_different_types_raises(

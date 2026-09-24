@@ -452,7 +452,7 @@ class ComplexNumbers(Validator[complex | np.complexfloating[Any, Any]]):
         """
         # for some reason pyright does not think numpy complex
         # types as valid types here
-        if not isinstance(value, self.validtypes):  # pyright: ignore
+        if not isinstance(value, self.validtypes):  # pyright: ignore[reportArgumentType]
             raise TypeError(f"{value!r} is not complex; {context}")
 
     is_numeric = False  # there is no meaningful way to sweep a complex number
