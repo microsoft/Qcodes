@@ -37,7 +37,7 @@ def test_combine_with_deprecated_units_kwarg(
         multipar = combine(*parameters, name="combined", units="V")
 
     assert "`units` is deprecated" in caplog.text
-    assert multipar.parameter.unit == "V"  # pyright: ignore[reportFunctionMemberAccess]
+    assert multipar.parameter.unit == "V"
 
 
 def test_sweep_bad_setpoints(parameters: list[ManualParameter]) -> None:

@@ -1,3 +1,8 @@
+# The clr module is only importable when pythonnet is installed via the
+# minicircuits_usb_spdt extra. Which pyright rules the ignore comments below
+# suppress therefore depends on whether pythonnet is installed, so the check for
+# superfluous ignore comments is disabled in this module.
+# pyright: reportUnnecessaryTypeIgnoreComment=false
 import os
 from typing import TYPE_CHECKING
 
