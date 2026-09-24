@@ -313,8 +313,6 @@ class ChannelTuple[InstrumentModuleType: "InstrumentModule"](
         name_parts.append(self.short_name)
         return name_parts
 
-    # the parameter obj should be called value but that would
-    # be an incompatible change
     def index(
         self,
         obj: InstrumentModuleType,
@@ -627,8 +625,6 @@ class ChannelTuple[InstrumentModuleType: "InstrumentModule"](
             chan.invalidate_cache()
 
 
-# in index method the parameter obj should be called value but that would
-# be an incompatible change
 class ChannelList[InstrumentModuleType: "InstrumentModule"](
     ChannelTuple[InstrumentModuleType], MutableSequence[InstrumentModuleType]
 ):
