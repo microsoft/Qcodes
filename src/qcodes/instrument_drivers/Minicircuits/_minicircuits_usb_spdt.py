@@ -60,7 +60,9 @@ class MiniCircuitsUsbSPDT(MiniCircuitsSPDTBase):
         # import .net exception so we can catch it below
         # we keep this import local so that the module can be imported
         # without a working .net install
-        clr.AddReference("System.IO")
+        # AddReference is dynamically added to clr so it is not visible to pyright
+        # the pyright: ignore is only required if pythonnet is installed.
+        clr.AddReference("System.IO")  # pyright: ignore[reportAttributeAccessIssue]
         from System.IO import (  # pyright: ignore[reportMissingImports]  # noqa: PLC0415
             FileNotFoundException,
         )
@@ -71,11 +73,15 @@ class MiniCircuitsUsbSPDT(MiniCircuitsSPDTBase):
         try:
             if driver_path is None:
                 try:
-                    clr.AddReference(self.PATH_TO_DRIVER)
+                    clr.AddReference(  # pyright: ignore[reportAttributeAccessIssue]
+                        self.PATH_TO_DRIVER
+                    )
                 except FileNotFoundError:
-                    clr.AddReference(self.PATH_TO_DRIVER_45)
+                    clr.AddReference(  # pyright: ignore[reportAttributeAccessIssue]
+                        self.PATH_TO_DRIVER_45
+                    )
             else:
-                clr.AddReference(driver_path)
+                clr.AddReference(driver_path)  # pyright: ignore[reportAttributeAccessIssue]
 
         except (ImportError, FileNotFoundException):
             raise ImportError(
