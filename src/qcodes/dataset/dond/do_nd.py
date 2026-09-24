@@ -790,7 +790,7 @@ def dond(
     )
 
     datasavers = []
-    interrupted: Callable[  # noqa E731
+    interrupted: Callable[  # noqa: E731
         [], KeyboardInterrupt | BreakConditionInterrupt | None
     ] = lambda: None
     try:
