@@ -31,12 +31,14 @@ from qcodes.dataset._raw_data_storage import (
 from qcodes.dataset.sqlite.connection import atomic, atomic_transaction
 from qcodes.dataset.sqlite.queries import (
     _check_if_table_found,
+    _create_run_table,
     get_parameter_data,
     get_raw_data_db_path_for_run,
     get_shaped_parameter_data_for_one_paramtree,
     set_raw_data_db_path_for_run,
 )
 from qcodes.dataset.sqlite.query_helpers import (
+    insert_column,
     insert_many_values,
     length,
     one,
@@ -61,16 +63,12 @@ class ResultsBackend:
     main database. A backend is owned by exactly one dataset.
 
     Subclasses customise only what differs: :attr:`results_conn`, the
-    ``setup_on_*`` / :meth:`close` lifecycle, :attr:`creates_results_table_in_main_db`,
+    ``setup_on_*`` / :meth:`create_results_table` / :meth:`close` lifecycle,
     :attr:`results_db_path`, and - if the read path differs -
     :meth:`read_parameter_data`. The results-table operations below are written
     against :attr:`results_conn`, so both backends reuse them unchanged (which
     is why :class:`MainDatabaseResultsBackend` needs no code of its own).
     """
-
-    #: Whether ``create_run`` should create the results table in the main
-    #: database for this dataset.
-    creates_results_table_in_main_db: bool = True
 
     def __init__(self, dataset: DataSet) -> None:
         self._dataset = dataset
@@ -86,10 +84,25 @@ class ResultsBackend:
         """Set up the backend for an existing run being loaded. No-op here."""
 
     def setup_on_new_run(self) -> None:
-        """Record backend bookkeeping for a newly created run. No-op here."""
+        """Record backend bookkeeping for a newly created run.
 
-    def setup_on_start(self) -> None:
-        """Create/open the results store when the run is started. No-op here."""
+        The default creates the (still empty) results table in the main
+        database so that the run is recognisable as a :class:`.DataSet` (rather
+        than a ``DataSetInMem``) even before it is started. Subclasses that keep
+        no results table in the main database override this.
+        """
+        _create_run_table(self.results_conn, self._dataset.table_name)
+
+    def create_results_table(self) -> None:
+        """Populate this backend's results table when the run is started.
+
+        The default adds the parameter columns to the table created in
+        :meth:`setup_on_new_run`; subclasses that store results elsewhere
+        override this (e.g. to create a per-dataset file).
+        """
+        ds = self._dataset
+        for spec in ds._rundescriber.interdeps.paramspecs:
+            insert_column(self.results_conn, ds.table_name, spec.name, spec.type)
 
     def close(self) -> None:
         """Close any resources owned by the backend. No-op here."""
@@ -168,8 +181,6 @@ class SeparateSqliteFileResultsBackend(ResultsBackend):
     loading.
     """
 
-    creates_results_table_in_main_db = False
-
     def __init__(self, dataset: DataSet) -> None:
         super().__init__(dataset)
         self._conn: AtomicConnection | None = None
@@ -215,7 +226,7 @@ class SeparateSqliteFileResultsBackend(ResultsBackend):
         with atomic(ds.conn) as aconn:
             set_raw_data_db_path_for_run(aconn, ds.run_id, raw_path_str)
 
-    def setup_on_start(self) -> None:
+    def create_results_table(self) -> None:
         ds = self._dataset
         # The raw-data path was already recorded at creation time; reuse it so
         # both locations stay in sync.

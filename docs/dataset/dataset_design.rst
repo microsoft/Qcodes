@@ -86,29 +86,35 @@ file can become inconvenient due to the file size. To address this,
 QCoDeS supports an optional **split raw data storage** mode (see
 :ref:`sec:intro_split_raw_data` for user-facing details).
 
-From a design perspective, this feature adds a thin routing layer inside the
-``DataSet`` class without changing any public interfaces:
+From a design perspective, this feature adds a pluggable *results backend*
+inside the ``DataSet`` class without changing any public interfaces:
 
-- A ``_data_conn`` property transparently returns either the main database
-  connection or a per-dataset raw data connection, depending on the
-  configuration.
+- A ``ResultsBackend`` strategy (in ``qcodes.dataset._results_backend``)
+  encapsulates where and how a dataset's results table is stored. The default
+  ``MainDatabaseResultsBackend`` keeps results in the main database;
+  ``SeparateSqliteFileResultsBackend`` writes them to a per-dataset SQLite file.
+  The backend is selected in ``DataSet.__init__`` (from config for new runs,
+  from the run's recorded state for existing ones).
+- A ``_results_conn`` property returns the backend's connection -- the main
+  database connection by default, or a per-dataset raw data connection when
+  results are stored separately.
 - Write paths (``add_results``, ``_BackgroundWriter``) and read paths
   (``get_parameter_data``, ``DataSetCacheWithDBBackend``, ``number_of_results``,
-  ``__len__``) all go through this single routing point.
+  ``__len__``) all go through the backend / ``_results_conn``.
 - The per-dataset SQLite file is a lightweight database containing only the
   results table and numpy type adapters -- no QCoDeS metadata schema.
 - When raw data storage is enabled, **no results table is created in the main
   database** at all -- only the run metadata is stored there. This mirrors how
-  ``DataSetInMem`` records runs (with ``create_run_table=False``). A run is
-  identified as a split-storage dataset by the ``raw_data_db_path`` column in
-  the ``runs`` table (recorded at dataset creation), which is used both to
-  reconnect to the raw data file and to distinguish such runs from
-  ``DataSetInMem`` runs (which also have no results table). This column is an
-  internal storage detail and is kept out of the user-facing metadata.
+  ``DataSetInMem`` records runs. A run is identified as a split-storage dataset
+  by the ``raw_data_db_path`` column in the ``runs`` table (recorded at dataset
+  creation), which is used both to reconnect to the raw data file and to
+  distinguish such runs from ``DataSetInMem`` runs (which also have no results
+  table). This column is an internal storage detail and is kept out of the
+  user-facing metadata.
 - Subscriber triggers (used for real-time data callbacks) are created on the
-  data connection. Because the results table only exists once the dataset is
-  started (in the per-dataset file), subscriptions requested before the dataset
-  is started are deferred and materialised at start time.
+  results connection. Because the results table only exists once the dataset is
+  started, subscriptions requested before then are deferred and materialised at
+  start time.
 
 The implementation is contained in ``qcodes.dataset._raw_data_storage`` (helper
 functions) and a handful of additions to ``qcodes.dataset.data_set`` (routing

@@ -369,6 +369,8 @@ class TestDataSetWithSplitRawData:
         assert len(received) > 0
         assert received[-1] == 5
         self._close_ds(ds)
+
+    def test_get_parameter_data_from_raw_data(self) -> None:
         """get_parameter_data should read from the raw data file."""
         ds, results = self._make_dataset_with_data(n_rows=5)
         data = ds.get_parameter_data()

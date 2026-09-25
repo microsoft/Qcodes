@@ -152,9 +152,10 @@ def update_raw_data_paths(
     Use this when per-dataset raw data files have been relocated to a new
     folder but the main database still references the old paths.
 
-    The function scans all runs that have a ``raw_data_db_path`` metadata
-    entry, verifies that a file with the expected GUID-based name exists in
-    *new_raw_data_folder*, and updates the stored path in the database.
+    The function scans all runs that have a ``raw_data_db_path`` internal
+    ``runs`` column set, verifies that a file with the expected GUID-based name
+    exists in *new_raw_data_folder*, and updates the stored path in the
+    database.
 
     Args:
         db_path: Path to the main QCoDeS database file.
@@ -171,7 +172,10 @@ def update_raw_data_paths(
 
     """
     db_path = Path(db_path)
-    new_raw_data_folder = Path(new_raw_data_folder)
+    # Resolve to an absolute path so the stored path does not depend on the
+    # process working directory when datasets are loaded later (newly created
+    # split datasets also store absolute paths).
+    new_raw_data_folder = Path(new_raw_data_folder).resolve()
 
     if not db_path.is_file():
         raise FileNotFoundError(f"Database file not found: {db_path}")
@@ -473,17 +477,21 @@ def cleanup_datasets(
         if not dry_run and matching:
             for ds_info in tqdm(matching, desc="Removing datasets"):
                 try:
-                    # Delete the raw data file from disk
-                    if ds_info.raw_data_db_path:
-                        raw_path = Path(ds_info.raw_data_db_path)
-                        if raw_path.is_file():
-                            file_size = raw_path.stat().st_size
-                            raw_path.unlink()
-                            total_freed += file_size
-                            log.debug("Deleted raw data file: %s", raw_path)
-
-                    # Remove dataset records from the main DB
+                    raw_path = (
+                        Path(ds_info.raw_data_db_path)
+                        if ds_info.raw_data_db_path
+                        else None
+                    )
+                    # Remove the DB record first: if this fails, the raw data
+                    # file is still on disk (recoverable) rather than deleted
+                    # while its run keeps pointing at missing data.
                     remove_dataset_from_db(conn, ds_info.run_id)
+                    # Only after the record is gone, delete the raw data file.
+                    if raw_path is not None and raw_path.is_file():
+                        file_size = raw_path.stat().st_size
+                        raw_path.unlink()
+                        total_freed += file_size
+                        log.debug("Deleted raw data file: %s", raw_path)
                     removed.append(ds_info)
                     log.debug(
                         "Removed dataset run_id=%d (guid=%s) from %s.",

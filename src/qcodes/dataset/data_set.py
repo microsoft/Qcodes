@@ -333,10 +333,10 @@ class DataSet(BaseDataSet):
             if exp_id is None:
                 exp_id = get_default_experiment_id(self.conn)
             name = name or "dataset"
-            # Select the results backend from config. A backend that stores
-            # results in a separate file keeps ``create_run`` from creating a
-            # results table in the main database - only the run metadata is kept
-            # there (this mirrors how ``DataSetInMem`` records runs).
+            # Select the results backend from config. The results table is
+            # created by the backend when the run is started (see
+            # ``create_results_table``), not here - ``create_run`` only records
+            # the run metadata, mirroring how ``DataSetInMem`` records runs.
             self._results_backend = select_results_backend_for_new_run(self)
             _, run_id, __ = create_run(
                 self.conn,
@@ -346,7 +346,7 @@ class DataSet(BaseDataSet):
                 parameters=None,
                 values=values,
                 metadata=metadata,
-                create_run_table=self._results_backend.creates_results_table_in_main_db,
+                create_run_table=False,
             )
             # this is really the UUID (an ever increasing count in the db)
             self._run_id = run_id
@@ -753,15 +753,14 @@ class DataSet(BaseDataSet):
                 spec,
                 conn=self.conn,
                 run_id=self.run_id,
-                # The results table only lives in the main database when the
-                # backend keeps it there; a separate backend creates the
-                # parameter columns in its own file in setup_on_start below.
-                insert_into_results_table=self._results_backend.creates_results_table_in_main_db,
+                # The results table is created wholesale by the backend just
+                # below, so only the layouts/dependencies are updated here.
+                insert_into_results_table=False,
             )
 
-        # Let the backend create/open its results store (e.g. a per-dataset
-        # SQLite file with the full results table).
-        self._results_backend.setup_on_start()
+        # Let the backend create its results table (in the main database, or in
+        # a per-dataset SQLite file) now that all parameters are known.
+        self._results_backend.create_results_table()
 
         desc_str = serial.to_json_for_storage(self.description)
 
@@ -1353,6 +1352,9 @@ class DataSet(BaseDataSet):
         """
         Remove all subscribers
         """
+        # Drop subscriptions that were deferred before the dataset started and
+        # never materialised into real subscribers/triggers.
+        self._pending_subscribers.clear()
         sql = """
         SELECT name FROM sqlite_master
         WHERE type = 'trigger'
@@ -1780,7 +1782,7 @@ def load_by_run_spec(
         )
 
         if len(guids) == 1:
-            d = load_by_guid(guids[0], internal_conn)
+            d = load_by_guid(guids[0], internal_conn, read_only=read_only)
         elif len(guids) > 1:
             print(generate_dataset_table(guids, conn=internal_conn))
             raise NameError(
@@ -1893,7 +1895,7 @@ def load_by_id(
             raise ValueError(
                 f"Run with run_id {run_id} does not exist in the database: {internal_conn.path_to_dbfile}"
             )
-        d = _get_datasetprotocol_from_guid(guid, internal_conn)
+        d = _get_datasetprotocol_from_guid(guid, internal_conn, read_only=read_only)
     finally:
         # dataset takes ownership of the connection but DataSetInMem does not
         if not conn and not isinstance(d, DataSet):
@@ -1936,7 +1938,7 @@ def load_by_guid(
 
     # this function raises a RuntimeError if more than one run matches the GUID
     try:
-        d = _get_datasetprotocol_from_guid(guid, internal_conn)
+        d = _get_datasetprotocol_from_guid(guid, internal_conn, read_only=read_only)
     finally:
         # dataset takes ownership of the connection but DataSetInMem does not
         if not conn and not isinstance(d, DataSet):
@@ -1986,7 +1988,7 @@ def load_by_counter(
     # this function raises a RuntimeError if more than one run matches the GUID
     try:
         guid = get_guid_from_expid_and_counter(internal_conn, exp_id, counter)
-        d = _get_datasetprotocol_from_guid(guid, internal_conn)
+        d = _get_datasetprotocol_from_guid(guid, internal_conn, read_only=read_only)
     finally:
         # dataset takes ownership of the connection but DataSetInMem does not
         if not conn and not isinstance(d, DataSet):
@@ -1996,7 +1998,7 @@ def load_by_counter(
 
 
 def _get_datasetprotocol_from_guid(
-    guid: str, conn: AtomicConnection
+    guid: str, conn: AtomicConnection, *, read_only: bool = False
 ) -> DataSetProtocol:
     run_id = get_runid_from_guid(conn, guid)
     if run_id is None:
@@ -2030,7 +2032,7 @@ def _get_datasetprotocol_from_guid(
         _check_if_table_found(conn, result_table_name)
         or get_raw_data_db_path_for_run(conn, run_id) is not None
     ):
-        d = DataSet(conn=conn, run_id=run_id)
+        d = DataSet(conn=conn, run_id=run_id, read_only=read_only)
     else:
         d = DataSetInMem._load_from_db(conn=conn, guid=guid)
 
