@@ -275,7 +275,7 @@ def test_set_callback_for_instance(
     captured_instance_params = []
 
     def callback(param: ParameterBase, val: Any) -> None:
-        if ParameterBase.global_on_set_callback:
+        if ParameterBase.global_on_set_callback is not None:
             ParameterBase.global_on_set_callback(param, val)
         captured_instance_params.append(val)
 
