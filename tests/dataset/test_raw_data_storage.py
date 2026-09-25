@@ -30,6 +30,10 @@ from qcodes.dataset._raw_data_storage import (
     purge_orphaned_datasets,
     update_raw_data_paths,
 )
+from qcodes.dataset._results_backend import (
+    MainDatabaseResultsBackend,
+    SeparateSqliteFileResultsBackend,
+)
 from qcodes.dataset.data_set import DataSet, load_by_id
 from qcodes.dataset.database_extract_runs import (
     export_datasets_and_create_metadata_db,
@@ -47,9 +51,14 @@ if TYPE_CHECKING:
 
 def _raw_file(ds: DataSet) -> Path:
     """Return the per-dataset raw data file path, asserting it is set."""
-    raw_path = ds._raw_data_db_path
+    raw_path = get_raw_data_db_path_for_run(ds.conn, ds.run_id)
     assert raw_path is not None
     return Path(raw_path)
+
+
+def _uses_separate_file(ds: DataSet) -> bool:
+    """Whether the dataset stores results in a separate per-dataset file."""
+    return isinstance(ds._results_backend, SeparateSqliteFileResultsBackend)
 
 
 # ---------------------------------------------------------------------------
@@ -177,20 +186,80 @@ class TestDataSetWithSplitRawData:
     @staticmethod
     def _close_ds(ds: DataSet) -> None:
         """Close both main and raw data connections."""
-        if ds._raw_data_conn is not None:
-            ds._raw_data_conn.close()
+        ds._results_backend.close()
         ds.conn.close()
 
     def test_raw_data_conn_is_set(self) -> None:
-        """When split is enabled, DataSet should have a raw data connection."""
+        """When split is enabled, results go to a separate connection."""
         ds = new_data_set("test-split")
         x = ParamSpecBase("x", "numeric")
         y = ParamSpecBase("y", "numeric")
         idps = InterDependencies_(dependencies={y: (x,)})
         ds.set_interdependencies(idps)
         ds.mark_started()
-        assert ds._raw_data_conn is not None
+        # Once started, the results connection is the separate file, not the
+        # main database connection.
+        assert _uses_separate_file(ds)
+        assert ds._results_conn is not ds.conn
         self._close_ds(ds)
+
+    def test_background_writing_routes_to_separate_file(self) -> None:
+        """With split storage, background writes must land in the per-dataset
+        file (routed via the backend's results_db_path)."""
+        ds = new_data_set("test-split")
+        x = ParamSpecBase("x", "numeric")
+        y = ParamSpecBase("y", "numeric")
+        idps = InterDependencies_(dependencies={y: (x,)})
+        ds.set_interdependencies(idps)
+        ds.mark_started(start_bg_writer=True)
+
+        # The path the background writer targets is the separate file.
+        assert ds._results_backend.results_db_path is not None
+        assert Path(ds._results_backend.results_db_path) == _raw_file(ds)
+
+        results = [{"x": float(i), "y": float(i**2)} for i in range(5)]
+        ds.add_results(results)
+        ds.mark_completed()  # flushes the background writer
+
+        assert ds.number_of_results == 5
+        data = ds.get_parameter_data()
+        np.testing.assert_array_almost_equal(
+            data["y"]["y"], np.array([r["y"] for r in results])
+        )
+        # Nothing was written to the main DB (no results table there).
+        cursor = ds.conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+            (ds.table_name,),
+        )
+        assert cursor.fetchone() is None
+        self._close_ds(ds)
+
+    def test_new_data_set_uses_separate_file_backend(self) -> None:
+        """When split is enabled, new datasets use the separate-file backend."""
+        ds = new_data_set("test-split")
+        assert isinstance(ds, DataSet)
+        assert isinstance(ds._results_backend, SeparateSqliteFileResultsBackend)
+        self._close_ds(ds)
+
+    def test_loaded_dataset_autodetects_backend(self) -> None:
+        """A split dataset is detected as such however it is loaded, including
+        via direct DataSet(run_id=...) construction."""
+        ds, _ = self._make_dataset_with_data(n_rows=3)
+        run_id = ds.run_id
+        path_to_db = ds.path_to_db
+        self._close_ds(ds)
+
+        # via the public load_by_id
+        loaded = load_by_id(run_id)
+        assert isinstance(loaded, DataSet)
+        assert isinstance(loaded._results_backend, SeparateSqliteFileResultsBackend)
+        self._close_ds(loaded)
+
+        # via direct DataSet construction (auto-detection, no factory needed)
+        direct = DataSet(path_to_db=path_to_db, run_id=run_id)
+        assert isinstance(direct._results_backend, SeparateSqliteFileResultsBackend)
+        assert direct._results_conn is not direct.conn
+        self._close_ds(direct)
 
     def test_raw_data_file_created(self, tmp_path: Path) -> None:
         """A per-dataset SQLite file should be created."""
@@ -206,10 +275,9 @@ class TestDataSetWithSplitRawData:
         ds, _ = self._make_dataset_with_data()
         # Not exposed as user metadata ...
         assert "raw_data_db_path" not in ds.metadata
-        # ... but recorded internally and pointing at the real file.
-        assert ds._raw_data_db_path is not None
+        # ... but recorded in the runs table and pointing at the real file.
         assert _raw_file(ds).is_file()
-        assert ds._raw_data_db_path == get_raw_data_db_path_for_run(ds.conn, ds.run_id)
+        assert _uses_separate_file(ds)
         self._close_ds(ds)
 
     def test_data_is_in_raw_db_not_main(self) -> None:
@@ -232,9 +300,10 @@ class TestDataSetWithSplitRawData:
             main_conn, "runs", "result_table_name", "run_id", ds.run_id
         )
 
-        # Raw data DB should have the actual data
-        raw_conn = ds._raw_data_conn
-        assert raw_conn is not None
+        # Raw data DB should have the actual data. The results connection is
+        # the separate file once the dataset has been started.
+        raw_conn = ds._results_conn
+        assert raw_conn is not ds.conn
         cursor = raw_conn.execute(f'SELECT COUNT(*) FROM "{table_name}"')
         raw_count = cursor.fetchone()[0]
         assert raw_count == 5
@@ -255,8 +324,10 @@ class TestDataSetWithSplitRawData:
         idps = InterDependencies_(dependencies={y: (x,)})
         ds.set_interdependencies(idps)
 
-        # Not started yet: no raw data file, and no table in the main DB.
-        assert ds._raw_data_conn is None
+        # Not started yet: the separate file is not created, so the results
+        # connection falls back to the main connection, and no table exists.
+        assert _uses_separate_file(ds)
+        assert ds._results_conn is ds.conn
         cursor = ds.conn.execute(
             "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
             (ds.table_name,),
@@ -331,7 +402,8 @@ class TestDataSetWithSplitRawData:
         # Re-load from the database
         loaded = load_by_id(run_id)
         assert isinstance(loaded, DataSet)
-        assert loaded._raw_data_conn is not None
+        assert _uses_separate_file(loaded)
+        assert loaded._results_conn is not loaded.conn
         data = loaded.get_parameter_data()
         np.testing.assert_array_almost_equal(
             data["y"]["y"], np.array([r["y"] for r in results])
@@ -343,9 +415,9 @@ class TestDataSetWithSplitRawData:
         ds1, _ = self._make_dataset_with_data(n_rows=3)
         ds2, _ = self._make_dataset_with_data(n_rows=5)
 
-        assert ds1._raw_data_conn is not None
-        assert ds2._raw_data_conn is not None
-        assert ds1._raw_data_conn.path_to_dbfile != ds2._raw_data_conn.path_to_dbfile
+        assert _uses_separate_file(ds1)
+        assert _uses_separate_file(ds2)
+        assert ds1._results_conn.path_to_dbfile != ds2._results_conn.path_to_dbfile
         assert ds1.number_of_results == 3
         assert ds2.number_of_results == 5
         self._close_ds(ds1)
@@ -388,15 +460,23 @@ class TestDataSetWithSplitRawData:
 
 @pytest.mark.usefixtures("experiment")
 class TestDataSetWithoutSplitRawData:
-    def test_raw_data_conn_is_none(self) -> None:
-        """When split is disabled, _raw_data_conn should be None."""
+    def test_uses_main_database_backend(self) -> None:
+        """When split is disabled, datasets use the main-database backend."""
+        ds = new_data_set("test-no-split")
+        assert isinstance(ds._results_backend, MainDatabaseResultsBackend)
+        # Results go to the main database connection.
+        assert ds._results_conn is ds.conn
+        ds.conn.close()
+
+    def test_results_conn_is_main_conn(self) -> None:
+        """When split is disabled, the results connection is the main one."""
         ds = new_data_set("test-no-split")
         x = ParamSpecBase("x", "numeric")
         y = ParamSpecBase("y", "numeric")
         idps = InterDependencies_(dependencies={y: (x,)})
         ds.set_interdependencies(idps)
         ds.mark_started()
-        assert ds._raw_data_conn is None
+        assert ds._results_conn is ds.conn
         ds.conn.close()
 
     def test_data_in_main_db(self) -> None:
@@ -425,8 +505,7 @@ class TestDataSetWithoutSplitRawData:
 class TestUpdateRawDataPaths:
     @staticmethod
     def _close_ds(ds: DataSet) -> None:
-        if ds._raw_data_conn is not None:
-            ds._raw_data_conn.close()
+        ds._results_backend.close()
         ds.conn.close()
 
     def test_update_after_move(self, tmp_path: Path) -> None:
@@ -512,8 +591,7 @@ class TestPurgeOrphanedDatasets:
 
     @staticmethod
     def _close_ds(ds: DataSet) -> None:
-        if ds._raw_data_conn is not None:
-            ds._raw_data_conn.close()
+        ds._results_backend.close()
         ds.conn.close()
 
     @pytest.mark.usefixtures("_raw_data_db")
@@ -623,8 +701,7 @@ class TestCleanupDatasets:
 
     @staticmethod
     def _close_ds(ds: DataSet) -> None:
-        if ds._raw_data_conn is not None:
-            ds._raw_data_conn.close()
+        ds._results_backend.close()
         ds.conn.close()
 
     @pytest.mark.usefixtures("_raw_data_db")
@@ -780,8 +857,7 @@ class TestExtractExportWithSplitRawData:
 
     @staticmethod
     def _close_ds(ds: DataSet) -> None:
-        if ds._raw_data_conn is not None:
-            ds._raw_data_conn.close()
+        ds._results_backend.close()
         ds.conn.close()
 
     def test_extract_runs_into_db_with_split_data(self, tmp_path: Path) -> None:

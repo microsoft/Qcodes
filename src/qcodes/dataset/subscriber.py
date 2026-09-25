@@ -64,7 +64,7 @@ class _Subscriber(Thread):
         self.callback_id = f"callback{self._id}"
         self.trigger_id = f"sub{self._id}"
 
-        conn = dataSet._data_conn
+        conn = dataSet._results_conn
 
         conn.create_function(self.callback_id, -1, self._cache_data_to_queue)
 
