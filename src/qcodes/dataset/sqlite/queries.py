@@ -11,9 +11,8 @@ import sqlite3
 import time
 import unicodedata
 import warnings
-from dataclasses import dataclass
 from itertools import zip_longest
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -2364,8 +2363,7 @@ def set_raw_data_db_path_for_run(
     )
 
 
-@dataclass(frozen=True)
-class RawDataDatasetRecord:
+class RawDataDatasetRecord(NamedTuple):
     """A run in the main database whose raw data is stored in a separate file.
 
     Returned by :func:`get_datasets_with_raw_data_path` for each started run
@@ -2412,20 +2410,23 @@ def get_datasets_with_raw_data_path(
     return [RawDataDatasetRecord(*row) for row in cursor.fetchall()]
 
 
-def remove_dataset_from_db(
-    conn: AtomicConnection, run_id: int, result_table_name: str
-) -> None:
+def remove_dataset_from_db(conn: AtomicConnection, run_id: int) -> None:
     """Remove a single dataset's records from the database.
 
     Deletes the run row, associated layouts and dependencies, and drops
-    the results table (if it exists).
+    the results table (if it exists). The results-table name is looked up
+    from the ``runs`` table.
 
     Args:
         conn: Connection to the database.
         run_id: The run_id of the dataset to remove.
-        result_table_name: Name of the dataset's results table.
 
     """
+    result_table_name = select_one_where(
+        conn, "runs", "result_table_name", "run_id", run_id
+    )
+    assert isinstance(result_table_name, str)
+
     with atomic(conn) as aconn:
         # Guard against dropping an unintended table if result_table_name is
         # malformed, reusing the same validation used when creating tables.

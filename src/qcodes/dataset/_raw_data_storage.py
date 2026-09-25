@@ -17,7 +17,9 @@ from contextlib import closing
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple
+
+from tqdm.auto import tqdm
 
 import qcodes
 from qcodes.dataset.export_config import _expand_export_path
@@ -148,7 +150,7 @@ def update_raw_data_paths(
     """Update raw data file paths in the main database after files have moved.
 
     Use this when per-dataset raw data files have been relocated to a new
-    folder but the main database still references the old paths3.
+    folder but the main database still references the old paths.
 
     The function scans all runs that have a ``raw_data_db_path`` metadata
     entry, verifies that a file with the expected GUID-based name exists in
@@ -176,51 +178,52 @@ def update_raw_data_paths(
     if not new_raw_data_folder.is_dir():
         raise FileNotFoundError(f"New raw data folder not found: {new_raw_data_folder}")
 
-    conn = connect(str(db_path))
-
-    if not is_column_in_table(conn, "runs", "raw_data_db_path"):
-        log.info("No raw_data_db_path column found in %s; nothing to update.", db_path)
-        conn.close()
-        return []
-
-    cursor = conn.execute(
-        "SELECT run_id, raw_data_db_path FROM runs WHERE raw_data_db_path IS NOT NULL"
-    )
-    rows = cursor.fetchall()
-
     updated: list[tuple[int, str, str]] = []
 
-    for run_id, old_path_str in rows:
-        old_path = Path(old_path_str)
-        # The per-dataset file name is always <guid>.db — preserved on move
-        new_path = new_raw_data_folder / old_path.name
-
-        if not new_path.is_file():
-            log.warning(
-                "Run %d: expected raw data file %s not found in new folder; skipping.",
-                run_id,
-                new_path,
+    with closing(connect(str(db_path))) as conn:
+        if not is_column_in_table(conn, "runs", "raw_data_db_path"):
+            log.info(
+                "No raw_data_db_path column found in %s; nothing to update.", db_path
             )
-            continue
+            return []
 
-        if str(new_path) == old_path_str:
-            continue  # already correct
-
-        new_path_str = str(new_path)
-        with atomic(conn) as aconn:
-            aconn.execute(
-                "UPDATE runs SET raw_data_db_path = ? WHERE run_id = ?",
-                (new_path_str, run_id),
-            )
-        updated.append((run_id, old_path_str, new_path_str))
-        log.debug(
-            "Run %d: updated raw_data_db_path from %s to %s",
-            run_id,
-            old_path_str,
-            new_path_str,
+        cursor = conn.execute(
+            "SELECT run_id, raw_data_db_path FROM runs "
+            "WHERE raw_data_db_path IS NOT NULL"
         )
+        rows = cursor.fetchall()
 
-    conn.close()
+        for run_id, old_path_str in tqdm(rows, desc="Updating raw data paths"):
+            old_path = Path(old_path_str)
+            # The per-dataset file name is always <guid>.db — preserved on move
+            new_path = new_raw_data_folder / old_path.name
+
+            if not new_path.is_file():
+                log.warning(
+                    "Run %d: expected raw data file %s not found in new folder;"
+                    " skipping.",
+                    run_id,
+                    new_path,
+                )
+                continue
+
+            if str(new_path) == old_path_str:
+                continue  # already correct
+
+            new_path_str = str(new_path)
+            with atomic(conn) as aconn:
+                aconn.execute(
+                    "UPDATE runs SET raw_data_db_path = ? WHERE run_id = ?",
+                    (new_path_str, run_id),
+                )
+            updated.append((run_id, old_path_str, new_path_str))
+            log.debug(
+                "Run %d: updated raw_data_db_path from %s to %s",
+                run_id,
+                old_path_str,
+                new_path_str,
+            )
+
     log.info("Updated %d raw data paths in %s", len(updated), db_path)
     return updated
 
@@ -230,8 +233,7 @@ def update_raw_data_paths(
 # ---------------------------------------------------------------------------
 
 
-@dataclass
-class DatasetInfo:
+class DatasetInfo(NamedTuple):
     """Summary information about a dataset in the main database."""
 
     run_id: int
@@ -275,7 +277,7 @@ def _build_dataset_info_list(
     rows = get_datasets_with_raw_data_path(conn)
 
     datasets: list[DatasetInfo] = []
-    for row in rows:
+    for row in tqdm(rows, desc="Scanning datasets"):
         raw_path = row.raw_data_db_path
         raw_size: int | None = None
         if raw_path and Path(raw_path).is_file():
@@ -345,11 +347,9 @@ def purge_orphaned_datasets(
         errors: list[tuple[int, Exception]] = []
 
         if not dry_run and orphaned:
-            for ds_info in orphaned:
+            for ds_info in tqdm(orphaned, desc="Removing orphaned datasets"):
                 try:
-                    remove_dataset_from_db(
-                        conn, ds_info.run_id, ds_info.result_table_name
-                    )
+                    remove_dataset_from_db(conn, ds_info.run_id)
                     removed.append(ds_info)
                     log.debug(
                         "Removed orphaned dataset run_id=%d (guid=%s) from %s.",
@@ -471,7 +471,7 @@ def cleanup_datasets(
         total_freed: int = 0
 
         if not dry_run and matching:
-            for ds_info in matching:
+            for ds_info in tqdm(matching, desc="Removing datasets"):
                 try:
                     # Delete the raw data file from disk
                     if ds_info.raw_data_db_path:
@@ -483,9 +483,7 @@ def cleanup_datasets(
                             log.debug("Deleted raw data file: %s", raw_path)
 
                     # Remove dataset records from the main DB
-                    remove_dataset_from_db(
-                        conn, ds_info.run_id, ds_info.result_table_name
-                    )
+                    remove_dataset_from_db(conn, ds_info.run_id)
                     removed.append(ds_info)
                     log.debug(
                         "Removed dataset run_id=%d (guid=%s) from %s.",
