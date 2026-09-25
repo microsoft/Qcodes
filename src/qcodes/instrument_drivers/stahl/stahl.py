@@ -36,8 +36,10 @@ def chain(*functions: Callable[..., Any]) -> Callable[..., Any]:
 
     Example:
         >>> def f():
-        >>>   return "1.2"
-        >>> chain(f, float)()  # return 1.2 as float
+        ...     return "1.2"
+        >>> chain(f, float)()
+        1.2
+
 
     """
 

@@ -32,9 +32,11 @@ class InstrumentLoggerAdapter(logging.LoggerAdapter):
     instance.
 
     The context data gets stored in the `extra` dictionary as a property of the
-    Adapter. It is filled by the ``__init__`` method::
+    Adapter. It is filled by the ``__init__`` method:
 
-        >>> LoggerAdapter(log, {'instrument': instrument_instance})
+    .. code-block:: python
+
+        LoggerAdapter(log, {'instrument': instrument_instance})
 
     """
 
@@ -163,11 +165,13 @@ def filter_instrument(
     the supplied instruments to pass.
 
     Example:
-        >>> h1, h2 = logger.get_console_handler(), logger.get_file_handler()
-        >>> with logger.filter_instruments((qdac, dmm2), handler=[h1, h2]):
-        >>>     qdac.ch01(1)  # logged
-        >>>     v1 = dmm2.v() # logged
-        >>>     v2 = keithley.v()  # not logged
+        .. code-block:: python
+
+            h1, h2 = logger.get_console_handler(), logger.get_file_handler()
+            with logger.filter_instruments((qdac, dmm2), handler=[h1, h2]):
+                qdac.ch01(1)  # logged
+                v1 = dmm2.v() # logged
+                v2 = keithley.v()  # not logged
 
     Args:
         instrument: The instrument or sequence of instruments to enable
