@@ -34,6 +34,8 @@ class LakeshoreBaseOutput(InstrumentChannel["LakeshoreBase"]):
         output_name: str,
         output_index: int,
         has_pid: bool = True,
+        has_heater_output_setup: bool = True,
+        heater_output_has_output_type: bool = True,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
         """
@@ -46,6 +48,17 @@ class LakeshoreBaseOutput(InstrumentChannel["LakeshoreBase"]):
               instrument
             has_pid: if True, then the output supports closed loop control,
               hence it will have three parameters to set it up: 'P', 'I', and 'D'
+            has_heater_output_setup: if True, then the output supports the heater
+              setup (``HTRSET``) command, hence it will have the parameters to set it
+              up (``output_heater_resistance``, ``output_max_current``,
+              ``output_max_user_current``, ``output_display`` and, depending on
+              ``heater_output_has_output_type``, ``output_type``). Set to False for
+              outputs that do not support ``HTRSET`` (e.g. the analog voltage
+              outputs 3 and 4 of the Model 336).
+            heater_output_has_output_type: if True, the heater setup (``HTRSET``)
+              command includes the ``output_type`` field. Set to False for models
+              whose ``HTRSET`` command does not have an output-type field (e.g. the
+              Model 336). Only relevant when ``has_heater_output_setup`` is True.
             **kwargs: Forwarded to baseclass.
 
         """
@@ -129,61 +142,82 @@ class LakeshoreBaseOutput(InstrumentChannel["LakeshoreBase"]):
                 get_cmd=f"PID? {output_index}",
             )
 
-        self.output_type: GroupParameter = self.add_parameter(
-            name="output_type",
-            docstring="Output type (Output 2 only): 0=Current, 1=Voltage",
-            val_mapping=(
-                {"current": 0, "voltage": 1} if output_index == 1 else {"current": 0}
-            ),
-            parameter_class=GroupParameter,
-        )
-        """Output type (Output 2 only): 0=Current, 1=Voltage"""
+        self._has_heater_output_setup = has_heater_output_setup
+        if has_heater_output_setup:
+            heater_setup_params: list[GroupParameter] = []
+            heater_setup_set_fields: list[str] = []
 
-        self.output_heater_resistance: GroupParameter = self.add_parameter(
-            name="output_heater_resistance",
-            docstring="Heater Resistance Setting: 25/50ohm",
-            val_mapping={"25ohm": 1, "50ohm": 2},
-            parameter_class=GroupParameter,
-        )
-        """Heater Resistance Setting: 25/50ohm"""
+            if heater_output_has_output_type:
+                self.output_type: GroupParameter = self.add_parameter(
+                    name="output_type",
+                    docstring="Output type (Output 2 only): 0=Current, 1=Voltage",
+                    val_mapping=(
+                        {"current": 0, "voltage": 1}
+                        if output_index == 1
+                        else {"current": 0}
+                    ),
+                    parameter_class=GroupParameter,
+                )
+                """Output type (Output 2 only): 0=Current, 1=Voltage"""
+                heater_setup_params.append(self.output_type)
+                heater_setup_set_fields.append("{output_type}")
 
-        self.output_max_current: GroupParameter = self.add_parameter(
-            name="output_max_current",
-            docstring="Specifies the maximum heater output current: User Specified, 0.707 A, 1 A, 1.141 A, 1.732",
-            val_mapping={"user": 0, "0.707A": 1, "1A": 2, "1.141A": 3, "1.732A": 4},
-            parameter_class=GroupParameter,
-        )
-        """Specifies the maximum heater output current: User Specified, 0.707 A, 1 A, 1.141 A, 1.732"""
+            self.output_heater_resistance: GroupParameter = self.add_parameter(
+                name="output_heater_resistance",
+                docstring="Heater Resistance Setting: 25/50ohm",
+                val_mapping={"25ohm": 1, "50ohm": 2},
+                parameter_class=GroupParameter,
+            )
+            """Heater Resistance Setting: 25/50ohm"""
 
-        self.output_max_user_current: GroupParameter = self.add_parameter(
-            name="output_max_user_current",
-            docstring="Specifies the maximum heater output current if max current is set to User Specified.",
-            vals=vals.Numbers(0, 1.732),
-            unit="A",
-            get_parser=float,
-            parameter_class=GroupParameter,
-        )
-        """Specifies the maximum heater output current if max current is set to User Specified."""
+            self.output_max_current: GroupParameter = self.add_parameter(
+                name="output_max_current",
+                docstring="Specifies the maximum heater output current: User Specified, 0.707 A, 1 A, 1.141 A, 1.732",
+                val_mapping={"user": 0, "0.707A": 1, "1A": 2, "1.141A": 3, "1.732A": 4},
+                parameter_class=GroupParameter,
+            )
+            """Specifies the maximum heater output current: User Specified, 0.707 A, 1 A, 1.141 A, 1.732"""
 
-        self.output_display: GroupParameter = self.add_parameter(
-            name="output_display",
-            docstring="Specifies whether the heater output displays in current or power (current mode only)",
-            val_mapping={"current": 1, "power": 2},
-            parameter_class=GroupParameter,
-        )
-        """Specifies whether the heater output displays in current or power (current mode only)"""
+            self.output_max_user_current: GroupParameter = self.add_parameter(
+                name="output_max_user_current",
+                docstring="Specifies the maximum heater output current if max current is set to User Specified.",
+                vals=vals.Numbers(0, 1.732),
+                unit="A",
+                get_parser=float,
+                parameter_class=GroupParameter,
+            )
+            """Specifies the maximum heater output current if max current is set to User Specified."""
 
-        self.heater_group = Group(
-            [
-                self.output_type,
-                self.output_heater_resistance,
-                self.output_max_current,
-                self.output_max_user_current,
-                self.output_display,
-            ],
-            set_cmd=f"HTRSET {output_index},{{output_type}},{{output_heater_resistance}},{{output_max_current}},{{output_max_user_current}},{{output_display}}",
-            get_cmd=f"HTRSET? {output_index}",
-        )
+            self.output_display: GroupParameter = self.add_parameter(
+                name="output_display",
+                docstring="Specifies whether the heater output displays in current or power (current mode only)",
+                val_mapping={"current": 1, "power": 2},
+                parameter_class=GroupParameter,
+            )
+            """Specifies whether the heater output displays in current or power (current mode only)"""
+
+            heater_setup_params.extend(
+                [
+                    self.output_heater_resistance,
+                    self.output_max_current,
+                    self.output_max_user_current,
+                    self.output_display,
+                ]
+            )
+            heater_setup_set_fields.extend(
+                [
+                    "{output_heater_resistance}",
+                    "{output_max_current}",
+                    "{output_max_user_current}",
+                    "{output_display}",
+                ]
+            )
+
+            self.heater_group = Group(
+                heater_setup_params,
+                set_cmd=f"HTRSET {output_index},{','.join(heater_setup_set_fields)}",
+                get_cmd=f"HTRSET? {output_index}",
+            )
 
         self.output_range: Parameter = self.add_parameter(
             "output_range",
