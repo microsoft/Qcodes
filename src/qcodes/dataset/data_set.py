@@ -748,15 +748,19 @@ class DataSet(BaseDataSet):
         """
         paramspecs = new_to_old(self._rundescriber.interdeps).paramspecs
 
-        for spec in paramspecs:
-            add_parameter(
-                spec,
-                conn=self.conn,
-                run_id=self.run_id,
-                # The results table is created wholesale by the backend just
-                # below, so only the layouts/dependencies are updated here.
-                insert_into_results_table=False,
-            )
+        # Register all parameters in a single transaction (each add_parameter
+        # would otherwise commit on its own) to avoid one fsync per parameter.
+        with atomic(self.conn) as conn:
+            for spec in paramspecs:
+                add_parameter(
+                    spec,
+                    conn=conn,
+                    run_id=self.run_id,
+                    # The results table is created wholesale by the backend
+                    # just below, so only the layouts/dependencies are updated
+                    # here.
+                    insert_into_results_table=False,
+                )
 
         # Let the backend create its results table (in the main database, or in
         # a per-dataset SQLite file) now that all parameters are known.

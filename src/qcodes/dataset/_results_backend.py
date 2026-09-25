@@ -101,8 +101,11 @@ class ResultsBackend:
         override this (e.g. to create a per-dataset file).
         """
         ds = self._dataset
-        for spec in ds._rundescriber.interdeps.paramspecs:
-            insert_column(self.results_conn, ds.table_name, spec.name, spec.type)
+        # Add all columns in a single transaction to avoid one commit (fsync)
+        # per parameter.
+        with atomic(self.results_conn) as conn:
+            for spec in ds._rundescriber.interdeps.paramspecs:
+                insert_column(conn, ds.table_name, spec.name, spec.type)
 
     def close(self) -> None:
         """Close any resources owned by the backend. No-op here."""
