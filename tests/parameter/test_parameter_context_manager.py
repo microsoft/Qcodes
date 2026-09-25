@@ -137,7 +137,7 @@ def test_set_to_none_for_not_captured_parameter_but_instrument_has_value() -> No
     )
 
     # pre-conditions
-    assert p.cache._value is None  # type: ignore[attr-defined]
+    assert p.cache._value is None  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     assert p.cache.raw_value is None
     assert p.cache.timestamp is None
     assert set_counter == 0

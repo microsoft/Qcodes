@@ -690,9 +690,9 @@ class LakeshoreBase(VisaInstrument, Generic[ChanType_co]):
     # Define this in the model-specific class in case you want to use a
     # different class for sensor channels
     # type error. It's not clear to me why assigning a value that matches the
-    # default of the TypeVar is an error but both mypy and pyright
-    # flags it here.
-    CHANNEL_CLASS: type[ChanType_co] = LakeshoreBaseSensorChannel  # type: ignore[assignment]
+    # default of the TypeVar is an error but mypy, pyright and ty all
+    # flag it here.
+    CHANNEL_CLASS: type[ChanType_co] = LakeshoreBaseSensorChannel  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
 
     # This dict has channel name in the driver as keys, and channel "name" that
     # is used in instrument commands as values. For example, if channel called

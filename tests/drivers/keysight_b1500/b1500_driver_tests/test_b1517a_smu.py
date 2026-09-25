@@ -34,10 +34,10 @@ def test_snapshot() -> None:
     # We need to use `InstrumentBase` (not a bare mock) in order for
     # `snapshot` methods call resolution to work out
     mainframe = InstrumentBase(name="mainframe")
-    mainframe.write = MagicMock()  # type: ignore[attr-defined]
+    mainframe.write = MagicMock()  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     slot_nr = 1
     smu = KeysightB1517A(
-        parent=mainframe,  # type: ignore[arg-type]
+        parent=mainframe,  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
         name="B1517A",
         slot_nr=slot_nr,
     )
@@ -67,7 +67,7 @@ def test_v_measure_range_config_raises_type_error(smu: KeysightB1517A) -> None:
     msg = re.escape("Expected valid voltage measurement range, got 42.")
 
     with pytest.raises(TypeError, match=msg):
-        smu.v_measure_range_config(v_measure_range=42)  # pyright: ignore[reportArgumentType]
+        smu.v_measure_range_config(v_measure_range=42)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
 
 def test_v_measure_range_config_raises_invalid_range_error(smu: KeysightB1517A) -> None:
@@ -105,7 +105,7 @@ def test_i_measure_range_config_raises_type_error(smu: KeysightB1517A) -> None:
     msg = re.escape("Expected valid current measurement range, got 99.")
 
     with pytest.raises(TypeError, match=msg):
-        smu.i_measure_range_config(i_measure_range=99)  # pyright: ignore[reportArgumentType]
+        smu.i_measure_range_config(i_measure_range=99)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
 
 def test_i_measure_range_config_raises_invalid_range_error(smu: KeysightB1517A) -> None:
@@ -361,7 +361,7 @@ def test_set_average_samples_for_high_speed_adc(smu: KeysightB1517A) -> None:
     mainframe.reset_mock()
 
     # while it does not type check, it is possible to pass the enum value as int
-    smu.set_average_samples_for_high_speed_adc(131, 2)  # pyright: ignore[reportArgumentType]
+    smu.set_average_samples_for_high_speed_adc(131, 2)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
     mainframe.write.assert_called_once_with("AV 131,2")
 
     mainframe.reset_mock()

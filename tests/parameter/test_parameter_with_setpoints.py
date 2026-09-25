@@ -103,7 +103,7 @@ def test_setpoints_non_parameter_raises() -> None:
         param_with_setpoints_1 = ParameterWithSetpoints(
             "param_1",
             get_cmd=lambda: _rng.random(n_points_1()),
-            setpoints=(lambda x: x,),  # type: ignore[arg-type]
+            setpoints=(lambda x: x,),  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
             vals=vals.Arrays(shape=(n_points_1,)),
         )
 
@@ -114,7 +114,7 @@ def test_setpoints_non_parameter_raises() -> None:
     )
 
     with pytest.raises(TypeError, match=err_msg):
-        param_with_setpoints_1.setpoints = (lambda x: x,)  # type: ignore[assignment]
+        param_with_setpoints_1.setpoints = (lambda x: x,)  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
 
 
 def test_validation_inconsistent_shape() -> None:
@@ -322,7 +322,7 @@ def test_validation_one_dim_missing() -> None:
         "param_6",
         get_cmd=lambda: _rng.random(n_points_1()),
         setpoints=(setpoints_1,),
-        vals=vals.Arrays(shape=(n_points_1, None)),  # type: ignore[arg-type]
+        vals=vals.Arrays(shape=(n_points_1, None)),  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
     )
     expected_err_msg = (
         r"One or more dimensions have unknown shape "
@@ -349,7 +349,7 @@ def test_validation_one_sp_dim_missing() -> None:
     setpoints_1 = Parameter(
         "setpoints_1",
         get_cmd=lambda: _rng.random(n_points_1()),
-        vals=vals.Arrays(shape=(n_points_1, None)),  # type: ignore[arg-type]
+        vals=vals.Arrays(shape=(n_points_1, None)),  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
     )
     param_sp_without_shape = ParameterWithSetpoints(
         "param_6",
