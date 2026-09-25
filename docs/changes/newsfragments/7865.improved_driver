@@ -1,0 +1,1 @@
+Add convenience methods to Tektronix DPO7200xx (``single``, ``download_waveforms``, ``get_timebase``) and AWG70000A (``upload_seqx``) drivers for streamlined waveform acquisition and sequence upload workflows.
