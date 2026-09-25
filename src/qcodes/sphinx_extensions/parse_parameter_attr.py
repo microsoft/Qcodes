@@ -43,9 +43,7 @@ def find_class(
     """Find all classes in a given Parso node named ``classname``."""
     nodes = []
     for child in node.children:
-        if (
-            isinstance(child, parso.python.tree.Class) and child.name.value == classname  # pyright: ignore
-        ):
+        if isinstance(child, parso.python.tree.Class) and child.name.value == classname:
             nodes.append(child)
         elif isinstance(child, parso.tree.Node):
             nodes.extend(find_class(child, classname))
@@ -60,8 +58,7 @@ def find_init_func(
     for child in node.children:
         if (
             isinstance(child, parso.python.tree.Function)
-            and child.name.value  # pyright: ignore[reportAttributeAccessIssue]
-            == "__init__"
+            and child.name.value == "__init__"
         ):
             nodes.append(child)
         elif isinstance(child, parso.tree.Node):

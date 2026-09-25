@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from qcodes.dataset.sqlite.connection import AtomicConnection
 
     # used in forward refs that cannot be detected
-    from .data_set import DataSet  # noqa F401
+    from .data_set import DataSet  # noqa: F401
     from .data_set_in_memory import DataSetInMem
     from .data_set_protocol import DataSetProtocol, ParameterData
 

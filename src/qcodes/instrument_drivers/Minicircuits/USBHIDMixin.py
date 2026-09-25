@@ -2,13 +2,19 @@
 A mixin module for USB Human Interface Device instruments
 """
 
+# pywinusb is only importable when installed via the minicircuits_rudat extra.
+# Which pyright rules the ignore comment on the import below suppresses
+# therefore depends on whether pywinusb is installed, so the check for
+# superfluous ignore comments is disabled in this module.
+# pyright: reportUnnecessaryTypeIgnoreComment=false
+
 import os
 import struct
 import time
 from typing import TYPE_CHECKING
 
 try:
-    from pywinusb import (  # pyright: ignore[reportMissingModuleSource,reportMissingImports]
+    from pywinusb import (  # pyright: ignore[reportMissingImports,reportMissingTypeStubs]
         hid,
     )
 
@@ -80,7 +86,7 @@ class MiniCircuitsHIDMixin(Instrument):
             instance_id=instance_id,
         ).get_devices()
 
-        if len(devs) == 0:
+        if devs is None or len(devs) == 0:
             raise RuntimeError("No instruments found!")
         elif len(devs) > 1:
             raise RuntimeError(
@@ -170,6 +176,9 @@ class MiniCircuitsHIDMixin(Instrument):
         devs = hid.HidDeviceFilter(  # pyright: ignore[reportPossiblyUnboundVariable]
             porduct_id=cls.product_id, vendor_id=cls.vendor_id
         ).get_devices()
+
+        if devs is None:
+            return []
 
         return [dev.instance_id for dev in devs]
 

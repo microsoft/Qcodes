@@ -42,7 +42,7 @@ reload(qcodes.instrument.ip)
 reload(qcodes.instrument.visa)
 reload(qcodes.instrument)
 
-import qcodes  # noqa F402
+import qcodes  # noqa: E402
 
 # sphinx 6.2 -> 7.1 produces a warning
 # Debugger warning: It seems that frozen modules are being used, which may

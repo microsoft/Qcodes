@@ -122,7 +122,7 @@ def _make_lakeshore_336():
 
 def test_pid_set(lakeshore_336) -> None:
     ls = lakeshore_336
-    P, I, D = 1, 2, 3  # noqa  E741
+    P, I, D = 1, 2, 3  # noqa:  E741
     # Only current source outputs/heaters have PID parameters,
     # voltages source outputs/heaters do not.
     outputs = [ls.output_1, ls.output_2]

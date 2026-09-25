@@ -351,7 +351,7 @@ def load_experiment_by_name(
             _repr.append(s)
         _repr_str = "\n".join(_repr)
         if load_last_duplicate:
-            e = exp  # pyright: ignore
+            e = exp  # pyright: ignore[reportPossiblyUnboundVariable]
         else:
             raise ValueError(
                 f"Many experiments matching your request found:\n{_repr_str}"
