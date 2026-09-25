@@ -5,6 +5,7 @@ specific to the domain of QCoDeS database.
 
 from __future__ import annotations
 
+import contextlib
 import datetime
 import logging
 import sqlite3
@@ -1865,6 +1866,24 @@ def get_metadata_from_run_id(conn: AtomicConnection, run_id: int) -> dict[str, A
     return metadata
 
 
+def _is_storable_in_column(val: Any) -> bool:
+    """
+    Return whether SQLite can store ``val`` in a column.
+
+    Rather than comparing against a fixed list of types, this asks SQLite
+    itself whether it can bind the value, so any type with a registered
+    adapter -- NumPy scalars and arrays, for instance -- is still accepted.
+    The statement is a bare ``SELECT`` against a throwaway in-memory
+    connection, so nothing is written anywhere.
+    """
+    with contextlib.closing(sqlite3.connect(":memory:")) as probe:
+        try:
+            probe.execute("SELECT ?", (val,))
+        except (sqlite3.InterfaceError, sqlite3.ProgrammingError):
+            return False
+    return True
+
+
 def validate_dynamic_column_data(data: Mapping[str, Any]) -> None:
     """
     Validate the given dicts tags and values. Note that None is not a valid
@@ -1873,6 +1892,12 @@ def validate_dynamic_column_data(data: Mapping[str, Any]) -> None:
 
     Args:
         data: the metadata mapping (tags to values)
+
+    Raises:
+        KeyError: if a tag is not a valid SQLite column name.
+        ValueError: if a value is None.
+        TypeError: if a value cannot be stored in a SQLite column, such as a
+            nested dict or a sequence.
 
     """
     for tag, val in data.items():
@@ -1884,6 +1909,13 @@ def validate_dynamic_column_data(data: Mapping[str, Any]) -> None:
         if val is None:
             raise ValueError(
                 f"Tag {tag} has value None. That is not a valid metadata value!"
+            )
+        if not _is_storable_in_column(val):
+            raise TypeError(
+                f"Tag {tag} has value of type {type(val).__name__}. That is "
+                "not a valid metadata value: a column stores a single SQLite "
+                "value, so a nested dict or a sequence has to be serialized "
+                "first, for example with json.dumps."
             )
 
 
