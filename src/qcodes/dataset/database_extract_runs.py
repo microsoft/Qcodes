@@ -175,8 +175,6 @@ def _extract_single_dataset_into_db(
         dataset, target_conn, target_exp_id
     )
     assert target_table_name is not None
-    # Read from the connection where the source dataset's results table lives,
-    # which may be a separate per-dataset SQLite file.
     _populate_results_table(
         dataset._results_conn, target_conn, dataset.table_name, target_table_name
     )

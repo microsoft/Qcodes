@@ -113,7 +113,7 @@ If the per-dataset raw data files are moved to a different folder (e.g. during d
         new_raw_data_folder="/new/location/of/raw_files/"
     )
 
-This scans all datasets with a ``raw_data_db_path`` metadata entry, checks whether the corresponding ``.db`` file exists in the new folder, and updates the stored path accordingly.
+This scans all datasets with the ``raw_data_db_path`` internal ``runs`` column set, checks whether the corresponding ``.db`` file exists in the new folder, and updates the stored path accordingly.
 
 Managing Datasets
 -----------------
