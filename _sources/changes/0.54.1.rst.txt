@@ -1,0 +1,8 @@
+QCoDeS 0.54.0 (2025-10-02)
+==========================
+
+New:
+----
+
+- Exporting of data using xarray directly bypassing Pandas introduced in 0.54.0 has been temporarily disabled
+  due to changes in output format with parameters measured in decreasing order. This will be revisited in a future release. (:pr:`7546`)
