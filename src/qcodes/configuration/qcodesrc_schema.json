@@ -382,6 +382,11 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Should the data be cached in memory as it is measured. Useful to disable for large datasets to save on memory consumption."
+                },
+                "snapshot_at_end": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Should a snapshot of the station be taken at the end of a measurement in addition to the one taken at the start. The end snapshot is stored in the dataset metadata under the 'end_snapshot' key."
                 }
             },
             "description": "Settings related to the DataSet and Measurement Context manager",

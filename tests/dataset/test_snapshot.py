@@ -3,10 +3,16 @@ import json
 import numpy
 import pytest
 
+import qcodes as qc
 from qcodes.dataset.measurements import Measurement
+from qcodes.dataset.snapshot_utils import (
+    diff_start_end_snapshot,
+    diff_start_end_snapshot_by_id,
+)
 from qcodes.instrument_drivers.mock_instruments import DummyInstrument
 from qcodes.parameters import ManualParameter, Parameter
 from qcodes.station import Station
+from qcodes.utils import ParameterDiff, format_parameter_diff
 
 
 @pytest.fixture  # scope is "function" per default
@@ -171,3 +177,158 @@ def test_station_snapshot_in_measurement_refreshes_only_invalid_caches(
     # valid cache -> not gotten, cached value used
     assert valid_calls["n"] == 0
     assert params["p_valid"]["value"] == 7
+
+
+def test_end_snapshot_taken_by_default(experiment, dac, dmm) -> None:
+    station = Station()
+    station.add_component(dac)
+    station.add_component(dmm)
+
+    dac.ch1(1)
+
+    measurement = Measurement(experiment, station)
+    measurement.register_parameter(dac.ch1)
+    measurement.register_parameter(dmm.v1, setpoints=[dac.ch1])
+
+    with measurement.run() as data_saver:
+        data_saver.add_result((dac.ch1, 7), (dmm.v1, 5))
+        dac.ch1(10)
+
+    dataset = data_saver.dataset
+
+    start_snapshot = dataset.snapshot
+    end_snapshot = dataset.end_snapshot
+    assert start_snapshot is not None
+    assert end_snapshot is not None
+
+    assert (
+        start_snapshot["station"]["instruments"]["dummy_dac"]["parameters"]["ch1"][
+            "value"
+        ]
+        == 1
+    )
+    assert (
+        end_snapshot["station"]["instruments"]["dummy_dac"]["parameters"]["ch1"][
+            "value"
+        ]
+        == 10
+    )
+
+    # the end snapshot is stored as metadata
+    assert dataset.metadata["end_snapshot"] == json.dumps(end_snapshot)
+
+
+def test_end_snapshot_can_be_disabled(experiment, dac, dmm) -> None:
+    station = Station()
+    station.add_component(dac)
+    station.add_component(dmm)
+
+    measurement = Measurement(experiment, station)
+    measurement.register_parameter(dac.ch1)
+
+    with measurement.run(snapshot_at_end=False) as data_saver:
+        data_saver.add_result((dac.ch1, 7))
+
+    assert data_saver.dataset.snapshot is not None
+    assert data_saver.dataset.end_snapshot is None
+    assert "end_snapshot" not in data_saver.dataset.metadata
+
+
+def test_end_snapshot_can_be_disabled_by_config(experiment, dac, dmm) -> None:
+    station = Station()
+    station.add_component(dac)
+
+    measurement = Measurement(experiment, station)
+    measurement.register_parameter(dac.ch1)
+
+    original = qc.config.dataset.snapshot_at_end
+    qc.config.dataset.snapshot_at_end = False
+    try:
+        with measurement.run() as data_saver:
+            data_saver.add_result((dac.ch1, 7))
+    finally:
+        qc.config.dataset.snapshot_at_end = original
+
+    assert data_saver.dataset.end_snapshot is None
+
+
+def test_add_end_snapshot_does_not_overwrite(experiment, dac) -> None:
+    measurement = Measurement(experiment)
+    measurement.register_parameter(dac.ch1)
+
+    with measurement.run() as data_saver:
+        data_saver.add_result((dac.ch1, 7))
+
+    dataset = data_saver.dataset
+    original = dataset._end_snapshot_raw
+    assert original is not None
+
+    dataset.add_end_snapshot(json.dumps({"station": {"parameters": {}}}))
+    assert dataset._end_snapshot_raw == original
+
+    dataset.add_end_snapshot(
+        json.dumps({"station": {"parameters": {}}}), overwrite=True
+    )
+    assert dataset.end_snapshot == {"station": {"parameters": {}}}
+
+
+def test_diff_start_end_snapshot(experiment, dac, dmm) -> None:
+    station = Station()
+    station.add_component(dac)
+    station.add_component(dmm)
+
+    dac.ch1(1)
+    dac.ch2(2)
+
+    measurement = Measurement(experiment, station)
+    measurement.register_parameter(dac.ch1)
+
+    with measurement.run() as data_saver:
+        data_saver.add_result((dac.ch1, 7))
+        dac.ch1(10)
+
+    dataset = data_saver.dataset
+
+    diff = diff_start_end_snapshot(dataset)
+    assert diff.changed[("dummy_dac", "ch1")] == (1, 10)
+    assert ("dummy_dac", "ch2") not in diff.changed
+    assert diff.left_only == {}
+    assert diff.right_only == {}
+
+    # the same diff can be obtained from the run id
+    diff_by_id = diff_start_end_snapshot_by_id(dataset.run_id)
+    assert diff_by_id == diff
+
+
+def test_diff_start_end_snapshot_raises_without_end_snapshot(experiment, dac) -> None:
+    measurement = Measurement(experiment)
+    measurement.register_parameter(dac.ch1)
+
+    with measurement.run(snapshot_at_end=False) as data_saver:
+        data_saver.add_result((dac.ch1, 7))
+
+    with pytest.raises(RuntimeError, match="end of the measurement is empty"):
+        diff_start_end_snapshot(data_saver.dataset)
+
+
+def test_format_parameter_diff() -> None:
+    diff = ParameterDiff(
+        left_only={"a": 1},
+        right_only={("inst", "b"): 2},
+        changed={("inst", "c"): (3, 4)},
+    )
+
+    formatted = format_parameter_diff(diff, "start", "end")
+    assert formatted == (
+        "Changed parameters (start -> end):\n"
+        "  inst.c: 3 -> 4\n"
+        "Parameters only in start:\n"
+        "  a: 1\n"
+        "Parameters only in end:\n"
+        "  inst.b: 2"
+    )
+
+    assert str(diff) == format_parameter_diff(diff)
+
+    empty = ParameterDiff(left_only={}, right_only={}, changed={})
+    assert str(empty) == "No differences between the two snapshots."

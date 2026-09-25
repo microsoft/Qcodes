@@ -47,6 +47,12 @@ from .measurement_extensions import (
 )
 from .measurements import Measurement
 from .plotting import plot_by_id, plot_dataset
+from .snapshot_utils import (
+    diff_param_snapshots,
+    diff_param_values_by_id,
+    diff_start_end_snapshot,
+    diff_start_end_snapshot_by_id,
+)
 from .sqlite.connection import (
     AtomicConnection,
 )
@@ -88,6 +94,10 @@ __all__ = [
     "call_params_threaded",
     "connect",
     "datasaver_builder",
+    "diff_param_snapshots",
+    "diff_param_values_by_id",
+    "diff_start_end_snapshot",
+    "diff_start_end_snapshot_by_id",
     "do0d",
     "do1d",
     "do2d",
