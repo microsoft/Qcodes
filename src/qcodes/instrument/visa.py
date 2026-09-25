@@ -167,7 +167,7 @@ class VisaInstrument(Instrument):
             timeout = self.default_timeout
 
         super().__init__(name, **kwargs)
-        self.visa_log = get_instrument_logger(self, VISA_LOGGER)
+        self.visa_log = get_instrument_logger(self, self._logger_name(VISA_LOGGER))
 
         self.timeout: Parameter[float | None, Self] = self.add_parameter(
             "timeout",

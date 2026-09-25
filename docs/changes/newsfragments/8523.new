@@ -1,0 +1,21 @@
+Instruments can now opt in to a logger of their own, rather than sharing a
+single logger with every other instrument in the process. Setting the class
+attribute ``default_logger_scope`` to ``"instrument"`` makes ``Instrument.log``
+(and ``VisaInstrument.visa_log``) use a logger named after the driver class and
+the instrument's ``name_parts``, so that levels, handlers and ``propagate`` can
+be configured per instrument::
+
+    MyDriver.default_logger_scope = "instrument"
+
+The scoped loggers mirror the instrument hierarchy, for example
+``qcodes.instrument.instrument_base.MyDriver`` for the driver,
+``qcodes.instrument.instrument_base.MyDriver.myinst`` for one of its
+instruments and ``qcodes.instrument.instrument_base.MyDriver.myinst.ChanA`` for
+one of that instrument's channels. A level can therefore be set for a whole
+driver class, a single instrument or a single channel, and is inherited by
+everything below it. Setting the level for a whole driver also works before any
+of its instruments exist, so it can be configured via ``logger_levels`` in
+``qcodesrc.json``.
+
+The default is unchanged: without opting in, all instruments keep sharing one
+logger exactly as before.
