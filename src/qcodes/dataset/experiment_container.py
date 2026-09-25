@@ -341,18 +341,15 @@ def load_experiment_by_name(
     if len(exp_ids) == 0:
         raise ValueError("Experiment not found")
     elif len(exp_ids) > 1:
-        _repr = []
-        for exp_id in exp_ids:
-            exp = load_experiment(exp_id, conn=conn)
-            s = (
+        experiments = [load_experiment(exp_id, conn=conn) for exp_id in exp_ids]
+        if load_last_duplicate:
+            e = experiments[-1]
+        else:
+            _repr_str = "\n".join(
                 f"exp_id:{exp.exp_id} ({exp.name}-{exp.sample_name})"
                 f" started at ({exp.started_at})"
+                for exp in experiments
             )
-            _repr.append(s)
-        _repr_str = "\n".join(_repr)
-        if load_last_duplicate:
-            e = exp  # pyright: ignore[reportPossiblyUnboundVariable]
-        else:
             raise ValueError(
                 f"Many experiments matching your request found:\n{_repr_str}"
             )

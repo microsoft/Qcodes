@@ -16,7 +16,7 @@ from broadbean.sequence import InvalidForgedSequenceError, fs_schema
 
 from qcodes import validators as vals
 from qcodes.instrument import (
-    ChannelList,
+    ChannelTuple,
     InstrumentBaseKWArgs,
     InstrumentChannel,
     VisaInstrument,
@@ -597,28 +597,24 @@ class TektronixAWG70000Base(VisaInstrument):
         )
         """Parameter force_jump"""
 
-        add_channel_list = self.num_channels > 2
-        # We deem 2 channels too few for a channel list
-        if add_channel_list:
-            chanlist = ChannelList(
-                self, "Channels", Tektronix70000AWGChannel, snapshotable=False
-            )
-
+        channels: list[Tektronix70000AWGChannel] = []
         for ch_num in range(1, num_channels + 1):
             ch_name = f"ch{ch_num}"
             channel = Tektronix70000AWGChannel(self, ch_name, ch_num)
             self.add_submodule(ch_name, channel)
-            if add_channel_list:
-                # pyright does not seem to understand
-                # that this code can only run iff chanliss is created
-                chanlist.append(  # pyright: ignore[reportPossiblyUnboundVariable]
-                    channel
-                )
+            channels.append(channel)
 
-        if add_channel_list:
+        # We deem 2 channels too few for a channel list
+        if self.num_channels > 2:
             self.add_submodule(
                 "channels",
-                chanlist.to_channel_tuple(),  # pyright: ignore[reportPossiblyUnboundVariable]
+                ChannelTuple(
+                    self,
+                    "Channels",
+                    Tektronix70000AWGChannel,
+                    channels,
+                    snapshotable=False,
+                ),
             )
 
         # Folder on the AWG where to files are uploaded by default
