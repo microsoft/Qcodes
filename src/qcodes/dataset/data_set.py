@@ -60,8 +60,8 @@ from qcodes.dataset.sqlite.queries import (
     get_guid_from_expid_and_counter,
     get_guid_from_run_id,
     get_metadata_from_run_id,
-    get_parameter_data,
     get_parent_dataset_links,
+    get_raw_data_db_path_for_run,
     get_run_description,
     get_run_timestamp_from_run_id,
     get_runid_from_guid,
@@ -77,14 +77,20 @@ from qcodes.dataset.sqlite.query_helpers import (
     VALUE,
     VALUES,
     insert_many_values,
-    length,
-    one,
     select_one_where,
 )
 from qcodes.utils import (
     NumpyJSONEncoder,
 )
 
+from ._raw_data_storage import (
+    connect_to_raw_data_db,
+)
+from ._results_backend import (
+    ResultsBackend,
+    select_results_backend_for_existing_run,
+    select_results_backend_for_new_run,
+)
 from .data_set_cache import DataSetCacheWithDBBackend
 from .data_set_in_memory import DataSetInMem, load_from_file
 from .descriptions.versioning import serialization as serial
@@ -141,22 +147,42 @@ class _BackgroundWriter(Thread):
 
     def run(self) -> None:
         self.conn = connect(self.path)
+        self._raw_data_conns: dict[str, AtomicConnection] = {}
 
         while self.keep_writing:
             item = self.queue.get()
             if item["keys"] == "stop":
                 self.keep_writing = False
                 self.conn.close()
+                for raw_conn in self._raw_data_conns.values():
+                    raw_conn.close()
             elif item["keys"] == "finalize":
                 _WRITERS[self.path].active_datasets.remove(item["values"])
             else:
-                self.write_results(item["keys"], item["values"], item["table_name"])
+                conn = self._get_conn_for_item(item)
+                self.write_results(
+                    conn, item["keys"], item["values"], item["table_name"]
+                )
             self.queue.task_done()
 
+    def _get_conn_for_item(self, item: dict[str, Any]) -> AtomicConnection:
+        results_db_path = item.get("results_db_path")
+        if results_db_path is None:
+            return self.conn
+        if results_db_path not in self._raw_data_conns:
+            self._raw_data_conns[results_db_path] = connect_to_raw_data_db(
+                results_db_path
+            )
+        return self._raw_data_conns[results_db_path]
+
     def write_results(
-        self, keys: Sequence[str], values: Sequence[list[Any]], table_name: str
+        self,
+        conn: AtomicConnection,
+        keys: Sequence[str],
+        values: Sequence[list[Any]],
+        table_name: str,
     ) -> None:
-        insert_many_values(self.conn, table_name, keys, values)
+        insert_many_values(conn, table_name, keys, values)
 
     def shutdown(self) -> None:
         """
@@ -267,6 +293,10 @@ class DataSet(BaseDataSet):
 
         self._debug = False
         self.subscribers: dict[str, _Subscriber] = {}
+        #: Subscriptions requested before the dataset was started, and thus
+        #: before the results table exists. They are materialised into real
+        #: subscribers (with their SQL triggers) once the dataset is started.
+        self._pending_subscribers: dict[str, dict[str, Any]] = {}
         self._parent_dataset_links: list[Link]
         #: In memory representation of the data in the dataset.
         self._cache: DataSetCacheWithDBBackend = DataSetCacheWithDBBackend(self)
@@ -290,6 +320,13 @@ class DataSet(BaseDataSet):
             self._export_info = ExportInfo.from_str(
                 self.metadata.get("export_info", "")
             )
+            # Select the results backend from the run's recorded state, so that
+            # e.g. a run whose data lives in a separate SQLite file is detected
+            # automatically here (no matter how the DataSet is constructed).
+            self._results_backend: ResultsBackend = (
+                select_results_backend_for_existing_run(self, self.conn, self.run_id)
+            )
+            self._results_backend.setup_on_load(read_only=read_only)
         else:
             # Actually perform all the side effects needed for the creation
             # of a new dataset. Note that a dataset is created (in the DB)
@@ -298,6 +335,11 @@ class DataSet(BaseDataSet):
             if exp_id is None:
                 exp_id = get_default_experiment_id(self.conn)
             name = name or "dataset"
+            # Select the results backend from config. The backend sets up its
+            # own storage when the run is started (see ``setup_on_start``), not
+            # here - ``create_run`` only records the run metadata, mirroring how
+            # ``DataSetInMem`` records runs.
+            self._results_backend = select_results_backend_for_new_run(self)
             _, run_id, __ = create_run(
                 self.conn,
                 exp_id,
@@ -306,6 +348,7 @@ class DataSet(BaseDataSet):
                 parameters=None,
                 values=values,
                 metadata=metadata,
+                create_run_table=False,
             )
             # this is really the UUID (an ever increasing count in the db)
             self._run_id = run_id
@@ -324,6 +367,10 @@ class DataSet(BaseDataSet):
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._parent_dataset_links = []
             self._export_info = ExportInfo({})
+
+            # Let the backend record any bookkeeping for the new run (e.g. the
+            # location of the per-dataset raw data file).
+            self._results_backend.setup_on_new_run()
         assert self.path_to_db is not None
         if _WRITERS.get(self.path_to_db) is None:
             queue: Queue[Any] = Queue()
@@ -357,6 +404,28 @@ class DataSet(BaseDataSet):
     @property
     def cache(self) -> DataSetCacheWithDBBackend:
         return self._cache
+
+    @property
+    def _results_conn(self) -> AtomicConnection:
+        """The connection on which this dataset's results table lives.
+
+        Delegates to the results backend: the main database connection by
+        default, or a separate per-dataset connection when the results are
+        stored elsewhere. Collaborators that operate on the results table
+        directly (the cache and subscribers) use this.
+        """
+        return self._results_backend.results_conn
+
+    @property
+    def _results_table_exists(self) -> bool:
+        """Whether the physical results table currently exists.
+
+        With a separate results backend the table is created only once the
+        dataset has been started, so before that (and in the main database in
+        general) no results table exists. Callers that count rows must handle
+        this case.
+        """
+        return self._results_backend.results_table_exists()
 
     @property
     def run_id(self) -> int:
@@ -419,9 +488,7 @@ class DataSet(BaseDataSet):
 
     @property
     def number_of_results(self) -> int:
-        sql = f'SELECT COUNT(*) FROM "{self.table_name}"'
-        cursor = atomic_transaction(self.conn, sql)
-        return one(cursor, "COUNT(*)")
+        return self._results_backend.number_of_results()
 
     @property
     def counter(self) -> int:
@@ -683,10 +750,24 @@ class DataSet(BaseDataSet):
         """
         paramspecs = new_to_old(self._rundescriber.interdeps).paramspecs
 
-        for spec in paramspecs:
-            add_parameter(
-                spec, conn=self.conn, run_id=self.run_id, insert_into_results_table=True
-            )
+        # Register all parameters in a single transaction (each add_parameter
+        # would otherwise commit on its own) to avoid one fsync per parameter.
+        with atomic(self.conn) as conn:
+            for spec in paramspecs:
+                add_parameter(
+                    spec,
+                    conn=conn,
+                    run_id=self.run_id,
+                    # The results table is created wholesale by the backend
+                    # just below, so only the layouts/dependencies are updated
+                    # here.
+                    insert_into_results_table=False,
+                )
+
+        # Let the backend set up its storage (add columns to the main-database
+        # results table, create a per-dataset SQLite file, ...) now that all
+        # parameters are known.
+        self._results_backend.setup_on_start()
 
         desc_str = serial.to_json_for_storage(self.description)
 
@@ -722,6 +803,11 @@ class DataSet(BaseDataSet):
 
         writer_status.active_datasets.add(self.run_id)
         self.cache.prepare()
+
+        # Now that the dataset is started (and, for split raw data storage, the
+        # results table exists in the per-dataset file), create any subscribers
+        # that were requested while the dataset was still pristine.
+        self._start_pending_subscribers()
 
     def mark_completed(self) -> None:
         """
@@ -770,14 +856,17 @@ class DataSet(BaseDataSet):
         writer_status = self._writer_status
 
         if writer_status.write_in_background:
-            item = {
+            item: dict[str, Any] = {
                 "keys": list(expected_keys),
                 "values": values,
                 "table_name": self.table_name,
+                # None means the main database; a separate backend gives the
+                # per-dataset file the background writer should write to.
+                "results_db_path": self._results_backend.results_db_path,
             }
             writer_status.data_write_queue.put(item)
         else:
-            insert_many_values(self.conn, self.table_name, list(expected_keys), values)
+            self._results_backend.insert_results(list(expected_keys), values)
 
     def _raise_if_not_writable(self) -> None:
         if self.pristine:
@@ -869,8 +958,9 @@ class DataSet(BaseDataSet):
 
         else:
             valid_param_names = self._validate_parameters(*params)
-        return get_parameter_data(
-            self.conn, self.table_name, valid_param_names, start, end, callback
+
+        return self._results_backend.read_parameter_data(
+            valid_param_names, start, end, callback
         )
 
     def to_pandas_dataframe_dict(
@@ -1151,12 +1241,70 @@ class DataSet(BaseDataSet):
         callback_kwargs: Mapping[str, Any] | None = None,
     ) -> str:
         subscriber_id = uuid.uuid4().hex
+        if not self._results_table_exists:
+            # The results table does not exist yet - this happens with split
+            # raw data storage, where the table lives in the per-dataset file
+            # created only when the dataset is started. A subscriber has
+            # nothing to observe before the dataset is started, so defer
+            # creating it (and its SQL trigger) until then.
+            self._queue_pending_subscriber(
+                subscriber_id, callback, min_wait, min_count, state, callback_kwargs
+            )
+            return subscriber_id
+        self._create_and_start_subscriber(
+            subscriber_id, callback, min_wait, min_count, state, callback_kwargs
+        )
+        return subscriber_id
+
+    def _create_and_start_subscriber(
+        self,
+        subscriber_id: str,
+        callback: Callable[[Any, int, Any | None], None],
+        min_wait: int,
+        min_count: int,
+        state: Any | None,
+        callback_kwargs: Mapping[str, Any] | None,
+    ) -> None:
+        """Create a :class:`_Subscriber` (and its SQL trigger) and start it."""
         subscriber = _Subscriber(
             self, subscriber_id, callback, state, min_wait, min_count, callback_kwargs
         )
         self.subscribers[subscriber_id] = subscriber
         subscriber.start()
-        return subscriber_id
+
+    def _queue_pending_subscriber(
+        self,
+        subscriber_id: str,
+        callback: Callable[[Any, int, Any | None], None],
+        min_wait: int,
+        min_count: int,
+        state: Any | None,
+        callback_kwargs: Mapping[str, Any] | None,
+    ) -> None:
+        """Record a subscription requested before the dataset was started, to
+        be materialised once the results table exists (see
+        :meth:`_start_pending_subscribers`)."""
+        self._pending_subscribers[subscriber_id] = {
+            "callback": callback,
+            "min_wait": min_wait,
+            "min_count": min_count,
+            "state": state,
+            "callback_kwargs": callback_kwargs,
+        }
+
+    def _start_pending_subscribers(self) -> None:
+        """Materialise subscriptions that were requested before the dataset was
+        started (and thus before the results table existed)."""
+        for subscriber_id, kwargs in self._pending_subscribers.items():
+            self._create_and_start_subscriber(
+                subscriber_id,
+                kwargs["callback"],
+                kwargs["min_wait"],
+                kwargs["min_count"],
+                kwargs["state"],
+                kwargs["callback_kwargs"],
+            )
+        self._pending_subscribers.clear()
 
     def subscribe_from_config(self, name: str) -> str:
         """
@@ -1196,7 +1344,11 @@ class DataSet(BaseDataSet):
         """
         Remove subscriber with the provided uuid
         """
-        with atomic(self.conn) as conn:
+        if uuid in self._pending_subscribers:
+            # Not yet materialised into a real subscriber/trigger.
+            del self._pending_subscribers[uuid]
+            return
+        with atomic(self._results_conn) as conn:
             sub = self.subscribers[uuid]
             remove_trigger(conn, sub.trigger_id)
             sub.schedule_stop()
@@ -1207,12 +1359,16 @@ class DataSet(BaseDataSet):
         """
         Remove all subscribers
         """
+        # Drop subscriptions that were deferred before the dataset started and
+        # never materialised into real subscribers/triggers.
+        self._pending_subscribers.clear()
         sql = """
         SELECT name FROM sqlite_master
         WHERE type = 'trigger'
         """
-        triggers = atomic_transaction(self.conn, sql).fetchall()
-        with atomic(self.conn) as conn:
+        data_conn = self._results_conn
+        triggers = atomic_transaction(data_conn, sql).fetchall()
+        with atomic(data_conn) as conn:
             for (trigger,) in triggers:
                 remove_trigger(conn, trigger)
             for sub in self.subscribers.values():
@@ -1225,7 +1381,7 @@ class DataSet(BaseDataSet):
         return get_data_by_tag_and_table_name(self.conn, tag, self.table_name)
 
     def __len__(self) -> int:
-        return length(self.conn, self.table_name)
+        return self._results_backend.results_length()
 
     def __repr__(self) -> str:
         out = []
@@ -1633,7 +1789,7 @@ def load_by_run_spec(
         )
 
         if len(guids) == 1:
-            d = load_by_guid(guids[0], internal_conn)
+            d = load_by_guid(guids[0], internal_conn, read_only=read_only)
         elif len(guids) > 1:
             print(generate_dataset_table(guids, conn=internal_conn))
             raise NameError(
@@ -1746,7 +1902,7 @@ def load_by_id(
             raise ValueError(
                 f"Run with run_id {run_id} does not exist in the database: {internal_conn.path_to_dbfile}"
             )
-        d = _get_datasetprotocol_from_guid(guid, internal_conn)
+        d = _get_datasetprotocol_from_guid(guid, internal_conn, read_only=read_only)
     finally:
         # dataset takes ownership of the connection but DataSetInMem does not
         if not conn and not isinstance(d, DataSet):
@@ -1789,7 +1945,7 @@ def load_by_guid(
 
     # this function raises a RuntimeError if more than one run matches the GUID
     try:
-        d = _get_datasetprotocol_from_guid(guid, internal_conn)
+        d = _get_datasetprotocol_from_guid(guid, internal_conn, read_only=read_only)
     finally:
         # dataset takes ownership of the connection but DataSetInMem does not
         if not conn and not isinstance(d, DataSet):
@@ -1839,7 +1995,7 @@ def load_by_counter(
     # this function raises a RuntimeError if more than one run matches the GUID
     try:
         guid = get_guid_from_expid_and_counter(internal_conn, exp_id, counter)
-        d = _get_datasetprotocol_from_guid(guid, internal_conn)
+        d = _get_datasetprotocol_from_guid(guid, internal_conn, read_only=read_only)
     finally:
         # dataset takes ownership of the connection but DataSetInMem does not
         if not conn and not isinstance(d, DataSet):
@@ -1849,7 +2005,7 @@ def load_by_counter(
 
 
 def _get_datasetprotocol_from_guid(
-    guid: str, conn: AtomicConnection
+    guid: str, conn: AtomicConnection, *, read_only: bool = False
 ) -> DataSetProtocol:
     run_id = get_runid_from_guid(conn, guid)
     if run_id is None:
@@ -1875,8 +2031,15 @@ def _get_datasetprotocol_from_guid(
                 return d
 
     result_table_name = _get_result_table_name_by_guid(conn, guid)
-    if _check_if_table_found(conn, result_table_name):
-        d = DataSet(conn=conn, run_id=run_id)
+    # The results table is absent from the main DB when raw data is stored in a
+    # separate per-dataset SQLite file. Such runs are marked with a
+    # raw_data_db_path; anything else without a results table is an in-memory
+    # (netcdf-backed) dataset.
+    if (
+        _check_if_table_found(conn, result_table_name)
+        or get_raw_data_db_path_for_run(conn, run_id) is not None
+    ):
+        d = DataSet(conn=conn, run_id=run_id, read_only=read_only)
     else:
         d = DataSetInMem._load_from_db(conn=conn, guid=guid)
 

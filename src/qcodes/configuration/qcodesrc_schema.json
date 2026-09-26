@@ -382,6 +382,35 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Should the data be cached in memory as it is measured. Useful to disable for large datasets to save on memory consumption."
+                },
+                "raw_data_backend": {
+                    "type": "string",
+                    "enum": ["sqlite_main_db", "sqlite_per_dataset_db"],
+                    "default": "sqlite_main_db",
+                    "description": "Which backend stores dataset raw measurement data (the results tables). 'sqlite_main_db' (default) keeps the results in the main QCoDeS database. 'sqlite_per_dataset_db' writes each dataset's results to an individual per-dataset SQLite file while all metadata stays in the main database. Backend-specific settings live under raw_data_backend_config."
+                },
+                "raw_data_backend_config": {
+                    "type": "object",
+                    "default": {
+                        "sqlite_per_dataset_db": {
+                            "raw_data_path": "{db_location}"
+                        }
+                    },
+                    "description": "Backend-specific configuration, keyed by the raw_data_backend name. Each backend reads its own entry; add a new key here (and a new raw_data_backend enum value) when adding a new backend.",
+                    "properties": {
+                        "sqlite_per_dataset_db": {
+                            "type": "object",
+                            "description": "Configuration for the 'sqlite_per_dataset_db' results backend.",
+                            "properties": {
+                                "raw_data_path": {
+                                    "type": "string",
+                                    "default": "{db_location}",
+                                    "description": "Path to the folder where per-dataset raw data SQLite files are stored. {db_location} is a directory in the same folder as the .db file with a matching name, e.g. for ~/experiments.db raw data files will be stored in ~/experiments_db/"
+                                }
+                            },
+                            "required": ["raw_data_path"]
+                        }
+                    }
                 }
             },
             "description": "Settings related to the DataSet and Measurement Context manager",

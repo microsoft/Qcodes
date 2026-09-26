@@ -79,7 +79,13 @@
         "export_chunked_export_of_large_files_enabled": false,
         "export_chunked_threshold": 1000,
         "in_memory_cache": true,
-        "load_from_exported_file": false
+        "load_from_exported_file": false,
+        "raw_data_backend": "sqlite_main_db",
+        "raw_data_backend_config": {
+            "sqlite_per_dataset_db": {
+                "raw_data_path": "{db_location}"
+            }
+        }
     },
     "telemetry":
     {

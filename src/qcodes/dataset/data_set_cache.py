@@ -552,12 +552,15 @@ class DataSetCacheWithDBBackend(DataSetCache["DataSet"]):
             self._loaded_from_completed_ds = True
         if self._data == {}:
             self.prepare()
+        # The connection on which the dataset's results table lives (the main
+        # database, or a separate per-dataset file).
+        data_conn = self._dataset._results_conn
         (
             self._write_status,
             self._read_status,
             self._data,
         ) = load_new_data_from_db_and_append(
-            self._dataset.conn,
+            data_conn,
             self._dataset.table_name,
             self.rundescriber,
             self._write_status,
