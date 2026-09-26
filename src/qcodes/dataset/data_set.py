@@ -166,12 +166,14 @@ class _BackgroundWriter(Thread):
             self.queue.task_done()
 
     def _get_conn_for_item(self, item: dict[str, Any]) -> AtomicConnection:
-        raw_data_path = item.get("raw_data_path")
-        if raw_data_path is None:
+        results_db_path = item.get("results_db_path")
+        if results_db_path is None:
             return self.conn
-        if raw_data_path not in self._raw_data_conns:
-            self._raw_data_conns[raw_data_path] = connect_to_raw_data_db(raw_data_path)
-        return self._raw_data_conns[raw_data_path]
+        if results_db_path not in self._raw_data_conns:
+            self._raw_data_conns[results_db_path] = connect_to_raw_data_db(
+                results_db_path
+            )
+        return self._raw_data_conns[results_db_path]
 
     def write_results(
         self,
@@ -333,10 +335,10 @@ class DataSet(BaseDataSet):
             if exp_id is None:
                 exp_id = get_default_experiment_id(self.conn)
             name = name or "dataset"
-            # Select the results backend from config. The results table is
-            # created by the backend when the run is started (see
-            # ``create_results_table``), not here - ``create_run`` only records
-            # the run metadata, mirroring how ``DataSetInMem`` records runs.
+            # Select the results backend from config. The backend sets up its
+            # own storage when the run is started (see ``setup_on_start``), not
+            # here - ``create_run`` only records the run metadata, mirroring how
+            # ``DataSetInMem`` records runs.
             self._results_backend = select_results_backend_for_new_run(self)
             _, run_id, __ = create_run(
                 self.conn,
@@ -762,9 +764,10 @@ class DataSet(BaseDataSet):
                     insert_into_results_table=False,
                 )
 
-        # Let the backend create its results table (in the main database, or in
-        # a per-dataset SQLite file) now that all parameters are known.
-        self._results_backend.create_results_table()
+        # Let the backend set up its storage (add columns to the main-database
+        # results table, create a per-dataset SQLite file, ...) now that all
+        # parameters are known.
+        self._results_backend.setup_on_start()
 
         desc_str = serial.to_json_for_storage(self.description)
 
@@ -859,7 +862,7 @@ class DataSet(BaseDataSet):
                 "table_name": self.table_name,
                 # None means the main database; a separate backend gives the
                 # per-dataset file the background writer should write to.
-                "raw_data_path": self._results_backend.results_db_path,
+                "results_db_path": self._results_backend.results_db_path,
             }
             writer_status.data_write_queue.put(item)
         else:

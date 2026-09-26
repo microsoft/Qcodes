@@ -1,12 +1,14 @@
-Added **split raw data storage** for the DataSet: an opt-in feature
-enabled via the ``dataset.raw_data_to_separate_db`` config option that
-writes raw measurement data into individual per-dataset SQLite files
-while keeping all metadata in the main database.  This prevents the
-main DB file from growing excessively large and allows users to have a
-single main SQLite QCoDeS database on their PC as opposed to many that
-grow infinitely.  When enabled, no results table is created in the main
-database at all - it holds only metadata - and all public ``DataSet``
-APIs continue to work unchanged.
+Added **split raw data storage** for the DataSet: an opt-in results
+backend selected via the ``dataset.raw_data_backend`` config option
+(set it to ``"sqlite_per_dataset_db"``) that writes raw measurement
+data into individual per-dataset SQLite files while keeping all metadata
+in the main database.  This prevents the main DB file from growing
+excessively large and allows users to have a single main SQLite QCoDeS
+database on their PC as opposed to many that grow infinitely.  When
+selected, no results table is created in the main database at all - it
+holds only metadata - and all public ``DataSet`` APIs continue to work
+unchanged.  Backend-specific settings (such as the per-dataset file
+folder ``raw_data_path``) live under ``dataset.raw_data_backend_config``.
 
 Management helpers included:
 
