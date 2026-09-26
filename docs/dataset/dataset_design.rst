@@ -93,8 +93,11 @@ inside the ``DataSet`` class without changing any public interfaces:
   encapsulates where and how a dataset's results table is stored. The default
   ``MainDatabaseResultsBackend`` keeps results in the main database;
   ``SeparateSqliteFileResultsBackend`` writes them to a per-dataset SQLite file.
-  The backend is selected in ``DataSet.__init__`` (from config for new runs,
-  from the run's recorded state for existing ones).
+  Backends are registered by their ``backend_name`` (the ``dataset.raw_data_backend``
+  config value); the backend is selected in ``DataSet.__init__`` from that config
+  for new runs, and from the run's recorded state for existing ones. Adding a
+  backend is a matter of registering a new ``ResultsBackend`` subclass and a
+  ``raw_data_backend`` / ``raw_data_backend_config`` entry.
 - A ``_results_conn`` property returns the backend's connection -- the main
   database connection by default, or a per-dataset raw data connection when
   results are stored separately.

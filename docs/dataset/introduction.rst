@@ -85,24 +85,24 @@ By default, all measurement data (the results table rows) is stored in the same 
 
 QCoDeS supports an optional **split raw data storage** mode in which the actual measurement data for each ``DataSet`` is written to an individual, per-dataset SQLite file while all metadata remains in the main database. Each per-dataset file is named after the dataset's GUID (e.g. ``<guid>.db``) and is stored in a configurable folder.
 
-This feature is controlled by two configuration options in ``qcodesrc.json``:
+Which backend stores a dataset's results is selected by the ``dataset.raw_data_backend`` option in ``qcodesrc.json``, with backend-specific settings under ``dataset.raw_data_backend_config``:
 
-- ``dataset.raw_data_to_separate_db`` (bool, default ``false``): enables or disables split storage.
-- ``dataset.raw_data_path`` (string, default ``"{db_location}"``): the folder where per-dataset files are created. The ``{db_location}`` placeholder is expanded to a folder derived from the main database path (e.g. ``~/experiments.db`` becomes ``~/experiments_db/``).
+- ``dataset.raw_data_backend`` (string, default ``"sqlite_main_db"``): the results backend. ``"sqlite_main_db"`` keeps results in the main database; ``"sqlite_per_dataset_db"`` enables split storage.
+- ``dataset.raw_data_backend_config.sqlite_per_dataset_db.raw_data_path`` (string, default ``"{db_location}"``): the folder where per-dataset files are created. The ``{db_location}`` placeholder is expanded to a folder derived from the main database path (e.g. ``~/experiments.db`` becomes ``~/experiments_db/``).
 
-When enabled:
+When ``"sqlite_per_dataset_db"`` is selected:
 
 - No results table is created in the main database; it stores only the run metadata, keeping it lightweight.
 - All ``INSERT`` and ``SELECT`` operations on results data are transparently routed to the per-dataset file.
 - The path to the per-dataset file is recorded in the ``runs`` table, so ``load_by_id`` and related loading functions automatically reconnect to the correct file.
-- All public ``DataSet`` APIs (``get_parameter_data``, ``to_pandas_dataframe``, ``to_xarray_dataset``, ``cache``, ``export``, etc.) work identically whether split storage is enabled or not.
+- All public ``DataSet`` APIs (``get_parameter_data``, ``to_pandas_dataframe``, ``to_xarray_dataset``, ``cache``, ``export``, etc.) work identically whichever backend is selected.
 
 Example runtime configuration::
 
     import qcodes as qc
 
-    qc.config.dataset.raw_data_to_separate_db = True
-    qc.config.dataset.raw_data_path = "/data/raw_measurements/"
+    qc.config.dataset.raw_data_backend = "sqlite_per_dataset_db"
+    qc.config.dataset.raw_data_backend_config.sqlite_per_dataset_db.raw_data_path = "/data/raw_measurements/"
 
 If the per-dataset raw data files are moved to a different folder (e.g. during data migration or archival), the stored paths in the main database will become stale. Use the :func:`~qcodes.dataset.update_raw_data_paths` helper to update them::
 

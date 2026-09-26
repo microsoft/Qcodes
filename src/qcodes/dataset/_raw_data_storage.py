@@ -1,13 +1,14 @@
 """
 Module for managing per-dataset raw data SQLite files.
 
-When the ``dataset.raw_data_to_separate_db`` config option is enabled,
+When ``dataset.raw_data_backend`` is set to ``"sqlite_per_dataset_db"``,
 measurement data (results tables) are written to individual SQLite files
 - one per dataset - instead of the main QCoDeS database file.  All metadata
 (runs, experiments, parameters) remains in the main database.
 
 The per-dataset files are stored in the folder given by
-``dataset.raw_data_path`` and are named ``<guid>.db``.
+``dataset.raw_data_backend_config.sqlite_per_dataset_db.raw_data_path`` and are
+named ``<guid>.db``.
 """
 
 from __future__ import annotations
@@ -36,34 +37,55 @@ from qcodes.dataset.sqlite.queries import (
 from qcodes.dataset.sqlite.query_helpers import is_column_in_table
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Mapping, Sequence
+    from typing import Any
 
     from qcodes.parameters import ParamSpecBase
 
 log = logging.getLogger(__name__)
 
-_RAW_DATA_CONFIG_SECTION = "dataset"
-_RAW_DATA_ENABLED_KEY = "raw_data_to_separate_db"
+_DATASET_CONFIG_SECTION = "dataset"
+_RESULTS_BACKEND_KEY = "raw_data_backend"
+_BACKEND_CONFIG_KEY = "raw_data_backend_config"
 _RAW_DATA_PATH_KEY = "raw_data_path"
+
+#: ``raw_data_backend`` value keeping results in the main QCoDeS database.
+MAIN_DB_BACKEND = "sqlite_main_db"
+#: ``raw_data_backend`` value selecting the per-dataset SQLite-file backend.
+PER_DATASET_DB_BACKEND = "sqlite_per_dataset_db"
+
+
+def get_configured_results_backend_name() -> str:
+    """Return the results backend name from ``dataset.raw_data_backend``."""
+    return qcodes.config[_DATASET_CONFIG_SECTION].get(
+        _RESULTS_BACKEND_KEY, MAIN_DB_BACKEND
+    )
+
+
+def get_results_backend_config(backend_name: str) -> Mapping[str, Any]:
+    """Return the backend-specific config for *backend_name*.
+
+    Reads ``dataset.raw_data_backend_config.<backend_name>``; returns an empty
+    mapping when the backend has no configured settings.
+    """
+    all_config = qcodes.config[_DATASET_CONFIG_SECTION].get(_BACKEND_CONFIG_KEY, {})
+    return all_config.get(backend_name, {}) or {}
 
 
 def is_raw_data_storage_enabled() -> bool:
-    """Return True if per-dataset raw data storage is enabled in config."""
-    return bool(
-        qcodes.config[_RAW_DATA_CONFIG_SECTION].get(_RAW_DATA_ENABLED_KEY, False)
-    )
+    """Return True if the per-dataset SQLite results backend is selected."""
+    return get_configured_results_backend_name() == PER_DATASET_DB_BACKEND
 
 
 def get_raw_data_folder() -> Path:
     """Return the resolved folder path for raw data SQLite files.
 
-    The path template from config is expanded the same way as the
-    export path (``{db_location}`` is replaced with a folder derived
-    from the main database path).
+    The path template comes from the ``sqlite_per_dataset_db`` backend config
+    and is expanded the same way as the export path (``{db_location}`` is
+    replaced with a folder derived from the main database path).
     """
-    raw_path_template: str = qcodes.config[_RAW_DATA_CONFIG_SECTION].get(
-        _RAW_DATA_PATH_KEY, "{db_location}"
-    )
+    config = get_results_backend_config(PER_DATASET_DB_BACKEND)
+    raw_path_template: str = config.get(_RAW_DATA_PATH_KEY, "{db_location}")
     return Path(_expand_export_path(raw_path_template)).expanduser().absolute()
 
 

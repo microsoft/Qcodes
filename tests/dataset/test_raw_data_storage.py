@@ -1,9 +1,9 @@
 """
 Tests for per-dataset raw data SQLite storage.
 
-When ``dataset.raw_data_to_separate_db`` is enabled, measurement data
-(results tables) are written to individual SQLite files while metadata
-remains in the main database.
+When ``dataset.raw_data_backend`` is set to ``"sqlite_per_dataset_db"``,
+measurement data (results tables) are written to individual SQLite files while
+metadata remains in the main database.
 """
 
 from __future__ import annotations
@@ -24,8 +24,10 @@ from qcodes.dataset._raw_data_storage import (
     cleanup_datasets,
     connect_to_raw_data_db,
     create_raw_data_db,
+    get_configured_results_backend_name,
     get_raw_data_db_path,
     get_raw_data_folder,
+    get_results_backend_config,
     is_raw_data_storage_enabled,
     purge_orphaned_datasets,
     update_raw_data_paths,
@@ -68,18 +70,22 @@ def _uses_separate_file(ds: DataSet) -> bool:
 
 @pytest.fixture()
 def _raw_data_db(tmp_path: Path) -> Generator[None, None, None]:
-    """Set up a temp DB with raw_data_to_separate_db enabled."""
+    """Set up a temp DB with the per-dataset SQLite results backend selected."""
     db_path = str(tmp_path / "test.db")
     qc.config["core"]["db_location"] = db_path
     qc.config["core"]["db_debug"] = False
-    qc.config["dataset"]["raw_data_to_separate_db"] = True
-    qc.config["dataset"]["raw_data_path"] = str(tmp_path / "raw_data")
+    qc.config["dataset"]["raw_data_backend"] = "sqlite_per_dataset_db"
+    qc.config["dataset"]["raw_data_backend_config"] = {
+        "sqlite_per_dataset_db": {"raw_data_path": str(tmp_path / "raw_data")}
+    }
     initialise_database()
     try:
         yield
     finally:
-        qc.config["dataset"]["raw_data_to_separate_db"] = False
-        qc.config["dataset"]["raw_data_path"] = "{db_location}"
+        qc.config["dataset"]["raw_data_backend"] = "sqlite_main_db"
+        qc.config["dataset"]["raw_data_backend_config"] = {
+            "sqlite_per_dataset_db": {"raw_data_path": "{db_location}"}
+        }
         gc.collect()
 
 
@@ -104,6 +110,33 @@ class TestRawDataStorageHelpers:
 
     def test_is_raw_data_storage_enabled_on(self, _raw_data_db: None) -> None:
         assert is_raw_data_storage_enabled()
+
+    def test_configured_backend_default(self, tmp_path: Path) -> None:
+        assert get_configured_results_backend_name() == "sqlite_main_db"
+
+    def test_configured_backend_selected(self, _raw_data_db: None) -> None:
+        assert get_configured_results_backend_name() == "sqlite_per_dataset_db"
+
+    def test_backend_config_holds_raw_data_path(
+        self, _raw_data_db: None, tmp_path: Path
+    ) -> None:
+        config = get_results_backend_config("sqlite_per_dataset_db")
+        assert config["raw_data_path"] == str(tmp_path / "raw_data")
+        # A backend without configured settings gets an empty mapping.
+        assert get_results_backend_config("sqlite_main_db") == {}
+
+    def test_unknown_backend_raises(self, tmp_path: Path) -> None:
+        qc.config["core"]["db_location"] = str(tmp_path / "unknown.db")
+        qc.config["core"]["db_debug"] = False
+        initialise_database()
+        new_experiment("e", sample_name="s")
+        qc.config["dataset"]["raw_data_backend"] = "does_not_exist"
+        try:
+            with pytest.raises(ValueError, match="Unknown results backend"):
+                new_data_set("ds")
+        finally:
+            qc.config["dataset"]["raw_data_backend"] = "sqlite_main_db"
+            gc.collect()
 
     def test_get_raw_data_folder(self, _raw_data_db: None, tmp_path: Path) -> None:
         folder = get_raw_data_folder()

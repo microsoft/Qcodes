@@ -23,10 +23,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from qcodes.dataset._raw_data_storage import (
+    MAIN_DB_BACKEND,
+    PER_DATASET_DB_BACKEND,
     connect_to_raw_data_db,
     create_raw_data_db,
+    get_configured_results_backend_name,
     get_raw_data_db_path,
-    is_raw_data_storage_enabled,
 )
 from qcodes.dataset.sqlite.connection import atomic, atomic_transaction
 from qcodes.dataset.sqlite.queries import (
@@ -62,13 +64,18 @@ class ResultsBackend:
     them elsewhere (e.g. a per-dataset SQLite file) while metadata stays in the
     main database. A backend is owned by exactly one dataset.
 
-    Subclasses customise only what differs: :attr:`results_conn`, the
-    ``setup_on_*`` / :meth:`create_results_table` / :meth:`close` lifecycle,
+    Subclasses customise only what differs: :attr:`backend_name`,
+    :attr:`results_conn`, the ``setup_on_*`` / :meth:`close` lifecycle,
     :attr:`results_db_path`, and - if the read path differs -
-    :meth:`read_parameter_data`. The results-table operations below are written
-    against :attr:`results_conn`, so both backends reuse them unchanged (which
-    is why :class:`MainDatabaseResultsBackend` needs no code of its own).
+    :meth:`read_parameter_data`. The results-table operations below
+    are written against :attr:`results_conn`, so both backends reuse them
+    unchanged (which is why :class:`MainDatabaseResultsBackend` needs no code of
+    its own).
     """
+
+    #: ``dataset.raw_data_backend`` value that selects this backend and keys its
+    #: settings in ``dataset.raw_data_backend_config``.
+    backend_name: str = MAIN_DB_BACKEND
 
     def __init__(self, dataset: DataSet) -> None:
         self._dataset = dataset
@@ -84,21 +91,23 @@ class ResultsBackend:
         """Set up the backend for an existing run being loaded. No-op here."""
 
     def setup_on_new_run(self) -> None:
-        """Record backend bookkeeping for a newly created run.
+        """Prepare the backend's storage for a newly created run.
 
         The default creates the (still empty) results table in the main
         database so that the run is recognisable as a :class:`.DataSet` (rather
         than a ``DataSetInMem``) even before it is started. Subclasses that keep
-        no results table in the main database override this.
+        no storage in the main database override this.
         """
         _create_run_table(self.results_conn, self._dataset.table_name)
 
-    def create_results_table(self) -> None:
-        """Populate this backend's results table when the run is started.
+    def setup_on_start(self) -> None:
+        """Prepare/open the backend's storage when the run is started.
 
-        The default adds the parameter columns to the table created in
-        :meth:`setup_on_new_run`; subclasses that store results elsewhere
-        override this (e.g. to create a per-dataset file).
+        Called once all parameters are known. The default adds the parameter
+        columns to the table created in :meth:`setup_on_new_run`; a backend that
+        stores data elsewhere overrides this (e.g. to create a per-dataset file)
+        - and a backend that keeps no results table at all can do whatever its
+        storage format requires here instead.
         """
         ds = self._dataset
         # Add all columns in a single transaction to avoid one commit (fsync)
@@ -184,6 +193,8 @@ class SeparateSqliteFileResultsBackend(ResultsBackend):
     loading.
     """
 
+    backend_name = PER_DATASET_DB_BACKEND
+
     def __init__(self, dataset: DataSet) -> None:
         super().__init__(dataset)
         self._conn: AtomicConnection | None = None
@@ -229,7 +240,7 @@ class SeparateSqliteFileResultsBackend(ResultsBackend):
         with atomic(ds.conn) as aconn:
             set_raw_data_db_path_for_run(aconn, ds.run_id, raw_path_str)
 
-    def create_results_table(self) -> None:
+    def setup_on_start(self) -> None:
         ds = self._dataset
         # The raw-data path was already recorded at creation time; reuse it so
         # both locations stay in sync.
@@ -281,11 +292,27 @@ class SeparateSqliteFileResultsBackend(ResultsBackend):
             self._conn.close()
 
 
+#: Registry mapping ``dataset.raw_data_backend`` values to backend classes.
+#: Add an entry here (and a matching ``raw_data_backend`` enum value plus a
+#: ``raw_data_backend_config`` section in the config schema) to add a backend.
+_RESULTS_BACKENDS_BY_NAME: dict[str, type[ResultsBackend]] = {
+    MainDatabaseResultsBackend.backend_name: MainDatabaseResultsBackend,
+    SeparateSqliteFileResultsBackend.backend_name: SeparateSqliteFileResultsBackend,
+}
+
+
 def select_results_backend_for_new_run(dataset: DataSet) -> ResultsBackend:
     """Choose the results backend for a newly created dataset based on config."""
-    if is_raw_data_storage_enabled():
-        return SeparateSqliteFileResultsBackend(dataset)
-    return MainDatabaseResultsBackend(dataset)
+    name = get_configured_results_backend_name()
+    try:
+        backend_cls = _RESULTS_BACKENDS_BY_NAME[name]
+    except KeyError:
+        raise ValueError(
+            f"Unknown results backend {name!r} configured in "
+            f"'dataset.raw_data_backend'. Valid options are: "
+            f"{sorted(_RESULTS_BACKENDS_BY_NAME)}."
+        ) from None
+    return backend_cls(dataset)
 
 
 def select_results_backend_for_existing_run(
