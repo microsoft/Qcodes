@@ -144,7 +144,11 @@ def test_context(default_params, default_database_and_experiment):
         },
         data_vars=(meas1.name,),
     )
-    assert datasets[0].metadata == metadata_dict
+    assert {
+        key: value
+        for key, value in datasets[0].metadata.items()
+        if key != "end_snapshot"
+    } == metadata_dict
 
     assert_dataset_as_expected(
         datasets[1],
@@ -155,7 +159,11 @@ def test_context(default_params, default_database_and_experiment):
         },
         data_vars=(meas2.name, meas3.name),
     )
-    assert datasets[1].metadata == {}
+    assert {
+        key: value
+        for key, value in datasets[1].metadata.items()
+        if key != "end_snapshot"
+    } == {}
 
 
 def test_dond_into(default_params, default_database_and_experiment):

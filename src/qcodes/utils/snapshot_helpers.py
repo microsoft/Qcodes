@@ -14,6 +14,65 @@ class ParameterDiff(NamedTuple):
     right_only: ParameterDict[Any]
     changed: ParameterDict[tuple[Any, Any]]
 
+    def __str__(self) -> str:
+        return format_parameter_diff(self)
+
+
+def _format_parameter_key(key: ParameterKey) -> str:
+    if isinstance(key, tuple):
+        return ".".join(key)
+    return key
+
+
+def format_parameter_diff(
+    diff: ParameterDiff,
+    left_name: str = "left",
+    right_name: str = "right",
+) -> str:
+    """
+    Render a :class:`ParameterDiff` as a human-readable multi-line string.
+
+    Args:
+        diff: the difference to render.
+        left_name: name used to refer to the left hand side snapshot.
+        right_name: name used to refer to the right hand side snapshot.
+
+    Returns:
+        A human-readable representation of the differences.
+
+    """
+    lines: list[str] = []
+
+    if diff.changed:
+        lines.append(f"Changed parameters ({left_name} -> {right_name}):")
+        lines.extend(
+            f"  {_format_parameter_key(key)}: {left!r} -> {right!r}"
+            for key, (left, right) in sorted(
+                diff.changed.items(), key=lambda item: _format_parameter_key(item[0])
+            )
+        )
+    if diff.left_only:
+        lines.append(f"Parameters only in {left_name}:")
+        lines.extend(
+            f"  {_format_parameter_key(key)}: {value!r}"
+            for key, value in sorted(
+                diff.left_only.items(), key=lambda item: _format_parameter_key(item[0])
+            )
+        )
+    if diff.right_only:
+        lines.append(f"Parameters only in {right_name}:")
+        lines.extend(
+            f"  {_format_parameter_key(key)}: {value!r}"
+            for key, value in sorted(
+                diff.right_only.items(), key=lambda item: _format_parameter_key(item[0])
+            )
+        )
+
+    if not lines:
+        return "No differences between the two snapshots."
+
+    return "\n".join(lines)
+
 
 def extract_param_values(snapshot: Snapshot) -> dict[ParameterKey, Any]:
     """

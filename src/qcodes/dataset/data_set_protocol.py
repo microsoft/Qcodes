@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
 import warnings
@@ -68,6 +69,11 @@ type SpecsOrInterDeps = SPECS | InterDependencies_
 type ParameterData = dict[str, dict[str, npt.NDArray]]
 
 LOG = logging.getLogger(__name__)
+
+# TODO(jenshnielsen): Consider adding a dedicated ``end_snapshot`` column to the
+# runs table via a database upgrade rather than storing the end snapshot as
+# metadata in a dynamic column.
+END_SNAPSHOT_METADATA_KEY = "end_snapshot"
 
 
 class CompletedError(RuntimeError):
@@ -167,6 +173,14 @@ class DataSetProtocol(Protocol):
 
     @property
     def _snapshot_raw(self) -> str | None: ...
+
+    @property
+    def end_snapshot(self) -> dict[str, Any] | None: ...
+
+    def add_end_snapshot(self, snapshot: str, overwrite: bool = False) -> None: ...
+
+    @property
+    def _end_snapshot_raw(self) -> str | None: ...
 
     def add_metadata(self, tag: str, metadata: Any) -> None: ...
 
@@ -546,6 +560,51 @@ class BaseDataSet(DataSetProtocol, Protocol):
         Return all the parameters that explicitly depend on other parameters
         """
         return tuple(self.description.interdeps.dependencies.keys())
+
+    @property
+    def end_snapshot(self) -> dict[str, Any] | None:
+        """
+        Snapshot taken at the end of the run as a dictionary (or None if no
+        such snapshot was taken).
+        """
+        snapshot_json = self._end_snapshot_raw
+        if snapshot_json is not None:
+            return json.loads(snapshot_json)
+        else:
+            return None
+
+    @property
+    def _end_snapshot_raw(self) -> str | None:
+        """
+        Snapshot taken at the end of the run as a JSON-formatted string
+        (or None).
+        """
+        snapshot_raw = self.metadata.get(END_SNAPSHOT_METADATA_KEY)
+        if snapshot_raw is None:
+            return None
+        if not isinstance(snapshot_raw, str):
+            raise TypeError(
+                f"Expected the end snapshot of run {self.guid} to be a string "
+                f"but got {type(snapshot_raw)}."
+            )
+        return snapshot_raw
+
+    def add_end_snapshot(self, snapshot: str, overwrite: bool = False) -> None:
+        """
+        Add a snapshot taken at the end of the run to this dataset.
+
+        Args:
+            snapshot: the raw JSON dump of the snapshot
+            overwrite: force overwrite an existing end snapshot
+
+        """
+        if self._end_snapshot_raw is None or overwrite:
+            self.add_metadata(END_SNAPSHOT_METADATA_KEY, snapshot)
+        else:
+            LOG.warning(
+                "This dataset already has an end snapshot. "
+                "Use overwrite=True to overwrite that"
+            )
 
 
 class DataSetType(StrEnum):
