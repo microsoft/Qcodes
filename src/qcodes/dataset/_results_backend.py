@@ -235,7 +235,7 @@ class SeparateSqliteFileResultsBackend(ResultsBackend):
         # split-storage dataset (so it can be told apart from a DataSetInMem run,
         # which also has no results table) even before it is started and before
         # the raw data file is created.
-        raw_path_str = str(get_raw_data_db_path(ds.guid))
+        raw_path_str = str(get_raw_data_db_path(ds.guid, db_path=ds.path_to_db))
         self._db_path = raw_path_str
         with atomic(ds.conn) as aconn:
             set_raw_data_db_path_for_run(aconn, ds.run_id, raw_path_str)
@@ -244,7 +244,9 @@ class SeparateSqliteFileResultsBackend(ResultsBackend):
         ds = self._dataset
         # The raw-data path was already recorded at creation time; reuse it so
         # both locations stay in sync.
-        raw_path_str = self._db_path or str(get_raw_data_db_path(ds.guid))
+        raw_path_str = self._db_path or str(
+            get_raw_data_db_path(ds.guid, db_path=ds.path_to_db)
+        )
         self._conn = create_raw_data_db(
             Path(raw_path_str),
             ds.table_name,

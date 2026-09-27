@@ -77,28 +77,33 @@ def is_raw_data_storage_enabled() -> bool:
     return get_configured_results_backend_name() == PER_DATASET_DB_BACKEND
 
 
-def get_raw_data_folder() -> Path:
+def get_raw_data_folder(db_path: str | None = None) -> Path:
     """Return the resolved folder path for raw data SQLite files.
 
     The path template comes from the ``sqlite_per_dataset_db`` backend config
-    and is expanded the same way as the export path (``{db_location}`` is
-    replaced with a folder derived from the main database path).
+    and is expanded the same way as the export path. ``{db_location}`` is
+    resolved relative to *db_path* (the owning dataset's database) when given,
+    otherwise relative to the global ``core.db_location`` config.
     """
     config = get_results_backend_config(PER_DATASET_DB_BACKEND)
     raw_path_template: str = config.get(_RAW_DATA_PATH_KEY, "{db_location}")
-    return Path(_expand_export_path(raw_path_template)).expanduser().absolute()
+    return Path(_expand_export_path(raw_path_template, db_path)).expanduser().absolute()
 
 
-def get_raw_data_db_path(guid: str, folder: Path | None = None) -> Path:
+def get_raw_data_db_path(
+    guid: str, folder: Path | None = None, db_path: str | None = None
+) -> Path:
     """Return the full path for a dataset's raw data SQLite file.
 
     Args:
         guid: The GUID of the dataset.
         folder: Override folder.  If *None*, uses :func:`get_raw_data_folder`.
+        db_path: The owning dataset's database file, used to resolve
+            ``{db_location}`` when *folder* is not given.
 
     """
     if folder is None:
-        folder = get_raw_data_folder()
+        folder = get_raw_data_folder(db_path)
     return folder / f"{guid}.db"
 
 
@@ -446,7 +451,8 @@ def cleanup_datasets(
 
     Raises:
         FileNotFoundError: If the main database file does not exist.
-        ValueError: If no criteria are specified.
+        ValueError: If no criteria are specified, or if ``older_than_days`` or
+            ``larger_than_mb`` is negative.
 
     """
     db_path = Path(db_path)
@@ -455,6 +461,16 @@ def cleanup_datasets(
 
     if older_than_days is None and sample_name is None and larger_than_mb is None:
         raise ValueError("At least one cleanup criterion must be specified.")
+
+    # Reject negative thresholds: a negative age puts the cutoff in the future
+    # and a negative size is below every file, so either would match (and, when
+    # dry_run=False, delete) essentially all split datasets.
+    if older_than_days is not None and older_than_days < 0:
+        raise ValueError(
+            f"older_than_days must be non-negative, got {older_than_days}."
+        )
+    if larger_than_mb is not None and larger_than_mb < 0:
+        raise ValueError(f"larger_than_mb must be non-negative, got {larger_than_mb}.")
 
     with closing(connect(str(db_path))) as conn:
         all_datasets = _build_dataset_info_list(conn)

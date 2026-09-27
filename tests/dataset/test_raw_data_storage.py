@@ -147,6 +147,16 @@ class TestRawDataStorageHelpers:
         path = get_raw_data_db_path("abc-123", folder)
         assert path == folder / "abc-123.db"
 
+    def test_raw_data_folder_derives_from_given_db_path(self, tmp_path: Path) -> None:
+        """With the default ``{db_location}`` template, the folder resolves next
+        to the owning dataset's database, not the global config location."""
+        ds_db = tmp_path / "sub" / "exp.db"
+        assert get_raw_data_folder(str(ds_db)) == tmp_path / "sub" / "exp_db"
+        assert (
+            get_raw_data_db_path("g", db_path=str(ds_db))
+            == tmp_path / "sub" / "exp_db" / "g.db"
+        )
+
     def test_create_raw_data_db(self, tmp_path: Path) -> None:
         db_path = tmp_path / "raw" / "test.db"
         params = [
@@ -884,6 +894,20 @@ class TestCleanupDatasets:
         db_path.touch()
         with pytest.raises(ValueError, match="At least one cleanup criterion"):
             cleanup_datasets(db_path)
+
+    def test_negative_older_than_days_raises(self, tmp_path: Path) -> None:
+        """A negative age threshold would match (and delete) everything."""
+        db_path = tmp_path / "test.db"
+        db_path.touch()
+        with pytest.raises(ValueError, match="older_than_days must be non-negative"):
+            cleanup_datasets(db_path, older_than_days=-1, dry_run=False)
+
+    def test_negative_larger_than_mb_raises(self, tmp_path: Path) -> None:
+        """A negative size threshold would match (and delete) everything."""
+        db_path = tmp_path / "test.db"
+        db_path.touch()
+        with pytest.raises(ValueError, match="larger_than_mb must be non-negative"):
+            cleanup_datasets(db_path, larger_than_mb=-1, dry_run=False)
 
     def test_nonexistent_db_raises(self, tmp_path: Path) -> None:
         """Should raise if the DB file doesn't exist."""
