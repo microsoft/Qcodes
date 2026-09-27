@@ -85,7 +85,7 @@ By default, all measurement data (the results table rows) is stored in the same 
 
 QCoDeS supports an optional **split raw data storage** mode in which the actual measurement data for each ``DataSet`` is written to an individual, per-dataset SQLite file while all metadata remains in the main database. Each per-dataset file is named after the dataset's GUID (e.g. ``<guid>.db``) and is stored in a configurable folder.
 
-Which backend stores a dataset's results is selected by the ``dataset.raw_data_backend`` option in ``qcodesrc.json``, with backend-specific settings under ``dataset.raw_data_backend_config``:
+Which backend stores a dataset's results is selected by the ``dataset.raw_data_backend`` configuration option, with backend-specific settings under ``dataset.raw_data_backend_config`` (see the :doc:`Configuring QCoDeS notebook <../examples/basic_examples/Configuring_QCoDeS>` for how to view and change QCoDeS configuration):
 
 - ``dataset.raw_data_backend`` (string, default ``"sqlite_main_db"``): the results backend. ``"sqlite_main_db"`` keeps results in the main database; ``"sqlite_per_dataset_db"`` enables split storage.
 - ``dataset.raw_data_backend_config.sqlite_per_dataset_db.raw_data_path`` (string, default ``"{db_location}"``): the folder where per-dataset files are created. The ``{db_location}`` placeholder is expanded to a folder derived from the main database path (e.g. ``~/experiments.db`` becomes ``~/experiments_db/``).

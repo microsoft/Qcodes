@@ -34,7 +34,7 @@ from qcodes.dataset.sqlite.queries import (
     get_datasets_with_raw_data_path,
     remove_dataset_from_db,
 )
-from qcodes.dataset.sqlite.query_helpers import is_column_in_table
+from qcodes.dataset.sqlite.query_helpers import insert_column, is_column_in_table
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -152,10 +152,15 @@ def create_raw_data_db(
 
     conn = connect_to_raw_data_db(path)
 
-    # Reuse the same results-table creation logic as the main database so
-    # the raw-data table schema (column definitions, table-name validation)
-    # stays consistent with the rest of QCoDeS.
-    _create_run_table(conn, table_name, paramspecs or None)
+    # Create the empty results table, then add the parameter columns with
+    # insert_column - exactly as the main database does - so column names are
+    # quoted. ``_create_run_table`` with paramspecs would emit them verbatim via
+    # ``ParamSpecBase.sql_repr()``, which breaks for names that are SQL keywords
+    # (e.g. a parameter called ``from``).
+    _create_run_table(conn, table_name)
+    with atomic(conn) as aconn:
+        for spec in paramspecs:
+            insert_column(aconn, table_name, spec.name, spec.type)
 
     log.info(
         "Created raw data database at %s with table %s",

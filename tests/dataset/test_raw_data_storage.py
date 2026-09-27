@@ -236,6 +236,33 @@ class TestDataSetWithSplitRawData:
         assert ds._results_conn is not ds.conn
         self._close_ds(ds)
 
+    def test_sql_keyword_parameter_names_quoted_in_file(self) -> None:
+        """A parameter whose name is a SQL keyword (e.g. ``from``) must not
+        break creation of the per-dataset results table: startup must succeed
+        just as it does for the main-database backend, and the per-dataset file
+        must contain the quoted columns.
+
+        (Inserting rows for such names is a separate, pre-existing QCoDeS
+        limitation shared by both backends, so it is not exercised here.)
+        """
+        ds = new_data_set("test-split")
+        setpoint = ParamSpecBase("from", "numeric")
+        measured = ParamSpecBase("select", "numeric")
+        idps = InterDependencies_(dependencies={measured: (setpoint,)})
+        ds.set_interdependencies(idps)
+
+        # Previously raised sqlite3.OperationalError at CREATE TABLE time.
+        ds.mark_started()
+
+        raw_conn = connect_to_raw_data_db(_raw_file(ds))
+        try:
+            cursor = raw_conn.execute(f'PRAGMA table_info("{ds.table_name}")')
+            columns = {row[1] for row in cursor.fetchall()}
+        finally:
+            raw_conn.close()
+        assert {"from", "select"} <= columns
+        self._close_ds(ds)
+
     def test_background_writing_routes_to_separate_file(self) -> None:
         """With split storage, background writes must land in the per-dataset
         file (routed via the backend's results_db_path)."""
