@@ -1913,7 +1913,7 @@ def validate_dynamic_column_data(data: Mapping[str, Any]) -> None:
         if not _is_storable_in_column(val):
             raise TypeError(
                 f"Tag {tag} has value of type {type(val).__name__}. That is "
-                "not a valid metadata value: a column stores a single SQLite "
+                "not a valid metadata value. Note that a column stores a single SQLite "
                 "value, so a nested dict or a sequence has to be serialized "
                 "first, for example with json.dumps."
             )
