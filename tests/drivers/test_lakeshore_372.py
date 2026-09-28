@@ -245,7 +245,7 @@ def lakeshore_372():
 
 def test_pid_set(lakeshore_372) -> None:
     ls = lakeshore_372
-    P, I, D = 1, 2, 3  # noqa  E741
+    P, I, D = 1, 2, 3  # noqa:  E741
     for h in (ls.warmup_heater, ls.analog_heater, ls.sample_heater):
         h.P(P)
         h.I(I)

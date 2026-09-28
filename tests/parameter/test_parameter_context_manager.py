@@ -153,7 +153,7 @@ def test_set_to_none_for_not_captured_parameter_but_instrument_has_value() -> No
     # assertions after exiting the context
     assert set_counter == 2
     assert instr_value == "something"
-    assert p.cache._value == "foo"  # pyright: ignore
+    assert p.cache._value == "foo"  # pyright: ignore[reportAttributeAccessIssue]
     assert p.cache.raw_value == "something"
     assert p.cache.timestamp is not None
 

@@ -77,9 +77,7 @@ def store_array_to_database_alt(meas: Measurement, array: DataArray) -> int:
     dims = len(array.shape)
     assert array.array_id is not None
     if dims == 2:
-        outer_data = np.empty(
-            array.shape[1]  # pyright: ignore[reportGeneralTypeIssues]
-        )
+        outer_data = np.empty(array.shape[1])
         inner_setarray_id = array.set_arrays[0].array_id
         outer_setarray_id = array.set_arrays[1].array_id
         assert inner_setarray_id is not None
