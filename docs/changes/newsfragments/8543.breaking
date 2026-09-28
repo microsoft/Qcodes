@@ -1,2 +1,4 @@
 Remove the deprecated TypeVars and type aliases that were retained as runtime
 compatibility imports after the conversion to PEP 695 type parameter syntax.
+Imports of ``typing.TypeVar`` are now banned: use PEP 695 type parameter syntax
+unless a default value requires ``typing_extensions.TypeVar`` on Python 3.12.
