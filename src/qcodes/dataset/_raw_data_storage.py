@@ -31,8 +31,8 @@ from qcodes.dataset.sqlite.database import (
 )
 from qcodes.dataset.sqlite.queries import (
     _create_run_table,
+    _remove_dataset_from_db,
     get_datasets_with_raw_data_path,
-    remove_dataset_from_db,
 )
 from qcodes.dataset.sqlite.query_helpers import insert_column, is_column_in_table
 
@@ -385,7 +385,7 @@ def purge_orphaned_datasets(
         if not dry_run and orphaned:
             for ds_info in tqdm(orphaned, desc="Removing orphaned datasets"):
                 try:
-                    remove_dataset_from_db(conn, ds_info.run_id)
+                    _remove_dataset_from_db(conn, ds_info.run_id)
                     removed.append(ds_info)
                     log.debug(
                         "Removed orphaned dataset run_id=%d (guid=%s) from %s.",
@@ -432,6 +432,9 @@ def cleanup_datasets(
     Criteria are combined with AND logic: a dataset must match **all**
     specified criteria to be selected for removal. Specify at least one
     criterion.
+
+    In-progress runs (started but not yet completed) are never removed, since
+    their raw-data file may still be actively written by another process.
 
     Args:
         db_path: Path to the main QCoDeS database file.
@@ -487,6 +490,13 @@ def cleanup_datasets(
             size_threshold_bytes = int(larger_than_mb * 1024 * 1024)
 
         for ds in all_datasets:
+            # Never delete an in-progress run (started but not completed):
+            # another process may still be writing its raw-data file, and
+            # unlinking it would cause data loss. Such runs are skipped
+            # regardless of the other criteria.
+            if ds.completed_timestamp is None:
+                continue
+
             # Age filter
             if cutoff_ts is not None:
                 ts = ds.completed_timestamp or ds.run_timestamp
@@ -528,7 +538,7 @@ def cleanup_datasets(
                     # Remove the DB record first: if this fails, the raw data
                     # file is still on disk (recoverable) rather than deleted
                     # while its run keeps pointing at missing data.
-                    remove_dataset_from_db(conn, ds_info.run_id)
+                    _remove_dataset_from_db(conn, ds_info.run_id)
                     # Only after the record is gone, delete the raw data file.
                     if raw_path is not None and raw_path.is_file():
                         file_size = raw_path.stat().st_size

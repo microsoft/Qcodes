@@ -43,6 +43,7 @@ from qcodes.dataset.database_extract_runs import (
 )
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.sqlite.database import connect, initialise_database
+from qcodes.dataset.sqlite.db_overview import get_db_overview
 from qcodes.dataset.sqlite.queries import get_raw_data_db_path_for_run
 from qcodes.dataset.sqlite.query_helpers import select_one_where
 from qcodes.parameters import ParamSpecBase
@@ -482,6 +483,18 @@ class TestDataSetWithSplitRawData:
         )
         self._close_ds(loaded)
 
+    def test_get_db_overview_counts_split_records(self) -> None:
+        """get_db_overview must count rows from the per-dataset raw-data file
+        for split runs (the results table is absent from the main DB)."""
+        ds, results = self._make_dataset_with_data(n_rows=7)
+        run_id = ds.run_id
+        db_path = ds.path_to_db
+        assert db_path is not None
+        self._close_ds(ds)
+
+        overview = get_db_overview(path_to_db=db_path)
+        assert overview[run_id]["records"] == len(results)
+
     def test_multiple_datasets_split(self) -> None:
         """Multiple datasets should each get their own raw data file."""
         ds1, _ = self._make_dataset_with_data(n_rows=3)
@@ -816,6 +829,29 @@ class TestCleanupDatasets:
         assert len(result.removed_datasets) == 1
         assert not raw_path1.is_file()
         assert raw_path2.is_file()  # other sample untouched
+
+    @pytest.mark.usefixtures("_raw_data_db")
+    def test_cleanup_skips_in_progress_runs(self, tmp_path: Path) -> None:
+        """An in-progress (started, not completed) run must never be removed,
+        even if it matches the cleanup criteria - its file may still be
+        actively written."""
+        new_experiment("exp1", sample_name="test-sample")
+        ds = new_data_set("ds-active")
+        x = ParamSpecBase("x", "numeric")
+        y = ParamSpecBase("y", "numeric")
+        ds.set_interdependencies(InterDependencies_(dependencies={y: (x,)}))
+        ds.mark_started()
+        ds.add_results([{"x": 1.0, "y": 2.0}])
+        # deliberately NOT marked completed
+        raw_path = _raw_file(ds)
+        db_path = ds.path_to_db
+        assert db_path is not None
+        self._close_ds(ds)
+
+        result = cleanup_datasets(db_path, sample_name="test-sample", dry_run=False)
+        assert len(result.matching_datasets) == 0
+        assert len(result.removed_datasets) == 0
+        assert raw_path.is_file()
 
     @pytest.mark.usefixtures("_raw_data_db")
     def test_cleanup_by_size(self, tmp_path: Path) -> None:

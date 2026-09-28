@@ -2410,8 +2410,12 @@ def get_datasets_with_raw_data_path(
     return [RawDataDatasetRecord(*row) for row in cursor.fetchall()]
 
 
-def remove_dataset_from_db(conn: AtomicConnection, run_id: int) -> None:
+def _remove_dataset_from_db(conn: AtomicConnection, run_id: int) -> None:
     """Remove a single dataset's records from the database.
+
+    Internal helper for the raw-data management functions
+    (:func:`~qcodes.dataset.purge_orphaned_datasets`,
+    :func:`~qcodes.dataset.cleanup_datasets`); not part of the public API.
 
     Deletes the run row, associated layouts and dependencies, and drops
     the results table (if it exists). The results-table name is looked up
