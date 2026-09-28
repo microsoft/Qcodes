@@ -1,6 +1,6 @@
 from functools import wraps
 from operator import xor
-from typing import TYPE_CHECKING, ParamSpec
+from typing import TYPE_CHECKING
 
 from . import constants
 
@@ -13,10 +13,9 @@ def as_csv(comps: "Iterable[object]", sep: str = ",") -> str:
     return sep.join(format(x) for x in comps)
 
 
-P = ParamSpec("P")
-
-
-def final_command(f: "Callable[P, MessageBuilder]") -> "Callable[P, MessageBuilder]":
+def final_command[**P](
+    f: "Callable[P, MessageBuilder]",
+) -> "Callable[P, MessageBuilder]":
     @wraps(f)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> "MessageBuilder":
         res: MessageBuilder = f(*args, **kwargs)

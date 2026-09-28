@@ -293,7 +293,8 @@ banned-module-level-imports = [
     "matplotlib", "IPython", "ruamel", "tabulate", "h5netcdf", "PIL", "qcodes_loop"]
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
-"typing.TypeVar".msg = "Use typing_extensions.TypeVar for Python 3.12 compatibility with default values."
+"typing.ParamSpec".msg = "Use PEP 695 parameter syntax unless a default value requires typing_extensions.ParamSpec."
+"typing.TypeVar".msg = "Use PEP 695 type parameter syntax unless a default value requires typing_extensions.TypeVar."
 
 
 [tool.ruff.lint.pep8-naming]
