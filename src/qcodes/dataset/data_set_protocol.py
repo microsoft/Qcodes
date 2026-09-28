@@ -551,18 +551,3 @@ class BaseDataSet(DataSetProtocol, Protocol):
 class DataSetType(StrEnum):
     DataSet = "DataSet"
     DataSetInMem = "DataSetInMem"
-
-
-if not TYPE_CHECKING:
-    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
-
-    __getattr__ = _make_deprecated_typevars_getattr(
-        __name__,
-        {
-            "array_like_types": (tuple, list, npt.NDArray),
-            "scalar_res_types": ScalarResTypes,
-            "values_type": ValuesType,
-            "res_type": ResType,
-            "setpoints_type": SetpointsType,
-        },
-    )

@@ -1,0 +1,2 @@
+Remove the deprecated TypeVars and type aliases that were retained as runtime
+compatibility imports after the conversion to PEP 695 type parameter syntax.

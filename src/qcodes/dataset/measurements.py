@@ -1615,16 +1615,3 @@ def _numeric_values_are_equal(
         ):
             return False
     return True
-
-
-if not TYPE_CHECKING:
-    from typing import TypeVar
-
-    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
-
-    __getattr__ = _make_deprecated_typevars_getattr(
-        __name__,
-        {
-            "T": TypeVar("T", bound="Measurement"),
-        },
-    )

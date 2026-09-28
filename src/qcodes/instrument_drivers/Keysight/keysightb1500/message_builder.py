@@ -1,6 +1,6 @@
 from functools import wraps
 from operator import xor
-from typing import TYPE_CHECKING, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, ParamSpec
 
 from . import constants
 
@@ -3983,13 +3983,3 @@ class MessageBuilder:
 
         self._msg.append(cmd)
         return self
-
-
-if not TYPE_CHECKING:
-    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
-
-    _deprecated_typevars: dict[str, TypeVar] = {
-        "T": TypeVar("T"),
-    }
-
-    __getattr__ = _make_deprecated_typevars_getattr(__name__, _deprecated_typevars)

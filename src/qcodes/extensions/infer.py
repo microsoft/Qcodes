@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, ClassVar, TypeVar
+from typing import TYPE_CHECKING, ClassVar
 
 from qcodes.instrument import Instrument, InstrumentBase, InstrumentModule
 from qcodes.parameters import DelegateParameter, Parameter, ParameterBase
@@ -286,14 +286,3 @@ def get_sole_parent_instrument_from_chain_of_type[TInstrument: InstrumentBase](
 
         raise ValueError(f"{error_msg_1} {[instr.name for instr in instruments]}")
     return instruments[0]
-
-
-if not TYPE_CHECKING:
-    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
-
-    _deprecated_typevars: dict[str, TypeVar] = {
-        "C": TypeVar("C", bound=ParameterBase),
-        "TInstrument": TypeVar("TInstrument", bound=InstrumentBase),
-    }
-
-    __getattr__ = _make_deprecated_typevars_getattr(__name__, _deprecated_typevars)

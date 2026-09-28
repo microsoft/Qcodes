@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import logging
 import warnings
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import Any, ClassVar
 
 from qcodes.parameters import ParameterBase
 
@@ -319,16 +319,3 @@ class ParameterMixin:
             ]
 
         return mixin_classes
-
-
-if not TYPE_CHECKING:
-    from typing import TypeVar
-
-    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
-
-    __getattr__ = _make_deprecated_typevars_getattr(
-        __name__,
-        {
-            "T": TypeVar("T"),
-        },
-    )

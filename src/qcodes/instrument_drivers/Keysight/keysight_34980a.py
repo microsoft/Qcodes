@@ -184,20 +184,3 @@ class Keysight34980A(VisaInstrument):
         else:
             vals.Ints(min_value=1, max_value=self._total_slot).validate(slot)
             self.write(f"ROUT:OPEN:ALL {slot}")
-
-
-if not TYPE_CHECKING:
-    from typing import TypeVar
-
-    from typing_extensions import ParamSpec
-
-    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
-
-    __getattr__ = _make_deprecated_typevars_getattr(
-        __name__,
-        {
-            "S": TypeVar("S", bound="Keysight34980A"),
-            "T": TypeVar("T"),
-            "P": ParamSpec("P"),
-        },
-    )

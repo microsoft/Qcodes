@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, TypeVar
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 import numpy.typing as npt
@@ -569,15 +569,3 @@ class DataSetCacheWithDBBackend(DataSetCache["DataSet"]):
         )
         if not data_not_read:
             self._live = False
-
-
-if not TYPE_CHECKING:
-    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
-
-    _deprecated_typevars: dict[str, TypeVar] = {
-        "DatasetType_co": TypeVar(
-            "DatasetType_co", bound="DataSetProtocol", covariant=True
-        ),
-    }
-
-    __getattr__ = _make_deprecated_typevars_getattr(__name__, _deprecated_typevars)

@@ -285,16 +285,3 @@ class Keithley6500(VisaInstrument):
         mode = _parse_output_string(self._mode_map[self.mode()])
         cmd = f"{mode}:{parameter} {value}"
         self.write(cmd)
-
-
-if not TYPE_CHECKING:
-    from typing import TypeVar
-
-    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
-
-    __getattr__ = _make_deprecated_typevars_getattr(
-        __name__,
-        {
-            "T": TypeVar("T"),
-        },
-    )
