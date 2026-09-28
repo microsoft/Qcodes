@@ -1229,16 +1229,3 @@ class AutoLoadableChannelList[TAUTORELOADCHANNEL: AutoLoadableInstrumentChannel]
 
         self.append(new_channel)
         return new_channel
-
-
-if not TYPE_CHECKING:
-    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
-
-    _deprecated_typevars: dict[str, TypeVar] = {
-        "T": TypeVar("T", bound="ChannelTuple"),
-        "TAUTORELOADCHANNEL": TypeVar(
-            "TAUTORELOADCHANNEL", bound=AutoLoadableInstrumentChannel
-        ),
-    }
-
-    __getattr__ = _make_deprecated_typevars_getattr(__name__, _deprecated_typevars)

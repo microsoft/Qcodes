@@ -90,18 +90,3 @@ class MultiChannelInstrumentParameter[InstrumentModuleType: "InstrumentModule"](
         """
 
         return self.names
-
-
-if not TYPE_CHECKING:
-    from typing import TypeVar
-
-    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
-
-    __getattr__ = _make_deprecated_typevars_getattr(
-        __name__,
-        {
-            "InstrumentModuleType": TypeVar(
-                "InstrumentModuleType", bound="InstrumentModule"
-            ),
-        },
-    )

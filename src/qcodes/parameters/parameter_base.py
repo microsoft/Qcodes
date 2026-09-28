@@ -1684,13 +1684,3 @@ class ParameterSet[P: ParameterBase](MutableSet[P]):  # noqa: PLW1641
         raise NotImplementedError(
             f">+ operation is not defined between ParameterSet and {type(other)}"
         )
-
-
-if not TYPE_CHECKING:
-    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
-
-    _deprecated_typevars: dict[str, TypeVar] = {
-        "P": TypeVar("P", bound="ParameterBase"),
-    }
-
-    __getattr__ = _make_deprecated_typevars_getattr(__name__, _deprecated_typevars)

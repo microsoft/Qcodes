@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING, Any, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
-from typing_extensions import ParamSpec
 
 from qcodes.metadatable import normalize_snapshot_update
 from qcodes.parameters import Parameter
@@ -15,9 +14,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from qcodes.metadatable import SnapshotUpdate
-
-T = TypeVar("T")
-P = ParamSpec("P")
 
 
 def create_parameter(
@@ -50,7 +46,9 @@ def create_parameter(
 
     if get_cmd is not False:
 
-        def wrap_in_call_counter(get_func: Callable[P, T]) -> Callable[P, T]:
+        def wrap_in_call_counter[**P, T](
+            get_func: Callable[P, T],
+        ) -> Callable[P, T]:
             call_count = 0
 
             def wrapped_func(*args: P.args, **kwargs: P.kwargs) -> T:
