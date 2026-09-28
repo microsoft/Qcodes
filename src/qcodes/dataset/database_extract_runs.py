@@ -166,8 +166,6 @@ def _extract_single_dataset_into_db(
             f"GUID: {dataset.guid} and run_id: {dataset.run_id}"
         )
 
-    source_conn = dataset.conn
-
     run_id = get_runid_from_guid(target_conn, dataset.guid)
 
     if run_id is not None:
@@ -178,7 +176,7 @@ def _extract_single_dataset_into_db(
     )
     assert target_table_name is not None
     _populate_results_table(
-        source_conn, target_conn, dataset.table_name, target_table_name
+        dataset._results_conn, target_conn, dataset.table_name, target_table_name
     )
 
 

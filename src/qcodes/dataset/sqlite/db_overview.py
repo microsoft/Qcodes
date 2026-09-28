@@ -18,18 +18,22 @@ import json
 import logging
 import sqlite3
 from contextlib import closing, nullcontext
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from typing_extensions import TypedDict
 
-from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn
+from qcodes.dataset.sqlite.database import (
+    _connect_to_sqlite_file,
+    conn_from_dbpath_or_conn,
+)
 from qcodes.dataset.sqlite.query_helpers import is_column_in_table
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-    from pathlib import Path
 
     from qcodes.dataset.sqlite.connection import AtomicConnection
+
 
 log = logging.getLogger(__name__)
 
@@ -179,6 +183,13 @@ def get_db_overview(
         ]
         extra_select = "".join(f", r.{col}" for col in valid_extra_columns)
 
+        # Split-storage runs keep their results table in a per-dataset SQLite
+        # file recorded in ``raw_data_db_path`` (the column only exists once the
+        # feature has been used). Select it last so the fixed/extra column
+        # indices below are unaffected.
+        has_raw_col = is_column_in_table(c, "runs", "raw_data_db_path")
+        raw_select = ", r.raw_data_db_path" if has_raw_col else ""
+
         # ``run_description`` is queried to derive the record count for
         # completed runs; the (potentially large) snapshot is deliberately
         # excluded.
@@ -186,7 +197,7 @@ def get_db_overview(
             SELECT r.run_id, e.name, e.sample_name, r.name,
                    r.run_timestamp, r.completed_timestamp,
                    r.guid, r.result_table_name,
-                   r.run_description{extra_select}
+                   r.run_description{extra_select}{raw_select}
             FROM runs r
             JOIN experiments e ON r.exp_id = e.exp_id
             WHERE r.run_id > ?
@@ -199,26 +210,48 @@ def get_db_overview(
             log.warning("Could not query database overview: %s", e)
             return overview
 
+        n_fixed = 9  # number of columns selected before ``extra_columns``
+        raw_idx = n_fixed + len(valid_extra_columns) if has_raw_col else None
+
         # ``result_counter`` in the runs table is the run's ordinal within its
         # experiment, not a data-point count, so it is not usable here. For the
         # ``array`` paramtype a single INSERT can also contain many data points.
         # The real number of data points is therefore the row count of the
-        # results table, queried separately.
-        result_tables = {row[7] for row in rows if row[7]}
-        row_counts: dict[str, int] = {}
-        for table in result_tables:
-            try:
-                (count,) = c.execute(f'SELECT COUNT(*) FROM "{table}"').fetchone()
-            except sqlite3.Error:
-                continue  # results table may not exist (yet)
-            row_counts[table] = count
+        # results table, queried separately (keyed by run_id). For split-storage
+        # runs the table lives in the recorded per-dataset file, so it is
+        # counted there rather than on the main connection.
+        row_counts: dict[int, int] = {}
+        raw_conns: dict[str, AtomicConnection] = {}
+        try:
+            for row in rows:
+                table = row[7]
+                if not table:
+                    continue
+                raw_db_path = row[raw_idx] if raw_idx is not None else None
+                count_conn = c
+                if raw_db_path:
+                    if not Path(raw_db_path).is_file():
+                        continue  # per-dataset file moved/deleted
+                    if raw_db_path not in raw_conns:
+                        raw_conns[raw_db_path] = _connect_to_sqlite_file(
+                            raw_db_path, read_only=True
+                        )
+                    count_conn = raw_conns[raw_db_path]
+                try:
+                    (count,) = count_conn.execute(
+                        f'SELECT COUNT(*) FROM "{table}"'
+                    ).fetchone()
+                except sqlite3.Error:
+                    continue  # results table may not exist (yet)
+                row_counts[row[0]] = count
+        finally:
+            for raw_conn in raw_conns.values():
+                raw_conn.close()
 
-        n_fixed = 9  # number of columns selected before ``extra_columns``
         for row in rows:
             run_id = row[0]
             started_date, started_time = _format_timestamp(row[4])
             completed_date, completed_time = _format_timestamp(row[5])
-            result_table = row[7] or ""
             is_completed = row[5] is not None and row[5] != 0
 
             # The record count is a best-effort data-point count. For completed
@@ -228,9 +261,9 @@ def get_db_overview(
             if is_completed:
                 records = _records_from_run_description(row[8])
                 if records == 0:
-                    records = row_counts.get(result_table, 0)
+                    records = row_counts.get(run_id, 0)
             else:
-                records = row_counts.get(result_table, 0)
+                records = row_counts.get(run_id, 0)
                 if records == 0:
                     records = _records_from_run_description(row[8])
 
