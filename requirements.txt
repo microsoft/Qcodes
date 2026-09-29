@@ -167,7 +167,7 @@ jupyterlab-widgets==3.0.17
     # via ipywidgets
 kiwisolver==1.5.1
     # via matplotlib
-lazy-loader==0.5
+lazy-loader==0.6
     # via qcodes-loop
 libcst==1.9.0
     # via qcodes (pyproject.toml)
