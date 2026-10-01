@@ -9,9 +9,8 @@ import hypothesis.strategies as hst
 import numpy as np
 import pytest
 import xarray as xr
-from deepdiff import DeepDiff  # type: ignore[import-untyped]
 from hypothesis import HealthCheck, given, settings
-from numpy.testing import assert_almost_equal
+from numpy.testing import assert_almost_equal, assert_array_equal
 
 import qcodes
 from qcodes.dataset import Measurement, load_by_id, load_by_run_spec
@@ -727,6 +726,10 @@ def test_dataset_in_mem_with_inferred_parameters(
     cache_data = ds.cache.data()
 
     assert set(param_data.keys()) == set(cache_data.keys())
-    assert set(param_data["dependent"].keys()) == set(cache_data["dependent"].keys())
-
-    assert DeepDiff(param_data, cache_data, ignore_nan_inequality=True) == {}
+    for outer_key, param_subdict in param_data.items():
+        cache_subdict = cache_data[outer_key]
+        assert set(param_subdict.keys()) == set(cache_subdict.keys())
+        for inner_key, param_array in param_subdict.items():
+            # assert_array_equal treats NaNs in the same positions as equal
+            # and strict=True also requires matching shape and dtype
+            assert_array_equal(param_array, cache_subdict[inner_key], strict=True)
