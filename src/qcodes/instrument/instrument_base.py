@@ -86,26 +86,28 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
 
     """
 
-    default_logger_scope: LoggerScope = "shared"
+    default_logger_scope: ClassVar[LoggerScope] = "shared"
     """
     Logger naming scope used for :attr:`log` (and
     :attr:`~qcodes.instrument.VisaInstrument.visa_log`).
 
     By default all instruments share a single logger. Set this to
-    ``"instrument"`` on a driver class to give each of its instruments a logger
-    of its own, so that log levels and handlers can be configured per
-    instrument::
+    ``"instrument"`` in the definition of a driver class to give each of its
+    instruments a logger of its own, so that log levels and handlers can be
+    configured per instrument::
 
-        >>> MyDriver.default_logger_scope = "instrument"
+        class MyDriver(VisaInstrument):
+            default_logger_scope = "instrument"
 
     The resulting loggers are named
     ``qcodes.instrument.instrument_base.<DriverClass>.<name_parts>``, so a
     level can be set for a whole driver class, a single instrument, or a single
     submodule.
 
-    The scope is looked up on the :meth:`root_instrument` while the instrument
-    is created, so it applies to the whole instrument including its submodules,
-    and changing it afterwards has no effect on existing instruments.
+    The scope is resolved once, when the :meth:`root_instrument` is created,
+    and every submodule uses the scope of its root. It therefore applies to the
+    whole instrument, including submodules added later, and changing it
+    afterwards has no effect on existing instruments.
     """
 
     def __init__(
@@ -155,6 +157,11 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         # This is needed for snapshot method to work
         self._meta_attrs = ["name", "label"]
 
+        root = self.root_instrument
+        self._logger_scope: LoggerScope = (
+            type(self).default_logger_scope if root is self else root._logger_scope
+        )
+
         self.log: InstrumentLoggerAdapter = get_instrument_logger(
             self, self._logger_name(__name__)
         )
@@ -163,7 +170,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
     def _logger_name(self, base: str) -> str:
         """
         Name of the logger to use, derived from ``base`` according to the
-        logger scope of the :meth:`root_instrument`.
+        logger scope resolved when the :meth:`root_instrument` was created.
 
         Under the ``"instrument"`` scope the name is built from the class of
         the :meth:`root_instrument` followed by :meth:`name_parts`, e.g.
@@ -177,8 +184,8 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
                 no scope was configured.
 
         """
-        root = self.root_instrument
-        if root.default_logger_scope == "instrument":
+        if self._logger_scope == "instrument":
+            root = self.root_instrument
             return ".".join((base, type(root).__name__, *self.name_parts))
         return base
 

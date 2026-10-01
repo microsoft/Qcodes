@@ -5,7 +5,7 @@ Tests for `qcodes.utils.logger`.
 import logging
 import os
 from copy import copy
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 import numpy as np
 import pytest
@@ -17,6 +17,7 @@ from qcodes.instrument import Instrument
 from qcodes.instrument.visa import VISA_LOGGER
 from qcodes.instrument_drivers.american_magnetics import AMIModel430, AMIModel4303D
 from qcodes.instrument_drivers.mock_instruments import (
+    DummyChannel,
     DummyChannelInstrument,
     DummyInstrument,
 )
@@ -366,19 +367,19 @@ def test_get_level_code_with_invalid_type() -> None:
 class ScopedDummyInstrument(DummyInstrument):
     """Dummy instrument that opts in to a per instrument logger."""
 
-    default_logger_scope: "LoggerScope" = "instrument"
+    default_logger_scope: ClassVar["LoggerScope"] = "instrument"
 
 
 class ScopedDummyChannelInstrument(DummyChannelInstrument):
     """Instrument with channels that opts in to a per instrument logger."""
 
-    default_logger_scope: "LoggerScope" = "instrument"
+    default_logger_scope: ClassVar["LoggerScope"] = "instrument"
 
 
 class ScopedAMIModel430(AMIModel430):
     """VISA instrument that opts in to a per instrument logger."""
 
-    default_logger_scope: "LoggerScope" = "instrument"
+    default_logger_scope: ClassVar["LoggerScope"] = "instrument"
 
 
 @pytest.fixture(name="restore_shared_logger_levels", autouse=True)
@@ -457,6 +458,8 @@ def test_level_can_be_set_for_a_whole_driver_class() -> None:
     A level configured on the driver class node applies to every instrument of
     that driver, including ones created afterwards, and not to other drivers.
     """
+    # pin the shared level so the result does not depend on ambient logging config
+    logging.getLogger(SHARED_INSTRUMENT_LOGGER_NAME).setLevel(logging.WARNING)
     class_logger = logging.getLogger(
         f"{SHARED_INSTRUMENT_LOGGER_NAME}.ScopedDummyInstrument"
     )
@@ -469,7 +472,7 @@ def test_level_can_be_set_for_a_whole_driver_class() -> None:
 
     assert inst_a.log.logger.getEffectiveLevel() == logging.DEBUG
     assert inst_b.log.logger.getEffectiveLevel() == logging.DEBUG
-    assert other.log.logger.getEffectiveLevel() != logging.DEBUG
+    assert other.log.logger.getEffectiveLevel() == logging.WARNING
 
 
 def test_driver_class_level_applies_to_submodules() -> None:
@@ -482,6 +485,23 @@ def test_driver_class_level_applies_to_submodules() -> None:
     channel = inst.submodules["A"]
 
     assert channel.log.logger.getEffectiveLevel() == logging.DEBUG  # type: ignore[union-attr]
+
+
+def test_scope_is_fixed_when_root_is_created(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """
+    Changing the scope after the root was created must not split the hierarchy
+    for submodules that are added later.
+    """
+    inst = ScopedDummyChannelInstrument("fixed_scope")
+    monkeypatch.setattr(ScopedDummyChannelInstrument, "default_logger_scope", "shared")
+
+    channel = DummyChannel(inst, "late_channel", "Z")
+    inst.add_submodule("late_channel", channel)
+
+    assert channel.log.logger.name == f"{inst.log.logger.name}.late_channel"
+    assert channel.log.logger.parent is inst.log.logger
 
 
 def test_instrument_level_overrides_driver_class_level() -> None:

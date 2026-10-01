@@ -5,7 +5,8 @@ attribute ``default_logger_scope`` to ``"instrument"`` makes ``Instrument.log``
 the instrument's ``name_parts``, so that levels, handlers and ``propagate`` can
 be configured per instrument::
 
-    MyDriver.default_logger_scope = "instrument"
+    class MyDriver(VisaInstrument):
+        default_logger_scope = "instrument"
 
 The scoped loggers mirror the instrument hierarchy, for example
 ``qcodes.instrument.instrument_base.MyDriver`` for the driver,
