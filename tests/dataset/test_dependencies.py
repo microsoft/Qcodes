@@ -17,6 +17,14 @@ from qcodes.parameters import ParamSpecBase
 from tests.common import error_caused_by
 
 
+def test_param_spec_base_reexported_from_qcodes_dataset() -> None:
+    """``ParamSpecBase`` is part of the public :mod:`qcodes.dataset` API."""
+    import qcodes.dataset as qdataset
+
+    assert qdataset.ParamSpecBase is ParamSpecBase
+    assert "ParamSpecBase" in qdataset.__all__
+
+
 def test_wrong_input_raises() -> None:
     for pspecs in (
         ["p1", "p2", "p3"],
