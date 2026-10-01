@@ -2,28 +2,36 @@
 A mixin module for USB Human Interface Device instruments
 """
 
+# pywinusb is only importable when installed via the minicircuits_rudat extra.
+# Which pyright rules the ignore comment on the import below suppresses
+# therefore depends on whether pywinusb is installed, so the check for
+# superfluous ignore comments is disabled in this module.
+# pyright: reportUnnecessaryTypeIgnoreComment=false
+
 import os
 import struct
 import time
 from typing import TYPE_CHECKING
 
-try:
-    from pywinusb import (  # pyright: ignore[reportMissingModuleSource,reportMissingImports]
-        hid,
-    )
-
-    imported_hid = True
-except ImportError:
-    # We will raise a proper error when we attempt to instantiate a driver.
-    # Raising an exception here will cause CI to fail under Linux
-    imported_hid = False
-
-from qcodes.instrument import Instrument
-
 if TYPE_CHECKING:
     from typing import Unpack
 
+    # Type checkers only ever see the successful import, since the code below
+    # always verifies that the import succeeded before making use of hid.
+    from pywinusb import (  # pyright: ignore[reportMissingImports,reportMissingTypeStubs]
+        hid,
+    )
+
     from qcodes.instrument import InstrumentBaseKWArgs
+else:
+    try:
+        from pywinusb import hid
+    except ImportError:
+        # We will raise a proper error when we attempt to instantiate a driver.
+        # Raising an exception here will cause CI to fail under Linux
+        hid = None
+
+from qcodes.instrument import Instrument
 
 
 class MiniCircuitsHIDMixin(Instrument):
@@ -36,7 +44,7 @@ class MiniCircuitsHIDMixin(Instrument):
         if os.name != "nt":
             raise ImportError("This driver only works on Windows.")
 
-        if imported_hid is False:
+        if hid is None:
             raise ImportError(
                 "pywinusb is not installed. Please install it by typing "
                 "'pip install pywinusb' in a qcodes environment terminal"
@@ -74,13 +82,13 @@ class MiniCircuitsHIDMixin(Instrument):
         self._end_of_message = b"\x00"
         self.packet_size = 64
 
-        devs = hid.HidDeviceFilter(  # pyright: ignore[reportPossiblyUnboundVariable]
+        devs = hid.HidDeviceFilter(
             product_id=self.product_id,
             vendor_id=self.vendor_id,
             instance_id=instance_id,
         ).get_devices()
 
-        if len(devs) == 0:
+        if devs is None or len(devs) == 0:
             raise RuntimeError("No instruments found!")
         elif len(devs) > 1:
             raise RuntimeError(
@@ -167,9 +175,12 @@ class MiniCircuitsHIDMixin(Instrument):
         """
         cls._check_hid_import()
 
-        devs = hid.HidDeviceFilter(  # pyright: ignore[reportPossiblyUnboundVariable]
+        devs = hid.HidDeviceFilter(
             porduct_id=cls.product_id, vendor_id=cls.vendor_id
         ).get_devices()
+
+        if devs is None:
+            return []
 
         return [dev.instance_id for dev in devs]
 

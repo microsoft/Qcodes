@@ -4,10 +4,9 @@ import logging
 import time
 import warnings
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
-from typing_extensions import ParamSpec
 
 from qcodes.instrument import InstrumentBase
 from qcodes.instrument_drivers.Lakeshore import LakeshoreModel372
@@ -23,9 +22,6 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 VISA_LOGGER = f"{InstrumentBase.__module__}.com.visa"
-
-P = ParamSpec("P")
-T = TypeVar("T")
 
 
 class MockVisaInstrument:
@@ -91,7 +87,7 @@ class MockVisaInstrument:
             return super().ask_raw(cmd)  # type: ignore[misc]
 
 
-def query(name: str) -> Callable[[Callable[P, T]], Callable[P, T]]:
+def query[**P, T](name: str) -> Callable[[Callable[P, T]], Callable[P, T]]:
     def wrapper(func: Callable[P, T]) -> Callable[P, T]:
         func.query_name = name.upper()  # type: ignore[attr-defined]
         return func
@@ -99,7 +95,7 @@ def query(name: str) -> Callable[[Callable[P, T]], Callable[P, T]]:
     return wrapper
 
 
-def command(name: str) -> Callable[[Callable[P, T]], Callable[P, T]]:
+def command[**P, T](name: str) -> Callable[[Callable[P, T]], Callable[P, T]]:
     def wrapper(func: Callable[P, T]) -> Callable[P, T]:
         func.command_name = name.upper()  # type: ignore[attr-defined]
         return func
@@ -245,7 +241,7 @@ def lakeshore_372():
 
 def test_pid_set(lakeshore_372) -> None:
     ls = lakeshore_372
-    P, I, D = 1, 2, 3  # noqa  E741
+    P, I, D = 1, 2, 3  # noqa:  E741
     for h in (ls.warmup_heater, ls.analog_heater, ls.sample_heater):
         h.P(P)
         h.I(I)

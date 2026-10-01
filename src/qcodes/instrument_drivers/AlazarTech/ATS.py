@@ -926,16 +926,3 @@ class AcquisitionController[OutputType](Instrument, AcquisitionInterface[Any]):
         :return: reference to the Alazar instrument
         """
         return self._alazar
-
-
-if not TYPE_CHECKING:
-    from typing import TypeVar
-
-    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
-
-    __getattr__ = _make_deprecated_typevars_getattr(
-        __name__,
-        {
-            "OutputType": TypeVar("OutputType"),
-        },
-    )

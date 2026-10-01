@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from typing import TYPE_CHECKING, TypeVar
 
 
 def create_on_off_val_mapping[T](
@@ -30,13 +29,3 @@ def create_on_off_val_mapping[T](
     offs = (*offs_, False)
     all_vals_tuples = [(on, on_val) for on in ons] + [(off, off_val) for off in offs]
     return OrderedDict(all_vals_tuples)
-
-
-if not TYPE_CHECKING:
-    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
-
-    _deprecated_typevars: dict[str, TypeVar] = {
-        "T": TypeVar("T"),
-    }
-
-    __getattr__ = _make_deprecated_typevars_getattr(__name__, _deprecated_typevars)

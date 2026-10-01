@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import importlib
 from collections.abc import Callable
-from typing import Any, TypeVar
+from typing import Any, TypeVar  # noqa: TID251
 
 import pytest
 
@@ -86,12 +85,3 @@ def test_fallback_not_called_for_deprecated_names() -> None:
     with pytest.warns(QCoDeSDeprecationWarning):
         getattr_fn("X")
     assert not fallback_called
-
-
-def test_real_module_import_triggers_warning() -> None:
-    """Test that importing a deprecated TypeVar from an actual module works."""
-    mod = importlib.import_module("qcodes.utils.deep_update_utils")
-    with pytest.warns(QCoDeSDeprecationWarning, match="'K'"):
-        k = mod.K
-
-    assert isinstance(k, TypeVar)

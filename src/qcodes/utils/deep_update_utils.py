@@ -1,7 +1,7 @@
 from collections import abc
 from collections.abc import Hashable, Mapping, MutableMapping
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import Any, cast
 
 
 def deep_update[K: Hashable, L: Hashable](
@@ -22,14 +22,3 @@ def deep_update[K: Hashable, L: Hashable](
         else:
             dest_int[k] = deepcopy(v_update)
     return dest_int
-
-
-if not TYPE_CHECKING:
-    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
-
-    _deprecated_typevars: dict[str, TypeVar] = {
-        "K": TypeVar("K", bound=Hashable),
-        "L": TypeVar("L", bound=Hashable),
-    }
-
-    __getattr__ = _make_deprecated_typevars_getattr(__name__, _deprecated_typevars)

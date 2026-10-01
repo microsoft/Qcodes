@@ -785,6 +785,23 @@ def test_metadata(experiment, request: FixtureRequest) -> None:
         ds1.add_metadata(good_tag, None)
     assert error_caused_by(e2, none_value_msg)
 
+    # A column holds a single SQLite value, so anything nested has to say so
+    # rather than surfacing as a bare sqlite3 binding error. See issue #1444.
+    for bad_value in ({"b": 1}, [1, 2], (1, 2), {1, 2}):
+        nested_value_msg = (
+            f"Tag {good_tag} has value of type {type(bad_value).__name__}. "
+            "That is not a valid metadata value"
+        )
+        with pytest.raises(
+            RuntimeError, match="Rolling back due to unhandled exception"
+        ) as e3:
+            ds1.add_metadata(good_tag, bad_value)
+        assert error_caused_by(e3, nested_value_msg)
+
+    # Values NumPy registers an adapter for must keep working.
+    ds1.add_metadata("np_scalar", np.int64(3))
+    assert ds1.metadata["np_scalar"] == 3
+
 
 def test_the_same_dataset_as(some_interdeps, experiment) -> None:
     ds = DataSet()

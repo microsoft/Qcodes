@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 
 import pytest
 
@@ -13,8 +13,6 @@ if TYPE_CHECKING:
 
     from qcodes.instrument import InstrumentBase
     from qcodes.metadatable import SnapshotUpdate
-
-T = TypeVar("T")
 
 NOT_PASSED: Literal["NOT_PASSED"] = "NOT_PASSED"
 
@@ -137,7 +135,7 @@ class GetSetRawParameter(Parameter):
         pass
 
 
-class BookkeepingValidator(vals.Validator[T]):
+class BookkeepingValidator[T](vals.Validator[T]):
     """
     Validator that keeps track of what it validates
     """

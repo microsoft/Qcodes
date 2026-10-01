@@ -43,7 +43,7 @@ class DummyParameterIsPropertyInstr(Instrument):
         to define an interface for the instrument.
         """
         super().__init__(name, **kwargs)
-        self.add_parameter("voltage", set_cmd=None, get_cmd=None)  # type: ignore
+        self.add_parameter("voltage", set_cmd=None, get_cmd=None)
 
     @property
     def voltage(self):

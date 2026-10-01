@@ -66,7 +66,7 @@ dask==2026.8.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-debugpy==1.8.21
+debugpy==1.8.22
     # via ipykernel
 decorator==5.3.1
     # via ipython
@@ -85,9 +85,9 @@ executing==2.2.1
     # via stack-data
 fastjsonschema==2.22.2
     # via nbformat
-fonttools==4.65.0
+fonttools==4.66.0
     # via matplotlib
-fsspec==2026.7.0
+fsspec==2026.9.0
     # via dask
 furo==2025.12.19
     # via qcodes (pyproject.toml)
@@ -103,9 +103,9 @@ h5py==3.16.0
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.168.0
+hypothesis==6.168.1
     # via qcodes (pyproject.toml)
-idna==3.19
+idna==3.20
     # via requests
 imagesize==2.0.1
     # via
@@ -167,7 +167,7 @@ jupyterlab-widgets==3.0.17
     # via ipywidgets
 kiwisolver==1.5.1
     # via matplotlib
-lazy-loader==0.5
+lazy-loader==0.6
     # via qcodes-loop
 libcst==1.9.0
     # via qcodes (pyproject.toml)
@@ -212,7 +212,7 @@ nbsphinx==0.9.8
     # via qcodes (pyproject.toml)
 nest-asyncio==1.6.0
     # via ipykernel
-networkx==3.6.1
+networkx==3.7
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -258,13 +258,13 @@ packaging==26.3
     #   sphinx
     #   versioningit
     #   xarray
-pandas==3.0.5
+pandas==3.0.6
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
     #   qcodes-loop
     #   xarray
-pandas-stubs==3.0.5.260730
+pandas-stubs==3.0.5.260914
     # via qcodes (pyproject.toml)
 pandocfilters==1.5.1
     # via nbconvert
@@ -279,7 +279,7 @@ pillow==12.3.0
     #   qcodes (pyproject.toml)
     #   matplotlib
     #   qcodes
-platformdirs==4.11.8
+platformdirs==4.11.12
     # via jupyter-core
 pluggy==1.6.0
     # via
@@ -308,7 +308,7 @@ pygments==2.21.0
     #   nbconvert
     #   pytest
     #   sphinx
-pyparsing==3.3.2
+pyparsing==3.3.3
     # via matplotlib
 pytest==9.1.1
     # via
@@ -324,7 +324,7 @@ pytest-cov==7.1.0
     # via qcodes (pyproject.toml)
 pytest-mock==3.15.1
     # via qcodes (pyproject.toml)
-pytest-rerunfailures==16.6.1
+pytest-rerunfailures==16.7
     # via qcodes (pyproject.toml)
 pytest-xdist==3.8.0
     # via qcodes (pyproject.toml)
@@ -385,7 +385,7 @@ snowballstemmer==3.1.1
     # via sphinx
 sortedcontainers==2.4.0
     # via hypothesis
-soupsieve==2.9.2
+soupsieve==2.10
     # via beautifulsoup4
 sphinx==8.2.3
     # via
@@ -433,7 +433,7 @@ toolz==1.1.0
     # via
     #   dask
     #   partd
-tornado==6.5.8
+tornado==6.5.10
     # via
     #   ipykernel
     #   jupyter-client
@@ -490,7 +490,7 @@ uncertainties==3.2.3
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   requests
     #   types-requests
@@ -500,7 +500,7 @@ versioningit==3.3.0
     #   broadbean
     #   qcodes
     #   qcodes-loop
-wcwidth==0.8.3
+wcwidth==0.9.1
     # via prompt-toolkit
 webencodings==0.5.1
     # via

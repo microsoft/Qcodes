@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, TypeVar
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 import numpy.typing as npt
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from qcodes.dataset.sqlite.connection import AtomicConnection
 
     # used in forward refs that cannot be detected
-    from .data_set import DataSet  # noqa F401
+    from .data_set import DataSet  # noqa: F401
     from .data_set_in_memory import DataSetInMem
     from .data_set_protocol import DataSetProtocol, ParameterData
 
@@ -552,12 +552,15 @@ class DataSetCacheWithDBBackend(DataSetCache["DataSet"]):
             self._loaded_from_completed_ds = True
         if self._data == {}:
             self.prepare()
+        # The connection on which the dataset's results table lives (the main
+        # database, or a separate per-dataset file).
+        data_conn = self._dataset._results_conn
         (
             self._write_status,
             self._read_status,
             self._data,
         ) = load_new_data_from_db_and_append(
-            self._dataset.conn,
+            data_conn,
             self._dataset.table_name,
             self.rundescriber,
             self._write_status,
@@ -569,15 +572,3 @@ class DataSetCacheWithDBBackend(DataSetCache["DataSet"]):
         )
         if not data_not_read:
             self._live = False
-
-
-if not TYPE_CHECKING:
-    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
-
-    _deprecated_typevars: dict[str, TypeVar] = {
-        "DatasetType_co": TypeVar(
-            "DatasetType_co", bound="DataSetProtocol", covariant=True
-        ),
-    }
-
-    __getattr__ = _make_deprecated_typevars_getattr(__name__, _deprecated_typevars)

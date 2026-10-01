@@ -13,7 +13,7 @@ import ctypes
 import logging
 from functools import partial
 from threading import Lock
-from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, NewType, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, NewType
 from weakref import WeakValueDictionary
 
 from qcodes.parameters import ParameterBase
@@ -202,13 +202,3 @@ class WrappedDll(metaclass=DllWrapperMeta):
             *_normalize_params(*args),
         )
         return future.result()
-
-
-if not TYPE_CHECKING:
-    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
-
-    _deprecated_typevars: dict[str, TypeVar] = {
-        "T": TypeVar("T"),
-    }
-
-    __getattr__ = _make_deprecated_typevars_getattr(__name__, _deprecated_typevars)

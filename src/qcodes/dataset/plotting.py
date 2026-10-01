@@ -17,7 +17,7 @@ import numpy as np
 import numpy.typing as npt
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
 
     import matplotlib.axes
     import matplotlib.ticker
@@ -533,29 +533,29 @@ def _convert_complex_to_real(
 
     phase_unit = "deg" if degrees else "rad"
 
-    converters = {
-        "data": {
-            "real_and_imag": lambda x: (np.real(x), np.imag(x)),
-            "mag_and_phase": lambda x: (np.abs(x), np.angle(x, deg=degrees)),
-        },
-        "labels": {
-            "real_and_imag": lambda label: (label + " [real]", label + " [imag]"),
-            "mag_and_phase": lambda label: (label + " [mag]", label + " [phase]"),
-        },
-        "units": {
-            "real_and_imag": lambda u: (u, u),
-            "mag_and_phase": lambda u: (u, phase_unit),
-        },
-        "names": {
-            "real_and_imag": lambda n: (n + "_real", n + "_imag"),
-            "mag_and_phase": lambda n: (n + "_mag", n + "_phase"),
-        },
+    data_converters: dict[
+        str, Callable[[npt.NDArray], tuple[npt.NDArray, npt.NDArray]]
+    ] = {
+        "real_and_imag": lambda x: (np.real(x), np.imag(x)),
+        "mag_and_phase": lambda x: (np.abs(x), np.angle(x, deg=degrees)),
+    }
+    label_converters: dict[str, Callable[[str], tuple[str, str]]] = {
+        "real_and_imag": lambda label: (label + " [real]", label + " [imag]"),
+        "mag_and_phase": lambda label: (label + " [mag]", label + " [phase]"),
+    }
+    unit_converters: dict[str, Callable[[str], tuple[str, str]]] = {
+        "real_and_imag": lambda u: (u, u),
+        "mag_and_phase": lambda u: (u, phase_unit),
+    }
+    name_converters: dict[str, Callable[[str], tuple[str, str]]] = {
+        "real_and_imag": lambda n: (n + "_real", n + "_imag"),
+        "mag_and_phase": lambda n: (n + "_mag", n + "_phase"),
     }
 
-    new_data = converters["data"][conversion](parameter["data"])
-    new_labels = converters["labels"][conversion](parameter["label"])
-    new_units = converters["units"][conversion](parameter["unit"])
-    new_names = converters["names"][conversion](parameter["name"])
+    new_data = data_converters[conversion](parameter["data"])
+    new_labels = label_converters[conversion](parameter["label"])
+    new_units = unit_converters[conversion](parameter["unit"])
+    new_names = name_converters[conversion](parameter["name"])
 
     parameter1: DSPlotData = {
         "name": new_names[0],
@@ -569,8 +569,7 @@ def _convert_complex_to_real(
         "name": new_names[1],
         "label": new_labels[1],
         "unit": new_units[1],
-        "data": new_data[1],  # pyright: ignore[reportAssignmentType]
-        # the type of the converter cannot be infered due to the nested dict converters
+        "data": new_data[1],
         "shape": parameter["shape"],
     }
 

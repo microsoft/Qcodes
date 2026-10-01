@@ -440,20 +440,3 @@ class KeysightB2201(KeysightB220X):
     """
     QCodes driver for B2201
     """
-
-
-if not TYPE_CHECKING:
-    from typing import TypeVar
-
-    from typing_extensions import ParamSpec
-
-    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
-
-    __getattr__ = _make_deprecated_typevars_getattr(
-        __name__,
-        {
-            "S": TypeVar("S", bound="KeysightB220X"),
-            "T": TypeVar("T"),
-            "P": ParamSpec("P"),
-        },
-    )
