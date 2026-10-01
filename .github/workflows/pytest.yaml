@@ -103,6 +103,10 @@ jobs:
       run: mypy -p qcodes
       if: ${{ !matrix.min-version && always() }}
       id: mypy
+    - name: Run ty
+      run: ty check --output-format github
+      if: ${{ !matrix.min-version && always() }}
+      id: ty
     - name: Set pytest basetemp
       if: ${{ runner.os == 'Windows' }}
       run: echo "PYTEST_BASETEMP=--basetemp=D:\\tmp" >> $GITHUB_ENV

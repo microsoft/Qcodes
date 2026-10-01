@@ -1496,11 +1496,8 @@ def _assert_xarray_metadata_is_as_expected(
     assert xarray_ds.ds_name == qc_dataset.name
     assert xarray_ds.sample_name == qc_dataset.sample_name
     assert xarray_ds.exp_name == qc_dataset.exp_name
-    assert (
-        xarray_ds.snapshot == qc_dataset.snapshot_raw
-        if qc_dataset.snapshot_raw is not None
-        else "null"
-    )
+    if qc_dataset.snapshot_raw is not None:
+        assert xarray_ds.snapshot == qc_dataset.snapshot_raw
     assert xarray_ds.guid == qc_dataset.guid
     assert xarray_ds.run_timestamp == qc_dataset.run_timestamp()
     assert xarray_ds.completed_timestamp == qc_dataset.completed_timestamp()
@@ -1822,7 +1819,7 @@ def test_multi_index_export_with_inferred_parameter(
 ) -> None:
     """Inferred parameters must export correctly when a MultiIndex dim is used."""
     xds = mock_dataset_non_grid_inferred.to_xarray_dataset(
-        use_multi_index=use_multi_index  # pyright: ignore[reportArgumentType]
+        use_multi_index=use_multi_index  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
     )
 
     assert xds.sizes == {"multi_index": 50}
@@ -1846,13 +1843,13 @@ def test_non_unique_multi_index_export_with_inferred_parameter(
 
 def test_multi_index_wrong_option(mock_dataset_non_grid: DataSet) -> None:
     with pytest.raises(ValueError, match="Invalid value for use_multi_index"):
-        mock_dataset_non_grid.to_xarray_dataset(use_multi_index=True)  # pyright: ignore[reportArgumentType]
+        mock_dataset_non_grid.to_xarray_dataset(use_multi_index=True)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
     with pytest.raises(ValueError, match="Invalid value for use_multi_index"):
-        mock_dataset_non_grid.to_xarray_dataset(use_multi_index=False)  # pyright: ignore[reportArgumentType]
+        mock_dataset_non_grid.to_xarray_dataset(use_multi_index=False)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
     with pytest.raises(ValueError, match="Invalid value for use_multi_index"):
-        mock_dataset_non_grid.to_xarray_dataset(use_multi_index="perhaps")  # pyright: ignore[reportArgumentType]
+        mock_dataset_non_grid.to_xarray_dataset(use_multi_index="perhaps")  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
 
 def test_geneate_pandas_index() -> None:

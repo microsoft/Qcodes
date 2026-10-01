@@ -42,7 +42,7 @@ class TestParameterBaseKeywordOnly:
 
     def test_positional_args_rejected(self) -> None:
         with pytest.raises(TypeError):
-            _ConcreteParameterBase("test", None)  # type: ignore[misc]
+            _ConcreteParameterBase("test", None)  # type: ignore[misc]  # ty: ignore[too-many-positional-arguments]
 
 
 class TestParameterKeywordOnly:
@@ -55,7 +55,7 @@ class TestParameterKeywordOnly:
 
     def test_positional_args_rejected(self) -> None:
         with pytest.raises(TypeError):
-            Parameter("test", None, set_cmd=None)  # type: ignore[misc]
+            Parameter("test", None, set_cmd=None)  # type: ignore[misc]  # ty: ignore[too-many-positional-arguments]
 
 
 # Minimal concrete subclass of ArrayParameter for testing
@@ -74,11 +74,11 @@ class TestArrayParameterKeywordOnly:
 
     def test_positional_args_rejected(self) -> None:
         with pytest.raises(TypeError):
-            _ConcreteArrayParameter("test", (3,))  # type: ignore[misc]
+            _ConcreteArrayParameter("test", (3,))  # type: ignore[misc]  # ty: ignore[missing-argument, too-many-positional-arguments]
 
     def test_missing_shape_raises(self) -> None:
         with pytest.raises(TypeError):
-            _ConcreteArrayParameter("test")  # type: ignore[misc]
+            _ConcreteArrayParameter("test")  # type: ignore[misc]  # ty: ignore[missing-argument]
 
 
 class TestGroupParameterKeywordOnly:
@@ -90,7 +90,7 @@ class TestGroupParameterKeywordOnly:
 
     def test_positional_args_rejected(self) -> None:
         with pytest.raises(TypeError):
-            GroupParameter("test", None)  # type: ignore[misc]
+            GroupParameter("test", None)  # type: ignore[misc]  # ty: ignore[too-many-positional-arguments]
 
 
 def _make_delegate_group() -> DelegateGroup:
@@ -112,11 +112,11 @@ class TestGroupedParameterKeywordOnly:
     def test_positional_args_rejected(self) -> None:
         grp = _make_delegate_group()
         with pytest.raises(TypeError):
-            GroupedParameter("test", grp)  # type: ignore[misc]
+            GroupedParameter("test", grp)  # type: ignore[misc]  # ty: ignore[missing-argument, too-many-positional-arguments]
 
     def test_missing_group_raises(self) -> None:
         with pytest.raises(TypeError):
-            GroupedParameter("test")  # type: ignore[misc]
+            GroupedParameter("test")  # type: ignore[misc]  # ty: ignore[missing-argument]
 
 
 # Minimal concrete subclass of MultiParameter for testing
@@ -135,15 +135,15 @@ class TestMultiParameterKeywordOnly:
 
     def test_positional_args_rejected(self) -> None:
         with pytest.raises(TypeError):
-            _ConcreteMultiParameter("test", ("a",), ((),))  # type: ignore[misc]
+            _ConcreteMultiParameter("test", ("a",), ((),))  # type: ignore[misc]  # ty: ignore[missing-argument, too-many-positional-arguments]
 
     def test_missing_names_raises(self) -> None:
         with pytest.raises(TypeError):
-            _ConcreteMultiParameter("test", shapes=((),))  # type: ignore[misc]
+            _ConcreteMultiParameter("test", shapes=((),))  # type: ignore[misc]  # ty: ignore[missing-argument]
 
     def test_missing_shapes_raises(self) -> None:
         with pytest.raises(TypeError):
-            _ConcreteMultiParameter("test", names=("a",))  # type: ignore[misc]
+            _ConcreteMultiParameter("test", names=("a",))  # type: ignore[misc]  # ty: ignore[missing-argument]
 
 
 class TestMultiChannelInstrumentParameterKeywordOnly:
@@ -157,8 +157,8 @@ class TestMultiChannelInstrumentParameterKeywordOnly:
 
     def test_positional_args_rejected(self) -> None:
         with pytest.raises(TypeError):
-            MultiChannelInstrumentParameter(
-                [],  # pyright: ignore[reportCallIssue]
+            MultiChannelInstrumentParameter(  # ty: ignore[missing-argument]
+                [],  # pyright: ignore[reportCallIssue]  # ty: ignore[too-many-positional-arguments]
                 "x",
                 name="test",
                 names=("a",),
@@ -167,13 +167,13 @@ class TestMultiChannelInstrumentParameterKeywordOnly:
 
     def test_missing_channels_raises(self) -> None:
         with pytest.raises(TypeError):
-            MultiChannelInstrumentParameter(  # type: ignore[call-arg]
+            MultiChannelInstrumentParameter(  # type: ignore[call-arg]  # ty: ignore[missing-argument]
                 param_name="x", name="test", names=("a",), shapes=((),)
             )
 
     def test_missing_param_name_raises(self) -> None:
         with pytest.raises(TypeError):
-            MultiChannelInstrumentParameter(  # type: ignore[call-arg]
+            MultiChannelInstrumentParameter(  # type: ignore[call-arg]  # ty: ignore[missing-argument]
                 channels=[], name="test", names=("a",), shapes=((),)
             )
 
@@ -188,7 +188,7 @@ class TestElapsedTimeParameterKeywordOnly:
 
     def test_positional_args_rejected(self) -> None:
         with pytest.raises(TypeError):
-            ElapsedTimeParameter("test", "My label")  # type: ignore[misc]
+            ElapsedTimeParameter("test", "My label")  # type: ignore[misc]  # ty: ignore[too-many-positional-arguments]
 
 
 class TestInstrumentRefParameterKeywordOnly:
@@ -201,4 +201,4 @@ class TestInstrumentRefParameterKeywordOnly:
 
     def test_positional_args_rejected(self) -> None:
         with pytest.raises(TypeError):
-            InstrumentRefParameter("test", None)  # type: ignore[misc]
+            InstrumentRefParameter("test", None)  # type: ignore[misc]  # ty: ignore[too-many-positional-arguments]

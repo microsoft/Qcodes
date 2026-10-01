@@ -1,0 +1,6 @@
+The Keysight B1500 example notebook called
+``b1500.run_iv_staircase_sweep.measurement_status()`` in the phase compensation
+section. ``IVSweepMeasurement`` has no such method, so the cell raised
+``AttributeError``. The surrounding text asks for all channel outputs to be
+enabled before performing phase compensation, so the cell now calls
+``b1500.enable_channels()``.

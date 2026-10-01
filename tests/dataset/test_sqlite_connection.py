@@ -58,7 +58,7 @@ def test_atomic_raises_for_non_atomic_conn() -> None:
         "atomic context manager only accepts AtomicConnection "
         "database connection objects."
     )
-    with pytest.raises(ValueError, match=match_str), atomic(sqlite_conn):  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match=match_str), atomic(sqlite_conn):  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
         pass
 
 
@@ -295,7 +295,7 @@ def test_atomic_transaction_on_sqlite3_connection_raises(tmp_path) -> None:
     )
 
     with pytest.raises(ValueError, match=match_str):
-        atomic_transaction(conn, "whatever sql query")  # type: ignore[arg-type]
+        atomic_transaction(conn, "whatever sql query")  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 def test_connect() -> None:

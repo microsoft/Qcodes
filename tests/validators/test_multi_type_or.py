@@ -38,7 +38,7 @@ def test_good() -> None:
 def test_bad() -> None:
     for args in ([], [1], [Strings(), True]):
         with pytest.raises(TypeError):
-            MultiTypeOr(*args)  # type: ignore[misc]
+            MultiTypeOr(*args)  # type: ignore[misc]  # ty: ignore[invalid-argument-type]
 
 
 def test_valid_values() -> None:

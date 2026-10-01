@@ -37,14 +37,14 @@ def test_create_on_off_val_mapping_for(
 
     # this does not type check. However, hash(1) == hash(True)
     # so 1/0 behaves like True and False at runtime
-    assert val_mapping[1] is on_val  # type: ignore[index]
+    assert val_mapping[1] is on_val  # type: ignore[index]  # ty: ignore[invalid-argument-type]
     assert val_mapping[True] is on_val
     assert val_mapping["1"] is on_val
     assert val_mapping["ON"] is on_val
     assert val_mapping["On"] is on_val
     assert val_mapping["on"] is on_val
 
-    assert val_mapping[0] is off_val  # type: ignore[index]
+    assert val_mapping[0] is off_val  # type: ignore[index]  # ty: ignore[invalid-argument-type]
     assert val_mapping[False] is off_val
     assert val_mapping["0"] is off_val
     assert val_mapping["OFF"] is off_val

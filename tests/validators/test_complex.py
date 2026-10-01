@@ -28,4 +28,4 @@ def test_complex_raises(val: float | str) -> None:
     n = ComplexNumbers()
 
     with pytest.raises(TypeError, match=r"is not complex;"):
-        n.validate(val)  # type: ignore[arg-type]
+        n.validate(val)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]

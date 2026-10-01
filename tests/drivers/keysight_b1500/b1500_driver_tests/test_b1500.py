@@ -69,21 +69,21 @@ def test_snapshot_does_not_raise_warnings(b1500: KeysightB1500) -> None:
 def test_submodule_access_by_class(b1500: KeysightB1500) -> None:
     assert b1500.smu1 in b1500.by_kind[constants.ModuleKind.SMU]
     # while it does not type check it is possible to look up by string
-    assert b1500.smu1 in b1500.by_kind["SMU"]  # pyright: ignore[reportArgumentType]
+    assert b1500.smu1 in b1500.by_kind["SMU"]  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
     assert b1500.smu1 in b1500.by_kind[constants.ModuleKind.SMU]
-    assert b1500.smu2 in b1500.by_kind["SMU"]  # pyright: ignore[reportArgumentType]
+    assert b1500.smu2 in b1500.by_kind["SMU"]  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
     assert b1500.cmu1 in b1500.by_kind[constants.ModuleKind.CMU]
-    assert b1500.cmu1 in b1500.by_kind["CMU"]  # pyright: ignore[reportArgumentType]
+    assert b1500.cmu1 in b1500.by_kind["CMU"]  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
     assert b1500.wgfmu1 in b1500.by_kind[constants.ModuleKind.WGFMU]
-    assert b1500.wgfmu1 in b1500.by_kind["WGFMU"]  # pyright: ignore[reportArgumentType]
+    assert b1500.wgfmu1 in b1500.by_kind["WGFMU"]  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
 
 def test_submodule_access_by_slot(b1500: KeysightB1500) -> None:
     assert b1500.smu1 is b1500.by_slot[SlotNr.SLOT01]
     assert b1500.smu2 is b1500.by_slot[SlotNr.SLOT02]
     # while it does not type check it is possible to look up by integer
-    assert b1500.cmu1 is b1500.by_slot[3]  # pyright: ignore[reportArgumentType]
-    assert b1500.wgfmu1 is b1500.by_slot[6]  # pyright: ignore[reportArgumentType]
+    assert b1500.cmu1 is b1500.by_slot[3]  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
+    assert b1500.wgfmu1 is b1500.by_slot[6]  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
 
 def test_submodule_access_by_channel(b1500: KeysightB1500) -> None:
@@ -92,7 +92,7 @@ def test_submodule_access_by_channel(b1500: KeysightB1500) -> None:
     assert b1500.cmu1 is b1500.by_channel[ChNr.SLOT_03_CH1]
     assert b1500.wgfmu1 is b1500.by_channel[ChNr.SLOT_06_CH1]
     # while it does not type check it is possible to look up by integer
-    assert b1500.wgfmu1 is b1500.by_channel[6]  # pyright: ignore[reportArgumentType]
+    assert b1500.wgfmu1 is b1500.by_channel[6]  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
     assert b1500.wgfmu1 is b1500.by_channel[ChNr.SLOT_06_CH2]
 
 

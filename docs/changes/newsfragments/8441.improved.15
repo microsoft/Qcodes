@@ -1,0 +1,3 @@
+The module level ports used by ``qcodes.monitor`` are now annotated as
+``int``. They are intended to be reassigned to select another port, which
+type checkers rejected since the type was inferred from the default value.
