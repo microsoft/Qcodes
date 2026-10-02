@@ -1,0 +1,32 @@
+QCoDeS 0.47.0 (2024-08-07)
+==========================
+
+Breaking Changes:
+-----------------
+
+This release supports Python 3.10 and later.
+
+Improved Drivers:
+-----------------
+
+- Fixed the Harvard DecaDAC range not including the highest bit. (:pr:`6076`)
+- Fixed Keysight 34465A DMM firmware version parsing. (:pr:`6076`)
+- Fixed Oxford Instruments Triton section parsing. (:pr:`6076`)
+- The long deprecated aliases to channels on MiniCircuits UsbSPDT drivers have been removed. This means that `channel_a` should be replaced by `a` and so on in any call to this driver. (:pr:`6207`)
+- Added power output parameters to LakeShore335 driver, allowing configuration of the maximum heater current. (:pr:`6248`)
+- Added input coupling and impedance parameters for channels in the Keysight Infiniium oscilloscope driver. (:pr:`6293`)
+- Added 'offset' parameter to Tektronix AWG Channels. (:pr:`6303`)
+- The ``qcodes.instrument_drivers.american_magnetics.AMIModel430`` driver can now be snapshotted with the heater missing or not enabled
+  without triggering warnings. Furthermore confusing aliases for parameters on the switch module have been deprecated since use of these would
+  lead to incorrect state of the parameters.
+  The aliases ``qcodes.instrument_drivers.american_magnetics.AMI_430_visa.AMI430_3D`` and ``qcodes.instrument_drivers.american_magnetics.AMI_430_visa.AMI430``
+  have been deprecated. (:pr:`6306`)
+- Add setpoint ramp rate parameters to LakeShore335 driver,
+  this allows to configure the setpoint ramp rate. (:pr:`6322`)
+- Add setpoint ramp status parameter to LakeShore335 driver,
+  this allows to monitor a ongoing setpoint ramp. (:pr:`6322`)
+
+Other Changes:
+--------------
+
+- Improved error handling when checking experiment IDs in the experiment list. (:pr:`6305`)
