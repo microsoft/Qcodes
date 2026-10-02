@@ -8,7 +8,7 @@ from qcodes.parameters import Group, GroupParameter
 
 from .lakeshore_base import (
     LakeshoreBase,
-    LakeshoreBaseOutput,
+    LakeshoreBaseOutputWithHeaterSetupAndOutputType,
     LakeshoreBaseSensorChannel,
 )
 
@@ -147,7 +147,7 @@ class LakeshoreModel335Channel(LakeshoreBaseSensorChannel):
         )
 
 
-class LakeshoreModel335CurrentSource(LakeshoreBaseOutput):
+class LakeshoreModel335CurrentSource(LakeshoreBaseOutputWithHeaterSetupAndOutputType):
     """
     InstrumentChannel for current sources on Lakeshore Model 335.
 

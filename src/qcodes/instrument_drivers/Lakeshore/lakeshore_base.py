@@ -39,6 +39,14 @@ class LakeshoreBaseOutput(InstrumentChannel["LakeshoreBase"]):
         """
         Base class for the outputs of Lakeshore temperature controllers
 
+        This class does not add the parameters of the heater setup
+        (``HTRSET``) command because not all outputs support it and its
+        format differs between models. Outputs that support it should
+        subclass :class:`LakeshoreBaseOutputWithHeaterSetup` or
+        :class:`LakeshoreBaseOutputWithHeaterSetupAndOutputType` instead,
+        or add model specific heater setup parameters (as the sample and
+        warm-up heaters of the Model 372 do).
+
         Args:
             parent: instrument that this channel belongs to
             output_name: name of this output
@@ -128,62 +136,6 @@ class LakeshoreBaseOutput(InstrumentChannel["LakeshoreBase"]):
                 set_cmd=f"PID {output_index},{{P}},{{I}},{{D}}",
                 get_cmd=f"PID? {output_index}",
             )
-
-        self.output_type: GroupParameter = self.add_parameter(
-            name="output_type",
-            docstring="Output type (Output 2 only): 0=Current, 1=Voltage",
-            val_mapping=(
-                {"current": 0, "voltage": 1} if output_index == 1 else {"current": 0}
-            ),
-            parameter_class=GroupParameter,
-        )
-        """Output type (Output 2 only): 0=Current, 1=Voltage"""
-
-        self.output_heater_resistance: GroupParameter = self.add_parameter(
-            name="output_heater_resistance",
-            docstring="Heater Resistance Setting: 25/50ohm",
-            val_mapping={"25ohm": 1, "50ohm": 2},
-            parameter_class=GroupParameter,
-        )
-        """Heater Resistance Setting: 25/50ohm"""
-
-        self.output_max_current: GroupParameter = self.add_parameter(
-            name="output_max_current",
-            docstring="Specifies the maximum heater output current: User Specified, 0.707 A, 1 A, 1.141 A, 1.732",
-            val_mapping={"user": 0, "0.707A": 1, "1A": 2, "1.141A": 3, "1.732A": 4},
-            parameter_class=GroupParameter,
-        )
-        """Specifies the maximum heater output current: User Specified, 0.707 A, 1 A, 1.141 A, 1.732"""
-
-        self.output_max_user_current: GroupParameter = self.add_parameter(
-            name="output_max_user_current",
-            docstring="Specifies the maximum heater output current if max current is set to User Specified.",
-            vals=vals.Numbers(0, 1.732),
-            unit="A",
-            get_parser=float,
-            parameter_class=GroupParameter,
-        )
-        """Specifies the maximum heater output current if max current is set to User Specified."""
-
-        self.output_display: GroupParameter = self.add_parameter(
-            name="output_display",
-            docstring="Specifies whether the heater output displays in current or power (current mode only)",
-            val_mapping={"current": 1, "power": 2},
-            parameter_class=GroupParameter,
-        )
-        """Specifies whether the heater output displays in current or power (current mode only)"""
-
-        self.heater_group = Group(
-            [
-                self.output_type,
-                self.output_heater_resistance,
-                self.output_max_current,
-                self.output_max_user_current,
-                self.output_display,
-            ],
-            set_cmd=f"HTRSET {output_index},{{output_type}},{{output_heater_resistance}},{{output_max_current}},{{output_max_user_current}},{{output_display}}",
-            get_cmd=f"HTRSET? {output_index}",
-        )
 
         self.output_range: Parameter = self.add_parameter(
             "output_range",
@@ -506,6 +458,133 @@ class LakeshoreBaseOutput(InstrumentChannel["LakeshoreBase"]):
                 time_enter_tolerance_zone = time_now
 
             time.sleep(wait_cycle_time)
+
+
+class LakeshoreBaseOutputWithHeaterSetup(LakeshoreBaseOutput):
+    def __init__(
+        self,
+        parent: "LakeshoreBase",
+        output_name: str,
+        output_index: int,
+        has_pid: bool = True,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ):
+        """
+        Base class for the outputs of Lakeshore temperature controllers that
+        support the heater setup command in the form
+        ``HTRSET <output>,<heater resistance>,<max current>,<max user current>,<current/power>``
+        (e.g. outputs 1 and 2 of the Model 336).
+
+        Args:
+            parent: instrument that this channel belongs to
+            output_name: name of this output
+            output_index: identifier for this output that is used in VISA commands of the
+              instrument
+            has_pid: if True, then the output supports closed loop control,
+              hence it will have three parameters to set it up: 'P', 'I', and 'D'
+            **kwargs: Forwarded to baseclass.
+
+        """
+        super().__init__(parent, output_name, output_index, has_pid=has_pid, **kwargs)
+
+        self.output_heater_resistance: GroupParameter = self.add_parameter(
+            name="output_heater_resistance",
+            docstring="Heater Resistance Setting: 25/50ohm",
+            val_mapping={"25ohm": 1, "50ohm": 2},
+            parameter_class=GroupParameter,
+        )
+        """Heater Resistance Setting: 25/50ohm"""
+
+        self.output_max_current: GroupParameter = self.add_parameter(
+            name="output_max_current",
+            docstring="Specifies the maximum heater output current: User Specified, 0.707 A, 1 A, 1.141 A, 1.732",
+            val_mapping={"user": 0, "0.707A": 1, "1A": 2, "1.141A": 3, "1.732A": 4},
+            parameter_class=GroupParameter,
+        )
+        """Specifies the maximum heater output current: User Specified, 0.707 A, 1 A, 1.141 A, 1.732"""
+
+        self.output_max_user_current: GroupParameter = self.add_parameter(
+            name="output_max_user_current",
+            docstring="Specifies the maximum heater output current if max current is set to User Specified.",
+            vals=vals.Numbers(0, 1.732),
+            unit="A",
+            get_parser=float,
+            parameter_class=GroupParameter,
+        )
+        """Specifies the maximum heater output current if max current is set to User Specified."""
+
+        self.output_display: GroupParameter = self.add_parameter(
+            name="output_display",
+            docstring="Specifies whether the heater output displays in current or power (current mode only)",
+            val_mapping={"current": 1, "power": 2},
+            parameter_class=GroupParameter,
+        )
+        """Specifies whether the heater output displays in current or power (current mode only)"""
+
+        self.heater_group = Group(
+            [
+                self.output_heater_resistance,
+                self.output_max_current,
+                self.output_max_user_current,
+                self.output_display,
+            ],
+            set_cmd=f"HTRSET {output_index},{{output_heater_resistance}},{{output_max_current}},{{output_max_user_current}},{{output_display}}",
+            get_cmd=f"HTRSET? {output_index}",
+        )
+
+
+class LakeshoreBaseOutputWithHeaterSetupAndOutputType(
+    LakeshoreBaseOutputWithHeaterSetup
+):
+    def __init__(
+        self,
+        parent: "LakeshoreBase",
+        output_name: str,
+        output_index: int,
+        has_pid: bool = True,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ):
+        """
+        Base class for the outputs of Lakeshore temperature controllers that
+        support the heater setup command in the form
+        ``HTRSET <output>,<output type>,<heater resistance>,<max current>,<max user current>,<current/power>``
+        (e.g. the outputs of the Model 335).
+
+        Args:
+            parent: instrument that this channel belongs to
+            output_name: name of this output
+            output_index: identifier for this output that is used in VISA commands of the
+              instrument
+            has_pid: if True, then the output supports closed loop control,
+              hence it will have three parameters to set it up: 'P', 'I', and 'D'
+            **kwargs: Forwarded to baseclass.
+
+        """
+        super().__init__(parent, output_name, output_index, has_pid=has_pid, **kwargs)
+
+        self.output_type: GroupParameter = self.add_parameter(
+            name="output_type",
+            docstring="Output type (Output 2 only): 0=Current, 1=Voltage",
+            val_mapping=(
+                {"current": 0, "voltage": 1} if output_index == 1 else {"current": 0}
+            ),
+            parameter_class=GroupParameter,
+        )
+        """Output type (Output 2 only): 0=Current, 1=Voltage"""
+
+        # The output type is the first field of this HTRSET command format,
+        # hence redefine the heater setup group of the parent class
+        self.heater_group = Group(
+            [
+                self.output_type,
+                self.output_heater_resistance,
+                self.output_max_current,
+                self.output_max_user_current,
+                self.output_display,
+            ],
+            set_cmd=f"HTRSET {output_index},{{output_type}},{{output_heater_resistance}},{{output_max_current}},{{output_max_user_current}},{{output_display}}",
+            get_cmd=f"HTRSET? {output_index}",
+        )
 
 
 class LakeshoreBaseSensorChannel(InstrumentChannel):
