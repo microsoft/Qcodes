@@ -43,7 +43,9 @@ class LakeshoreBaseOutput(InstrumentChannel["LakeshoreBase"]):
         (``HTRSET``) command because not all outputs support it and its
         format differs between models. Outputs that support it should
         subclass :class:`LakeshoreBaseOutputWithHeaterSetup` or
-        :class:`LakeshoreBaseOutputWithHeaterSetupAndOutputType` instead.
+        :class:`LakeshoreBaseOutputWithHeaterSetupAndOutputType` instead,
+        or add model specific heater setup parameters (as the sample and
+        warm-up heaters of the Model 372 do).
 
         Args:
             parent: instrument that this channel belongs to

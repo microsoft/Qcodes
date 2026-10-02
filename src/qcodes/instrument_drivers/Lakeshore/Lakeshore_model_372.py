@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 import qcodes.validators as vals
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (
     LakeshoreBase,
-    LakeshoreBaseOutputWithHeaterSetupAndOutputType,
+    LakeshoreBaseOutput,
     LakeshoreBaseSensorChannel,
 )
 from qcodes.parameters import Group, GroupParameter
@@ -17,8 +17,16 @@ if TYPE_CHECKING:
 _n_channels = 16
 
 
-class LakeshoreModel372Output(LakeshoreBaseOutputWithHeaterSetupAndOutputType):
-    """An InstrumentChannel for control outputs (heaters) of Lakeshore Model 372"""
+class LakeshoreModel372Output(LakeshoreBaseOutput):
+    """
+    An InstrumentChannel for control outputs (heaters) of Lakeshore Model 372
+
+    This class is used for the analog (still) heater, which does not support
+    the heater setup (``HTRSET``) command. The sample heater and the warm-up
+    heater use the subclasses :class:`LakeshoreModel372SampleHeater` and
+    :class:`LakeshoreModel372WarmupHeater`, which add the parameters of that
+    command.
+    """
 
     MODES: ClassVar[dict[str, int]] = {
         "off": 0,
@@ -103,6 +111,121 @@ class LakeshoreModel372Output(LakeshoreBaseOutputWithHeaterSetupAndOutputType):
         self.P.vals = vals.Numbers(0.0, 1000)
         self.I.vals = vals.Numbers(0.0, 10000)
         self.D.vals = vals.Numbers(0, 2500)
+
+
+class LakeshoreModel372SampleHeater(LakeshoreModel372Output):
+    """
+    An InstrumentChannel for the sample heater (output 0) of Lakeshore Model 372
+
+    Unlike the Model 335, the heater setup (``HTRSET``) command of the
+    Model 372 has no output type field. The max current fields of this command
+    only apply to the warm-up heater, hence the sample heater only has the
+    heater resistance and current/power display parameters.
+    """
+
+    def __init__(
+        self,
+        parent: "LakeshoreModel372",
+        output_name: str,
+        output_index: int,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ) -> None:
+        super().__init__(parent, output_name, output_index, **kwargs)
+
+        self.output_heater_resistance: GroupParameter = self.add_parameter(
+            name="output_heater_resistance",
+            docstring="Heater load in ohms (1 to 2000)",
+            vals=vals.Numbers(1, 2000),
+            unit="Ohm",
+            get_parser=float,
+            parameter_class=GroupParameter,
+        )
+        """Heater load in ohms (1 to 2000)"""
+
+        self.output_display: GroupParameter = self.add_parameter(
+            name="output_display",
+            docstring="Specifies whether the heater output displays in current or power",
+            val_mapping={"current": 1, "power": 2},
+            parameter_class=GroupParameter,
+        )
+        """Specifies whether the heater output displays in current or power"""
+
+        # The manual requires zeros for the max current and max user current
+        # fields when configuring the sample heater
+        self.heater_group = Group(
+            [self.output_heater_resistance, self.output_display],
+            set_cmd=f"HTRSET {output_index},{{output_heater_resistance}},0,0,{{output_display}}",
+            get_cmd=f"HTRSET? {output_index}",
+            get_parser=self._parse_heater_setup,
+        )
+
+    @staticmethod
+    def _parse_heater_setup(response: str) -> dict[str, str]:
+        resistance, _, _, display = response.split(",")
+        return {"output_heater_resistance": resistance, "output_display": display}
+
+
+class LakeshoreModel372WarmupHeater(LakeshoreModel372Output):
+    """
+    An InstrumentChannel for the warm-up heater (output 1) of Lakeshore Model 372
+
+    Unlike the Model 335, the heater setup (``HTRSET``) command of the
+    Model 372 has no output type field.
+    """
+
+    def __init__(
+        self,
+        parent: "LakeshoreModel372",
+        output_name: str,
+        output_index: int,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ) -> None:
+        super().__init__(parent, output_name, output_index, **kwargs)
+
+        self.output_heater_resistance: GroupParameter = self.add_parameter(
+            name="output_heater_resistance",
+            docstring="Heater Resistance Setting: 25/50ohm",
+            val_mapping={"25ohm": 1, "50ohm": 2},
+            parameter_class=GroupParameter,
+        )
+        """Heater Resistance Setting: 25/50ohm"""
+
+        self.output_max_current: GroupParameter = self.add_parameter(
+            name="output_max_current",
+            docstring="Specifies the maximum heater output current: User Specified, 0.45 A, 0.63 A",
+            val_mapping={"user": 0, "0.45A": 1, "0.63A": 2},
+            parameter_class=GroupParameter,
+        )
+        """Specifies the maximum heater output current: User Specified, 0.45 A, 0.63 A"""
+
+        self.output_max_user_current: GroupParameter = self.add_parameter(
+            name="output_max_user_current",
+            docstring="Specifies the maximum heater output current if max current is set to User Specified.",
+            vals=vals.Numbers(0, 0.63),
+            unit="A",
+            get_parser=float,
+            parameter_class=GroupParameter,
+        )
+        """Specifies the maximum heater output current if max current is set to User Specified."""
+
+        self.output_display: GroupParameter = self.add_parameter(
+            name="output_display",
+            docstring="Specifies whether the heater output displays in current or power",
+            val_mapping={"current": 1, "power": 2},
+            parameter_class=GroupParameter,
+        )
+        """Specifies whether the heater output displays in current or power"""
+
+        self.heater_group = Group(
+            [
+                self.output_heater_resistance,
+                self.output_max_current,
+                self.output_max_user_current,
+                self.output_display,
+            ],
+            set_cmd=f"HTRSET {output_index},{{output_heater_resistance}},{{output_max_current}},{{output_max_user_current}},{{output_display}}",
+            get_cmd=f"HTRSET? {output_index}",
+        )
 
 
 class LakeshoreModel372Channel(LakeshoreBaseSensorChannel):
@@ -351,16 +474,20 @@ class LakeshoreModel372(LakeshoreBase[LakeshoreModel372Channel]):
 
         heaters = {"sample_heater": 0, "warmup_heater": 1, "analog_heater": 2}
 
-        self.sample_heater: LakeshoreModel372Output = self.add_submodule(
+        self.sample_heater: LakeshoreModel372SampleHeater = self.add_submodule(
             "sample_heater",
-            LakeshoreModel372Output(self, "sample_heater", heaters["sample_heater"]),
+            LakeshoreModel372SampleHeater(
+                self, "sample_heater", heaters["sample_heater"]
+            ),
         )
         """
         Sample heater output channel.
         """
-        self.warmup_heater: LakeshoreModel372Output = self.add_submodule(
+        self.warmup_heater: LakeshoreModel372WarmupHeater = self.add_submodule(
             "warmup_heater",
-            LakeshoreModel372Output(self, "warmup_heater", heaters["warmup_heater"]),
+            LakeshoreModel372WarmupHeater(
+                self, "warmup_heater", heaters["warmup_heater"]
+            ),
         )
         """
         Warm-up heater output channel.
