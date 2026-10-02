@@ -5,7 +5,7 @@ from __future__ import annotations
 import collections.abc
 import logging
 import warnings
-from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
 import numpy as np
 from typing_extensions import TypedDict, TypeVar, deprecated
@@ -36,6 +36,21 @@ TParameter = TypeVar("TParameter", bound="ParameterBase", default="Parameter")
 TSubmodule = TypeVar(
     "TSubmodule", bound="InstrumentModule | ChannelTuple", default="InstrumentModule"
 )
+
+LoggerScope = Literal["shared", "instrument"]
+"""
+Naming scope used for the logger behind :attr:`InstrumentBase.log` (and
+:attr:`~qcodes.instrument.VisaInstrument.visa_log`).
+
+``"shared"``
+    All instruments share a single logger.
+``"instrument"``
+    Each instrument gets its own logger, named after the class of its
+    ``root_instrument`` followed by its ``name_parts``. This creates one logger
+    per driver class, one per instrument and one per submodule, each a child of
+    the previous one, so a level configured on any of them applies to
+    everything below it.
+"""
 
 
 class InstrumentBaseKWArgs(TypedDict):
@@ -69,6 +84,30 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         label: nicely formatted name of the instrument; if None, the
             ``name`` is used.
 
+    """
+
+    default_logger_scope: ClassVar[LoggerScope] = "shared"
+    """
+    Logger naming scope used for :attr:`log` (and
+    :attr:`~qcodes.instrument.VisaInstrument.visa_log`).
+
+    By default all instruments share a single logger. Set this to
+    ``"instrument"`` in the definition of a driver class to give each of its
+    instruments a logger of its own, so that log levels and handlers can be
+    configured per instrument::
+
+        class MyDriver(VisaInstrument):
+            default_logger_scope = "instrument"
+
+    The resulting loggers are named
+    ``qcodes.instrument.instrument_base.<DriverClass>.<name_parts>``, so a
+    level can be set for a whole driver class, a single instrument, or a single
+    submodule.
+
+    The scope is resolved once, when the :meth:`root_instrument` is created,
+    and every submodule uses the scope of its root. It therefore applies to the
+    whole instrument, including submodules added later, and changing it
+    afterwards has no effect on existing instruments.
     """
 
     def __init__(
@@ -118,8 +157,37 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         # This is needed for snapshot method to work
         self._meta_attrs = ["name", "label"]
 
-        self.log: InstrumentLoggerAdapter = get_instrument_logger(self, __name__)
+        root = self.root_instrument
+        self._logger_scope: LoggerScope = (
+            type(self).default_logger_scope if root is self else root._logger_scope
+        )
+
+        self.log: InstrumentLoggerAdapter = get_instrument_logger(
+            self, self._logger_name(__name__)
+        )
         self.log.debug("Created instrument: %s", self.full_name)
+
+    def _logger_name(self, base: str) -> str:
+        """
+        Name of the logger to use, derived from ``base`` according to the
+        logger scope resolved when the :meth:`root_instrument` was created.
+
+        Under the ``"instrument"`` scope the name is built from the class of
+        the :meth:`root_instrument` followed by :meth:`name_parts`, e.g.
+        ``<base>.MyDriver.myinst.ChanA``. That gives one node per driver class,
+        one per instrument and one per submodule, so a level can be configured
+        for a whole driver, a single instrument, or a single channel, and each
+        is inherited by everything below it.
+
+        Args:
+            base: Name of the shared logger that this instrument would use if
+                no scope was configured.
+
+        """
+        if self._logger_scope == "instrument":
+            root = self.root_instrument
+            return ".".join((base, type(root).__name__, *self.name_parts))
+        return base
 
     @property
     def label(self) -> str:
