@@ -6,6 +6,7 @@ from qcodes.parameters import Group, GroupParameter, Parameter
 from .lakeshore_base import (
     LakeshoreBase,
     LakeshoreBaseOutput,
+    LakeshoreBaseOutputWithHeaterSetup,
     LakeshoreBaseSensorChannel,
 )
 
@@ -31,12 +32,13 @@ _channel_name_to_outmode_command_map: dict[str, int] = {
 }
 
 
-class LakeshoreModel336CurrentSource(LakeshoreBaseOutput):
+class LakeshoreModel336CurrentSource(LakeshoreBaseOutputWithHeaterSetup):
     """
     InstrumentChannel for current sources on Lakeshore Model 336.
 
     Class for control outputs 1 and 2 of Lakeshore Model 336 that are variable DC current
-    sources referenced to chassis ground.
+    sources referenced to chassis ground. Unlike the Model 335, the heater setup
+    (``HTRSET``) command of the Model 336 has no output type field.
     """
 
     MODES: ClassVar[dict[str, int]] = {
@@ -59,16 +61,7 @@ class LakeshoreModel336CurrentSource(LakeshoreBaseOutput):
         output_index: int,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
-        # The Model 336 HTRSET command has no output-type field (unlike the
-        # Model 335), so exclude ``output_type`` from the heater setup group.
-        super().__init__(
-            parent,
-            output_name,
-            output_index,
-            has_pid=True,
-            heater_output_has_output_type=False,
-            **kwargs,
-        )
+        super().__init__(parent, output_name, output_index, has_pid=True, **kwargs)
 
         self.P.vals = vals.Numbers(0.1, 1000)
         self.I.vals = vals.Numbers(0.1, 1000)
@@ -80,7 +73,7 @@ class LakeshoreModel336VoltageSource(LakeshoreBaseOutput):
     InstrumentChannel for voltage sources on Lakeshore Model 336.
 
     This is used for control outputs 3 and 4 that are variable DC voltage
-    sources.
+    sources. These outputs do not support the heater setup (``HTRSET``) command.
     """
 
     MODES: ClassVar[dict[str, int]] = {
@@ -105,16 +98,7 @@ class LakeshoreModel336VoltageSource(LakeshoreBaseOutput):
         output_index: int,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
-        # Outputs 3 and 4 are unpowered analog voltage outputs that do not
-        # support the heater setup (HTRSET) command, so disable it entirely.
-        super().__init__(
-            parent,
-            output_name,
-            output_index,
-            has_pid=False,
-            has_heater_output_setup=False,
-            **kwargs,
-        )
+        super().__init__(parent, output_name, output_index, has_pid=False, **kwargs)
 
 
 class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 import qcodes.validators as vals
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (
     LakeshoreBase,
-    LakeshoreBaseOutput,
+    LakeshoreBaseOutputWithHeaterSetupAndOutputType,
     LakeshoreBaseSensorChannel,
 )
 from qcodes.parameters import Group, GroupParameter
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 _n_channels = 16
 
 
-class LakeshoreModel372Output(LakeshoreBaseOutput):
+class LakeshoreModel372Output(LakeshoreBaseOutputWithHeaterSetupAndOutputType):
     """An InstrumentChannel for control outputs (heaters) of Lakeshore Model 372"""
 
     MODES: ClassVar[dict[str, int]] = {
