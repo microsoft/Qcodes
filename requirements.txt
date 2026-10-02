@@ -27,8 +27,6 @@ broadbean==0.15.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-cachebox==5.2.3
-    # via deepdiff
 certifi==2026.7.22
     # via requests
 cf-xarray==0.11.3
@@ -70,8 +68,6 @@ debugpy==1.8.22
     # via ipykernel
 decorator==5.3.1
     # via ipython
-deepdiff==9.1.0
-    # via qcodes (pyproject.toml)
 defusedxml==0.7.1
     # via nbconvert
 docutils==0.21.2
@@ -241,8 +237,6 @@ opentelemetry-api==1.44.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-orderly-set==5.5.0
-    # via deepdiff
 packaging==26.3
     # via
     #   qcodes (pyproject.toml)

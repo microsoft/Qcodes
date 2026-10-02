@@ -1,0 +1,2 @@
+The test suite no longer depends on ``deepdiff``. The tests that used it now compare the data directly
+using ``InterDependencies`` equality and ``numpy.testing.assert_array_equal``.
