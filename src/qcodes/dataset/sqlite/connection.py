@@ -53,6 +53,8 @@ def atomic(conn: AtomicConnection) -> Generator[AtomicConnection, None, None]:
     If one transaction fails, all the previous transactions are rolled back
     and no more transactions are performed.
 
+    A KeyboardInterrupt rolls the transaction back and is re-raised.
+
     NB: 'BEGIN' is by default only inserted before INSERT/UPDATE/DELETE/REPLACE
     but we want to guard any transaction that modifies the database (e.g. also
     ALTER)
@@ -87,6 +89,10 @@ def atomic(conn: AtomicConnection) -> Generator[AtomicConnection, None, None]:
                 conn.isolation_level = None
                 conn.cursor().execute("BEGIN")
             yield conn
+        except KeyboardInterrupt:
+            conn.rollback()
+            log.exception("Rolling back due to unhandled exception")
+            raise
         except Exception as e:
             conn.rollback()
             log.exception("Rolling back due to unhandled exception")

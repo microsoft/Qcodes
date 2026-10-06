@@ -105,6 +105,51 @@ def test_atomic_with_exception() -> None:
     assert 25 == sqlite_conn.execute("PRAGMA user_version").fetchall()[0][0]
 
 
+def test_atomic_with_keyboardinterrupt(tmp_path) -> None:
+    dbfile = str(tmp_path / "temp.db")
+    conn = AtomicConnection(dbfile)
+    isolation_level = conn.isolation_level
+
+    conn.execute("CREATE TABLE t (x INTEGER)")
+    conn.commit()
+
+    with (  # noqa: PT012
+        pytest.raises(KeyboardInterrupt),
+        atomic(conn),
+    ):
+        conn.execute("INSERT INTO t (x) VALUES (1)")
+        raise KeyboardInterrupt
+
+    assert [] == conn.execute("SELECT x FROM t").fetchall()
+    assert conn_plus_is_idle(conn, isolation_level)
+
+    with atomic(conn):
+        conn.execute("INSERT INTO t (x) VALUES (2)")
+
+    reader = sqlite3.connect(dbfile, timeout=1)
+    assert [(2,)] == reader.execute("SELECT x FROM t").fetchall()
+
+
+def test_nested_atomic_with_keyboardinterrupt(tmp_path) -> None:
+    dbfile = str(tmp_path / "temp.db")
+    conn = AtomicConnection(dbfile)
+    isolation_level = conn.isolation_level
+
+    conn.execute("CREATE TABLE t (x INTEGER)")
+    conn.commit()
+
+    with (  # noqa: PT012
+        pytest.raises(KeyboardInterrupt),
+        atomic(conn),
+    ):
+        conn.execute("INSERT INTO t (x) VALUES (1)")
+        with atomic(conn):
+            raise KeyboardInterrupt
+
+    assert [] == conn.execute("SELECT x FROM t").fetchall()
+    assert conn_plus_is_idle(conn, isolation_level)
+
+
 def test_atomic_on_outmost_connection_that_is_in_transaction() -> None:
     conn = AtomicConnection(":memory:")
 
