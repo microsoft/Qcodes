@@ -8,15 +8,21 @@ be configured per instrument::
     class MyDriver(VisaInstrument):
         default_logger_scope = "instrument"
 
-The scoped loggers mirror the instrument hierarchy, for example
-``qcodes.instrument.instrument_base.MyDriver`` for the driver,
-``qcodes.instrument.instrument_base.MyDriver.myinst`` for one of its
-instruments and ``qcodes.instrument.instrument_base.MyDriver.myinst.ChanA`` for
-one of that instrument's channels. A level can therefore be set for a whole
-driver class, a single instrument or a single channel, and is inherited by
-everything below it. Setting the level for a whole driver also works before any
-of its instruments exist, so it can be configured via ``logger_levels`` in
-``qcodesrc.json``.
+The scoped loggers mirror the instrument hierarchy below the module-qualified
+driver class, for example ``vendor.driver.MyDriver`` for the driver,
+``vendor.driver.MyDriver.myinst`` for one of its instruments and
+``vendor.driver.MyDriver.myinst.ChanA`` for one of that instrument's channels.
+VISA traffic uses the parallel
+``vendor.driver.MyDriver.com.visa.myinst`` branch. A level can therefore be set
+for a whole driver class, a single instrument or a single channel, and is
+inherited by everything below it. Setting the level for a whole driver also
+works before any of its instruments exist, so it can be configured via
+``logger_levels`` in ``qcodesrc.json``.
+
+Because module-qualified scoped loggers are no longer below
+``qcodes.instrument.instrument_base``, opted-in drivers do not inherit levels
+configured on that shared logger. Configure the module-qualified driver class
+logger instead.
 
 The default is unchanged: without opting in, all instruments keep sharing one
 logger exactly as before.

@@ -57,7 +57,9 @@ class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore[misc]
         newkwargs = {kw: val for (kw, val) in kwargs.items() if kw not in ipkwargs}
 
         Instrument.__init__(self, name, **newkwargs)
-        self.visa_log = get_instrument_logger(self, self._logger_name(VISA_LOGGER))
+        self.visa_log = get_instrument_logger(
+            self, self._logger_name(VISA_LOGGER, "com", "visa")
+        )
 
         ##################################################
         # __init__ of VisaInstrument

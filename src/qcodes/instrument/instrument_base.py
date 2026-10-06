@@ -45,10 +45,10 @@ Naming scope used for the logger behind :attr:`InstrumentBase.log` (and
 ``"shared"``
     All instruments share a single logger.
 ``"instrument"``
-    Each instrument gets its own logger, named after the class of its
-    ``root_instrument`` followed by its ``name_parts``. This creates one logger
-    per driver class, one per instrument and one per submodule, each a child of
-    the previous one, so a level configured on any of them applies to
+    Each instrument gets its own logger, named after the module-qualified class
+    of its ``root_instrument`` followed by its ``name_parts``. This creates one
+    logger per driver class, one per instrument and one per submodule, each a
+    child of the previous one, so a level configured on any of them applies to
     everything below it.
 """
 
@@ -100,9 +100,8 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
             default_logger_scope = "instrument"
 
     The resulting loggers are named
-    ``qcodes.instrument.instrument_base.<DriverClass>.<name_parts>``, so a
-    level can be set for a whole driver class, a single instrument, or a single
-    submodule.
+    ``<DriverModule>.<DriverClass>.<name_parts>``, so a level can be set for a
+    whole driver class, a single instrument, or a single submodule.
 
     The scope is resolved once, when the :meth:`root_instrument` is created,
     and every submodule uses the scope of its root. It therefore applies to the
@@ -158,36 +157,39 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         self._meta_attrs = ["name", "label"]
 
         root = self.root_instrument
-        self._logger_scope: LoggerScope = (
-            type(self).default_logger_scope if root is self else root._logger_scope
-        )
+        if root is self:
+            self._logger_scope: LoggerScope = type(self).default_logger_scope
 
         self.log: InstrumentLoggerAdapter = get_instrument_logger(
             self, self._logger_name(__name__)
         )
         self.log.debug("Created instrument: %s", self.full_name)
 
-    def _logger_name(self, base: str) -> str:
+    def _logger_name(self, default: str, *branch: str) -> str:
         """
-        Name of the logger to use, derived from ``base`` according to the
+        Name of the logger to use, derived from ``default`` according to the
         logger scope resolved when the :meth:`root_instrument` was created.
 
         Under the ``"instrument"`` scope the name is built from the class of
-        the :meth:`root_instrument` followed by :meth:`name_parts`, e.g.
-        ``<base>.MyDriver.myinst.ChanA``. That gives one node per driver class,
-        one per instrument and one per submodule, so a level can be configured
-        for a whole driver, a single instrument, or a single channel, and each
-        is inherited by everything below it.
+        the :meth:`root_instrument`, an optional branch, and
+        :meth:`name_parts`, e.g. ``vendor.driver.MyDriver.myinst.ChanA`` or
+        ``vendor.driver.MyDriver.com.visa.myinst``. That gives one node per
+        driver class, one per instrument and one per submodule, so a level can
+        be configured for a whole driver, a single instrument, or a single
+        channel, and each is inherited by everything below it.
 
         Args:
-            base: Name of the shared logger that this instrument would use if
-                no scope was configured.
+            default: Name of the shared logger that this instrument would use
+                if no scope was configured.
+            branch: Optional branch between the driver class and the
+                instrument name.
 
         """
-        if self._logger_scope == "instrument":
-            root = self.root_instrument
-            return ".".join((base, type(root).__name__, *self.name_parts))
-        return base
+        root = self.root_instrument
+        if root._logger_scope != "instrument":
+            return default
+        cls = type(root)
+        return ".".join((cls.__module__, cls.__qualname__, *branch, *self.name_parts))
 
     @property
     def label(self) -> str:
