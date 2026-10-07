@@ -9,7 +9,7 @@ import math
 import typing
 from collections import abc
 from collections.abc import Hashable
-from typing import TYPE_CHECKING, Any, Literal, cast, get_args
+from typing import Any, Literal, cast, get_args
 
 import numpy as np
 import numpy.typing as npt
@@ -431,7 +431,7 @@ class ComplexNumbers(Validator[complex | np.complexfloating[Any, Any]]):
     A validator for complex numbers.
     """
 
-    validtypes = (complex, np.complex128, np.complex64)
+    validtypes: tuple[type, ...] = (complex, np.complex128, np.complex64)
 
     def __init__(self) -> None:
         self._valid_values = ((1 + 1j),)
@@ -450,9 +450,7 @@ class ComplexNumbers(Validator[complex | np.complexfloating[Any, Any]]):
             TypeError: If not a complex number.
 
         """
-        # for some reason pyright does not think numpy complex
-        # types as valid types here
-        if not isinstance(value, self.validtypes):  # pyright: ignore
+        if not isinstance(value, self.validtypes):
             raise TypeError(f"{value!r} is not complex; {context}")
 
     is_numeric = False  # there is no meaningful way to sweep a complex number
@@ -1258,16 +1256,3 @@ class Dict(Validator[dict[Hashable, Any]]):
     @allowed_keys.setter
     def allowed_keys(self, keys: abc.Sequence[Hashable] | None) -> None:
         self._allowed_keys = keys
-
-
-if not TYPE_CHECKING:
-    from typing import TypeVar
-
-    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
-
-    __getattr__ = _make_deprecated_typevars_getattr(
-        __name__,
-        {
-            "T": TypeVar("T"),
-        },
-    )

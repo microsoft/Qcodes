@@ -1316,20 +1316,3 @@ class AMIModel4303D(Instrument):
         self._adjust_child_instruments(setpoint_values)
 
         self._set_point = set_point
-
-
-if not TYPE_CHECKING:
-    from typing import TypeVar
-
-    from typing_extensions import ParamSpec
-
-    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
-
-    __getattr__ = _make_deprecated_typevars_getattr(
-        __name__,
-        {
-            "S": TypeVar("S", bound="AMI430SwitchHeater"),
-            "T": TypeVar("T"),
-            "P": ParamSpec("P"),
-        },
-    )

@@ -9,7 +9,7 @@ import itertools
 import logging
 from collections import defaultdict
 from functools import partial
-from typing import TYPE_CHECKING, Protocol, TypeVar
+from typing import TYPE_CHECKING, Protocol
 
 from qcodes.utils import RespondingThread
 
@@ -219,13 +219,3 @@ class ThreadPoolParamsCaller(_ParamsCallerProtocol):
         exc_tb: TracebackType | None,
     ) -> None:
         self._thread_pool.__exit__(exc_type, exc_val, exc_tb)
-
-
-if not TYPE_CHECKING:
-    from qcodes.utils.deprecate import _make_deprecated_typevars_getattr
-
-    _deprecated_typevars: dict[str, TypeVar] = {
-        "T": TypeVar("T"),
-    }
-
-    __getattr__ = _make_deprecated_typevars_getattr(__name__, _deprecated_typevars)

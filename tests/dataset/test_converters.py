@@ -1,5 +1,3 @@
-from deepdiff import DeepDiff  # type: ignore[import-untyped]
-
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.converters import (
     new_to_old,
@@ -66,11 +64,11 @@ def _assert_dicts_are_related_as_expected(v0, v1, v2):
     assert v1["version"] == 1
     assert len(v1) == 2
 
-    # conversion does not preserve order in the dict so use deepdiff to compare
-    assert (
-        DeepDiff(v2["interdependencies"], v0["interdependencies"], ignore_order=True)
-        == {}
-    )
+    # conversion does not preserve the order of the paramspecs so compare
+    # via InterDependencies whose equality ignores that order
+    assert InterDependencies._from_dict(
+        v2["interdependencies"]
+    ) == InterDependencies._from_dict(v0["interdependencies"])
     assert v2["interdependencies_"] == v1["interdependencies"]
     assert v2["version"] == 2
     assert len(v2) == 3
@@ -93,8 +91,24 @@ def test_construct_current_rundescriber_from_v0(some_paramspecs) -> None:
         version=3,
         shapes=None,
     )
-    assert DeepDiff(rds1._to_dict(), expected_v3_dict, ignore_order=True) == {}
-    assert DeepDiff(rds_upgraded._to_dict(), expected_v3_dict, ignore_order=True) == {}
+    _assert_v3_dicts_equal_up_to_paramspec_order(rds1._to_dict(), expected_v3_dict)
+    _assert_v3_dicts_equal_up_to_paramspec_order(
+        rds_upgraded._to_dict(), expected_v3_dict
+    )
+
+
+def _assert_v3_dicts_equal_up_to_paramspec_order(
+    actual: RunDescriberV3Dict, expected: RunDescriberV3Dict
+) -> None:
+    # conversion from v0 does not preserve the order of the old style
+    # paramspecs so compare those via InterDependencies whose equality
+    # ignores that order. All other entries must match exactly.
+    assert InterDependencies._from_dict(
+        actual["interdependencies"]
+    ) == InterDependencies._from_dict(expected["interdependencies"])
+    assert {k: v for k, v in actual.items() if k != "interdependencies"} == {
+        k: v for k, v in expected.items() if k != "interdependencies"
+    }
 
 
 def test_construct_current_rundescriber_from_v1(some_interdeps) -> None:

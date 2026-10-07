@@ -59,10 +59,9 @@ class NumpyJSONEncoder(json.JSONEncoder):
                 "nominal_value": float(o.nominal_value),
                 "std_dev": float(o.std_dev),
             }
-        elif hasattr(o, "_JSONEncoder"):
+        elif (json_encoder := getattr(o, "_JSONEncoder", None)) is not None:
             # Use object's custom JSON encoder
-            jsosencode = o._JSONEncoder  # pyright: ignore[reportAttributeAccessIssue]
-            return jsosencode()
+            return json_encoder()
         else:
             try:
                 s = super().default(o)
@@ -77,12 +76,12 @@ class NumpyJSONEncoder(json.JSONEncoder):
                 # __getnewargs__ will return bytes for a bytes object
                 # causing an infinte recursion, so we do not
                 # try to pickle bytes or bytearrays
-                if hasattr(o, "__getnewargs__") and not isinstance(
-                    o, (bytes, bytearray)
-                ):
+                if (
+                    getnewargs := getattr(o, "__getnewargs__", None)
+                ) is not None and not isinstance(o, (bytes, bytearray)):
                     return {
                         "__class__": type(o).__name__,
-                        "__args__": o.__getnewargs__(),  # pyright: ignore[reportAttributeAccessIssue]
+                        "__args__": getnewargs(),
                     }
                 else:
                     # we cannot convert the object to JSON, just take a string

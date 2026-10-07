@@ -91,10 +91,17 @@ def get_data_export_automatic() -> bool:
     return export_automatic
 
 
-def _expand_export_path(export_path: str) -> str:
-    db_location = Path(qcodes.config["core"]["db_location"]).expanduser().absolute()
-    expanded_export_folder = db_location.parent / "_".join(
-        (db_location.stem, db_location.suffix.replace(".", ""))
+def _expand_export_path(export_path: str, db_location: str | None = None) -> str:
+    # db_location defaults to the global config, but callers can pass the
+    # location of a specific database (e.g. a dataset's own file) so that
+    # {db_location} resolves relative to that database rather than the global
+    # config value.
+    location: str = (
+        db_location if db_location is not None else qcodes.config["core"]["db_location"]
+    )
+    db_file = Path(location).expanduser().absolute()
+    expanded_export_folder = db_file.parent / "_".join(
+        (db_file.stem, db_file.suffix.replace(".", ""))
     )
     # we ignore the rule here since this is actually a manual expansion of the f string
     return export_path.replace("{db_location}", str(expanded_export_folder))  # noqa: RUF027

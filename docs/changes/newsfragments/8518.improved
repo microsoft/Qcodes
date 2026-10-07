@@ -1,0 +1,6 @@
+Adding metadata that SQLite cannot store in a column now fails with a message naming the tag and its type.
+
+A nested dict or a sequence previously surfaced as ``sqlite3.ProgrammingError: Error binding parameter 1:
+type 'list' is not supported``, which said nothing about which tag was at fault. ``validate_dynamic_column_data``
+now rejects such values with a ``TypeError`` suggesting serialization, alongside its existing checks for invalid
+tags and ``None``. Values that NumPy registers a SQLite adapter for, such as scalars and arrays, are unaffected.
