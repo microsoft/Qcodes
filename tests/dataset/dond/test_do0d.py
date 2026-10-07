@@ -2,6 +2,7 @@ import hypothesis.strategies as hst
 import matplotlib.axes
 import numpy as np
 import pytest
+import xarray as xr
 from hypothesis import HealthCheck, given, settings
 
 from qcodes import config, validators
@@ -93,6 +94,38 @@ def test_do0d_output_data(_param) -> None:
     assert data.description.interdeps.names == (_param.name,)
     loaded_data = data.get_parameter_data()["simple_parameter"]["simple_parameter"]
     assert loaded_data == np.array([_param.get()])
+
+
+@pytest.mark.usefixtures("experiment")
+def test_do0d_export_to_netcdf(_param, tmp_path) -> None:
+    dataset = do0d(_param, do_plot=False)[0]
+
+    dataset.export(export_type="netcdf", path=tmp_path)
+
+    export_path = dataset.export_info.export_paths["nc"]
+    with xr.open_dataset(export_path) as exported_dataset:
+        assert exported_dataset[_param.name].dims == (f"{_param.name}_dim_0",)
+        np.testing.assert_array_equal(
+            exported_dataset[_param.name].values, np.array([_param.get()])
+        )
+
+
+@pytest.mark.usefixtures("experiment")
+def test_do0d_array_export_to_netcdf(tmp_path) -> None:
+    param = ArrayshapedParam(
+        name="paramwitharrayval", vals=validators.Arrays(shape=(10,))
+    )
+    dataset = do0d(param, do_plot=False)[0]
+    expected_data = dataset.get_parameter_data()[param.name][param.name]
+
+    dataset.export(export_type="netcdf", path=tmp_path)
+
+    export_path = dataset.export_info.export_paths["nc"]
+    with xr.open_dataset(export_path) as exported_dataset:
+        assert exported_dataset[param.name].dims == (f"{param.name}_dim_0",)
+        np.testing.assert_array_equal(
+            exported_dataset[param.name].values, expected_data
+        )
 
 
 @pytest.mark.usefixtures("experiment")
