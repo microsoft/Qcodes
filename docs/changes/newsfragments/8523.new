@@ -14,8 +14,14 @@ module ``vendor.driver``, the loggers are named::
 
     vendor.driver.MyDriver                    the driver class
     vendor.driver.MyDriver.myinst             Instrument.log
-    vendor.driver.MyDriver.myinst.ChanA       log of a channel or other submodule
+    vendor.driver.MyDriver.myinst.my_module   log of a submodule
     vendor.driver.MyDriver.myinst.com.visa    VisaInstrument.visa_log
+
+A submodule is named after the key it is added with in ``add_submodule``, for
+example ``my_module`` for ``self.add_submodule("my_module", MyModule(self))``,
+and not after its own name or class. A submodule that is not added as an
+individual submodule, such as a channel that only exists in a channel list, is
+named after its own name.
 
 Each logger is a child of the previous one, so a level or handler can be set
 for a whole driver class, for everything that belongs to one instrument

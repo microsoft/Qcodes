@@ -20,6 +20,7 @@ from qcodes.instrument_drivers.american_magnetics import AMIModel430, AMIModel43
 from qcodes.instrument_drivers.mock_instruments import (
     DummyChannel,
     DummyChannelInstrument,
+    DummyChannelOnlyInstrument,
     DummyInstrument,
 )
 from qcodes.instrument_drivers.tektronix import TektronixAWG5208
@@ -390,6 +391,12 @@ class ScopedDummyChannelInstrument(DummyChannelInstrument):
     default_logger_scope: ClassVar["LoggerScope"] = "instrument"
 
 
+class ScopedDummyChannelOnlyInstrument(DummyChannelOnlyInstrument):
+    """Instrument with channels only in a channel list that opts in."""
+
+    default_logger_scope: ClassVar["LoggerScope"] = "instrument"
+
+
 class ScopedAMIModel430(AMIModel430):
     """VISA instrument that opts in to a per instrument logger."""
 
@@ -578,16 +585,75 @@ def test_submodule_logger_is_child_of_instrument_logger() -> None:
     class_logger_name = scoped_class_logger_name(ScopedDummyChannelInstrument)
 
     assert inst.log.logger.name == f"{class_logger_name}.scoped_channels"
+    # DummyChannelInstrument adds the channel ChanA under the key "A"
+    assert channel_a.name_parts == ["scoped_channels", "ChanA"]  # type: ignore[union-attr]
     assert (
         channel_a.log.logger.name  # type: ignore[union-attr]
-        == f"{class_logger_name}.scoped_channels.ChanA"
+        == f"{class_logger_name}.scoped_channels.A"
     )
     assert (
         channel_b.log.logger.name  # type: ignore[union-attr]
-        == f"{class_logger_name}.scoped_channels.ChanB"
+        == f"{class_logger_name}.scoped_channels.B"
     )
     assert channel_a.log.logger.parent is inst.log.logger  # type: ignore[union-attr]
     assert channel_b.log.logger.parent is inst.log.logger  # type: ignore[union-attr]
+
+
+def test_submodule_logger_is_named_after_the_key_it_was_added_with() -> None:
+    """The key given to ``add_submodule`` is used, not the name of the module."""
+    inst = ScopedDummyInstrument("keyed_module")
+    module = InstrumentModule(inst, "ModuleName")
+
+    inst.add_submodule("module_key", module)
+
+    assert module.name_parts == ["keyed_module", "ModuleName"]
+    assert module.log.logger.name == (
+        f"{scoped_class_logger_name(ScopedDummyInstrument)}.keyed_module.module_key"
+    )
+    assert module.log.logger.parent is inst.log.logger
+
+
+def test_submodule_without_key_logger_is_named_after_the_module() -> None:
+    """Channels that only exist in a channel list have no key to use."""
+    inst = ScopedDummyChannelOnlyInstrument("channel_list_only")
+    channel = inst.channels[0]
+    class_logger_name = scoped_class_logger_name(ScopedDummyChannelOnlyInstrument)
+
+    assert "ChanA_a" not in inst.submodules
+    assert channel.log.logger.name == f"{class_logger_name}.channel_list_only.ChanA_a"  # type: ignore[union-attr]
+    assert channel.log.logger.parent is inst.log.logger  # type: ignore[union-attr]
+
+
+def test_logger_of_nested_modules_follows_the_key_of_their_parent() -> None:
+    """Adding a module renames the loggers of the modules below it as well."""
+    inst = ScopedDummyInstrument("late_keys")
+    class_logger_name = scoped_class_logger_name(ScopedDummyInstrument)
+    parent = InstrumentModule(inst, "ParentName")
+    child = InstrumentModule(parent, "ChildName")
+
+    parent.add_submodule("child_key", child)
+    assert (
+        child.log.logger.name == f"{class_logger_name}.late_keys.ParentName.child_key"
+    )
+
+    inst.add_submodule("parent_key", parent)
+
+    assert parent.log.logger.name == f"{class_logger_name}.late_keys.parent_key"
+    assert (
+        child.log.logger.name == f"{class_logger_name}.late_keys.parent_key.child_key"
+    )
+    assert child.log.logger.parent is parent.log.logger
+
+
+def test_submodule_logger_is_not_replaced_without_instrument_scope() -> None:
+    inst = DummyInstrument("unscoped_module")
+    module = InstrumentModule(inst, "UnscopedModule")
+    log = module.log
+
+    inst.add_submodule("unscoped_key", module)
+
+    assert module.log is log
+    assert module.log.logger.name == SHARED_INSTRUMENT_LOGGER_NAME
 
 
 def test_nested_submodule_logger_is_child_of_its_parent_module() -> None:
@@ -599,7 +665,7 @@ def test_nested_submodule_logger_is_child_of_its_parent_module() -> None:
     assert nested.name_parts == ["nested_modules", "ChanA", "nested"]
     assert nested.log.logger.name == (
         f"{scoped_class_logger_name(ScopedDummyChannelInstrument)}"
-        ".nested_modules.ChanA.nested"
+        ".nested_modules.A.nested"
     )
     assert nested.log.logger.parent is channel.log.logger  # type: ignore[union-attr]
 
@@ -770,7 +836,7 @@ def test_handler_on_instrument_logger_receives_all_its_records() -> None:
     class_logger_name = scoped_class_logger_name(ScopedAMIModel430)
     assert [record.name for record in records] == [
         f"{class_logger_name}.handler_for_whole_instrument",
-        f"{class_logger_name}.handler_for_whole_instrument.SwitchHeater",
+        f"{class_logger_name}.handler_for_whole_instrument.switch_heater",
         f"{class_logger_name}.handler_for_whole_instrument.com.visa",
     ]
 

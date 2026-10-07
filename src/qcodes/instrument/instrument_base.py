@@ -46,12 +46,12 @@ Naming scope used for the logger behind :attr:`InstrumentBase.log` (and
     All instruments share a single logger.
 ``"instrument"``
     Each instrument gets its own logger. The name starts with the
-    module-qualified class of its ``root_instrument``, followed by the
-    instrument's ``name_parts``, i.e. the name of the instrument and the names
-    of any submodules, e.g. ``vendor.driver.MyDriver.myinst.ChanA``. Every
-    logger is a child of the logger of its parent, so a level or handler set on
-    the logger of an instrument also applies to its submodules and to its
-    VISA traffic.
+    module-qualified class of its ``root_instrument``, followed by the name of
+    the instrument and, for a submodule, the keys under which it was added with
+    :meth:`~InstrumentBase.add_submodule`, e.g.
+    ``vendor.driver.MyDriver.myinst.my_module``. Every logger is a child of the
+    logger of its parent, so a level or handler set on the logger of an
+    instrument also applies to its submodules and to its VISA traffic.
 """
 
 
@@ -102,12 +102,17 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
             default_logger_scope = "instrument"
 
     The resulting loggers are named
-    ``<DriverModule>.<DriverClass>.<instrument name>[.<submodule names>]``,
+    ``<DriverModule>.<DriverClass>.<instrument name>[.<submodule keys>]``,
     and the VISA traffic of an instrument is logged to
-    ``<DriverModule>.<DriverClass>.<instrument name>.com.visa``. A level can
-    therefore be set for a whole driver class, for everything belonging to one
-    instrument (driver messages, submodules and VISA traffic), or for a single
-    submodule or the VISA traffic of one instrument.
+    ``<DriverModule>.<DriverClass>.<instrument name>.com.visa``. A submodule is
+    named after the key it is added with in :meth:`add_submodule` (for example
+    ``switch_heater``), which is not necessarily its own name (for example
+    ``SwitchHeater``). A submodule that is not added as an individual
+    submodule, such as a channel that only exists in a channel list, uses its
+    own name. A level can therefore be set for a whole driver class, for
+    everything belonging to one instrument (driver messages, submodules and
+    VISA traffic), or for a single submodule or the VISA traffic of one
+    instrument.
 
     The scope is resolved once, when the :meth:`root_instrument` is created,
     and every submodule uses the scope of its root. It therefore applies to the
@@ -178,10 +183,10 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
 
         Under the ``"instrument"`` scope the name is built from the module and
         qualified name of the class of the :meth:`root_instrument`, followed by
-        :meth:`name_parts` (the name of the root instrument and of any
-        submodules between it and this component) and an optional branch, e.g.
+        the name of the root instrument, the keys of any submodules between it
+        and this component, and an optional branch, e.g.
         ``vendor.driver.MyDriver.myinst``,
-        ``vendor.driver.MyDriver.myinst.ChanA`` or
+        ``vendor.driver.MyDriver.myinst.my_module`` or
         ``vendor.driver.MyDriver.myinst.com.visa``. Each name is a child of the
         previous one, so a level configured on the driver class applies to all
         its instruments, and a level configured on an instrument applies to
@@ -197,7 +202,39 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         if root._logger_scope != "instrument":
             return default
         cls = type(root)
-        return ".".join((cls.__module__, cls.__qualname__, *self.name_parts, *branch))
+        return ".".join(
+            (cls.__module__, cls.__qualname__, *self._logger_name_parts, *branch)
+        )
+
+    @property
+    def _logger_name_parts(self) -> list[str]:
+        """
+        The parts of the scoped logger name that follow the class of the
+        :meth:`root_instrument`: the name of the root instrument and, for a
+        submodule, the key it was added with in :meth:`add_submodule`.
+        """
+        return [self.short_name]
+
+    def _refresh_logger(self) -> None:
+        """
+        Recreate :attr:`log` of this component and of all its submodules.
+
+        A submodule is named after the key it is added with in
+        :meth:`add_submodule`. That key is only known after the submodule was
+        created, so its logger is recreated when it is added. This also covers
+        the submodules of the added submodule, whose names contain its key.
+        """
+        if self.root_instrument._logger_scope != "instrument":
+            return
+        self.log = get_instrument_logger(self, self._logger_name(__name__))
+        for submodule in self.submodules.values():
+            modules = (
+                submodule
+                if isinstance(submodule, collections.abc.Sequence)
+                else (submodule,)
+            )
+            for module in modules:
+                module._refresh_logger()
 
     @property
     def label(self) -> str:
@@ -396,6 +433,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
             self._channel_lists[name] = submodule  # type: ignore[assignment]
         else:
             self.instrument_modules[name] = submodule
+            submodule._refresh_logger()
         return submodule
 
     def get_component(self, full_name: str) -> MetadatableWithName:
