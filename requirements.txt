@@ -111,7 +111,7 @@ iniconfig==2.3.0
     # via pytest
 intersphinx-registry==0.2609.5
     # via qcodes (pyproject.toml)
-ipykernel==7.3.0
+ipykernel==7.4.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
