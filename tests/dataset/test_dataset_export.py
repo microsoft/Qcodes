@@ -194,6 +194,16 @@ def _make_direct_export_dataset(experiment: Experiment) -> DataSet:
     return dataset
 
 
+@pytest.fixture(name="independent_export_dataset")
+def _make_independent_export_dataset(experiment: Experiment) -> DataSet:
+    dataset = new_data_set("independent_export_dataset")
+    signalparam = ParamSpecBase("signal", "numeric")
+    inferredparam = ParamSpecBase("inferred", "numeric")
+    idps = InterDependencies_(inferences={inferredparam: (signalparam,)})
+    dataset.set_interdependencies(idps)
+    return dataset
+
+
 @pytest.fixture(name="mock_dataset_grid_incomplete")
 def _make_mock_dataset_grid_incomplete(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
@@ -1754,6 +1764,51 @@ def test_xarray_data_set_direct_skips_missing_inferred_data(
 
     assert set(xarray_dataset.coords) == {"x", "y"}
     assert set(xarray_dataset.data_vars) == {"signal"}
+
+
+@pytest.mark.parametrize("shape", [(), (1,), (4,), (2, 2)])
+@pytest.mark.parametrize("include_inferred", [True, False])
+def test_xarray_data_set_direct_without_dependencies(
+    independent_export_dataset: DataSet,
+    shape: tuple[int, ...],
+    include_inferred: bool,
+) -> None:
+    signal = np.arange(np.prod(shape, dtype=int)).reshape(shape)
+    data = {"signal": signal}
+    if include_inferred:
+        data["inferred"] = (signal + 10).ravel()
+
+    xarray_dataset = _xarray_data_set_direct(independent_export_dataset, "signal", data)
+
+    dimensions = tuple(f"signal_dim_{axis}" for axis in range(len(shape)))
+    assert set(xarray_dataset.coords) == set()
+    assert xarray_dataset["signal"].dims == dimensions
+    assert xarray_dataset["signal"].shape == shape
+    assert_array_equal(xarray_dataset["signal"].values, signal)
+    if include_inferred:
+        assert set(xarray_dataset.data_vars) == {"signal", "inferred"}
+        assert xarray_dataset["inferred"].dims == dimensions
+        assert xarray_dataset["inferred"].shape == shape
+        assert_array_equal(xarray_dataset["inferred"].values, signal + 10)
+    else:
+        assert set(xarray_dataset.data_vars) == {"signal"}
+
+
+@pytest.mark.parametrize("inferred_size", [0, 3, 5])
+def test_xarray_data_set_direct_without_dependencies_rejects_invalid_inferred_size(
+    independent_export_dataset: DataSet,
+    inferred_size: int,
+) -> None:
+    data = {
+        "signal": np.arange(4).reshape(2, 2),
+        "inferred": np.arange(inferred_size),
+    }
+
+    with pytest.raises(
+        ValueError,
+        match=f"^Parameter contains {inferred_size} values, but 4 were expected$",
+    ):
+        _xarray_data_set_direct(independent_export_dataset, "signal", data)
 
 
 def test_multi_index_options_incomplete_grid(
