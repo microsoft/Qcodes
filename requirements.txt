@@ -506,7 +506,7 @@ websockets==17.1
     #   qcodes
 widgetsnbextension==4.0.16
     # via ipywidgets
-xarray==2026.7.0
+xarray==2026.9.0
     # via
     #   qcodes (pyproject.toml)
     #   cf-xarray
