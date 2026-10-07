@@ -268,6 +268,29 @@ def _xarray_data_set_direct(
     shape = sub_dict[name].shape
     expected_size = prod(shape)
 
+    if not deps:
+        dimensions = tuple(f"{name}_dim_{axis}" for axis in range(len(shape)))
+
+        def reshape_without_dependencies(data: npt.NDArray) -> npt.NDArray:
+            if data.size != expected_size:
+                raise ValueError(
+                    f"Parameter contains {data.size} values, "
+                    f"but {expected_size} were expected"
+                )
+            return data.reshape(shape)
+
+        independent_data_vars: dict[str, tuple[tuple[str, ...], npt.NDArray]] = {
+            name: (dimensions, reshape_without_dependencies(sub_dict[name]))
+        }
+        for inf in inferred:
+            if inf.name in sub_dict:
+                independent_data_vars[inf.name] = (
+                    dimensions,
+                    reshape_without_dependencies(sub_dict[inf.name]),
+                )
+
+        return xr.Dataset(independent_data_vars)
+
     if len(deps) != len(shape):
         raise ValueError(
             f"Parameter {name!r} has shape {shape}, but has {len(deps)} dependencies"
