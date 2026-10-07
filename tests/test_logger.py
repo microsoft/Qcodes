@@ -13,7 +13,7 @@ from pytest import LogCaptureFixture
 
 import qcodes as qc
 from qcodes import logger
-from qcodes.instrument import Instrument
+from qcodes.instrument import Instrument, InstrumentModule
 from qcodes.instrument.ip_to_visa import IPToVisa
 from qcodes.instrument.visa import VISA_LOGGER
 from qcodes.instrument_drivers.american_magnetics import AMIModel430, AMIModel4303D
@@ -520,7 +520,8 @@ def test_scope_is_fixed_when_root_is_created(
     channel = DummyChannel(inst, "late_channel", "Z")
     inst.add_submodule("late_channel", channel)
 
-    assert channel.log.logger.name == f"{inst.log.logger.name}.late_channel"
+    class_logger_name = scoped_class_logger_name(ScopedDummyChannelInstrument)
+    assert channel.log.logger.name == f"{class_logger_name}.fixed_scope.late_channel"
     assert channel.log.logger.parent is inst.log.logger
 
 
@@ -570,26 +571,63 @@ def test_scoped_logger_is_filterable_by_instrument() -> None:
 
 
 def test_submodule_logger_is_child_of_instrument_logger() -> None:
-    """A submodule must sit below its parent in the logger hierarchy."""
+    """A submodule is named after its own name and sits below its parent."""
     inst = ScopedDummyChannelInstrument("scoped_channels")
-    channel = inst.submodules["A"]
+    channel_a = inst.submodules["A"]
+    channel_b = inst.submodules["B"]
+    class_logger_name = scoped_class_logger_name(ScopedDummyChannelInstrument)
 
+    assert inst.log.logger.name == f"{class_logger_name}.scoped_channels"
     assert (
-        channel.log.logger.name  # type: ignore[union-attr]
-        == f"{scoped_class_logger_name(ScopedDummyChannelInstrument)}"
-        ".scoped_channels.ChanA"
+        channel_a.log.logger.name  # type: ignore[union-attr]
+        == f"{class_logger_name}.scoped_channels.ChanA"
     )
-    assert channel.log.logger.parent is inst.log.logger  # type: ignore[union-attr]
+    assert (
+        channel_b.log.logger.name  # type: ignore[union-attr]
+        == f"{class_logger_name}.scoped_channels.ChanB"
+    )
+    assert channel_a.log.logger.parent is inst.log.logger  # type: ignore[union-attr]
+    assert channel_b.log.logger.parent is inst.log.logger  # type: ignore[union-attr]
+
+
+def test_nested_submodule_logger_is_child_of_its_parent_module() -> None:
+    inst = ScopedDummyChannelInstrument("nested_modules")
+    channel = inst.submodules["A"]
+    nested = InstrumentModule(channel, "nested")  # type: ignore[arg-type]
+    channel.add_submodule("nested", nested)  # type: ignore[union-attr]
+
+    assert nested.name_parts == ["nested_modules", "ChanA", "nested"]
+    assert nested.log.logger.name == (
+        f"{scoped_class_logger_name(ScopedDummyChannelInstrument)}"
+        ".nested_modules.ChanA.nested"
+    )
+    assert nested.log.logger.parent is channel.log.logger  # type: ignore[union-attr]
 
 
 def test_instrument_level_applies_to_its_submodules() -> None:
     """Setting the level on an instrument must also cover its channels."""
+    logging.getLogger(__name__).setLevel(logging.WARNING)
     inst = ScopedDummyChannelInstrument("level_to_channels")
+    other = ScopedDummyChannelInstrument("level_to_channels_other")
     channel = inst.submodules["A"]
 
     inst.log.logger.setLevel(logging.DEBUG)
 
     assert channel.log.logger.getEffectiveLevel() == logging.DEBUG  # type: ignore[union-attr]
+    assert other.submodules["A"].log.logger.getEffectiveLevel() == logging.WARNING  # type: ignore[union-attr]
+
+
+def test_submodule_level_can_be_set_for_one_module() -> None:
+    """A level can be set on exactly one submodule of one instrument."""
+    logging.getLogger(__name__).setLevel(logging.WARNING)
+    inst_a = ScopedDummyChannelInstrument("submodule_level_a")
+    inst_b = ScopedDummyChannelInstrument("submodule_level_b")
+
+    inst_a.submodules["A"].log.logger.setLevel(logging.DEBUG)  # type: ignore[union-attr]
+
+    assert inst_a.submodules["A"].log.logger.getEffectiveLevel() == logging.DEBUG  # type: ignore[union-attr]
+    assert inst_a.submodules["B"].log.logger.getEffectiveLevel() == logging.WARNING  # type: ignore[union-attr]
+    assert inst_b.submodules["A"].log.logger.getEffectiveLevel() == logging.WARNING  # type: ignore[union-attr]
 
 
 def test_submodule_of_unscoped_instrument_uses_shared_logger() -> None:
@@ -620,14 +658,13 @@ def test_visa_log_follows_instrument_scope() -> None:
         terminator="\n",
     )
 
-    assert inst.visa_log.logger.name == f"{class_logger_name}.com.visa.scoped_visa_log"
+    assert inst.visa_log.logger.name == f"{class_logger_name}.scoped_visa_log.com.visa"
     assert inst.log.logger.name == f"{class_logger_name}.scoped_visa_log"
     assert inst.visa_log.logger is not inst.log.logger
 
 
-def test_driver_class_logger_is_parent_of_log_and_visa_branches() -> None:
+def test_driver_class_logger_is_ancestor_of_log_and_visa_loggers() -> None:
     class_logger = logging.getLogger(scoped_class_logger_name(ScopedAMIModel430))
-    visa_class_logger = logging.getLogger(f"{class_logger.name}.com.visa")
     inst = ScopedAMIModel430(
         "scoped_logger_parents",
         address="GPIB::1::INSTR",
@@ -636,8 +673,106 @@ def test_driver_class_logger_is_parent_of_log_and_visa_branches() -> None:
     )
 
     assert inst.log.logger.parent is class_logger
-    assert logger_is_descendant(visa_class_logger, class_logger)
-    assert inst.visa_log.logger.parent is visa_class_logger
+    assert logger_is_descendant(inst.visa_log.logger, inst.log.logger)
+    assert logger_is_descendant(inst.visa_log.logger, class_logger)
+    assert logger_is_descendant(inst.switch_heater.log.logger, inst.log.logger)
+
+
+def test_instrument_level_applies_to_visa_traffic_and_submodules() -> None:
+    """One level on an instrument covers its driver, VISA and module records."""
+    logging.getLogger(__name__).setLevel(logging.WARNING)
+    inst = ScopedAMIModel430(
+        "level_for_whole_instrument",
+        address="GPIB::1::INSTR",
+        pyvisa_sim_file="AMI430.yaml",
+        terminator="\n",
+    )
+    other = ScopedAMIModel430(
+        "level_for_other_instrument",
+        address="GPIB::2::INSTR",
+        pyvisa_sim_file="AMI430.yaml",
+        terminator="\n",
+    )
+
+    inst.log.logger.setLevel(logging.DEBUG)
+
+    assert inst.visa_log.logger.getEffectiveLevel() == logging.DEBUG
+    assert inst.switch_heater.log.logger.getEffectiveLevel() == logging.DEBUG
+    assert other.log.logger.getEffectiveLevel() == logging.WARNING
+    assert other.visa_log.logger.getEffectiveLevel() == logging.WARNING
+
+
+def test_visa_level_can_differ_from_instrument_level() -> None:
+    """The VISA traffic of an instrument can be configured separately."""
+    inst = ScopedAMIModel430(
+        "separate_visa_level",
+        address="GPIB::1::INSTR",
+        pyvisa_sim_file="AMI430.yaml",
+        terminator="\n",
+    )
+
+    inst.log.logger.setLevel(logging.DEBUG)
+    inst.visa_log.logger.setLevel(logging.WARNING)
+
+    assert inst.log.logger.getEffectiveLevel() == logging.DEBUG
+    assert inst.switch_heater.log.logger.getEffectiveLevel() == logging.DEBUG
+    assert inst.visa_log.logger.getEffectiveLevel() == logging.WARNING
+
+
+def test_driver_class_level_applies_to_visa_traffic() -> None:
+    logging.getLogger(__name__).setLevel(logging.WARNING)
+    logging.getLogger(scoped_class_logger_name(ScopedAMIModel430)).setLevel(
+        logging.DEBUG
+    )
+
+    inst = ScopedAMIModel430(
+        "class_level_for_visa",
+        address="GPIB::1::INSTR",
+        pyvisa_sim_file="AMI430.yaml",
+        terminator="\n",
+    )
+
+    assert inst.visa_log.logger.getEffectiveLevel() == logging.DEBUG
+
+
+def test_handler_on_instrument_logger_receives_all_its_records() -> None:
+    """A handler on the instrument logger sees driver, module and VISA records."""
+    inst = ScopedAMIModel430(
+        "handler_for_whole_instrument",
+        address="GPIB::1::INSTR",
+        pyvisa_sim_file="AMI430.yaml",
+        terminator="\n",
+    )
+    other = ScopedAMIModel430(
+        "handler_for_other_instrument",
+        address="GPIB::2::INSTR",
+        pyvisa_sim_file="AMI430.yaml",
+        terminator="\n",
+    )
+    records: list[logging.LogRecord] = []
+
+    class _ListHandler(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            records.append(record)
+
+    handler = _ListHandler(level=logging.DEBUG)
+    inst.log.logger.addHandler(handler)
+    inst.log.logger.setLevel(logging.DEBUG)
+    try:
+        inst.log.info(TEST_LOG_MESSAGE)
+        inst.switch_heater.log.info(TEST_LOG_MESSAGE)
+        inst.visa_log.info(TEST_LOG_MESSAGE)
+        other.log.info(TEST_LOG_MESSAGE)
+        other.visa_log.info(TEST_LOG_MESSAGE)
+    finally:
+        inst.log.logger.removeHandler(handler)
+
+    class_logger_name = scoped_class_logger_name(ScopedAMIModel430)
+    assert [record.name for record in records] == [
+        f"{class_logger_name}.handler_for_whole_instrument",
+        f"{class_logger_name}.handler_for_whole_instrument.SwitchHeater",
+        f"{class_logger_name}.handler_for_whole_instrument.com.visa",
+    ]
 
 
 def test_same_class_name_in_different_modules_has_distinct_loggers() -> None:
@@ -677,5 +812,5 @@ def test_ip_to_visa_log_follows_instrument_scope() -> None:
 
     assert inst.log.logger.name == f"{class_logger_name}.scoped_ip_to_visa"
     assert (
-        inst.visa_log.logger.name == f"{class_logger_name}.com.visa.scoped_ip_to_visa"
+        inst.visa_log.logger.name == f"{class_logger_name}.scoped_ip_to_visa.com.visa"
     )

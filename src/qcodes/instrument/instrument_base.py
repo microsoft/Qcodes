@@ -45,11 +45,13 @@ Naming scope used for the logger behind :attr:`InstrumentBase.log` (and
 ``"shared"``
     All instruments share a single logger.
 ``"instrument"``
-    Each instrument gets its own logger, named after the module-qualified class
-    of its ``root_instrument`` followed by its ``name_parts``. This creates one
-    logger per driver class, one per instrument and one per submodule, each a
-    child of the previous one, so a level configured on any of them applies to
-    everything below it.
+    Each instrument gets its own logger. The name starts with the
+    module-qualified class of its ``root_instrument``, followed by the
+    instrument's ``name_parts``, i.e. the name of the instrument and the names
+    of any submodules, e.g. ``vendor.driver.MyDriver.myinst.ChanA``. Every
+    logger is a child of the logger of its parent, so a level or handler set on
+    the logger of an instrument also applies to its submodules and to its
+    VISA traffic.
 """
 
 
@@ -100,8 +102,12 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
             default_logger_scope = "instrument"
 
     The resulting loggers are named
-    ``<DriverModule>.<DriverClass>.<name_parts>``, so a level can be set for a
-    whole driver class, a single instrument, or a single submodule.
+    ``<DriverModule>.<DriverClass>.<instrument name>[.<submodule names>]``,
+    and the VISA traffic of an instrument is logged to
+    ``<DriverModule>.<DriverClass>.<instrument name>.com.visa``. A level can
+    therefore be set for a whole driver class, for everything belonging to one
+    instrument (driver messages, submodules and VISA traffic), or for a single
+    submodule or the VISA traffic of one instrument.
 
     The scope is resolved once, when the :meth:`root_instrument` is created,
     and every submodule uses the scope of its root. It therefore applies to the
@@ -170,26 +176,28 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         Name of the logger to use, derived from ``default`` according to the
         logger scope resolved when the :meth:`root_instrument` was created.
 
-        Under the ``"instrument"`` scope the name is built from the class of
-        the :meth:`root_instrument`, an optional branch, and
-        :meth:`name_parts`, e.g. ``vendor.driver.MyDriver.myinst.ChanA`` or
-        ``vendor.driver.MyDriver.com.visa.myinst``. That gives one node per
-        driver class, one per instrument and one per submodule, so a level can
-        be configured for a whole driver, a single instrument, or a single
-        channel, and each is inherited by everything below it.
+        Under the ``"instrument"`` scope the name is built from the module and
+        qualified name of the class of the :meth:`root_instrument`, followed by
+        :meth:`name_parts` (the name of the root instrument and of any
+        submodules between it and this component) and an optional branch, e.g.
+        ``vendor.driver.MyDriver.myinst``,
+        ``vendor.driver.MyDriver.myinst.ChanA`` or
+        ``vendor.driver.MyDriver.myinst.com.visa``. Each name is a child of the
+        previous one, so a level configured on the driver class applies to all
+        its instruments, and a level configured on an instrument applies to
+        everything that belongs to it.
 
         Args:
             default: Name of the shared logger that this instrument would use
                 if no scope was configured.
-            branch: Optional branch between the driver class and the
-                instrument name.
+            branch: Optional branch appended after the name parts.
 
         """
         root = self.root_instrument
         if root._logger_scope != "instrument":
             return default
         cls = type(root)
-        return ".".join((cls.__module__, cls.__qualname__, *branch, *self.name_parts))
+        return ".".join((cls.__module__, cls.__qualname__, *self.name_parts, *branch))
 
     @property
     def label(self) -> str:
