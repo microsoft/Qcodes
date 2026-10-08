@@ -1,1 +1,0 @@
-A second interrupt during a database write rolls the open transaction back instead of leaving the file locked.
