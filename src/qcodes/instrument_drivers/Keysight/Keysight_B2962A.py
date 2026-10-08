@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 class KeysightB2962AChannel(InstrumentChannel):
     def __init__(
-        self,
+        self: Self,
         parent: Instrument,
         name: str,
         chan: int,
