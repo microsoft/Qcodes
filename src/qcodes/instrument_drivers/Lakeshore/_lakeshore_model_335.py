@@ -189,8 +189,6 @@ class LakeshoreModel335(LakeshoreBase[LakeshoreModel335Channel]):
 
     channel_name_command: ClassVar[dict[str, str]] = _channel_name_to_command_map
 
-    CHANNEL_CLASS = LakeshoreModel335Channel
-
     input_channel_parameter_values_to_channel_name_on_instrument = (
         _channel_name_to_command_map
     )
@@ -198,7 +196,13 @@ class LakeshoreModel335(LakeshoreBase[LakeshoreModel335Channel]):
     def __init__(
         self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
     ) -> None:
-        super().__init__(name, address, print_connect_message=False, **kwargs)
+        super().__init__(
+            name,
+            address,
+            channel_class=LakeshoreModel335Channel,
+            print_connect_message=False,
+            **kwargs,
+        )
 
         if isinstance(self.visa_handle, pyvisa.resources.serial.SerialInstrument):
             self.visa_handle.baud_rate = 57600

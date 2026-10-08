@@ -289,8 +289,6 @@ class LakeshoreModel336(LakeshoreBase[LakeshoreModel336Channel]):
 
     channel_name_command: ClassVar[dict[str, str]] = _channel_name_to_command_map
 
-    CHANNEL_CLASS = LakeshoreModel336Channel
-
     input_channel_parameter_values_to_channel_name_on_instrument = (
         _channel_name_to_command_map
     )
@@ -298,7 +296,9 @@ class LakeshoreModel336(LakeshoreBase[LakeshoreModel336Channel]):
     def __init__(
         self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
     ) -> None:
-        super().__init__(name, address, **kwargs)
+        super().__init__(
+            name, address, channel_class=LakeshoreModel336Channel, **kwargs
+        )
 
         self.output_1: LakeshoreModel336CurrentSource = self.add_submodule(
             name="output_1",

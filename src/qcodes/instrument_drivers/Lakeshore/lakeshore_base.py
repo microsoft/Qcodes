@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from qcodes.instrument.channel import ChannelTuple
 
 
-class LakeshoreBaseOutput(InstrumentChannel["LakeshoreBase"]):
+class LakeshoreBaseOutput(InstrumentChannel["LakeshoreBase[Any]"]):
     MODES: ClassVar[dict[str, int]] = {}
     RANGES: ClassVar[dict[str, int]] = {}
 
@@ -30,7 +30,7 @@ class LakeshoreBaseOutput(InstrumentChannel["LakeshoreBase"]):
 
     def __init__(
         self,
-        parent: "LakeshoreBase",
+        parent: "LakeshoreBase[Any]",
         output_name: str,
         output_index: int,
         has_pid: bool = True,
@@ -594,7 +594,7 @@ class LakeshoreBaseSensorChannel(InstrumentChannel):
 
     def __init__(
         self,
-        parent: "LakeshoreBase",
+        parent: "LakeshoreBase[Any]",
         name: str,
         channel: str,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
@@ -758,20 +758,13 @@ class LakeshoreBase(VisaInstrument, Generic[ChanType_co]):
     please make sure to extend this class accordingly, or create a new one.
 
     In order to use a variation of the `BaseSensorChannel` class for sensor
-    channels, just set `CHANNEL_CLASS` to that variation of the class inside
-    your `LakeshoreBase`'s subclass.
+    channels, pass that class as ``channel_class`` from your `LakeshoreBase`
+    subclass.
 
     In order to add heaters (output channels) to the driver, add `BaseOutput`
     instances (subclasses of those) in your `LakeshoreBase`'s subclass
     constructor via `add_submodule` method.
     """
-
-    # Define this in the model-specific class in case you want to use a
-    # different class for sensor channels
-    # type error. It's not clear to me why assigning a value that matches the
-    # default of the TypeVar is an error but both mypy and pyright
-    # flags it here.
-    CHANNEL_CLASS: type[ChanType_co] = LakeshoreBaseSensorChannel  # type: ignore[assignment]
 
     # This dict has channel name in the driver as keys, and channel "name" that
     # is used in instrument commands as values. For example, if channel called
@@ -789,6 +782,7 @@ class LakeshoreBase(VisaInstrument, Generic[ChanType_co]):
         self,
         name: str,
         address: str,
+        channel_class: type[ChanType_co],
         print_connect_message: bool = True,
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ) -> None:
@@ -800,11 +794,9 @@ class LakeshoreBase(VisaInstrument, Generic[ChanType_co]):
         # Note that `snapshotable` is set to false in order to avoid duplicate
         # snapshotting which otherwise will happen because each channel is also
         # added as a submodule to the instrument.
-        channels = ChannelList(
-            self, "TempSensors", self.CHANNEL_CLASS, snapshotable=False
-        )
+        channels = ChannelList(self, "TempSensors", channel_class, snapshotable=False)
         for channel_name, command in self.channel_name_command.items():
-            channel = self.CHANNEL_CLASS(self, channel_name, command)
+            channel = channel_class(self, channel_name, command)
             channels.append(channel)
             self.add_submodule(channel_name, channel)
         self.channels: ChannelTuple[ChanType_co] = self.add_submodule(
