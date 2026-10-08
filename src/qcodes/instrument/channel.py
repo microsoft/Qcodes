@@ -95,6 +95,22 @@ class InstrumentModule(InstrumentBase, Generic[_TIB_co]):
         name_parts.append(self.short_name)
         return name_parts
 
+    @property
+    def _logger_name_parts(self) -> list[str]:
+        # The key is looked up on the parent each time, since it is only
+        # registered after this module was created. A module that is not added
+        # as an individual submodule, such as a channel that only exists in a
+        # channel list, has no key and falls back to its own name.
+        key = next(
+            (
+                key
+                for key, submodule in self._parent.submodules.items()
+                if submodule is self
+            ),
+            self.short_name,
+        )
+        return [*self._parent._logger_name_parts, key]
+
 
 class InstrumentChannel(InstrumentModule[_TIB_co], Generic[_TIB_co]):
     pass

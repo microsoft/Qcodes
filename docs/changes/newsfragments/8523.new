@@ -1,0 +1,39 @@
+Instruments can now opt in to a logger of their own, rather than sharing a
+single logger with every other instrument in the process. Setting the class
+attribute ``default_logger_scope`` to ``"instrument"`` makes ``Instrument.log``
+(and ``VisaInstrument.visa_log``) use a logger named after the driver class and
+the instrument's ``name_parts``, so that levels, handlers and ``propagate`` can
+be configured per instrument::
+
+    class MyDriver(VisaInstrument):
+        default_logger_scope = "instrument"
+
+The scoped loggers mirror the instrument hierarchy below the module-qualified
+driver class. For an instrument ``myinst`` of ``MyDriver``, defined in the
+module ``vendor.driver``, the loggers are named::
+
+    vendor.driver.MyDriver                    the driver class
+    vendor.driver.MyDriver.myinst             Instrument.log
+    vendor.driver.MyDriver.myinst.my_module   log of a submodule
+    vendor.driver.MyDriver.myinst.com.visa    VisaInstrument.visa_log
+
+A submodule is named after the key it is added with in ``add_submodule``, for
+example ``my_module`` for ``self.add_submodule("my_module", MyModule(self))``,
+and not after its own name or class. A submodule that is not added as an
+individual submodule, such as a channel that only exists in a channel list, is
+named after its own name.
+
+Each logger is a child of the previous one, so a level or handler can be set
+for a whole driver class, for everything that belongs to one instrument
+(its own messages, its submodules and its VISA traffic), or for a single
+submodule or the VISA traffic of one instrument. Setting the level for a whole
+driver also works before any of its instruments exist, so it can be configured
+via ``logger_levels`` in ``qcodesrc.json``.
+
+Because module-qualified scoped loggers are no longer below
+``qcodes.instrument.instrument_base``, opted-in drivers do not inherit levels
+configured on that shared logger or on ``qcodes.instrument.instrument_base.com.visa``.
+Configure the module-qualified driver class logger instead.
+
+The default is unchanged: without opting in, all instruments keep sharing one
+logger exactly as before.
