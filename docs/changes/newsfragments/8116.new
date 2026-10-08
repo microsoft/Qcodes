@@ -1,0 +1,12 @@
+Added experimental ``qcodes.measure_v2`` package — a parallel measurement API
+that decouples plan description from execution. Plans are Python generators
+yielding typed messages (``Set``, ``Read``, ``Sleep``, ``Emit``, ``OpenRun``,
+``CloseRun``); an engine drives them on a dedicated worker thread and
+publishes events to pluggable sinks. Enables non-blocking measurement
+submission, mid-flight cancellation with guaranteed cleanup via plan
+``try/finally`` blocks, and live data consumption via custom sinks.
+The public surface is ``qc.measure_v2.scan(...)`` and the engine /
+``RunHandle`` types for advanced use; the SQLite sink reuses the existing
+``DataSaver`` infrastructure. This package is experimental and its API
+may change in subsequent releases. See ``src/qcodes/measure_v2/DESIGN.md``
+for the architecture document.
