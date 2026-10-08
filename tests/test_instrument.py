@@ -213,7 +213,7 @@ def test_parameter_property(testdummy: DummyInstrument) -> None:
     # since this is added dynamically we cannot know the type statically
     assert_type(testdummy.dac1, Any)
     # this is an assigned attribute so we know it statically
-    assert_type(testdummy.fixed_parameter, Parameter)
+    assert_type(testdummy.fixed_parameter, Parameter[Any, DummyInstrument])
 
     assert testdummy.fixed_parameter.get() == 5
     testdummy.fixed_parameter.set(10)
