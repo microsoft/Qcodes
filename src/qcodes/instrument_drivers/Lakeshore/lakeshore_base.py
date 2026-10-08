@@ -463,7 +463,7 @@ class LakeshoreBaseOutput(InstrumentChannel["LakeshoreBase[Any]"]):
 class LakeshoreBaseOutputWithHeaterSetup(LakeshoreBaseOutput):
     def __init__(
         self,
-        parent: "LakeshoreBase",
+        parent: "LakeshoreBase[Any]",
         output_name: str,
         output_index: int,
         has_pid: bool = True,
@@ -538,7 +538,7 @@ class LakeshoreBaseOutputWithHeaterSetupAndOutputType(
 ):
     def __init__(
         self,
-        parent: "LakeshoreBase",
+        parent: "LakeshoreBase[Any]",
         output_name: str,
         output_index: int,
         has_pid: bool = True,
