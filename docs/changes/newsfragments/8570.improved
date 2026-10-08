@@ -1,3 +1,0 @@
-Fixed NetCDF export of measurements without setpoint dependencies, including
-scalar and array-valued parameters measured with ``do0d`` or ``dond``.
-The exported data retains its shape using parameter-specific dimensions.
