@@ -10,7 +10,7 @@ import io
 import logging
 import re
 import weakref
-from typing import TYPE_CHECKING, Any, assert_type
+from typing import TYPE_CHECKING, Any, Self, assert_type
 from weakref import WeakValueDictionary
 
 import pytest
@@ -213,11 +213,36 @@ def test_parameter_property(testdummy: DummyInstrument) -> None:
     # since this is added dynamically we cannot know the type statically
     assert_type(testdummy.dac1, Any)
     # this is an assigned attribute so we know it statically
-    assert_type(testdummy.fixed_parameter, Parameter)
+    assert_type(testdummy.fixed_parameter, Parameter[Any, DummyInstrument])
 
     assert testdummy.fixed_parameter.get() == 5
     testdummy.fixed_parameter.set(10)
     assert testdummy.fixed_parameter.get() == 10
+
+
+def test_parameter_instrument_self_type() -> None:
+    """Parameters retain the instrument's subclass type."""
+
+    class ParentInstrument(InstrumentBase):
+        def __init__(self: Self, name: str) -> None:
+            super().__init__(name)
+            self.value: Parameter[float, Self] = self.add_parameter(
+                "value", get_cmd=None, set_cmd=None, initial_value=1.0
+            )
+            assert_type(self.value.instrument, Self)
+            inferred = self.add_parameter("inferred", get_cmd=None, set_cmd=None)
+            assert_type(inferred, Parameter[Any, Self])
+
+    class ChildInstrument(ParentInstrument):
+        pass
+
+    instrument = ChildInstrument("self_type")
+    assert_type(instrument.value.instrument, ChildInstrument)
+    inferred = instrument.add_parameter("extra", get_cmd=None, set_cmd=None)
+    assert_type(inferred, Parameter[Any, ChildInstrument])
+    assert instrument.value.instrument is instrument
+    assert inferred.instrument is instrument
+    assert instrument.value() == 1.0
 
 
 def test_attr_access_channels(testdummychannelinstr: DummyChannelInstrument) -> None:

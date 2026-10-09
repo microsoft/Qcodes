@@ -93,7 +93,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel["KeysightN9030B"]):
     """
 
     def __init__(
-        self,
+        self: Self,
         parent: KeysightN9030B,
         name: str,
         *arg: Any,
