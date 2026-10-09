@@ -1,0 +1,8 @@
+QCoDeS 0.36.1 (2022-12-20)
+==========================
+
+Improved:
+---------
+
+- The dataset logic has been updated to ensure that if you set an already completed
+  dataset as completed the completion timestamp will not be updated. (:pr:`4876`)

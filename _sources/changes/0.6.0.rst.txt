@@ -1,0 +1,71 @@
+Changelog for QCoDeS 0.6.0
+==========================
+
+The September 2019 release of QCoDeS
+
+New:
+____
+
+* Improvements to dataset performance. Especially when doing concurrent reads and writes from the db.
+  The QCoDeS experiment sqlite database is now created in WAL mode. Note that if you perform a manual backup
+  of a db in wal mode you should also backup any .wal file along with the .db file. See
+  https://www.sqlite.org/wal.html for additional details. (:pr:`1685`)
+* New highlevel `tutorial for beginners <../examples/15_minutes_to_QCoDeS.ipynb>`_. (:pr:`1693`)
+
+Improved:
+_________
+
+* Improvements to API docs. (:pr:`1660`, :pr:`1691`, :pr:`1702`, :pr:`1706`)
+* Notebook Dataset Performance: Correct typos and add figure. (:pr:`1683`)
+* Add logging to measurement runner `__exit__`. (:pr:`1695`)
+* Link tutorial to "Getting started", "README". (:pr:`1703`)
+* Don't use deprecated ``matplotlib`` ``cbar.get_clim``. (:pr:`1724`)
+* Make DataSet.paramspecs always return ParamSpec. (:pr:`1720`)
+* Add ``Station.close_all_registered_instruments``. (:pr:`1713`, :pr:`1726`)
+* Station: fail hard when adding an ``Instrument`` with a name that is already registered. (:pr:`1714`)
+
+New Instrument drivers:
+_______________________
+
+* Rigol DS1074Z oscilloscope. (:pr:`1652`)
+
+Improved Drivers:
+_________________
+
+* Alazar: refactor `AcquisitionInterface` out of `AcquisitionController`. (:pr:`1694`)
+* Alazar: Fix reference to method in error message. (:pr:`1697`)
+* Alazar: Simulator. (:pr:`1707`)
+* AMI430: Fix issue with changing field unit. (:pr:`1599`)
+* AMI430 test: fix flakiness from asserting timestamps of Parameters. (:pr:`1718`)
+* Dynacool: Add blocking and non-blocking ramp. (:pr:`1586`)
+* Keysight B1500: Sampling Measurement mode. (:pr:`1607`)
+* Keysight B1500: Show connection message on init. (:pr:`1677`)
+* Keysight B1500: Edit example notebook to set averaging during sampling measurement. (:pr:`1696`)
+* Keysight N6705B: Fix syntax error in parameter. (:pr:`1669`)
+* Keysight B220x: Show connection message on init. (:pr:`1677`)
+* Keysight E8267D: Add missing parameters. (:pr:`1705`, :pr:`1708`)
+* Lakeshore 325: Add two parameters (resistance, heater_output). (:pr:`1711`)
+* Yokogawa GS200: Exclude/Include snapshot depending on mode. (:pr:`1699`)
+
+Under the hood:
+_______________
+
+* Significant improvements to import time of QCoDeS. (:pr:`1678`)
+* Updates to requirements. (:pr:`1686`, :pr:`1690`, :pr:`1688`)
+* Use recommended way of running xvfb on Travis. (:pr:`1687`)
+* CI: Link commands in all scripts by their exit code, use mostly 'bash'. (:pr:`1712`)
+* Make test GetLatest stricter about timestamps. (:pr:`1719`)
+* Test using python 3.8 prerelease. (:pr:`1722`)
+
+Breaking Changes:
+_________________
+
+* The default config value for ``gui.plotlib`` has changed from ``"all"`` to ``null``. This means the
+  legacy plot modules ``MatPlot`` and ``QtPlot`` are no longer imported into the top level qcodes namespace by
+  default. To restore the original behaviour change your config file locally.
+* ``capture_dataframe`` is no longer available from ``qcodes.logger``. To use it import it
+  from ``qcodes.logger.log_analysis``.
+* Deprecate old QDac driver in favour of QCac_channels driver. (:pr:`1578`)
+* Adding an instrument to the QCoDeS station with an already existing name is now a hard error rather
+  than falling back to constructing a new unique name.(:pr:`1713`)
+* Deprecate ``qcodes.utils.helpers.make_unique`` as it is unused in QCoDeS. (:pr:`1713`)
