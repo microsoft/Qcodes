@@ -1,0 +1,3 @@
+Allow the Yokogawa GS200 driver to use the documented generated output ranges,
+including 12 V on the 10 V source range, while retaining the 32 V and 200 mA
+maximum output limits for direct output and ramps.
