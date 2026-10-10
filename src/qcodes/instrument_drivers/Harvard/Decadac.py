@@ -1,6 +1,6 @@
 from functools import partial
 from time import time
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 import qcodes.validators as vals
 from qcodes.instrument import (
@@ -13,6 +13,7 @@ from qcodes.instrument import (
 if TYPE_CHECKING:
     from typing import Unpack
 
+    from qcodes.instrument import ChannelTuple
     from qcodes.parameters import Parameter
 
 
@@ -433,7 +434,10 @@ class HarvardDecadacSlot(InstrumentChannel, DacReader):
                     self, f"Chan{i}", i, min_val=min_val, max_val=max_val
                 )
             )
-        self.add_submodule("channels", channels)
+        self.channels: ChannelList[HarvardDecadacChannel] = self.add_submodule(
+            "channels", channels
+        )
+        """ChannelList holding the four DAC channels of this slot."""
         # Set the slot mode. Valid modes are:
         #   Off: Channel outputs are disconnected from the input, grounded
         #       with 10MOhm.
@@ -541,11 +545,15 @@ class HarvardDecadac(VisaInstrument, DacReader):
         slots = ChannelList(self, "Slots", self.DAC_SLOT_CLASS)
         for i in range(5):  # Create the 6 DAC slots
             slots.append(self.DAC_SLOT_CLASS(self, f"Slot{i}", i, min_val, max_val))
-            slot_channels = slots[i].channels
-            slot_channels = cast("ChannelList", slot_channels)
-            channels.extend(slot_channels)
-        self.add_submodule("slots", slots.to_channel_tuple())
-        self.add_submodule("channels", channels.to_channel_tuple())
+            channels.extend(slots[i].channels)
+        self.slots: ChannelTuple[HarvardDecadacSlot] = self.add_submodule(
+            "slots", slots.to_channel_tuple()
+        )
+        """ChannelTuple holding the DAC slots."""
+        self.channels: ChannelTuple[HarvardDecadacChannel] = self.add_submodule(
+            "channels", channels.to_channel_tuple()
+        )
+        """ChannelTuple holding all DAC channels across all slots."""
 
         self.connect_message()
 

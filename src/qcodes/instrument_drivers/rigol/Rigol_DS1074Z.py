@@ -16,6 +16,7 @@ from qcodes.validators import Arrays, Enum, Numbers
 if TYPE_CHECKING:
     from typing import Unpack
 
+    from qcodes.instrument import ChannelTuple
     from qcodes.parameters import Parameter
 
 
@@ -219,7 +220,10 @@ class RigolDS1074Z(VisaInstrument):
             channel = RigolDS1074ZChannel(self, f"ch{channel_number}", channel_number)
             channels.append(channel)
 
-        self.add_submodule("channels", channels.to_channel_tuple())
+        self.channels: ChannelTuple[RigolDS1074ZChannel] = self.add_submodule(
+            "channels", channels.to_channel_tuple()
+        )
+        """ChannelTuple holding the oscilloscope channels."""
 
         self.connect_message()
 

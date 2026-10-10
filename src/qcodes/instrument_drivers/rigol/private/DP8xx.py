@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from typing import Unpack
 
+    from qcodes.instrument import ChannelTuple
     from qcodes.parameters import Parameter
 
 
@@ -197,7 +198,10 @@ class RigolDP8xxBase(VisaInstrument):
             )
             channels.append(channel)
             self.add_submodule(ch_name, channel)
-        self.add_submodule("channels", channels.to_channel_tuple())
+        self.channels: ChannelTuple[RigolDP8xxChannel] = self.add_submodule(
+            "channels", channels.to_channel_tuple()
+        )
+        """ChannelTuple holding the output channels of the power supply."""
 
         self.connect_message()
 

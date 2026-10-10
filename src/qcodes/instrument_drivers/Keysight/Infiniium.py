@@ -657,9 +657,10 @@ class KeysightInfiniiumFunction(InstrumentChannel):
         )
 
         # Measurement subsystem
-        self.add_submodule(
+        self.measure: KeysightInfiniiumBoundMeasurement = self.add_submodule(
             "measure", KeysightInfiniiumBoundMeasurement(self, "measure")
         )
+        """Measurement subsystem bound to this function."""
 
     @property
     def channel(self) -> int:
@@ -793,9 +794,10 @@ class KeysightInfiniiumChannel(InstrumentChannel["KeysightInfiniium"]):
         )
 
         # Measurement subsystem
-        self.add_submodule(
+        self.measure: KeysightInfiniiumBoundMeasurement = self.add_submodule(
             "measure", KeysightInfiniiumBoundMeasurement(self, "measure")
         )
+        """Measurement subsystem bound to this channel."""
 
     @property
     def channel(self) -> int:

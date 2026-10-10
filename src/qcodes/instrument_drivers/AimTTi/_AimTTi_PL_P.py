@@ -14,6 +14,8 @@ from qcodes.parameters import Parameter, create_on_off_val_mapping
 if TYPE_CHECKING:
     from typing import Unpack
 
+    from qcodes.instrument import ChannelTuple
+
 
 class NotKnownModel(Exception):
     """
@@ -275,7 +277,10 @@ class AimTTi(VisaInstrument):
             channels.append(channel)
             self.add_submodule(f"ch{i}", channel)
 
-        self.add_submodule("channels", channels.to_channel_tuple())
+        self.channels: ChannelTuple[AimTTiChannel] = self.add_submodule(
+            "channels", channels.to_channel_tuple()
+        )
+        """ChannelTuple holding the output channels of the power supply."""
         self.connect_message()
 
     # Interface Management
