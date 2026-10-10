@@ -636,6 +636,40 @@ instruments:
     assert mock.ch1.raw_value == 7
 
 
+def test_setup_alias_parameters_on_channel() -> None:
+    """``alias`` adds the alias to the channel that the parameter belongs to,
+    whereas ``alias_at_root`` adds it to the root instrument."""
+    st = station_from_config_str(
+        """
+instruments:
+  mock:
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
+    enable_forced_reconnect: true
+    parameters:
+      A.temperature:
+        alias: temperature_a
+        alias_at_root: temperature_a_at_root
+        initial_value: 10
+    B:
+      temperature:
+        alias_at_root: temperature_b_at_root
+        initial_value: 20
+    """
+    )
+    mock = st.load_instrument("mock")
+
+    assert mock.A.temperature_a is mock.A.temperature
+    assert not hasattr(mock, "temperature_a")
+
+    assert mock.temperature_a_at_root is mock.A.temperature
+    assert not hasattr(mock.A, "temperature_a_at_root")
+    assert mock.temperature_a_at_root() == 10
+
+    assert mock.temperature_b_at_root is mock.B.temperature
+    assert not hasattr(mock.B, "temperature_b_at_root")
+    assert mock.temperature_b_at_root() == 20
+
+
 def test_setup_delegate_parameters() -> None:
     st = station_from_config_str(
         """

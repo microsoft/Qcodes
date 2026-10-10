@@ -20,6 +20,10 @@
                     "type": "string",
                     "pattern": "^\\w+$"
                 },
+                "alias_at_root": {
+                    "type": "string",
+                    "pattern": "^\\w+$"
+                },
                 "label": {
                     "type": "string"
                 },
