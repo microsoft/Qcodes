@@ -80,6 +80,7 @@ from qcodes.dataset.sqlite.query_helpers import (
     select_one_where,
 )
 from qcodes.utils import (
+    DelayedKeyboardInterrupt,
     NumpyJSONEncoder,
 )
 
@@ -1601,18 +1602,22 @@ class DataSet(BaseDataSet):
         log.debug("Flushing to database")
         writer_status = self._writer_status
         if len(self._results) > 0:
-            try:
-                self.add_results(self._results)
-                if writer_status.write_in_background:
-                    log.debug("Successfully enqueued result for write thread")
-                else:
-                    log.debug("Successfully wrote result to disk")
-                self._results = []
-            except Exception:
-                if writer_status.write_in_background:
-                    log.exception("Could not enqueue result")
-                else:
-                    log.exception("Could not commit to database")
+            # A KeyboardInterrupt while the results are being written must be
+            # delayed until the written results are removed from the pending
+            # results, otherwise the next flush would write them a second time.
+            with DelayedKeyboardInterrupt(context={"reason": "qcodes flush data"}):
+                try:
+                    self.add_results(self._results)
+                    if writer_status.write_in_background:
+                        log.debug("Successfully enqueued result for write thread")
+                    else:
+                        log.debug("Successfully wrote result to disk")
+                    self._results = []
+                except Exception:
+                    if writer_status.write_in_background:
+                        log.exception("Could not enqueue result")
+                    else:
+                        log.exception("Could not commit to database")
         else:
             log.debug("No results to flush")
 
