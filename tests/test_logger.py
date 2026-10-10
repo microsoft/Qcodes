@@ -511,7 +511,7 @@ def test_driver_class_level_applies_to_submodules() -> None:
     inst = ScopedDummyChannelInstrument("class_level_channels")
     channel = inst.submodules["A"]
 
-    assert channel.log.logger.getEffectiveLevel() == logging.DEBUG  # type: ignore[union-attr]
+    assert channel.log.logger.getEffectiveLevel() == logging.DEBUG
 
 
 def test_scope_is_fixed_when_root_is_created(
@@ -586,17 +586,11 @@ def test_submodule_logger_is_child_of_instrument_logger() -> None:
 
     assert inst.log.logger.name == f"{class_logger_name}.scoped_channels"
     # DummyChannelInstrument adds the channel ChanA under the key "A"
-    assert channel_a.name_parts == ["scoped_channels", "ChanA"]  # type: ignore[union-attr]
-    assert (
-        channel_a.log.logger.name  # type: ignore[union-attr]
-        == f"{class_logger_name}.scoped_channels.A"
-    )
-    assert (
-        channel_b.log.logger.name  # type: ignore[union-attr]
-        == f"{class_logger_name}.scoped_channels.B"
-    )
-    assert channel_a.log.logger.parent is inst.log.logger  # type: ignore[union-attr]
-    assert channel_b.log.logger.parent is inst.log.logger  # type: ignore[union-attr]
+    assert channel_a.name_parts == ["scoped_channels", "ChanA"]
+    assert channel_a.log.logger.name == f"{class_logger_name}.scoped_channels.A"
+    assert channel_b.log.logger.name == f"{class_logger_name}.scoped_channels.B"
+    assert channel_a.log.logger.parent is inst.log.logger
+    assert channel_b.log.logger.parent is inst.log.logger
 
 
 def test_submodule_logger_is_named_after_the_key_it_was_added_with() -> None:
@@ -620,8 +614,8 @@ def test_submodule_without_key_logger_is_named_after_the_module() -> None:
     class_logger_name = scoped_class_logger_name(ScopedDummyChannelOnlyInstrument)
 
     assert "ChanA_a" not in inst.submodules
-    assert channel.log.logger.name == f"{class_logger_name}.channel_list_only.ChanA_a"  # type: ignore[union-attr]
-    assert channel.log.logger.parent is inst.log.logger  # type: ignore[union-attr]
+    assert channel.log.logger.name == f"{class_logger_name}.channel_list_only.ChanA_a"
+    assert channel.log.logger.parent is inst.log.logger
 
 
 def test_logger_of_nested_modules_follows_the_key_of_their_parent() -> None:
@@ -660,14 +654,14 @@ def test_nested_submodule_logger_is_child_of_its_parent_module() -> None:
     inst = ScopedDummyChannelInstrument("nested_modules")
     channel = inst.submodules["A"]
     nested = InstrumentModule(channel, "nested")  # type: ignore[arg-type]
-    channel.add_submodule("nested", nested)  # type: ignore[union-attr]
+    channel.add_submodule("nested", nested)
 
     assert nested.name_parts == ["nested_modules", "ChanA", "nested"]
     assert nested.log.logger.name == (
         f"{scoped_class_logger_name(ScopedDummyChannelInstrument)}"
         ".nested_modules.A.nested"
     )
-    assert nested.log.logger.parent is channel.log.logger  # type: ignore[union-attr]
+    assert nested.log.logger.parent is channel.log.logger
 
 
 def test_instrument_level_applies_to_its_submodules() -> None:
@@ -679,8 +673,8 @@ def test_instrument_level_applies_to_its_submodules() -> None:
 
     inst.log.logger.setLevel(logging.DEBUG)
 
-    assert channel.log.logger.getEffectiveLevel() == logging.DEBUG  # type: ignore[union-attr]
-    assert other.submodules["A"].log.logger.getEffectiveLevel() == logging.WARNING  # type: ignore[union-attr]
+    assert channel.log.logger.getEffectiveLevel() == logging.DEBUG
+    assert other.submodules["A"].log.logger.getEffectiveLevel() == logging.WARNING
 
 
 def test_submodule_level_can_be_set_for_one_module() -> None:
@@ -689,18 +683,18 @@ def test_submodule_level_can_be_set_for_one_module() -> None:
     inst_a = ScopedDummyChannelInstrument("submodule_level_a")
     inst_b = ScopedDummyChannelInstrument("submodule_level_b")
 
-    inst_a.submodules["A"].log.logger.setLevel(logging.DEBUG)  # type: ignore[union-attr]
+    inst_a.submodules["A"].log.logger.setLevel(logging.DEBUG)
 
-    assert inst_a.submodules["A"].log.logger.getEffectiveLevel() == logging.DEBUG  # type: ignore[union-attr]
-    assert inst_a.submodules["B"].log.logger.getEffectiveLevel() == logging.WARNING  # type: ignore[union-attr]
-    assert inst_b.submodules["A"].log.logger.getEffectiveLevel() == logging.WARNING  # type: ignore[union-attr]
+    assert inst_a.submodules["A"].log.logger.getEffectiveLevel() == logging.DEBUG
+    assert inst_a.submodules["B"].log.logger.getEffectiveLevel() == logging.WARNING
+    assert inst_b.submodules["A"].log.logger.getEffectiveLevel() == logging.WARNING
 
 
 def test_submodule_of_unscoped_instrument_uses_shared_logger() -> None:
     inst = DummyChannelInstrument("unscoped_channels")
     channel = inst.submodules["A"]
 
-    assert channel.log.logger.name == SHARED_INSTRUMENT_LOGGER_NAME  # type: ignore[union-attr]
+    assert channel.log.logger.name == SHARED_INSTRUMENT_LOGGER_NAME
 
 
 def test_visa_log_is_shared_by_default() -> None:

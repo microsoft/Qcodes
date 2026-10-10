@@ -324,7 +324,7 @@ def test_load_by_id_for_none() -> None:
     experiment_name=hst.text(min_size=1),
     sample_name=hst.text(min_size=1),
     dataset_name=hst.text(
-        hst.characters(categories=_unicode_categories),  # type: ignore[arg-type]
+        hst.characters(categories=_unicode_categories),
         min_size=1,
     ),
 )

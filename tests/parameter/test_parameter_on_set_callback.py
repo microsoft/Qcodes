@@ -22,14 +22,14 @@ STEP_SIZE = 0.1
 THREAD_SLEEP = 0.01
 
 
-@pytest.fixture(autouse=True)  # type: ignore[misc]
+@pytest.fixture(autouse=True)
 def _reset_callback() -> "Generator[None, None, None]":
     """Reset the callback after each test"""
     yield
     ParameterBase.global_on_set_callback = None
 
 
-@pytest.fixture()  # type: ignore[misc]
+@pytest.fixture()
 def basic_parameter(
     basic_callback: "Callable[[ParameterBase, Any], None]",
 ) -> Parameter:
@@ -39,7 +39,7 @@ def basic_parameter(
     return param
 
 
-@pytest.fixture(scope="function")  # type: ignore[misc]
+@pytest.fixture(scope="function")
 def basic_callback(
     captured_params: list[tuple[ParameterBase, Any]],
 ) -> "Callable[[ParameterBase, Any], None]":
@@ -51,13 +51,13 @@ def basic_callback(
     return callback
 
 
-@pytest.fixture(scope="function")  # type: ignore[misc]
+@pytest.fixture(scope="function")
 def captured_params() -> list[tuple[ParameterBase, Any]]:
     """Fixture for capturing callback parameters"""
     return []
 
 
-@pytest.fixture(autouse=True, scope="function")  # type: ignore[misc]
+@pytest.fixture(autouse=True, scope="function")
 def cleanup_db_connections():
     """Clean up any open SQLite connections after each test"""
     yield
@@ -120,7 +120,7 @@ class TestBasicCallbackBehavior:
 class TestValidationBehavior:
     """Tests for validation-related functionality"""
 
-    @pytest.mark.parametrize(  # type: ignore[misc]
+    @pytest.mark.parametrize(
         "test_input,validator,should_callback",
         [
             pytest.param(5, validators.Numbers(0, 10), True, id="valid_number"),

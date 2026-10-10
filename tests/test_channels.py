@@ -97,7 +97,7 @@ def test_channels_call_function(
         caplog.clear()
         # the return type of __getattr__ is very broad since it can return both
         # a MultiInstrumentParameter an attribute a callable etc
-        dci.channels.log_my_name()  # type: ignore[call-arg]
+        dci.channels.log_my_name()
         mssgs = [rec.message for rec in caplog.records]
         names = [ch.name.replace("dci_", "") for ch in dci.channels]
         assert mssgs == names
@@ -175,7 +175,7 @@ def test_channel_tuple_validator_requires_channel_tuple(
     dci: DummyChannelInstrument,
 ) -> None:
     with pytest.raises(ValueError, match="channel_list must be a ChannelTuple"):
-        ChannelTupleValidator(dci.A)  # type: ignore[arg-type]
+        ChannelTupleValidator(dci.A)
 
 
 def test_wrong_chan_type_raises(empty_instrument: Instrument) -> None:
@@ -304,6 +304,34 @@ def test_channel_type_can_be_inferred(
     assert_type(dci.channels[0], DummyChannel)
 
 
+class _SubDummyChannel(DummyChannel):
+    pass
+
+
+def test_channel_tuple_is_covariant(dci: DummyChannelInstrument) -> None:
+    # Guarded by pyright in CI: the assignment below only type checks while
+    # ChannelTuple is covariant in its channel type.
+    sub_channels: ChannelTuple[_SubDummyChannel] = ChannelTuple(
+        dci, "subs", _SubDummyChannel, [_SubDummyChannel(dci, "ChanA", "A")]
+    )
+    channels: ChannelTuple[DummyChannel] = sub_channels
+    assert channels.get_channel_by_name("ChanA") is sub_channels[0]
+
+    # index and count accept any object, as for collections.abc.Sequence.
+    assert channels.count(object()) == 0
+    with pytest.raises(ValueError):
+        channels.index(object())
+
+
+def test_channel_list_is_invariant(dci: DummyChannelInstrument) -> None:
+    # ChannelList is mutable, so it must stay invariant. Pyright reports an
+    # unnecessary ignore in the tests, so this fails if it becomes covariant.
+    sub_channels = ChannelList(dci, "subs", _SubDummyChannel)
+    channels: ChannelList[DummyChannel] = sub_channels  # pyright: ignore[reportAssignmentType]
+    with pytest.raises(TypeError, match="All items in a channel list"):
+        channels.append(DummyChannel(dci, "ChanA", "A"))
+
+
 def test_add_none_channel_tuple_to_channel_tuple_raises(
     dci: DummyChannelInstrument,
 ) -> None:
@@ -420,12 +448,12 @@ def test_remove_channel(dci_with_list: DCIWithList) -> None:
     chan_a = dci_with_list.A
     # the return type of __getattr__ is very broad since it can return both
     # a MultiInstrumentParameter an attribute a callable etc
-    original_length = len(channels.temperature())  # type: ignore[call-arg]
+    original_length = len(channels.temperature())
     channels.remove(chan_a)
     with pytest.raises(AttributeError):
         getattr(channels, chan_a.short_name)
     assert len(channels) == original_length - 1
-    assert len(channels.temperature()) == original_length - 1  # type: ignore[call-arg]
+    assert len(channels.temperature()) == original_length - 1
     # the return type of __getattr__ is very broad since it can return both
     # a MultiInstrumentParameter an attribute a callable etc
 
@@ -480,7 +508,7 @@ def test_combine_channels(dci: DummyChannelInstrument, setpoints: list[float]) -
         chan.temperature(setpoints[i])
 
     expected = (*setpoints[0:2], 0, 0, *setpoints[2:])
-    assert dci.channels.temperature() == expected  # type: ignore[call-arg]
+    assert dci.channels.temperature() == expected
     # the return type of __getattr__ is very broad since it can return both
     # a MultiInstrumentParameter, an attribute a callable etc.
 
@@ -753,7 +781,7 @@ def test_get_attr_on_empty_channellist_works_as_expected(
 
 
 def test_channel_tuple_call_method_basic_test(dci: DummyChannelInstrument) -> None:
-    result = dci.channels.turn_on()  # type: ignore[call-arg]
+    result = dci.channels.turn_on()
     # the return type of __getattr__ is very broad since it can return both
     # a MultiInstrumentParameter an attribute a callable etc
     assert result is None
@@ -765,7 +793,7 @@ def test_channel_tuple_call_method_called_as_expected(
     for channel in dci.channels:
         channel.turn_on = mocker.MagicMock(return_value=1)
 
-    result = dci.channels.turn_on("bar")  # type: ignore[call-arg]
+    result = dci.channels.turn_on("bar")
     # the return type of __getattr__ is very broad since it can return both
     # a MultiInstrumentParameter an attribute a callable etc
     # We never return the result (same for Function)

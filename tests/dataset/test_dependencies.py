@@ -101,8 +101,8 @@ def test_init_validation_raises(some_paramspecbases) -> None:
     for inv in invalid_trees_2:
         with pytest.raises(ValueError, match="already exists"):
             InterDependencies_(
-                dependencies=inv["deps"],  # type: ignore[arg-type]
-                inferences=inv["inffs"],  # type: ignore[arg-type]
+                dependencies=inv["deps"],
+                inferences=inv["inffs"],
             )
 
 

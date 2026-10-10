@@ -36,13 +36,13 @@ def test_errors(c0, c1, c2) -> None:
 
     # fails if the parameter has no setter
     with pytest.raises(TypeError):
-        c2[0:0.1:0.01]  # type: ignore[misc]
+        c2[0:0.1:0.01]
 
     # validates every step value against the parameter's Validator
     with pytest.raises(ValueError):
         c0[5:15:1]
     with pytest.raises(ValueError):
-        c0[5.0:15.0:1.0]  # type: ignore[misc]
+        c0[5.0:15.0:1.0]
     with pytest.raises(ValueError):
         c0[-12]
     with pytest.raises(ValueError):
@@ -74,7 +74,7 @@ def test_valid(c0) -> None:
     assert 2 not in c0_sv
 
     # in-place and copying addition
-    c0_sv += c0[1.5:1.8:0.1]  # type: ignore[misc]
+    c0_sv += c0[1.5:1.8:0.1]
     c0_sv2 = c0_sv + c0[2]
     assert list(c0_sv) == [1, 1.5, 1.6, 1.7]
     assert list(c0_sv2) == [1, 1.5, 1.6, 1.7, 2]
@@ -120,7 +120,7 @@ def test_base() -> None:
 def test_snapshot(c0) -> None:
     assert c0[0].snapshot() == {"parameter": c0.snapshot(), "values": [{"item": 0}]}
 
-    assert c0[0:5:0.3].snapshot()["values"] == [  # type: ignore[misc]
+    assert c0[0:5:0.3].snapshot()["values"] == [
         {"first": 0, "last": 4.8, "num": 17, "type": "linear"}
     ]
 
