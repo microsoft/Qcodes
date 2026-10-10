@@ -13,9 +13,7 @@ from qcodes.instrument_drivers.Lakeshore import (
         min_size=1,
         max_size=5,
         unique=True,
-    ).map(
-        sorted  # type: ignore[arg-type]
-    )
+    ).map(sorted)
 )
 def test_decode_sensor_status(list_of_codes) -> None:
     """

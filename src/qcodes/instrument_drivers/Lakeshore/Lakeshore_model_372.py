@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 _n_channels = 16
 
 
-class LakeshoreModel372Output(LakeshoreBaseOutput):
+class LakeshoreModel372Output(LakeshoreBaseOutput["LakeshoreModel372"]):
     """
     An InstrumentChannel for control outputs (heaters) of Lakeshore Model 372
 
@@ -228,7 +228,7 @@ class LakeshoreModel372WarmupHeater(LakeshoreModel372Output):
         )
 
 
-class LakeshoreModel372Channel(LakeshoreBaseSensorChannel):
+class LakeshoreModel372Channel(LakeshoreBaseSensorChannel["LakeshoreModel372"]):
     """
     An InstrumentChannel representing a single sensor on a Lakeshore Model 372.
 

@@ -32,7 +32,9 @@ _channel_name_to_outmode_command_map: dict[str, int] = {
 }
 
 
-class LakeshoreModel336CurrentSource(LakeshoreBaseOutputWithHeaterSetup):
+class LakeshoreModel336CurrentSource(
+    LakeshoreBaseOutputWithHeaterSetup["LakeshoreModel336"]
+):
     """
     InstrumentChannel for current sources on Lakeshore Model 336.
 
@@ -68,7 +70,7 @@ class LakeshoreModel336CurrentSource(LakeshoreBaseOutputWithHeaterSetup):
         self.D.vals = vals.Numbers(0, 200)
 
 
-class LakeshoreModel336VoltageSource(LakeshoreBaseOutput):
+class LakeshoreModel336VoltageSource(LakeshoreBaseOutput["LakeshoreModel336"]):
     """
     InstrumentChannel for voltage sources on Lakeshore Model 336.
 
@@ -101,7 +103,7 @@ class LakeshoreModel336VoltageSource(LakeshoreBaseOutput):
         super().__init__(parent, output_name, output_index, has_pid=False, **kwargs)
 
 
-class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):
+class LakeshoreModel336Channel(LakeshoreBaseSensorChannel["LakeshoreModel336"]):
     """
     An InstrumentChannel representing a single sensor on a Lakeshore Model 336.
 
