@@ -1,0 +1,4 @@
+The section of the Contributor guide on documenting QCoDeS has been updated to describe how the API
+documentation is currently generated: user facing classes and functions are documented by exporting them
+from the ``__init__.py`` file of their subpackage, and instrument drivers by exporting them from their
+vendor's subpackage, which is documented by a file in ``docs/drivers_api``.
