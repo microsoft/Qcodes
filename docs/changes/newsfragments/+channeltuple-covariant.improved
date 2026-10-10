@@ -1,0 +1,4 @@
+``ChannelTuple`` is now covariant in its channel type, so type checkers accept a
+``ChannelTuple[SubChannel]`` where a ``ChannelTuple[BaseChannel]`` is expected.
+``ChannelTuple.index`` and ``ChannelTuple.count`` now accept any object, matching
+``collections.abc.Sequence``. ``ChannelList`` remains invariant because it is mutable.

@@ -587,6 +587,42 @@ def test_set_element_locked_raises(dci_with_list: DCIWithList) -> None:
     assert dci_with_list.channels[0] is not dci_with_list.channels[1]
 
 
+def test_channel_list_lookup_by_name_tracks_mutations(
+    dci_with_list: DCIWithList,
+) -> None:
+    # ChannelList keeps mutable storage alongside the read-only storage of
+    # ChannelTuple. Lookups implemented on ChannelTuple must see every mutation.
+    channels = dci_with_list.channels
+    foo = DummyChannel(dci_with_list, name="foo", channel="foo")
+    bar = DummyChannel(dci_with_list, name="bar", channel="bar")
+    baz = DummyChannel(dci_with_list, name="baz", channel="baz")
+
+    channels.append(foo)
+    channels.extend([bar])
+    assert tuple(channels.get_channels_by_name("foo", "bar")) == (foo, bar)
+    assert channels.index(bar) == len(channels) - 1
+
+    channels[-1] = baz
+    assert channels.get_channel_by_name("baz") is baz
+    with pytest.raises(KeyError):
+        channels.get_channel_by_name("bar")
+
+    del channels[-1]
+    channels.remove(foo)
+    assert channels.count(foo) == 0
+    for name in ("foo", "baz"):
+        with pytest.raises(KeyError):
+            channels.get_channel_by_name(name)
+
+    channels.clear()
+    assert len(channels) == 0
+    assert len(channels._channel_mapping) == 0
+
+    channels.insert(0, foo)
+    assert channels.get_channel_by_name("foo") is foo
+    assert channels.to_channel_tuple().get_channel_by_name("foo") is foo
+
+
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,), deadline=1000)
 @given(myindexs=hst.lists(elements=hst.integers(0, 7), min_size=1))
 def test_access_channels_by_name(
