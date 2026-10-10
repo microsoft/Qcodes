@@ -1,0 +1,4 @@
+``load_by_run_spec`` and ``get_guids_by_run_spec`` gain a ``name`` argument that selects runs by their name,
+i.e. the name of the ``Measurement`` that created them. The table of matching runs that ``load_by_run_spec``
+prints when a run spec is ambiguous now includes the run name, and ``plot_dataset`` includes the run name in
+the title of the plots.

@@ -638,6 +638,7 @@ def test_combine_runs(
         ds2 = load_by_guid(new_guids[i - 2], conn=target_conn)
         assert ds2.captured_run_id == int(mydict["captured_run_id"])
         assert ds2.captured_counter == int(mydict["captured_counter"])
+        assert ds2.name == mydict["name"]
         assert ds2.exp_name == mydict["experiment_name"]
         assert ds2.sample_name == mydict["sample_name"]
         assert guid_comp["location"] == int(mydict["location"])

@@ -1730,6 +1730,7 @@ def load_by_run_spec(
     captured_counter: int | None = None,
     experiment_name: str | None = None,
     sample_name: str | None = None,
+    name: str | None = None,
     # guid parts
     sample_id: int | None = None,
     location: int | None = None,
@@ -1755,6 +1756,8 @@ def load_by_run_spec(
           at the time of capture.
         experiment_name: name of the experiment that the run was captured
         sample_name: The name of the sample given when creating the experiment.
+        name: The name of the run, i.e. the name of the measurement that
+          created it.
         sample_id: The sample_id assigned as part of the GUID.
         location: The location code assigned as part of GUID.
         work_station: The workstation assigned as part of the GUID.
@@ -1781,6 +1784,7 @@ def load_by_run_spec(
             captured_counter=captured_counter,
             experiment_name=experiment_name,
             sample_name=sample_name,
+            name=name,
             # guid parts
             sample_id=sample_id,
             location=location,
@@ -1812,6 +1816,7 @@ def get_guids_by_run_spec(
     captured_counter: int | None = None,
     experiment_name: str | None = None,
     sample_name: str | None = None,
+    name: str | None = None,
     # guid parts
     sample_id: int | None = None,
     location: int | None = None,
@@ -1830,6 +1835,8 @@ def get_guids_by_run_spec(
           at the time of capture.
         experiment_name: name of the experiment that the run was captured
         sample_name: The name of the sample given when creating the experiment.
+        name: The name of the run, i.e. the name of the measurement that
+          created it.
         sample_id: The sample_id assigned as part of the GUID.
         location: The location code assigned as part of GUID.
         work_station: The workstation assigned as part of the GUID.
@@ -1850,6 +1857,7 @@ def get_guids_by_run_spec(
             captured_counter=captured_counter,
             experiment_name=experiment_name,
             sample_name=sample_name,
+            name=name,
         )
 
         matched_guids = filter_guids_by_parts(guids, location, sample_id, work_station)
@@ -2120,6 +2128,7 @@ def generate_dataset_table(
     headers = (
         "captured_run_id",
         "captured_counter",
+        "name",
         "experiment_name",
         "sample_name",
         "location",
@@ -2133,6 +2142,7 @@ def generate_dataset_table(
             [
                 ds.captured_run_id,
                 ds.captured_counter,
+                ds.name,
                 ds.exp_name,
                 ds.sample_name,
                 parsed_guid["location"],
