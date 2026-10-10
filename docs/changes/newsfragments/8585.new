@@ -1,0 +1,4 @@
+Parameters in a station configuration file can now be given an ``alias_at_root``. Like ``alias`` it makes
+the parameter available under another name, but on the root instrument rather than on the instrument or
+channel that the parameter belongs to, e.g. ``qdac.cutter_gate`` instead of ``qdac.ch01.cutter_gate``.
+The description of ``alias`` in the Station example notebook has been corrected accordingly.
