@@ -285,8 +285,11 @@ def plot_dataset(
         if len(data) == 2:  # 1D PLOTTING
             log.debug(f"Doing a 1D plot with kwargs: {kwargs}")
 
-            xpoints = data[0]["data"]
-            ypoints = data[1]["data"]
+            # The data of array valued parameters, e.g. a ParameterWithSetpoints,
+            # has one row per result. Flatten it, as is done for 2D data below,
+            # so that the plot type is determined from the individual setpoints.
+            xpoints = data[0]["data"].flatten()
+            ypoints = data[1]["data"].flatten()
 
             plottype = get_1D_plottype(xpoints, ypoints)
             log.debug(f"Determined plottype: {plottype}")
