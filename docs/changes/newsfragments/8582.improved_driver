@@ -1,0 +1,4 @@
+The AimTTi PL-P series, Harvard Decadac, Keysight Infiniium and Rigol DS1074Z, DS4000 and DP8xx
+drivers now assign their statically named submodules (``channels``, ``slots`` and ``measure``) to
+typed and documented instance attributes, making them visible to static type checkers and IDE
+completion.
