@@ -22,7 +22,19 @@ if TYPE_CHECKING:
     from qcodes.instrument.channel import ChannelTuple
 
 
-class LakeshoreBaseOutput(InstrumentChannel["LakeshoreBase[Any]"]):
+# Cannot convert to PEP 695: uses default= and covariant= which require PEP 696 (Python 3.13+).
+LakeshoreParentType_co = TypeVar(
+    "LakeshoreParentType_co",
+    bound="LakeshoreBase",
+    default="LakeshoreBase",
+    covariant=True,
+)
+"""Type of the Lakeshore instrument that an output or sensor channel belongs to."""
+
+
+class LakeshoreBaseOutput(
+    InstrumentChannel[LakeshoreParentType_co], Generic[LakeshoreParentType_co]
+):
     MODES: ClassVar[dict[str, int]] = {}
     RANGES: ClassVar[dict[str, int]] = {}
 
@@ -30,7 +42,7 @@ class LakeshoreBaseOutput(InstrumentChannel["LakeshoreBase[Any]"]):
 
     def __init__(
         self,
-        parent: "LakeshoreBase[Any]",
+        parent: LakeshoreParentType_co,
         output_name: str,
         output_index: int,
         has_pid: bool = True,
@@ -460,10 +472,12 @@ class LakeshoreBaseOutput(InstrumentChannel["LakeshoreBase[Any]"]):
             time.sleep(wait_cycle_time)
 
 
-class LakeshoreBaseOutputWithHeaterSetup(LakeshoreBaseOutput):
+class LakeshoreBaseOutputWithHeaterSetup(
+    LakeshoreBaseOutput[LakeshoreParentType_co], Generic[LakeshoreParentType_co]
+):
     def __init__(
         self,
-        parent: "LakeshoreBase[Any]",
+        parent: LakeshoreParentType_co,
         output_name: str,
         output_index: int,
         has_pid: bool = True,
@@ -534,11 +548,12 @@ class LakeshoreBaseOutputWithHeaterSetup(LakeshoreBaseOutput):
 
 
 class LakeshoreBaseOutputWithHeaterSetupAndOutputType(
-    LakeshoreBaseOutputWithHeaterSetup
+    LakeshoreBaseOutputWithHeaterSetup[LakeshoreParentType_co],
+    Generic[LakeshoreParentType_co],
 ):
     def __init__(
         self,
-        parent: "LakeshoreBase[Any]",
+        parent: LakeshoreParentType_co,
         output_name: str,
         output_index: int,
         has_pid: bool = True,
@@ -587,14 +602,16 @@ class LakeshoreBaseOutputWithHeaterSetupAndOutputType(
         )
 
 
-class LakeshoreBaseSensorChannel(InstrumentChannel):
+class LakeshoreBaseSensorChannel(
+    InstrumentChannel[LakeshoreParentType_co], Generic[LakeshoreParentType_co]
+):
     # A dictionary of sensor statuses that assigns a string representation of
     # the status to a status bit weighting (e.g. {4: 'VMIX OVL'})
     SENSOR_STATUSES: ClassVar[dict[int, str]] = {}
 
     def __init__(
         self,
-        parent: "LakeshoreBase[Any]",
+        parent: LakeshoreParentType_co,
         name: str,
         channel: str,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",

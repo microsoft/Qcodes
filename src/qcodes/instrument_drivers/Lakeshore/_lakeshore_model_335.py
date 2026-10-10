@@ -33,7 +33,7 @@ _channel_name_to_outmode_command_map: dict[str, int] = {
 _channel_name_to_outmode_command_map.update({"None": 0})
 
 
-class LakeshoreModel335Channel(LakeshoreBaseSensorChannel):
+class LakeshoreModel335Channel(LakeshoreBaseSensorChannel["LakeshoreModel335"]):
     """
     An InstrumentChannel representing a single sensor on a Lakeshore Model 335.
 
@@ -147,7 +147,9 @@ class LakeshoreModel335Channel(LakeshoreBaseSensorChannel):
         )
 
 
-class LakeshoreModel335CurrentSource(LakeshoreBaseOutputWithHeaterSetupAndOutputType):
+class LakeshoreModel335CurrentSource(
+    LakeshoreBaseOutputWithHeaterSetupAndOutputType["LakeshoreModel335"]
+):
     """
     InstrumentChannel for current sources on Lakeshore Model 335.
 
