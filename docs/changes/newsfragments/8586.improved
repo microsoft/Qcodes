@@ -1,0 +1,4 @@
+Interrupting a measurement with a ``KeyboardInterrupt`` while results were being written to the database
+could store the results that were being written twice, since they were written again when the measurement
+exited. A ``KeyboardInterrupt`` is now delayed until the written results have been removed from the
+results waiting to be written, so each result is stored exactly once.

@@ -2,8 +2,9 @@ import io
 import logging
 import random
 import re
+import signal
 from copy import copy
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -29,6 +30,7 @@ from qcodes.dataset.guids import parse_guid
 from qcodes.dataset.sqlite.connection import atomic, path_to_dbfile
 from qcodes.dataset.sqlite.database import _convert_array, get_DB_location
 from qcodes.dataset.sqlite.queries import _rewrite_timestamps, _unicode_categories
+from qcodes.dataset.sqlite.query_helpers import insert_many_values
 from qcodes.parameters import ParamSpecBase
 from qcodes.utils.types import complex_types, numpy_complex, numpy_floats, numpy_ints
 from tests.common import error_caused_by
@@ -41,6 +43,7 @@ if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
     from qcodes.dataset.experiment_container import Experiment
+    from qcodes.dataset.sqlite.connection import AtomicConnection
     from qcodes.dataset.sqlite.query_helpers import VALUE
 
 n_experiments = 0
@@ -1483,3 +1486,37 @@ def test_flush_data_to_database_logs_failure(
     assert expected_message in caplog.text
     assert "could not write" in caplog.text
     assert dataset._results == results
+
+
+def test_flush_data_to_database_interrupted_while_writing(
+    dataset: DataSet, mocker: "MockerFixture"
+) -> None:
+    """
+    A KeyboardInterrupt that arrives while the results are being written is
+    delayed until the write has been committed. The results that were written
+    must then no longer be pending, otherwise the next flush (e.g. when the
+    measurement exits) writes them a second time.
+    """
+    xparam = ParamSpecBase("x", "numeric")
+    idps = InterDependencies_(standalones=(xparam,))
+    dataset.set_interdependencies(idps)
+    dataset.mark_started()
+
+    def insert_and_interrupt(conn: "AtomicConnection", *args: Any) -> int:
+        with atomic(conn):
+            signal.raise_signal(signal.SIGINT)
+            return insert_many_values(conn, *args)
+
+    mocker.patch(
+        "qcodes.dataset._results_backend.insert_many_values",
+        side_effect=insert_and_interrupt,
+    )
+    dataset._results = [{"x": 1}, {"x": 2}]
+
+    with pytest.raises(KeyboardInterrupt):
+        dataset._flush_data_to_database()
+
+    assert dataset._results == []
+    dataset._flush_data_to_database()
+    assert dataset.number_of_results == 2
+    np.testing.assert_array_equal(dataset.get_parameter_data()["x"]["x"], [1, 2])
