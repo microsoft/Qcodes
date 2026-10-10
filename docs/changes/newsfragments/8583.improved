@@ -1,0 +1,3 @@
+``plot_dataset`` draws 1D data of a ``ParameterWithSetpoints`` as a line plot again rather than as a
+scatter plot. The data of such parameters has one row per result, which made all setpoints appear
+identical when the plot type was determined.

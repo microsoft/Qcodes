@@ -20,8 +20,9 @@ from qcodes.dataset.plotting import (
     plot_dataset,
 )
 from qcodes.instrument_drivers.mock_instruments import DummyInstrument
-from qcodes.parameters import Parameter
+from qcodes.parameters import Parameter, ParameterWithSetpoints
 from qcodes.plotting.axis_labels import _ENGINEERING_PREFIXES, _UNITS_FOR_RESCALING
+from qcodes.validators import Arrays
 
 if TYPE_CHECKING:
     from qcodes.dataset.data_export import DSPlotData
@@ -232,6 +233,53 @@ def test_plot_dataset_2d_shaped(
         assert ylims[0] > -1.0
         assert ylims[1] > 10
         assert ylims[1] < 11
+
+
+def test_plot_dataset_1d_parameter_with_setpoints_is_line_plot(
+    experiment, request: FixtureRequest
+) -> None:
+    """
+    Test that a 1D dataset of a ParameterWithSetpoints is drawn as a line plot.
+
+    The data of such a parameter has a leading dimension of one row per result
+    which used to make the setpoints look identical and the data was therefore
+    drawn as a scatter plot.
+    """
+    n_points = 20
+    # decreasing setpoints to verify that the line is drawn in sorted order
+    setpoint_values = np.linspace(1, 0, n_points)
+    measured_values = setpoint_values**2
+
+    setpoints = Parameter(
+        "freq",
+        get_cmd=lambda: setpoint_values,
+        vals=Arrays(shape=(n_points,)),
+    )
+    spectrum = ParameterWithSetpoints(
+        "spectrum",
+        setpoints=(setpoints,),
+        get_cmd=lambda: measured_values,
+        vals=Arrays(shape=(n_points,)),
+    )
+
+    meas = Measurement()
+    meas.register_parameter(spectrum)
+
+    with meas.run() as datasaver:
+        datasaver.add_result((setpoints, setpoints()), (spectrum, spectrum()))
+
+    dataset = datasaver.dataset
+    assert dataset.cache.data()["spectrum"]["freq"].shape == (1, n_points)
+
+    axes, _ = plot_dataset(dataset)
+
+    assert len(axes) == 1
+    assert len(axes[0].lines) == 1
+    assert len(axes[0].collections) == 0
+
+    line = axes[0].lines[0]
+    assert_allclose(np.asarray(line.get_xdata()), setpoint_values[::-1])
+    assert_allclose(np.asarray(line.get_ydata()), measured_values[::-1])
 
 
 def test_appropriate_kwargs() -> None:
