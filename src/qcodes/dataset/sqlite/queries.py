@@ -650,11 +650,12 @@ def _query_guids_from_run_spec(
     captured_counter: int | None = None,
     experiment_name: str | None = None,
     sample_name: str | None = None,
+    name: str | None = None,
 ) -> list[str]:
     """
     Get the GUIDs of runs matching the supplied run specifications.
 
-    # Todo: do we need to select by start/end time too? Is result name useful?
+    # Todo: do we need to select by start/end time too?
 
     Args:
         conn: connection to the database.
@@ -664,6 +665,8 @@ def _query_guids_from_run_spec(
             run at capture time.
         experiment_name: Name of the experiment that the runs should belong to.
         sample_name: Name of the sample that the query should be restricted to.
+        name: Name of the runs, i.e. the name of the measurement that
+            created them.
 
     Returns:
         A list of the GUIDs matching the supplied specifications.
@@ -685,7 +688,7 @@ def _query_guids_from_run_spec(
         exp_ids = None
 
     conds = []
-    inputs = []
+    inputs: list[int | str] = []
 
     if exp_ids is not None:
         exp_placeholder = sql_placeholder_string(len(exp_ids))
@@ -697,6 +700,9 @@ def _query_guids_from_run_spec(
     if captured_counter is not None:
         conds.append("captured_counter is ?")
         inputs.append(captured_counter)
+    if name is not None:
+        conds.append("name is ?")
+        inputs.append(name)
 
     if len(conds) >= 1:
         where_clause = " WHERE " + " AND ".join(conds)

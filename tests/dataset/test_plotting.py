@@ -10,6 +10,7 @@ from numpy.testing import assert_allclose
 from pytest import FixtureRequest
 
 import qcodes as qc
+from qcodes.dataset.data_set import new_data_set
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.plotting import (
@@ -432,3 +433,25 @@ def test_plot_dataset_parameters(experiment, request: FixtureRequest, params) ->
         # actual data and plotted not exactly equal (?)
         # so check for very small diff
         assert_allclose(np.array(plotted), data, rtol=1e-10)
+
+
+def test_plot_dataset_title(experiment, some_interdeps) -> None:
+    """
+    Test that the title of the plot contains the run id, the name of the
+    run, the experiment name and the sample name.
+    """
+    dataset = new_data_set("frequency_sweep", exp_id=experiment.exp_id)
+    dataset.set_interdependencies(some_interdeps[1])
+    dataset.mark_started()
+    dataset.add_results(
+        [{"ps1": setpoint, "ps2": 2 * setpoint} for setpoint in range(5)]
+    )
+    dataset.mark_completed()
+
+    axes, _ = plot_dataset(dataset)
+
+    assert len(axes) == 1
+    title = axes[0].get_title().replace("\n", " ")
+    assert title == (
+        "Run #1: frequency_sweep, Experiment test-experiment (test-sample)"
+    )

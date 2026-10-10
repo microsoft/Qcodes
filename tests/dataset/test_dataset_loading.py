@@ -354,6 +354,48 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps) -> None:
     assert empty_guid_list == []
 
 
+def test_load_by_run_spec_name(empty_temp_db, some_interdeps) -> None:
+    exp = new_experiment("te1", sample_name="ts1")
+
+    def create_ds_with_name(name: str) -> DataSet:
+        ds = new_data_set(name, exp_id=exp.exp_id)
+        ds.set_interdependencies(some_interdeps[1])
+        ds.mark_started()
+        ds.add_results([{"ps1": 1, "ps2": 2}])
+        ds.mark_completed()
+        return ds
+
+    run_names = ["sweep", "calibration", "sweep"]
+    created_ds = [create_ds_with_name(name) for name in run_names]
+
+    conn = created_ds[0].conn
+
+    guids_sweep = get_guids_by_run_spec(name="sweep", conn=conn)
+    assert guids_sweep == [created_ds[0].guid, created_ds[2].guid]
+    with pytest.raises(NameError, match="More than one matching"):
+        load_by_run_spec(name="sweep", conn=conn)
+
+    loaded_ds = load_by_run_spec(name="calibration", conn=conn)
+    assert loaded_ds.the_same_dataset_as(created_ds[1])
+    assert loaded_ds.name == "calibration"
+
+    # the name can be combined with the other parts of the run spec
+    loaded_ds = load_by_run_spec(name="sweep", captured_counter=3, conn=conn)
+    assert loaded_ds.the_same_dataset_as(created_ds[2])
+
+    guids_sweep_te1 = get_guids_by_run_spec(
+        name="sweep", experiment_name="te1", sample_name="ts1", conn=conn
+    )
+    assert guids_sweep_te1 == guids_sweep
+
+    assert (
+        get_guids_by_run_spec(name="calibration", captured_counter=1, conn=conn) == []
+    )
+    assert get_guids_by_run_spec(name="nosuchname", conn=conn) == []
+    with pytest.raises(NameError, match="No run matching"):
+        load_by_run_spec(name="nosuchname", conn=conn)
+
+
 def test_callback(scalar_datasets_parameterized: DataSet) -> None:
     called_progress: list[float] = []
 

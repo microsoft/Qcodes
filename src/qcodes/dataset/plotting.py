@@ -123,7 +123,8 @@ def plot_dataset(
     created dynamically. If colorbar axes are supplied, they will be reused,
     yet new colorbar axes will be returned.
 
-    The plot has a title that comprises run id, experiment name, and sample
+    The plot has a title that comprises run id, run name (i.e. the name of
+    the measurement that created the dataset), experiment name, and sample
     name.
 
     ``**kwargs`` are passed to matplotlib's relevant plotting functions
@@ -204,7 +205,8 @@ def plot_dataset(
     experiment_name = dataset.exp_name
     sample_name = dataset.sample_name
     title = (
-        f"Run #{dataset.captured_run_id}, Experiment {experiment_name} ({sample_name})"
+        f"Run #{dataset.captured_run_id}: {dataset.name}, "
+        f"Experiment {experiment_name} ({sample_name})"
     )
 
     alldata: NamedData = _get_data_from_ds(dataset)
