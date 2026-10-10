@@ -727,6 +727,8 @@ class Station(Metadatable, DelegateAttributes):
                         )
                 elif attr == "alias":
                     setattr(parameter.instrument, val, parameter)
+                elif attr == "alias_at_root":
+                    setattr(parameter.root_instrument, val, parameter)
                 elif attr == "initial_value":
                     # skip value attribute so that it gets set last
                     # when everything else has been set up
