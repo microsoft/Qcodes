@@ -195,7 +195,7 @@ def test_faulty_property_surfaces_original_attribute_error() -> None:
             # ``missing`` does not exist; accessing it raises AttributeError.
             # Before this fix, Python fell through to ``__getattr__`` which
             # reported "no attribute 'prop'" and hid the real cause.
-            return self.missing  # type: ignore[attr-defined]
+            return self.missing
 
     obj = WithFaultyProperty()
     with pytest.raises(AttributeError, match="missing"):
@@ -238,7 +238,7 @@ def test_inapplicable_descriptor_does_not_raise_type_error() -> None:
     # ``__name__`` is not defined on ``Plain`` instances, so accessing it
     # should raise ``AttributeError``, never ``TypeError``.
     with pytest.raises(AttributeError):
-        _ = obj.__name__  # type: ignore[attr-defined]
+        _ = obj.__name__
 
     # ``inspect.iscoroutinefunction`` internally does
     # ``getattr(obj, '__name__', None)`` — this must not raise.

@@ -117,13 +117,13 @@ def test_add_component_with_no_name() -> None:
     station.add_component(bob)  # type: ignore[arg-type]
 
     assert ["component0"] == list(station.components.keys())
-    assert bob == station.components["component0"]  # type: ignore[comparison-overlap]
+    assert bob == station.components["component0"]
 
     jay = {"name", "jay"}
     station.add_component(jay)  # type: ignore[arg-type]
 
     assert ["component0", "component1"] == list(station.components.keys())
-    assert jay == station.components["component1"]  # type: ignore[comparison-overlap]
+    assert jay == station.components["component1"]
 
 
 def test_remove_component() -> None:

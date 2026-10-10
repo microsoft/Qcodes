@@ -24,7 +24,7 @@ def _make_controlled_setpoints(
     """Create a ParameterWithSetpoints that infers ``controlled`` via unpack_self."""
 
     class _ControlledSetpoints(ParameterWithSetpoints):
-        def unpack_self(self, value):  # type: ignore[override]
+        def unpack_self(self, value):
             res = super().unpack_self(value)
             res.append((controlled, controlled()))
             return res

@@ -79,12 +79,12 @@ def make_observable_parameter(
 
             p = Parameter(
                 *args,
-                **kwargs,  # type: ignore[misc]
+                **kwargs,
                 set_cmd=set_cmd,
                 get_cmd=get_cmd,
             )
             param = cast("ObservableParam", p)
-            param.get_instr_val = get_cmd  # type: ignore[method-assign]
+            param.get_instr_val = get_cmd
         return param
 
     yield make_parameter
@@ -380,7 +380,7 @@ def test_initial_cache_value_not_applied_to_temporary_base_cache() -> None:
     cache_set_call_count = 0
     original_cache_set = _Cache.set
 
-    def counting_set(self: _Cache, value: object) -> None:  # type: ignore[type-arg]
+    def counting_set(self: _Cache, value: object) -> None:
         nonlocal cache_set_call_count
         cache_set_call_count += 1
         original_cache_set(self, value)

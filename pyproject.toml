@@ -210,6 +210,14 @@ reportUnnecessaryTypeIgnoreComment = "none"
 # but not type ignore comments since mypy already checks if type ignores are necessary
 reportUnnecessaryContains = "none"
 
+# mypy does not check the tests, so pyright is the only checker that can
+# report unnecessary type ignore comments there.
+[[tool.pyright.executionEnvironments]]
+root = "tests"
+# keep resolving ``import tests.…`` from the project root
+extraPaths = ["."]
+reportUnnecessaryTypeIgnoreComment = "error"
+
 [tool.pytest.ini_options]
 minversion = "7.2"
 testpaths = "tests"

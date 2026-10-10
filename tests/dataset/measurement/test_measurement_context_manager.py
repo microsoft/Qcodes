@@ -2132,10 +2132,10 @@ def test_datasaver_2d_multi_parameters_array(
 
     # 30 points in each setpoint value list
     this_sp_val: npt.NDArray = np.array(
-        reduce(list.__add__, [[n] * 3 for n in range(5, 10)], [])  # type: ignore[arg-type]
+        reduce(list.__add__, [[n] * 3 for n in range(5, 10)], [])
     )
     that_sp_val: npt.NDArray = np.array(
-        reduce(list.__add__, [[n] for n in range(9, 12)], []) * 5  # type: ignore[arg-type]
+        reduce(list.__add__, [[n] for n in range(9, 12)], []) * 5
     )
 
     assert isinstance(ds, DataSet)

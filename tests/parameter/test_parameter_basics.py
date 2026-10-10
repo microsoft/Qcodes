@@ -252,7 +252,7 @@ def test_underlying_instrument_for_virtual_parameter() -> None:
     p._instrument = named_instrument  # type: ignore[assignment]
     vp = VirtualParameter("test_param", param=p)
 
-    assert vp.underlying_instrument is named_instrument  # type: ignore[comparison-overlap]
+    assert vp.underlying_instrument is named_instrument
 
 
 def test_get_cmd_str_no_instrument_raises() -> None:

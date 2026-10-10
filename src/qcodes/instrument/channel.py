@@ -3,7 +3,14 @@
 from __future__ import annotations
 
 import sys
-from collections.abc import Callable, Iterable, Iterator, MutableSequence, Sequence
+from collections.abc import (
+    Callable,
+    Iterable,
+    Iterator,
+    Mapping,
+    MutableSequence,
+    Sequence,
+)
 from typing import TYPE_CHECKING, Any, Generic, Self, cast, overload
 
 from typing_extensions import TypeVar
@@ -193,13 +200,16 @@ class ChannelTuple[InstrumentModuleType: "InstrumentModule"](
         self._snapshotable = snapshotable
         self._paramclass = multichan_paramclass
 
-        self._channel_mapping: dict[str, InstrumentModuleType] = {}
+        # The storage is typed as read-only (``Sequence`` and ``Mapping``) so
+        # that type checkers infer ``ChannelTuple`` as covariant in its
+        # channel type. ``ChannelList`` keeps its own mutable references to
+        # the same objects.
+        self._channels: Sequence[InstrumentModuleType]
         # provide lookup of channels by name
-        # If a list of channels is not provided, define a list to store
-        # channels. This will eventually become a locked tuple.
-        self._channels: list[InstrumentModuleType]
+        self._channel_mapping: Mapping[str, InstrumentModuleType]
         if chan_list is None:
             self._channels = []
+            self._channel_mapping = {}
         else:
             self._channels = list(chan_list)
             self._channel_mapping = {
@@ -331,7 +341,7 @@ class ChannelTuple[InstrumentModuleType: "InstrumentModule"](
 
     def index(
         self,
-        obj: InstrumentModuleType,
+        obj: object,
         start: int = 0,
         stop: int = sys.maxsize,
     ) -> int:
@@ -346,7 +356,7 @@ class ChannelTuple[InstrumentModuleType: "InstrumentModule"](
         """
         return self._channels.index(obj, start, stop)
 
-    def count(self, obj: InstrumentModuleType) -> int:
+    def count(self, obj: object) -> int:
         """Returns number of instances of the given object in the list
 
         Args:
@@ -703,6 +713,15 @@ class ChannelList[InstrumentModuleType: "InstrumentModule"](
         super().__init__(
             parent, name, chan_type, chan_list, snapshotable, multichan_paramclass
         )
+        # Mutable views of the storage that ``ChannelTuple`` exposes read-only.
+        # ``_channels`` and ``_channel_mapping`` refer to these same objects,
+        # so they must only be modified in place, never reassigned.
+        self._mutable_channels: list[InstrumentModuleType] = list(self._channels)
+        self._mutable_channel_mapping: dict[str, InstrumentModuleType] = dict(
+            self._channel_mapping
+        )
+        self._channels = self._mutable_channels
+        self._channel_mapping = self._mutable_channel_mapping
         if len(self._channels) > 0:
             self._locked = True
         else:
@@ -717,10 +736,8 @@ class ChannelList[InstrumentModuleType: "InstrumentModule"](
     def __delitem__(self, key: int | slice) -> None:
         if self._locked:
             raise AttributeError("Cannot delete from a locked channel list")
-        self._channels.__delitem__(key)
-        self._channel_mapping = {
-            channel.short_name: channel for channel in self._channels
-        }
+        self._mutable_channels.__delitem__(key)
+        self._rebuild_channel_mapping()
 
     @overload
     def __setitem__(self, index: int, value: InstrumentModuleType) -> None: ...
@@ -741,15 +758,20 @@ class ChannelList[InstrumentModuleType: "InstrumentModule"](
         # asserts added to work around https://github.com/python/mypy/issues/7858
         if isinstance(index, int):
             assert isinstance(value, InstrumentModule)
-            self._channels[index] = value  # type: ignore[assignment]
+            self._mutable_channels[index] = value  # type: ignore[assignment]
             # mypy does not know that InstrumentModuleType is a TypeVar bound to
             # InstrumentModule so complains here
         else:
             assert not isinstance(value, InstrumentModule)
-            self._channels[index] = value
-        self._channel_mapping = {
-            channel.short_name: channel for channel in self._channels
-        }
+            self._mutable_channels[index] = value
+        self._rebuild_channel_mapping()
+
+    def _rebuild_channel_mapping(self) -> None:
+        # Update in place so that ``_channel_mapping`` stays the same object.
+        self._mutable_channel_mapping.clear()
+        self._mutable_channel_mapping.update(
+            {channel.short_name: channel for channel in self._mutable_channels}
+        )
 
     def append(self, obj: InstrumentModuleType) -> None:
         """
@@ -768,8 +790,8 @@ class ChannelList[InstrumentModuleType: "InstrumentModule"](
                 f"type. Adding {type(obj).__name__} to a "
                 f"list of {self._chan_type.__name__}."
             )
-        self._channel_mapping[obj.short_name] = obj
-        self._channels.append(obj)
+        self._mutable_channel_mapping[obj.short_name] = obj
+        self._mutable_channels.append(obj)
 
     def clear(self) -> None:
         """
@@ -777,9 +799,8 @@ class ChannelList[InstrumentModuleType: "InstrumentModule"](
         """
         if self._locked:
             raise AttributeError("Cannot clear a locked ChannelList")
-        # when not locked the _channels seq is a list
-        self._channels.clear()
-        self._channel_mapping.clear()
+        self._mutable_channels.clear()
+        self._mutable_channel_mapping.clear()
 
     def remove(self, obj: InstrumentModuleType) -> None:
         """
@@ -792,8 +813,8 @@ class ChannelList[InstrumentModuleType: "InstrumentModule"](
         if self._locked:
             raise AttributeError("Cannot remove from a locked channel list")
         else:
-            self._channels.remove(obj)
-            self._channel_mapping.pop(obj.short_name)
+            self._mutable_channels.remove(obj)
+            self._mutable_channel_mapping.pop(obj.short_name)
 
     def extend(self, objects: Iterable[InstrumentModuleType]) -> None:
         """
@@ -811,8 +832,10 @@ class ChannelList[InstrumentModuleType: "InstrumentModule"](
         objects_tuple = tuple(objects)
         if not all(isinstance(obj, self._chan_type) for obj in objects_tuple):
             raise TypeError("All items in a channel list must be of the same type.")
-        self._channels.extend(objects_tuple)
-        self._channel_mapping.update({obj.short_name: obj for obj in objects_tuple})
+        self._mutable_channels.extend(objects_tuple)
+        self._mutable_channel_mapping.update(
+            {obj.short_name: obj for obj in objects_tuple}
+        )
 
     def insert(self, index: int, obj: InstrumentModuleType) -> None:
         """
@@ -830,8 +853,8 @@ class ChannelList[InstrumentModuleType: "InstrumentModule"](
                 f"All items in a channel list must be of the same "
                 f"type. Adding {type(obj).__name__} to a list of {self._chan_type.__name__}."
             )
-        self._channels.insert(index, obj)
-        self._channel_mapping[obj.short_name] = obj
+        self._mutable_channels.insert(index, obj)
+        self._mutable_channel_mapping[obj.short_name] = obj
 
     def get_validator(self) -> ChannelTupleValidator:
         """
