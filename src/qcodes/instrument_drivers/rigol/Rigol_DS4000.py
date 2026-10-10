@@ -22,6 +22,7 @@ from qcodes.parameters import ArrayParameter, ParamRawDataType
 if TYPE_CHECKING:
     from typing import Unpack
 
+    from qcodes.instrument import ChannelTuple
     from qcodes.parameters import Parameter
 
 log = logging.getLogger(__name__)
@@ -345,7 +346,10 @@ class RigolDS4000(VisaInstrument):
             channel = RigolDS4000Channel(self, f"ch{channel_number}", channel_number)
             channels.append(channel)
 
-        self.add_submodule("channels", channels.to_channel_tuple())
+        self.channels: ChannelTuple[RigolDS4000Channel] = self.add_submodule(
+            "channels", channels.to_channel_tuple()
+        )
+        """ChannelTuple holding the oscilloscope channels."""
 
     def _check_firmware_version(self) -> None:
         # Require version 00.02.03
