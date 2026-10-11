@@ -25,11 +25,35 @@ if TYPE_CHECKING:
 # Cannot convert to PEP 695: uses default= and covariant= which require PEP 696 (Python 3.13+).
 LakeshoreParentType_co = TypeVar(
     "LakeshoreParentType_co",
-    bound="LakeshoreBase",
-    default="LakeshoreBase",
+    bound="LakeshoreBaseInstrument",
+    default="LakeshoreBaseInstrument",
     covariant=True,
 )
 """Type of the Lakeshore instrument that an output or sensor channel belongs to."""
+
+
+class LakeshoreBaseInstrument(VisaInstrument):
+    """
+    Non-generic base class shared by all Lakeshore temperature controllers.
+
+    Drivers should subclass :class:`LakeshoreBase`, which adds the sensor
+    channel handling. This class exists so that output and sensor channels can
+    declare "my parent is some Lakeshore instrument" without having to name the
+    generic :class:`LakeshoreBase`, which would resolve to ``LakeshoreBase[Any]``
+    and lose the channel type.
+    """
+
+    # This dict has channel name in the driver as keys, and channel "name" that
+    # is used in instrument commands as values. For example, if channel called
+    # "B" is referred to in instrument commands as '2', then this dictionary
+    # will contain {'B': '2'} entry.
+    channel_name_command: ClassVar[dict[str, str]] = {}
+
+    input_channel_parameter_values_to_channel_name_on_instrument: ClassVar[
+        dict[Any, str]
+    ]
+
+    default_terminator = "\r\n"
 
 
 class LakeshoreBaseOutput(
@@ -767,7 +791,7 @@ ChanType_co = TypeVar(
 )
 
 
-class LakeshoreBase(VisaInstrument, Generic[ChanType_co]):
+class LakeshoreBase(LakeshoreBaseInstrument, Generic[ChanType_co]):
     """
     This base class has been written to be that base for the Lakeshore 336
     and 372. There are probably other lakeshore modes that can use the
@@ -782,18 +806,6 @@ class LakeshoreBase(VisaInstrument, Generic[ChanType_co]):
     instances (subclasses of those) in your `LakeshoreBase`'s subclass
     constructor via `add_submodule` method.
     """
-
-    # This dict has channel name in the driver as keys, and channel "name" that
-    # is used in instrument commands as values. For example, if channel called
-    # "B" is referred to in instrument commands as '2', then this dictionary
-    # will contain {'B': '2'} entry.
-    channel_name_command: ClassVar[dict[str, str]] = {}
-
-    input_channel_parameter_values_to_channel_name_on_instrument: ClassVar[
-        dict[Any, str]
-    ]
-
-    default_terminator = "\r\n"
 
     def __init__(
         self,
