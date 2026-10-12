@@ -29,12 +29,14 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.12", "3.13", "3.14"]
+        python-version: ["3.12", "3.13", "3.14", "3.15"]
         exclude:
           - os: windows-latest
             python-version: 3.13
           - os: windows-latest
             python-version: 3.14
+          - os: windows-latest
+            python-version: 3.15
     env:
       OS: ${{ matrix.os }}
       SPHINX_WARNINGS_AS_ERROR: true
@@ -69,10 +71,21 @@ jobs:
         attempt_limit: 5
         attempt_delay: 1000
       if: runner.os == 'Windows'
+    # h5py does not ship wheels for Python 3.15 yet so it is built from source,
+    # which requires the HDF5 headers. Remove once h5py ships cp315 wheels.
+    - name: Install HDF5 headers to build h5py from source
+      if: ${{ matrix.python-version == '3.15' }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libhdf5-dev
+      shell: bash
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
       with:
         python-version: ${{ matrix.python-version }}
+        # Python 3.15.0 final is not yet in the actions/python-versions manifest.
+        # This only has an effect when no stable release of the version exists.
+        allow-prereleases: true
         cache: 'pip'
         cache-dependency-path: |
           pyproject.toml
