@@ -44,7 +44,7 @@ def test_is_qcodes_installed_editably_reads_direct_url(
     )
     assert is_qcodes_installed_editably() is False
 
-    # installed from a local directory by pip, so dir_info is empty
+    # installed from a local directory but not editable, so dir_info is empty
     read_text.return_value = '{"url": "file:///home/user/qcodes", "dir_info": {}}'
     assert is_qcodes_installed_editably() is False
 
