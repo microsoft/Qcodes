@@ -9,7 +9,7 @@ import numpy.typing as npt
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
 
-    from qcodes.dataset.dond.do_nd_utils import ActionsT
+    from qcodes.dataset._dond.do_nd_utils import ActionsT
     from qcodes.parameters import ParameterBase
 
 

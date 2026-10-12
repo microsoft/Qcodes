@@ -1,4 +1,4 @@
-from .BaselSP983 import BaselSP983
+from ._basel_sp983 import BaselSP983
 
 
 class BaselSP983c(BaselSP983):

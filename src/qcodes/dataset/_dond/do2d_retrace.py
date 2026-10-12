@@ -21,8 +21,8 @@ TRACER = trace.get_tracer(__name__)
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from qcodes.dataset._dond.do_nd_utils import ActionsT
     from qcodes.dataset.data_set_protocol import DataSetProtocol
-    from qcodes.dataset.dond.do_nd_utils import ActionsT
     from qcodes.dataset.experiment_container import Experiment
     from qcodes.parameters import ParameterBase
 

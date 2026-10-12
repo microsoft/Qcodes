@@ -14,7 +14,12 @@ the supported, statically typed alternative.
 
 from __future__ import annotations
 
+import os
+import subprocess
+import sys
+import textwrap
 import warnings
+from pathlib import Path
 
 import pytest
 
@@ -26,6 +31,39 @@ import qcodes.parameters
 import qcodes.station
 import qcodes.validators
 from qcodes.utils import QCoDeSDeprecationWarning
+
+
+@pytest.mark.skipif(
+    not hasattr(sys, "set_lazy_imports"), reason="requires Python 3.15 lazy imports"
+)
+def test_public_reexports_with_lazy_qcodes_imports() -> None:
+    lazy_imports_path = Path(__file__).parents[1] / ".github" / "lazy-imports"
+    code = textwrap.dedent(
+        """
+        import qcodes.dataset as dataset
+        import qcodes.dataset._dond.do_nd
+        import qcodes.utils as utils
+        import qcodes.utils._full_class
+        from qcodes.instrument_drivers import basel, stanford_research
+
+        assert callable(dataset.dond)
+        assert callable(utils.full_class)
+        assert callable(stanford_research.SR830)
+        assert callable(basel.BaselSP983)
+        """
+    )
+
+    subprocess.run(
+        [sys.executable, "-c", code],
+        check=True,
+        env={
+            **os.environ,
+            "PYTHON_LAZY_IMPORTS": "all",
+            "PYTHONPATH": os.pathsep.join(
+                (str(lazy_imports_path), os.environ.get("PYTHONPATH", ""))
+            ),
+        },
+    )
 
 
 def test_top_level_parameter_shorthand_deprecated() -> None:

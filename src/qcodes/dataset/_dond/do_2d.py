@@ -10,8 +10,7 @@ from opentelemetry import trace
 from tqdm.auto import tqdm
 
 from qcodes import config
-from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
-from qcodes.dataset.dond.do_nd_utils import (
+from qcodes.dataset._dond.do_nd_utils import (
     BreakConditionInterrupt,
     _handle_plotting,
     _register_actions,
@@ -19,6 +18,7 @@ from qcodes.dataset.dond.do_nd_utils import (
     _set_write_period,
     catch_interrupts,
 )
+from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.threading import (
     SequentialParamsCaller,
@@ -34,13 +34,13 @@ TRACER = trace.get_tracer(__name__)
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
-    from qcodes.dataset.dond.do_nd_utils import (
+    from qcodes.dataset._dond.do_nd_utils import (
         ActionsT,
         AxesTupleListWithDataSet,
         BreakConditionT,
         ParamMeasT,
     )
+    from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
     from qcodes.dataset.experiment_container import Experiment
 
 

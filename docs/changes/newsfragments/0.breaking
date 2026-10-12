@@ -1,0 +1,7 @@
+Rename implementation modules that collide with public package attributes so
+that QCoDeS imports can be resolved safely when Python lazy imports are enabled.
+The implementation package ``qcodes.dataset.dond`` and the directly imported
+Stanford Research and Basel driver modules are now private; import their public
+objects from their parent packages instead.
+The Python 3.15 test job now runs with lazy imports enabled for all imports
+involving QCoDeS.

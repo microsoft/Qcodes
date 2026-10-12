@@ -14,8 +14,7 @@ from tqdm.auto import tqdm
 from typing_extensions import TypedDict
 
 from qcodes import config
-from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
-from qcodes.dataset.dond.do_nd_utils import (
+from qcodes.dataset._dond.do_nd_utils import (
     BreakConditionInterrupt,
     _handle_plotting,
     _register_actions,
@@ -23,6 +22,7 @@ from qcodes.dataset.dond.do_nd_utils import (
     _set_write_period,
     catch_interrupts,
 )
+from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.threading import (
     SequentialParamsCaller,
@@ -34,14 +34,14 @@ from qcodes.parameters import ParameterBase
 from .sweeps import AbstractSweep, TogetherSweep
 
 if TYPE_CHECKING:
-    from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
-    from qcodes.dataset.dond.do_nd_utils import (
+    from qcodes.dataset._dond.do_nd_utils import (
         ActionsT,
         AxesTupleListWithDataSet,
         BreakConditionT,
         MultiAxesTupleListWithDataSet,
         ParamMeasT,
     )
+    from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
     from qcodes.dataset.experiment_container import Experiment
 
 LOG = logging.getLogger(__name__)

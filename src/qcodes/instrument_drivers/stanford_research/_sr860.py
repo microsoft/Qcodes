@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from qcodes.instrument_drivers.stanford_research.SR86x import SR86x
+from qcodes.instrument_drivers.stanford_research._sr86x import SR86x
 
 if TYPE_CHECKING:
     from typing import Unpack

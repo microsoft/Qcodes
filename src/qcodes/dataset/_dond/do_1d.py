@@ -11,7 +11,7 @@ from .sweeps import LinSweep
 if TYPE_CHECKING:
     from typing import Unpack
 
-    from qcodes.dataset.dond.do_nd_utils import (
+    from qcodes.dataset._dond.do_nd_utils import (
         AxesTupleListWithDataSet,
         ParamMeasT,
     )

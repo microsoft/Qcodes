@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from qcodes.instrument_drivers.mock_instruments import DummyInstrument
-from qcodes.instrument_drivers.stanford_research.SR830 import (
+from qcodes.instrument_drivers.stanford_research._sr830 import (
     ChannelBuffer,
     ChannelTrace,
 )
