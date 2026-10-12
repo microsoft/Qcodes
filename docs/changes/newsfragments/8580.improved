@@ -1,0 +1,5 @@
+``qcodes.utils.is_qcodes_installed_editably`` no longer shells out to ``pip`` to detect an
+editable install. The editable status is now read directly from the installed package
+metadata (the :pep:`610` ``direct_url.json`` file), which both ``pip`` and ``uv`` write.
+This means the check also works in environments where ``pip`` is not installed, such as
+environments managed by ``uv``, and it no longer requires spawning a subprocess.
