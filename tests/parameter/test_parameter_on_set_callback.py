@@ -63,9 +63,11 @@ def cleanup_db_connections():
     yield
     gc.collect()
 
-    open_connections = [
-        obj for obj in gc.get_objects() if isinstance(obj, sqlite3.Connection)
-    ]
+    open_connections: list[sqlite3.Connection] = []
+    for obj in gc.get_objects():
+        with suppress(ReferenceError):
+            if isinstance(obj, sqlite3.Connection):
+                open_connections.append(obj)
 
     for conn in open_connections:
         with suppress(sqlite3.Error):

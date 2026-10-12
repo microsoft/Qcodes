@@ -328,7 +328,7 @@ def test_do1d_break_condition(caplog: LogCaptureFixture, _param_set, _param) -> 
 
     assert isinstance(data[0], DataSet) is True
     assert (
-        "qcodes.dataset.dond.do_nd_utils",
+        "qcodes.dataset._dond.do_nd_utils",
         logging.WARNING,
         "Measurement has been interrupted, data may be incomplete: Break condition was met.",
     ) in caplog.record_tuples

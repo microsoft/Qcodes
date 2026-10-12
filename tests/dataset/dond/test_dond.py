@@ -27,8 +27,8 @@ from qcodes.dataset import (
     dond,
     new_experiment,
 )
+from qcodes.dataset._dond.do_nd import _Sweeper
 from qcodes.dataset.data_set import DataSet
-from qcodes.dataset.dond.do_nd import _Sweeper
 from qcodes.instrument_drivers.mock_instruments import (
     ArraySetPointParam,
     Multi2DSetPointParam,

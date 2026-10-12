@@ -14,7 +14,12 @@ the supported, statically typed alternative.
 
 from __future__ import annotations
 
+import os
+import subprocess
+import sys
+import textwrap
 import warnings
+from pathlib import Path
 
 import pytest
 
@@ -26,6 +31,93 @@ import qcodes.parameters
 import qcodes.station
 import qcodes.validators
 from qcodes.utils import QCoDeSDeprecationWarning
+
+
+@pytest.mark.skipif(
+    not hasattr(sys, "set_lazy_imports"), reason="requires Python 3.15 lazy imports"
+)
+def test_public_reexports_with_lazy_qcodes_imports() -> None:
+    lazy_imports_path = Path(__file__).parents[1] / ".github" / "lazy-imports"
+    code = textwrap.dedent(
+        """
+        import sys
+
+        import qcodes.dataset as dataset
+        import qcodes.dataset._dond.do_nd
+        import qcodes.utils as utils
+        import qcodes.utils._full_class
+        from qcodes.instrument_drivers import basel, stanford_research
+
+        assert callable(dataset.dond)
+        assert callable(utils.full_class)
+        assert callable(stanford_research.SR830)
+        assert callable(basel.BaselSP983)
+
+        lazy_filter = sys.get_lazy_imports_filter()
+        assert lazy_filter is not None
+        assert not lazy_filter(None, "qcodes.dataset.dond", None)
+        assert not lazy_filter(None, "qcodes.utils.full_class", None)
+        """
+    )
+
+    subprocess.run(
+        [sys.executable, "-c", code],
+        check=True,
+        env={
+            **os.environ,
+            "PYTHON_LAZY_IMPORTS": "all",
+            "PYTHONPATH": os.pathsep.join(
+                (str(lazy_imports_path), os.environ.get("PYTHONPATH", ""))
+            ),
+        },
+    )
+
+
+@pytest.mark.parametrize(
+    ("module_name", "parent_module_name", "attribute_name"),
+    [
+        (
+            "qcodes.dataset.dond.do_nd",
+            "qcodes.dataset",
+            "dond",
+        ),
+        (
+            "qcodes.instrument_drivers.basel.BaselSP983",
+            "qcodes.instrument_drivers.basel",
+            "BaselSP983",
+        ),
+        (
+            "qcodes.instrument_drivers.stanford_research.SR830",
+            "qcodes.instrument_drivers.stanford_research",
+            "SR830",
+        ),
+        ("qcodes.utils.full_class", "qcodes.utils", "full_class"),
+    ],
+)
+def test_deprecated_module_aliases(
+    module_name: str, parent_module_name: str, attribute_name: str
+) -> None:
+    code = textwrap.dedent(
+        f"""
+        import importlib
+        import warnings
+
+        from qcodes.utils.deprecate import QCoDeSDeprecationWarning
+
+        parent_module = importlib.import_module({parent_module_name!r})
+        expected = getattr(parent_module, {attribute_name!r})
+        with warnings.catch_warnings(record=True) as warning_records:
+            warnings.simplefilter("always", QCoDeSDeprecationWarning)
+            deprecated_module = importlib.import_module({module_name!r})
+
+        assert getattr(deprecated_module, {attribute_name!r}) is expected
+        assert len(warning_records) == 1
+        assert issubclass(warning_records[0].category, QCoDeSDeprecationWarning)
+        assert "module" in str(warning_records[0].message)
+        assert "deprecated" in str(warning_records[0].message)
+        """
+    )
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 def test_top_level_parameter_shorthand_deprecated() -> None:
