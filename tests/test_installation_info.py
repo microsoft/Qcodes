@@ -44,6 +44,17 @@ def test_is_qcodes_installed_editably_reads_direct_url(
     )
     assert is_qcodes_installed_editably() is False
 
+    # installed from a local directory by pip, so dir_info is empty
+    read_text.return_value = '{"url": "file:///home/user/qcodes", "dir_info": {}}'
+    assert is_qcodes_installed_editably() is False
+
+    # installed from git, so there is vcs_info but no dir_info
+    read_text.return_value = (
+        '{"url": "https://github.com/microsoft/Qcodes.git", "vcs_info": '
+        '{"vcs": "git", "commit_id": "0123456789abcdef0123456789abcdef01234567"}}'
+    )
+    assert is_qcodes_installed_editably() is False
+
     # installed from an index, so no direct_url.json is written
     read_text.return_value = None
     assert is_qcodes_installed_editably() is False
