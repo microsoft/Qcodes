@@ -1,0 +1,2 @@
+Refactored the ``CopperMountainM5xxx`` base driver to work more generally
+with all S2VNAs (now called ``CopperMountainS2VnaBase``) and added a driver for V0602.
