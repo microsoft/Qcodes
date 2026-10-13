@@ -17,9 +17,9 @@ if TYPE_CHECKING:
     from typing import Unpack
 
 
-class CopperMountainM5xxx(VisaInstrument):
+class CopperMountainS2VnaBase(VisaInstrument):
     """
-    Base class for QCoDeS drivers for Copper Mountain M-series VNAs.
+    Base class for QCoDeS drivers for Copper Mountain S2VNAs.
 
     Not to be instantiated directly. Use model specific subclass.
     https://coppermountaintech.com/help-s2/index.html
@@ -37,10 +37,16 @@ class CopperMountainM5xxx(VisaInstrument):
         address: str,
         min_freq: float,
         max_freq: float,
+        min_power: float,
+        max_power: float,
+        max_points_per_sweep: int,
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ):
         """
-        QCoDeS driver for Copper Mountain M-series VNA (M5xxx).
+        QCoDeS Base driver for Copper Mountain S2VNAs. This should not be
+        instantiated directly. Please see https://coppermountaintech.com/help-s2/index.html
+        for list of compatible instruments.
+
         This driver supports only a single channel.
 
         Args:
@@ -48,15 +54,20 @@ class CopperMountainM5xxx(VisaInstrument):
             address: VISA address of the instrument.
             min_freq: Minimum frequency supported by the instrument (in Hz).
             max_freq: Maximum frequency supported by the instrument (in Hz).
+            min_power: Minimum output power (in dBm).
+            max_power: Maximum output power (in dBm).
+            max_points_per_sweep: Maximum number of measurement points per sweep.
             **kwargs: Additional keyword arguments for VisaInstrument.
 
         """
 
         super().__init__(name=name, address=address, **kwargs)
-        self.min_freq = min_freq
-        self.max_freq = max_freq
-        self.min_points = 2
-        self.max_points = 200001
+        self._min_freq = min_freq
+        self._max_freq = max_freq
+        self._min_power = min_power
+        self._max_power = max_power
+        self._min_points_per_sweep = 2
+        self._max_points_per_sweep = max_points_per_sweep
 
         self.output: Parameter = self.add_parameter(
             name="output",
@@ -76,7 +87,7 @@ class CopperMountainM5xxx(VisaInstrument):
             set_cmd="SOUR:POW {}",
             unit="dBm",
             docstring="Sets or reads out the power level for the frequency sweep type in dBm.",
-            vals=Numbers(min_value=-55, max_value=5),
+            vals=Numbers(min_value=self._min_power, max_value=self._max_power),
         )
         """Sets or reads out the power level for the frequency sweep type in dBm."""
 
@@ -203,7 +214,7 @@ class CopperMountainM5xxx(VisaInstrument):
             unit="Hz",
             docstring="Sets or reads out the stimulus start value "
             "of the sweep range for linear or logarithmic sweep type.",
-            vals=Numbers(min_value=self.min_freq, max_value=self.max_freq - 1),
+            vals=Numbers(min_value=self._min_freq, max_value=self._max_freq - 1),
         )
         """Sets or reads out the stimulus start value of the sweep
         range for linear or logarithmic sweep type."""
@@ -217,7 +228,7 @@ class CopperMountainM5xxx(VisaInstrument):
             unit="Hz",
             docstring="Sets or reads out the stimulus stop value of the "
             "sweep range for linear or logarithmic sweep type.",
-            vals=Numbers(min_value=self.min_freq + 1, max_value=self.max_freq),
+            vals=Numbers(min_value=self._min_freq + 1, max_value=self._max_freq),
         )
         """Sets or reads out the stimulus stop value of the sweep
         range for linear or logarithmic sweep type."""
@@ -231,7 +242,7 @@ class CopperMountainM5xxx(VisaInstrument):
             unit="Hz",
             docstring="Sets or reads out the stimulus center value of "
             "the sweep range for linear or logarithmic sweep type.",
-            vals=Numbers(min_value=self.min_freq + 1, max_value=self.max_freq - 1),
+            vals=Numbers(min_value=self._min_freq + 1, max_value=self._max_freq - 1),
         )
         """Sets or reads out the stimulus center value of the sweep range for
         linear or logarithmic sweep type."""
@@ -245,7 +256,7 @@ class CopperMountainM5xxx(VisaInstrument):
             unit="Hz",
             docstring="Sets or reads out the stimulus span value of the "
             "sweep range for linear or logarithmic sweep type.",
-            vals=Numbers(min_value=1, max_value=self.max_freq - 1),
+            vals=Numbers(min_value=1, max_value=self._max_freq - 1),
         )
         """Sets or reads out the stimulus span value of the sweep range
         for linear or logarithmic sweep type."""
@@ -258,7 +269,10 @@ class CopperMountainM5xxx(VisaInstrument):
             get_cmd="SENS1:SWE:POIN?",
             set_cmd=self._set_number_of_points,
             docstring="Sets or reads out the number of measurement points.",
-            vals=Ints(min_value=self.min_points, max_value=self.max_points),
+            vals=Ints(
+                min_value=self._min_points_per_sweep,
+                max_value=self._max_points_per_sweep,
+            ),
         )
         """Sets or reads out the number of measurement points."""
 
@@ -625,7 +639,7 @@ class CopperMountainM5xxx(VisaInstrument):
 
 
 class FrequencySweepMagPhase(
-    MultiParameter[tuple[NDArray, NDArray], CopperMountainM5xxx]
+    MultiParameter[tuple[NDArray, NDArray], CopperMountainS2VnaBase]
 ):
     """
     Sweep that returns magnitude and phase.
@@ -637,7 +651,7 @@ class FrequencySweepMagPhase(
         start: float,
         stop: float,
         number_of_points: int,
-        instrument: CopperMountainM5xxx,
+        instrument: CopperMountainS2VnaBase,
         expected_measurement_duration: float = 600,
         **kwargs: Any,
     ) -> None:
@@ -735,7 +749,7 @@ class FrequencySweepMagPhase(
 
 
 class PointMagPhase(
-    MultiParameter[tuple[np.floating, np.floating], CopperMountainM5xxx]
+    MultiParameter[tuple[np.floating, np.floating], CopperMountainS2VnaBase]
 ):
     """
     Returns the average Sxx of a frequency sweep.
@@ -746,7 +760,7 @@ class PointMagPhase(
     def __init__(
         self,
         name: str,
-        instrument: CopperMountainM5xxx,
+        instrument: CopperMountainS2VnaBase,
         expected_measurement_duration: float = 600,
         **kwargs: Any,
     ) -> None:
@@ -834,7 +848,7 @@ class PointMagPhase(
         return 20 * np.log10(abs(sxx_mean)), (np.angle(sxx_mean))
 
 
-class PointIQ(MultiParameter[tuple[np.floating, np.floating], CopperMountainM5xxx]):
+class PointIQ(MultiParameter[tuple[np.floating, np.floating], CopperMountainS2VnaBase]):
     """
     Returns the average Sxx of a frequency sweep, in terms of I and Q.
     Work around for a CW mode where only one point is read.
@@ -844,7 +858,7 @@ class PointIQ(MultiParameter[tuple[np.floating, np.floating], CopperMountainM5xx
     def __init__(
         self,
         name: str,
-        instrument: CopperMountainM5xxx,
+        instrument: CopperMountainS2VnaBase,
         expected_measurement_duration: float = 600,
         **kwargs: Any,
     ) -> None:
