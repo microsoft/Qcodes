@@ -1,0 +1,2 @@
+QCoDeS is now tested against Python 3.15 on Linux. The ``zhinst-qcodes`` test dependency is not installed
+on Python 3.15 since ``zhinst-core`` does not yet provide wheels for it.

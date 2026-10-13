@@ -6,36 +6,40 @@ QCoDeS
 
 import json
 import logging
-import subprocess
-from importlib.metadata import distributions
+from importlib.metadata import distribution, distributions
 
 log = logging.getLogger(__name__)
 
 
 def is_qcodes_installed_editably() -> bool | None:
     """
-    Try to ask pip whether QCoDeS is installed in editable mode and return
-    the answer a boolean. Returns None if pip somehow did not respond as
-    expected.
+    Check whether QCoDeS is installed in editable mode and return the answer
+    as a boolean. Returns None if the installation metadata could not be read
+    or understood.
+
+    The answer is read from the ``direct_url.json`` file that installers such
+    as pip and uv write as part of the package metadata, as specified by
+    :pep:`610`. This means that no installer needs to be available at runtime.
     """
 
-    answer: bool | None
-
     try:
-        pipproc = subprocess.run(
-            ["python", "-m", "pip", "list", "-e", "--no-index", "--format=json"],
-            check=True,
-            stdout=subprocess.PIPE,
-        )
-        e_pkgs = json.loads(pipproc.stdout.decode("utf-8"))
-        answer = any(
-            isinstance(pkg, dict) and pkg.get("name") == "qcodes" for pkg in e_pkgs
-        )
+        # On Python 3.13+ ``Distribution.origin`` parses this file for us, but it
+        # is typed as ``SimpleNamespace`` so everything below it becomes ``Any``,
+        # and ``dir_info`` is missing entirely for VCS installs. Parsing the json
+        # ourselves keeps this typed and works on all supported Python versions.
+        direct_url = distribution("qcodes").read_text("direct_url.json")
+        if direct_url is None:
+            # No direct_url.json means that QCoDeS was installed from an index
+            # (e.g. PyPI) and therefore not in editable mode.
+            return False
+        # A non-editable install from a local directory writes an empty
+        # "dir_info", and a VCS or archive install writes none at all, so the
+        # "editable" key is absent rather than false in those cases.
+        dir_info = json.loads(direct_url).get("dir_info", {})
+        return dir_info.get("editable", False) is True
     except Exception:
         log.exception("Could not determine if QCoDeS is installed editably")
-        answer = None
-
-    return answer
+        return None
 
 
 def get_all_installed_package_versions() -> dict[str, str]:
