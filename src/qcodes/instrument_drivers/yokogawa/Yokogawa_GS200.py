@@ -863,7 +863,7 @@ class YokogawaGS200(VisaInstrument):
                         "Need to enable output before hardware ramps are allowed."
                     )
 
-                if abs(ramp_to) > (rng := self.range()):
+                if abs(ramp_to) > (rng := self._get_output_limit(self.range())):
                     raise ValueError(
                         f"Desired output level not in range  [-{rng:.3}, {rng:.3}]"
                     )
@@ -985,6 +985,8 @@ class YokogawaGS200(VisaInstrument):
                         f"Invalid mode {mode}. Mode must be one of 'CURR' or 'VOLT'"
                     )
 
+        self_range = self._get_output_limit(self_range)
+
         # Check we are not trying to set an out of range value
         if self.range() is None or abs(output_level) > abs(self_range):
             # Check that the range hasn't changed
@@ -995,6 +997,7 @@ class YokogawaGS200(VisaInstrument):
                         "Trying to set output but not in"
                         " auto mode and range is unknown."
                     )
+                self_range = self._get_output_limit(self_range)
             # If we are still out of range, raise a value error
             if abs(output_level) > abs(self_range):
                 raise ValueError(
@@ -1008,6 +1011,26 @@ class YokogawaGS200(VisaInstrument):
             auto_str = ""
         cmd_str = f":SOUR:LEV{auto_str} {output_level:.5e}"
         self.write(cmd_str)
+
+    def _get_output_limit(self, source_range: float) -> float:
+        """Return the generated output limit for a nominal source range.
+
+        The GS200 manual, section 5.2, specifies 120% of the nominal range,
+        except for the largest ranges: 32 V and 200 mA respectively.
+        """
+        mode = self.source_mode.cache.get(get_if_invalid=True)
+        match mode:
+            case "VOLT":
+                maximum = 32.0
+            case "CURR":
+                maximum = 200e-3
+            case _:
+                if TYPE_CHECKING:
+                    assert_never(mode)
+                raise ValueError(
+                    f"Invalid mode {mode}. Mode must be one of 'CURR' or 'VOLT'"
+                )
+        return min(1.2 * source_range, maximum)
 
     def _update_measurement_module(
         self,
@@ -1116,8 +1139,8 @@ class YokogawaGS200(VisaInstrument):
             output_range: Range to set. For voltage, we have the ranges [10e-3,
                 100e-3, 1e0, 10e0, 30e0]. For current, we have the ranges [1e-3,
                 10e-3, 100e-3, 200e-3]. If auto_range = False, then setting the
-                output can only happen if the set value is smaller than the
-                present range.
+                output is limited to the generated output range for the
+                present nominal source range.
 
         """
         self._assert_mode(mode)
@@ -1136,7 +1159,8 @@ class YokogawaGS200(VisaInstrument):
             range: For voltage, we have the ranges [10e-3, 100e-3, 1e0, 10e0,
                 30e0]. For current, we have the ranges [1e-3, 10e-3, 100e-3,
                 200e-3]. If auto_range = False, then setting the output can only
-                happen if the set value is smaller than the present range.
+                happen within the generated output range for the present
+                nominal source range.
 
         """
         self._assert_mode(mode)
