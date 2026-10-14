@@ -461,7 +461,7 @@ types-requests==2.33.0.20260906
     # via
     #   qcodes (pyproject.toml)
     #   types-tqdm
-types-tabulate==0.10.0.20260508
+types-tabulate==0.10.0.20261006
     # via qcodes (pyproject.toml)
 types-tqdm==4.70.0.20260906
     # via qcodes (pyproject.toml)
