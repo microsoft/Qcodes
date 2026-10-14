@@ -376,7 +376,7 @@ def test_get_level_name_with_invalid_type() -> None:
 def test_get_level_code_with_invalid_type() -> None:
     """Only str and int can be converted to a logging level code."""
     with pytest.raises(RuntimeError, match="get_level_code: Cannot to convert level"):
-        logger.get_level_code(1.5)  # type: ignore[arg-type]
+        logger.get_level_code(1.5)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 class ScopedDummyInstrument(DummyInstrument):
