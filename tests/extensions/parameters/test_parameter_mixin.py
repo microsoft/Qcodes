@@ -90,7 +90,7 @@ def test_compatible_bases_must_be_list() -> None:
     with pytest.raises(TypeError):
 
         class IncorrectParameterMixin(ParameterMixin):
-            _COMPATIBLE_BASES = "notalist"  # type: ignore[assignment]
+            _COMPATIBLE_BASES = "notalist"  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
 
 
 def test_incompatible_bases_must_be_list() -> None:
@@ -100,7 +100,7 @@ def test_incompatible_bases_must_be_list() -> None:
             _COMPATIBLE_BASES: ClassVar[list[type[ParameterBase]]] = [
                 CompatibleParameter
             ]
-            _INCOMPATIBLE_BASES = IncompatibleParameter  # type: ignore[assignment]
+            _INCOMPATIBLE_BASES = IncompatibleParameter  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
 
 
 ##############################
