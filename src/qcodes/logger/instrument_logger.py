@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from qcodes.instrument import InstrumentBase
 
 
-class InstrumentLoggerAdapter(logging.LoggerAdapter):
+class InstrumentLoggerAdapter(logging.LoggerAdapter[logging.Logger]):
     """
     In the Python logging module adapters are used to add context information
     to logging. The :class:`logging.LoggerAdapter` has the same methods as the
