@@ -423,7 +423,7 @@ tabulate==0.10.0
     #   qcodes
 tinycss2==1.5.1
     # via bleach
-toolz==1.1.0
+toolz==1.2.0
     # via
     #   dask
     #   partd
