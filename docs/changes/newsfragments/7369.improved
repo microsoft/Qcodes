@@ -1,0 +1,3 @@
+``ParamSpecBase`` is now re-exported from :mod:`qcodes.dataset` so that users
+defining custom ``InterDependencies_`` graphs via the public ``qcodes.dataset``
+namespace do not need to reach into :mod:`qcodes.parameters` to obtain it.
