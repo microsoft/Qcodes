@@ -1,0 +1,2 @@
+Added the ``four_wire_measurement`` setting to the simulated Keithley 2600 (``Keithley_2600.yaml``),
+so a full snapshot of the simulated instrument no longer waits out the VISA timeout on that parameter.
