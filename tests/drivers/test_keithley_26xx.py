@@ -1,3 +1,4 @@
+import logging
 from collections import Counter
 from typing import TYPE_CHECKING, cast
 from unittest.mock import patch
@@ -74,6 +75,10 @@ def test_smu_channels_and_their_parameters(driver) -> None:
         smu.nplc(2.3)
         assert smu.nplc() == 2.3
 
+        assert smu.four_wire_measurement() is False
+        smu.four_wire_measurement(True)
+        assert smu.four_wire_measurement() is True
+
         assert 0.0 == smu.sourcerange_v()
         some_valid_sourcerange_v = driver._vranges[smu.model][2]
         smu.sourcerange_v(some_valid_sourcerange_v)
@@ -146,6 +151,20 @@ def test_smu_channels_and_their_parameters(driver) -> None:
         assert "V" == smu.timetrace.unit
         assert "Voltage" == smu.timetrace.label
         assert smu.time_axis == smu.timetrace.setpoints[0]
+
+
+def test_snapshot_updates_every_parameter(
+    driver, caplog: pytest.LogCaptureFixture
+) -> None:
+    # a query missing from the sim file waits for the VISA timeout and is only logged
+    with caplog.at_level(logging.WARNING):
+        driver.snapshot(update=True)
+
+    assert not [
+        record.getMessage()
+        for record in caplog.records
+        if "Could not update parameter" in record.getMessage()
+    ]
 
 
 def test_setting_source_voltage_range_disables_autorange(smus) -> None:
