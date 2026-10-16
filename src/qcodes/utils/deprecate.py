@@ -14,6 +14,15 @@ class QCoDeSDeprecationWarning(RuntimeWarning):
     """
 
 
+def _warn_deprecated_module(module_name: str, replacement: str) -> None:
+    warnings.warn(
+        f"The module {module_name!r} is deprecated and will be removed in a "
+        f"future release. Import from {replacement!r} instead.",
+        QCoDeSDeprecationWarning,
+        stacklevel=2,
+    )
+
+
 def _make_deprecated_typevars_getattr(
     module_name: str,
     deprecated: dict[str, Any],

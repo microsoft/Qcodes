@@ -1,0 +1,6 @@
+The implementation modules that collide with public package attributes have
+moved to private module paths to support Python lazy imports. The previous
+``qcodes.dataset.dond``, ``qcodes.utils.full_class``, Stanford Research driver
+module, and Basel driver module paths remain available as deprecated aliases.
+Import their public objects from the parent packages instead. These deprecated
+module aliases will be removed in a future release.

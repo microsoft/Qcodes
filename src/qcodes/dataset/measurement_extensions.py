@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING, Any
 
 from opentelemetry import trace
 
-from qcodes.dataset.dond.do_nd import _Sweeper
-from qcodes.dataset.dond.do_nd_utils import ParamMeasT, catch_interrupts
-from qcodes.dataset.dond.sweeps import AbstractSweep, LinSweep, TogetherSweep
+from qcodes.dataset._dond.do_nd import _Sweeper
+from qcodes.dataset._dond.do_nd_utils import ParamMeasT, catch_interrupts
+from qcodes.dataset._dond.sweeps import AbstractSweep, LinSweep, TogetherSweep
 from qcodes.dataset.measurements import DataSaver, Measurement
 from qcodes.dataset.threading import process_params_meas
 from qcodes.parameters.parameter_base import ParameterBase
