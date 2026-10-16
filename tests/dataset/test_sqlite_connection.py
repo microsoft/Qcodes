@@ -1,7 +1,9 @@
 import gc
-import logging
 import re
 import sqlite3
+import subprocess
+import sys
+import textwrap
 import threading
 import weakref
 
@@ -393,25 +395,69 @@ def test_close_all_connections(tmp_path) -> None:
             conn.execute("SELECT 1")
 
 
-def test_close_all_connections_skips_connections_from_other_threads(
-    tmp_path, caplog: pytest.LogCaptureFixture
+def test_close_all_connections_only_closes_connections_owned_by_thread(
+    tmp_path,
 ) -> None:
     dbfile = tmp_path / "temp.db"
     conns: list[AtomicConnection] = []
-    thread = threading.Thread(target=lambda: conns.append(connect(dbfile)))
-    thread.start()
-    thread.join()
-    (other_thread_conn,) = conns
+    opened = threading.Event()
+    close = threading.Event()
 
-    with caplog.at_level(logging.WARNING):
+    def open_and_close_in_thread() -> None:
+        conns.append(connect(dbfile))
+        opened.set()
+        close.wait(timeout=10)
         close_all_connections()
 
-    assert other_thread_conn in get_open_connections()
-    assert "Could not close connection to" in caplog.text
+    thread = threading.Thread(target=open_and_close_in_thread)
+    thread.start()
+    assert opened.wait(timeout=10)
+    (other_thread_conn,) = conns
+    own_conn = connect(dbfile)
 
-    # the connection cannot be closed from this thread, so release it via gc
-    conn_ref = weakref.ref(other_thread_conn)
-    conns.clear()
-    del other_thread_conn
-    gc.collect()
-    assert conn_ref() is None
+    assert other_thread_conn.owner_thread_id == thread.ident
+    assert own_conn.owner_thread_id == threading.get_ident()
+
+    close_all_connections()
+    assert own_conn not in get_open_connections()
+    assert other_thread_conn in get_open_connections()
+
+    close.set()
+    thread.join(timeout=10)
+    assert not thread.is_alive()
+    assert other_thread_conn not in get_open_connections()
+
+
+def test_open_connections_are_closed_at_exit(tmp_path) -> None:
+    # atexit handlers run in reverse order of registration, so a handler
+    # registered before qcodes is imported runs after qcodes' own handler
+    # and can observe whether the connection was closed.
+    script = textwrap.dedent(
+        f"""
+        import atexit
+        import sqlite3
+
+        def report():
+            try:
+                conn.execute("SELECT 1")
+            except sqlite3.ProgrammingError:
+                print("closed")
+            else:
+                print("open")
+
+        atexit.register(report)
+
+        from qcodes.dataset.sqlite.connection import AtomicConnection
+
+        conn = AtomicConnection({str(tmp_path / "temp.db")!r})
+        """
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=True,
+    )
+
+    assert result.stdout.strip() == "closed"

@@ -6,6 +6,7 @@ performing nested atomic transactions on an SQLite database.
 
 from __future__ import annotations
 
+import atexit
 import logging
 import sqlite3
 import threading
@@ -43,11 +44,17 @@ class AtomicConnection(sqlite3.Connection):
     """
     Path to the database file of the connection.
     """
+    owner_thread_id: int
+    """
+    Identifier (as returned by :func:`threading.get_ident`) of the thread
+    that created the connection.
+    """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         self.path_to_dbfile = path_to_dbfile(self)
+        self.owner_thread_id = threading.get_ident()
         with _open_connections_lock:
             _open_connections.add(self)
 
@@ -68,26 +75,25 @@ def get_open_connections() -> tuple[AtomicConnection, ...]:
 
 def close_all_connections() -> None:
     """
-    Close all :class:`AtomicConnection` objects that are currently open in
-    this process, e.g. to release the file handles on database files.
+    Close all :class:`AtomicConnection` objects that are currently open and
+    were created by the calling thread, e.g. to release the file handles on
+    database files. Connections owned by other threads are left open, since
+    sqlite connections are by default bound to the thread that created them.
 
     Any uncommitted changes on these connections are discarded, and objects
     holding one of them (such as a ``DataSet``) can no longer use it to
     access the database.
 
-    Connections that cannot be closed from the calling thread (sqlite
-    connections are by default bound to the thread that created them) are
-    left open and a warning is logged.
+    This function is registered to run automatically when the Python
+    interpreter exits.
     """
+    thread_id = threading.get_ident()
     for conn in get_open_connections():
-        try:
+        if conn.owner_thread_id == thread_id:
             conn.close()
-        except sqlite3.ProgrammingError:
-            log.warning(
-                "Could not close connection to %r since it was opened "
-                "in a different thread.",
-                conn.path_to_dbfile,
-            )
+
+
+atexit.register(close_all_connections)
 
 
 @contextmanager
