@@ -416,7 +416,7 @@ class TektronixDPOWaveformFormat(InstrumentChannel):
     """
 
     def __init__(
-        self,
+        self: Self,
         parent: InstrumentBase,
         name: str,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
@@ -473,7 +473,7 @@ class TektronixDPOChannel(InstrumentChannel[TektronixDPO7000xx]):
     """
 
     def __init__(
-        self,
+        self: Self,
         parent: TektronixDPO7000xx,
         name: str,
         channel_number: int,
@@ -726,7 +726,7 @@ class TektronixDPOAcquisition(InstrumentChannel):
     """
 
     def __init__(
-        self,
+        self: Self,
         parent: Instrument,
         name: str,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",

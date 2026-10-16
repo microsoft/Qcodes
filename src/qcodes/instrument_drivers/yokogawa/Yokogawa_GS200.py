@@ -443,7 +443,7 @@ class YokogawaGS200(VisaInstrument):
     default_terminator = "\n"
 
     def __init__(
-        self,
+        self: Self,
         name: str,
         address: str,
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
