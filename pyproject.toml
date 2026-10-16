@@ -237,7 +237,9 @@ markers = "serial"
 # and error on all other warnings
 filterwarnings = [
     'error',
-    'ignore:unclosed database in:ResourceWarning', # internal should be fixed
+    # DataSet, Experiment and the load_* functions open connections that
+    # they never close, so these are only closed when garbage collected
+    'ignore:unclosed database in:ResourceWarning',
     'ignore:unclosed\ <socket\.socket:ResourceWarning', # not clear from where this is coming
 ]
 

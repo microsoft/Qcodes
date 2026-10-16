@@ -6,6 +6,7 @@ import sys
 import textwrap
 import threading
 import weakref
+from contextlib import closing
 
 import pytest
 
@@ -60,13 +61,15 @@ def test_atomic_connection() -> None:
 
 
 def test_atomic_raises_for_non_atomic_conn() -> None:
-    sqlite_conn = sqlite3.connect(":memory:")
-
     match_str = re.escape(
         "atomic context manager only accepts AtomicConnection "
         "database connection objects."
     )
-    with pytest.raises(ValueError, match=match_str), atomic(sqlite_conn):  # type: ignore[arg-type]
+    with (
+        closing(sqlite3.connect(":memory:")) as sqlite_conn,
+        pytest.raises(ValueError, match=match_str),
+        atomic(sqlite_conn),  # type: ignore[arg-type]
+    ):
         pass
 
 
@@ -134,8 +137,8 @@ def test_atomic_with_keyboardinterrupt(tmp_path) -> None:
     with atomic(conn):
         conn.execute("INSERT INTO t (x) VALUES (2)")
 
-    reader = sqlite3.connect(dbfile, timeout=1)
-    assert [(2,)] == reader.execute("SELECT x FROM t").fetchall()
+    with closing(sqlite3.connect(dbfile, timeout=1)) as reader:
+        assert [(2,)] == reader.execute("SELECT x FROM t").fetchall()
 
 
 def test_nested_atomic_with_keyboardinterrupt(tmp_path) -> None:
@@ -331,23 +334,24 @@ def test_atomic_transaction(tmp_path) -> None:
 
     atomic_transaction(conn, sql_create_table)
 
-    ctrl_conn = sqlite3.connect(dbfile)
-    sql_table_exists = 'SELECT sql FROM sqlite_master WHERE TYPE = "table"'
-    assert sql_create_table in ctrl_conn.execute(sql_table_exists).fetchall()[0]
+    with closing(sqlite3.connect(dbfile)) as ctrl_conn:
+        sql_table_exists = 'SELECT sql FROM sqlite_master WHERE TYPE = "table"'
+        assert sql_create_table in ctrl_conn.execute(sql_table_exists).fetchall()[0]
 
 
 def test_atomic_transaction_on_sqlite3_connection_raises(tmp_path) -> None:
     """Test that atomic_transaction does not work for sqlite3.Connection"""
     dbfile = str(tmp_path / "temp.db")
 
-    conn = sqlite3.connect(dbfile)
-
     match_str = re.escape(
         "atomic context manager only accepts AtomicConnection "
         "database connection objects."
     )
 
-    with pytest.raises(ValueError, match=match_str):
+    with (
+        closing(sqlite3.connect(dbfile)) as conn,
+        pytest.raises(ValueError, match=match_str),
+    ):
         atomic_transaction(conn, "whatever sql query")  # type: ignore[arg-type]
 
 
