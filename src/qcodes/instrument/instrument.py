@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import time
 import weakref
-from typing import TYPE_CHECKING, Any, Protocol, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, overload
 
 from qcodes.utils import strip_attrs
 from qcodes.validators import Anything
@@ -57,11 +57,11 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
 
     """
 
-    _all_instruments: weakref.WeakValueDictionary[str, Instrument] = (
+    _all_instruments: ClassVar[weakref.WeakValueDictionary[str, Instrument]] = (
         weakref.WeakValueDictionary()
     )
     _type: type[Instrument] | None = None
-    _instances: weakref.WeakSet[Instrument] = weakref.WeakSet()
+    _instances: ClassVar[weakref.WeakSet[Instrument]] = weakref.WeakSet()
 
     def __init__(self, name: str, **kwargs: Unpack[InstrumentBaseKWArgs]) -> None:
         self._t0 = time.time()
