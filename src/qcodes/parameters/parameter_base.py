@@ -37,6 +37,7 @@ from qcodes.validators import (
 )
 
 from ..utils.types import NumberType
+from . import parameter_observers as _parameter_observers
 from .cache import _Cache, _CacheProtocol
 from .named_repr import named_repr
 from .permissive_range import permissive_range
@@ -984,6 +985,12 @@ class ParameterBase(
                 raise NotImplementedError(
                     f"Trying to get an abstract parameter: {self.full_name}"
                 )
+            observers = _parameter_observers._observers
+            timestamp = t0 = 0.0
+            if observers:
+                timestamp = time.time()
+                t0 = time.perf_counter()
+            raw_value = None
             try:
                 # There might be cases where a .get also has args/kwargs
                 raw_value = get_function(*args, **kwargs)
@@ -995,11 +1002,36 @@ class ParameterBase(
 
                 self.cache._update_with(value=value, raw_value=raw_value)
 
-                return value
-
             except Exception as e:
+                if observers:
+                    _parameter_observers._notify(
+                        observers,
+                        _parameter_observers.ParameterAccess(
+                            parameter=self,
+                            kind="get",
+                            value=None,
+                            raw_value=raw_value,
+                            timestamp=timestamp,
+                            duration=time.perf_counter() - t0,
+                            exception=e,
+                        ),
+                    )
                 e.args = (*e.args, f"getting {self}")
                 raise
+
+            if observers:
+                _parameter_observers._notify(
+                    observers,
+                    _parameter_observers.ParameterAccess(
+                        parameter=self,
+                        kind="get",
+                        value=value,
+                        raw_value=raw_value,
+                        timestamp=timestamp,
+                        duration=time.perf_counter() - t0,
+                    ),
+                )
+            return value
 
         return get_wrapper
 
@@ -1041,8 +1073,26 @@ class ParameterBase(
 
                     # Start timer to measure execution time of set_function
                     t0 = time.perf_counter()
+                    observers = _parameter_observers._observers
+                    timestamp = time.time() if observers else 0.0
 
-                    set_function(raw_val_step, **kwargs)
+                    try:
+                        set_function(raw_val_step, **kwargs)
+                    except Exception as e:
+                        if observers:
+                            _parameter_observers._notify(
+                                observers,
+                                _parameter_observers.ParameterAccess(
+                                    parameter=self,
+                                    kind="set",
+                                    value=val_step,
+                                    raw_value=raw_val_step,
+                                    timestamp=timestamp,
+                                    duration=time.perf_counter() - t0,
+                                    exception=e,
+                                ),
+                            )
+                        raise
 
                     # Update last set time (used for calculating delays)
                     self._t_last_set = time.perf_counter()
@@ -1056,6 +1106,19 @@ class ParameterBase(
                     self.cache._update_with(value=val_step, raw_value=raw_val_step)
 
                     self._call_on_set_callback(val_step)
+
+                    if observers:
+                        _parameter_observers._notify(
+                            observers,
+                            _parameter_observers.ParameterAccess(
+                                parameter=self,
+                                kind="set",
+                                value=val_step,
+                                raw_value=raw_val_step,
+                                timestamp=timestamp,
+                                duration=t_elapsed,
+                            ),
+                        )
 
             except Exception as e:
                 e.args = (*e.args, f"setting {self} to {value}")

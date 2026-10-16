@@ -1,0 +1,7 @@
+Added parameter observers: ``qcodes.parameters.add_parameter_observer`` registers a callable that is
+notified of every ``get`` and ``set`` of every parameter, with a ``qcodes.parameters.ParameterAccess``
+describing the parameter, the value and raw value, when the access started, how long it took and any
+exception it raised. A set that ramps in steps is reported once per step. Any number of observers can be
+registered (use ``remove_parameter_observer`` or the ``observe_parameters`` context manager to remove them
+again), and they are independent of ``on_set_callback`` and ``global_on_set_callback``. This makes it
+possible to record all instrument communication made by a piece of code without changing it.

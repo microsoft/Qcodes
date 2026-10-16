@@ -86,6 +86,15 @@ from .parameter_base import (
     ParamRawDataType,
     invert_val_mapping,
 )
+from .parameter_observers import (
+    ParameterAccess,
+    ParameterAccessKind,
+    ParameterObserver,
+    add_parameter_observer,
+    observe_parameters,
+    registered_parameter_observers,
+    remove_parameter_observer,
+)
 from .parameter_with_setpoints import ParameterWithSetpoints, expand_setpoints_helper
 from .scaled_paramter import ScaledParameter
 from .specialized_parameters import ElapsedTimeParameter, InstrumentRefParameter
@@ -112,16 +121,23 @@ __all__ = [
     "ParamSpecBase",
     "ParamSpecBaseDict",
     "Parameter",
+    "ParameterAccess",
+    "ParameterAccessKind",
     "ParameterBase",
     "ParameterBaseKWArgs",
     "ParameterKWArgs",
+    "ParameterObserver",
     "ParameterSet",
     "ParameterWithSetpoints",
     "ScaledParameter",
     "SweepFixedValues",
     "SweepValues",
+    "add_parameter_observer",
     "combine",
     "create_on_off_val_mapping",
     "expand_setpoints_helper",
     "invert_val_mapping",
+    "observe_parameters",
+    "registered_parameter_observers",
+    "remove_parameter_observer",
 ]
