@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 _n_channels = 16
 
 
-class LakeshoreModel372Output(LakeshoreBaseOutput):
+class LakeshoreModel372Output(LakeshoreBaseOutput["LakeshoreModel372"]):
     """
     An InstrumentChannel for control outputs (heaters) of Lakeshore Model 372
 
@@ -228,7 +228,7 @@ class LakeshoreModel372WarmupHeater(LakeshoreModel372Output):
         )
 
 
-class LakeshoreModel372Channel(LakeshoreBaseSensorChannel):
+class LakeshoreModel372Channel(LakeshoreBaseSensorChannel["LakeshoreModel372"]):
     """
     An InstrumentChannel representing a single sensor on a Lakeshore Model 372.
 
@@ -465,12 +465,12 @@ class LakeshoreModel372(LakeshoreBase[LakeshoreModel372Channel]):
         dict[int, str]
     ] = {i: f"ch{i:02}" for i in range(1, 1 + _n_channels)}
 
-    CHANNEL_CLASS = LakeshoreModel372Channel
-
     def __init__(
         self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
     ) -> None:
-        super().__init__(name, address, **kwargs)
+        super().__init__(
+            name, address, channel_class=LakeshoreModel372Channel, **kwargs
+        )
 
         heaters = {"sample_heater": 0, "warmup_heater": 1, "analog_heater": 2}
 
