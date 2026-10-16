@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import copy
-import gc
 import os
 import sys
 import threading
@@ -13,7 +12,7 @@ from hypothesis import settings
 
 import qcodes as qc
 from qcodes.configuration import Config
-from qcodes.dataset import initialise_database, new_data_set
+from qcodes.dataset import close_all_connections, initialise_database, new_data_set
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.experiment_container import Experiment, new_experiment
 from qcodes.instrument import Instrument
@@ -127,26 +126,29 @@ def reset_state_on_exit() -> Generator[None, None, None]:
         Station.default = None
 
 
+@pytest.fixture(scope="function", autouse=True)
+def close_db_connections() -> Generator[None, None, None]:
+    """
+    Close any database connections left open by a test, so that they do not
+    leak into other tests or keep the database files locked.
+    """
+    try:
+        yield
+    finally:
+        close_all_connections()
+
+
 @pytest.fixture(scope="function", name="empty_temp_db")
-def _make_empty_temp_db(tmp_path: Path) -> Generator[None, None, None]:
+def _make_empty_temp_db(tmp_path: Path) -> None:
     global n_experiments
     n_experiments = 0
     # create a temp database for testing
-    try:
-        qc.config["core"]["db_location"] = str(tmp_path / "temp.db")
-        if os.environ.get("QCODES_SQL_DEBUG"):
-            qc.config["core"]["db_debug"] = True
-        else:
-            qc.config["core"]["db_debug"] = False
-        initialise_database()
-        yield
-    finally:
-        # there is a very real chance that the tests will leave open
-        # connections to the database. These will have gone out of scope at
-        # this stage but a gc collection may not have run. The gc
-        # collection ensures that all connections belonging to now out of
-        # scope objects will be closed
-        gc.collect()
+    qc.config["core"]["db_location"] = str(tmp_path / "temp.db")
+    if os.environ.get("QCODES_SQL_DEBUG"):
+        qc.config["core"]["db_debug"] = True
+    else:
+        qc.config["core"]["db_debug"] = False
+    initialise_database()
 
 
 # note that you cannot use mark.usefixtures in a fixture

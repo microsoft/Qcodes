@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import gc
 import os
 import shutil
 import tempfile
@@ -42,22 +41,13 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture(scope="function", name="non_created_db")
-def _make_non_created_db(tmp_path) -> Generator[None, None, None]:
+def _make_non_created_db(tmp_path) -> None:
     # set db location to a non existing file
-    try:
-        qc.config["core"]["db_location"] = str(tmp_path / "temp.db")
-        if os.environ.get("QCODES_SQL_DEBUG"):
-            qc.config["core"]["db_debug"] = True
-        else:
-            qc.config["core"]["db_debug"] = False
-        yield
-    finally:
-        # there is a very real chance that the tests will leave open
-        # connections to the database. These will have gone out of scope at
-        # this stage but a gc collection may not have run. The gc
-        # collection ensures that all connections belonging to now out of
-        # scope objects will be closed
-        gc.collect()
+    qc.config["core"]["db_location"] = str(tmp_path / "temp.db")
+    if os.environ.get("QCODES_SQL_DEBUG"):
+        qc.config["core"]["db_debug"] = True
+    else:
+        qc.config["core"]["db_debug"] = False
 
 
 @pytest.fixture(scope="function")
@@ -71,12 +61,6 @@ def empty_temp_db_connection(tmp_path):
         yield conn
     finally:
         conn.close()
-        # there is a very real chance that the tests will leave open
-        # connections to the database. These will have gone out of scope at
-        # this stage but a gc collection may not have run. The gc
-        # collection ensures that all connections belonging to now out of
-        # scope objects will be closed
-        gc.collect()
 
 
 @pytest.fixture(scope="function")
@@ -95,12 +79,6 @@ def two_empty_temp_db_connections(tmp_path):
     finally:
         source_conn.close()
         target_conn.close()
-        # there is a very real chance that the tests will leave open
-        # connections to the database. These will have gone out of scope at
-        # this stage but a gc collection may not have run. The gc
-        # collection ensures that all connections belonging to now out of
-        # scope objects will be closed
-        gc.collect()
 
 
 @contextmanager

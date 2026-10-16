@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import logging
 import sqlite3
+import threading
+import weakref
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any
 
@@ -17,6 +19,9 @@ if TYPE_CHECKING:
     from collections.abc import Generator
 
 log = logging.getLogger(__name__)
+
+_open_connections: weakref.WeakSet[AtomicConnection] = weakref.WeakSet()
+_open_connections_lock = threading.Lock()
 
 
 class AtomicConnection(sqlite3.Connection):
@@ -43,6 +48,46 @@ class AtomicConnection(sqlite3.Connection):
         super().__init__(*args, **kwargs)
 
         self.path_to_dbfile = path_to_dbfile(self)
+        with _open_connections_lock:
+            _open_connections.add(self)
+
+    def close(self) -> None:
+        super().close()
+        with _open_connections_lock:
+            _open_connections.discard(self)
+
+
+def get_open_connections() -> tuple[AtomicConnection, ...]:
+    """
+    Return all :class:`AtomicConnection` objects that have been opened in
+    this process and have not yet been closed or garbage collected.
+    """
+    with _open_connections_lock:
+        return tuple(_open_connections)
+
+
+def close_all_connections() -> None:
+    """
+    Close all :class:`AtomicConnection` objects that are currently open in
+    this process, e.g. to release the file handles on database files.
+
+    Any uncommitted changes on these connections are discarded, and objects
+    holding one of them (such as a ``DataSet``) can no longer use it to
+    access the database.
+
+    Connections that cannot be closed from the calling thread (sqlite
+    connections are by default bound to the thread that created them) are
+    left open and a warning is logged.
+    """
+    for conn in get_open_connections():
+        try:
+            conn.close()
+        except sqlite3.ProgrammingError:
+            log.warning(
+                "Could not close connection to %r since it was opened "
+                "in a different thread.",
+                conn.path_to_dbfile,
+            )
 
 
 @contextmanager

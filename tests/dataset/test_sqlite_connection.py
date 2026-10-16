@@ -1,5 +1,9 @@
+import gc
+import logging
 import re
 import sqlite3
+import threading
+import weakref
 
 import pytest
 
@@ -7,6 +11,8 @@ from qcodes.dataset.sqlite.connection import (
     AtomicConnection,
     atomic,
     atomic_transaction,
+    close_all_connections,
+    get_open_connections,
 )
 from qcodes.dataset.sqlite.database import connect
 from tests.common import error_caused_by
@@ -350,3 +356,62 @@ def test_connect() -> None:
     assert isinstance(conn, AtomicConnection)
     assert False is conn.atomic_in_progress
     assert None is conn.row_factory
+
+
+def test_open_connections_are_tracked_until_closed(tmp_path) -> None:
+    conn = connect(tmp_path / "temp.db")
+    assert conn in get_open_connections()
+
+    conn.close()
+    assert conn not in get_open_connections()
+
+    # closing an already closed connection is a no-op
+    conn.close()
+    assert conn not in get_open_connections()
+
+
+def test_garbage_collected_connections_are_not_tracked() -> None:
+    conn = AtomicConnection(":memory:")
+    assert conn in get_open_connections()
+
+    conn_ref = weakref.ref(conn)
+    del conn
+    gc.collect()
+    # the registry must not keep connections alive
+    assert conn_ref() is None
+
+
+def test_close_all_connections(tmp_path) -> None:
+    conns = [connect(tmp_path / "temp.db") for _ in range(3)]
+    conns.append(AtomicConnection(":memory:"))
+
+    close_all_connections()
+
+    for conn in conns:
+        assert conn not in get_open_connections()
+        with pytest.raises(sqlite3.ProgrammingError):
+            conn.execute("SELECT 1")
+
+
+def test_close_all_connections_skips_connections_from_other_threads(
+    tmp_path, caplog: pytest.LogCaptureFixture
+) -> None:
+    dbfile = tmp_path / "temp.db"
+    conns: list[AtomicConnection] = []
+    thread = threading.Thread(target=lambda: conns.append(connect(dbfile)))
+    thread.start()
+    thread.join()
+    (other_thread_conn,) = conns
+
+    with caplog.at_level(logging.WARNING):
+        close_all_connections()
+
+    assert other_thread_conn in get_open_connections()
+    assert "Could not close connection to" in caplog.text
+
+    # the connection cannot be closed from this thread, so release it via gc
+    conn_ref = weakref.ref(other_thread_conn)
+    conns.clear()
+    del other_thread_conn
+    gc.collect()
+    assert conn_ref() is None
