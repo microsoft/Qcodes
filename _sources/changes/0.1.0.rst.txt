@@ -1,0 +1,23 @@
+Changelog for QCoDeS 0.1.1
+==========================
+
+Breaking Changes
+----------------
+
+- Defaults to no multiprocessing
+
+New & Improved
+--------------
+
+- Multi Parameter sweep
+- More documentation
+- Single shot parameter data_set
+- Configuration system
+
+Fixed
+-----
+
+- Small quirks
+
+
+-
