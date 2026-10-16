@@ -103,7 +103,9 @@ class OverwriteGetParam(Parameter):
         self.set_count = 0
         self.get_count = 0
 
-    def get(self) -> int:
+    # overwriting get is not allowed and raises at runtime, which is what
+    # test_parameter_with_overwritten_get_raises checks
+    def get(self) -> int:  # ty: ignore[invalid-mutable-override]
         self.get_count += 1
         return self._value
 
@@ -117,7 +119,9 @@ class OverwriteSetParam(Parameter):
         self.set_count = 0
         self.get_count = 0
 
-    def set(self, value: Any) -> None:
+    # overwriting set is not allowed and raises at runtime, which is what
+    # test_parameter_with_overwritten_set_raises checks
+    def set(self, value: Any) -> None:  # ty: ignore[invalid-mutable-override]
         self.set_count += 1
         self._value = value
 

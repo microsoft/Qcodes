@@ -124,7 +124,10 @@ class Command[Output, ParsedOutput]:
         elif is_function(cmd, arg_count):
             assert cmd is not None
             self._cmd = cmd
-            exec_mapping = {
+            cmd_exec_mapping: dict[
+                tuple[bool | Literal["multi"], bool],
+                Callable[..., Output | ParsedOutput],
+            ] = {  # (parse_input, parse_output)
                 (False, False): cmd,
                 (False, True): self.call_cmd_parsed_out,
                 (True, False): self.call_cmd_parsed_in,
@@ -132,7 +135,7 @@ class Command[Output, ParsedOutput]:
                 ("multi", False): self.call_cmd_parsed_in2,
                 ("multi", True): self.call_cmd_parsed_in2_out,
             }
-            self.exec_function = exec_mapping[(parse_input, parse_output)]
+            self.exec_function = cmd_exec_mapping[(parse_input, parse_output)]
 
         elif cmd is None:
             if no_cmd_function is not None:

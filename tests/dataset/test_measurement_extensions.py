@@ -333,7 +333,7 @@ def test_dond_into_fails_with_together_sweeps(
     ):
         dond_into(
             datasaver,
-            TogetherSweep(sweep1, sweep2),  # pyright: ignore [reportArgumentType]
+            TogetherSweep(sweep1, sweep2),  # pyright: ignore [reportArgumentType]  # ty: ignore[invalid-argument-type]
             meas1,
         )
 
@@ -353,8 +353,8 @@ def test_dond_into_fails_with_groups(default_params, default_database_and_experi
         dond_into(
             datasaver,
             sweep1,
-            [meas1],  # pyright: ignore [reportArgumentType]
-            [meas2],  # pyright: ignore [reportArgumentType]
+            [meas1],  # pyright: ignore [reportArgumentType]  # ty: ignore[invalid-argument-type]
+            [meas2],  # pyright: ignore [reportArgumentType]  # ty: ignore[invalid-argument-type]
         )
 
 
@@ -499,7 +499,7 @@ def test_shapes_in_dataset_definition_with_scalar_params(
     _ = default_database_and_experiment
     set1, set2, _, meas1, meas2, _ = default_params
 
-    expected_shapes = {
+    expected_shapes: dict[str, tuple[int, ...]] = {
         meas1.register_name: (11, 11),
         meas2.register_name: (11, 11),
     }
@@ -527,7 +527,7 @@ def test_shapes_in_dataset_definition_with_pws(
     _ = default_database_and_experiment
     pws1, set1 = pws_params
 
-    expected_shapes = {
+    expected_shapes: dict[str, tuple[int, ...]] = {
         pws1.register_name: (11, 11),
     }
     dataset_definition = [
@@ -573,7 +573,7 @@ def test_setup_measurement_instances_sets_shapes(
     _ = default_database_and_experiment
     set1, _, _, meas1, _, _ = default_params
 
-    expected_shapes = {meas1.register_name: (5,)}
+    expected_shapes: dict[str, tuple[int, ...]] = {meas1.register_name: (5,)}
     dataset_definitions = [
         DataSetDefinition(
             name="test_shapes",
@@ -611,8 +611,8 @@ def test_shapes_with_multiple_datasets(default_params, default_database_and_expe
     _ = default_database_and_experiment
     set1, set2, set3, meas1, _, meas3 = default_params
 
-    shapes_1 = {meas1.register_name: (11, 11)}
-    shapes_2 = {meas3.register_name: (11, 11)}
+    shapes_1: dict[str, tuple[int, ...]] = {meas1.register_name: (11, 11)}
+    shapes_2: dict[str, tuple[int, ...]] = {meas3.register_name: (11, 11)}
     dataset_definition = [
         DataSetDefinition(
             name="dataset_1",
