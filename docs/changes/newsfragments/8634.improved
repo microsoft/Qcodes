@@ -1,0 +1,3 @@
+Loading data from a ``DataSet`` is now faster. Array and complex valued data is read
+several times faster since the header of the stored arrays is only parsed once per
+parameter rather than once per stored value.
