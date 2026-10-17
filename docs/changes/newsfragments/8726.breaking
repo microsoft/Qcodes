@@ -5,3 +5,6 @@ started dataset, since the parameters of a dataset can not change at that point.
 datasets and modifying it in place raises a ``TypeError``. Methods that return a new
 object such as ``extend`` and ``remove`` continue to work, and ``FrozenInterDependencies_``
 now compares equal to an ``InterDependencies_`` with the same parameters.
+The ``override`` argument of ``DataSet.set_interdependencies`` is deprecated, since the
+interdependencies of a started dataset are fixed and ``override`` never updated the run
+description stored in the database.
