@@ -166,14 +166,46 @@ class ResultsBackend:
         callback: Callable[[float], None] | None,
     ) -> ParameterData:
         """Read parameter data for the given parameters from the backend."""
-        return get_parameter_data(
-            self.results_conn,
-            self._dataset.table_name,
-            valid_param_names,
-            start,
-            end,
-            callback,
+        if self._dataset.pristine:
+            # The parameters of a pristine dataset may still change and their
+            # columns do not exist yet, so read with the description stored
+            # in the database, which finds no data.
+            return get_parameter_data(
+                self.results_conn,
+                self._dataset.table_name,
+                valid_param_names,
+                start,
+                end,
+                callback,
+            )
+        return self._read_parameter_data_with_own_rundescriber(
+            valid_param_names, start, end, callback
         )
+
+    def _read_parameter_data_with_own_rundescriber(
+        self,
+        valid_param_names: list[str],
+        start: int | None,
+        end: int | None,
+        callback: Callable[[float], None] | None,
+    ) -> ParameterData:
+        # The run description can not change once a dataset has been started,
+        # so use the one held by the dataset (with frozen interdependencies
+        # that cache dependency lookups) rather than reading and parsing it
+        # from the database on every call.
+        ds = self._dataset
+        output: ParameterData = {}
+        for param_name in valid_param_names:
+            output[param_name] = get_shaped_parameter_data_for_one_paramtree(
+                self.results_conn,
+                ds.table_name,
+                ds._rundescriber,
+                param_name,
+                start,
+                end,
+                callback,
+            )
+        return output
 
 
 class MainDatabaseResultsBackend(ResultsBackend):
@@ -268,26 +300,13 @@ class SeparateSqliteFileResultsBackend(ResultsBackend):
         end: int | None,
         callback: Callable[[float], None] | None,
     ) -> ParameterData:
-        ds = self._dataset
         if self._conn is None:
             # Not started yet / no separate file: defer to the default reader,
             # which will find no results table and return empty data.
             return super().read_parameter_data(valid_param_names, start, end, callback)
-        # When results live in a separate DB, bypass get_parameter_data (which
-        # looks up the rundescriber from the main DB) and call the lower-level
-        # function directly with the rundescriber we already hold.
-        output: ParameterData = {}
-        for param_name in valid_param_names:
-            output[param_name] = get_shaped_parameter_data_for_one_paramtree(
-                self._conn,
-                ds.table_name,
-                ds._rundescriber,
-                param_name,
-                start,
-                end,
-                callback,
-            )
-        return output
+        return self._read_parameter_data_with_own_rundescriber(
+            valid_param_names, start, end, callback
+        )
 
     def close(self) -> None:
         if self._conn is not None:

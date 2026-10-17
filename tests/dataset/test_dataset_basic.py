@@ -23,7 +23,10 @@ from qcodes.dataset import (
 )
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.data_set_protocol import CompletedError
-from qcodes.dataset.descriptions.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.dependencies import (
+    FrozenInterDependencies_,
+    InterDependencies_,
+)
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.guids import parse_guid
 from qcodes.dataset.sqlite.connection import atomic, path_to_dbfile
@@ -216,6 +219,44 @@ def test_mark_completed_twice(start_bg_writer) -> None:
     ds.mark_started(start_bg_writer=start_bg_writer)
     ds.mark_completed()
     ds.mark_completed()
+
+
+@pytest.mark.parametrize("start_bg_writer", (True, False))
+@pytest.mark.usefixtures("experiment")
+def test_interdependencies_frozen_once_started(start_bg_writer) -> None:
+    x = ParamSpecBase("x", "numeric")
+    y = ParamSpecBase("y", "numeric")
+    idps = InterDependencies_(dependencies={y: (x,)})
+    ds = DataSet()
+    ds.set_interdependencies(idps)
+    assert not isinstance(ds.description.interdeps, FrozenInterDependencies_)
+
+    ds.mark_started(start_bg_writer=start_bg_writer)
+    assert isinstance(ds.description.interdeps, FrozenInterDependencies_)
+    assert ds.description.interdeps == idps
+
+    ds.add_results([{"x": 1, "y": 2}])
+    ds.mark_completed()
+    assert isinstance(ds.description.interdeps, FrozenInterDependencies_)
+
+    loaded = load_by_id(ds.run_id)
+    assert isinstance(loaded.description.interdeps, FrozenInterDependencies_)
+    assert loaded.description == ds.description
+    assert loaded.the_same_dataset_as(ds)
+
+    ds.set_interdependencies(idps, override=True)
+    assert isinstance(ds.description.interdeps, FrozenInterDependencies_)
+
+
+@pytest.mark.usefixtures("experiment")
+def test_interdependencies_of_pristine_loaded_dataset_not_frozen() -> None:
+    x = ParamSpecBase("x", "numeric")
+    ds = DataSet(specs=InterDependencies_(standalones=(x,)))
+
+    loaded = load_by_id(ds.run_id)
+
+    assert loaded.pristine
+    assert not isinstance(loaded.description.interdeps, FrozenInterDependencies_)
 
 
 @pytest.mark.usefixtures("experiment")

@@ -16,7 +16,10 @@ import qcodes
 from qcodes.dataset import Measurement, load_by_id, load_by_run_spec
 from qcodes.dataset.data_set_in_memory import DataSetInMem, load_from_file
 from qcodes.dataset.data_set_protocol import DataSetType
-from qcodes.dataset.descriptions.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.dependencies import (
+    FrozenInterDependencies_,
+    InterDependencies_,
+)
 from qcodes.dataset.sqlite.connection import AtomicConnection, atomic_transaction
 from qcodes.parameters import ManualParameter, Parameter, ParamSpecBase
 from qcodes.station import Station
@@ -457,6 +460,30 @@ def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path) -> None:
     assert loaded_ds.metadata["metadata_added_after_export"] == 69
 
     compare_datasets(ds, loaded_ds)
+
+
+def test_interdependencies_frozen_after_measurement_and_load(
+    meas_with_registered_param, DMM, DAC, tmp_path
+) -> None:
+    with meas_with_registered_param.run(
+        dataset_class=DataSetType.DataSetInMem
+    ) as datasaver:
+        datasaver.add_result((DAC.ch1, 1.0), (DMM.v1, 2.0))
+
+    ds = datasaver.dataset
+    assert isinstance(ds, DataSetInMem)
+    assert isinstance(ds.description.interdeps, FrozenInterDependencies_)
+    ds.export(export_type="netcdf", path=tmp_path)
+
+    loaded_from_db = load_by_id(ds.run_id)
+    assert isinstance(loaded_from_db, DataSetInMem)
+    assert isinstance(loaded_from_db.description.interdeps, FrozenInterDependencies_)
+    assert loaded_from_db.description == ds.description
+
+    export_path = ds.export_info.export_paths["nc"]
+    loaded_from_file = load_from_file(export_path)
+    assert isinstance(loaded_from_file.description.interdeps, FrozenInterDependencies_)
+    assert loaded_from_file.description == ds.description
 
 
 def test_load_from_file(meas_with_registered_param, DMM, DAC, tmp_path) -> None:
