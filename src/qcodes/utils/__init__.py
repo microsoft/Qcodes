@@ -17,7 +17,7 @@ from .installation_info import (
     get_all_installed_package_versions,
     is_qcodes_installed_editably,
 )
-from .json_utils import NumpyJSONEncoder
+from .json_utils import NumpyJSONDecoder, NumpyJSONEncoder
 from .numpy_utils import list_of_data_to_maybe_ragged_nd_array
 from .partial_utils import partial_with_docstring
 from .path_helpers import get_qcodes_path, get_qcodes_user_path
@@ -27,6 +27,7 @@ from .threading_utils import RespondingThread, thread_map
 __all__ = [
     "DelayedKeyboardInterrupt",
     "DelegateAttributes",
+    "NumpyJSONDecoder",
     "NumpyJSONEncoder",
     "ParameterDiff",
     "QCoDeSDeprecationWarning",

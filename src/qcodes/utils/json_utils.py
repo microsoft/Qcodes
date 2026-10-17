@@ -87,3 +87,24 @@ class NumpyJSONEncoder(json.JSONEncoder):
                     # we cannot convert the object to JSON, just take a string
                     s = str(o)
             return s
+
+
+class NumpyJSONDecoder(json.JSONDecoder):
+    """
+    This JSON decoder adds support for deserializing types encoded by
+    :class:`NumpyJSONEncoder`, such as complex numbers and UFloat instances.
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        if "object_hook" not in kwargs:
+            kwargs["object_hook"] = self.default_object_hook
+        super().__init__(*args, **kwargs)
+
+    @staticmethod
+    def default_object_hook(dct: dict[str, Any]) -> Any:
+        dtype = dct.get("__dtype__")
+        if dtype == "complex" and "re" in dct and "im" in dct:
+            return complex(dct["re"], dct["im"])
+        elif dtype == "UFloat" and "nominal_value" in dct and "std_dev" in dct:
+            return uncertainties.ufloat(dct["nominal_value"], dct["std_dev"])
+        return dct
