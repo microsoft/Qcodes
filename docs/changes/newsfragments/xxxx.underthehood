@@ -1,0 +1,3 @@
+Tests are now distributed between pytest-xdist workers using ``worksteal`` rather than
+``loadfile``, so that a single slow test file no longer determines the duration of the
+test run.
