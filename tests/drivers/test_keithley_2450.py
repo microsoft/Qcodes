@@ -54,6 +54,14 @@ def test_change_source_function(k2450) -> None:
     )
 
 
+def test_source_limit_has_the_unit_of_the_limited_quantity(k2450) -> None:
+    """
+    The current source limits the voltage (VLIM), the voltage source the current (ILIM).
+    """
+    assert k2450.submodules["_source_current"].limit.unit == "V"
+    assert k2450.submodules["_source_voltage"].limit.unit == "A"
+
+
 def test_source_change_error(k2450) -> None:
     """
     If the sense function is in resistance mode, test that an error is generated
