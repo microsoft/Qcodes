@@ -165,6 +165,23 @@ def test_tlimit(lakeshore_336) -> None:
         assert ch.t_limit() == tlimit
 
 
+def test_input_range_reads_as_a_number(lakeshore_336) -> None:
+    for ch in lakeshore_336.channels:
+        assert ch.range() == 1  # INTYPE? replies "0,0,1,0,1" in the sim
+        ch.range(ch.range())  # the value read back is accepted when set again
+        ch.range(2)
+        assert ch.range() == 2
+
+
+def test_sensor_name_accepts_at_most_15_characters(lakeshore_336) -> None:
+    for ch in lakeshore_336.channels:
+        ch.sensor_name("sample stage")
+        assert ch.sensor_name() == "sample stage"
+        ch.sensor_name("x" * 15)
+        with pytest.raises(ValueError, match="length"):
+            ch.sensor_name("x" * 16)
+
+
 def test_setpoint(lakeshore_336) -> None:
     ls = lakeshore_336
     setpoint = 5.1

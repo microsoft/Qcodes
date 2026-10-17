@@ -143,6 +143,14 @@ def test_tlimit(lakeshore_335) -> None:
         assert ch.t_limit() == tlimit
 
 
+def test_input_range_reads_as_a_number(lakeshore_335) -> None:
+    for ch in lakeshore_335.channels:
+        assert ch.range() == 1  # INTYPE? replies "1,0,1,0,1" in the sim
+        ch.range(ch.range())  # the value read back is accepted when set again
+        ch.range(0)
+        assert ch.range() == 0
+
+
 def test_setpoint(lakeshore_335) -> None:
     ls = lakeshore_335
     setpoint = 5.1

@@ -154,6 +154,7 @@ class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):
             "chosen sensor type: diode 0-1, platinum "
             "RTD 0-6, NTC RTD 0-8. Refer to the page "
             "136 of the manual for the lookup table",
+            get_parser=int,
             vals=vals.Numbers(0, 8),
             parameter_class=GroupParameter,
         )

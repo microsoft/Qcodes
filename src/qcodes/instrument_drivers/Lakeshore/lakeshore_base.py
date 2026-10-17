@@ -667,7 +667,7 @@ class LakeshoreBaseSensorChannel(InstrumentChannel):
             get_cmd=f"INNAME? {self._channel}",
             get_parser=str,
             set_cmd=f'INNAME {self._channel},"{{}}"',
-            vals=vals.Strings(15),
+            vals=vals.Strings(max_length=15),
             label="Sensor name",
         )
         """Parameter sensor_name"""
