@@ -757,7 +757,6 @@ class DataSetInMem(BaseDataSet):
         self,
         interdeps: InterDependencies_,
         shapes: Shapes | None = None,
-        override: bool = False,
     ) -> None:
         """
         Set the interdependencies object (which holds all added
@@ -770,12 +769,10 @@ class DataSetInMem(BaseDataSet):
                 f"Wrong input type. Expected InterDepencies_, got {type(interdeps)}"
             )
 
-        if not self.pristine and not override:
+        if not self.pristine:
             mssg = "Can not set interdependencies on a DataSet that has been started."
             raise RuntimeError(mssg)
         self._rundescriber = RunDescriber(interdeps, shapes=shapes)
-        if not self.pristine:
-            self._rundescriber = _freeze_rundescriber(self._rundescriber)
 
     def _get_paramspecs(self) -> SPECS:
         old_interdeps = new_to_old(self.description.interdeps)

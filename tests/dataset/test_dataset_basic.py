@@ -33,6 +33,7 @@ from qcodes.dataset.sqlite.connection import atomic, path_to_dbfile
 from qcodes.dataset.sqlite.database import _convert_array, get_DB_location
 from qcodes.dataset.sqlite.queries import _rewrite_timestamps, _unicode_categories
 from qcodes.parameters import ParamSpecBase
+from qcodes.utils import QCoDeSDeprecationWarning
 from qcodes.utils.types import complex_types, numpy_complex, numpy_floats, numpy_ints
 from tests.common import error_caused_by
 from tests.dataset.helper_functions import verify_data_dict
@@ -244,8 +245,33 @@ def test_interdependencies_frozen_once_started(start_bg_writer) -> None:
     assert loaded.description == ds.description
     assert loaded.the_same_dataset_as(ds)
 
-    ds.set_interdependencies(idps, override=True)
+
+@pytest.mark.usefixtures("experiment")
+def test_set_interdependencies_override_is_deprecated() -> None:
+    x = ParamSpecBase("x", "numeric")
+    y = ParamSpecBase("y", "numeric")
+    idps = InterDependencies_(dependencies={y: (x,)})
+    ds = DataSet()
+    ds.set_interdependencies(idps)
+    ds.mark_started()
+
+    with pytest.raises(RuntimeError, match="has been started"):
+        ds.set_interdependencies(idps)
+
+    match = "The `override` argument of `DataSet.set_interdependencies` is deprecated"
+    with pytest.warns(QCoDeSDeprecationWarning, match=match):
+        ds.set_interdependencies(idps, override=True)  # pyright: ignore[reportDeprecated]
     assert isinstance(ds.description.interdeps, FrozenInterDependencies_)
+    assert ds.description.interdeps == idps
+
+    with pytest.warns(QCoDeSDeprecationWarning, match=match):
+        ds.set_interdependencies(idps, None, True)  # pyright: ignore[reportDeprecated]
+
+    with (
+        pytest.warns(QCoDeSDeprecationWarning, match=match),
+        pytest.raises(RuntimeError, match="has been started"),
+    ):
+        ds.set_interdependencies(idps, override=False)  # pyright: ignore[reportDeprecated]
 
 
 @pytest.mark.usefixtures("experiment")
