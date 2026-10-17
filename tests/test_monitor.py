@@ -52,6 +52,7 @@ def _make_channel_instr_monitor(channel_instr, request: FixtureRequest):
     m = monitor.Monitor(
         channel_instr.A.dummy_start,
         channel_instr.B.dummy_start,
+        interval=0.1,
         use_root_instrument=request.param,
     )
     try:

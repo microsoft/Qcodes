@@ -11,6 +11,7 @@ import pytest
 from qcodes.instrument import InstrumentBase
 from qcodes.instrument_drivers.Lakeshore import LakeshoreModel372
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (
+    LakeshoreBaseOutput,
     LakeshoreBaseSensorChannel,
 )
 from qcodes.logger import get_instrument_logger
@@ -22,6 +23,23 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 VISA_LOGGER = f"{InstrumentBase.__module__}.com.visa"
+
+# The mocks simulate a linear temperature ramp that is much faster than on a
+# real instrument to keep the tests that wait for the setpoint short.
+SIMULATED_RAMP_RATE = 10  # K/s
+
+
+def speed_up_outputs(instrument: InstrumentBase) -> None:
+    """
+    Scale the waiting parameters of all outputs to match the simulated ramp
+    rate and remove the setpoint ``post_delay`` that is only needed for real
+    instruments.
+    """
+    for submodule in instrument.submodules.values():
+        if isinstance(submodule, LakeshoreBaseOutput):
+            submodule.setpoint.post_delay = 0
+            submodule.wait_cycle_time(0.01)
+            submodule.wait_equilibration_time(0.05)
 
 
 class MockVisaInstrument:
@@ -186,6 +204,8 @@ class LakeshoreModel372Mock(MockVisaInstrument, LakeshoreModel372):
             for i in range(1, 17)
         }
 
+        speed_up_outputs(self)
+
         # simulate delayed heating
         self.simulate_heating = False
         self.start_heating_time = time.perf_counter()
@@ -199,9 +219,8 @@ class LakeshoreModel372Mock(MockVisaInstrument, LakeshoreModel372):
         Simply define a fixed setpoint of 4 k for now
         """
         delta = abs(time.perf_counter() - self.start_heating_time)
-        # make it simple to start with: linear ramp 1K per second
-        # start at 7K.
-        return max(4, 7 - delta)
+        # make it simple to start with: linear ramp starting at 7K.
+        return max(4, 7 - SIMULATED_RAMP_RATE * delta)
 
     @query("KRDG?")
     def temperature(self, output):

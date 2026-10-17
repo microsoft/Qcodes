@@ -21,11 +21,11 @@ def test_get_from_cache_does_not_trigger_real_get_if_get_if_invalid_false() -> N
     not trigger a get of the parameter when parameter
     has expired due to max_val_age
     """
-    param = BetterGettableParam(name="param", max_val_age=1)
+    param = BetterGettableParam(name="param", max_val_age=0.1)
     param.get()
     assert param._get_count == 1
     # let the cache expire
-    time.sleep(2)
+    time.sleep(0.2)
     param.cache.get(get_if_invalid=False)
     assert param._get_count == 1
 

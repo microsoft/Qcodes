@@ -579,7 +579,7 @@ def test_subscriptions(
             # wrap the assertions. This is going to ensure that some time is
             # given to the Subscriber threads to finish exhausting the queue.
             @retry_until_does_not_throw(
-                exception_class_to_expect=AssertionError, delay=0.5, tries=20
+                exception_class_to_expect=AssertionError, delay=0.05, tries=200
             )
             def assert_states_updated_from_callbacks(
                 num: int, expected_values: list[int]

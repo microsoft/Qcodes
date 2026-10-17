@@ -2,7 +2,6 @@ import itertools
 from typing import TYPE_CHECKING
 
 import pytest
-from pyvisa.errors import VisaIOError
 
 from qcodes.instrument_drivers.Keysight.keysight_b220x import KeysightB220X
 
@@ -12,17 +11,11 @@ if TYPE_CHECKING:
 
 @pytest.fixture
 def uut() -> "Generator[KeysightB220X, None, None]":
-    try:
-        resource_name = "insert_Keysight_B2200_VISA_resource_name_here"
-        instance = KeysightB220X("switch_matrix", address=resource_name)
-    except (ValueError, VisaIOError):
-        # Either there is no VISA lib installed or there was no real
-        # instrument found at the specified address => use simulated instrument
-        instance = KeysightB220X(
-            "switch_matrix",
-            address="GPIB::1::INSTR",
-            pyvisa_sim_file="keysight_b220x.yaml",
-        )
+    instance = KeysightB220X(
+        "switch_matrix",
+        address="GPIB::1::INSTR",
+        pyvisa_sim_file="keysight_b220x.yaml",
+    )
 
     instance.get_status()
     instance.clear_status()
