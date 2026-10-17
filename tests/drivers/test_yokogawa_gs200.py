@@ -41,6 +41,12 @@ def test_basic_init(gs200: YokogawaGS200) -> None:
     assert idn["vendor"] == "QCoDeS Yokogawa Mock"
 
 
+def test_current_parameters_are_in_amperes(gs200: YokogawaGS200) -> None:
+    assert gs200.current.unit == "A"
+    assert gs200.current_range.unit == "A"
+    assert gs200.current_limit.unit == "A"
+
+
 def test_current_raises_in_voltage_mode(gs200: YokogawaGS200) -> None:
     gs200.source_mode("VOLT")
 
