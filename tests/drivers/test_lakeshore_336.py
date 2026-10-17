@@ -8,10 +8,12 @@ from qcodes.instrument import InstrumentBase
 from qcodes.instrument_drivers.Lakeshore import LakeshoreModel336
 
 from .test_lakeshore_372 import (
+    SIMULATED_RAMP_RATE,
     DictClass,
     MockVisaInstrument,
     instrument_fixture,
     query,
+    speed_up_outputs,
 )
 
 log = logging.getLogger(__name__)
@@ -86,6 +88,8 @@ class LakeshoreModel336Mock(MockVisaInstrument, LakeshoreModel336):
             for i in self.channel_name_command
         }
 
+        speed_up_outputs(self)
+
         # simulate delayed heating
         self.simulate_heating = False
         self.start_heating_time = time.perf_counter()
@@ -99,9 +103,8 @@ class LakeshoreModel336Mock(MockVisaInstrument, LakeshoreModel336):
         Simply define a fixed setpoint of 4 k for now
         """
         delta = abs(time.perf_counter() - self.start_heating_time)
-        # make it simple to start with: linear ramp 1K per second
-        # start at 7K.
-        return max(4, 7 - delta)
+        # make it simple to start with: linear ramp starting at 7K.
+        return max(4, 7 - SIMULATED_RAMP_RATE * delta)
 
     @query("KRDG?")
     def temperature(self, output: str) -> float | str:
