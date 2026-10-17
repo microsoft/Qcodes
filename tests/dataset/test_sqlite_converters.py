@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import math
 from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
@@ -11,6 +12,7 @@ from qcodes.dataset.sqlite.database import (
     _adapt_complex,
     _convert_array,
     _convert_complex,
+    _convert_numeric,
 )
 
 if TYPE_CHECKING:
@@ -133,3 +135,29 @@ def test_convert_complex(value: complex | np.complexfloating) -> None:
     assert type(result) is type(expected)
     np.testing.assert_array_equal(result, expected)
 
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (b"1.5", 1.5),
+        (b"-2.25e-3", -2.25e-3),
+        (b"3", 3),
+        (b"3.0", 3),
+        (b"-0.0", 0),
+        (b"1e20", 10**20),
+        (b"inf", math.inf),
+        (b"-Infinity", -math.inf),
+        (b"some text", "some text"),
+    ],
+)
+def test_convert_numeric(value: bytes, expected: float | str) -> None:
+    result = _convert_numeric(value)
+    assert type(result) is type(expected)
+    assert result == expected
+
+
+@pytest.mark.parametrize("value", [b"nan", b"NaN", b"-nan"])
+def test_convert_numeric_nan(value: bytes) -> None:
+    result = _convert_numeric(value)
+    assert isinstance(result, float)
+    assert math.isnan(result)

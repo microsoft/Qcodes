@@ -156,20 +156,10 @@ def _convert_numeric(value: bytes) -> float | int | str:
         # Let string casting fail if bytes encoding is invalid
         return str(value, encoding=this_session_default_encoding)
 
-    # If that worked, e.g. did not raise an exception, then we check if the outcome is
-    # either an infinity or a NaN
-    # For a single value, math.isfinite is 10 times faster than np.isinfinite (or
-    # combining np.isnan and np.isinf)
-    if not math.isfinite(numeric):
-        return numeric
-
-    # If it is not 'nan' and not 'inf', then we need to see if the value is really an
-    # integer or with floating point digits
-    numeric_int = int(numeric)
-    if numeric != numeric_int:
-        return numeric
-    else:
-        return numeric_int
+    # is_integer is False for NaN and infinity so these are returned as floats
+    if numeric.is_integer():
+        return int(numeric)
+    return numeric
 
 
 def _adapt_float(fl: float) -> float | str:
