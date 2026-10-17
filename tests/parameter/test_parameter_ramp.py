@@ -7,7 +7,7 @@ from hypothesis import given, settings
 from pytest import LogCaptureFixture
 
 from qcodes.parameters import Parameter
-from qcodes.validators import Numbers
+from qcodes.validators import Ints, Numbers
 
 from .conftest import MemoryParameter
 
@@ -191,6 +191,27 @@ def test_step_ramp_numpy_integer_overflow() -> None:
     p.step = 50
     p(np.int8(-100))
     assert p.set_values == [100, 50, 0, -50, -100]
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [np.int8, np.int16, np.int32, np.int64, np.uint8, np.uint16, np.uint32, np.uint64],
+)
+def test_step_ramp_numpy_integer_full_span(dtype: type[np.integer]) -> None:
+    # ramping between the limits of the dtype must write every intermediate
+    # step, never more than step apart, in both directions
+    low, high = int(np.iinfo(dtype).min), int(np.iinfo(dtype).max)
+    step = (high - low) // 5 + 1
+    p = MemoryParameter(
+        name="p", initial_value=dtype(low), vals=Ints(min_value=low, max_value=high)
+    )
+    p.step = step
+    p(dtype(high))
+    p(dtype(low))
+    up = [*range(low, high, step), high]
+    down = [*range(high, low, -step), low]
+    assert p.set_values == up + down[1:]
+    assert p() == low
 
 
 def test_stepping_from_invalid_starting_point() -> None:

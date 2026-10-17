@@ -60,3 +60,49 @@ numpy_int_args = [
 @pytest.mark.parametrize("args,result", numpy_int_args)
 def test_numpy_integer_calls(args, result) -> None:
     assert permissive_range(*args) == result
+
+
+numpy_mixed_args = [
+    # Python int endpoint outside the range of the numpy integer endpoint
+    ((np.int8(100), 200, 25), [100, 125, 150, 175]),
+    ((200, np.int8(100), 25), [200, 175, 150, 125]),
+    ((np.uint8(10), -10, 5), [10, 5, 0, -5]),
+    (
+        (np.int64(-(2**63)), np.uint64(2**64 - 1), 2**62),
+        [-(2**63) + i * 2**62 for i in range(6)],
+    ),
+    # float step or float endpoint descending from an unsigned integer
+    ((np.uint8(3), np.uint8(1), 0.5), [3.0, 2.5, 2.0, 1.5]),
+    ((np.uint16(10), 2.5, 2), [10, 8, 6, 4]),
+    ((10.0, 0.0, np.uint16(3)), [10.0, 7.0, 4.0, 1.0]),
+]
+
+
+@pytest.mark.parametrize("args,result", numpy_mixed_args)
+def test_numpy_integer_mixed_calls(args, result) -> None:
+    assert permissive_range(*args) == result
+
+
+integer_dtypes = [
+    np.int8,
+    np.int16,
+    np.int32,
+    np.int64,
+    np.uint8,
+    np.uint16,
+    np.uint32,
+    np.uint64,
+]
+
+
+@pytest.mark.parametrize("dtype", integer_dtypes)
+@pytest.mark.parametrize("ascending", [True, False])
+def test_numpy_integer_full_span(dtype: type[np.integer], ascending: bool) -> None:
+    # stepping across the whole range of the dtype gives the same values as
+    # the built-in range does for the equivalent Python ints
+    low, high = int(np.iinfo(dtype).min), int(np.iinfo(dtype).max)
+    step = (high - low) // 3 + 1
+    start, stop = (low, high) if ascending else (high, low)
+    expected = list(range(start, stop, step if ascending else -step))
+    assert permissive_range(dtype(start), dtype(stop), step) == expected
+    assert permissive_range(dtype(start), dtype(stop), -step) == expected
