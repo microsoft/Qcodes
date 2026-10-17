@@ -120,7 +120,6 @@ class RigolDS1074Z(VisaInstrument):
             "waveform_npoints",
             get_cmd="WAV:POIN?",
             set_cmd="WAV:POIN {}",
-            unit="s",
             get_parser=int,
         )
         """Parameter waveform_npoints"""
@@ -147,7 +146,6 @@ class RigolDS1074Z(VisaInstrument):
             "trigger_mode",
             get_cmd=":TRIGger:MODE?",
             set_cmd=":TRIGger:MODE {}",
-            unit="V",
             vals=Enum("edge", "pulse", "video", "pattern"),
             get_parser=str,
         )
@@ -227,7 +225,7 @@ class RigolDS1074Z(VisaInstrument):
         xorigin = self.waveform_xorigin()
         xincrem = self.waveform_xincrem()
         npts = self.waveform_npoints()
-        xdata = np.linspace(xorigin, npts * xincrem + xorigin, npts)
+        xdata = xorigin + xincrem * np.arange(npts)
         return xdata
 
     def _get_trigger_level(self) -> str:

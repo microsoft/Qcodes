@@ -65,3 +65,13 @@ def test_get_data_source(driver) -> None:
     assert driver.data_source() == "ch1"
     driver.data_source("ch2")
     assert driver.data_source() == "ch2"
+
+
+def test_time_axis_is_spaced_by_xincrement(driver) -> None:
+    driver.waveform_npoints(5)
+    assert driver.time_axis() == pytest.approx([0, 0.1, 0.2, 0.3, 0.4])
+
+
+def test_point_count_and_trigger_mode_have_no_unit(driver) -> None:
+    assert driver.waveform_npoints.unit == ""
+    assert driver.trigger_mode.unit == ""
