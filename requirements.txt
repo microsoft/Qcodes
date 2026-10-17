@@ -77,7 +77,7 @@ docutils==0.21.2
     #   sphinx-jsonschema
 execnet==2.1.2
     # via pytest-xdist
-executing==2.2.1
+executing==2.3.0
     # via stack-data
 fastjsonschema==2.22.2
     # via nbformat
