@@ -1,0 +1,1 @@
+The Lakeshore sensor name accepts at most 15 characters (it required at least 15), and the input range of the Lakeshore 335 and 336 reads as an integer.
