@@ -27,7 +27,10 @@ from qcodes.dataset.data_set_protocol import (
     ValuesType,
 )
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.descriptions.rundescriber import (
+    RunDescriber,
+    _freeze_rundescriber,
+)
 from qcodes.dataset.descriptions.versioning.converters import new_to_old, old_to_new
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.experiment_settings import get_default_experiment_id
@@ -314,6 +317,8 @@ class DataSet(BaseDataSet):
             self._rundescriber = run_desc
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._started = self.run_timestamp_raw is not None
+            if self._started:
+                self._rundescriber = _freeze_rundescriber(self._rundescriber)
             self._parent_dataset_links = str_to_links(
                 get_parent_dataset_links(self.conn, self.run_id)
             )
@@ -650,6 +655,8 @@ class DataSet(BaseDataSet):
             mssg = "Can not set interdependencies on a DataSet that has been started."
             raise RuntimeError(mssg)
         self._rundescriber = RunDescriber(interdeps, shapes=shapes)
+        if not self.pristine:
+            self._rundescriber = _freeze_rundescriber(self._rundescriber)
 
     def add_metadata(self, tag: str, metadata: Any) -> None:
         """
@@ -748,6 +755,7 @@ class DataSet(BaseDataSet):
         """
         Perform the actions that must take place once the run has been started
         """
+        self._rundescriber = _freeze_rundescriber(self._rundescriber)
         paramspecs = new_to_old(self._rundescriber.interdeps).paramspecs
 
         # Register all parameters in a single transaction (each add_parameter

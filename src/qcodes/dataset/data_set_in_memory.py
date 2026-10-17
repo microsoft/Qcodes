@@ -19,7 +19,10 @@ from qcodes.dataset.data_set_protocol import (
     ParameterData,
 )
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.descriptions.rundescriber import (
+    RunDescriber,
+    _freeze_rundescriber,
+)
 from qcodes.dataset.descriptions.versioning.converters import new_to_old
 from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.guids import generate_guid
@@ -115,6 +118,8 @@ class DataSetInMem(BaseDataSet):
             rundescriber = RunDescriber(interdeps, shapes=None)
 
         self._rundescriber = rundescriber
+        if not self.pristine:
+            self._rundescriber = _freeze_rundescriber(self._rundescriber)
         if parent_dataset_links is not None:
             self._parent_dataset_links = list(parent_dataset_links)
         else:
@@ -769,6 +774,8 @@ class DataSetInMem(BaseDataSet):
             mssg = "Can not set interdependencies on a DataSet that has been started."
             raise RuntimeError(mssg)
         self._rundescriber = RunDescriber(interdeps, shapes=shapes)
+        if not self.pristine:
+            self._rundescriber = _freeze_rundescriber(self._rundescriber)
 
     def _get_paramspecs(self) -> SPECS:
         old_interdeps = new_to_old(self.description.interdeps)
@@ -786,6 +793,7 @@ class DataSetInMem(BaseDataSet):
         """
         Perform the actions that must take place once the run has been started
         """
+        self._rundescriber = _freeze_rundescriber(self._rundescriber)
 
         with contextlib.closing(
             conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)

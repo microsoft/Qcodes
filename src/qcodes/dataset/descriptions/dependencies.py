@@ -629,7 +629,8 @@ class FrozenInterDependencies_(InterDependencies_):  # noqa: PLW1641
     # todo: not clear if this should implement __hash__.
     """
     A frozen version of InterDependencies_ that is immutable and caches
-    expensive lookups. This is used exclusively while running a measurement
+    expensive lookups. Datasets freeze their interdependencies once they are
+    started, since the parameters of a dataset can not change after that point,
     to minimize the overhead of dependency lookups for each data operation.
 
     Args:
@@ -666,7 +667,11 @@ class FrozenInterDependencies_(InterDependencies_):  # noqa: PLW1641
         raise TypeError("FrozenInterDependencies_ is immutable")
 
     def remove(self, paramspec: ParamSpecBase) -> InterDependencies_:
-        raise TypeError("FrozenInterDependencies_ is immutable")
+        """
+        Create a new :class:`InterDependencies_` object that is similar
+        to this instance, but has the given parameter removed.
+        """
+        return self.to_interdependencies().remove(paramspec)
 
     def extend(
         self,
@@ -767,7 +772,7 @@ class FrozenInterDependencies_(InterDependencies_):  # noqa: PLW1641
         return rep
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, FrozenInterDependencies_):
+        if not isinstance(other, InterDependencies_):
             return False
         return nx.utils.graphs_equal(self.graph, other.graph)
 
