@@ -203,6 +203,13 @@ def test_setting_measure_current_range_disables_autorange(smus) -> None:
         assert smu.measure_autorange_i_enabled() is False
 
 
+def test_current_ranges_are_distinct_and_ascending(driver) -> None:
+    for model, ranges in driver._iranges.items():
+        assert ranges == sorted(set(ranges)), model
+    for model in ("2634B", "2635B", "2636B"):
+        assert 10e-3 in driver._iranges[model]
+
+
 def test_fast_sweep_parameters(smus) -> None:
     for smu in smus:
         smu = cast("Keithley2600Channel", smu)
