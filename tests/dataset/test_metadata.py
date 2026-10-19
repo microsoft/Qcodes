@@ -1,15 +1,21 @@
-def test_get_metadata_from_dataset(dataset) -> None:
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from qcodes.dataset.data_set import DataSet
+
+
+def test_get_metadata_from_dataset(dataset: "DataSet") -> None:
     dataset.add_metadata("something", 123)
     something = dataset.get_metadata("something")
     assert 123 == something
 
 
-def test_get_nonexisting_metadata(dataset) -> None:
+def test_get_nonexisting_metadata(dataset: "DataSet") -> None:
     data = dataset.get_metadata("something")
     assert data is None
 
 
-def test_get_metadata_lower_upper_case(dataset) -> None:
+def test_get_metadata_lower_upper_case(dataset: "DataSet") -> None:
     dataset.add_metadata("something", 123)
 
     something_lower = dataset.metadata.get("something", "didnt find lowercase")

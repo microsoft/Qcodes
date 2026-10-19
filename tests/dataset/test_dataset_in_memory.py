@@ -22,11 +22,19 @@ from qcodes.parameters import ManualParameter, Parameter, ParamSpecBase
 from qcodes.station import Station
 
 if TYPE_CHECKING:
+    from qcodes.dataset.data_set_protocol import DataSetProtocol
+if TYPE_CHECKING:
+    from qcodes.instrument_drivers.mock_instruments import DummyInstrument
+
+if TYPE_CHECKING:
     from qcodes.dataset.experiment_container import Experiment
 
 
 def test_dataset_in_memory_reload_from_db(
-    meas_with_registered_param, DMM, DAC, tmp_path
+    meas_with_registered_param: "Measurement",
+    DMM: "DummyInstrument",
+    DAC: "DummyInstrument",
+    tmp_path: "Path",
 ) -> None:
     with meas_with_registered_param.run(
         dataset_class=DataSetType.DataSetInMem
@@ -62,7 +70,12 @@ def test_dataset_in_memory_reload_from_db(
     shape2=hst.integers(min_value=1, max_value=100),
 )
 def test_dataset_in_memory_reload_from_db_2d(
-    meas_with_registered_param_2d, DMM, DAC, tmp_path, shape1, shape2
+    meas_with_registered_param_2d: "Measurement",
+    DMM: "DummyInstrument",
+    DAC: "DummyInstrument",
+    tmp_path: "Path",
+    shape1: "int",
+    shape2: "int",
 ) -> None:
     meas_with_registered_param_2d.set_shapes(
         {
@@ -120,7 +133,13 @@ def test_dataset_in_memory_reload_from_db_2d(
     shape3=hst.integers(min_value=1, max_value=10),
 )
 def test_dataset_in_memory_reload_from_db_3d(
-    meas_with_registered_param_3d, DMM, DAC3D, tmp_path, shape1, shape2, shape3
+    meas_with_registered_param_3d: "Measurement",
+    DMM: "DummyInstrument",
+    DAC3D: "DummyInstrument",
+    tmp_path: "Path",
+    shape1: "int",
+    shape2: "int",
+    shape3: "int",
 ) -> None:
     meas_with_registered_param_3d.set_shapes(
         {
@@ -175,7 +194,10 @@ def test_dataset_in_memory_reload_from_db_3d(
 
 
 def test_dataset_in_memory_without_cache_raises(
-    meas_with_registered_param, DMM, DAC, tmp_path
+    meas_with_registered_param: "Measurement",
+    DMM: "DummyInstrument",
+    DAC: "DummyInstrument",
+    tmp_path: "Path",
 ) -> None:
     with (  # noqa: PT012
         pytest.raises(
@@ -195,7 +217,10 @@ def test_dataset_in_memory_without_cache_raises(
 
 
 def test_dataset_in_memory_reload_from_db_complex(
-    meas_with_registered_param_complex, DAC, complex_num_instrument, tmp_path
+    meas_with_registered_param_complex: "Measurement",
+    DAC: "DummyInstrument",
+    complex_num_instrument: "DummyInstrument",
+    tmp_path: "Path",
 ) -> None:
     with meas_with_registered_param_complex.run(
         dataset_class=DataSetType.DataSetInMem
@@ -219,7 +244,10 @@ def test_dataset_in_memory_reload_from_db_complex(
 
 
 def test_dataset_in_memory_reload_from_netcdf_complex(
-    meas_with_registered_param_complex, DAC, complex_num_instrument, tmp_path
+    meas_with_registered_param_complex: "Measurement",
+    DAC: "DummyInstrument",
+    complex_num_instrument: "DummyInstrument",
+    tmp_path: "Path",
 ) -> None:
     with meas_with_registered_param_complex.run(
         dataset_class=DataSetType.DataSetInMem
@@ -245,7 +273,10 @@ def test_dataset_in_memory_reload_from_netcdf_complex(
 
 
 def test_dataset_in_memory_no_export_warns(
-    meas_with_registered_param, DMM, DAC, tmp_path
+    meas_with_registered_param: "Measurement",
+    DMM: "DummyInstrument",
+    DAC: "DummyInstrument",
+    tmp_path: "Path",
 ) -> None:
     with meas_with_registered_param.run(
         dataset_class=DataSetType.DataSetInMem
@@ -272,7 +303,10 @@ def test_dataset_in_memory_no_export_warns(
 
 
 def test_dataset_in_memory_missing_file_warns(
-    meas_with_registered_param, DMM, DAC, tmp_path
+    meas_with_registered_param: "Measurement",
+    DMM: "DummyInstrument",
+    DAC: "DummyInstrument",
+    tmp_path: "Path",
 ) -> None:
     with meas_with_registered_param.run(
         dataset_class=DataSetType.DataSetInMem
@@ -295,7 +329,10 @@ def test_dataset_in_memory_missing_file_warns(
 
 
 def test_dataset_in_reload_from_netcdf(
-    meas_with_registered_param, DMM, DAC, tmp_path
+    meas_with_registered_param: "Measurement",
+    DMM: "DummyInstrument",
+    DAC: "DummyInstrument",
+    tmp_path: "Path",
 ) -> None:
     with meas_with_registered_param.run(
         dataset_class=DataSetType.DataSetInMem
@@ -321,7 +358,10 @@ def test_dataset_in_reload_from_netcdf(
 
 
 def test_dataset_load_from_netcdf_and_db(
-    meas_with_registered_param, DMM, DAC, tmp_path
+    meas_with_registered_param: "Measurement",
+    DMM: "DummyInstrument",
+    DAC: "DummyInstrument",
+    tmp_path: "Path",
 ) -> None:
     with meas_with_registered_param.run(
         dataset_class=DataSetType.DataSetInMem
@@ -339,7 +379,7 @@ def test_dataset_load_from_netcdf_and_db(
             get_v = DMM.v1()
             datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
 
-    path_to_db = datasaver.dataset._path_to_db
+    path_to_db = datasaver.dataset.path_to_db
     ds = datasaver.dataset
     ds.add_metadata("mymetadatatag", 42)
 
@@ -359,7 +399,10 @@ def test_dataset_load_from_netcdf_and_db(
 
 
 def test_dataset_in_memory_does_not_create_runs_table(
-    meas_with_registered_param, DMM, DAC, tmp_path
+    meas_with_registered_param: "Measurement",
+    DMM: "DummyInstrument",
+    DAC: "DummyInstrument",
+    tmp_path: "Path",
 ) -> None:
     with meas_with_registered_param.run(
         dataset_class=DataSetType.DataSetInMem
@@ -370,7 +413,8 @@ def test_dataset_in_memory_does_not_create_runs_table(
             datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
 
     ds = datasaver.dataset
-    dbfile = datasaver.dataset._path_to_db
+    dbfile = datasaver.dataset.path_to_db
+    assert dbfile is not None
 
     conn = AtomicConnection(dbfile)
 
@@ -381,7 +425,7 @@ def test_dataset_in_memory_does_not_create_runs_table(
     assert all(ds.name not in table_name for table_name in tablenames)
 
 
-def test_load_from_netcdf_and_write_metadata_to_db(empty_temp_db) -> None:
+def test_load_from_netcdf_and_write_metadata_to_db(empty_temp_db: "None") -> None:
     netcdf_file_path = (
         Path(__file__).parent / "fixtures" / "db_files" / "netcdf" / "qcodes_2.nc"
     )
@@ -414,7 +458,7 @@ def test_load_from_netcdf_and_write_metadata_to_db(empty_temp_db) -> None:
     compare_datasets(ds, loaded_ds)
 
 
-def test_load_from_netcdf_no_db_file(non_created_db) -> None:
+def test_load_from_netcdf_no_db_file(non_created_db: "None") -> None:
     netcdf_file_path = (
         Path(__file__).parent / "fixtures" / "db_files" / "netcdf" / "qcodes_2.nc"
     )
@@ -429,7 +473,12 @@ def test_load_from_netcdf_no_db_file(non_created_db) -> None:
     compare_datasets(ds, loaded_ds)
 
 
-def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path) -> None:
+def test_load_from_db(
+    meas_with_registered_param: "Measurement",
+    DMM: "DummyInstrument",
+    DAC: "DummyInstrument",
+    tmp_path: "Path",
+) -> None:
     Station(DAC, DMM)
     with meas_with_registered_param.run(
         dataset_class=DataSetType.DataSetInMem
@@ -459,7 +508,12 @@ def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path) -> None:
     compare_datasets(ds, loaded_ds)
 
 
-def test_load_from_file(meas_with_registered_param, DMM, DAC, tmp_path) -> None:
+def test_load_from_file(
+    meas_with_registered_param: "Measurement",
+    DMM: "DummyInstrument",
+    DAC: "DummyInstrument",
+    tmp_path: "Path",
+) -> None:
     qcodes.config["dataset"]["export_prefix"] = "my_export_prefix"
     qcodes.config["dataset"]["export_type"] = "netcdf"
 
@@ -472,7 +526,7 @@ def test_load_from_file(meas_with_registered_param, DMM, DAC, tmp_path) -> None:
             get_v = DMM.v1()
             datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
 
-    ds: DataSetInMem = datasaver.dataset
+    ds: DataSetProtocol = datasaver.dataset
     ds.add_metadata("foo", "bar")
     ds.export(path=tmp_path)
     ds.add_metadata("metadata_added_after_export", "42")
@@ -494,7 +548,12 @@ def test_load_from_file(meas_with_registered_param, DMM, DAC, tmp_path) -> None:
     compare_datasets(ds, loaded_ds)
 
 
-def test_load_from_file_by_id(meas_with_registered_param, DMM, DAC, tmp_path) -> None:
+def test_load_from_file_by_id(
+    meas_with_registered_param: "Measurement",
+    DMM: "DummyInstrument",
+    DAC: "DummyInstrument",
+    tmp_path: "Path",
+) -> None:
     qcodes.config["dataset"]["export_prefix"] = "my_export_prefix"
     qcodes.config["dataset"]["export_type"] = "netcdf"
     qcodes.config["dataset"]["load_from_exported_file"] = True
@@ -507,7 +566,7 @@ def test_load_from_file_by_id(meas_with_registered_param, DMM, DAC, tmp_path) ->
             get_v = DMM.v1()
             datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
 
-    ds: DataSetInMem = datasaver.dataset
+    ds: DataSetProtocol = datasaver.dataset
     assert not isinstance(ds, DataSetInMem)
     ds.export(path=tmp_path)
 
@@ -522,7 +581,9 @@ def test_load_from_file_by_id(meas_with_registered_param, DMM, DAC, tmp_path) ->
     assert not isinstance(loaded_ds_from_db, DataSetInMem)
 
 
-def test_load_from_netcdf_non_completed_dataset(experiment, tmp_path) -> None:
+def test_load_from_netcdf_non_completed_dataset(
+    experiment: "Experiment", tmp_path: "Path"
+) -> None:
     """Test that non-completed datasets can be loaded from netcdf files."""
     # Create a non-completed dataset by NOT using the measurement context manager
     # which automatically completes the dataset on exit
@@ -565,7 +626,7 @@ def test_load_from_netcdf_non_completed_dataset(experiment, tmp_path) -> None:
     assert loaded_ds.run_timestamp_raw == ds.run_timestamp_raw
 
 
-def test_load_from_netcdf_legacy_version(non_created_db) -> None:
+def test_load_from_netcdf_legacy_version(non_created_db: "None") -> None:
     # Qcodes 0.26 exported netcdf files did not contain
     # the parent dataset links and used a different engine to write data
     # check that it still loads correctly
@@ -584,7 +645,7 @@ def test_load_from_netcdf_legacy_version(non_created_db) -> None:
     compare_datasets(ds, loaded_ds)
 
 
-def compare_datasets(ds, loaded_ds):
+def compare_datasets(ds: "DataSetProtocol", loaded_ds: "DataSetProtocol") -> "None":
     assert ds.the_same_dataset_as(loaded_ds)
     assert len(ds) == len(loaded_ds)
     assert len(ds) != 0
@@ -606,7 +667,10 @@ def compare_datasets(ds, loaded_ds):
 
 
 def test_load_from_db_dataset_moved(
-    meas_with_registered_param, DMM, DAC, tmp_path
+    meas_with_registered_param: "Measurement",
+    DMM: "DummyInstrument",
+    DAC: "DummyInstrument",
+    tmp_path: "Path",
 ) -> None:
     Station(DAC, DMM)
     with meas_with_registered_param.run(

@@ -34,6 +34,11 @@ from qcodes.parameters import (
 from qcodes.validators import Arrays, ComplexNumbers, Numbers
 
 if TYPE_CHECKING:
+    from numpy.typing import NDArray
+
+    from qcodes.instrument import InstrumentBase
+
+if TYPE_CHECKING:
     from collections.abc import Generator, Iterator
     from pathlib import Path
 
@@ -88,7 +93,9 @@ def two_empty_temp_db_connections(
 
 
 @contextmanager
-def temporarily_copied_DB(filepath: str, **kwargs):
+def temporarily_copied_DB(
+    filepath: str, **kwargs
+) -> Generator[AtomicConnection, None, None]:
     """
     Make a temporary copy of a db-file and delete it after use. Meant to be
     used together with the old version database fixtures, lest we change the
@@ -572,12 +579,12 @@ def channel_array_instrument() -> Generator[DummyChannelInstrument, None, None]:
 @pytest.fixture
 def complex_num_instrument() -> Generator[DummyInstrument, None, None]:
     class MyParam(Parameter):
-        def get_raw(self):
+        def get_raw(self) -> complex:
             assert self.instrument is not None
             return self.instrument.setpoint() + 1j * self.instrument.setpoint()
 
     class RealPartParam(Parameter):
-        def get_raw(self):
+        def get_raw(self) -> float:
             assert self.instrument is not None
             return self.instrument.complex_setpoint().real
 
@@ -672,7 +679,12 @@ def SpectrumAnalyzer() -> Generator[DummyInstrument, None, None]:
     """
 
     class BaseSpectrum(ArrayParameter):
-        def __init__(self, name, instrument, **kwargs):
+        def __init__(
+            self,
+            name: str,
+            instrument: InstrumentBase,
+            **kwargs,
+        ):
             super().__init__(
                 name=name,
                 shape=(1,),  # this attribute should be removed
@@ -688,7 +700,7 @@ def SpectrumAnalyzer() -> Generator[DummyInstrument, None, None]:
             self.stop = 2e6
             self._rng = np.random.default_rng()
 
-        def get_data(self):
+        def get_data(self) -> NDArray[np.float64]:
             # This is how it should be: the setpoints are generated at the
             # time we get. But that will of course not work with the old Loop
             self.setpoints = (tuple(np.linspace(self.start, self.stop, self.npts)),)
@@ -696,11 +708,16 @@ def SpectrumAnalyzer() -> Generator[DummyInstrument, None, None]:
             return self._rng.standard_normal(self.npts)
 
     class Spectrum(BaseSpectrum):
-        def get_raw(self):
+        def get_raw(self) -> NDArray[np.float64]:
             return super().get_data()
 
     class MultiDimSpectrum(ArrayParameter):
-        def __init__(self, name, instrument, **kwargs):
+        def __init__(
+            self,
+            name: str,
+            instrument: InstrumentBase,
+            **kwargs,
+        ):
             self.start = 0
             self.stop = 2e6
             self.npts = (100, 50, 20)
@@ -722,16 +739,16 @@ def SpectrumAnalyzer() -> Generator[DummyInstrument, None, None]:
             )
             self._rng = np.random.default_rng()
 
-        def get_raw(self):
+        def get_raw(self) -> NDArray[np.float64]:
             return self._rng.standard_normal(self.npts)
 
     class ListSpectrum(BaseSpectrum):
-        def get_raw(self):
+        def get_raw(self) -> list[np.float64]:
             output = super().get_data()
             return list(output)
 
     class TupleSpectrum(BaseSpectrum):
-        def get_raw(self):
+        def get_raw(self) -> tuple[np.float64, ...]:
             output = super().get_data()
             return tuple(output)
 
@@ -800,11 +817,15 @@ def _make_dummy_instrument() -> Iterator[DummyChannelInstrument]:
 
 
 class ArrayshapedParam(Parameter):
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self,
+        *args: str,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         self._rng = np.random.default_rng()
 
-    def get_raw(self):
+    def get_raw(self) -> NDArray[np.float64]:
         assert isinstance(self.vals, Arrays)
         assert self.vals.shape is not None
         shape = self.vals.shape

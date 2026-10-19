@@ -1,5 +1,6 @@
 from keyword import iskeyword
 from numbers import Number
+from typing import TYPE_CHECKING
 
 import hypothesis.strategies as hst
 import pytest
@@ -9,8 +10,13 @@ from numpy import ndarray
 from qcodes.dataset.descriptions.param_spec import ParamSpec
 from qcodes.parameters import ParamSpecBase
 
+if TYPE_CHECKING:
+    from hypothesis.strategies import SearchStrategy
 
-def valid_identifier(**kwargs):
+    from qcodes.dataset.descriptions.param_spec import ParamSpecDict
+
+
+def valid_identifier(**kwargs: "int") -> "SearchStrategy[str]":
     """Return a strategy which generates a valid Python Identifier"""
     if "min_size" not in kwargs:
         kwargs["min_size"] = 4
@@ -39,7 +45,7 @@ valid_paramspec_kwargs = hst.fixed_dictionaries(
 
 
 @pytest.fixture
-def version_0_dicts():
+def version_0_dicts() -> "list[ParamSpecDict]":
     sers = []
     sers.append(
         {
@@ -65,7 +71,7 @@ def version_0_dicts():
 
 
 @pytest.fixture
-def version_0_objects():
+def version_0_objects() -> "list[ParamSpec]":
     """
     The ParamSpecs that the dictionaries above represent
     """
@@ -103,7 +109,14 @@ def version_0_objects():
         elements=hst.sampled_from(["numeric", "array", "text"]), min_size=6, max_size=6
     ),
 )
-def test_creation(name, sp1, sp2, inff1, inff2, paramtype) -> None:
+def test_creation(
+    name: "str",
+    sp1: "str",
+    sp2: "str",
+    inff1: "str",
+    inff2: "str",
+    paramtype: "list[str]",
+) -> None:
     invalid_types = ("np.array", "ndarray", "lala", "", Number, ndarray, 0, None)
     for inv_type in invalid_types:
         with pytest.raises(ValueError):
@@ -149,7 +162,7 @@ def test_creation(name, sp1, sp2, inff1, inff2, paramtype) -> None:
 
 
 @given(name=hst.text(min_size=1))
-def test_repr(name) -> None:
+def test_repr(name: "str") -> None:
     okay_types = ["array", "numeric", "text"]
 
     for okt in okay_types:
@@ -172,7 +185,7 @@ alphabet = "".join(chr(i) for i in range(ord("a"), ord("z")))
     name2=hst.text(min_size=4, max_size=100, alphabet=alphabet),
     name3=hst.text(min_size=4, max_size=100, alphabet=alphabet),
 )
-def test_depends_on(name1, name2, name3) -> None:
+def test_depends_on(name1: "str", name2: "str", name3: "str") -> None:
     ps2 = ParamSpec(name2, "numeric")
     ps3 = ParamSpec(name3, "numeric")
 
@@ -194,7 +207,7 @@ def test_depends_on(name1, name2, name3) -> None:
     name2=hst.text(min_size=4, max_size=100, alphabet=alphabet),
     name3=hst.text(min_size=4, max_size=100, alphabet=alphabet),
 )
-def test_inferred_from(name1, name2, name3) -> None:
+def test_inferred_from(name1: "str", name2: "str", name3: "str") -> None:
     ps2 = ParamSpec(name2, "numeric")
     ps3 = ParamSpec(name3, "numeric")
 
@@ -216,7 +229,7 @@ def test_inferred_from(name1, name2, name3) -> None:
     name1=hst.text(min_size=4, max_size=100, alphabet=alphabet),
     name2=hst.text(min_size=4, max_size=100, alphabet=alphabet),
 )
-def test_copy(name1, name2) -> None:
+def test_copy(name1: "str", name2: "str") -> None:
     ps_indep = ParamSpec(name1, "numeric")
     ps = ParamSpec(name2, "numeric", depends_on=[ps_indep, "other_param"])
     ps_copy = ps.copy()
@@ -265,7 +278,9 @@ def test_convert_to_dict() -> None:
     assert ser["inferred_from"] == p1._inferred_from
 
 
-def test_from_dict(version_0_dicts, version_0_objects) -> None:
+def test_from_dict(
+    version_0_dicts: "list[ParamSpecDict]", version_0_objects: "list[ParamSpec]"
+) -> None:
     for sdict, ps in zip(version_0_dicts, version_0_objects):
         deps = ParamSpec._from_dict(sdict)
         assert ps == deps
@@ -300,7 +315,11 @@ def test_hash(paramspecs) -> None:
     add_to_2_dep=hst.booleans(),
 )
 def test_hash_with_deferred_and_inferred_as_paramspecs(
-    paramspecs, add_to_1_inf, add_to_1_dep, add_to_2_inf, add_to_2_dep
+    paramspecs,
+    add_to_1_inf: "bool",
+    add_to_1_dep: "bool",
+    add_to_2_inf: "bool",
+    add_to_2_dep: "bool",
 ) -> None:
     """
     Test that hashing works if 'inferred_from' and/or 'depends_on' contain

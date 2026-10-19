@@ -18,7 +18,13 @@ CALLBACK_RUN_ID = None
 CALLBACK_SNAPSHOT = None
 
 
-def callback(result_list, data_set_len, state, run_id, snapshot):
+def callback(
+    result_list: "list[tuple[object, ...]]",
+    data_set_len: "int",
+    state: "object",
+    run_id: "int",
+    snapshot: "str | None",
+) -> "None":
     """
     default_callback example function implemented in the Web UI.
     """
@@ -28,7 +34,7 @@ def callback(result_list, data_set_len, state, run_id, snapshot):
     CALLBACK_SNAPSHOT = snapshot
 
 
-def reset_callback_globals():
+def reset_callback_globals() -> "None":
     global CALLBACK_COUNT, CALLBACK_RUN_ID, CALLBACK_SNAPSHOT
     CALLBACK_COUNT = 0
     CALLBACK_RUN_ID = None
@@ -37,7 +43,7 @@ def reset_callback_globals():
 
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_default_callback(bg_writing) -> None:
+def test_default_callback(bg_writing: "bool") -> None:
     """
     The Web UI needs to know the results of an experiment with the metadata.
     So a default_callback class variable is set by the Web UI with a callback
@@ -75,7 +81,7 @@ def test_default_callback(bg_writing) -> None:
 
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_numpy_types(bg_writing) -> None:
+def test_numpy_types(bg_writing: "bool") -> None:
     """
     Test that we can save numpy types in the data set
     """
@@ -135,7 +141,10 @@ def test_numpy_types(bg_writing) -> None:
     ],
 )
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_saving_numeric_values_as_text(numeric_type, bg_writing) -> None:
+def test_saving_numeric_values_as_text(
+    numeric_type: "Callable[[int], int | float | np.integer | np.floating]",
+    bg_writing: "bool",
+) -> None:
     """
     Test the saving numeric values into 'text' parameter raises an exception
     """

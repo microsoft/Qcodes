@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from math import ceil
 from string import ascii_uppercase
+from typing import TYPE_CHECKING, Literal
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -11,6 +12,15 @@ from hypothesis import HealthCheck, given, settings
 
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.measurements import Measurement
+
+if TYPE_CHECKING:
+    from qcodes.dataset.data_set_protocol import ParameterData
+    from qcodes.dataset.experiment_container import Experiment
+    from qcodes.instrument_drivers.mock_instruments import (
+        DummyChannelInstrument,
+        DummyInstrument,
+    )
+    from qcodes.parameters import Parameter
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
@@ -23,13 +33,13 @@ from qcodes.dataset.measurements import Measurement
 )
 @given(n_points=hst.integers(min_value=1, max_value=11))
 def test_cache_standalone(
-    experiment,
-    DMM,
-    n_points,
-    bg_writing,
-    channel_array_instrument,
-    set_shape,
-    in_memory_cache,
+    experiment: Experiment,
+    DMM: DummyInstrument,
+    n_points: int,
+    bg_writing: bool,
+    channel_array_instrument: DummyChannelInstrument,
+    set_shape: bool,
+    in_memory_cache: bool,
 ) -> None:
     meas1 = Measurement()
     meas1.register_parameter(DMM.v1)
@@ -198,15 +208,15 @@ def test_cache_standalone(
 )
 @given(n_points=hst.integers(min_value=1, max_value=11))
 def test_cache_1d(
-    experiment,
-    DAC,
-    DMM,
-    n_points,
-    bg_writing,
-    channel_array_instrument,
-    setpoints_type,
-    set_shape,
-    in_memory_cache,
+    experiment: Experiment,
+    DAC: DummyInstrument,
+    DMM: DummyInstrument,
+    n_points: int,
+    bg_writing: bool,
+    channel_array_instrument: DummyChannelInstrument,
+    setpoints_type: Literal["text", "numeric"],
+    set_shape: bool,
+    in_memory_cache: bool,
 ) -> None:
     setpoints_param, setpoints_values = _prepare_setpoints_1d(
         DAC, channel_array_instrument, n_points, setpoints_type
@@ -383,14 +393,14 @@ def test_cache_1d(
 )
 @given(n_points=hst.integers(min_value=1, max_value=101))
 def test_cache_1d_every_other_point(
-    experiment,
-    DAC,
-    DMM,
-    n_points,
-    bg_writing,
-    channel_array_instrument,
-    setpoints_type,
-    in_memory_cache,
+    experiment: Experiment,
+    DAC: DummyInstrument,
+    DMM: DummyInstrument,
+    n_points: int,
+    bg_writing: bool,
+    channel_array_instrument: DummyChannelInstrument,
+    setpoints_type: Literal["text", "numeric"],
+    in_memory_cache: bool,
 ) -> None:
     setpoints_param, setpoints_values = _prepare_setpoints_1d(
         DAC, channel_array_instrument, n_points, setpoints_type
@@ -467,14 +477,14 @@ def test_cache_1d_every_other_point(
     n_points_inner=hst.integers(min_value=1, max_value=11),
 )
 def test_cache_2d(
-    experiment,
-    DAC,
-    DMM,
-    n_points_outer,
-    n_points_inner,
-    bg_writing,
-    channel_array_instrument,
-    in_memory_cache,
+    experiment: Experiment,
+    DAC: DummyInstrument,
+    DMM: DummyInstrument,
+    n_points_outer: int,
+    n_points_inner: int,
+    bg_writing: bool,
+    channel_array_instrument: DummyChannelInstrument,
+    in_memory_cache: bool,
 ) -> None:
     meas = Measurement()
 
@@ -535,14 +545,14 @@ def test_cache_2d(
     n_points_inner=hst.integers(min_value=1, max_value=11),
 )
 def test_cache_2d_num_with_multiple_storage_types(
-    experiment,
-    DAC,
-    DMM,
-    n_points_outer,
-    n_points_inner,
-    bg_writing,
-    storage_type,
-    in_memory_cache,
+    experiment: Experiment,
+    DAC: DummyInstrument,
+    DMM: DummyInstrument,
+    n_points_outer: int,
+    n_points_inner: int,
+    bg_writing: bool,
+    storage_type: Literal["numeric", "array"] | None,
+    in_memory_cache: bool,
 ) -> None:
     meas = Measurement()
 
@@ -592,13 +602,13 @@ def test_cache_2d_num_with_multiple_storage_types(
 )
 @given(n_points=hst.integers(min_value=1, max_value=21))
 def test_cache_1d_array_in_1d(
-    experiment,
-    DAC,
-    channel_array_instrument,
-    n_points,
-    bg_writing,
-    storage_type,
-    in_memory_cache,
+    experiment: Experiment,
+    DAC: DummyInstrument,
+    channel_array_instrument: DummyChannelInstrument,
+    n_points: int,
+    bg_writing: bool,
+    storage_type: Literal["numeric", "array"] | None,
+    in_memory_cache: bool,
 ) -> None:
     param = channel_array_instrument.A.dummy_array_parameter
     meas = Measurement()
@@ -640,13 +650,13 @@ def test_cache_1d_array_in_1d(
 )
 @given(n_points=hst.integers(min_value=1, max_value=21))
 def test_cache_multiparam_in_1d(
-    experiment,
-    DAC,
-    channel_array_instrument,
-    n_points,
-    bg_writing,
-    storage_type,
-    in_memory_cache,
+    experiment: Experiment,
+    DAC: DummyInstrument,
+    channel_array_instrument: DummyChannelInstrument,
+    n_points: int,
+    bg_writing: bool,
+    storage_type: Literal["numeric", "array"] | None,
+    in_memory_cache: bool,
 ) -> None:
     param = channel_array_instrument.A.dummy_2d_multi_parameter
     meas = Measurement()
@@ -689,14 +699,14 @@ def test_cache_multiparam_in_1d(
 )
 @given(n_points=hst.integers(min_value=1, max_value=21))
 def test_cache_complex_array_param_in_1d(
-    experiment,
-    DAC,
-    channel_array_instrument,
-    n_points,
-    bg_writing,
-    storage_type,
-    outer_param_type,
-    in_memory_cache,
+    experiment: Experiment,
+    DAC: DummyInstrument,
+    channel_array_instrument: DummyChannelInstrument,
+    n_points: int,
+    bg_writing: bool,
+    storage_type: Literal["array"] | None,
+    outer_param_type: Literal["numeric", "text"],
+    in_memory_cache: bool,
 ) -> None:
     param = channel_array_instrument.A.dummy_complex_array_parameter
     meas = Measurement()
@@ -745,14 +755,14 @@ def test_cache_complex_array_param_in_1d(
 )
 @given(n_points=hst.integers(min_value=1, max_value=11))
 def test_cache_1d_shape(
-    experiment,
-    DAC,
-    DMM,
-    n_points,
-    bg_writing,
-    channel_array_instrument,
-    setpoints_type,
-    in_memory_cache,
+    experiment: Experiment,
+    DAC: DummyInstrument,
+    DMM: DummyInstrument,
+    n_points: int,
+    bg_writing: bool,
+    channel_array_instrument: DummyChannelInstrument,
+    setpoints_type: Literal["text", "numeric"],
+    in_memory_cache: bool,
 ) -> None:
     setpoints_param, setpoints_values = _prepare_setpoints_1d(
         DAC, channel_array_instrument, n_points, setpoints_type
@@ -851,15 +861,15 @@ def test_cache_1d_shape(
     pws_n_points=hst.integers(min_value=1, max_value=11),
 )
 def test_cache_2d_shape(
-    experiment,
-    DAC,
-    DMM,
-    n_points_outer,
-    n_points_inner,
-    pws_n_points,
-    bg_writing,
-    channel_array_instrument,
-    cache_size,
+    experiment: Experiment,
+    DAC: DummyInstrument,
+    DMM: DummyInstrument,
+    n_points_outer: int,
+    n_points_inner: int,
+    pws_n_points: int,
+    bg_writing: bool,
+    channel_array_instrument: DummyChannelInstrument,
+    cache_size: Literal["too_large", "correct", "too_small"],
 ) -> None:
     meas = Measurement()
 
@@ -985,8 +995,11 @@ def test_cache_2d_shape(
 
 
 def _assert_completed_cache_is_as_expected(
-    cache_data_trees, param_data_trees, flatten=False, clip=False
-):
+    cache_data_trees: ParameterData,
+    param_data_trees: ParameterData,
+    flatten: bool = False,
+    clip: bool = False,
+) -> None:
     # there is a tiny round trip loss in accuracy
     # when serializing float types
     approx_kinds = ("f", "c")
@@ -1027,12 +1040,12 @@ def _assert_completed_cache_is_as_expected(
 
 
 def _assert_partial_cache_is_as_expected(
-    cache_data_trees,
-    expected_shapes,
-    n_points_measured,
-    param_data_trees,
-    cache_correct=True,
-):
+    cache_data_trees: ParameterData,
+    expected_shapes: dict[str, tuple[int, ...]],
+    n_points_measured: int,
+    param_data_trees: ParameterData,
+    cache_correct: bool = True,
+) -> None:
     assert sorted(cache_data_trees.keys()) == sorted(expected_shapes.keys())
     # there is a tiny round trip loss in accuracy
     # when serializing float types
@@ -1068,7 +1081,7 @@ def _assert_parameter_data_is_identical(
     expected: dict[str, dict[str, np.ndarray]],
     actual: dict[str, dict[str, np.ndarray]],
     shaped_partial: bool = False,
-):
+) -> None:
     assert expected.keys() == actual.keys()
     # there is a tiny round trip loss in accuracy
     # when serializing float types
@@ -1112,7 +1125,12 @@ def _array_param_used_in_tree(measurement: Measurement) -> bool:
     return found_array
 
 
-def _prepare_setpoints_1d(DAC, channel_array_instrument, n_points, setpoints_type):
+def _prepare_setpoints_1d(
+    DAC: DummyInstrument,
+    channel_array_instrument: DummyChannelInstrument,
+    n_points: int,
+    setpoints_type: Literal["numeric", "text"],
+) -> tuple[Parameter[float] | Parameter[str], npt.NDArray[np.float64] | list[str]]:
     if setpoints_type == "numeric":
         setpoints_param = DAC.ch1
         setpoints_values = np.linspace(-1, 1, n_points)

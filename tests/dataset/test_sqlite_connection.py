@@ -29,14 +29,14 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-def sqlite_conn_in_transaction(conn: sqlite3.Connection):
+def sqlite_conn_in_transaction(conn: sqlite3.Connection) -> "bool":
     assert isinstance(conn, sqlite3.Connection)
     assert True is conn.in_transaction
     assert None is conn.isolation_level
     return True
 
 
-def conn_plus_in_transaction(conn: AtomicConnection):
+def conn_plus_in_transaction(conn: AtomicConnection) -> "bool":
     assert isinstance(conn, AtomicConnection)
     assert True is conn.atomic_in_progress
     assert None is conn.isolation_level
@@ -44,14 +44,16 @@ def conn_plus_in_transaction(conn: AtomicConnection):
     return True
 
 
-def sqlite_conn_is_idle(conn: sqlite3.Connection, isolation=None):
+def sqlite_conn_is_idle(
+    conn: sqlite3.Connection, isolation: "str | None" = None
+) -> "bool":
     assert isinstance(conn, sqlite3.Connection)
     assert False is conn.in_transaction
     assert isolation == conn.isolation_level
     return True
 
 
-def conn_plus_is_idle(conn: AtomicConnection, isolation=None):
+def conn_plus_is_idle(conn: AtomicConnection, isolation: "str | None" = None) -> "bool":
     assert isinstance(conn, AtomicConnection)
     assert False is conn.atomic_in_progress
     assert isolation == conn.isolation_level
@@ -124,7 +126,7 @@ def test_atomic_with_exception() -> None:
     assert 25 == sqlite_conn.execute("PRAGMA user_version").fetchall()[0][0]
 
 
-def test_atomic_with_keyboardinterrupt(tmp_path) -> None:
+def test_atomic_with_keyboardinterrupt(tmp_path: "Path") -> None:
     dbfile = str(tmp_path / "temp.db")
     conn = AtomicConnection(dbfile)
     isolation_level = conn.isolation_level
@@ -149,7 +151,7 @@ def test_atomic_with_keyboardinterrupt(tmp_path) -> None:
         assert [(2,)] == reader.execute("SELECT x FROM t").fetchall()
 
 
-def test_nested_atomic_with_keyboardinterrupt(tmp_path) -> None:
+def test_nested_atomic_with_keyboardinterrupt(tmp_path: "Path") -> None:
     dbfile = str(tmp_path / "temp.db")
     conn = AtomicConnection(dbfile)
     isolation_level = conn.isolation_level
@@ -185,7 +187,7 @@ def test_atomic_on_outmost_connection_that_is_in_transaction() -> None:
 
 
 @pytest.mark.parametrize("in_transaction", (True, False))
-def test_atomic_on_connection_plus_that_is_in_progress(in_transaction) -> None:
+def test_atomic_on_connection_plus_that_is_in_progress(in_transaction: "bool") -> None:
     sqlite_conn = AtomicConnection(":memory:")
 
     # explicitly set to True for testing purposes
@@ -248,7 +250,7 @@ def test_two_nested_atomics() -> None:
 
 
 def test_that_use_of_atomic_commits_only_at_outermost_context(
-    tmp_path,
+    tmp_path: "Path",
 ) -> None:
     """
     This test tests the behavior of `AtomicConnection` that is created from
@@ -332,7 +334,7 @@ def test_that_use_of_atomic_commits_only_at_outermost_context(
     assert 3 == len(control_conn.execute(get_all_runs).fetchall())
 
 
-def test_atomic_transaction(tmp_path) -> None:
+def test_atomic_transaction(tmp_path: "Path") -> None:
     """Test that atomic_transaction works for AtomicConnection"""
     dbfile = str(tmp_path / "temp.db")
 
@@ -347,7 +349,7 @@ def test_atomic_transaction(tmp_path) -> None:
         assert sql_create_table in ctrl_conn.execute(sql_table_exists).fetchall()[0]
 
 
-def test_atomic_transaction_on_sqlite3_connection_raises(tmp_path) -> None:
+def test_atomic_transaction_on_sqlite3_connection_raises(tmp_path: "Path") -> None:
     """Test that atomic_transaction does not work for sqlite3.Connection"""
     dbfile = str(tmp_path / "temp.db")
 

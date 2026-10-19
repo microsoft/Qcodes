@@ -7,6 +7,7 @@ import sqlite3
 import time
 import unicodedata
 from contextlib import contextmanager
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import hypothesis.strategies as hst
@@ -34,11 +35,20 @@ from tests.common import error_caused_by
 
 from .helper_functions import verify_data_dict
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from qcodes.dataset.sqlite.connection import AtomicConnection
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from qcodes.dataset.experiment_container import Experiment
+
 _unicode_categories = ("Lu", "Ll", "Lt", "Lm", "Lo", "Nd", "Pc", "Pd", "Zs")
 
 
 @contextmanager
-def shadow_conn(path_to_db: str):
+def shadow_conn(path_to_db: str) -> "Generator[AtomicConnection, None, None]":
     """
     Simple context manager to create a connection for testing and
     close it on exit
@@ -49,7 +59,7 @@ def shadow_conn(path_to_db: str):
 
 
 @pytest.fixture(name="simple_run_describer")
-def _make_simple_run_describer():
+def _make_simple_run_describer() -> "Generator[RunDescriber, None, None]":
     x = ParamSpecBase("x", "numeric")
     t = ParamSpecBase("t", "numeric")
     y = ParamSpecBase("y", "numeric")
@@ -61,7 +71,7 @@ def _make_simple_run_describer():
     yield rundescriber
 
 
-def test_path_to_dbfile(tmp_path) -> None:
+def test_path_to_dbfile(tmp_path: "Path") -> None:
     tempdb = str(tmp_path / "database.db")
     conn = mut_db.connect(tempdb)
     try:
@@ -71,14 +81,14 @@ def test_path_to_dbfile(tmp_path) -> None:
         conn.close()
 
 
-def test_one_raises_on_no_results(experiment) -> None:
+def test_one_raises_on_no_results(experiment: "Experiment") -> None:
     conn = experiment.conn
 
     with pytest.raises(RuntimeError, match="Expected one row"):
         mut_help.one(conn.cursor(), column="Something_you_dont_have")
 
 
-def test_one_raises_on_more_than_one_result(experiment) -> None:
+def test_one_raises_on_more_than_one_result(experiment: "Experiment") -> None:
     conn = experiment.conn
 
     # create another experiment with so that the query below returns
@@ -95,7 +105,7 @@ def test_one_raises_on_more_than_one_result(experiment) -> None:
         mut_help.one(cur, column="exp_id")
 
 
-def test_one_raises_on_wrong_column_name(experiment) -> None:
+def test_one_raises_on_wrong_column_name(experiment: "Experiment") -> None:
     conn = experiment.conn
 
     query = """
@@ -108,7 +118,7 @@ def test_one_raises_on_wrong_column_name(experiment) -> None:
         mut_help.one(cur, column="eXP_id")
 
 
-def test_one_raises_on_wrong_column_index(experiment) -> None:
+def test_one_raises_on_wrong_column_index(experiment: "Experiment") -> None:
     conn = experiment.conn
 
     query = """
@@ -121,7 +131,7 @@ def test_one_raises_on_wrong_column_index(experiment) -> None:
         mut_help.one(cur, column=1)
 
 
-def test_one_works_if_given_column_index(experiment) -> None:
+def test_one_works_if_given_column_index(experiment: "Experiment") -> None:
     # This test relies on the fact that there's only one experiment in the
     # given database
     conn = experiment.conn
@@ -137,7 +147,7 @@ def test_one_works_if_given_column_index(experiment) -> None:
     assert exp_id == experiment.exp_id
 
 
-def test_one_works_if_given_column_name(experiment) -> None:
+def test_one_works_if_given_column_name(experiment: "Experiment") -> None:
     # This test relies on the fact that there's only one experiment in the
     # given database
     conn = experiment.conn
@@ -153,7 +163,7 @@ def test_one_works_if_given_column_name(experiment) -> None:
     assert exp_id == experiment.exp_id
 
 
-def test_atomic_transaction_raises(experiment) -> None:
+def test_atomic_transaction_raises(experiment: "Experiment") -> None:
     conn = experiment.conn
 
     bad_sql = '""'
@@ -162,7 +172,7 @@ def test_atomic_transaction_raises(experiment) -> None:
         mut_conn.atomic_transaction(conn, bad_sql)
 
 
-def test_atomic_raises(experiment) -> None:
+def test_atomic_raises(experiment: "Experiment") -> None:
     conn = experiment.conn
 
     bad_sql = '""'
@@ -172,7 +182,7 @@ def test_atomic_raises(experiment) -> None:
     assert error_caused_by(excinfo, "syntax error")
 
 
-def test_insert_many_values_raises(experiment) -> None:
+def test_insert_many_values_raises(experiment: "Experiment") -> None:
     conn = experiment.conn
 
     with pytest.raises(ValueError):
@@ -181,7 +191,7 @@ def test_insert_many_values_raises(experiment) -> None:
         )
 
 
-def test_get_non_existing_metadata_returns_none(experiment) -> None:
+def test_get_non_existing_metadata_returns_none(experiment: "Experiment") -> None:
     assert (
         mut_queries.get_data_by_tag_and_table_name(
             experiment.conn, "something", "results"
@@ -191,7 +201,7 @@ def test_get_non_existing_metadata_returns_none(experiment) -> None:
 
 
 @given(table_name=hst.text(max_size=50))
-def test__validate_table_raises(table_name) -> None:
+def test__validate_table_raises(table_name: "str") -> None:
     should_raise = False
     for char in table_name:
         if unicodedata.category(char) not in _unicode_categories:
@@ -204,7 +214,9 @@ def test__validate_table_raises(table_name) -> None:
         assert mut_queries._validate_table_name(table_name)
 
 
-def test_get_dependents_simple(experiment, simple_run_describer) -> None:
+def test_get_dependents_simple(
+    experiment: "Experiment", simple_run_describer: "RunDescriber"
+) -> None:
     (_, run_id, _) = mut_queries.create_run(
         experiment.conn,
         experiment.exp_id,
@@ -220,7 +232,7 @@ def test_get_dependents_simple(experiment, simple_run_describer) -> None:
     assert deps == [layout_id]
 
 
-def test_get_layout_id_with_invalid_parameter_type(dataset) -> None:
+def test_get_layout_id_with_invalid_parameter_type(dataset: "DataSet") -> None:
     with pytest.raises(ValueError, match="Wrong parameter type, must be ParamSpec"):
         mut_queries._get_layout_id(
             dataset.conn,
@@ -229,7 +241,7 @@ def test_get_layout_id_with_invalid_parameter_type(dataset) -> None:
         )
 
 
-def test_get_dependents(experiment) -> None:
+def test_get_dependents(experiment: "Experiment") -> None:
     # more parameters, more complicated dependencies
     x = ParamSpecBase("x", "numeric")
     t = ParamSpecBase("t", "numeric")
@@ -265,36 +277,36 @@ def test_get_dependents(experiment) -> None:
     assert deps == expected_deps
 
 
-def test_column_in_table(dataset) -> None:
+def test_column_in_table(dataset: "DataSet") -> None:
     assert mut_help.is_column_in_table(dataset.conn, "runs", "run_id")
     assert not mut_help.is_column_in_table(dataset.conn, "runs", "non-existing-column")
 
 
-def test_run_exist(dataset) -> None:
+def test_run_exist(dataset: "DataSet") -> None:
     assert mut_queries.run_exists(dataset.conn, dataset.run_id)
     assert not mut_queries.run_exists(dataset.conn, dataset.run_id + 1)
 
 
-def test_get_last_run(dataset) -> None:
+def test_get_last_run(dataset: "DataSet") -> None:
     assert dataset.run_id == mut_queries.get_last_run(dataset.conn, dataset.exp_id)
     assert dataset.run_id == mut_queries.get_last_run(dataset.conn)
 
 
-def test_get_last_run_no_runs(experiment) -> None:
+def test_get_last_run_no_runs(experiment: "Experiment") -> None:
     assert None is mut_queries.get_last_run(experiment.conn, experiment.exp_id)
     assert None is mut_queries.get_last_run(experiment.conn)
 
 
-def test_get_last_experiment(experiment) -> None:
+def test_get_last_experiment(experiment: "Experiment") -> None:
     assert experiment.exp_id == mut_queries.get_last_experiment(experiment.conn)
 
 
-def test_get_last_experiment_no_experiments(empty_temp_db) -> None:
+def test_get_last_experiment_no_experiments(empty_temp_db: "None") -> None:
     conn = mut_db.connect(get_DB_location())
     assert None is mut_queries.get_last_experiment(conn)
 
 
-def test_update_runs_description(dataset) -> None:
+def test_update_runs_description(dataset: "DataSet") -> None:
     invalid_descs = ["{}", "description"]
 
     for idesc in invalid_descs:
@@ -305,7 +317,7 @@ def test_update_runs_description(dataset) -> None:
     mut_queries.update_run_description(dataset.conn, dataset.run_id, desc)
 
 
-def test_runs_table_columns(empty_temp_db) -> None:
+def test_runs_table_columns(empty_temp_db: "None") -> None:
     """
     Ensure that the column names of a pristine runs table are what we expect
     """
@@ -320,7 +332,7 @@ def test_runs_table_columns(empty_temp_db) -> None:
     assert colnames == []
 
 
-def test_get_parameter_data(scalar_dataset) -> None:
+def test_get_parameter_data(scalar_dataset: "DataSet") -> None:
     ds = scalar_dataset
     input_names = ["param_3"]
 
@@ -380,7 +392,7 @@ def test_get_parameter_data_independent_parameters(
     )
 
 
-def test_is_run_id_in_db(empty_temp_db) -> None:
+def test_is_run_id_in_db(empty_temp_db: "None") -> None:
     conn = mut_db.connect(get_DB_location())
     mut_queries.new_experiment(conn, "test_exp", "no_sample")
 
@@ -400,13 +412,15 @@ def test_is_run_id_in_db(empty_temp_db) -> None:
     assert expected_dict == acquired_dict
 
 
-def test_atomic_creation(experiment, simple_run_describer) -> None:
+def test_atomic_creation(
+    experiment: "Experiment", simple_run_describer: "RunDescriber"
+) -> None:
     """ "
     Test that dataset creation is atomic. Test for
     https://github.com/QCoDeS/Qcodes/issues/1444
     """
 
-    def just_throw(*args):
+    def just_throw(*args: "object") -> "None":
         raise RuntimeError("This breaks adding metadata")
 
     # first we patch add_data_to_dynamic_columns to throw an exception
@@ -456,7 +470,7 @@ def test_atomic_creation(experiment, simple_run_describer) -> None:
         assert len(runs) == 1
 
 
-def test_set_run_timestamp(dataset) -> None:
+def test_set_run_timestamp(dataset: "DataSet") -> None:
     assert dataset.run_timestamp_raw is None
     assert dataset.completed_timestamp_raw is None
 
@@ -476,7 +490,7 @@ def test_set_run_timestamp(dataset) -> None:
     assert error_caused_by(ei, ("Can not set run_timestamp; it has already been set"))
 
 
-def test_set_run_timestamp_explicit(dataset) -> None:
+def test_set_run_timestamp_explicit(dataset: "DataSet") -> None:
     assert dataset.run_timestamp_raw is None
     assert dataset.completed_timestamp_raw is None
 
@@ -495,7 +509,7 @@ def test_set_run_timestamp_explicit(dataset) -> None:
     assert error_caused_by(ei, "Can not set run_timestamp; it has already been set")
 
 
-def test_mark_run_complete(dataset) -> None:
+def test_mark_run_complete(dataset: "DataSet") -> None:
     assert dataset.run_timestamp_raw is None
     assert dataset.completed_timestamp_raw is None
 
@@ -510,7 +524,7 @@ def test_mark_run_complete(dataset) -> None:
     assert dataset.completed_timestamp_raw > time_now
 
 
-def test_mark_run_complete_twice(dataset, caplog: LogCaptureFixture) -> None:
+def test_mark_run_complete_twice(dataset: "DataSet", caplog: LogCaptureFixture) -> None:
     assert dataset.run_timestamp_raw is None
     assert dataset.completed_timestamp_raw is None
 
@@ -548,7 +562,7 @@ def test_mark_run_complete_twice(dataset, caplog: LogCaptureFixture) -> None:
     assert dataset.completed_timestamp_raw > completed_time
 
 
-def test_mark_run_complete_explicit_time(dataset) -> None:
+def test_mark_run_complete_explicit_time(dataset: "DataSet") -> None:
     assert dataset.run_timestamp_raw is None
     assert dataset.completed_timestamp_raw is None
 
@@ -562,7 +576,7 @@ def test_mark_run_complete_explicit_time(dataset) -> None:
     mut_queries.mark_run_complete(dataset.conn, dataset.run_id)
 
 
-def test_connect_read_only_mode(tmp_path):
+def test_connect_read_only_mode(tmp_path: "Path") -> "None":
     """
     Test that connecting with read_only=True allows reading but not writing.
     """

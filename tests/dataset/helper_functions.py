@@ -9,6 +9,9 @@ import pandas as pd
 from numpy.testing import assert_array_equal
 
 if TYPE_CHECKING:
+    from numpy.typing import NDArray
+
+if TYPE_CHECKING:
     from collections.abc import Collection, Hashable, Mapping, Sequence
 
 
@@ -70,8 +73,8 @@ def verify_data_dict_for_single_param(
     datadict: dict[str, np.ndarray],
     names: Sequence[str],
     shapes: Sequence[tuple[int, ...]],
-    values,
-):
+    values: Sequence[NDArray[np.generic]],
+) -> None:
     # check that there are no unexpected elements in the dict
     key_names = list(datadict.keys())
     assert set(key_names) == set(names)
@@ -89,8 +92,8 @@ def verify_dataframe_for_single_param(
     dataframe: pd.DataFrame,
     names: Sequence[str],
     shapes: Sequence[tuple[int, ...]],
-    values,
-):
+    values: Sequence[NDArray[np.generic]],
+) -> None:
     # check that the dataframe has the same elements as index and columns
     pandas_index_names = list(dataframe.index.names)
     pandas_column_names = list(dataframe)

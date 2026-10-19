@@ -1,4 +1,5 @@
 import re
+from typing import TYPE_CHECKING
 
 import hypothesis.extra.numpy as hypnumpy
 import hypothesis.strategies as hst
@@ -12,8 +13,13 @@ from qcodes.dataset.measurements import DataSaver, Measurement
 from qcodes.parameters import ManualParameter, Parameter, ParamSpecBase
 from qcodes.validators import Strings
 
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
+if TYPE_CHECKING:
+    from qcodes.dataset.experiment_container import Experiment
 
-def test_string_via_dataset(experiment) -> None:
+
+def test_string_via_dataset(experiment: "Experiment") -> None:
     """
     Test that we can save text into database via DataSet API
     """
@@ -31,7 +37,7 @@ def test_string_via_dataset(experiment) -> None:
     assert test_set.get_parameter_data()["p"]["p"] == [["some text"]]
 
 
-def test_string_via_datasaver(experiment) -> None:
+def test_string_via_datasaver(experiment: "Experiment") -> None:
     """
     Test that we can save text into database via DataSaver API
     """
@@ -56,7 +62,7 @@ def test_string_via_datasaver(experiment) -> None:
     assert test_set.get_parameter_data()["p"]["p"] == np.array(["some text"])
 
 
-def test_string(experiment) -> None:
+def test_string(experiment: "Experiment") -> None:
     """
     Test that we can save text into database via Measurement API
     """
@@ -80,7 +86,7 @@ def test_string(experiment) -> None:
     assert test_set.get_parameter_data()["p"]["p"] == np.array(["some text"])
 
 
-def test_string_with_wrong_paramtype(experiment) -> None:
+def test_string_with_wrong_paramtype(experiment: "Experiment") -> None:
     """
     Test that an exception occurs when saving string data if when registering a
     string parameter the paramtype was not set to 'text'
@@ -165,7 +171,7 @@ def test_string_saved_and_loaded_as_numeric_via_dataset() -> None:
         test_set.conn.close()
 
 
-def test_list_of_strings(experiment) -> None:
+def test_list_of_strings(experiment: "Experiment") -> None:
     """
     Test saving list of strings via DataSaver
     """
@@ -211,7 +217,10 @@ def test_list_of_strings(experiment) -> None:
         shape=hypnumpy.array_shapes(),
     )
 )
-def test_string_and_date_data_in_array(experiment, p_values) -> None:
+def test_string_and_date_data_in_array(
+    experiment: "Experiment",
+    p_values: "NDArray[np.str_ | np.bytes_ | np.timedelta64 | np.datetime64]",
+) -> None:
     p = Parameter(
         "p",
         label="String parameter",

@@ -5,7 +5,7 @@ These are the basic black box tests for the doNd functions.
 import logging
 import re
 from functools import partial
-from typing import assert_type
+from typing import TYPE_CHECKING, assert_type
 
 import hypothesis.strategies as hst
 import matplotlib.axes
@@ -31,6 +31,7 @@ from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.dond.do_nd import _Sweeper
 from qcodes.instrument_drivers.mock_instruments import (
     ArraySetPointParam,
+    DummyChannelInstrument,
     Multi2DSetPointParam,
     Multi2DSetPointParam2Sizes,
     MultiSetPointParam,
@@ -44,20 +45,25 @@ from qcodes.parameters import (
 from qcodes.validators import Arrays, Ints
 from tests.dataset.conftest import ArrayshapedParam
 
+if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
+
+    from qcodes.dataset.experiment_container import Experiment
+
 
 class TrackingParameter(Parameter):
     """Parameter that keeps track of number of get and set operations"""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: str, **kwargs):
         self.set_count = 0
         self.get_count = 0
         super().__init__(*args, **kwargs)
 
-    def set_raw(self, value):
+    def set_raw(self, value: object) -> None:
         self.set_count += 1
         self.cache._set_from_raw_value(value)
 
-    def get_raw(self):
+    def get_raw(self) -> object:
         self.get_count += 1
         return self.cache.raw_value
 
@@ -71,16 +77,16 @@ class GetReturnsCountParameter(Parameter):
     Allows you to set a value but returns the get count rather
     than the value"""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: str, **kwargs):
         self.set_count = 0
         self.get_count = 0
         super().__init__(*args, **kwargs)
 
-    def set_raw(self, value):
+    def set_raw(self, value: object) -> None:
         self.set_count += 1
         self.cache._set_from_raw_value(value)
 
-    def get_raw(self):
+    def get_raw(self) -> int:
         self.get_count += 1
         return self.get_count
 
@@ -89,7 +95,7 @@ class GetReturnsCountParameter(Parameter):
         self.set_count = 0
 
 
-def test_linear_sweep_get_setpoints(_param) -> None:
+def test_linear_sweep_get_setpoints(_param: Parameter[int]) -> None:
     start = 0
     stop = 1
     num_points = 5
@@ -104,7 +110,12 @@ def test_linear_sweep_get_setpoints(_param) -> None:
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("cache_config", [True, False])
 @pytest.mark.parametrize("cache_setting", [True, False, None])
-def test_cache_config(_param, _param_2, cache_config, cache_setting) -> None:
+def test_cache_config(
+    _param: Parameter[int],
+    _param_2: Parameter[int],
+    cache_config: bool,
+    cache_setting: bool | None,
+) -> None:
     qc.config.dataset.in_memory_cache = cache_config
     start = 0
     stop = 1
@@ -121,7 +132,9 @@ def test_cache_config(_param, _param_2, cache_config, cache_setting) -> None:
         assert ds.cache.live is None
 
 
-def test_linear_sweep_properties(_param, _param_complex) -> None:
+def test_linear_sweep_properties(
+    _param: Parameter[int], _param_complex: Parameter[complex]
+) -> None:
     start = 0
     stop = 1
     num_points = 5
@@ -137,7 +150,9 @@ def test_linear_sweep_properties(_param, _param_complex) -> None:
     assert sweep_2.delay == 0
 
 
-def test_linear_sweep_parameter_class(_param, _param_complex) -> None:
+def test_linear_sweep_parameter_class(
+    _param: Parameter[int], _param_complex: Parameter[complex]
+) -> None:
     start = 0
     stop = 1
     num_points = 5
@@ -153,7 +168,7 @@ def test_linear_sweep_parameter_class(_param, _param_complex) -> None:
     assert isinstance(sweep_3.param, ParameterBase)
 
 
-def test_log_sweep_get_setpoints(_param) -> None:
+def test_log_sweep_get_setpoints(_param: Parameter[int]) -> None:
     start = 0
     stop = 1
     num_points = 5
@@ -165,7 +180,9 @@ def test_log_sweep_get_setpoints(_param) -> None:
     )
 
 
-def test_log_sweep_properties(_param, _param_complex) -> None:
+def test_log_sweep_properties(
+    _param: Parameter[int], _param_complex: Parameter[complex]
+) -> None:
     start = 0
     stop = 1
     num_points = 5
@@ -181,7 +198,9 @@ def test_log_sweep_properties(_param, _param_complex) -> None:
     assert sweep_2.delay == 0
 
 
-def test_log_sweep_parameter_class(_param, _param_complex) -> None:
+def test_log_sweep_parameter_class(
+    _param: Parameter[int], _param_complex: Parameter[complex]
+) -> None:
     start = 0
     stop = 1
     num_points = 5
@@ -197,7 +216,7 @@ def test_log_sweep_parameter_class(_param, _param_complex) -> None:
     assert isinstance(sweep_3.param, ParameterBase)
 
 
-def test_array_sweep_get_setpoints(_param) -> None:
+def test_array_sweep_get_setpoints(_param: Parameter[int]) -> None:
     array = np.linspace(0, 1, 5)
     delay = 1
     sweep = ArraySweep(_param, array, delay)
@@ -210,7 +229,7 @@ def test_array_sweep_get_setpoints(_param) -> None:
     np.testing.assert_array_equal(sweep2.get_setpoints(), np.array(array2))
 
 
-def test_array_sweep_properties(_param) -> None:
+def test_array_sweep_properties(_param: Parameter[int]) -> None:
     array = np.linspace(0, 1, 5)
     delay = 1
     sweep = ArraySweep(_param, array, delay)
@@ -224,7 +243,9 @@ def test_array_sweep_properties(_param) -> None:
     assert sweep_2.delay == 0
 
 
-def test_array_sweep_parameter_class(_param, _param_complex) -> None:
+def test_array_sweep_parameter_class(
+    _param: Parameter[int], _param_complex: Parameter[complex]
+) -> None:
     array = np.linspace(0, 1, 5)
 
     sweep = ArraySweep(_param, array)
@@ -238,7 +259,9 @@ def test_array_sweep_parameter_class(_param, _param_complex) -> None:
     assert isinstance(sweep_3.param, ParameterBase)
 
 
-def test_dond_explicit_exp_meas_sample(_param, experiment) -> None:
+def test_dond_explicit_exp_meas_sample(
+    _param: Parameter[int], experiment: "Experiment"
+) -> None:
     experiment_2 = new_experiment("new-exp", "no-sample")
 
     data1 = dond(_param, do_plot=False, exp=experiment)
@@ -263,7 +286,7 @@ def test_dond_explicit_exp_meas_sample(_param, experiment) -> None:
 
 
 def test_dond_multi_datasets_explicit_exp_meas_sample(
-    _param, _param_complex, experiment
+    _param: Parameter[int], _param_complex: Parameter[complex], experiment: "Experiment"
 ) -> None:
     experiment_2 = new_experiment("new-exp", "no-sample")
 
@@ -295,7 +318,7 @@ def test_dond_multi_datasets_explicit_exp_meas_sample(
 
 
 def test_dond_multi_datasets_explicit_meas_names(
-    _param, _param_complex, experiment
+    _param: Parameter[int], _param_complex: Parameter[complex], experiment: "Experiment"
 ) -> None:
     data1 = dond(
         [_param],
@@ -310,7 +333,9 @@ def test_dond_multi_datasets_explicit_meas_names(
     assert datasets1[1].name == "bar"
 
 
-def test_dond_multi_datasets_meas_names_len_mismatch(_param, experiment) -> None:
+def test_dond_multi_datasets_meas_names_len_mismatch(
+    _param: Parameter[int], experiment: "Experiment"
+) -> None:
     with pytest.raises(
         ValueError,
         match=re.escape("Got 2 measurement names but should create 1 dataset(s)."),
@@ -335,7 +360,13 @@ def test_dond_multi_datasets_meas_names_len_mismatch(_param, experiment) -> None
     suppress_health_check=(HealthCheck.function_scoped_fixture,),
 )
 def test_dond_0d_verify_shape(
-    _param, _param_complex, multiparamtype, dummyinstrument, n_points_pws
+    _param: Parameter[int],
+    _param_complex: Parameter[complex],
+    multiparamtype: type[
+        MultiSetPointParam | Multi2DSetPointParam | Multi2DSetPointParam2Sizes
+    ],
+    dummyinstrument: DummyChannelInstrument,
+    n_points_pws: int,
 ) -> None:
     arrayparam = ArraySetPointParam(name="arrayparam")
     multiparam = multiparamtype(name="multiparam")
@@ -395,7 +426,7 @@ def test_dond_0d_pws_with_register_name_has_correct_shape() -> None:
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_dond_0d_output_data(_param) -> None:
+def test_dond_0d_output_data(_param: Parameter[int]) -> None:
     exp = dond(_param)
     data = exp[0]
     assert isinstance(data, DataSetProtocol)
@@ -420,7 +451,9 @@ def test_dond_0d_parameter_with_array_vals() -> None:
 @pytest.mark.parametrize("period", [None, 1])
 @pytest.mark.parametrize("plot", [None, True, False])
 @pytest.mark.parametrize("plot_config", [None, True, False])
-def test_dond_0d_with_real_parameter(period, plot, plot_config) -> None:
+def test_dond_0d_with_real_parameter(
+    period: float | None, plot: bool | None, plot_config: bool | None
+) -> None:
     arrayparam = ArraySetPointParam(name="arrayparam")
 
     if plot_config is not None:
@@ -435,7 +468,9 @@ def test_dond_0d_with_real_parameter(period, plot, plot_config) -> None:
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_dond_0d_parameter_with_setpoints_2d(dummyinstrument) -> None:
+def test_dond_0d_parameter_with_setpoints_2d(
+    dummyinstrument: DummyChannelInstrument,
+) -> None:
     dummyinstrument.A.dummy_start(0)
     dummyinstrument.A.dummy_stop(10)
     dummyinstrument.A.dummy_n_points(10)
@@ -452,7 +487,7 @@ def test_dond_0d_parameter_with_setpoints_2d(dummyinstrument) -> None:
 
 
 @pytest.mark.usefixtures("experiment")
-def test_dond_1d_parameter_with_array_vals(_param_set) -> None:
+def test_dond_1d_parameter_with_array_vals(_param_set: Parameter[float | None]) -> None:
     param = ArrayshapedParam(
         name="paramwitharrayval", vals=validators.Arrays(shape=(10,))
     )
@@ -490,13 +525,15 @@ def test_dond_1d_parameter_with_array_vals(_param_set) -> None:
     suppress_health_check=(HealthCheck.function_scoped_fixture,),
 )
 def test_dond_1d_verify_shape(
-    _param,
-    _param_complex,
-    _param_set,
-    multiparamtype,
-    dummyinstrument,
-    num_points,
-    n_points_pws,
+    _param: Parameter[int],
+    _param_complex: Parameter[complex],
+    _param_set: Parameter[float | None],
+    multiparamtype: type[
+        MultiSetPointParam | Multi2DSetPointParam | Multi2DSetPointParam2Sizes
+    ],
+    dummyinstrument: DummyChannelInstrument,
+    num_points: int,
+    n_points_pws: int,
 ) -> None:
     arrayparam = ArraySetPointParam(name="arrayparam")
     multiparam = multiparamtype(name="multiparam")
@@ -533,7 +570,11 @@ def test_dond_1d_verify_shape(
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_dond_1d_additional_setpoints(_param, _param_complex, _param_set) -> None:
+def test_dond_1d_additional_setpoints(
+    _param: Parameter[int],
+    _param_complex: Parameter[complex],
+    _param_set: Parameter[float | None],
+) -> None:
     additional_setpoints = [
         Parameter(f"additional_setter_parameter_{i}", set_cmd=None, get_cmd=None)
         for i in range(2)
@@ -560,7 +601,9 @@ def test_dond_1d_additional_setpoints(_param, _param_complex, _param_set) -> Non
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(num_points_p1=hst.integers(min_value=1, max_value=5))
 @pytest.mark.usefixtures("experiment")
-def test_dond_1d_additional_setpoints_shape(_param, _param_set, num_points_p1) -> None:
+def test_dond_1d_additional_setpoints_shape(
+    _param: Parameter[int], _param_set: Parameter[float | None], num_points_p1: int
+) -> None:
     arrayparam = ArraySetPointParam(name="arrayparam")
     array_shape = arrayparam.shape
     additional_setpoints = [
@@ -595,7 +638,12 @@ def test_dond_1d_additional_setpoints_shape(_param, _param_set, num_points_p1) -
 @pytest.mark.usefixtures("plot_close", "experiment")
 @pytest.mark.parametrize("plot", [None, True, False])
 @pytest.mark.parametrize("plot_config", [None, True, False])
-def test_dond_1d_plot(_param_set, _param, plot, plot_config) -> None:
+def test_dond_1d_plot(
+    _param_set: Parameter[float | None],
+    _param: Parameter[int],
+    plot: bool | None,
+    plot_config: bool | None,
+) -> None:
     if plot_config is not None:
         config.dataset.dond_plot = plot_config
 
@@ -610,7 +658,11 @@ def test_dond_1d_plot(_param_set, _param, plot, plot_config) -> None:
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_dond_1d_output_data(_param, _param_complex, _param_set) -> None:
+def test_dond_1d_output_data(
+    _param: Parameter[int],
+    _param_complex: Parameter[complex],
+    _param_set: Parameter[float | None],
+) -> None:
     sweep_1 = LinSweep(_param_set, 0, 0.5, 5, 0)
 
     exp_1 = dond(sweep_1, _param, _param_complex)
@@ -641,7 +693,11 @@ def test_dond_1d_output_data(_param, _param_complex, _param_set) -> None:
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_dond_1d_output_type(_param, _param_complex, _param_set) -> None:
+def test_dond_1d_output_type(
+    _param: Parameter[int],
+    _param_complex: Parameter[complex],
+    _param_set: Parameter[float | None],
+) -> None:
     sweep_1 = LinSweep(_param_set, 0, 0.5, 2, 0)
 
     data_1 = dond(sweep_1, _param, _param_complex)
@@ -664,15 +720,17 @@ def test_dond_1d_output_type(_param, _param_complex, _param_set) -> None:
     suppress_health_check=(HealthCheck.function_scoped_fixture,),
 )
 def test_dond_2d_verify_shape(
-    _param,
-    _param_complex,
-    _param_set,
-    _param_set_2,
-    multiparamtype,
-    dummyinstrument,
-    num_points_p1,
-    num_points_p2,
-    n_points_pws,
+    _param: Parameter[int],
+    _param_complex: Parameter[complex],
+    _param_set: Parameter[float | None],
+    _param_set_2: Parameter[float | None],
+    multiparamtype: type[
+        MultiSetPointParam | Multi2DSetPointParam | Multi2DSetPointParam2Sizes
+    ],
+    dummyinstrument: DummyChannelInstrument,
+    num_points_p1: int,
+    num_points_p2: int,
+    n_points_pws: int,
 ) -> None:
     arrayparam = ArraySetPointParam(name="arrayparam")
     multiparam = multiparamtype(name="multiparam")
@@ -733,7 +791,10 @@ def test_dond_2d_verify_shape(
 
 @pytest.mark.usefixtures("plot_close", "experiment")
 def test_dond_2d_additional_setpoints(
-    _param, _param_complex, _param_set, _param_set_2
+    _param: Parameter[int],
+    _param_complex: Parameter[complex],
+    _param_set: Parameter[float | None],
+    _param_set_2: Parameter[float | None],
 ) -> None:
     additional_setpoints = [
         Parameter(f"additional_setter_parameter_{i}", set_cmd=None, get_cmd=None)
@@ -776,7 +837,12 @@ def test_dond_2d_additional_setpoints(
 @settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @pytest.mark.usefixtures("experiment")
 def test_dond_2d_additional_setpoints_shape(
-    _param, _param_complex, _param_set, _param_set_2, num_points_p1, num_points_p2
+    _param: Parameter[int],
+    _param_complex: Parameter[complex],
+    _param_set: Parameter[float | None],
+    _param_set_2: Parameter[float | None],
+    num_points_p1: int,
+    num_points_p2: int,
 ) -> None:
     arrayparam = ArraySetPointParam(name="arrayparam")
     array_shape = arrayparam.shape
@@ -821,7 +887,13 @@ def test_dond_2d_additional_setpoints_shape(
 @pytest.mark.usefixtures("plot_close", "experiment")
 @pytest.mark.parametrize("plot", [None, True, False])
 @pytest.mark.parametrize("plot_config", [None, True, False])
-def test_dond_2d_plot(_param_set, _param_set_2, _param, plot, plot_config) -> None:
+def test_dond_2d_plot(
+    _param_set: Parameter[float | None],
+    _param_set_2: Parameter[float | None],
+    _param: Parameter[int],
+    plot: bool | None,
+    plot_config: bool | None,
+) -> None:
     if plot_config is not None:
         config.dataset.dond_plot = plot_config
 
@@ -838,7 +910,12 @@ def test_dond_2d_plot(_param_set, _param_set_2, _param, plot, plot_config) -> No
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_dond_2d_output_type(_param, _param_complex, _param_set, _param_set_2) -> None:
+def test_dond_2d_output_type(
+    _param: Parameter[int],
+    _param_complex: Parameter[complex],
+    _param_set: Parameter[float | None],
+    _param_set_2: Parameter[float | None],
+) -> None:
     sweep_1 = LinSweep(_param_set, 0, 0.5, 2, 0)
     sweep_2 = LinSweep(_param_set_2, 0.5, 1, 2, 0)
 
@@ -847,7 +924,12 @@ def test_dond_2d_output_type(_param, _param_complex, _param_set, _param_set_2) -
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_dond_2d_output_data(_param, _param_complex, _param_set, _param_set_2) -> None:
+def test_dond_2d_output_data(
+    _param: Parameter[int],
+    _param_complex: Parameter[complex],
+    _param_set: Parameter[float | None],
+    _param_set_2: Parameter[float | None],
+) -> None:
     sweep_1 = LinSweep(_param_set, 0, 0.5, 5, 0)
     sweep_2 = LinSweep(_param_set_2, 0.5, 1, 5, 0)
     exp_2 = dond(sweep_1, sweep_2, _param, _param_complex)
@@ -891,7 +973,10 @@ def test_dond_2d_output_data(_param, _param_complex, _param_set, _param_set_2) -
 
 @pytest.mark.usefixtures("plot_close", "experiment")
 def test_dond_2d_multi_datasets_output_type(
-    _param, _param_complex, _param_set, _param_set_2
+    _param: Parameter[int],
+    _param_complex: Parameter[complex],
+    _param_set: Parameter[float | None],
+    _param_set_2: Parameter[float | None],
 ) -> None:
     sweep_1 = LinSweep(_param_set, 0, 0.5, 2, 0)
     sweep_2 = LinSweep(_param_set_2, 0.5, 1, 2, 0)
@@ -905,7 +990,11 @@ def test_dond_2d_multi_datasets_output_type(
 
 @pytest.mark.usefixtures("plot_close", "experiment")
 def test_dond_2d_multi_datasets_multi_exp(
-    _param, _param_complex, _param_set, _param_set_2, request: FixtureRequest
+    _param: Parameter[int],
+    _param_complex: Parameter[complex],
+    _param_set: Parameter[float | None],
+    _param_set_2: Parameter[float | None],
+    request: FixtureRequest,
 ) -> None:
     exp1 = new_experiment("test-experiment-1", sample_name="test-sample-1")
     exp2 = new_experiment("test-experiment-2", sample_name="test-sample-2")
@@ -928,7 +1017,11 @@ def test_dond_2d_multi_datasets_multi_exp(
 
 @pytest.mark.usefixtures("plot_close", "experiment")
 def test_dond_2d_multi_datasets_multi_exp_inconsistent_raises(
-    _param, _param_complex, _param_set, _param_set_2, request: FixtureRequest
+    _param: Parameter[int],
+    _param_complex: Parameter[complex],
+    _param_set: Parameter[float | None],
+    _param_set_2: Parameter[float | None],
+    request: FixtureRequest,
 ) -> None:
     exp1 = new_experiment("test-experiment-1", sample_name="test-sample-1")
     exp2 = new_experiment("test-experiment-2", sample_name="test-sample-2")
@@ -951,7 +1044,12 @@ def test_dond_2d_multi_datasets_multi_exp_inconsistent_raises(
 @pytest.mark.parametrize("plot", [None, True, False])
 @pytest.mark.parametrize("plot_config", [None, True, False])
 def test_dond_2d_multiple_datasets_plot(
-    _param_set, _param_set_2, _param, _param_2, plot, plot_config
+    _param_set: Parameter[float | None],
+    _param_set_2: Parameter[float | None],
+    _param: Parameter[int],
+    _param_2: Parameter[int],
+    plot: bool | None,
+    plot_config: bool | None,
 ) -> None:
     if plot_config is not None:
         config.dataset.dond_plot = plot_config
@@ -979,12 +1077,12 @@ def test_dond_2d_multiple_datasets_plot(
 
 @pytest.mark.usefixtures("plot_close", "experiment")
 def test_dond_2d_multi_datasets_with_callable_output_data(
-    _param,
-    _param_2,
-    _param_complex,
-    _param_complex_2,
-    _param_set,
-    _param_set_2,
+    _param: Parameter[int],
+    _param_2: Parameter[int],
+    _param_complex: Parameter[complex],
+    _param_complex_2: Parameter[complex],
+    _param_set: Parameter[float | None],
+    _param_set_2: Parameter[float | None],
     _string_callable,
 ) -> None:
     sweep_1 = LinSweep(_param_set, 0, 0.5, 5, 0)
@@ -1077,7 +1175,12 @@ def test_dond_2d_multi_datasets_with_callable_output_data(
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_dond_together_sweep(_param_set, _param_set_2, _param, _param_2) -> None:
+def test_dond_together_sweep(
+    _param_set: Parameter[float | None],
+    _param_set_2: Parameter[float | None],
+    _param: Parameter[int],
+    _param_2: Parameter[int],
+) -> None:
     sweep_1 = LinSweep(_param_set, 0, 1, 10, 0)
     sweep_2 = LinSweep(_param_set_2, 1, 2, 10, 0)
 
@@ -1105,7 +1208,11 @@ def test_dond_together_sweep(_param_set, _param_set_2, _param, _param_2) -> None
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_dond_together_sweep_sweeper(_param_set, _param_set_2, _param) -> None:
+def test_dond_together_sweep_sweeper(
+    _param_set: Parameter[float | None],
+    _param_set_2: Parameter[float | None],
+    _param: Parameter[int],
+) -> None:
     sweep_len = 10
 
     delay_1 = 0.1
@@ -1400,7 +1507,7 @@ def test_dond_together_sweep_sweeper_combined_lists() -> None:
     n_points_1=hst.integers(min_value=1, max_value=500),
     n_points_2=hst.integers(min_value=1, max_value=500),
 )
-def test_together_sweep_validation(n_points_1, n_points_2) -> None:
+def test_together_sweep_validation(n_points_1: int, n_points_2: int) -> None:
     a = ManualParameter("a", initial_value=0)
     b = ManualParameter("b", initial_value=0)
     sweepA = LinSweep(a, 0, 3, n_points_1)
@@ -1531,7 +1638,9 @@ def test_dond_together_sweep_sweeper_wrong_mp_in_dataset_dependencies() -> None:
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_dond_together_sweep_parameter_with_setpoints(dummyinstrument) -> None:
+def test_dond_together_sweep_parameter_with_setpoints(
+    dummyinstrument: DummyChannelInstrument,
+) -> None:
     outer_shape = 10
     inner_shape = 15
 
@@ -1584,7 +1693,7 @@ def test_dond_together_sweep_parameter_with_setpoints(dummyinstrument) -> None:
 
 @pytest.mark.usefixtures("plot_close", "experiment")
 def test_dond_together_sweep_parameter_with_setpoints_explicit_mapping(
-    dummyinstrument,
+    dummyinstrument: DummyChannelInstrument,
 ) -> None:
     outer_shape = 10
     inner_shape = 15
@@ -1640,7 +1749,7 @@ def test_dond_together_sweep_parameter_with_setpoints_explicit_mapping(
 
 @pytest.mark.usefixtures("plot_close", "experiment")
 def test_dond_together_sweep_parameter_with_setpoints_explicit_mapping_and_callable(
-    dummyinstrument,
+    dummyinstrument: DummyChannelInstrument,
 ) -> None:
     outer_shape = 10
     inner_shape = 15
@@ -1696,7 +1805,11 @@ def test_dond_together_sweep_parameter_with_setpoints_explicit_mapping_and_calla
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_dond_sweeper_combinations(_param_set, _param_set_2, _param) -> None:
+def test_dond_sweeper_combinations(
+    _param_set: Parameter[float | None],
+    _param_set_2: Parameter[float | None],
+    _param: Parameter[int],
+) -> None:
     outer_shape = 10
     inner_shape = 15
 
@@ -1763,7 +1876,7 @@ def test_error_measured_grouped_and_not_grouped() -> None:
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_post_action(mocker) -> None:
+def test_post_action(mocker: "MockerFixture") -> None:
     param_1 = ManualParameter("param_1", initial_value=0.0)
     param_2 = ManualParameter("param_2", initial_value=0.0)
 
@@ -1797,7 +1910,11 @@ def test_default_log_info(caplog: LogCaptureFixture) -> None:
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_dond_get_after_set(_param_set, _param_set_2, _param) -> None:
+def test_dond_get_after_set(
+    _param_set: Parameter[float | None],
+    _param_set_2: Parameter[float | None],
+    _param: Parameter[int],
+) -> None:
     n_points = 10
 
     a = TrackingParameter("a", initial_value=0)
@@ -1830,7 +1947,11 @@ def test_dond_get_after_set(_param_set, _param_set_2, _param) -> None:
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_dond_get_after_set_stores_get_value(_param_set, _param_set_2, _param) -> None:
+def test_dond_get_after_set_stores_get_value(
+    _param_set: Parameter[float | None],
+    _param_set_2: Parameter[float | None],
+    _param: Parameter[int],
+) -> None:
     n_points = 11
 
     a = GetReturnsCountParameter("a", initial_value=0)
@@ -1858,7 +1979,9 @@ def test_dond_get_after_set_stores_get_value(_param_set, _param_set_2, _param) -
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_dond_return_type(_param_set, _param) -> None:
+def test_dond_return_type(
+    _param_set: Parameter[float | None], _param: Parameter[int]
+) -> None:
     n_points = 11
 
     # test that with squeeze=False we get MultiAxesTupleListWithDataSet as the return type

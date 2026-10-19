@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from collections.abc import Generator
 
     from qcodes.dataset.data_set_protocol import ValuesType
+    from qcodes.dataset.experiment_container import Experiment
     from qcodes.parameters.parameter_base import ParameterBase
 
 
@@ -62,7 +63,12 @@ def controlling_parameters() -> (
     yield control1, comp1, comp2
 
 
-def test_add_result_self_unpack(controlling_parameters, experiment):
+def test_add_result_self_unpack(
+    controlling_parameters: tuple[
+        ControllingParameter, ManualParameter, ManualParameter
+    ],
+    experiment: "Experiment",
+) -> None:
     control1, comp1, comp2 = controlling_parameters
     meas1 = ManualParameter("meas1")
 
@@ -93,7 +99,12 @@ def test_add_result_self_unpack(controlling_parameters, experiment):
     assert meas1_data["comp2"] == pytest.approx(np.linspace(10, 9, 11))
 
 
-def test_add_result_self_unpack_with_PWS(controlling_parameters, experiment):
+def test_add_result_self_unpack_with_PWS(
+    controlling_parameters: tuple[
+        ControllingParameter, ManualParameter, ManualParameter
+    ],
+    experiment: "Experiment",
+) -> None:
     control1, comp1, comp2 = controlling_parameters
     pws_setpoints = Parameter(
         "pws_setpoints",

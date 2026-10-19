@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.converters import (
     new_to_old,
@@ -18,8 +20,14 @@ from qcodes.dataset.descriptions.versioning.rundescribertypes import (
 from qcodes.dataset.descriptions.versioning.serialization import from_dict_to_current
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 
+if TYPE_CHECKING:
+    from qcodes.dataset.descriptions.dependencies import InterDependencies_
+    from qcodes.dataset.descriptions.param_spec import ParamSpec
 
-def test_convert_v0_to_newer(some_paramspecs) -> None:
+
+def test_convert_v0_to_newer(
+    some_paramspecs: "dict[int, dict[str, ParamSpec]]",
+) -> None:
     pgroup1 = some_paramspecs[1]
 
     interdeps = InterDependencies(
@@ -33,7 +41,7 @@ def test_convert_v0_to_newer(some_paramspecs) -> None:
     _assert_dicts_are_related_as_expected(v0, v1, v2)
 
 
-def test_convert_v1(some_interdeps) -> None:
+def test_convert_v1(some_interdeps: "list[InterDependencies_]") -> None:
     interdeps_ = some_interdeps[0]
 
     v1 = RunDescriberV1Dict(interdependencies=interdeps_._to_dict(), version=1)
@@ -42,7 +50,7 @@ def test_convert_v1(some_interdeps) -> None:
     _assert_dicts_are_related_as_expected(v0, v1, v2)
 
 
-def test_convert_v2(some_interdeps) -> None:
+def test_convert_v2(some_interdeps: "list[InterDependencies_]") -> None:
     interdeps_ = some_interdeps[0]
     interdeps = new_to_old(interdeps_)
 
@@ -56,7 +64,9 @@ def test_convert_v2(some_interdeps) -> None:
     _assert_dicts_are_related_as_expected(v0, v1, v2)
 
 
-def _assert_dicts_are_related_as_expected(v0, v1, v2):
+def _assert_dicts_are_related_as_expected(
+    v0: "RunDescriberV0Dict", v1: "RunDescriberV1Dict", v2: "RunDescriberV2Dict"
+) -> "None":
     assert (
         v1["interdependencies"]
         == old_to_new(InterDependencies._from_dict(v0["interdependencies"]))._to_dict()
@@ -74,7 +84,9 @@ def _assert_dicts_are_related_as_expected(v0, v1, v2):
     assert len(v2) == 3
 
 
-def test_construct_current_rundescriber_from_v0(some_paramspecs) -> None:
+def test_construct_current_rundescriber_from_v0(
+    some_paramspecs: "dict[int, dict[str, ParamSpec]]",
+) -> None:
     pgroup1 = some_paramspecs[1]
 
     interdeps = InterDependencies(
@@ -111,7 +123,9 @@ def _assert_v3_dicts_equal_up_to_paramspec_order(
     }
 
 
-def test_construct_current_rundescriber_from_v1(some_interdeps) -> None:
+def test_construct_current_rundescriber_from_v1(
+    some_interdeps: "list[InterDependencies_]",
+) -> None:
     interdeps_ = some_interdeps[0]
     interdeps = new_to_old(interdeps_)
 
@@ -129,7 +143,9 @@ def test_construct_current_rundescriber_from_v1(some_interdeps) -> None:
     assert rds_upgraded._to_dict() == expected_v3_dict
 
 
-def test_construct_current_rundescriber_from_v2(some_interdeps) -> None:
+def test_construct_current_rundescriber_from_v2(
+    some_interdeps: "list[InterDependencies_]",
+) -> None:
     interdeps_ = some_interdeps[0]
     interdeps = new_to_old(interdeps_)
 
@@ -152,7 +168,9 @@ def test_construct_current_rundescriber_from_v2(some_interdeps) -> None:
     assert rds_upgraded._to_dict() == expected_v3_dict
 
 
-def test_construct_current_rundescriber_from_v3(some_interdeps) -> None:
+def test_construct_current_rundescriber_from_v3(
+    some_interdeps: "list[InterDependencies_]",
+) -> None:
     interdeps_ = some_interdeps[0]
     interdeps = new_to_old(interdeps_)
 
@@ -168,7 +186,9 @@ def test_construct_current_rundescriber_from_v3(some_interdeps) -> None:
     assert rds_upgraded._to_dict() == v3
 
 
-def test_construct_current_rundescriber_from_fake_v4(some_interdeps) -> None:
+def test_construct_current_rundescriber_from_fake_v4(
+    some_interdeps: "list[InterDependencies_]",
+) -> None:
     interdeps_ = some_interdeps[0]
     interdeps = new_to_old(interdeps_)
 

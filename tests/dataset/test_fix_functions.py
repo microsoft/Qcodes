@@ -69,7 +69,7 @@ def test_fix_wrong_run_descriptions() -> None:
 
     skip_if_no_fixtures(dbname_old)
 
-    def make_ps(n):
+    def make_ps(n: "int") -> "ParamSpec":
         ps = ParamSpec(
             f"p{n}", label=f"Parameter {n}", unit=f"unit {n}", paramtype="numeric"
         )

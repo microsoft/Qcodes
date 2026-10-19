@@ -56,6 +56,9 @@ from tests.common import error_caused_by, skip_if_no_fixtures
 from tests.dataset.conftest import temporarily_copied_DB
 
 if TYPE_CHECKING:
+    from qcodes.dataset.data_set_protocol import DataSetProtocol
+
+if TYPE_CHECKING:
     from collections.abc import Generator
 
 fixturepath = Path(tests.dataset.__file__).parent / "fixtures"
@@ -749,7 +752,9 @@ def test_update_existing_guids(caplog: LogCaptureFixture) -> None:
         _assert_loc_station(ds5, old_loc, old_ws)
 
 
-def _assert_loc_station(ds, expected_loc, expected_station):
+def _assert_loc_station(
+    ds: "DataSetProtocol", expected_loc: "int", expected_station: "int"
+) -> "None":
     guid_dict = parse_guid(ds.guid)
     assert guid_dict["location"] == expected_loc
     assert guid_dict["work_station"] == expected_station

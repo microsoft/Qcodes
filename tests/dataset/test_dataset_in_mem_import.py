@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import json
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -6,11 +9,19 @@ from qcodes.dataset import load_by_guid, load_from_netcdf
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.experiment_container import Experiment
-from qcodes.dataset.sqlite.connection import path_to_dbfile
+from qcodes.dataset.sqlite.connection import AtomicConnection, path_to_dbfile
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from pathlib import Path
+
+    from qcodes.dataset.data_set_protocol import DataSetProtocol
 
 
 def test_basic_roundtrip(
-    two_empty_temp_db_connections, some_interdeps, tmp_path
+    two_empty_temp_db_connections: tuple[AtomicConnection, AtomicConnection],
+    some_interdeps,
+    tmp_path: Path,
 ) -> None:
     """
     Test that we can export from one db and import into another in
@@ -68,7 +79,9 @@ def test_basic_roundtrip(
 
 
 def test_roundtrip_to_db_with_existing_meas(
-    two_empty_temp_db_connections, some_interdeps, tmp_path
+    two_empty_temp_db_connections: tuple[AtomicConnection, AtomicConnection],
+    some_interdeps,
+    tmp_path: Path,
 ) -> None:
     """
     Test that we can export from one db and import into another in
@@ -152,7 +165,9 @@ def test_roundtrip_to_db_with_existing_meas(
 
 
 def test_roundtrip_to_db_with_existing_meas_in_same_exp(
-    two_empty_temp_db_connections, some_interdeps, tmp_path
+    two_empty_temp_db_connections: tuple[AtomicConnection, AtomicConnection],
+    some_interdeps,
+    tmp_path: Path,
 ) -> None:
     """
     Test that we can export from one db and import into another in
@@ -232,7 +247,9 @@ def test_roundtrip_to_db_with_existing_meas_in_same_exp(
     )
 
 
-def _assert_before_writing_metadata(source_datasets, loaded_datasets) -> None:
+def _assert_before_writing_metadata(
+    source_datasets: Sequence[DataSetInMem], loaded_datasets: Sequence[DataSetInMem]
+) -> None:
     for ds, lds in zip(source_datasets, loaded_datasets):
         # these should always be equal
         assert ds.guid == lds.guid
@@ -265,12 +282,12 @@ def _assert_before_writing_metadata(source_datasets, loaded_datasets) -> None:
 
 
 def _assert_after_writing_metadata(
-    source_datasets,
-    loaded_datasets,
-    reloaded_ds,
-    offset_total_ds,
-    offset_ds_in_exp,
-    offset_exps,
+    source_datasets: Sequence[DataSetInMem],
+    loaded_datasets: Sequence[DataSetInMem],
+    reloaded_ds: Sequence[DataSetProtocol],
+    offset_total_ds: int,
+    offset_ds_in_exp: int,
+    offset_exps: int,
 ) -> None:
     for ds, lds, rlds in zip(source_datasets, loaded_datasets, reloaded_ds):
         # these should always be equal

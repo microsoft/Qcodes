@@ -1,9 +1,14 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from qcodes.dataset.dond.do_nd_utils import BreakConditionInterrupt, catch_interrupts
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
-def test_catch_interrupts():
+
+def test_catch_interrupts() -> None:
     # Test normal execution (no interrupt)
     with catch_interrupts() as get_interrupt:
         assert get_interrupt() is None
@@ -41,7 +46,7 @@ def test_catch_interrupts():
     assert isinstance(get_interrupt(), BreakConditionInterrupt)
 
 
-def test_catch_interrupts_in_loops():
+def test_catch_interrupts_in_loops() -> None:
     # Test interruption in a simple loop
     loop_count = 0
     with pytest.raises(KeyboardInterrupt):  # noqa: PT012
@@ -68,8 +73,8 @@ def test_catch_interrupts_in_loops():
     assert inner_count == 5
 
 
-def test_catch_interrupts_simulated_sweeps():
-    def simulated_sweep(interrupt_at=None):
+def test_catch_interrupts_simulated_sweeps() -> None:
+    def simulated_sweep(interrupt_at: int | None = None) -> "Iterator[int]":
         for i in range(5):
             with catch_interrupts():
                 if i == interrupt_at:

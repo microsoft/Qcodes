@@ -27,7 +27,9 @@ def test_wrong_input_raises() -> None:
             InterDependencies(pspecs)  # type: ignore[arg-type]
 
 
-def test_init(some_paramspecbases) -> None:
+def test_init(
+    some_paramspecbases: "tuple[ParamSpecBase, ParamSpecBase, ParamSpecBase, ParamSpecBase]",
+) -> None:
     """
     Assert that the init functions correctly sets up the object.
     Assert via the public-facing methods.
@@ -56,7 +58,9 @@ def test_init(some_paramspecbases) -> None:
     assert idps.top_level_parameters == (ps1, ps4)
 
 
-def test_init_validation_raises(some_paramspecbases) -> None:
+def test_init_validation_raises(
+    some_paramspecbases: "tuple[ParamSpecBase, ParamSpecBase, ParamSpecBase, ParamSpecBase]",
+) -> None:
     (ps1, ps2, ps3, ps4) = some_paramspecbases
 
     # First test validation of trees invalid in their own right
@@ -106,8 +110,10 @@ def test_init_validation_raises(some_paramspecbases) -> None:
             )
 
 
-def test_to_dict(some_paramspecbases) -> None:
-    def tester(idps) -> None:
+def test_to_dict(
+    some_paramspecbases: "tuple[ParamSpecBase, ParamSpecBase, ParamSpecBase, ParamSpecBase]",
+) -> None:
+    def tester(idps: "InterDependencies_") -> None:
         ser = idps._to_dict()
         json.dumps(ser)
         idps_deser = InterDependencies_._from_dict(ser)
@@ -127,14 +133,16 @@ def test_to_dict(some_paramspecbases) -> None:
     tester(idps)
 
 
-def test_old_to_new_and_back(some_paramspecs) -> None:
+def test_old_to_new_and_back(
+    some_paramspecs: "dict[int, dict[str, ParamSpec]]",
+) -> None:
     idps_old = InterDependencies(*some_paramspecs[1].values())
     idps_new = old_to_new(idps_old)
 
     assert new_to_old(idps_new) == idps_old
 
 
-def test_old_to_new(some_paramspecs) -> None:
+def test_old_to_new(some_paramspecs: "dict[int, dict[str, ParamSpec]]") -> None:
     ps1 = some_paramspecs[1]["ps1"]
     ps2 = some_paramspecs[1]["ps2"]
     ps3 = some_paramspecs[1]["ps3"]
@@ -183,7 +191,9 @@ def test_old_to_new(some_paramspecs) -> None:
     assert idps_new._id_to_paramspec == {ps.name: ps for ps in paramspecs3}
 
 
-def test_new_to_old(some_paramspecbases) -> None:
+def test_new_to_old(
+    some_paramspecbases: "tuple[ParamSpecBase, ParamSpecBase, ParamSpecBase, ParamSpecBase]",
+) -> None:
     (ps1, ps2, ps3, ps4) = some_paramspecbases
 
     idps_new = InterDependencies_(dependencies={ps1: (ps2, ps3)}, standalones=(ps4,))
@@ -235,7 +245,9 @@ def test_new_to_old(some_paramspecbases) -> None:
     assert new_to_old(idps_new) == idps_old_expected
 
 
-def test_validate_subset(some_paramspecbases) -> None:
+def test_validate_subset(
+    some_paramspecbases: "tuple[ParamSpecBase, ParamSpecBase, ParamSpecBase, ParamSpecBase]",
+) -> None:
     ps1, ps2, ps3, ps4 = some_paramspecbases
 
     idps = InterDependencies_(
@@ -274,7 +286,9 @@ def test_validate_subset(some_paramspecbases) -> None:
         idps.validate_subset((ps2, ps42, ps4))
 
 
-def test_extend(some_paramspecbases) -> None:
+def test_extend(
+    some_paramspecbases: "tuple[ParamSpecBase, ParamSpecBase, ParamSpecBase, ParamSpecBase]",
+) -> None:
     ps1, ps2, ps3, _ = some_paramspecbases
 
     idps = InterDependencies_(standalones=(ps1, ps2))
@@ -317,7 +331,9 @@ def test_extend(some_paramspecbases) -> None:
         idps_ext = idps.extend(inferences={ps2: (ps1,)})
 
 
-def test_remove(some_paramspecbases) -> None:
+def test_remove(
+    some_paramspecbases: "tuple[ParamSpecBase, ParamSpecBase, ParamSpecBase, ParamSpecBase]",
+) -> None:
     ps1, ps2, ps3, ps4 = some_paramspecbases
 
     idps = InterDependencies_(dependencies={ps1: (ps2, ps3)}, inferences={ps2: (ps4,)})
@@ -347,7 +363,7 @@ def test_remove(some_paramspecbases) -> None:
     assert idps_rem == idps_expected
 
 
-def test_equality_old(some_paramspecs) -> None:
+def test_equality_old(some_paramspecs: "dict[int, dict[str, ParamSpec]]") -> None:
     # TODO: make this more fancy with itertools
 
     ps1 = some_paramspecs[1]["ps1"]
@@ -441,7 +457,9 @@ def test_collect_related__complex(
     assert idps2.find_all_parameters_in_tree(ps1) == {ps1, ps2, ps3}
 
 
-def test_all_parameters_in_tree_by_group_raises_on_non_top_level(some_paramspecbases):
+def test_all_parameters_in_tree_by_group_raises_on_non_top_level(
+    some_paramspecbases: "tuple[ParamSpecBase, ParamSpecBase, ParamSpecBase, ParamSpecBase]",
+) -> "None":
     (ps1, ps2, ps3, ps4) = some_paramspecbases
 
     idps = InterDependencies_(dependencies={ps1: (ps2,)}, inferences={ps2: (ps3,)})
@@ -478,7 +496,9 @@ def test_dependency_on_middle_parameter(
     assert idps.find_all_parameters_in_tree(ps1) == {ps1, ps2, ps3, ps4}
 
 
-def test_frozen_interdependencies(some_paramspecbases) -> None:
+def test_frozen_interdependencies(
+    some_paramspecbases: "tuple[ParamSpecBase, ParamSpecBase, ParamSpecBase, ParamSpecBase]",
+) -> None:
     ps1, ps2, ps3, ps4 = some_paramspecbases
     idps = InterDependencies_(dependencies={ps1: (ps2, ps3)}, inferences={ps2: (ps4,)})
 
@@ -525,7 +545,9 @@ def test_frozen_interdependencies(some_paramspecbases) -> None:
     assert frozen._top_level_parameters_cache is not None
 
 
-def test_frozen_from_dict(some_paramspecbases) -> None:
+def test_frozen_from_dict(
+    some_paramspecbases: "tuple[ParamSpecBase, ParamSpecBase, ParamSpecBase, ParamSpecBase]",
+) -> None:
     ps1, ps2, ps3, _ = some_paramspecbases
     idps = InterDependencies_(dependencies={ps1: (ps2, ps3)})
     ser = idps._to_dict()

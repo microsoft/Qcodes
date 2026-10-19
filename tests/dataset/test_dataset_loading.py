@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 import time
 from math import floor
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
@@ -25,6 +26,11 @@ from qcodes.dataset.sqlite.queries import (
     get_raw_run_attributes,
     raw_time_to_str_time,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+if TYPE_CHECKING:
+    from qcodes.dataset.descriptions.dependencies import InterDependencies_
 
 
 @pytest.mark.usefixtures("experiment")
@@ -250,7 +256,7 @@ def test_completed_timestamp_with_default_format() -> None:
 
 
 @pytest.mark.usefixtures("experiment")
-def test_load_by_guid(some_interdeps) -> None:
+def test_load_by_guid(some_interdeps: list[InterDependencies_]) -> None:
     ds = DataSet()
     ds.set_interdependencies(some_interdeps[1])
     ds.mark_started()
@@ -261,8 +267,10 @@ def test_load_by_guid(some_interdeps) -> None:
     assert loaded_ds.the_same_dataset_as(ds)
 
 
-def test_load_by_run_spec(empty_temp_db, some_interdeps) -> None:
-    def create_ds_with_exp_id(exp_id):
+def test_load_by_run_spec(
+    empty_temp_db: None, some_interdeps: list[InterDependencies_]
+) -> None:
+    def create_ds_with_exp_id(exp_id: int) -> DataSet:
         ds = DataSet(exp_id=exp_id)
         ds.set_interdependencies(some_interdeps[1])
         ds.mark_started()
@@ -357,7 +365,7 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps) -> None:
 def test_callback(scalar_datasets_parameterized: DataSet) -> None:
     called_progress: list[float] = []
 
-    def callback_closure(called_progress: list[float]):
+    def callback_closure(called_progress: list[float]) -> Callable[[float], None]:
         def callback(progress: float) -> None:
             called_progress.append(progress)
 

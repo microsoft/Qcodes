@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
@@ -10,12 +12,20 @@ from qcodes.dataset.sqlite.connection import atomic_transaction
 from qcodes.parameters import ParamSpecBase
 from tests.common import retry_until_does_not_throw
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+if TYPE_CHECKING:
+    from qcodes.dataset.experiment_container import Experiment
+    from qcodes.instrument_drivers.mock_instruments import DummyInstrument
+
 VALUE = str | float | list | np.ndarray | bool
 
 
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_nested_measurement_basic(DAC, DMM, bg_writing) -> None:
+def test_nested_measurement_basic(
+    DAC: "DummyInstrument", DMM: "DummyInstrument", bg_writing: "bool"
+) -> None:
     meas1 = Measurement()
     meas1.register_parameter(DAC.ch1)
     meas1.register_parameter(DMM.v1, setpoints=(DAC.ch1,))
@@ -51,7 +61,7 @@ def test_nested_measurement_basic(DAC, DMM, bg_writing) -> None:
 
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_nested_measurement(bg_writing) -> None:
+def test_nested_measurement(bg_writing: "bool") -> None:
     meas1 = Measurement()
     meas1.register_custom_parameter("foo1")
     meas1.register_custom_parameter("bar1", setpoints=("foo1",))
@@ -93,7 +103,7 @@ def test_nested_measurement(bg_writing) -> None:
     inner_len2=hst.integers(min_value=1, max_value=200),
 )
 def test_nested_measurement_array(
-    bg_writing, outer_len, inner_len1, inner_len2
+    bg_writing: "bool", outer_len: "int", inner_len1: "int", inner_len2: "int"
 ) -> None:
     meas1 = Measurement()
     meas1.register_custom_parameter("foo1", paramtype="numeric")
@@ -164,13 +174,16 @@ def test_nested_measurement_array(
 
 
 @pytest.fixture(scope="function")
-def basic_subscriber():
+def basic_subscriber() -> "Callable[[list[tuple[VALUE]], int, dict | None], None]":
     """
     A basic subscriber that just puts results and length into
     state
     """
 
-    def subscriber(results: list[tuple[VALUE]], length: int, state: dict) -> None:
+    def subscriber(
+        results: list[tuple[VALUE]], length: int, state: dict | None
+    ) -> None:
+        assert state is not None
         state[length] = results
 
     return subscriber
@@ -178,7 +191,10 @@ def basic_subscriber():
 
 @pytest.mark.flaky(reruns=5)
 @pytest.mark.serial
-def test_subscription_on_dual_datasets(experiment, basic_subscriber) -> None:
+def test_subscription_on_dual_datasets(
+    experiment: "Experiment",
+    basic_subscriber: "Callable[[list[tuple[VALUE]], int, dict | None], None]",
+) -> None:
     xparam = ParamSpecBase(name="x", paramtype="numeric", label="x parameter", unit="V")
     yparam1 = ParamSpecBase(
         name="y1", paramtype="numeric", label="y parameter", unit="Hz"
@@ -223,7 +239,7 @@ def test_subscription_on_dual_datasets(experiment, basic_subscriber) -> None:
         @retry_until_does_not_throw(
             exception_class_to_expect=AssertionError, delay=0.5, tries=10
         )
-        def assert_expected_state():
+        def assert_expected_state() -> "None":
             assert dataset1.subscribers[sub_id_1].state == expected_state_1
             assert dataset2.subscribers[sub_id_2].state == expected_state_2
 

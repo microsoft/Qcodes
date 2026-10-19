@@ -34,7 +34,7 @@ def _make_controlled_setpoints(
     return p
 
 
-def test_parameter_with_setpoints_has_control(experiment: "Experiment"):
+def test_parameter_with_setpoints_has_control(experiment: "Experiment") -> "None":
     mp_data = np.arange(10)
     p1_data = np.linspace(-1, 1, 10)
 
@@ -90,7 +90,7 @@ def test_parameter_with_setpoints_has_control(experiment: "Experiment"):
     npt.assert_array_almost_equal(raw_data["p2"]["p1"].ravel(), p1_data)
 
 
-def test_parameter_with_setpoints_has_control_2d(experiment: "Experiment"):
+def test_parameter_with_setpoints_has_control_2d(experiment: "Experiment") -> "None":
     """Test that an inferred parameter with the same size as its parent
     but different from the full dimension product is correctly included."""
 
