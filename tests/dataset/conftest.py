@@ -39,6 +39,7 @@ if TYPE_CHECKING:
 
     from qcodes.dataset.data_set_protocol import DataSetProtocol
     from qcodes.dataset.experiment_container import Experiment
+    from qcodes.dataset.sqlite.connection import AtomicConnection
 
 
 @pytest.fixture(scope="function", name="non_created_db")
@@ -52,7 +53,9 @@ def _make_non_created_db(tmp_path: Path) -> None:
 
 
 @pytest.fixture(scope="function")
-def empty_temp_db_connection(tmp_path):
+def empty_temp_db_connection(
+    tmp_path: Path,
+) -> Generator[AtomicConnection, None, None]:
     """
     Yield connection to an empty temporary DB file.
     """
@@ -65,7 +68,9 @@ def empty_temp_db_connection(tmp_path):
 
 
 @pytest.fixture(scope="function")
-def two_empty_temp_db_connections(tmp_path):
+def two_empty_temp_db_connections(
+    tmp_path: Path,
+) -> Generator[tuple[AtomicConnection, AtomicConnection], None, None]:
     """
     Yield connections to two empty files. Meant for use with the
     test_database_extract_runs
@@ -108,7 +113,7 @@ def temporarily_copied_DB(filepath: str, **kwargs):
 
 
 @pytest.fixture(name="scalar_dataset")
-def _make_scalar_dataset(dataset):
+def _make_scalar_dataset(dataset: DataSet) -> Generator[DataSet, None, None]:
     n_params = 3
     n_rows = 10**3
     params_indep = [
@@ -138,7 +143,9 @@ def _make_scalar_dataset(dataset):
 @pytest.fixture(
     name="scalar_datasets_parameterized", params=((3, 10**3), (5, 10**3), (10, 50))
 )
-def _make_scalar_datasets_parameterized(dataset, request: FixtureRequest):
+def _make_scalar_datasets_parameterized(
+    dataset: DataSet, request: FixtureRequest
+) -> Generator[DataSet, None, None]:
     n_params = request.param[0]
     n_rows = request.param[1]
     params_indep = [
@@ -166,7 +173,7 @@ def _make_scalar_datasets_parameterized(dataset, request: FixtureRequest):
 
 
 @pytest.fixture
-def scalar_dataset_with_nulls(dataset):
+def scalar_dataset_with_nulls(dataset: DataSet) -> Generator[DataSet, None, None]:
     """
     A very simple dataset. A scalar is varied, and two parameters are measured
     one by one
@@ -186,7 +193,9 @@ def scalar_dataset_with_nulls(dataset):
 
 
 @pytest.fixture(scope="function", params=["array", "numeric"])
-def array_dataset(experiment, request: FixtureRequest):
+def array_dataset(
+    experiment: Experiment, request: FixtureRequest
+) -> Generator[DataSetProtocol, None, None]:
     meas = Measurement()
     param = ArraySetPointParam()
     meas.register_parameter(param, paramtype=request.param)
@@ -206,7 +215,9 @@ def array_dataset(experiment, request: FixtureRequest):
 
 
 @pytest.fixture(scope="function", params=["array", "numeric"])
-def array_dataset_with_nulls(experiment, request: FixtureRequest):
+def array_dataset_with_nulls(
+    experiment: Experiment, request: FixtureRequest
+) -> Generator[DataSetProtocol, None, None]:
     """
     A dataset where two arrays are measured, one as a function
     of two other (setpoint) arrays, the other as a function of just one
@@ -235,7 +246,9 @@ def array_dataset_with_nulls(experiment, request: FixtureRequest):
 
 
 @pytest.fixture(scope="function", params=["array", "numeric"])
-def multi_dataset(experiment, request: FixtureRequest):
+def multi_dataset(
+    experiment: Experiment, request: FixtureRequest
+) -> Generator[DataSetProtocol, None, None]:
     meas = Measurement()
     param = Multi2DSetPointParam()
 
@@ -264,7 +277,9 @@ class MeasurementOptions(StrEnum):
     scope="function",
     params=[MeasurementOptions.SHAPE_KNOWN, MeasurementOptions.SHAPE_UNKNOWN],
 )
-def different_setpoint_dataset(experiment, request: FixtureRequest):
+def different_setpoint_dataset(
+    experiment: Experiment, request: FixtureRequest
+) -> Generator[DataSetProtocol, None, None]:
     meas = Measurement()
     param = Multi2DSetPointParam2Sizes()
 
@@ -328,7 +343,9 @@ def two_params_partial_2d_dataset(
 
 
 @pytest.fixture(scope="function")
-def array_in_scalar_dataset(experiment):
+def array_in_scalar_dataset(
+    experiment: Experiment,
+) -> Generator[DataSetProtocol, None, None]:
     meas = Measurement()
     scalar_param = Parameter("scalarparam", set_cmd=None)
     param = ArraySetPointParam()
@@ -349,7 +366,9 @@ def array_in_scalar_dataset(experiment):
 
 
 @pytest.fixture(scope="function")
-def varlen_array_in_scalar_dataset(experiment):
+def varlen_array_in_scalar_dataset(
+    experiment: Experiment,
+) -> Generator[DataSetProtocol, None, None]:
     meas = Measurement()
     scalar_param = Parameter("scalarparam", set_cmd=None)
     param = ArraySetPointParam()
@@ -371,7 +390,9 @@ def varlen_array_in_scalar_dataset(experiment):
 
 
 @pytest.fixture(scope="function")
-def array_in_scalar_dataset_unrolled(experiment):
+def array_in_scalar_dataset_unrolled(
+    experiment: Experiment,
+) -> Generator[DataSetProtocol, None, None]:
     """
     This fixture yields a dataset where an array-valued parameter is registered
     as a 'numeric' type and has an additional single-valued setpoint. We
@@ -398,7 +419,9 @@ def array_in_scalar_dataset_unrolled(experiment):
 
 
 @pytest.fixture(scope="function", params=["array", "numeric"])
-def array_in_str_dataset(experiment, request: FixtureRequest):
+def array_in_str_dataset(
+    experiment: Experiment, request: FixtureRequest
+) -> Generator[DataSetProtocol, None, None]:
     meas = Measurement()
     scalar_param = Parameter("textparam", set_cmd=None)
     param = ArraySetPointParam()
@@ -431,7 +454,7 @@ def some_paramspecbases() -> tuple[
 
 
 @pytest.fixture
-def some_paramspecs():
+def some_paramspecs() -> dict[int, dict[str, ParamSpec]]:
     """
     Some different paramspecs for testing. The idea is that we just add a
     new group of paramspecs as the need arises
@@ -481,7 +504,7 @@ def some_paramspecs():
 
 
 @pytest.fixture
-def some_interdeps():
+def some_interdeps() -> list[InterDependencies_]:
     """
     Some different InterDependencies_ objects for testing
     """
@@ -510,21 +533,21 @@ def some_interdeps():
 
 
 @pytest.fixture(name="DAC")  # scope is "function" per default
-def _make_dac():
+def _make_dac() -> Generator[DummyInstrument, None, None]:
     dac = DummyInstrument("dummy_dac", gates=["ch1", "ch2"])
     yield dac
     dac.close()
 
 
 @pytest.fixture(name="DAC3D")  # scope is "function" per default
-def _make_dac_3d():
+def _make_dac_3d() -> Generator[DummyInstrument, None, None]:
     dac = DummyInstrument("dummy_dac", gates=["ch1", "ch2", "ch3"])
     yield dac
     dac.close()
 
 
 @pytest.fixture(name="DAC_with_metadata")  # scope is "function" per default
-def _make_dac_with_metadata():
+def _make_dac_with_metadata() -> Generator[DummyInstrument, None, None]:
     dac = DummyInstrument(
         "dummy_dac", gates=["ch1", "ch2"], metadata={"dac": "metadata"}
     )
@@ -533,21 +556,21 @@ def _make_dac_with_metadata():
 
 
 @pytest.fixture(name="DMM")
-def _make_dmm():
+def _make_dmm() -> Generator[DummyInstrument, None, None]:
     dmm = DummyInstrument("dummy_dmm", gates=["v1", "v2"])
     yield dmm
     dmm.close()
 
 
 @pytest.fixture
-def channel_array_instrument():
+def channel_array_instrument() -> Generator[DummyChannelInstrument, None, None]:
     channelarrayinstrument = DummyChannelInstrument("dummy_channel_inst")
     yield channelarrayinstrument
     channelarrayinstrument.close()
 
 
 @pytest.fixture
-def complex_num_instrument():
+def complex_num_instrument() -> Generator[DummyInstrument, None, None]:
     class MyParam(Parameter):
         def get_raw(self):
             assert self.instrument is not None
@@ -642,7 +665,7 @@ def complex_num_instrument():
 
 
 @pytest.fixture
-def SpectrumAnalyzer():
+def SpectrumAnalyzer() -> Generator[DummyInstrument, None, None]:
     """
     Yields a DummyInstrument that holds ArrayParameters returning
     different types
@@ -723,7 +746,9 @@ def SpectrumAnalyzer():
 
 
 @pytest.fixture
-def meas_with_registered_param(experiment, DAC, DMM):
+def meas_with_registered_param(
+    experiment: Experiment, DAC: DummyInstrument, DMM: DummyInstrument
+) -> Generator[Measurement, None, None]:
     meas = Measurement()
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DMM.v1, setpoints=[DAC.ch1])
@@ -731,7 +756,9 @@ def meas_with_registered_param(experiment, DAC, DMM):
 
 
 @pytest.fixture
-def meas_with_registered_param_2d(experiment, DAC, DMM):
+def meas_with_registered_param_2d(
+    experiment: Experiment, DAC: DummyInstrument, DMM: DummyInstrument
+) -> Generator[Measurement, None, None]:
     meas = Measurement()
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DAC.ch2)
@@ -740,7 +767,9 @@ def meas_with_registered_param_2d(experiment, DAC, DMM):
 
 
 @pytest.fixture
-def meas_with_registered_param_3d(experiment, DAC3D, DMM):
+def meas_with_registered_param_3d(
+    experiment: Experiment, DAC3D: DummyInstrument, DMM: DummyInstrument
+) -> Generator[Measurement, None, None]:
     meas = Measurement()
     meas.register_parameter(DAC3D.ch1)
     meas.register_parameter(DAC3D.ch2)
@@ -750,7 +779,11 @@ def meas_with_registered_param_3d(experiment, DAC3D, DMM):
 
 
 @pytest.fixture(name="meas_with_registered_param_complex")
-def _make_meas_with_registered_param_complex(experiment, DAC, complex_num_instrument):
+def _make_meas_with_registered_param_complex(
+    experiment: Experiment,
+    DAC: DummyInstrument,
+    complex_num_instrument: DummyInstrument,
+) -> Generator[Measurement, None, None]:
     meas = Measurement()
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(complex_num_instrument.complex_num, setpoints=[DAC.ch1])
