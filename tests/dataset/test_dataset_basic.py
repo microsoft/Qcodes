@@ -278,13 +278,13 @@ def test_dataset_read_only_properties(dataset: DataSet) -> None:
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("non_existing_run_id", (1, 0, -1, "number#42"))
 def test_create_dataset_from_non_existing_run_id(
-    non_existing_run_id,
+    non_existing_run_id: int | str,
 ) -> None:
     with pytest.raises(
         ValueError,
         match=f"Run with run_id {non_existing_run_id} does not exist in the database",
     ):
-        _ = DataSet(run_id=non_existing_run_id)
+        _ = DataSet(run_id=non_existing_run_id)  # pyright: ignore[reportArgumentType]
 
 
 def test_create_dataset_pass_both_connection_and_path_to_db(
@@ -569,20 +569,20 @@ def test_load_by_counter() -> None:
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("nonexisting_counter", (-1, 0, 1, None))
 def test_load_by_counter_for_nonexisting_counter(
-    nonexisting_counter,
+    nonexisting_counter: int | None,
 ) -> None:
     exp_id = 1
     with pytest.raises(RuntimeError, match="Expected one row"):
-        _ = load_by_counter(exp_id, nonexisting_counter)
+        _ = load_by_counter(exp_id, nonexisting_counter)  # pyright: ignore[reportArgumentType]
 
 
 @pytest.mark.usefixtures("empty_temp_db")
 @pytest.mark.parametrize("nonexisting_exp_id", (-1, 0, 1, None))
 def test_load_by_counter_for_nonexisting_experiment(
-    nonexisting_exp_id,
+    nonexisting_exp_id: int | None,
 ) -> None:
     with pytest.raises(RuntimeError, match="Expected one row"):
-        _ = load_by_counter(nonexisting_exp_id, 1)
+        _ = load_by_counter(nonexisting_exp_id, 1)  # pyright: ignore[reportArgumentType]
 
 
 @pytest.mark.usefixtures("empty_temp_db")

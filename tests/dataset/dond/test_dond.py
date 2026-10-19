@@ -1083,15 +1083,15 @@ def test_dond_2d_multi_datasets_with_callable_output_data(
     _param_complex_2: Parameter[complex],
     _param_set: Parameter[float | None],
     _param_set_2: Parameter[float | None],
-    _string_callable,
+    _string_callable: str,
 ) -> None:
     sweep_1 = LinSweep(_param_set, 0, 0.5, 5, 0)
     sweep_2 = LinSweep(_param_set_2, 0.5, 1, 5, 0)
     exp_1 = dond(
         sweep_1,
         sweep_2,
-        [_string_callable, _param, _param_complex],
-        [_string_callable, _param_2, _param_complex_2],
+        [_string_callable, _param, _param_complex],  # pyright: ignore[reportArgumentType]
+        [_string_callable, _param_2, _param_complex_2],  # pyright: ignore[reportArgumentType]
     )
     datasets = exp_1[0]
     assert isinstance(datasets, tuple)
