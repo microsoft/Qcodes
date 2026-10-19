@@ -84,6 +84,7 @@ def _read_settings() -> tuple[dict[str, str | int], dict[str, bool | int | str]]
     settings.update({"VERSION": resp})
 
     c.close()
+    conn.close()
 
     return (limits, settings)
 
