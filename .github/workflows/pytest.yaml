@@ -46,6 +46,8 @@ jobs:
     env:
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}
+      PYTHON_LAZY_IMPORTS: ${{ matrix.python-version == '3.15' && 'all' || '' }}
+      PYTHONPATH: ${{ matrix.python-version == '3.15' && format('{0}/.github/lazy-imports', github.workspace) || '' }}
 
     steps:
 
