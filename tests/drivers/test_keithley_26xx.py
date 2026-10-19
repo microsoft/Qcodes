@@ -13,11 +13,13 @@ from qcodes.instrument_drivers.Keithley import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from qcodes.instrument_drivers.Keithley import Keithley2600Channel
 
 
 @pytest.fixture(scope="function", name="driver")
-def _make_driver():
+def _make_driver() -> "Generator[Keithley2614B, None, None]":
     driver = Keithley2614B(
         "Keithley_2600", address="GPIB::1::INSTR", pyvisa_sim_file="Keithley_2600.yaml"
     )
@@ -27,14 +29,16 @@ def _make_driver():
 
 
 @pytest.fixture(scope="function", name="smus")
-def _make_smus(driver):
+def _make_smus(
+    driver: Keithley2614B,
+) -> "Generator[tuple[Keithley2600Channel, ...], None, None]":
     smu_names = {"smua", "smub"}
     assert smu_names == set(driver.submodules.keys())
 
     yield tuple(getattr(driver, smu_name) for smu_name in smu_names)
 
 
-def test_idn(driver) -> None:
+def test_idn(driver: Keithley2614B) -> None:
     assert {
         "firmware": "3.0.0",
         "model": "2601B",
@@ -43,7 +47,7 @@ def test_idn(driver) -> None:
     } == driver.IDN()
 
 
-def test_smu_channels_and_their_parameters(driver) -> None:
+def test_smu_channels_and_their_parameters(driver: Keithley2614B) -> None:
     assert {"smua", "smub"} == set(driver.submodules.keys())
 
     for smu_name in ("smua", "smub"):
@@ -154,11 +158,11 @@ def test_smu_channels_and_their_parameters(driver) -> None:
 
 
 def test_snapshot_updates_every_parameter(
-    driver, caplog: pytest.LogCaptureFixture
+    driver: Keithley2614B, caplog: pytest.LogCaptureFixture
 ) -> None:
     # a query missing from the sim file waits for the VISA timeout and is only logged
     with caplog.at_level(logging.WARNING):
-        driver.snapshot(update=True)
+        driver.snapshot(update="All")
 
     assert not [
         record.getMessage()
@@ -167,7 +171,9 @@ def test_snapshot_updates_every_parameter(
     ]
 
 
-def test_setting_source_voltage_range_disables_autorange(smus) -> None:
+def test_setting_source_voltage_range_disables_autorange(
+    smus: "tuple[Keithley2600Channel, ...]",
+) -> None:
     for smu in smus:
         smu.source_autorange_v_enabled(True)
         assert smu.source_autorange_v_enabled() is True
@@ -176,7 +182,9 @@ def test_setting_source_voltage_range_disables_autorange(smus) -> None:
         assert smu.source_autorange_v_enabled() is False
 
 
-def test_setting_measure_voltage_range_disables_autorange(smus) -> None:
+def test_setting_measure_voltage_range_disables_autorange(
+    smus: "tuple[Keithley2600Channel, ...]",
+) -> None:
     for smu in smus:
         smu.measure_autorange_v_enabled(True)
         assert smu.measure_autorange_v_enabled() is True
@@ -185,7 +193,9 @@ def test_setting_measure_voltage_range_disables_autorange(smus) -> None:
         assert smu.measure_autorange_v_enabled() is False
 
 
-def test_setting_source_current_range_disables_autorange(smus) -> None:
+def test_setting_source_current_range_disables_autorange(
+    smus: "tuple[Keithley2600Channel, ...]",
+) -> None:
     for smu in smus:
         smu.source_autorange_i_enabled(True)
         assert smu.source_autorange_i_enabled() is True
@@ -194,7 +204,9 @@ def test_setting_source_current_range_disables_autorange(smus) -> None:
         assert smu.source_autorange_i_enabled() is False
 
 
-def test_setting_measure_current_range_disables_autorange(smus) -> None:
+def test_setting_measure_current_range_disables_autorange(
+    smus: "tuple[Keithley2600Channel, ...]",
+) -> None:
     for smu in smus:
         smu.measure_autorange_i_enabled(True)
         assert smu.measure_autorange_i_enabled() is True
@@ -203,7 +215,7 @@ def test_setting_measure_current_range_disables_autorange(smus) -> None:
         assert smu.measure_autorange_i_enabled() is False
 
 
-def test_fast_sweep_parameters(smus) -> None:
+def test_fast_sweep_parameters(smus: "tuple[Keithley2600Channel, ...]") -> None:
     for smu in smus:
         smu = cast("Keithley2600Channel", smu)
 
@@ -235,7 +247,7 @@ def test_fast_sweep_parameters(smus) -> None:
         np.testing.assert_array_almost_equal(setpoints, expected_setpoints)
 
 
-def test_fastsweep(driver) -> None:
+def test_fastsweep(driver: Keithley2614B) -> None:
     smu = driver.smua
 
     # Configure the fastsweep using LinSweep
@@ -252,7 +264,7 @@ def test_fastsweep(driver) -> None:
     np.testing.assert_array_equal(result, fake_data)
 
 
-def test_fastsweep_2d_parameters(driver) -> None:
+def test_fastsweep_2d_parameters(driver: Keithley2614B) -> None:
     """Test 2D fastsweep configuration with inner and outer sweeps."""
     smua = driver.smua
     smub = driver.smub
@@ -286,7 +298,7 @@ def test_fastsweep_2d_parameters(driver) -> None:
     assert smua.fastsweep.setpoints[1] is smua.fastsweep_inner_setpoints
 
 
-def test_fastsweep_2d_execution(driver) -> None:
+def test_fastsweep_2d_execution(driver: Keithley2614B) -> None:
     """Test 2D fastsweep returns correctly shaped data."""
     smua = driver.smua
     smub = driver.smub
@@ -311,7 +323,7 @@ def test_fastsweep_2d_execution(driver) -> None:
     np.testing.assert_array_equal(result.flatten(), fake_data)
 
 
-def test_fastsweep_channel_detection(driver) -> None:
+def test_fastsweep_channel_detection(driver: Keithley2614B) -> None:
     """Test that channels are correctly detected from LinSweep parameters."""
     smua = driver.smua
     smub = driver.smub
@@ -336,7 +348,7 @@ def test_fastsweep_channel_detection(driver) -> None:
     assert result.shape == (5, 10)
 
 
-def test_fastsweep_reconfigure_creates_fresh_setpoints(driver) -> None:
+def test_fastsweep_reconfigure_creates_fresh_setpoints(driver: Keithley2614B) -> None:
     """Test that calling setup_fastsweep twice creates fresh setpoint parameters.
 
     Regression test: previously, setpoint parameters were reused and their
