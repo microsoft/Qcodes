@@ -4,6 +4,7 @@ import copy
 import os
 import sys
 import threading
+import weakref
 from typing import TYPE_CHECKING
 
 import matplotlib
@@ -12,7 +13,7 @@ from hypothesis import settings
 
 import qcodes as qc
 from qcodes.configuration import Config
-from qcodes.dataset import close_all_connections, initialise_database, new_data_set
+from qcodes.dataset import get_open_connections, initialise_database, new_data_set
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.experiment_container import Experiment, new_experiment
 from qcodes.instrument import Instrument
@@ -130,12 +131,17 @@ def reset_state_on_exit() -> Generator[None, None, None]:
 def close_db_connections() -> Generator[None, None, None]:
     """
     Close any database connections left open by a test, so that they do not
-    leak into other tests or keep the database files locked.
+    leak into other tests or keep the database files locked. Preserve connections
+    opened by broader-scoped fixtures and those owned by other threads.
     """
+    existing_connections = weakref.WeakSet(get_open_connections())
+    thread_id = threading.get_ident()
     try:
         yield
     finally:
-        close_all_connections()
+        for conn in get_open_connections():
+            if conn not in existing_connections and conn.owner_thread_id == thread_id:
+                conn.close()
 
 
 @pytest.fixture(scope="function", name="empty_temp_db")

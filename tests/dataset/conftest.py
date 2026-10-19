@@ -35,13 +35,14 @@ from qcodes.validators import Arrays, ComplexNumbers, Numbers
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Iterator
+    from pathlib import Path
 
     from qcodes.dataset.data_set_protocol import DataSetProtocol
     from qcodes.dataset.experiment_container import Experiment
 
 
 @pytest.fixture(scope="function", name="non_created_db")
-def _make_non_created_db(tmp_path) -> None:
+def _make_non_created_db(tmp_path: Path) -> None:
     # set db location to a non existing file
     qc.config["core"]["db_location"] = str(tmp_path / "temp.db")
     if os.environ.get("QCODES_SQL_DEBUG"):

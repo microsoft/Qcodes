@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 _open_connections: weakref.WeakSet[AtomicConnection] = weakref.WeakSet()
-_open_connections_lock = threading.Lock()
+_open_connections_lock = threading.RLock()
 
 
 class AtomicConnection(sqlite3.Connection):

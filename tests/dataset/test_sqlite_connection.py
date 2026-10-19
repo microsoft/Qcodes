@@ -1,4 +1,5 @@
 import gc
+import os
 import re
 import sqlite3
 import subprocess
@@ -6,12 +7,15 @@ import sys
 import textwrap
 import threading
 import weakref
-from contextlib import closing
+from contextlib import closing, contextmanager
+from inspect import unwrap
+from typing import TYPE_CHECKING
 
 import pytest
 
 from qcodes.dataset.sqlite.connection import (
     AtomicConnection,
+    _open_connections_lock,
     atomic,
     atomic_transaction,
     close_all_connections,
@@ -19,6 +23,10 @@ from qcodes.dataset.sqlite.connection import (
 )
 from qcodes.dataset.sqlite.database import connect
 from tests.common import error_caused_by
+from tests.conftest import close_db_connections
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def sqlite_conn_in_transaction(conn: sqlite3.Connection):
@@ -364,7 +372,7 @@ def test_connect() -> None:
     assert None is conn.row_factory
 
 
-def test_open_connections_are_tracked_until_closed(tmp_path) -> None:
+def test_open_connections_are_tracked_until_closed(tmp_path: "Path") -> None:
     conn = connect(tmp_path / "temp.db")
     assert conn in get_open_connections()
 
@@ -387,7 +395,41 @@ def test_garbage_collected_connections_are_not_tracked() -> None:
     assert conn_ref() is None
 
 
-def test_close_all_connections(tmp_path) -> None:
+def test_open_connections_lock_is_reentrant() -> None:
+    """Allow registry access from finalizers running while the lock is held."""
+    with _open_connections_lock:
+        acquired = _open_connections_lock.acquire(blocking=False)
+        try:
+            assert acquired
+        finally:
+            if acquired:
+                _open_connections_lock.release()
+
+
+def test_connection_cleanup_preserves_existing_connections() -> None:
+    """Close only connections opened within the cleanup fixture's scope."""
+    with closing(AtomicConnection(":memory:")) as existing_conn:
+        with contextmanager(unwrap(close_db_connections))():
+            new_conn = AtomicConnection(":memory:")
+
+        assert existing_conn.execute("SELECT 1").fetchone() == (1,)
+        assert existing_conn in get_open_connections()
+        assert new_conn not in get_open_connections()
+        with pytest.raises(sqlite3.ProgrammingError):
+            new_conn.execute("SELECT 1")
+
+
+def test_connection_cleanup_does_not_keep_existing_connections_alive() -> None:
+    """Avoid extending connection lifetimes when recording existing connections."""
+    conn = AtomicConnection(":memory:")
+    conn_ref = weakref.ref(conn)
+    with contextmanager(unwrap(close_db_connections))():
+        del conn
+        gc.collect()
+        assert conn_ref() is None
+
+
+def test_close_all_connections(tmp_path: "Path") -> None:
     conns = [connect(tmp_path / "temp.db") for _ in range(3)]
     conns.append(AtomicConnection(":memory:"))
 
@@ -400,7 +442,7 @@ def test_close_all_connections(tmp_path) -> None:
 
 
 def test_close_all_connections_only_closes_connections_owned_by_thread(
-    tmp_path,
+    tmp_path: "Path",
 ) -> None:
     dbfile = tmp_path / "temp.db"
     conns: list[AtomicConnection] = []
@@ -432,7 +474,7 @@ def test_close_all_connections_only_closes_connections_owned_by_thread(
     assert other_thread_conn not in get_open_connections()
 
 
-def test_open_connections_are_closed_at_exit(tmp_path) -> None:
+def test_open_connections_are_closed_at_exit(tmp_path: "Path") -> None:
     # atexit handlers run in reverse order of registration, so a handler
     # registered before qcodes is imported runs after qcodes' own handler
     # and can observe whether the connection was closed.
@@ -451,7 +493,11 @@ def test_open_connections_are_closed_at_exit(tmp_path) -> None:
 
         atexit.register(report)
 
+        import qcodes
         from qcodes.dataset.sqlite.connection import AtomicConnection
+
+        assert qcodes.config.current_config == qcodes.config.defaults
+        assert qcodes.config.current_config_path == qcodes.config.default_file_name
 
         conn = AtomicConnection({str(tmp_path / "temp.db")!r})
         """
@@ -462,6 +508,13 @@ def test_open_connections_are_closed_at_exit(tmp_path) -> None:
         text=True,
         timeout=120,
         check=True,
+        cwd=tmp_path,
+        env={
+            **os.environ,
+            "HOME": str(tmp_path),
+            "USERPROFILE": str(tmp_path),
+            "QCODES_CONFIG": str(tmp_path / "qcodesrc.json"),
+        },
     )
 
     assert result.stdout.strip() == "closed"
