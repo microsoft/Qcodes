@@ -163,7 +163,6 @@ strict_equality = true
 module = [
     "tests.*",
     "qcodes.instrument_drivers.Harvard.*",
-    "qcodes.instrument_drivers.Keysight.keysightb1500.message_builder.*",
 ]
 disallow_untyped_defs = false
 disallow_incomplete_defs = false

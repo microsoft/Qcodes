@@ -1587,7 +1587,13 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def ercmaio(self, cmhl=None, acgs=None, bias=None, corr=None) -> "MessageBuilder":
+    def ercmaio(
+        self,
+        cmhl: int | None = None,
+        acgs: int | None = None,
+        bias: int | None = None,
+        corr: int | None = None,
+    ) -> "MessageBuilder":
         cmd = "ERCMAIO"
 
         if cmhl is not None:
@@ -2191,7 +2197,12 @@ class MessageBuilder:
         return self
 
     @final_command
-    def lst_query(self, pnum=None, index=None, size=None) -> "MessageBuilder":
+    def lst_query(
+        self,
+        pnum: int | None = None,
+        index: int | None = None,
+        size: int | None = None,
+    ) -> "MessageBuilder":
         cmd = "LST?"
 
         if pnum is not None:
@@ -2593,7 +2604,7 @@ class MessageBuilder:
         return self
 
     @final_command
-    def pch_query(self, master=None) -> "MessageBuilder":
+    def pch_query(self, master: constants.ChNr | int | None = None) -> "MessageBuilder":
         cmd = "PCH"
 
         if master is not None:
@@ -3031,7 +3042,9 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def sprm(self, mode: constants.SPRM.Mode | int, condition=None) -> "MessageBuilder":
+    def sprm(
+        self, mode: constants.SPRM.Mode | int, condition: float | None = None
+    ) -> "MessageBuilder":
         if condition is None:
             cmd = f"SPRM {mode}"
         else:
@@ -3198,7 +3211,7 @@ class MessageBuilder:
         self,
         chnum: constants.ChNr | int,
         mode: constants.RangingMode | int,
-        ranging_type=None,
+        ranging_type: int | None = None,
     ) -> "MessageBuilder":
         cmd = f"TC {chnum},{mode}"
 
@@ -3558,7 +3571,10 @@ class MessageBuilder:
         return self
 
     def wat(
-        self, wait_time_type: constants.WAT.Type | int, coeff: float, offset=None
+        self,
+        wait_time_type: constants.WAT.Type | int,
+        coeff: float,
+        offset: float | None = None,
     ) -> "MessageBuilder":
         cmd = f"WAT {wait_time_type},{coeff}"
 
