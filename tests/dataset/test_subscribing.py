@@ -36,7 +36,7 @@ class MockSubscriber:
     dataset!
     """
 
-    def __init__(self, ds: "DataSet", lg: "bool"):
+    def __init__(self, ds: "DataSet", lg: "bool") -> None:
         self.lg = lg
         self.ds = ds
 

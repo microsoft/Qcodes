@@ -630,7 +630,7 @@ def test_numpy_floats(dataset: DataSet) -> None:
     assert np.allclose(data, expected_result, atol=1e-8)
 
 
-def test_numpy_complex(dataset) -> None:
+def test_numpy_complex(dataset: DataSet) -> None:
     """
     Test that we can insert numpy complex in the data set
     """
@@ -640,7 +640,9 @@ def test_numpy_complex(dataset) -> None:
     dataset.mark_started()
 
     results = [{"x": tp(2.0 + 3.0j)} for tp in numpy_complex]
-    dataset.add_results(results)
+    # TODO: VALUE in qcodes.dataset.sqlite.query_helpers does not include
+    # numpy scalar types although add_results supports them
+    dataset.add_results(results)  # pyright: ignore[reportArgumentType]
     expected_result = np.array([tp(2.0 + 3.0j) for tp in numpy_complex])
     result = dataset.get_parameter_data()
     np.testing.assert_array_equal(result["x"]["x"], expected_result)
@@ -1438,8 +1440,8 @@ def limit_data_to_start_end(
     end: int | None,
     input_names: list[str],
     expected_names: dict[str, list[str]],
-    expected_shapes,
-    expected_values,
+    expected_shapes: dict[str, list[tuple[int, ...]]],
+    expected_values: dict[str, list[np.ndarray]],
 ) -> tuple[int | None, int | None]:
     if not (start is None and end is None):
         if start is None:
@@ -1450,8 +1452,8 @@ def limit_data_to_start_end(
         assert start is not None and end is not None
         if end < start:
             for name in input_names:
-                expected_shapes[name] = ()
-                expected_values[name] = {}
+                expected_shapes[name] = []
+                expected_values[name] = []
         else:
             for name in input_names:
                 new_shapes = []

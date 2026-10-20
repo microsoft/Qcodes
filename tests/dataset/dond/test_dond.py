@@ -5,7 +5,7 @@ These are the basic black box tests for the doNd functions.
 import logging
 import re
 from functools import partial
-from typing import TYPE_CHECKING, assert_type
+from typing import TYPE_CHECKING, Any, assert_type
 
 import hypothesis.strategies as hst
 import matplotlib.axes
@@ -54,7 +54,7 @@ if TYPE_CHECKING:
 class TrackingParameter(Parameter):
     """Parameter that keeps track of number of get and set operations"""
 
-    def __init__(self, *args: str, **kwargs):
+    def __init__(self, *args: str, **kwargs: Any) -> None:
         self.set_count = 0
         self.get_count = 0
         super().__init__(*args, **kwargs)
@@ -77,7 +77,7 @@ class GetReturnsCountParameter(Parameter):
     Allows you to set a value but returns the get count rather
     than the value"""
 
-    def __init__(self, *args: str, **kwargs):
+    def __init__(self, *args: str, **kwargs: Any) -> None:
         self.set_count = 0
         self.get_count = 0
         super().__init__(*args, **kwargs)

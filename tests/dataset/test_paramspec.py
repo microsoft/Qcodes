@@ -1,6 +1,6 @@
 from keyword import iskeyword
 from numbers import Number
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypedDict
 
 import hypothesis.strategies as hst
 import pytest
@@ -24,6 +24,15 @@ def valid_identifier(**kwargs: "int") -> "SearchStrategy[str]":
         alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_",
         **kwargs,
     ).filter(lambda x: x[0].isalpha() and x.isidentifier() and not (iskeyword(x)))
+
+
+class _ParamSpecKwargs(TypedDict):
+    name: str
+    paramtype: str
+    label: str | None
+    unit: str | None
+    depends_on: list[ParamSpec | str]
+    inferred_from: list[ParamSpec | str]
 
 
 # This strategy generates a dict of kwargs needed to instantiate a valid
@@ -287,7 +296,7 @@ def test_from_dict(
 
 
 @given(paramspecs=hst.lists(valid_paramspec_kwargs, min_size=2, max_size=2))
-def test_hash(paramspecs) -> None:
+def test_hash(paramspecs: "list[_ParamSpecKwargs]") -> None:
     p1 = ParamSpec(**paramspecs[0])
     p2 = ParamSpec(**paramspecs[1])
 
@@ -315,7 +324,7 @@ def test_hash(paramspecs) -> None:
     add_to_2_dep=hst.booleans(),
 )
 def test_hash_with_deferred_and_inferred_as_paramspecs(
-    paramspecs,
+    paramspecs: "list[_ParamSpecKwargs]",
     add_to_1_inf: "bool",
     add_to_1_dep: "bool",
     add_to_2_inf: "bool",
@@ -358,7 +367,7 @@ def test_hash_with_deferred_and_inferred_as_paramspecs(
 
 
 @given(paramspecs=hst.lists(valid_paramspec_kwargs, min_size=1, max_size=1))
-def test_base_version(paramspecs) -> None:
+def test_base_version(paramspecs: "list[_ParamSpecKwargs]") -> None:
     kwargs = paramspecs[0]
 
     ps = ParamSpec(**kwargs)

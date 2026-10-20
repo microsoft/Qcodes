@@ -5,7 +5,7 @@ import shutil
 import tempfile
 from contextlib import contextmanager
 from enum import StrEnum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pytest
@@ -94,7 +94,7 @@ def two_empty_temp_db_connections(
 
 @contextmanager
 def temporarily_copied_DB(
-    filepath: str, **kwargs
+    filepath: str, **kwargs: Any
 ) -> Generator[AtomicConnection, None, None]:
     """
     Make a temporary copy of a db-file and delete it after use. Meant to be
@@ -683,8 +683,8 @@ def SpectrumAnalyzer() -> Generator[DummyInstrument, None, None]:
             self,
             name: str,
             instrument: InstrumentBase,
-            **kwargs,
-        ):
+            **kwargs: Any,
+        ) -> None:
             super().__init__(
                 name=name,
                 shape=(1,),  # this attribute should be removed
@@ -716,8 +716,8 @@ def SpectrumAnalyzer() -> Generator[DummyInstrument, None, None]:
             self,
             name: str,
             instrument: InstrumentBase,
-            **kwargs,
-        ):
+            **kwargs: Any,
+        ) -> None:
             self.start = 0
             self.stop = 2e6
             self.npts = (100, 50, 20)
@@ -820,8 +820,8 @@ class ArrayshapedParam(Parameter):
     def __init__(
         self,
         *args: str,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         super().__init__(*args, **kwargs)
         self._rng = np.random.default_rng()
 

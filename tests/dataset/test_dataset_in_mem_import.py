@@ -16,11 +16,12 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from qcodes.dataset.data_set_protocol import DataSetProtocol
+    from qcodes.dataset.descriptions.dependencies import InterDependencies_
 
 
 def test_basic_roundtrip(
     two_empty_temp_db_connections: tuple[AtomicConnection, AtomicConnection],
-    some_interdeps,
+    some_interdeps: list[InterDependencies_],
     tmp_path: Path,
 ) -> None:
     """
@@ -49,8 +50,12 @@ def test_basic_roundtrip(
         source_dataset._perform_start_actions()
 
         for val in range(10):
+            # TODO: no data is actually added here: str keys never match the
+            # ParamSpecBase keys _enqueue_results expects, and the cache is
+            # never prepared (use ds.prepare(...) instead of
+            # _set_interdependencies/_perform_start_actions).
             source_dataset._enqueue_results(
-                {name: np.array([val]) for name in some_interdeps[1].names}
+                {name: np.array([val]) for name in some_interdeps[1].names}  # pyright: ignore[reportArgumentType]
             )
         source_dataset.mark_completed()
         source_dataset.export(export_type="netcdf", path=str(tmp_path))
@@ -80,7 +85,7 @@ def test_basic_roundtrip(
 
 def test_roundtrip_to_db_with_existing_meas(
     two_empty_temp_db_connections: tuple[AtomicConnection, AtomicConnection],
-    some_interdeps,
+    some_interdeps: list[InterDependencies_],
     tmp_path: Path,
 ) -> None:
     """
@@ -118,8 +123,12 @@ def test_roundtrip_to_db_with_existing_meas(
         source_dataset._perform_start_actions()
 
         for val in range(10):
+            # TODO: no data is actually added here: str keys never match the
+            # ParamSpecBase keys _enqueue_results expects, and the cache is
+            # never prepared (use ds.prepare(...) instead of
+            # _set_interdependencies/_perform_start_actions).
             source_dataset._enqueue_results(
-                {name: np.array([val]) for name in some_interdeps[1].names}
+                {name: np.array([val]) for name in some_interdeps[1].names}  # pyright: ignore[reportArgumentType]
             )
         source_dataset.mark_completed()
         source_dataset.export(export_type="netcdf", path=str(tmp_path))
@@ -135,8 +144,12 @@ def test_roundtrip_to_db_with_existing_meas(
         extra_dataset.mark_started()
 
         for val in range(10):
+            # TODO: no data is actually added here: str keys never match the
+            # ParamSpecBase keys _enqueue_results expects, and the cache is
+            # never prepared (use ds.prepare(...) instead of
+            # _set_interdependencies/_perform_start_actions).
             extra_dataset._enqueue_results(
-                {name: np.array([val]) for name in some_interdeps[1].names}
+                {name: np.array([val]) for name in some_interdeps[1].names}  # pyright: ignore[reportArgumentType]
             )
         extra_dataset.mark_completed()
 
@@ -166,7 +179,7 @@ def test_roundtrip_to_db_with_existing_meas(
 
 def test_roundtrip_to_db_with_existing_meas_in_same_exp(
     two_empty_temp_db_connections: tuple[AtomicConnection, AtomicConnection],
-    some_interdeps,
+    some_interdeps: list[InterDependencies_],
     tmp_path: Path,
 ) -> None:
     """
@@ -201,8 +214,12 @@ def test_roundtrip_to_db_with_existing_meas_in_same_exp(
         source_dataset._perform_start_actions()
 
         for val in range(10):
+            # TODO: no data is actually added here: str keys never match the
+            # ParamSpecBase keys _enqueue_results expects, and the cache is
+            # never prepared (use ds.prepare(...) instead of
+            # _set_interdependencies/_perform_start_actions).
             source_dataset._enqueue_results(
-                {name: np.array([val]) for name in some_interdeps[1].names}
+                {name: np.array([val]) for name in some_interdeps[1].names}  # pyright: ignore[reportArgumentType]
             )
         source_dataset.mark_completed()
         source_dataset.export(export_type="netcdf", path=str(tmp_path))
@@ -218,8 +235,12 @@ def test_roundtrip_to_db_with_existing_meas_in_same_exp(
         extra_dataset.mark_started()
 
         for val in range(10):
+            # TODO: no data is actually added here: str keys never match the
+            # ParamSpecBase keys _enqueue_results expects, and the cache is
+            # never prepared (use ds.prepare(...) instead of
+            # _set_interdependencies/_perform_start_actions).
             extra_dataset._enqueue_results(
-                {name: np.array([val]) for name in some_interdeps[1].names}
+                {name: np.array([val]) for name in some_interdeps[1].names}  # pyright: ignore[reportArgumentType]
             )
         extra_dataset.mark_completed()
 

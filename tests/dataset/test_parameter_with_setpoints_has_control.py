@@ -13,7 +13,9 @@ from qcodes.validators import Arrays
 if TYPE_CHECKING:
     import pytest
 
+    from qcodes.dataset.data_set_protocol import ValuesType
     from qcodes.dataset.experiment_container import Experiment
+    from qcodes.parameters import ParameterBase
 
 
 def _make_controlled_setpoints(
@@ -24,7 +26,9 @@ def _make_controlled_setpoints(
     """Create a ParameterWithSetpoints that infers ``controlled`` via unpack_self."""
 
     class _ControlledSetpoints(ParameterWithSetpoints):
-        def unpack_self(self, value):  # type: ignore[override]
+        def unpack_self(
+            self, value: "ValuesType"
+        ) -> "list[tuple[ParameterBase, ValuesType]]":
             res = super().unpack_self(value)
             res.append((controlled, controlled()))
             return res

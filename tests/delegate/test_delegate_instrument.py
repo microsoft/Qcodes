@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -7,14 +8,20 @@ from qcodes.instrument import Instrument
 from qcodes.instrument.delegate import DelegateInstrument
 from qcodes.instrument_drivers.mock_instruments import MockField
 
+if TYPE_CHECKING:
+    from qcodes.instrument_drivers.mock_instruments import MockDAC
+    from qcodes.station import Station
 
-def test_mock_dac(dac) -> None:
+
+def test_mock_dac(dac: "MockDAC") -> None:
     assert dac.ch01.voltage() == 0.0
     dac.ch01.voltage(1.0)
     assert dac.ch01.voltage() == 1.0
 
 
-def test_mock_field_delegate(station, field_x, chip_config) -> None:
+def test_mock_field_delegate(
+    station: "Station", field_x: MockField, chip_config: str
+) -> None:
     with patch.object(
         MockField, "set_field", wraps=field_x.set_field
     ) as mock_set_field:
@@ -38,7 +45,7 @@ def test_mock_field_delegate(station, field_x, chip_config) -> None:
         assert_almost_equal(field.ramp_X_field(), 0.0)
 
 
-def test_delegate_channel_instrument(station, chip_config) -> None:
+def test_delegate_channel_instrument(station: "Station", chip_config: str) -> None:
     station.load_config_file(chip_config)
     switch = station.load_switch(station=station)
 
@@ -56,7 +63,9 @@ def test_delegate_channel_instrument(station, chip_config) -> None:
     assert state.gnd == "off"
 
 
-def test_invalid_parameter_paths_raise(station, request: pytest.FixtureRequest) -> None:
+def test_invalid_parameter_paths_raise(
+    station: "Station", request: pytest.FixtureRequest
+) -> None:
     """A parameter must map to either a single path or a sequence of paths."""
     name = "delegate_with_invalid_paths"
 
