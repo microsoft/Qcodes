@@ -126,7 +126,7 @@ ipywidgets==8.1.9
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-jedi==0.20.0
+jedi==0.20.1
     # via ipython
 jinja2==3.1.6
     # via
