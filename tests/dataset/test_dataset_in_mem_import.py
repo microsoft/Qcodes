@@ -45,17 +45,11 @@ def test_basic_roundtrip(
             path_to_db=source_path,
         )
         source_datasets.append(source_dataset)
-        source_dataset._set_interdependencies(some_interdeps[1])
-
-        source_dataset._perform_start_actions()
+        source_dataset.prepare(interdeps=some_interdeps[1], snapshot={})
 
         for val in range(10):
-            # TODO: no data is actually added here: str keys never match the
-            # ParamSpecBase keys _enqueue_results expects, and the cache is
-            # never prepared (use ds.prepare(...) instead of
-            # _set_interdependencies/_perform_start_actions).
             source_dataset._enqueue_results(
-                {name: np.array([val]) for name in some_interdeps[1].names}  # pyright: ignore[reportArgumentType]
+                {param: np.array([val]) for param in some_interdeps[1].paramspecs}
             )
         source_dataset.mark_completed()
         source_dataset.export(export_type="netcdf", path=str(tmp_path))
@@ -118,17 +112,11 @@ def test_roundtrip_to_db_with_existing_meas(
             path_to_db=source_path,
         )
         source_datasets.append(source_dataset)
-        source_dataset._set_interdependencies(some_interdeps[1])
-
-        source_dataset._perform_start_actions()
+        source_dataset.prepare(interdeps=some_interdeps[1], snapshot={})
 
         for val in range(10):
-            # TODO: no data is actually added here: str keys never match the
-            # ParamSpecBase keys _enqueue_results expects, and the cache is
-            # never prepared (use ds.prepare(...) instead of
-            # _set_interdependencies/_perform_start_actions).
             source_dataset._enqueue_results(
-                {name: np.array([val]) for name in some_interdeps[1].names}  # pyright: ignore[reportArgumentType]
+                {param: np.array([val]) for param in some_interdeps[1].paramspecs}
             )
         source_dataset.mark_completed()
         source_dataset.export(export_type="netcdf", path=str(tmp_path))
@@ -144,12 +132,8 @@ def test_roundtrip_to_db_with_existing_meas(
         extra_dataset.mark_started()
 
         for val in range(10):
-            # TODO: no data is actually added here: str keys never match the
-            # ParamSpecBase keys _enqueue_results expects, and the cache is
-            # never prepared (use ds.prepare(...) instead of
-            # _set_interdependencies/_perform_start_actions).
             extra_dataset._enqueue_results(
-                {name: np.array([val]) for name in some_interdeps[1].names}  # pyright: ignore[reportArgumentType]
+                {param: np.array([val]) for param in some_interdeps[1].paramspecs}
             )
         extra_dataset.mark_completed()
 
@@ -209,17 +193,11 @@ def test_roundtrip_to_db_with_existing_meas_in_same_exp(
             path_to_db=source_path,
         )
         source_datasets.append(source_dataset)
-        source_dataset._set_interdependencies(some_interdeps[1])
-
-        source_dataset._perform_start_actions()
+        source_dataset.prepare(interdeps=some_interdeps[1], snapshot={})
 
         for val in range(10):
-            # TODO: no data is actually added here: str keys never match the
-            # ParamSpecBase keys _enqueue_results expects, and the cache is
-            # never prepared (use ds.prepare(...) instead of
-            # _set_interdependencies/_perform_start_actions).
             source_dataset._enqueue_results(
-                {name: np.array([val]) for name in some_interdeps[1].names}  # pyright: ignore[reportArgumentType]
+                {param: np.array([val]) for param in some_interdeps[1].paramspecs}
             )
         source_dataset.mark_completed()
         source_dataset.export(export_type="netcdf", path=str(tmp_path))
@@ -235,12 +213,8 @@ def test_roundtrip_to_db_with_existing_meas_in_same_exp(
         extra_dataset.mark_started()
 
         for val in range(10):
-            # TODO: no data is actually added here: str keys never match the
-            # ParamSpecBase keys _enqueue_results expects, and the cache is
-            # never prepared (use ds.prepare(...) instead of
-            # _set_interdependencies/_perform_start_actions).
             extra_dataset._enqueue_results(
-                {name: np.array([val]) for name in some_interdeps[1].names}  # pyright: ignore[reportArgumentType]
+                {param: np.array([val]) for param in some_interdeps[1].paramspecs}
             )
         extra_dataset.mark_completed()
 
@@ -268,10 +242,24 @@ def test_roundtrip_to_db_with_existing_meas_in_same_exp(
     )
 
 
+def _assert_same_data(expected: DataSetProtocol, actual: DataSetProtocol) -> None:
+    expected_data = expected.get_parameter_data()
+    actual_data = actual.get_parameter_data()
+    assert expected_data.keys() == actual_data.keys()
+    for tree_name, expected_tree in expected_data.items():
+        actual_tree = actual_data[tree_name]
+        assert expected_tree.keys() == actual_tree.keys()
+        for param_name, expected_values in expected_tree.items():
+            np.testing.assert_array_equal(actual_tree[param_name], expected_values)
+
+
 def _assert_before_writing_metadata(
     source_datasets: Sequence[DataSetInMem], loaded_datasets: Sequence[DataSetInMem]
 ) -> None:
     for ds, lds in zip(source_datasets, loaded_datasets):
+        assert ds.number_of_results > 0
+        _assert_same_data(ds, lds)
+
         # these should always be equal
         assert ds.guid == lds.guid
 
@@ -311,6 +299,9 @@ def _assert_after_writing_metadata(
     offset_exps: int,
 ) -> None:
     for ds, lds, rlds in zip(source_datasets, loaded_datasets, reloaded_ds):
+        _assert_same_data(ds, lds)
+        _assert_same_data(ds, rlds)
+
         # these should always be equal
         assert ds.guid == lds.guid
         assert ds.guid == rlds.guid
