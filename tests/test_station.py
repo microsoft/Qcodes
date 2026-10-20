@@ -1093,9 +1093,7 @@ def test_load_all_instruments_raises_on_both_only_names_and_only_types_passed(
 def test_load_all_instruments_no_args(example_station: Station) -> None:
     all_instruments_in_config = {"lakeshore", "mock_dac", "mock_dac2"}
 
-    # TODO: the load_all_instruments overloads in qcodes.station lack None
-    # defaults so calls omitting only_names/only_types match no overload.
-    loaded_instruments = example_station.load_all_instruments()  # pyright: ignore[reportCallIssue]
+    loaded_instruments = example_station.load_all_instruments()
 
     assert set(loaded_instruments) == all_instruments_in_config
 
@@ -1107,9 +1105,7 @@ def test_load_all_instruments_no_args(example_station: Station) -> None:
 def test_load_all_instruments_only_types(example_station: Station) -> None:
     all_dummy_instruments = {"mock_dac", "mock_dac2"}
 
-    # TODO: the load_all_instruments overloads in qcodes.station lack None
-    # defaults so calls omitting only_names/only_types match no overload.
-    loaded_instruments = example_station.load_all_instruments(  # pyright: ignore[reportCallIssue]
+    loaded_instruments = example_station.load_all_instruments(
         only_types=("DummyInstrument",)
     )
 
@@ -1132,9 +1128,7 @@ def test_load_all_instruments_only_types(example_station: Station) -> None:
 def test_load_all_instruments_only_names(example_station: Station) -> None:
     instruments_to_load = {"lakeshore", "mock_dac"}
 
-    # TODO: the load_all_instruments overloads in qcodes.station lack None
-    # defaults so calls omitting only_names/only_types match no overload.
-    loaded_instruments = example_station.load_all_instruments(  # pyright: ignore[reportCallIssue]
+    loaded_instruments = example_station.load_all_instruments(
         only_names=instruments_to_load
     )
 
@@ -1157,7 +1151,7 @@ def test_load_all_instruments_only_names(example_station: Station) -> None:
 def test_load_all_instruments_without_config_raises() -> None:
     station = Station()
     with pytest.raises(ValueError, match="Station has no config"):
-        station.load_all_instruments()  # type: ignore[call-overload]
+        station.load_all_instruments()
 
 
 def test_station_config_created_with_multiple_config_files() -> None:
