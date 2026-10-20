@@ -1,4 +1,4 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -7,17 +7,20 @@ from qcodes.instrument import Instrument
 from qcodes.parameters import Parameter
 from qcodes.utils import QCoDeSDeprecationWarning
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 
 class MockResetInstrument(Instrument):
     """
     A mock instrument that records calls to perform_reset.
     """
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         super().__init__(name)
         self.reset_call_args: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
 
-    def perform_reset(self, *args: Any, **kwargs: Any):
+    def perform_reset(self, *args: Any, **kwargs: Any) -> None:
         self.reset_call_args.append((args, kwargs))
         SetCacheValueOnResetParameterMixin.trigger_group("reset_group_general")
 
@@ -29,7 +32,7 @@ class ResetTestParameter(SetCacheValueOnResetParameterMixin, Parameter):
 
 
 @pytest.fixture
-def store():
+def store() -> dict[str, Any]:
     """
     Provides a dictionary to store parameter values.
     """
@@ -37,7 +40,7 @@ def store():
 
 
 @pytest.fixture
-def reset_instr():
+def reset_instr() -> "Generator[MockResetInstrument, None, None]":
     """
     Provides a mock instrument with reset capability.
     """
@@ -47,11 +50,13 @@ def reset_instr():
 
 
 @pytest.fixture(autouse=True)
-def clear_reset_registry():
+def clear_reset_registry() -> None:
     SetCacheValueOnResetParameterMixin._group_registry.clear()
 
 
-def test_cache_resets_to_value(store, reset_instr) -> None:
+def test_cache_resets_to_value(
+    store: dict[str, Any], reset_instr: MockResetInstrument
+) -> None:
     test_param: ResetTestParameter = reset_instr.add_parameter(
         name="test_param",
         parameter_class=ResetTestParameter,
@@ -67,7 +72,9 @@ def test_cache_resets_to_value(store, reset_instr) -> None:
     assert test_param.get() == 42
 
 
-def test_warning_if_cache_value_unset(store, reset_instr) -> None:
+def test_warning_if_cache_value_unset(
+    store: dict[str, Any], reset_instr: MockResetInstrument
+) -> None:
     with pytest.warns(
         UserWarning,
         match="cache_value_after_reset for parameter 'test_param' is not set",
@@ -81,7 +88,9 @@ def test_warning_if_cache_value_unset(store, reset_instr) -> None:
         )
 
 
-def test_cache_resets_to_none(store, reset_instr) -> None:
+def test_cache_resets_to_none(
+    store: dict[str, Any], reset_instr: MockResetInstrument
+) -> None:
     test_param: ResetTestParameter = reset_instr.add_parameter(
         name="test_param_none",
         parameter_class=ResetTestParameter,
@@ -97,7 +106,9 @@ def test_cache_resets_to_none(store, reset_instr) -> None:
     assert test_param.get() is None
 
 
-def test_set_parser_with_default_get_parser(store, reset_instr) -> None:
+def test_set_parser_with_default_get_parser(
+    store: dict[str, Any], reset_instr: MockResetInstrument
+) -> None:
     test_param: ResetTestParameter = reset_instr.add_parameter(
         name="test_param",
         parameter_class=ResetTestParameter,
@@ -116,7 +127,9 @@ def test_set_parser_with_default_get_parser(store, reset_instr) -> None:
     assert test_param.get_raw() == 30
 
 
-def test_direct_cache_update_and_reset(store, reset_instr) -> None:
+def test_direct_cache_update_and_reset(
+    store: dict[str, Any], reset_instr: MockResetInstrument
+) -> None:
     test_param: ResetTestParameter = reset_instr.add_parameter(
         name="test_param",
         parameter_class=ResetTestParameter,
@@ -165,7 +178,9 @@ def test_error_if_get_parser_supplied(reset_instr: MockResetInstrument) -> None:
         )
 
 
-def test_parameter_in_multiple_reset_groups(store, reset_instr) -> None:
+def test_parameter_in_multiple_reset_groups(
+    store: dict[str, Any], reset_instr: MockResetInstrument
+) -> None:
     test_param: ResetTestParameter = reset_instr.add_parameter(
         name="test_param",
         parameter_class=ResetTestParameter,
@@ -184,7 +199,7 @@ def test_parameter_in_multiple_reset_groups(store, reset_instr) -> None:
     assert test_param.get() == 100
 
 
-def test_get_raw_with_val_mapping(reset_instr) -> None:
+def test_get_raw_with_val_mapping(reset_instr: MockResetInstrument) -> None:
     class MyParam(SetCacheValueOnResetParameterMixin, Parameter):
         pass
 
@@ -205,7 +220,9 @@ def test_get_raw_with_val_mapping(reset_instr) -> None:
     assert p.get_raw() == "1"
 
 
-def test_warning_if_group_names_is_none(store, reset_instr):
+def test_warning_if_group_names_is_none(
+    store: dict[str, Any], reset_instr: MockResetInstrument
+) -> None:
     with pytest.warns(UserWarning, match="No group_name"):
         reset_instr.add_parameter(
             name="test_param",
@@ -216,7 +233,9 @@ def test_warning_if_group_names_is_none(store, reset_instr):
         )
 
 
-def test_warning_if_group_names_missing(store, reset_instr):
+def test_warning_if_group_names_missing(
+    store: dict[str, Any], reset_instr: MockResetInstrument
+) -> None:
     with pytest.warns(UserWarning, match="No group_name"):
         reset_instr.add_parameter(
             name="test_param",
@@ -226,7 +245,9 @@ def test_warning_if_group_names_missing(store, reset_instr):
         )
 
 
-def test_typeerror_if_group_names_invalid(store, reset_instr):
+def test_typeerror_if_group_names_invalid(
+    store: dict[str, Any], reset_instr: MockResetInstrument
+) -> None:
     with (
         pytest.warns(QCoDeSDeprecationWarning),
         pytest.raises(TypeError, match="group_names must be a list of strings or None"),

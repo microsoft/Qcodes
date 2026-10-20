@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pytest
@@ -21,9 +21,12 @@ from qcodes.extensions.infer import (
 from qcodes.instrument import Instrument, InstrumentBase, InstrumentModule
 from qcodes.parameters import DelegateParameter, ManualParameter, Parameter
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 
 class DummyModule(InstrumentModule):
-    def __init__(self, name: str, parent: Instrument):
+    def __init__(self, name: str, parent: Instrument) -> None:
         super().__init__(name=name, parent=parent)
         self.good_chan_parameter = ManualParameter(
             "good_chan_parameter", instrument=self
@@ -32,7 +35,7 @@ class DummyModule(InstrumentModule):
 
 
 class DummyInstrument(Instrument):
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         super().__init__(name=name)
         self.good_inst_parameter = ManualParameter(
             "good_inst_parameter", instrument=self
@@ -42,12 +45,12 @@ class DummyInstrument(Instrument):
 
 
 class DummyInstrument2(DummyInstrument):
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         super().__init__(name=name)
 
 
 class DummyDelegateInstrument(InstrumentBase):
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         super().__init__(name=name)
         self.inst_delegate = DelegateParameter(
             name="inst_delegate", source=None, instrument=self, bind_to_instrument=True
@@ -59,7 +62,7 @@ class DummyDelegateInstrument(InstrumentBase):
 
 
 class DummyDelegateModule(InstrumentModule):
-    def __init__(self, name: str, parent: InstrumentBase):
+    def __init__(self, name: str, parent: InstrumentBase) -> None:
         super().__init__(name=name, parent=parent)
         self.chan_delegate = DelegateParameter(
             name="chan_delegate", source=None, instrument=self, bind_to_instrument=True
@@ -69,13 +72,13 @@ class DummyDelegateModule(InstrumentModule):
 class UserLinkingParameter(Parameter):
     def __init__(
         self, name: str, linked_parameter: Parameter | None = None, **kwargs: Any
-    ):
+    ) -> None:
         super().__init__(name=name, **kwargs)
         self.linked_parameter: Parameter | None = linked_parameter
 
 
 @pytest.fixture(name="instrument_fixture")
-def make_instrument_fixture():
+def make_instrument_fixture() -> Generator[DummyInstrument, None, None]:
     inst = DummyInstrument("dummy_instrument")
     InferAttrs.clear()
     try:
@@ -85,7 +88,7 @@ def make_instrument_fixture():
 
 
 @pytest.fixture(name="instrument_fixture2")
-def make_instrument_fixture2():
+def make_instrument_fixture2() -> Generator[DummyInstrument2, None, None]:
     inst = DummyInstrument2("dummy_instrument2")
     InferAttrs.clear()
     try:
@@ -95,7 +98,9 @@ def make_instrument_fixture2():
 
 
 @pytest.fixture(name="good_inst_delegates")
-def make_good_delegate_parameters(instrument_fixture):
+def make_good_delegate_parameters(
+    instrument_fixture: DummyInstrument,
+) -> tuple[DelegateParameter, DelegateParameter, UserLinkingParameter]:
     inst = instrument_fixture
     good_inst_del_1 = DelegateParameter(
         "good_inst_del_1", source=inst.good_inst_parameter
@@ -108,7 +113,9 @@ def make_good_delegate_parameters(instrument_fixture):
 
 
 @pytest.fixture(name="multi_inst_chain")
-def make_multi_instrument_chain(instrument_fixture, instrument_fixture2):
+def make_multi_instrument_chain(
+    instrument_fixture: DummyInstrument, instrument_fixture2: DummyInstrument2
+) -> tuple[DelegateParameter, DelegateParameter, UserLinkingParameter]:
     inst = instrument_fixture
     inst2 = instrument_fixture2
     good_inst_del_1 = DelegateParameter(
@@ -125,7 +132,12 @@ def make_multi_instrument_chain(instrument_fixture, instrument_fixture2):
     return good_inst_del_1, good_inst_del_2, good_inst_del_3
 
 
-def test_get_root_parameter_valid(instrument_fixture, good_inst_delegates):
+def test_get_root_parameter_valid(
+    instrument_fixture: DummyInstrument,
+    good_inst_delegates: tuple[
+        DelegateParameter, DelegateParameter, UserLinkingParameter
+    ],
+) -> None:
     inst = instrument_fixture
     good_inst_del_1, good_inst_del_2, good_inst_del_3 = good_inst_delegates
 
@@ -144,7 +156,11 @@ def test_get_root_parameter_valid(instrument_fixture, good_inst_delegates):
     assert get_root_parameter(good_inst_del_3) is inst.good_inst_parameter
 
 
-def test_get_root_parameter_no_source(good_inst_delegates):
+def test_get_root_parameter_no_source(
+    good_inst_delegates: tuple[
+        DelegateParameter, DelegateParameter, UserLinkingParameter
+    ],
+) -> None:
     good_inst_del_1, good_inst_del_2, _ = good_inst_delegates
 
     good_inst_del_1.source = None
@@ -154,13 +170,21 @@ def test_get_root_parameter_no_source(good_inst_delegates):
     assert "is not attached to a source" in str(exc_info.value)
 
 
-def test_get_root_parameter_no_user_attr(good_inst_delegates):
+def test_get_root_parameter_no_user_attr(
+    good_inst_delegates: tuple[
+        DelegateParameter, DelegateParameter, UserLinkingParameter
+    ],
+) -> None:
     _, _, good_inst_del_3 = good_inst_delegates
     InferAttrs.clear()
     assert get_root_parameter(good_inst_del_3, "external_parameter") is good_inst_del_3
 
 
-def test_get_root_parameter_none_user_attr(good_inst_delegates):
+def test_get_root_parameter_none_user_attr(
+    good_inst_delegates: tuple[
+        DelegateParameter, DelegateParameter, UserLinkingParameter
+    ],
+) -> None:
     _, _, good_inst_del_3 = good_inst_delegates
     good_inst_del_3.linked_parameter = None
     with pytest.raises(InferError) as exc_info:
@@ -168,14 +192,19 @@ def test_get_root_parameter_none_user_attr(good_inst_delegates):
     assert "is not attached to a source on attribute" in str(exc_info.value)
 
 
-def test_infer_instrument_valid(instrument_fixture, good_inst_delegates):
+def test_infer_instrument_valid(
+    instrument_fixture: DummyInstrument,
+    good_inst_delegates: tuple[
+        DelegateParameter, DelegateParameter, UserLinkingParameter
+    ],
+) -> None:
     inst = instrument_fixture
     _, _, good_inst_del_3 = good_inst_delegates
     InferAttrs.add("linked_parameter")
     assert infer_instrument(good_inst_del_3) is inst
 
 
-def test_infer_instrument_no_instrument(instrument_fixture):
+def test_infer_instrument_no_instrument(instrument_fixture: DummyInstrument) -> None:
     inst = instrument_fixture
     no_inst_delegate = DelegateParameter(
         "no_inst_delegate", source=inst.bad_inst_parameter
@@ -185,7 +214,7 @@ def test_infer_instrument_no_instrument(instrument_fixture):
     assert "has no instrument" in str(exc_info.value)
 
 
-def test_infer_instrument_root_instrument_base():
+def test_infer_instrument_root_instrument_base() -> None:
     delegate_inst = DummyDelegateInstrument("dummy_delegate_instrument")
 
     with pytest.raises(InferError) as exc_info:
@@ -193,7 +222,7 @@ def test_infer_instrument_root_instrument_base():
     assert "Could not determine source instrument for parameter" in str(exc_info.value)
 
 
-def test_infer_channel_valid(instrument_fixture):
+def test_infer_channel_valid(instrument_fixture: DummyInstrument) -> None:
     inst = instrument_fixture
     chan_delegate = DelegateParameter(
         "chan_delegate", source=inst.module.good_chan_parameter
@@ -201,7 +230,7 @@ def test_infer_channel_valid(instrument_fixture):
     assert infer_channel(chan_delegate) is inst.module
 
 
-def test_infer_channel_no_channel(instrument_fixture):
+def test_infer_channel_no_channel(instrument_fixture: DummyInstrument) -> None:
     inst = instrument_fixture
     no_chan_delegate = DelegateParameter(
         "no_chan_delegate", source=inst.module.bad_chan_parameter
@@ -218,7 +247,12 @@ def test_infer_channel_no_channel(instrument_fixture):
     assert "Could not determine a root instrument channel" in str(exc_info.value)
 
 
-def test_get_parameter_chain(instrument_fixture, good_inst_delegates):
+def test_get_parameter_chain(
+    instrument_fixture: DummyInstrument,
+    good_inst_delegates: tuple[
+        DelegateParameter, DelegateParameter, UserLinkingParameter
+    ],
+) -> None:
     inst = instrument_fixture
     good_inst_del_1, good_inst_del_2, good_inst_del_3 = good_inst_delegates
     parameter_chain = get_parameter_chain(good_inst_del_3, "linked_parameter")
@@ -259,7 +293,12 @@ def test_get_parameter_chain(instrument_fixture, good_inst_delegates):
     )
 
 
-def test_parameters_on_delegate_instruments(instrument_fixture, good_inst_delegates):
+def test_parameters_on_delegate_instruments(
+    instrument_fixture: DummyInstrument,
+    good_inst_delegates: tuple[
+        DelegateParameter, DelegateParameter, UserLinkingParameter
+    ],
+) -> None:
     inst = instrument_fixture
     _, good_inst_del_2, _ = good_inst_delegates
 
@@ -272,7 +311,7 @@ def test_parameters_on_delegate_instruments(instrument_fixture, good_inst_delega
     assert infer_instrument(delegate_inst.inst_delegate) is inst
 
 
-def test_merge_user_and_class_attrs():
+def test_merge_user_and_class_attrs() -> None:
     InferAttrs.add("attr1")
     attr_set = _merge_user_and_class_attrs("attr2")
     assert {"attr1", "attr2"} == attr_set
@@ -281,7 +320,7 @@ def test_merge_user_and_class_attrs():
     assert {"attr1", "attr2", "attr3"} == attr_set_list
 
 
-def test_infer_attrs():
+def test_infer_attrs() -> None:
     InferAttrs.clear()
     assert InferAttrs.known_attrs() == ()
 
@@ -296,7 +335,11 @@ def test_infer_attrs():
     assert set(InferAttrs.known_attrs()) == {"attr1", "attr2", "attr3"}
 
 
-def test_get_parameter_chain_with_loops(good_inst_delegates):
+def test_get_parameter_chain_with_loops(
+    good_inst_delegates: tuple[
+        DelegateParameter, DelegateParameter, UserLinkingParameter
+    ],
+) -> None:
     good_inst_del_1, good_inst_del_2, good_inst_del_3 = good_inst_delegates
     good_inst_del_1.source = good_inst_del_3
     parameter_chain = get_parameter_chain(good_inst_del_3, "linked_parameter")
@@ -311,7 +354,11 @@ def test_get_parameter_chain_with_loops(good_inst_delegates):
     )
 
 
-def test_get_root_parameter_with_loops(good_inst_delegates):
+def test_get_root_parameter_with_loops(
+    good_inst_delegates: tuple[
+        DelegateParameter, DelegateParameter, UserLinkingParameter
+    ],
+) -> None:
     good_inst_del_1, good_inst_del_2, good_inst_del_3 = good_inst_delegates
     good_inst_del_1.source = good_inst_del_3
     with pytest.raises(InferError) as exc_info:
@@ -319,7 +366,7 @@ def test_get_root_parameter_with_loops(good_inst_delegates):
     assert "generated a loop of linking parameters" in str(exc_info.value)
 
 
-def test_chain_links_of_type():
+def test_chain_links_of_type() -> None:
     root_param = ManualParameter("root", initial_value=0)
     user_link = UserLinkingParameter("user_link", linked_parameter=root_param)
     delegate_link = DelegateParameter("delegate_link", source=user_link)
@@ -330,7 +377,7 @@ def test_chain_links_of_type():
     assert set(user_links) == {user_link, user_link_2}
 
 
-def test_sole_chain_link_of_type():
+def test_sole_chain_link_of_type() -> None:
     root_param = ManualParameter("root", initial_value=0)
     user_link = UserLinkingParameter("user_link", linked_parameter=root_param)
     delegate_link = DelegateParameter("delegate_link", source=user_link)
@@ -352,8 +399,10 @@ def test_sole_chain_link_of_type():
 
 
 def test_get_instrument_from_chain(
-    instrument_fixture, instrument_fixture2, multi_inst_chain
-):
+    instrument_fixture: DummyInstrument,
+    instrument_fixture2: DummyInstrument2,
+    multi_inst_chain: tuple[DelegateParameter, DelegateParameter, UserLinkingParameter],
+) -> None:
     inst = instrument_fixture
     inst2 = instrument_fixture2
     _good_inst_del_1, _good_inst_del_2, good_inst_del_3 = multi_inst_chain
@@ -365,7 +414,10 @@ def test_get_instrument_from_chain(
     assert set(instruments) == {inst, inst2}
 
 
-def test_get_sole_instrument_from_chain(instrument_fixture2, multi_inst_chain):
+def test_get_sole_instrument_from_chain(
+    instrument_fixture2: DummyInstrument2,
+    multi_inst_chain: tuple[DelegateParameter, DelegateParameter, UserLinkingParameter],
+) -> None:
     inst2 = instrument_fixture2
     _good_inst_del_1, _good_inst_del_2, good_inst_del_3 = multi_inst_chain
 
