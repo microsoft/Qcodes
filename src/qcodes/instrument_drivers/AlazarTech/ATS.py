@@ -322,7 +322,7 @@ class AlazarTechATS(Instrument):
         get_processed_data: str | None = None,
         allocated_buffers: int | None = None,
         buffer_timeout: int | None = None,
-        acquisition_controller: AcquisitionController[OutputType] | None = None,
+        acquisition_controller: AcquisitionInterface[OutputType] | None = None,
     ) -> OutputType:
         """
         Perform a single acquisition with the Alazar board, and set certain
@@ -897,7 +897,7 @@ class AcquisitionInterface[OutputType]:
         """
 
 
-class AcquisitionController[OutputType](Instrument, AcquisitionInterface[Any]):
+class AcquisitionController[OutputType](Instrument, AcquisitionInterface[OutputType]):
     """
     Compatibility class. The methods of :class:`AcquisitionController`
     have been extracted. This class is the base class fro AcquisitionInterfaces

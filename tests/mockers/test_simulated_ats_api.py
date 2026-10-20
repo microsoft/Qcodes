@@ -71,14 +71,7 @@ def test_simulated_alazar(
             get_processed_data=None,
             allocated_buffers=4,
             buffer_timeout=None,
-            # TODO: AlazarTechATS.acquire annotates acquisition_controller as
-            # AcquisitionController[OutputType] but only uses methods from
-            # AcquisitionInterface, so any AcquisitionInterface subclass works
-            # at runtime. AcquisitionController also subclasses
-            # AcquisitionInterface[Any], so OutputType is never bound to the
-            # return type. Widen the annotation to
-            # AcquisitionInterface[OutputType] and remove this ignore.
-            acquisition_controller=alazar_ctrl,  # pyright: ignore[reportArgumentType]
+            acquisition_controller=alazar_ctrl,
         )
     assert "tot acquire time" in caplog.records[-1].msg
     assert len(data) == buffers_per_acquisition
