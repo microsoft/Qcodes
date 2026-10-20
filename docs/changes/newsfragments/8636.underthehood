@@ -1,2 +1,0 @@
-Install Pandoc directly in documentation builds, retry transient failures, and
-report package-index update failures instead of ignoring them.
