@@ -8,11 +8,11 @@ from qcodes.instrument import Instrument
 from qcodes.parameters import Group, GroupParameter
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Generator
 
 
 @pytest.fixture(autouse=True)
-def close_all_instruments():
+def close_all_instruments() -> "Generator[None, None, None]":
     """Makes sure that after startup and teardown all instruments are closed"""
     Instrument.close_all()
     yield

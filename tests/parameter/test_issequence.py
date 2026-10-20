@@ -1,9 +1,14 @@
+from typing import TYPE_CHECKING, Any, NoReturn
+
 import pytest
 
 from qcodes.parameters.sequence_helpers import is_sequence
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator, Sequence
 
-def a_func():
+
+def a_func() -> NoReturn:
     raise RuntimeError("this function shouldn't get called")
 
 
@@ -40,12 +45,12 @@ no_sequence = [
 
 
 @pytest.mark.parametrize("val", yes_sequence)
-def test_yes(val) -> None:
+def test_yes(val: "Sequence[Any] | Iterator[Any]") -> None:
     assert is_sequence(val)
 
 
 @pytest.mark.parametrize("val", no_sequence)
-def test_no(val) -> None:
+def test_no(val: object) -> None:
     assert not is_sequence(val)
 
 

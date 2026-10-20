@@ -8,7 +8,7 @@ from .conftest import blank_instruments, named_instrument
 
 
 class SimpleMultiParam(MultiParameter):
-    def __init__(self, return_val: Any, *args: Any, **kwargs: Any):
+    def __init__(self, return_val: Any, *args: Any, **kwargs: Any) -> None:
         self._return_val = return_val
         self._get_count = 0
         super().__init__(*args, **kwargs)

@@ -20,7 +20,7 @@ class BrokenParameter(Parameter):
 
     def __init__(
         self, name: str, instrument: "InstrumentBase", *args: Any, **kwargs: Any
-    ):
+    ) -> None:
         super().__init__(name, *args, **kwargs)
         self._instrument = instrument
 
@@ -30,7 +30,7 @@ class BrokenParameter2(Parameter):
 
     def __init__(
         self, name: str, instrument: "InstrumentBase", set_cmd: Any, get_cmd: Any
-    ):
+    ) -> None:
         super().__init__(name=name, instrument=instrument)
 
 

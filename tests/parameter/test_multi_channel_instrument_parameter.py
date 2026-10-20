@@ -19,7 +19,7 @@ def dummy_channel_instrument() -> "Generator[DummyChannelInstrument, None, None]
 
 def test_set_multi_channel_instrument_parameter(
     dummy_channel_instrument: DummyChannelInstrument,
-):
+) -> None:
     """Tests :class:`MultiChannelInstrumentParameter` set method."""
     for name, param in dummy_channel_instrument.channels[0].parameters.items():
         if not param.settable:

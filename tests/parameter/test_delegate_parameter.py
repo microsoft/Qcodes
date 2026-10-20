@@ -41,7 +41,7 @@ def _make_simple_param(numeric_val: int) -> Generator[Parameter, None, None]:
 
 
 class ObservableParam(Parameter):
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.instr_val = None
         super().__init__(*args, **kwargs)
 
@@ -792,7 +792,7 @@ def test_value_validation_with_offset_and_scale() -> None:
         delegate_param.set(1)
 
 
-def test_delegate_of_delegate_updates_settable_gettable():
+def test_delegate_of_delegate_updates_settable_gettable() -> None:
     gettable_settable_source_param = Parameter(
         "source", set_cmd=None, get_cmd=None, vals=vals.Numbers(-5, 5)
     )
