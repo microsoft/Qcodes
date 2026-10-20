@@ -34,7 +34,9 @@ from qcodes.metadatable import Metadatable
 from qcodes.parameters import Function, Parameter
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterator, Sequence
+
+    from qcodes.metadatable.metadatable_base import Snapshot, SnapshotUpdate
 
 
 @pytest.fixture(name="testdummy", scope="function")
@@ -75,7 +77,7 @@ def _empty_instrument_with_empty_submodule() -> Iterator[Instrument]:
 
 
 @pytest.fixture(name="close_before_and_after", scope="function")
-def _close_before_and_after():
+def _close_before_and_after() -> Iterator[None]:
     Instrument.close_all()
     try:
         yield
@@ -266,7 +268,7 @@ def test_repr(testdummy: DummyInstrument) -> None:
     assert repr(testdummy) == "<DummyInstrument: testdummy>"
 
 
-def test_add_remove_f_p(testdummy) -> None:
+def test_add_remove_f_p(testdummy: DummyInstrument) -> None:
     with pytest.raises(KeyError, match="Duplicate parameter name dac1"):
         testdummy.add_parameter("dac1", get_cmd="foo")
 
@@ -294,7 +296,7 @@ def test_add_remove_f_p(testdummy) -> None:
     assert isinstance(dac1, Parameter)
 
 
-def test_instances(testdummy, parabola) -> None:
+def test_instances(testdummy: DummyInstrument, parabola: MockParabola) -> None:
     instruments = [testdummy, parabola]
     for instrument in instruments:
         for other_instrument in instruments:
@@ -312,13 +314,13 @@ def test_instances(testdummy, parabola) -> None:
         assert instrument is Instrument.find_instrument(instrument.name)
 
 
-def test_is_valid(testdummy) -> None:
+def test_is_valid(testdummy: DummyInstrument) -> None:
     assert Instrument.is_valid(testdummy)
     testdummy.close()
     assert not Instrument.is_valid(testdummy)
 
 
-def test_snapshot_value(testdummy) -> None:
+def test_snapshot_value(testdummy: DummyInstrument) -> None:
     testdummy.add_parameter(
         "has_snapshot_value",
         parameter_class=Parameter,
@@ -346,7 +348,7 @@ def test_snapshot_value(testdummy) -> None:
     assert "value" not in snapshot["parameters"]["no_snapshot_value"]
 
 
-def test_meta_instrument(parabola) -> None:
+def test_meta_instrument(parabola: MockParabola) -> None:
     mock_instrument = MockMetaParabola("mock_parabola", parabola)
 
     # Check that the mock instrument can return values
@@ -382,7 +384,7 @@ def test_empty_instrument(empty_instrument_with_empty_submodule: Instrument) -> 
     empty_instrument_with_empty_submodule.print_readable_snapshot()
 
 
-def test_find(testdummy) -> None:
+def test_find(testdummy: DummyInstrument) -> None:
     """Test finding an existing instrument"""
 
     instr_2 = find_or_create_instrument(
@@ -567,7 +569,7 @@ def test_instrumentbase_metadata() -> None:
 
 
 @pytest.mark.parametrize("cls", [(InstrumentBase), (Instrument)])
-def test_instrument_label(cls, request: FixtureRequest) -> None:
+def test_instrument_label(cls: type[InstrumentBase], request: FixtureRequest) -> None:
     """Instrument uses nicely formatted label if available."""
     instrument = cls(name="name")
     if isinstance(cls, type(Instrument)):
@@ -585,7 +587,7 @@ def test_instrument_label(cls, request: FixtureRequest) -> None:
     assert instrument.label == label
 
 
-def test_instrument_without_ref_is_gced():
+def test_instrument_without_ref_is_gced() -> None:
     # When there are no active references to an instrument and it is
     # gced there should be no live references to the instrument
 
@@ -627,14 +629,18 @@ class TestSnapshotType(Metadatable):
         super().__init__()
         self.sample_value = sample_value
 
-    def snapshot_base(self, update=True, params_to_skip_update=None):
+    def snapshot_base(
+        self,
+        update: bool | SnapshotUpdate | None = True,
+        params_to_skip_update: Sequence[str] | None = None,
+    ) -> Snapshot:
         return {"sample_key": self.sample_value}
 
 
 class TestInstrument(InstrumentBase):
     __test__ = False
 
-    def __init__(self, name, label) -> None:
+    def __init__(self, name: str, label: str) -> None:
         super().__init__(name, label=label)
         self._meta_attrs.extend(["test_attribute"])
         self._test_attribute = TestSnapshotType(12)

@@ -1,29 +1,34 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from qcodes.parameters import Parameter
 from qcodes.parameters.sweep_values import SweepValues
 from qcodes.validators import Numbers
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 
 @pytest.fixture(name="c0")
-def _make_c0():
+def _make_c0() -> "Generator[Parameter, None, None]":
     c0 = Parameter("c0", vals=Numbers(-10, 10), get_cmd=None, set_cmd=None)
     yield c0
 
 
 @pytest.fixture(name="c1")
-def _make_c1():
+def _make_c1() -> "Generator[Parameter, None, None]":
     c1 = Parameter("c1", get_cmd=None, set_cmd=None)
     yield c1
 
 
 @pytest.fixture(name="c2")
-def _make_c2():
+def _make_c2() -> "Generator[Parameter, None, None]":
     c2 = Parameter("c2", get_cmd=lambda: 42)
     yield c2
 
 
-def test_errors(c0, c1, c2) -> None:
+def test_errors(c0: Parameter, c1: Parameter, c2: Parameter) -> None:
     # only complete 3-part slices are valid
     with pytest.raises(TypeError):
         c0[1:2]  # For Int params this could be defined as step=1
@@ -56,20 +61,21 @@ def test_errors(c0, c1, c2) -> None:
 
     # improper use of extend
     with pytest.raises(TypeError):
-        c0[0.1].extend(5)
+        c0[0.1].extend(5)  # pyright: ignore[reportArgumentType]
 
     # SweepValue object has no getter, even if the parameter does
     with pytest.raises(AttributeError):
-        _ = c0[0.1].get
+        _ = c0[0.1].get  # pyright: ignore[reportAttributeAccessIssue]
 
 
-def test_valid(c0) -> None:
+def test_valid(c0: Parameter) -> None:
     c0_sv = c0[1]
     # setter gets mapped
     assert c0_sv.set == c0.set
     # normal sequence operations access values
     assert list(c0_sv) == [1]
-    assert c0_sv[0] == 1
+    # TODO: SweepFixedValues.__getitem__ only accepts slice but int keys work
+    assert c0_sv[0] == 1  # pyright: ignore[reportArgumentType]
     assert 1 in c0_sv
     assert 2 not in c0_sv
 
@@ -98,7 +104,8 @@ def test_valid(c0) -> None:
 
     # in-place and copying reverse
     c0_sv.reverse()
-    c0_sv5 = reversed(c0_sv)
+    # TODO: SweepFixedValues.__reversed__ returns Self, which is not an Iterator
+    c0_sv5 = reversed(c0_sv)  # pyright: ignore[reportCallIssue, reportArgumentType]
     assert list(c0_sv) == [1.7, 1.6, 1.5, 1]
     assert list(c0_sv5) == [1, 1.5, 1.6, 1.7]
 
@@ -117,7 +124,7 @@ def test_base() -> None:
         iter(SweepValues(p))
 
 
-def test_snapshot(c0) -> None:
+def test_snapshot(c0: Parameter) -> None:
     assert c0[0].snapshot() == {"parameter": c0.snapshot(), "values": [{"item": 0}]}
 
     assert c0[0:5:0.3].snapshot()["values"] == [  # type: ignore[misc]
@@ -143,7 +150,7 @@ def test_snapshot(c0) -> None:
     ]
 
 
-def test_repr(c0) -> None:
+def test_repr(c0: Parameter) -> None:
     sv = c0[0]
     assert repr(sv) == (
         f"<qcodes.parameters.sweep_values.SweepFixedValues: c0 at {id(sv)}>"

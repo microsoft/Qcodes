@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, NoReturn
 
 import pytest
 
@@ -11,12 +11,12 @@ class A:
 
 
 class BadKeysDict(dict[Any, Any]):
-    def keys(self):
+    def keys(self) -> NoReturn:
         raise RuntimeError("you can't have the keys!")
 
 
 class NoDelDict(dict[Any, Any]):
-    def __delitem__(self, item):
+    def __delitem__(self, item: Any) -> NoReturn:
         raise KeyError("get your hands off me!")
 
 

@@ -46,16 +46,16 @@ def test_no_cmd() -> None:
 
 
 def test_cmd_str() -> None:
-    def f_now(x):
+    def f_now(x: str) -> str:
         return x + " now"
 
-    def upper(s):
+    def upper(s: str) -> str:
         return s.upper()
 
-    def reversestr(s):
+    def reversestr(s: str) -> str:
         return s[::-1]
 
-    def swap(a, b):
+    def swap(a: str, b: str) -> tuple[str, str]:
         return b, a
 
     # basic exec_str

@@ -1,9 +1,12 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from pytest import FixtureRequest
 
 from qcodes.instrument import ChannelList, Instrument, InstrumentBase, InstrumentChannel
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 
 class ExampleBaseVoltageSource(Instrument):
@@ -13,7 +16,7 @@ class ExampleBaseVoltageSource(Instrument):
     allows us to enforce an interface.
     """
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         super().__init__(name)
 
         self.add_parameter(
@@ -28,7 +31,7 @@ class VoltageSource(ExampleBaseVoltageSource):
     Make a specific implementation of the interface
     """
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         super().__init__(name)
 
         self.add_parameter("voltage", unit="V", get_cmd=None, set_cmd=None)
@@ -45,7 +48,7 @@ class VoltageSourceBadUnit(ExampleBaseVoltageSource):
     The units must match between sub and base classes
     """
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         super().__init__(name)
 
         self.add_parameter(
@@ -63,7 +66,7 @@ class VoltageSourceInitException(Instrument):
     is raised
     """
 
-    def __init__(self, name: str, do_raise=True):
+    def __init__(self, name: str, do_raise: bool = True) -> None:
         super().__init__(name)
 
         if do_raise:
@@ -75,7 +78,7 @@ class VoltageChannelBase(InstrumentChannel):
     Create a channel with an abstract parameter
     """
 
-    def __init__(self, parent: InstrumentBase, name: str, **kwargs: Any):
+    def __init__(self, parent: InstrumentBase, name: str, **kwargs: Any) -> None:
         super().__init__(parent, name, **kwargs)
 
         self.add_parameter("voltage", unit="V", abstract=True)
@@ -86,7 +89,7 @@ class VoltageChannel(VoltageChannelBase):
     Create an implementation of the abstract channel
     """
 
-    def __init__(self, parent: InstrumentBase, name: str, **kwargs: Any):
+    def __init__(self, parent: InstrumentBase, name: str, **kwargs: Any) -> None:
         super().__init__(parent, name, **kwargs)
 
         self.add_parameter("voltage", unit="V", get_cmd=None, set_cmd=None)
@@ -101,7 +104,7 @@ class VoltageAbstractChannelSource(Instrument):
     def __init__(
         self,
         name: str,
-    ):
+    ) -> None:
         super().__init__(name)
         channel = VoltageChannelBase(self, "voltage")
         self.add_submodule("voltage", channel)
@@ -117,7 +120,7 @@ class VoltageChannelSource(Instrument):
     def __init__(
         self,
         name: str,
-    ):
+    ) -> None:
         super().__init__(name)
         channel = VoltageChannel(self, "voltage")
         self.add_submodule("voltage", channel)
@@ -132,7 +135,7 @@ class VoltageAbstractChannelListSource(Instrument):
     def __init__(
         self,
         name: str,
-    ):
+    ) -> None:
         super().__init__(name)
         channel = VoltageChannelBase(self, "voltage")
         channellist = ChannelList(self, "cl", VoltageChannelBase, chan_list=[channel])
@@ -149,7 +152,7 @@ class VoltageChannelListSource(Instrument):
     def __init__(
         self,
         name: str,
-    ):
+    ) -> None:
         super().__init__(name)
         channel = VoltageChannel(self, "voltage")
         channellist = ChannelList(self, "cl", VoltageChannel, chan_list=[channel])
@@ -157,13 +160,13 @@ class VoltageChannelListSource(Instrument):
 
 
 @pytest.fixture(name="driver", scope="module")
-def _driver():
+def _driver() -> "Generator[VoltageSource, None, None]":
     drvr = VoltageSource("abstract_instrument_driver")
     yield drvr
     drvr.close()
 
 
-def test_sanity(driver) -> None:
+def test_sanity(driver: VoltageSource) -> None:
     """
     If all abstract parameters are implemented, we should be able
     to instantiate the instrument

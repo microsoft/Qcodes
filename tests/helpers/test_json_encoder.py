@@ -89,7 +89,7 @@ def test_non_serializable() -> None:
     e = NumpyJSONEncoder()
 
     class Dummy:
-        def __str__(self):
+        def __str__(self) -> str:
             return "i am a dummy with \\ slashes /"
 
     assert e.encode(Dummy()) == '"i am a dummy with \\\\ slashes /"'
@@ -103,13 +103,13 @@ def test_object_with_serialization_method() -> None:
     e = NumpyJSONEncoder()
 
     class Dummy:
-        def __init__(self):
+        def __init__(self) -> None:
             self.confession = "a_dict_addict"
 
-        def __str__(self):
+        def __str__(self) -> str:
             return "me as a string"
 
-        def _JSONEncoder(self):
+        def _JSONEncoder(self) -> dict[str, str]:
             return {"i_am_actually": self.confession}
 
     assert e.encode(Dummy()) == '{"i_am_actually": "a_dict_addict"}'
@@ -166,7 +166,7 @@ def test_numpy_encoder_examplemetadata() -> None:
 
 
 @given(bytes_to_encode=hst.binary(max_size=100))
-def test_bytes(bytes_to_encode) -> None:
+def test_bytes(bytes_to_encode: bytes) -> None:
     e = NumpyJSONEncoder()
     v = e.encode(bytes_to_encode)
 
@@ -177,7 +177,7 @@ def test_bytes(bytes_to_encode) -> None:
 
 
 @given(bytes_to_encode=hst.binary(max_size=100))
-def test_bytes_array(bytes_to_encode) -> None:
+def test_bytes_array(bytes_to_encode: bytes) -> None:
     e = NumpyJSONEncoder()
     value = bytearray(bytes_to_encode)
     v = e.encode(value)

@@ -38,13 +38,13 @@ random_coordinates = {
 
 @given(random_coordinates["spherical"])
 @settings(max_examples=10)
-def test_spherical_properties(spherical0) -> None:
+def test_spherical_properties(spherical_coords: tuple[float, float, float]) -> None:
     """
     If the cartesian to spherical transform has been correctly implemented
     then we expect certain symmetrical properties
     """
     # Generate a random coordinate in spherical representation
-    spherical0 = dict(zip(["r", "theta", "phi"], spherical0))
+    spherical0 = dict(zip(["r", "theta", "phi"], spherical_coords))
     cartisian0 = FieldVector(**spherical0).get_components("x", "y", "z")
 
     # Mirror the theta angle in the xy-plane.
@@ -80,13 +80,15 @@ def test_spherical_properties(spherical0) -> None:
 
 @given(random_coordinates["cylindrical"])
 @settings(max_examples=10)
-def test_cylindrical_properties(cylindrical0) -> None:
+def test_cylindrical_properties(
+    cylindrical_coords: tuple[float, float, float],
+) -> None:
     """
     If the cartesian to cylindrical transform has been correctly implemented
     then we expect certain symmetrical properties
     """
     # Generate a random coordinate in cylindrical representation
-    cylindrical0 = dict(zip(["rho", "phi", "z"], cylindrical0))
+    cylindrical0 = dict(zip(["rho", "phi", "z"], cylindrical_coords))
     cartisian0 = FieldVector(**cylindrical0).get_components("x", "y", "z")
 
     # If we flip the sign of the rho coordinate, we will flip the xy coordinate
@@ -99,9 +101,12 @@ def test_cylindrical_properties(cylindrical0) -> None:
 
 @given(random_coordinates["cylindrical"], random_coordinates["spherical"])
 @settings(max_examples=10)
-def test_triangle_inequality(cylindrical0, spherical0) -> None:
-    cylindrical0 = FieldVector(**dict(zip(["rho", "phi", "z"], cylindrical0)))
-    spherical0 = FieldVector(**dict(zip(["r", "phi", "theta"], spherical0)))
+def test_triangle_inequality(
+    cylindrical_coords: tuple[float, float, float],
+    spherical_coords: tuple[float, float, float],
+) -> None:
+    cylindrical0 = FieldVector(**dict(zip(["rho", "phi", "z"], cylindrical_coords)))
+    spherical0 = FieldVector(**dict(zip(["r", "phi", "theta"], spherical_coords)))
 
     assert (cylindrical0 + spherical0).norm() <= (
         cylindrical0.norm() + spherical0.norm()
@@ -113,7 +118,7 @@ def test_triangle_inequality(cylindrical0, spherical0) -> None:
 
 @given(random_coordinates["cartesian"])
 @settings(max_examples=10)
-def test_homogeneous_roundtrip(cartesian0) -> None:
+def test_homogeneous_roundtrip(cartesian0: tuple[float, float, float]) -> None:
     vec = FieldVector(**dict(zip("xyz", cartesian0)))
     h_vec = 13 * vec.as_homogeneous()
 
@@ -125,7 +130,7 @@ def test_homogeneous_roundtrip(cartesian0) -> None:
 
 @given(random_coordinates["spherical"])
 @settings(max_examples=10)
-def test_json_dump(spherical0) -> None:
+def test_json_dump(spherical0: tuple[float, float, float]) -> None:
     vec = FieldVector(**dict(zip(["r", "phi", "theta"], spherical0)))
     dump = json.dumps(vec, cls=NumpyJSONEncoder)
 
