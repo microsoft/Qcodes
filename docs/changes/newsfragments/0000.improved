@@ -1,0 +1,3 @@
+The type annotations of ``Station.load_all_instruments`` now accept calling it without
+arguments or with only one of ``only_names`` and ``only_types``. Previously these valid
+calls matched none of the overloads and were rejected by static type checkers.
