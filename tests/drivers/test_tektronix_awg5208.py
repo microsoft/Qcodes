@@ -1,12 +1,16 @@
 import os
+from typing import TYPE_CHECKING
 
 import pytest
 
 from qcodes.instrument_drivers.tektronix.AWG5208 import TektronixAWG5208
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 
 @pytest.fixture(scope="function")
-def awg():
+def awg() -> "Generator[TektronixAWG5208, None, None]":
     awg_sim = TektronixAWG5208(
         "awg_sim", address="GPIB0::1::INSTR", pyvisa_sim_file="Tektronix_AWG5208.yaml"
     )
@@ -15,13 +19,13 @@ def awg():
     awg_sim.close()
 
 
-def test_init_awg(awg) -> None:
+def test_init_awg(awg: TektronixAWG5208) -> None:
     idn_dict = awg.IDN()
 
     assert idn_dict["vendor"] == "QCoDeS"
 
 
-def test_channel_resolution_docstring(awg) -> None:
+def test_channel_resolution_docstring(awg: TektronixAWG5208) -> None:
     expected_docstring = (
         "12 bit resolution allows for four "
         "markers, 13 bit resolution "

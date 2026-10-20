@@ -12,7 +12,7 @@ class TestAgilentE8257D(DriverTestCase[AgilentE8257D]):
     driver = AgilentE8257D
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.instrument.off()  # Not a test but a safety measure
 

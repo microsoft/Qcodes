@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 
 import numpy as np
 import pytest
@@ -9,6 +9,10 @@ from qcodes.instrument_drivers.Keysight import (
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+
+
+class _AskCallable(Protocol):
+    def __call__(self, cmd: str) -> str: ...
 
 
 @pytest.fixture(scope="function")
@@ -27,7 +31,7 @@ def driver() -> "Generator[Keysight34465A, None, None]":
 
 @pytest.fixture(scope="function")
 def driver_with_read_and_fetch_mocked(
-    val_volt,
+    val_volt: str,
 ) -> "Generator[Keysight34465A, None, None]":
     keysight_sim = Keysight34465A(
         "keysight_34465A_sim",
@@ -35,7 +39,9 @@ def driver_with_read_and_fetch_mocked(
         pyvisa_sim_file="Keysight_34465A.yaml",
     )
 
-    def get_ask_with_read_mock(original_ask, read_value):
+    def get_ask_with_read_mock(
+        original_ask: _AskCallable, read_value: str
+    ) -> _AskCallable:
         def ask_with_read_mock(cmd: str) -> str:
             if cmd in ("READ?", "FETCH?"):
                 return read_value
@@ -69,7 +75,7 @@ def test_reset(driver: Keysight34465A) -> None:
     driver.reset()
 
 
-def test_NPLC(driver) -> None:
+def test_NPLC(driver: Keysight34465A) -> None:
     assert driver.NPLC.get() == 10.0
     driver.NPLC.set(0.2)
     assert driver.NPLC.get() == 0.2
@@ -78,7 +84,7 @@ def test_NPLC(driver) -> None:
 
 @pytest.mark.parametrize("val_volt", ["100.0"])
 def test_get_voltage(
-    driver_with_read_and_fetch_mocked: Keysight34465A, val_volt: float
+    driver_with_read_and_fetch_mocked: Keysight34465A, val_volt: str
 ) -> None:
     voltage = driver_with_read_and_fetch_mocked.volt.get()
     assert voltage == 100.0
@@ -86,7 +92,7 @@ def test_get_voltage(
 
 @pytest.mark.parametrize("val_volt", ["9.9e37"])
 def test_get_voltage_plus_inf(
-    driver_with_read_and_fetch_mocked: Keysight34465A, val_volt: float
+    driver_with_read_and_fetch_mocked: Keysight34465A, val_volt: str
 ) -> None:
     voltage = driver_with_read_and_fetch_mocked.volt.get()
     assert voltage == np.inf
@@ -94,7 +100,7 @@ def test_get_voltage_plus_inf(
 
 @pytest.mark.parametrize("val_volt", ["-9.9e37"])
 def test_get_voltage_minus_inf(
-    driver_with_read_and_fetch_mocked: Keysight34465A, val_volt: float
+    driver_with_read_and_fetch_mocked: Keysight34465A, val_volt: str
 ) -> None:
     voltage = driver_with_read_and_fetch_mocked.volt.get()
     assert voltage == -np.inf
@@ -102,7 +108,7 @@ def test_get_voltage_minus_inf(
 
 @pytest.mark.parametrize("val_volt", ["10, 9.9e37, -9.9e37"])
 def test_get_timetrace(
-    driver_with_read_and_fetch_mocked: Keysight34465A, val_volt: float
+    driver_with_read_and_fetch_mocked: Keysight34465A, val_volt: str
 ) -> None:
     driver_with_read_and_fetch_mocked.timetrace_npts(3)
     assert driver_with_read_and_fetch_mocked.timetrace_npts() == 3

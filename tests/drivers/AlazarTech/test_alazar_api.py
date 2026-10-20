@@ -7,6 +7,7 @@ Alazar board installed.
 import gc
 import logging
 import os
+from typing import TYPE_CHECKING
 from weakref import WeakValueDictionary
 
 import pytest
@@ -18,11 +19,15 @@ from qcodes.instrument_drivers.AlazarTech.constants import (
     API_SUCCESS,
     ERROR_CODES,
     Capability,
+    ReturnCode,
 )
 from qcodes.instrument_drivers.AlazarTech.dll_wrapper import DllWrapperMeta
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
-def _skip_if_alazar_dll_and_boards_not_installed():
+
+def _skip_if_alazar_dll_and_boards_not_installed() -> pytest.MarkDecorator:
     if not os.path.exists(f"{AlazarTechATS.dll_path}.dll"):
         return pytest.mark.skip(
             "Alazar API DLL was not found in 'AlazarTechATS.dll_path'."
@@ -43,22 +48,22 @@ BOARD_ID = 1
 
 
 @pytest.fixture
-def alazar():
+def alazar() -> "Generator[AlazarTechATS, None, None]":
     alazar = AlazarTechATS("alazar", system_id=SYSTEM_ID, board_id=BOARD_ID)
     yield alazar
     alazar.close()
 
 
 @pytest.fixture
-def alazar_api():
+def alazar_api() -> "Generator[AlazarATSAPI, None, None]":
     yield AlazarATSAPI(AlazarTechATS.dll_path)
 
 
 def test_alazar_api_singleton_behavior(caplog: LogCaptureFixture) -> None:
-    def using_msg(dll_path):
+    def using_msg(dll_path: str) -> str:
         return f"Using existing instance for DLL path {dll_path}."
 
-    def creating_msg(dll_path):
+    def creating_msg(dll_path: str) -> str:
         return f"Creating new instance for DLL path {dll_path}."
 
     assert DllWrapperMeta._instances == WeakValueDictionary()
@@ -119,7 +124,7 @@ def test_find_boards() -> None:
     assert boards[0]["board_id"] == BOARD_ID
 
 
-def test_get_board_info(alazar_api) -> None:
+def test_get_board_info(alazar_api: AlazarATSAPI) -> None:
     info = AlazarTechATS.get_board_info(
         api=alazar_api, system_id=SYSTEM_ID, board_id=BOARD_ID
     )
@@ -134,7 +139,7 @@ def test_get_board_info(alazar_api) -> None:
     assert info["board_id"] == BOARD_ID
 
 
-def test_idn(alazar) -> None:
+def test_idn(alazar: AlazarTechATS) -> None:
     idn = alazar.get_idn()
     assert {
         "firmware",
@@ -153,10 +158,12 @@ def test_idn(alazar) -> None:
         "max_samples",
     } == set(idn.keys())
     assert idn["vendor"] == "AlazarTech"
-    assert idn["model"][:3] == "ATS"
+    model = idn["model"]
+    assert isinstance(model, str)
+    assert model[:3] == "ATS"
 
 
-def test_return_codes_are_correct(alazar_api) -> None:
+def test_return_codes_are_correct(alazar_api: AlazarATSAPI) -> None:
     """
     Test correctness of the coded return codes (success, failure, unknowns),
     and consistency with what `AlazarErrorToText` function returns.
@@ -167,44 +174,44 @@ def test_return_codes_are_correct(alazar_api) -> None:
 
     assert alazar_api.error_to_text(API_SUCCESS) == "ApiSuccess"
 
-    lower_unknown = API_SUCCESS - 1
+    lower_unknown = ReturnCode(API_SUCCESS - 1)
     assert alazar_api.error_to_text(lower_unknown) == "Unknown"
 
-    upper_unknown = max(list(ERROR_CODES.keys())) + 1
+    upper_unknown = ReturnCode(max(list(ERROR_CODES.keys())) + 1)
     assert alazar_api.error_to_text(upper_unknown) == "Unknown"
 
 
-def test_get_channel_info_convenient(alazar) -> None:
+def test_get_channel_info_convenient(alazar: AlazarTechATS) -> None:
     bps, max_s = alazar.api.get_channel_info_(alazar._handle)
     assert isinstance(bps, int)
     assert isinstance(max_s, int)
 
 
-def test_get_cpld_version_convenient(alazar) -> None:
+def test_get_cpld_version_convenient(alazar: AlazarTechATS) -> None:
     cpld_ver = alazar.api.get_cpld_version_(alazar._handle)
     assert isinstance(cpld_ver, str)
     assert len(cpld_ver.split(".")) == 2
 
 
-def test_get_driver_version_convenient(alazar_api) -> None:
+def test_get_driver_version_convenient(alazar_api: AlazarATSAPI) -> None:
     driver_ver = alazar_api.get_driver_version_()
     assert isinstance(driver_ver, str)
     assert len(driver_ver.split(".")) == 3
 
 
-def test_get_sdk_version_convenient(alazar_api) -> None:
+def test_get_sdk_version_convenient(alazar_api: AlazarATSAPI) -> None:
     sdk_ver = alazar_api.get_sdk_version_()
     assert isinstance(sdk_ver, str)
     assert len(sdk_ver.split(".")) == 3
 
 
-def test_query_capability_convenient(alazar) -> None:
+def test_query_capability_convenient(alazar: AlazarTechATS) -> None:
     cap = Capability.GET_SERIAL_NUMBER
     cap_value = alazar.api.query_capability_(alazar._handle, cap)
     assert isinstance(cap_value, int)
 
 
-def test_writing_and_reading_registers(alazar) -> None:
+def test_writing_and_reading_registers(alazar: AlazarTechATS) -> None:
     """
     The approach is to read the register that includes information about
     trigger holdoff parameter, and write the same value back to the board.

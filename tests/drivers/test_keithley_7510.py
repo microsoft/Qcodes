@@ -1,12 +1,17 @@
+from typing import TYPE_CHECKING
+
 import hypothesis.strategies as st
 import pytest
 from hypothesis import HealthCheck, given, settings
 
 from qcodes.instrument_drivers.Keithley import Keithley7510
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 
 @pytest.fixture(scope="function")
-def dmm_7510_driver():
+def dmm_7510_driver() -> "Generator[Keithley7510, None, None]":
     inst = Keithley7510(
         "Keithley_7510_sim",
         address="GPIB::1::INSTR",
@@ -19,7 +24,7 @@ def dmm_7510_driver():
         inst.close()
 
 
-def test_get_idn(dmm_7510_driver) -> None:
+def test_get_idn(dmm_7510_driver: Keithley7510) -> None:
     assert dmm_7510_driver.IDN() == {
         "vendor": "KEITHLEY INSTRUMENTS",
         "model": "DMM7510",
@@ -28,7 +33,7 @@ def test_get_idn(dmm_7510_driver) -> None:
     }
 
 
-def test_change_sense_function(dmm_7510_driver) -> None:
+def test_change_sense_function(dmm_7510_driver: Keithley7510) -> None:
     """
     Measurement should be the same as the sense function, e.g., only voltage
     measurement is allowed when the sense function is "voltage".
@@ -42,7 +47,9 @@ def test_change_sense_function(dmm_7510_driver) -> None:
 
 @settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(st.sampled_from((0.1, 1, 10, 100, 1000)), st.floats(0.01, 10))
-def test_set_range_and_nplc(dmm_7510_driver, upper_limit, nplc) -> None:
+def test_set_range_and_nplc(
+    dmm_7510_driver: Keithley7510, upper_limit: float, nplc: float
+) -> None:
     """
     Test the ability of setting range and nplc value for sense function.
     "Voltage" is used as an example.

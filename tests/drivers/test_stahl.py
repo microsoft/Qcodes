@@ -1,15 +1,19 @@
 import logging
+from typing import TYPE_CHECKING
 
 import pytest
 from pytest import LogCaptureFixture
 
 from qcodes.instrument_drivers.stahl import Stahl
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 LOG_NAME = "qcodes.instrument.instrument_base"
 
 
 @pytest.fixture(scope="function")
-def stahl_instrument():
+def stahl_instrument() -> "Generator[Stahl, None, None]":
     inst = Stahl("Stahl", "ASRL3", pyvisa_sim_file="stahl.yaml")
 
     try:
@@ -34,7 +38,7 @@ def test_parse_idn_string() -> None:
         Stahl.parse_idn_string("HS123 005 16 bla b")
 
 
-def test_get_idn(stahl_instrument) -> None:
+def test_get_idn(stahl_instrument: Stahl) -> None:
     """
     Instrument attributes are set correctly after getting the IDN
     """
@@ -50,7 +54,7 @@ def test_get_idn(stahl_instrument) -> None:
     assert stahl_instrument.output_type == "bipolar"
 
 
-def test_get_set_voltage(stahl_instrument, caplog: LogCaptureFixture) -> None:
+def test_get_set_voltage(stahl_instrument: Stahl, caplog: LogCaptureFixture) -> None:
     """
     Test that we can correctly get/set voltages
     """
@@ -66,7 +70,7 @@ def test_get_set_voltage(stahl_instrument, caplog: LogCaptureFixture) -> None:
 
 
 def test_get_set_voltage_assert_warning(
-    stahl_instrument, caplog: LogCaptureFixture
+    stahl_instrument: Stahl, caplog: LogCaptureFixture
 ) -> None:
     """
     On channel 2 we have deliberately introduced an error in the
@@ -80,7 +84,7 @@ def test_get_set_voltage_assert_warning(
     )
 
 
-def test_get_current(stahl_instrument) -> None:
+def test_get_current(stahl_instrument: Stahl) -> None:
     """
     Test that we can read currents and that the unit is in Ampere
     """
@@ -88,7 +92,7 @@ def test_get_current(stahl_instrument) -> None:
     assert stahl_instrument.channel[0].current.unit == "A"
 
 
-def test_get_temperature(stahl_instrument) -> None:
+def test_get_temperature(stahl_instrument: Stahl) -> None:
     """
     Due to limitations in pyvisa-sim, we cannot test this.
     Line 191 of pyvisa-sim/component.py  should read

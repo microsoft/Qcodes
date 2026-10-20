@@ -17,14 +17,17 @@ from qcodes.instrument_drivers.Lakeshore import (
         sorted  # type: ignore[arg-type]
     )
 )
-def test_decode_sensor_status(list_of_codes) -> None:
+def test_decode_sensor_status(list_of_codes: list[LakeshoreModel325Status]) -> None:
     """
     The sensor status is one of the status codes, or a sum thereof. Multiple
     status are possible as they are not necessarily mutually exclusive.
     The static method 'decode_sensor_status' in the Model_325_Sensor class can
     decode the status into status code(s).
     """
-    codes = [code.name.replace("_", " ") for code in list_of_codes[::-1]]
+    codes = []
+    for code in list_of_codes[::-1]:
+        assert code.name is not None
+        codes.append(code.name.replace("_", " "))
     codes_message = ", ".join(codes)
     sum_of_codes = int(sum(list_of_codes))
     status_messages = LakeshoreModel325Sensor.decode_sensor_status(sum_of_codes)

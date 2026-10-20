@@ -1,13 +1,17 @@
 import logging
+from typing import TYPE_CHECKING
 
 import pytest
 from pytest import FixtureRequest, LogCaptureFixture
 
 from qcodes.instrument_drivers.Keysight.keysight_34980a import Keysight34980A
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 
 @pytest.fixture(scope="function")
-def switch_driver():
+def switch_driver() -> "Generator[Keysight34980A, None, None]":
     inst = Keysight34980A(
         "keysight_34980A_sim",
         address="GPIB::1::INSTR",
