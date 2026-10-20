@@ -1,4 +1,5 @@
 import time
+from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 from unittest.mock import patch
 
@@ -84,21 +85,36 @@ def test_snapshot_button(tab: Tab, standalone_parameters_dataset: "DataSet") -> 
     assert "snapshot" in tab.get_title(1)
 
 
-def test_export_button(tab: Tab, standalone_parameters_dataset: "DataSet") -> None:
+def test_export_button(
+    tab: Tab,
+    standalone_parameters_dataset: "DataSet",
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # the export button writes to the current working directory
+    monkeypatch.chdir(tmp_path)
     ds = standalone_parameters_dataset
     export_button = interactive_widget._get_export_button(ds, tab)
     export_button.click()
-    time.sleep(0.5)  # after click
+
+    export_path = Path(ds.export_info.export_paths["csv"])
+    assert export_path.parent == tmp_path / "export"
+    assert export_path.is_file()
 
 
 @patch("matplotlib.pyplot.show")
 def test_plot_button(
-    tab: "MagicMock", standalone_parameters_dataset: "DataSet"
+    mock_show: "MagicMock", tab: Tab, standalone_parameters_dataset: "DataSet"
 ) -> None:
     ds = standalone_parameters_dataset
     plot_button = interactive_widget._get_plot_button(ds, tab)
     plot_button.click()
-    time.sleep(0.5)  # after click
+
+    assert len(tab.children) == 2
+    assert tab.get_title(1) == f"RID #{ds.captured_run_id} plot"
+    # plt.show is only reached if plot_dataset did not raise; errors inside the
+    # widget callback are caught and printed rather than propagated
+    mock_show.assert_called_once()
 
 
 @pytest.mark.parametrize(
