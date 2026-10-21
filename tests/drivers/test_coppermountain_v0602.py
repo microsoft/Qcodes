@@ -14,7 +14,7 @@ class DummyM5065:
 @pytest.fixture()
 def vna():
     instance = CopperMountainV0602(
-        name="M5065",
+        name="V0602",
         address="TCPIP0::localhost::hislip0::INSTR",
         pyvisa_sim_file="CopperMountain_V0602.yaml",
     )
