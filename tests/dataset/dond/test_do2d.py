@@ -2,6 +2,8 @@
 These are the basic black box tests for the doNd functions.
 """
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 import hypothesis.strategies as hst
@@ -415,7 +417,7 @@ def test_do2d_explicit_experiment(
     _param_set: Parameter[float | None],
     _param_set_2: Parameter[float | None],
     _param: Parameter[int],
-    experiment: "Experiment",
+    experiment: Experiment,
 ) -> None:
     start_p1 = 0
     stop_p1 = 0.5

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
@@ -13,7 +15,7 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture(autouse=True)
-def set_tmp_output_dir(tmpdir: "LocalPath") -> "Generator[None, None, None]":
+def set_tmp_output_dir(tmpdir: LocalPath) -> Generator[None, None, None]:
     old_config = config.user.mainfolder
     try:
         config.user.mainfolder = str(tmpdir)
@@ -23,7 +25,7 @@ def set_tmp_output_dir(tmpdir: "LocalPath") -> "Generator[None, None, None]":
 
 
 @pytest.fixture()
-def plot_close() -> "Generator[None, None, None]":
+def plot_close() -> Generator[None, None, None]:
     yield
     plt.close("all")
 

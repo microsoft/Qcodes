@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -209,7 +211,7 @@ def test_do1d_parameter_with_array_vals(_param_set: Parameter[float | None]) -> 
 def test_do1d_explicit_experiment(
     _param_set: Parameter[float | None],
     _param: Parameter[int],
-    experiment: "Experiment",
+    experiment: Experiment,
 ) -> None:
     start = 0
     stop = 1

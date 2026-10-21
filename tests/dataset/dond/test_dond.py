@@ -2,6 +2,8 @@
 These are the basic black box tests for the doNd functions.
 """
 
+from __future__ import annotations
+
 import logging
 import re
 from functools import partial
@@ -260,7 +262,7 @@ def test_array_sweep_parameter_class(
 
 
 def test_dond_explicit_exp_meas_sample(
-    _param: Parameter[int], experiment: "Experiment"
+    _param: Parameter[int], experiment: Experiment
 ) -> None:
     experiment_2 = new_experiment("new-exp", "no-sample")
 
@@ -286,7 +288,7 @@ def test_dond_explicit_exp_meas_sample(
 
 
 def test_dond_multi_datasets_explicit_exp_meas_sample(
-    _param: Parameter[int], _param_complex: Parameter[complex], experiment: "Experiment"
+    _param: Parameter[int], _param_complex: Parameter[complex], experiment: Experiment
 ) -> None:
     experiment_2 = new_experiment("new-exp", "no-sample")
 
@@ -318,7 +320,7 @@ def test_dond_multi_datasets_explicit_exp_meas_sample(
 
 
 def test_dond_multi_datasets_explicit_meas_names(
-    _param: Parameter[int], _param_complex: Parameter[complex], experiment: "Experiment"
+    _param: Parameter[int], _param_complex: Parameter[complex], experiment: Experiment
 ) -> None:
     data1 = dond(
         [_param],
@@ -334,7 +336,7 @@ def test_dond_multi_datasets_explicit_meas_names(
 
 
 def test_dond_multi_datasets_meas_names_len_mismatch(
-    _param: Parameter[int], experiment: "Experiment"
+    _param: Parameter[int], experiment: Experiment
 ) -> None:
     with pytest.raises(
         ValueError,
@@ -1876,7 +1878,7 @@ def test_error_measured_grouped_and_not_grouped() -> None:
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_post_action(mocker: "MockerFixture") -> None:
+def test_post_action(mocker: MockerFixture) -> None:
     param_1 = ManualParameter("param_1", initial_value=0.0)
     param_2 = ManualParameter("param_2", initial_value=0.0)
 
