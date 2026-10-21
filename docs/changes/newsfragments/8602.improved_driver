@@ -1,0 +1,4 @@
+Refactored the ``CopperMountainM5xxx`` base driver to work more generally
+with all S2VNAs (now called ``CopperMountainS2VnaBase``) and added a driver for V0602.
+The V0602 VISA simulator supports reset, averaging count, and electrical-distance
+units for driver testing.
