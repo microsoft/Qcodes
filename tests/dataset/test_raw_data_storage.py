@@ -8,7 +8,6 @@ metadata remains in the main database.
 
 from __future__ import annotations
 
-import gc
 import shutil
 import sqlite3
 import time
@@ -87,7 +86,6 @@ def _raw_data_db(tmp_path: Path) -> Generator[None, None, None]:
         qc.config["dataset"]["raw_data_backend_config"] = {
             "sqlite_per_dataset_db": {"raw_data_path": "{db_location}"}
         }
-        gc.collect()
 
 
 @pytest.fixture()
@@ -137,7 +135,6 @@ class TestRawDataStorageHelpers:
                 new_data_set("ds")
         finally:
             qc.config["dataset"]["raw_data_backend"] = "sqlite_main_db"
-            gc.collect()
 
     def test_get_raw_data_folder(self, _raw_data_db: None, tmp_path: Path) -> None:
         folder = get_raw_data_folder()

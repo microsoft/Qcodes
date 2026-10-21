@@ -54,6 +54,8 @@ from .measurements import Measurement
 from .plotting import plot_by_id, plot_dataset
 from .sqlite.connection import (
     AtomicConnection,
+    close_all_connections,
+    get_open_connections,
 )
 from .sqlite.database import (
     connect,
@@ -92,6 +94,7 @@ __all__ = [
     "TogetherSweep",
     "call_params_threaded",
     "cleanup_datasets",
+    "close_all_connections",
     "connect",
     "datasaver_builder",
     "do0d",
@@ -106,6 +109,7 @@ __all__ = [
     "get_db_overview",
     "get_default_experiment_id",
     "get_guids_by_run_spec",
+    "get_open_connections",
     "guids_from_dbs",
     "guids_from_dir",
     "guids_from_list_str",

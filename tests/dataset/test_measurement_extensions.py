@@ -1,4 +1,3 @@
-import gc
 import itertools
 from functools import partial
 from itertools import product
@@ -12,7 +11,6 @@ from qcodes.dataset import (
     LinSweep,
     Measurement,
     TogetherSweep,
-    connect,
     initialise_or_create_database_at,
     load_or_create_experiment,
 )
@@ -91,10 +89,7 @@ def default_database_and_experiment_(tmp_path):
     db_path = Path(tmp_path) / "context_tests.db"
     initialise_or_create_database_at(db_path)
     experiment = load_or_create_experiment("context_tests")
-    yield experiment
-    conn = connect(db_path)
-    conn.close()
-    gc.collect()
+    return experiment
 
 
 def test_context(default_params, default_database_and_experiment):
