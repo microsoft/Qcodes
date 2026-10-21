@@ -35,8 +35,17 @@ def test_idn_command(vna):
 
 
 def test_min_and_max_frequency_defaults(vna):
-    assert vna.min_freq == 300e3
-    assert vna.max_freq == 6.5e9
+    assert vna.start.vals.min_value == 300e3
+    assert vna.stop.vals.max_value == 6.5e9
+
+
+def test_min_and_max_power_defaults(vna):
+    assert vna.power.vals.min_value == -55.0
+    assert vna.power.vals.max_value == 5.0
+
+
+def test_number_of_points_max_default(vna):
+    assert vna.number_of_points.vals.max_value == 200_001
 
 
 def test_output_param(vna):
