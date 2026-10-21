@@ -34,6 +34,12 @@ def test_idn_command(vna):
     assert idn["model"] == "V0602"
 
 
+def test_reset_does_not_leave_pending_response(vna: CopperMountainV0602) -> None:
+    vna.reset()
+    assert vna.get_idn()["model"] == "V0602"
+    assert vna.output() is False
+
+
 def test_min_and_max_frequency_defaults(vna):
     assert vna.start.vals.min_value == 100e3
     assert vna.stop.vals.max_value == 6.5e9
@@ -68,6 +74,12 @@ def test_if_bandwidth_param(vna):
 def test_averages_param(vna):
     vna.averages(2)
     assert vna.averages() == 2
+
+
+@pytest.mark.parametrize("units", ["MET", "FEET", "INCH"])
+def test_electrical_distance_units(vna: CopperMountainV0602, units: str) -> None:
+    vna.electrical_distance_units(units)
+    assert vna.electrical_distance_units() == units
 
 
 def test_frequency_params(vna):
