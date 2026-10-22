@@ -546,7 +546,7 @@ class Keithley7510Sense(InstrumentChannel["Keithley7510"]):
         )
         """Set the user number for user-defined delay."""
 
-        self.user_delay: Parameter = self.add_parameter(
+        self.user_delay: Parameter[float, Self] = self.add_parameter(
             "user_delay",
             get_cmd=self._get_user_delay,
             set_cmd=self._set_user_delay,
@@ -584,10 +584,11 @@ class Keithley7510Sense(InstrumentChannel["Keithley7510"]):
         )
         """Enable or disable the averaging filter for measurements of the selected function."""
 
-        self.average_count: Parameter = self.add_parameter(
+        self.average_count: Parameter[int, Self] = self.add_parameter(
             "average_count",
             get_cmd=f":SENSe:{self._proper_function}:AVERage:COUNt?",
             set_cmd=f":SENSe:{self._proper_function}:AVERage:COUNt {{}}",
+            get_parser=int,
             vals=Numbers(1, 100),
             docstring="Set the number of measurements that are averaged when "
             "filtering is enabled.",
@@ -605,9 +606,9 @@ class Keithley7510Sense(InstrumentChannel["Keithley7510"]):
         )
         """Set the type of averaging filter that is used for the selected measure function when the measurement filter is enabled."""
 
-    def _get_user_delay(self) -> str:
+    def _get_user_delay(self) -> float:
         get_cmd = f":SENSe:{self._proper_function}:DELay:USER{self.user_number()}?"
-        return self.ask(get_cmd)
+        return float(self.ask(get_cmd))
 
     def _set_user_delay(self, value: float) -> None:
         set_cmd = (
@@ -683,10 +684,13 @@ class Keithley7510DigitizeSense(InstrumentChannel["Keithley7510"]):
         )
         """Determine when the 10 MΩ input divider is enabled. 'MOHM10' means 10 MΩ for all ranges."""
 
-        self.acq_rate: Parameter = self.add_parameter(
+        self.acq_rate: Parameter[int, Self] = self.add_parameter(
             "acq_rate",
             get_cmd=f":SENSe:DIGitize:{self._proper_function}:SRATE?",
             set_cmd=f":SENSe:DIGitize:{self._proper_function}:SRATE {{}}",
+            # the manual does not document the response format, so accept
+            # both integer and exponent notation
+            get_parser=lambda s: int(float(s)),
             vals=Ints(1000, 1000000),
             docstring="Define the precise acquisition rate at which the "
             "digitizing measurements are made.",
@@ -702,10 +706,11 @@ class Keithley7510DigitizeSense(InstrumentChannel["Keithley7510"]):
         )
         """Determine the aperture setting."""
 
-        self.count: Parameter = self.add_parameter(
+        self.count: Parameter[int, Self] = self.add_parameter(
             "count",
             get_cmd="SENSe:DIGitize:COUNt?",
             set_cmd="SENSe:DIGitize:COUNt {}",
+            get_parser=int,
             vals=Ints(1, 55000000),
             docstring="Set the number of measurements to digitize when a "
             "measurement is requested",
