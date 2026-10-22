@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes.instrument import (
     Instrument,
@@ -27,7 +27,7 @@ class KeysightN6705BChannel(InstrumentChannel):
 
         super().__init__(parent, name, **kwargs)
 
-        self.source_voltage: Parameter = self.add_parameter(
+        self.source_voltage: Parameter[float, Self] = self.add_parameter(
             "source_voltage",
             label=f"Channel {chan} Voltage",
             get_cmd=f"SOURCE:VOLT? (@{chan})",
@@ -37,7 +37,7 @@ class KeysightN6705BChannel(InstrumentChannel):
         )
         """Parameter source_voltage"""
 
-        self.source_current: Parameter = self.add_parameter(
+        self.source_current: Parameter[float, Self] = self.add_parameter(
             "source_current",
             label=f"Channel {chan} Current",
             get_cmd=f"SOURCE:CURR? (@{chan})",
@@ -47,7 +47,7 @@ class KeysightN6705BChannel(InstrumentChannel):
         )
         """Parameter source_current"""
 
-        self.voltage_limit: Parameter = self.add_parameter(
+        self.voltage_limit: Parameter[float, Self] = self.add_parameter(
             "voltage_limit",
             get_cmd=f"SOUR:VOLT:PROT? (@{chan})",
             get_parser=float,
@@ -57,7 +57,7 @@ class KeysightN6705BChannel(InstrumentChannel):
         )
         """Parameter voltage_limit"""
 
-        self.voltage: Parameter = self.add_parameter(
+        self.voltage: Parameter[float, Self] = self.add_parameter(
             "voltage",
             get_cmd=f"MEAS:VOLT? (@{chan})",
             get_parser=float,
@@ -66,7 +66,7 @@ class KeysightN6705BChannel(InstrumentChannel):
         )
         """Parameter voltage"""
 
-        self.current: Parameter = self.add_parameter(
+        self.current: Parameter[float, Self] = self.add_parameter(
             "current",
             get_cmd=f"MEAS:CURR? (@{chan})",
             get_parser=float,
@@ -75,7 +75,7 @@ class KeysightN6705BChannel(InstrumentChannel):
         )
         """Parameter current"""
 
-        self.enable: Parameter = self.add_parameter(
+        self.enable: Parameter[str, Self] = self.add_parameter(
             "enable",
             get_cmd=f"OUTP:STAT? (@{chan})",
             set_cmd=f"OUTP:STAT {{:d}}, (@{chan})",
@@ -83,7 +83,7 @@ class KeysightN6705BChannel(InstrumentChannel):
         )
         """Parameter enable"""
 
-        self.source_mode: Parameter = self.add_parameter(
+        self.source_mode: Parameter[str, Self] = self.add_parameter(
             "source_mode",
             get_cmd=f":OUTP:PMOD? (@{chan})",
             set_cmd=f":OUTP:PMOD {{:s}}, (@{chan})",

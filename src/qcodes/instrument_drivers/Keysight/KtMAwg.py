@@ -1,6 +1,6 @@
 import ctypes
 from functools import partial
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs, InstrumentChannel
 from qcodes.parameters import Parameter, create_on_off_val_mapping
@@ -42,7 +42,7 @@ class KeysightM9336AAWGChannel(InstrumentChannel["KeysightM9336A"]):
 
         self._catch_error = self.root_instrument._catch_error
 
-        self.output_term_config: Parameter = self.add_parameter(
+        self.output_term_config: Parameter[str, Self] = self.add_parameter(
             "output_term_config",
             label="Output Terminal Configuration",
             get_cmd=partial(
@@ -62,7 +62,7 @@ class KeysightM9336AAWGChannel(InstrumentChannel["KeysightM9336A"]):
         )
         """Parameter output_term_config"""
 
-        self.operation: Parameter = self.add_parameter(
+        self.operation: Parameter[str, Self] = self.add_parameter(
             "operation",
             label="Operating Mode",
             get_cmd=partial(
@@ -82,7 +82,7 @@ class KeysightM9336AAWGChannel(InstrumentChannel["KeysightM9336A"]):
         )
         """Parameter operation"""
 
-        self.output: Parameter = self.add_parameter(
+        self.output: Parameter[bool, Self] = self.add_parameter(
             "output",
             label="Output Enable",
             get_cmd=partial(
@@ -99,7 +99,7 @@ class KeysightM9336AAWGChannel(InstrumentChannel["KeysightM9336A"]):
         )
         """Parameter output"""
 
-        self.gain_config: Parameter = self.add_parameter(
+        self.gain_config: Parameter[str, Self] = self.add_parameter(
             "gain_config",
             label="AWG Gain Control Mode",
             set_cmd=self._set_gain_control,
@@ -110,7 +110,7 @@ class KeysightM9336AAWGChannel(InstrumentChannel["KeysightM9336A"]):
             },
         )
         """Parameter gain_config"""
-        self.gain: Parameter = self.add_parameter(
+        self.gain: Parameter[float, Self] = self.add_parameter(
             "gain",
             label="Composite Output Gain",
             set_cmd=self._set_gain,
@@ -119,7 +119,7 @@ class KeysightM9336AAWGChannel(InstrumentChannel["KeysightM9336A"]):
         )
         """Parameter gain"""
 
-        self.analog_gain: Parameter = self.add_parameter(
+        self.analog_gain: Parameter[float, Self] = self.add_parameter(
             "analog_gain",
             label="Analog Output Gain",
             vals=Numbers(0, 1.32),
@@ -128,7 +128,7 @@ class KeysightM9336AAWGChannel(InstrumentChannel["KeysightM9336A"]):
         )
         """Parameter analog_gain"""
 
-        self.digital_gain: Parameter = self.add_parameter(
+        self.digital_gain: Parameter[float, Self] = self.add_parameter(
             "digital_gain",
             label="Digital Output Gain",
             vals=Numbers(0, 1.0),

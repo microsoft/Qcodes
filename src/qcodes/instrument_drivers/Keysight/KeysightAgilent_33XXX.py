@@ -1,6 +1,6 @@
 import logging
 from functools import partial
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes import validators as vals
 from qcodes.instrument import (
@@ -74,7 +74,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
 
         self.model = self._parent.model
 
-        self.function_type: Parameter = self.add_parameter(
+        self.function_type: Parameter[str, Self] = self.add_parameter(
             "function_type",
             label=f"Channel {channum} function type",
             set_cmd=f"SOURce{channum}:FUNCtion {{}}",
@@ -86,7 +86,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         )
         """Parameter function_type"""
 
-        self.frequency_mode: Parameter = self.add_parameter(
+        self.frequency_mode: Parameter[str, Self] = self.add_parameter(
             "frequency_mode",
             label=f"Channel {channum} frequency mode",
             set_cmd=f"SOURce{channum}:FREQuency:MODE {{}}",
@@ -97,7 +97,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         """Parameter frequency_mode"""
 
         max_freq = self._parent._max_freqs[self.model]
-        self.frequency: Parameter = self.add_parameter(
+        self.frequency: Parameter[float, Self] = self.add_parameter(
             "frequency",
             label=f"Channel {channum} frequency",
             set_cmd=f"SOURce{channum}:FREQuency {{}}",
@@ -109,7 +109,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         )
         """Parameter frequency"""
 
-        self.phase: Parameter = self.add_parameter(
+        self.phase: Parameter[float, Self] = self.add_parameter(
             "phase",
             label=f"Channel {channum} phase",
             set_cmd=f"SOURce{channum}:PHASe {{}}",
@@ -120,7 +120,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         )
         """Parameter phase"""
 
-        self.amplitude_unit: Parameter = self.add_parameter(
+        self.amplitude_unit: Parameter[str, Self] = self.add_parameter(
             "amplitude_unit",
             label=f"Channel {channum} amplitude unit",
             set_cmd=f"SOURce{channum}:VOLTage:UNIT {{}}",
@@ -130,7 +130,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         )
         """Parameter amplitude_unit"""
 
-        self.amplitude: Parameter = self.add_parameter(
+        self.amplitude: Parameter[float, Self] = self.add_parameter(
             "amplitude",
             label=f"Channel {channum} amplitude",
             set_cmd=f"SOURce{channum}:VOLTage {{}}",
@@ -140,7 +140,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         )
         """Parameter amplitude"""
 
-        self.offset: Parameter = self.add_parameter(
+        self.offset: Parameter[float, Self] = self.add_parameter(
             "offset",
             label=f"Channel {channum} voltage offset",
             set_cmd=f"SOURce{channum}:VOLTage:OFFSet {{}}",
@@ -150,7 +150,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         )
         """Parameter offset"""
 
-        self.output: Parameter = self.add_parameter(
+        self.output: Parameter[str, Self] = self.add_parameter(
             "output",
             label=f"Channel {channum} output state",
             set_cmd=f"OUTPut{channum} {{}}",
@@ -159,7 +159,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         )
         """Parameter output"""
 
-        self.ramp_symmetry: Parameter = self.add_parameter(
+        self.ramp_symmetry: Parameter[float, Self] = self.add_parameter(
             "ramp_symmetry",
             label=f"Channel {channum} ramp symmetry",
             set_cmd=f"SOURce{channum}:FUNCtion:RAMP:SYMMetry {{}}",
@@ -170,7 +170,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         )
         """Parameter ramp_symmetry"""
 
-        self.pulse_width: Parameter = self.add_parameter(
+        self.pulse_width: Parameter[float, Self] = self.add_parameter(
             "pulse_width",
             label=f"Channel {channum} pulse width",
             set_cmd=f"SOURce{channum}:FUNCtion:PULSE:WIDTh {{}}",
@@ -192,7 +192,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         """Sets the transition times for the leading and trailing edges of the pulse."""
 
         # TRIGGER MENU
-        self.trigger_source: Parameter = self.add_parameter(
+        self.trigger_source: Parameter[str, Self] = self.add_parameter(
             "trigger_source",
             label=f"Channel {channum} trigger source",
             set_cmd=f"TRIGger{channum}:SOURce {{}}",
@@ -202,7 +202,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         )
         """Parameter trigger_source"""
 
-        self.trigger_slope: Parameter = self.add_parameter(
+        self.trigger_slope: Parameter[str, Self] = self.add_parameter(
             "trigger_slope",
             label=f"Channel {channum} trigger slope",
             set_cmd=f"TRIGger{channum}:SLOPe {{}}",
@@ -224,7 +224,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
             )
             """Parameter trigger_count"""
 
-            self.trigger_delay: Parameter = self.add_parameter(
+            self.trigger_delay: Parameter[float, Self] = self.add_parameter(
                 "trigger_delay",
                 label=f"Channel {channum} trigger delay",
                 set_cmd=f"TRIGger{channum}:DELay {{}}",
@@ -235,7 +235,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
             )
             """Parameter trigger_delay"""
 
-            self.trigger_timer: Parameter = self.add_parameter(
+            self.trigger_timer: Parameter[float, Self] = self.add_parameter(
                 "trigger_timer",
                 label=f"Channel {channum} trigger timer",
                 set_cmd=f"TRIGger{channum}:TIMer {{}}",
@@ -248,7 +248,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         # TODO: trigger level doesn't work remotely. Why?
 
         # output menu
-        self.output_polarity: Parameter = self.add_parameter(
+        self.output_polarity: Parameter[str, Self] = self.add_parameter(
             "output_polarity",
             label=f"Channel {channum} output polarity",
             set_cmd=f"OUTPut{channum}:POLarity {{}}",
@@ -258,7 +258,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         )
         """Parameter output_polarity"""
         # BURST MENU
-        self.burst_state: Parameter = self.add_parameter(
+        self.burst_state: Parameter[str, Self] = self.add_parameter(
             "burst_state",
             label=f"Channel {channum} burst state",
             set_cmd=f"SOURce{channum}:BURSt:STATe {{}}",
@@ -268,7 +268,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         )
         """Parameter burst_state"""
 
-        self.burst_mode: Parameter = self.add_parameter(
+        self.burst_mode: Parameter[str, Self] = self.add_parameter(
             "burst_mode",
             label=f"Channel {channum} burst mode",
             set_cmd=f"SOURce{channum}:BURSt:MODE {{}}",
@@ -289,7 +289,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         )
         """Parameter burst_ncycles"""
 
-        self.burst_phase: Parameter = self.add_parameter(
+        self.burst_phase: Parameter[float, Self] = self.add_parameter(
             "burst_phase",
             label=f"Channel {channum} burst start phase",
             set_cmd=f"SOURce{channum}:BURSt:PHASe {{}}",
@@ -300,7 +300,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         )
         """Parameter burst_phase"""
 
-        self.burst_polarity: Parameter = self.add_parameter(
+        self.burst_polarity: Parameter[str, Self] = self.add_parameter(
             "burst_polarity",
             label=f"Channel {channum} burst gated polarity",
             set_cmd=f"SOURce{channum}:BURSt:GATE:POLarity {{}}",
@@ -309,7 +309,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         )
         """Parameter burst_polarity"""
 
-        self.burst_int_period: Parameter = self.add_parameter(
+        self.burst_int_period: Parameter[float, Self] = self.add_parameter(
             "burst_int_period",
             label=f"Channel {channum} burst internal period",
             set_cmd=f"SOURce{channum}:BURSt:INTernal:PERiod {{}}",
@@ -336,7 +336,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         )
         """Sets expected output termination. Should equal the load impedance attached to the output."""
 
-        self.auto_range: Parameter = self.add_parameter(
+        self.auto_range: Parameter[str, Self] = self.add_parameter(
             "auto_range",
             label=f"Channel {channum} range mode",
             set_cmd=f"SOURce{channum}:VOLTage:RANGe:AUTO {{}}",
@@ -405,7 +405,7 @@ class Keysight33xxxSyncChannel(InstrumentChannel["Keysight33xxx"]):
     ):
         super().__init__(parent, name, **kwargs)
 
-        self.output: Parameter = self.add_parameter(
+        self.output: Parameter[str, Self] = self.add_parameter(
             "output",
             label="Sync output state",
             set_cmd="OUTPut:SYNC {}",
@@ -416,7 +416,7 @@ class Keysight33xxxSyncChannel(InstrumentChannel["Keysight33xxx"]):
         """Parameter output"""
 
         if parent.num_channels == 2:
-            self.source: Parameter = self.add_parameter(
+            self.source: Parameter[int, Self] = self.add_parameter(
                 "source",
                 label="Source of sync function",
                 set_cmd="OUTPut:SYNC:SOURce {}",

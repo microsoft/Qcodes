@@ -1,6 +1,15 @@
 import re
 import textwrap
-from typing import TYPE_CHECKING, Any, Generic, Literal, NotRequired, Unpack, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generic,
+    Literal,
+    NotRequired,
+    Self,
+    Unpack,
+    overload,
+)
 
 import numpy as np
 import numpy.typing as npt
@@ -351,7 +360,7 @@ class KeysightB1500IVSweeper(InstrumentChannel["KeysightB1517A"]):
         - Pcomp/output voltage > maximum current for the output range
         """
 
-        self.sweep_start: Parameter = self.add_parameter(
+        self.sweep_start: Parameter[float, Self] = self.add_parameter(
             name="sweep_start",
             set_cmd=self._set_sweep_start,
             get_cmd=self._get_sweep_start,
@@ -370,7 +379,7 @@ class KeysightB1500IVSweeper(InstrumentChannel["KeysightB1517A"]):
         start and stop must have the same polarity.
         """
 
-        self.sweep_end: Parameter = self.add_parameter(
+        self.sweep_end: Parameter[float, Self] = self.add_parameter(
             name="sweep_end",
             set_cmd=self._set_sweep_end,
             get_cmd=self._get_sweep_end,
@@ -389,7 +398,7 @@ class KeysightB1500IVSweeper(InstrumentChannel["KeysightB1517A"]):
         stop must have the same polarity.
         """
 
-        self.sweep_steps: Parameter = self.add_parameter(
+        self.sweep_steps: Parameter[int, Self] = self.add_parameter(
             name="sweep_steps",
             set_cmd=self._set_sweep_steps,
             get_cmd=self._get_sweep_steps,
@@ -1044,7 +1053,7 @@ class KeysightB1517A(KeysightB1500Module):
         output mode (voltage or current).
         """
 
-        self.enable_filter: Parameter = self.add_parameter(
+        self.enable_filter: Parameter[bool, Self] = self.add_parameter(
             name="enable_filter",
             set_cmd=self._set_enable_filter,
             get_cmd=None,

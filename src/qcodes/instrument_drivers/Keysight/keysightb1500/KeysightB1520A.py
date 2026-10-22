@@ -1,6 +1,6 @@
 import re
 import textwrap
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Self, cast
 
 import numpy as np
 
@@ -481,7 +481,7 @@ class KeysightB1520A(KeysightB1500Module):
         self._ranging_mode: constants.RangingMode = constants.RangingMode.AUTO
         self._measurement_range_for_non_auto: int | None = None
 
-        self.voltage_dc: Parameter = self.add_parameter(
+        self.voltage_dc: Parameter[float, Self] = self.add_parameter(
             name="voltage_dc",
             unit="V",
             set_cmd=self._set_voltage_dc,
@@ -490,7 +490,7 @@ class KeysightB1520A(KeysightB1500Module):
         )
         """Parameter voltage_dc"""
 
-        self.voltage_ac: Parameter = self.add_parameter(
+        self.voltage_ac: Parameter[float, Self] = self.add_parameter(
             name="voltage_ac",
             unit="V",
             set_cmd=self._set_voltage_ac,
@@ -499,7 +499,7 @@ class KeysightB1520A(KeysightB1500Module):
         )
         """Parameter voltage_ac"""
 
-        self.frequency: Parameter = self.add_parameter(
+        self.frequency: Parameter[float, Self] = self.add_parameter(
             name="frequency",
             unit="Hz",
             set_cmd=self._set_frequency,
@@ -508,7 +508,7 @@ class KeysightB1520A(KeysightB1500Module):
         )
         """Parameter frequency"""
 
-        self.capacitance: Parameter = self.add_parameter(
+        self.capacitance: Parameter[tuple[float, float], Self] = self.add_parameter(
             name="capacitance", get_cmd=self._get_capacitance, snapshot_value=False
         )
         """Parameter capacitance"""
@@ -660,19 +660,21 @@ class KeysightB1520A(KeysightB1500Module):
         Possible ranging modes are autorange and fixed range.
         """
 
-        self.measurement_range_for_non_auto: Parameter = self.add_parameter(
-            name="measurement_range_for_non_auto",
-            set_cmd=self._set_measurement_range_for_non_auto,
-            get_cmd=None,
-            docstring=textwrap.dedent(
-                """
+        self.measurement_range_for_non_auto: Parameter[int | None, Self] = (
+            self.add_parameter(
+                name="measurement_range_for_non_auto",
+                set_cmd=self._set_measurement_range_for_non_auto,
+                get_cmd=None,
+                docstring=textwrap.dedent(
+                    """
             Measurement range. Needs to set when ``ranging_mode`` is set to
             PLC. The value should be integer 0 or more. 50 ohm, 100 ohm,
             300 ohm, 1 kilo ohm, 3 kilo ohm, 10 kilo ohm, 30 kilo ohm,
             100 kilo ohm, and 300 kilo ohm are selectable. Available
             measurement ranges depend on the output signal frequency set by
             the FC command."""
-            ),
+                ),
+            )
         )
         """
         Measurement range. Needs to set when ``ranging_mode`` is set to
@@ -752,7 +754,7 @@ class KeysightB1520A(KeysightB1500Module):
         1: Enables the data monitor and output.
         """
 
-        self.cv_sweep_voltages: Parameter = self.add_parameter(
+        self.cv_sweep_voltages: Parameter[tuple[float, ...], Self] = self.add_parameter(
             name="cv_sweep_voltages",
             get_cmd=self._cv_sweep_voltages,
             unit="V",

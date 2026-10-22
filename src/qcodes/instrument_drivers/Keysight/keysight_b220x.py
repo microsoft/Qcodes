@@ -1,7 +1,7 @@
 import re
 import warnings
 from functools import wraps
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.validators import Enum, Ints, Lists, MultiType
@@ -66,7 +66,7 @@ class KeysightB220X(VisaInstrument):
 
         self._card = 0
 
-        self.get_status: Parameter = self.add_parameter(
+        self.get_status: Parameter[int, Self] = self.add_parameter(
             name="get_status",
             get_cmd="*ESR?",
             get_parser=int,
@@ -74,12 +74,12 @@ class KeysightB220X(VisaInstrument):
         )
         """Queries status register."""
 
-        self.get_error: Parameter = self.add_parameter(
+        self.get_error: Parameter[str, Self] = self.add_parameter(
             name="get_error", get_cmd=":SYST:ERR?", docstring="Queries error queue"
         )
         """Queries error queue"""
 
-        self.connections: Parameter = self.add_parameter(
+        self.connections: Parameter[set[tuple[int, int]], Self] = self.add_parameter(
             name="connections",
             get_cmd=f":CLOS:CARD? {self._card}",
             get_parser=KeysightB220X.parse_channel_list,
@@ -92,7 +92,7 @@ class KeysightB220X(VisaInstrument):
         set of tuples {(input, output), ...}
         """
 
-        self.connection_rule: Parameter = self.add_parameter(
+        self.connection_rule: Parameter[str, Self] = self.add_parameter(
             name="connection_rule",
             get_cmd=self._get_connection_rule,
             set_cmd=self._set_connection_rule,
@@ -134,7 +134,7 @@ class KeysightB220X(VisaInstrument):
         - existing connection to a port will be disconnected when a new connection is made.
         """
 
-        self.connection_sequence: Parameter = self.add_parameter(
+        self.connection_sequence: Parameter[str, Self] = self.add_parameter(
             name="connection_sequence",
             get_cmd=f":CONN:SEQ? {self._card}",
             set_cmd=f":CONN:SEQ {self._card},{{}}",
@@ -166,7 +166,7 @@ class KeysightB220X(VisaInstrument):
         mode is ON
         """
 
-        self.bias_mode: Parameter = self.add_parameter(
+        self.bias_mode: Parameter[bool, Self] = self.add_parameter(
             name="bias_mode",
             get_cmd=f":BIAS? {self._card}",
             set_cmd=f":BIAS {self._card},{{}}",
@@ -193,7 +193,7 @@ class KeysightB220X(VisaInstrument):
         `connect` or `disconnect` commands if GND mode is ON
         """
 
-        self.gnd_mode: Parameter = self.add_parameter(
+        self.gnd_mode: Parameter[bool, Self] = self.add_parameter(
             name="gnd_mode",
             get_cmd=f":AGND? {self._card}",
             set_cmd=f":AGND {self._card},{{}}",
@@ -225,7 +225,7 @@ class KeysightB220X(VisaInstrument):
         )
         """Parameter couple_ports"""
 
-        self.couple_mode: Parameter = self.add_parameter(
+        self.couple_mode: Parameter[bool, Self] = self.add_parameter(
             name="couple_mode",
             get_cmd=f":COUP? {self._card}",
             set_cmd=f":COUP {self._card},{{}}",
