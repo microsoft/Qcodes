@@ -350,12 +350,13 @@ class TektronixTPS2012(VisaInstrument):
             vals=vals.Enum("FALL", "RISE"),
         )
         """Parameter trigger_edge_slope"""
-        self.trigger_level: Parameter = self.add_parameter(
+        self.trigger_level: Parameter[float, Self] = self.add_parameter(
             "trigger_level",
             label="Trigger level",
             unit="V",
             get_cmd="TRIGger:MAIn:LEVel?",
             set_cmd="TRIGger:MAIn:LEVel {}",
+            get_parser=float,
             vals=vals.Numbers(),
         )
         """Parameter trigger_level"""
