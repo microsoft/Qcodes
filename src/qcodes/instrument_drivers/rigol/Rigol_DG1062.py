@@ -1,6 +1,6 @@
 import logging
 from functools import partial
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Self
 
 from qcodes import validators as vals
 from qcodes.instrument import (
@@ -44,7 +44,7 @@ class RigolDG1062Burst(InstrumentChannel["RigolDG1062"]):
         )
         """Parameter on"""
 
-        self.polarity: Parameter = self.add_parameter(
+        self.polarity: Parameter[str, Self] = self.add_parameter(
             "polarity",
             get_cmd=f":SOUR{channel}:BURS:GATE:POL?",
             set_cmd=f":SOUR{channel}:BURS:GATE:POL {{}}",
@@ -62,7 +62,7 @@ class RigolDG1062Burst(InstrumentChannel["RigolDG1062"]):
         )
         """Parameter period"""
 
-        self.mode: Parameter = self.add_parameter(
+        self.mode: Parameter[str, Self] = self.add_parameter(
             "mode",
             get_cmd=f":SOUR{channel}:BURS:MODE?",
             set_cmd=f":SOUR{channel}:BURS:MODE {{}}",
@@ -94,7 +94,7 @@ class RigolDG1062Burst(InstrumentChannel["RigolDG1062"]):
         )
         """Parameter time_delay"""
 
-        self.trigger_slope: Parameter = self.add_parameter(
+        self.trigger_slope: Parameter[str, Self] = self.add_parameter(
             "trigger_slope",
             get_cmd=f":SOUR{channel}:BURS:TRIG:SLOP?",
             set_cmd=f":SOUR{channel}:BURS:TRIG:SLOP {{}}",
@@ -102,7 +102,7 @@ class RigolDG1062Burst(InstrumentChannel["RigolDG1062"]):
         )
         """Parameter trigger_slope"""
 
-        self.source: Parameter = self.add_parameter(
+        self.source: Parameter[str, Self] = self.add_parameter(
             "source",
             get_cmd=f":SOUR{channel}:BURS:TRIG:SOUR?",
             set_cmd=f":SOUR{channel}:BURS:TRIG:SOUR {{}}",
@@ -236,7 +236,7 @@ class RigolDG1062Channel(InstrumentChannel["RigolDG1062"]):
         )
         """Parameter polarity"""
 
-        self.state: Parameter = self.add_parameter(
+        self.state: Parameter[str, Self] = self.add_parameter(
             "state",
             get_cmd=f"OUTPUT{channel}:STATE?",
             set_cmd=f"OUTPUT{channel}:STATE {{}}",

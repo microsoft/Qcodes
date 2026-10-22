@@ -1,7 +1,7 @@
 import binascii
 import logging
 from functools import partial
-from typing import TYPE_CHECKING, Any, Unpack
+from typing import TYPE_CHECKING, Any, Self, Unpack
 
 import numpy as np
 import numpy.typing as npt
@@ -235,7 +235,7 @@ class TektronixTPS2012Channel(InstrumentChannel):
     ):
         super().__init__(parent, name, **kwargs)
 
-        self.scale: Parameter = self.add_parameter(
+        self.scale: Parameter[float, Self] = self.add_parameter(
             "scale",
             label=f"Channel {channel} Scale",
             unit="V/div",
@@ -244,7 +244,7 @@ class TektronixTPS2012Channel(InstrumentChannel):
             get_parser=float,
         )
         """Parameter scale"""
-        self.position: Parameter = self.add_parameter(
+        self.position: Parameter[float, Self] = self.add_parameter(
             "position",
             label=f"Channel {channel} Position",
             unit="div",
@@ -259,7 +259,7 @@ class TektronixTPS2012Channel(InstrumentChannel):
             parameter_class=ScopeArray,
         )
         """Parameter curvedata"""
-        self.state: Parameter = self.add_parameter(
+        self.state: Parameter[str, Self] = self.add_parameter(
             "state",
             label=f"Channel {channel} display state",
             set_cmd="SELect:CH{} {}".format(channel, "{}"),
@@ -326,7 +326,7 @@ class TektronixTPS2012(VisaInstrument):
         )
 
         # general parameters
-        self.trigger_type: Parameter = self.add_parameter(
+        self.trigger_type: Parameter[str, Self] = self.add_parameter(
             "trigger_type",
             label="Type of the trigger",
             get_cmd="TRIGger:MAIn:TYPe?",
@@ -334,7 +334,7 @@ class TektronixTPS2012(VisaInstrument):
             vals=vals.Enum("EDGE", "VIDEO", "PULSE"),
         )
         """Parameter trigger_type"""
-        self.trigger_source: Parameter = self.add_parameter(
+        self.trigger_source: Parameter[str, Self] = self.add_parameter(
             "trigger_source",
             label="Source for the trigger",
             get_cmd="TRIGger:MAIn:EDGE:SOURce?",
@@ -342,7 +342,7 @@ class TektronixTPS2012(VisaInstrument):
             vals=vals.Enum("CH1", "CH2"),
         )
         """Parameter trigger_source"""
-        self.trigger_edge_slope: Parameter = self.add_parameter(
+        self.trigger_edge_slope: Parameter[str, Self] = self.add_parameter(
             "trigger_edge_slope",
             label="Slope for edge trigger",
             get_cmd="TRIGger:MAIn:EDGE:SLOpe?",
@@ -359,7 +359,7 @@ class TektronixTPS2012(VisaInstrument):
             vals=vals.Numbers(),
         )
         """Parameter trigger_level"""
-        self.data_source: Parameter = self.add_parameter(
+        self.data_source: Parameter[str, Self] = self.add_parameter(
             "data_source",
             label="Data source",
             get_cmd="DATa:SOUrce?",
@@ -367,7 +367,7 @@ class TektronixTPS2012(VisaInstrument):
             vals=vals.Enum("CH1", "CH2"),
         )
         """Parameter data_source"""
-        self.horizontal_scale: Parameter = self.add_parameter(
+        self.horizontal_scale: Parameter[float, Self] = self.add_parameter(
             "horizontal_scale",
             label="Horizontal scale",
             unit="s",

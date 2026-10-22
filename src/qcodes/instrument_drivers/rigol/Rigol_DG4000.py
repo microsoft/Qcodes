@@ -1,5 +1,5 @@
 from functools import partial
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.validators import Anything, Enum, Ints, MultiType, Numbers
@@ -109,7 +109,7 @@ class RigolDG4000(VisaInstrument):
         on_off_map = {True: "ON", False: "OFF"}
 
         # Counter
-        self.counter_attenuation: Parameter = self.add_parameter(
+        self.counter_attenuation: Parameter[int, Self] = self.add_parameter(
             "counter_attenuation",
             get_cmd="COUN:ATT?",
             set_cmd="COUN:ATT {}",
@@ -119,7 +119,7 @@ class RigolDG4000(VisaInstrument):
 
         self.add_function("auto_counter", call_cmd="COUN:AUTO")
 
-        self.counter_coupling: Parameter = self.add_parameter(
+        self.counter_coupling: Parameter[str, Self] = self.add_parameter(
             "counter_coupling",
             get_cmd="COUN:COUP?",
             set_cmd="COUN:COUP {}",
@@ -144,7 +144,7 @@ class RigolDG4000(VisaInstrument):
         )
         """Parameter counter_gate_time"""
 
-        self.counter_hf_reject_enabled: Parameter = self.add_parameter(
+        self.counter_hf_reject_enabled: Parameter[bool, Self] = self.add_parameter(
             "counter_hf_reject_enabled",
             get_cmd="COUN:HF?",
             set_cmd="COUN:HF {}",
@@ -161,7 +161,7 @@ class RigolDG4000(VisaInstrument):
         )
         """Parameter counter_impedance"""
 
-        self.counter_trigger_level: Parameter = self.add_parameter(
+        self.counter_trigger_level: Parameter[float, Self] = self.add_parameter(
             "counter_trigger_level",
             get_cmd="COUN:LEVE?",
             get_parser=float,
@@ -171,7 +171,7 @@ class RigolDG4000(VisaInstrument):
         )
         """Parameter counter_trigger_level"""
 
-        self.counter_enabled: Parameter = self.add_parameter(
+        self.counter_enabled: Parameter[bool, Self] = self.add_parameter(
             "counter_enabled",
             get_cmd="COUN:STAT?",
             set_cmd="COUN:STAT {}",
@@ -195,7 +195,7 @@ class RigolDG4000(VisaInstrument):
                 get_parser=partial(parse_single_output, i),
             )
 
-        self.counter_trigger_sensitivity: Parameter = self.add_parameter(
+        self.counter_trigger_sensitivity: Parameter[float, Self] = self.add_parameter(
             "counter_trigger_sensitivity",
             get_cmd="COUN:SENS?",
             get_parser=float,
@@ -669,7 +669,7 @@ class RigolDG4000(VisaInstrument):
         # System
         self.add_function("beep", call_cmd="SYST:BEEP")
 
-        self.beeper_enabled: Parameter = self.add_parameter(
+        self.beeper_enabled: Parameter[bool, Self] = self.add_parameter(
             "beeper_enabled",
             get_cmd="SYST:BEEP:STAT?",
             set_cmd="SYST:BEEP:STAT {}",
@@ -685,7 +685,7 @@ class RigolDG4000(VisaInstrument):
 
         self.add_function("get_error", call_cmd="SYST:ERR?", return_parser=str)
 
-        self.keyboard_locked: Parameter = self.add_parameter(
+        self.keyboard_locked: Parameter[bool, Self] = self.add_parameter(
             "keyboard_locked",
             get_cmd="SYST:KLOCK?",
             set_cmd="SYST:KLOCK {}",
@@ -693,7 +693,7 @@ class RigolDG4000(VisaInstrument):
         )
         """Parameter keyboard_locked"""
 
-        self.startup_mode: Parameter = self.add_parameter(
+        self.startup_mode: Parameter[str, Self] = self.add_parameter(
             "startup_mode",
             get_cmd="SYST:POWS?",
             get_parser=str.lower,
@@ -720,7 +720,7 @@ class RigolDG4000(VisaInstrument):
 
         self.add_function("restart", call_cmd="SYST:RESTART")
 
-        self.reference_clock_source: Parameter = self.add_parameter(
+        self.reference_clock_source: Parameter[str, Self] = self.add_parameter(
             "reference_clock_source",
             get_cmd="SYST:ROSC:SOUR?",
             set_cmd="SYST:ROSC:SOUR {}",
@@ -730,7 +730,7 @@ class RigolDG4000(VisaInstrument):
 
         self.add_function("shutdown", call_cmd="SYST:SHUTDOWN")
 
-        self.scpi_version: Parameter = self.add_parameter(
+        self.scpi_version: Parameter[str, Self] = self.add_parameter(
             "scpi_version", get_cmd="SYST:VERS?"
         )
         """Parameter scpi_version"""
