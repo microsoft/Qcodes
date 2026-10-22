@@ -687,7 +687,7 @@ class Keithley2600Channel(InstrumentChannel["Keithley2600"]):
         )
         """Parameter curr"""
 
-        self.res: Parameter = self.add_parameter(
+        self.res: Parameter[float, Self] = self.add_parameter(
             "res",
             get_cmd=f"{channel}.measure.r()",
             get_parser=float,
@@ -697,7 +697,7 @@ class Keithley2600Channel(InstrumentChannel["Keithley2600"]):
         )
         """Parameter res"""
 
-        self.mode: Parameter = self.add_parameter(
+        self.mode: Parameter[str, Self] = self.add_parameter(
             "mode",
             get_cmd=f"{channel}.source.func",
             get_parser=float,
@@ -708,7 +708,7 @@ class Keithley2600Channel(InstrumentChannel["Keithley2600"]):
         )
         """Selects the output source type. Can be either voltage or current."""
 
-        self.output: Parameter = self.add_parameter(
+        self.output: Parameter[bool, Self] = self.add_parameter(
             "output",
             get_cmd=f"{channel}.source.output",
             get_parser=float,
@@ -717,7 +717,7 @@ class Keithley2600Channel(InstrumentChannel["Keithley2600"]):
         )
         """Parameter output"""
 
-        self.linefreq: Parameter = self.add_parameter(
+        self.linefreq: Parameter[float, Self] = self.add_parameter(
             "linefreq",
             label="Line frequency",
             get_cmd="localnode.linefreq",
@@ -727,7 +727,7 @@ class Keithley2600Channel(InstrumentChannel["Keithley2600"]):
         )
         """Parameter linefreq"""
 
-        self.nplc: Parameter = self.add_parameter(
+        self.nplc: Parameter[float, Self] = self.add_parameter(
             "nplc",
             label="Number of power line cycles",
             set_cmd=f"{channel}.measure.nplc={{}}",
@@ -753,7 +753,7 @@ class Keithley2600Channel(InstrumentChannel["Keithley2600"]):
 
         # volt range
         # needs get after set (WilliamHPNielsen): why?
-        self.sourcerange_v: Parameter = self.add_parameter(
+        self.sourcerange_v: Parameter[float, Self] = self.add_parameter(
             "sourcerange_v",
             label="voltage source range",
             get_cmd=f"{channel}.source.rangev",
@@ -767,7 +767,7 @@ class Keithley2600Channel(InstrumentChannel["Keithley2600"]):
         )
         """The range used when sourcing voltage This affects the range and the precision of the source."""
 
-        self.source_autorange_v_enabled: Parameter = self.add_parameter(
+        self.source_autorange_v_enabled: Parameter[bool, Self] = self.add_parameter(
             "source_autorange_v_enabled",
             label="voltage source autorange",
             get_cmd=f"{channel}.source.autorangev",
@@ -778,7 +778,7 @@ class Keithley2600Channel(InstrumentChannel["Keithley2600"]):
         )
         """Set autorange on/off for source voltage."""
 
-        self.measurerange_v: Parameter = self.add_parameter(
+        self.measurerange_v: Parameter[float, Self] = self.add_parameter(
             "measurerange_v",
             label="voltage measure range",
             get_cmd=f"{channel}.measure.rangev",
@@ -798,7 +798,7 @@ class Keithley2600Channel(InstrumentChannel["Keithley2600"]):
         Note that if you both measure and source current this will have no effect, set `sourcerange_v` instead
         """
 
-        self.measure_autorange_v_enabled: Parameter = self.add_parameter(
+        self.measure_autorange_v_enabled: Parameter[bool, Self] = self.add_parameter(
             "measure_autorange_v_enabled",
             label="voltage measure autorange",
             get_cmd=f"{channel}.measure.autorangev",
@@ -810,7 +810,7 @@ class Keithley2600Channel(InstrumentChannel["Keithley2600"]):
         """Set autorange on/off for measure voltage."""
         # current range
         # needs get after set
-        self.sourcerange_i: Parameter = self.add_parameter(
+        self.sourcerange_i: Parameter[float, Self] = self.add_parameter(
             "sourcerange_i",
             label="current source range",
             get_cmd=f"{channel}.source.rangei",
@@ -824,7 +824,7 @@ class Keithley2600Channel(InstrumentChannel["Keithley2600"]):
         )
         """The range used when sourcing current This affects the range and the precision of the source."""
 
-        self.source_autorange_i_enabled: Parameter = self.add_parameter(
+        self.source_autorange_i_enabled: Parameter[bool, Self] = self.add_parameter(
             "source_autorange_i_enabled",
             label="current source autorange",
             get_cmd=f"{channel}.source.autorangei",
@@ -835,7 +835,7 @@ class Keithley2600Channel(InstrumentChannel["Keithley2600"]):
         )
         """Set autorange on/off for source current."""
 
-        self.measurerange_i: Parameter = self.add_parameter(
+        self.measurerange_i: Parameter[float, Self] = self.add_parameter(
             "measurerange_i",
             label="current measure range",
             get_cmd=f"{channel}.measure.rangei",
@@ -854,7 +854,7 @@ class Keithley2600Channel(InstrumentChannel["Keithley2600"]):
         The range to perform current measurements in. This affects the range and the precision of the measurement.
         Note that if you both measure and source current this will have no effect, set `sourcerange_i` instead"""
 
-        self.measure_autorange_i_enabled: Parameter = self.add_parameter(
+        self.measure_autorange_i_enabled: Parameter[bool, Self] = self.add_parameter(
             "measure_autorange_i_enabled",
             label="current autorange",
             get_cmd=f"{channel}.measure.autorangei",
@@ -865,7 +865,7 @@ class Keithley2600Channel(InstrumentChannel["Keithley2600"]):
         )
         """Set autorange on/off for measure current."""
         # Compliance limit
-        self.limitv: Parameter = self.add_parameter(
+        self.limitv: Parameter[float, Self] = self.add_parameter(
             "limitv",
             get_cmd=f"{channel}.source.limitv",
             get_parser=float,
@@ -880,7 +880,7 @@ class Keithley2600Channel(InstrumentChannel["Keithley2600"]):
         )
         """Voltage limit e.g. the maximum voltage allowed in current mode. If exceeded the current will be clipped."""
         # Compliance limit
-        self.limiti: Parameter = self.add_parameter(
+        self.limiti: Parameter[float, Self] = self.add_parameter(
             "limiti",
             get_cmd=f"{channel}.source.limiti",
             get_parser=float,
@@ -996,7 +996,7 @@ class Keithley2600Channel(InstrumentChannel["Keithley2600"]):
         )
         """Parameter timetrace"""
 
-        self.timetrace_mode: Parameter = self.add_parameter(
+        self.timetrace_mode: Parameter[str, Self] = self.add_parameter(
             "timetrace_mode",
             initial_value="current",
             get_cmd=None,
@@ -1353,7 +1353,7 @@ class Keithley2600(VisaInstrument):
             self.channels.append(channel)
 
         # display
-        self.display_settext: Parameter = self.add_parameter(
+        self.display_settext: Parameter[str, Self] = self.add_parameter(
             "display_settext", set_cmd=self._display_settext, vals=vals.Strings()
         )
         """Parameter display_settext"""

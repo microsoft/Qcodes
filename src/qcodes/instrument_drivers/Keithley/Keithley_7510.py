@@ -130,7 +130,7 @@ class Keithley7510Buffer(InstrumentChannel["Keithley7510"]):
                 f"{self.short_name} size to {self._size}."
             )
 
-        self.size: Parameter = self.add_parameter(
+        self.size: Parameter[int, Self] = self.add_parameter(
             "size",
             get_cmd=f":TRACe:POINts? '{self.short_name}'",
             set_cmd=f":TRACe:POINts {{}}, '{self.short_name}'",
@@ -139,7 +139,7 @@ class Keithley7510Buffer(InstrumentChannel["Keithley7510"]):
         )
         """The number of readings a buffer can store."""
 
-        self.number_of_readings: Parameter = self.add_parameter(
+        self.number_of_readings: Parameter[int, Self] = self.add_parameter(
             "number_of_readings",
             get_cmd=f":TRACe:ACTual? '{self.short_name}'",
             get_parser=int,
@@ -147,7 +147,7 @@ class Keithley7510Buffer(InstrumentChannel["Keithley7510"]):
         )
         """Get the number of readings in the reading buffer."""
 
-        self.last_index: Parameter = self.add_parameter(
+        self.last_index: Parameter[int, Self] = self.add_parameter(
             "last_index",
             get_cmd=f":TRACe:ACTual:END? '{self.short_name}'",
             get_parser=int,
@@ -155,7 +155,7 @@ class Keithley7510Buffer(InstrumentChannel["Keithley7510"]):
         )
         """Get the last index of readings in the reading buffer."""
 
-        self.first_index: Parameter = self.add_parameter(
+        self.first_index: Parameter[int, Self] = self.add_parameter(
             "first_index",
             get_cmd=f":TRACe:ACTual:STARt? '{self.short_name}'",
             get_parser=int,
@@ -208,7 +208,7 @@ class Keithley7510Buffer(InstrumentChannel["Keithley7510"]):
         )
         """Parameter setpoints_stop"""
 
-        self.n_pts: Parameter = self.add_parameter(
+        self.n_pts: Parameter[int, Self] = self.add_parameter(
             "n_pts", label="total n for the setpoints", get_cmd=self._get_n_pts
         )
         """Parameter n_pts"""
@@ -245,7 +245,7 @@ class Keithley7510Buffer(InstrumentChannel["Keithley7510"]):
         )
         """Parameter t_stop"""
 
-        self.fill_mode: Parameter = self.add_parameter(
+        self.fill_mode: Parameter[str, Self] = self.add_parameter(
             "fill_mode",
             get_cmd=f":TRACe:FILL:MODE? '{self.short_name}'",
             set_cmd=f":TRACe:FILL:MODE {{}}, '{self.short_name}'",
@@ -495,7 +495,7 @@ class Keithley7510Sense(InstrumentChannel["Keithley7510"]):
             "return the last reading.",
         )
 
-        self.auto_range: Parameter = self.add_parameter(
+        self.auto_range: Parameter[bool, Self] = self.add_parameter(
             "auto_range",
             get_cmd=f":SENSe:{self._proper_function}:RANGe:AUTO?",
             set_cmd=f":SENSe:{self._proper_function}:RANGe:AUTO {{}}",
@@ -505,7 +505,7 @@ class Keithley7510Sense(InstrumentChannel["Keithley7510"]):
         )
         """Determine if the measurement range is set manually or automatically for the selected measure function."""
 
-        self.range: Parameter = self.add_parameter(
+        self.range: Parameter[float, Self] = self.add_parameter(
             "range",
             get_cmd=f":SENSe:{self._proper_function}:RANGe?",
             set_cmd=f":SENSe:{self._proper_function}:RANGe {{}}",
@@ -516,7 +516,7 @@ class Keithley7510Sense(InstrumentChannel["Keithley7510"]):
         )
         """Determine the positive full-scale measure range."""
 
-        self.nplc: Parameter = self.add_parameter(
+        self.nplc: Parameter[float, Self] = self.add_parameter(
             "nplc",
             get_cmd=f":SENSe:{self._proper_function}:NPLCycles?",
             set_cmd=f":SENSe:{self._proper_function}:NPLCycles {{}}",
@@ -527,7 +527,7 @@ class Keithley7510Sense(InstrumentChannel["Keithley7510"]):
         )
         """Set the time that the input signal is measured for the selected function.(NPLC = number of power line cycles)"""
 
-        self.auto_delay: Parameter = self.add_parameter(
+        self.auto_delay: Parameter[bool, Self] = self.add_parameter(
             "auto_delay",
             get_cmd=f":SENSe:{self._proper_function}:DELay:AUTO?",
             set_cmd=f":SENSe:{self._proper_function}:DELay:AUTO {{}}",
@@ -537,7 +537,7 @@ class Keithley7510Sense(InstrumentChannel["Keithley7510"]):
         )
         """Enable or disable the automatic delay that occurs before each measurement."""
 
-        self.user_number: Parameter = self.add_parameter(
+        self.user_number: Parameter[int, Self] = self.add_parameter(
             "user_number",
             get_cmd=None,
             set_cmd=None,
@@ -556,7 +556,7 @@ class Keithley7510Sense(InstrumentChannel["Keithley7510"]):
         )
         """Set a user-defined delay that you can use in the trigger model."""
 
-        self.auto_zero: Parameter = self.add_parameter(
+        self.auto_zero: Parameter[bool, Self] = self.add_parameter(
             "auto_zero",
             get_cmd=f":SENSe:{self._proper_function}:AZERo?",
             set_cmd=f":SENSe:{self._proper_function}:AZERo {{}}",
@@ -574,7 +574,7 @@ class Keithley7510Sense(InstrumentChannel["Keithley7510"]):
         )
         """Cause the instrument to refresh the reference and zero measurements once"""
 
-        self.average: Parameter = self.add_parameter(
+        self.average: Parameter[bool, Self] = self.add_parameter(
             "average",
             get_cmd=f":SENSe:{self._proper_function}:AVERage?",
             set_cmd=f":SENSe:{self._proper_function}:AVERage {{}}",
@@ -594,7 +594,7 @@ class Keithley7510Sense(InstrumentChannel["Keithley7510"]):
         )
         """Set the number of measurements that are averaged when filtering is enabled."""
 
-        self.average_type: Parameter = self.add_parameter(
+        self.average_type: Parameter[str, Self] = self.add_parameter(
             "average_type",
             get_cmd=f":SENSe:{self._proper_function}:AVERage:TCONtrol?",
             set_cmd=f":SENSe:{self._proper_function}:AVERage:TCONtrol {{}}",
@@ -662,7 +662,7 @@ class Keithley7510DigitizeSense(InstrumentChannel["Keithley7510"]):
             "return the last reading.",
         )
 
-        self.range: Parameter = self.add_parameter(
+        self.range: Parameter[float, Self] = self.add_parameter(
             "range",
             get_cmd=f":SENSe:DIGitize:{self._proper_function}:RANGe?",
             set_cmd=f":SENSe:DIGitize:{self._proper_function}:RANGe {{}}",
@@ -673,7 +673,7 @@ class Keithley7510DigitizeSense(InstrumentChannel["Keithley7510"]):
         )
         """Determine the positive full-scale measure range."""
 
-        self.input_impedance: Parameter = self.add_parameter(
+        self.input_impedance: Parameter[str, Self] = self.add_parameter(
             "input_impedance",
             get_cmd=":SENSe:DIGitize:VOLTage:INPutimpedance?",
             set_cmd=":SENSe:DIGitize:VOLTage:INPutimpedance {}",
@@ -693,7 +693,7 @@ class Keithley7510DigitizeSense(InstrumentChannel["Keithley7510"]):
         )
         """Define the precise acquisition rate at which the digitizing measurements are made."""
 
-        self.aperture: Parameter = self.add_parameter(
+        self.aperture: Parameter[str, Self] = self.add_parameter(
             "aperture",
             get_cmd=f":SENSe:DIGitize:{self._proper_function}:APERture?",
             set_cmd=f":SENSe:DIGitize:{self._proper_function}:APERture {{}}",
@@ -741,7 +741,7 @@ class Keithley7510(VisaInstrument):
         """
         super().__init__(name, address, **kwargs)
 
-        self.sense_function: Parameter = self.add_parameter(
+        self.sense_function: Parameter[str, Self] = self.add_parameter(
             "sense_function",
             set_cmd=":SENSe:FUNCtion {}",
             get_cmd=":SENSe:FUNCtion?",
@@ -753,7 +753,7 @@ class Keithley7510(VisaInstrument):
         )
         """Add sense functions listed in the function modes."""
 
-        self.digi_sense_function: Parameter = self.add_parameter(
+        self.digi_sense_function: Parameter[str, Self] = self.add_parameter(
             "digi_sense_function",
             set_cmd=":DIGitize:FUNCtion {}",
             get_cmd=":DIGitize:FUNCtion?",
@@ -773,7 +773,7 @@ class Keithley7510(VisaInstrument):
         )
         """Name of the reading buffer in use."""
 
-        self.trigger_block_list: Parameter = self.add_parameter(
+        self.trigger_block_list: Parameter[str, Self] = self.add_parameter(
             "trigger_block_list",
             get_cmd=":TRIGger:BLOCk:LIST?",
             docstring="Return the settings for all trigger model blocks.",
@@ -787,7 +787,7 @@ class Keithley7510(VisaInstrument):
         )
         """Clear the trigger event on the external in line."""
 
-        self.trigger_in_ext_edge: Parameter = self.add_parameter(
+        self.trigger_in_ext_edge: Parameter[str, Self] = self.add_parameter(
             "trigger_in_ext_edge",
             get_cmd=":TRIGger:EXTernal:IN:EDGE?",
             set_cmd=":TRIGger:EXTernal:IN:EDGE {}",
@@ -797,14 +797,14 @@ class Keithley7510(VisaInstrument):
         )
         """Type of edge that is detected as an input on the external trigger in line"""
 
-        self.overrun_status: Parameter = self.add_parameter(
+        self.overrun_status: Parameter[str, Self] = self.add_parameter(
             "overrun_status",
             get_cmd=":TRIGger:EXTernal:IN:OVERrun?",
             docstring="Return the event detector overrun status.",
         )
         """Return the event detector overrun status."""
 
-        self.digitize_trigger: Parameter = self.add_parameter(
+        self.digitize_trigger: Parameter[str, Self] = self.add_parameter(
             "digitize_trigger",
             get_cmd=":TRIGger:DIGitize:STIMulus?",
             set_cmd=":TRIGger:DIGitize:STIMulus {}",
@@ -814,7 +814,7 @@ class Keithley7510(VisaInstrument):
         )
         """Set the instrument to digitize a measurement the next time it detects the specified trigger event."""
 
-        self.system_errors: Parameter = self.add_parameter(
+        self.system_errors: Parameter[str, Self] = self.add_parameter(
             "system_errors",
             get_cmd=":SYSTem:ERRor?",
             docstring="Return the oldest unread error message from the event "

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import create_on_off_val_mapping
@@ -25,7 +25,7 @@ class Keithley2400(VisaInstrument):
     ):
         super().__init__(name, address, **kwargs)
 
-        self.rangev: Parameter = self.add_parameter(
+        self.rangev: Parameter[float, Self] = self.add_parameter(
             "rangev",
             get_cmd="SENS:VOLT:RANG?",
             get_parser=float,
@@ -34,7 +34,7 @@ class Keithley2400(VisaInstrument):
         )
         """Parameter rangev"""
 
-        self.rangei: Parameter = self.add_parameter(
+        self.rangei: Parameter[float, Self] = self.add_parameter(
             "rangei",
             get_cmd="SENS:CURR:RANG?",
             get_parser=float,
@@ -43,7 +43,7 @@ class Keithley2400(VisaInstrument):
         )
         """Parameter rangei"""
 
-        self.compliancev: Parameter = self.add_parameter(
+        self.compliancev: Parameter[float, Self] = self.add_parameter(
             "compliancev",
             get_cmd="SENS:VOLT:PROT?",
             get_parser=float,
@@ -52,7 +52,7 @@ class Keithley2400(VisaInstrument):
         )
         """Parameter compliancev"""
 
-        self.compliancei: Parameter = self.add_parameter(
+        self.compliancei: Parameter[float, Self] = self.add_parameter(
             "compliancei",
             get_cmd="SENS:CURR:PROT?",
             get_parser=float,
@@ -61,7 +61,7 @@ class Keithley2400(VisaInstrument):
         )
         """Parameter compliancei"""
 
-        self.volt: Parameter = self.add_parameter(
+        self.volt: Parameter[float, Self] = self.add_parameter(
             "volt",
             get_cmd=self._get_read_output_protected,
             get_parser=self._volt_parser,
@@ -77,7 +77,7 @@ class Keithley2400(VisaInstrument):
         )
         """Sets voltage in 'VOLT' mode. Get returns measured voltage if sensing 'VOLT' otherwise it returns setpoint value. Note that it is an error to read voltage with output off"""
 
-        self.curr: Parameter = self.add_parameter(
+        self.curr: Parameter[float, Self] = self.add_parameter(
             "curr",
             get_cmd=self._get_read_output_protected,
             get_parser=self._curr_parser,
@@ -93,7 +93,7 @@ class Keithley2400(VisaInstrument):
         )
         """Sets current in 'CURR' mode. Get returns measured current if sensing 'CURR' otherwise it returns setpoint value. Note that it is an error to read current with output off"""
 
-        self.mode: Parameter = self.add_parameter(
+        self.mode: Parameter[str, Self] = self.add_parameter(
             "mode",
             vals=Enum("VOLT", "CURR"),
             get_cmd=":SOUR:FUNC?",
@@ -102,7 +102,7 @@ class Keithley2400(VisaInstrument):
         )
         """Parameter mode"""
 
-        self.sense: Parameter = self.add_parameter(
+        self.sense: Parameter[str, Self] = self.add_parameter(
             "sense",
             vals=Strings(),
             get_cmd=":SENS:FUNC?",
@@ -111,7 +111,7 @@ class Keithley2400(VisaInstrument):
         )
         """Parameter sense"""
 
-        self.output: Parameter = self.add_parameter(
+        self.output: Parameter[bool, Self] = self.add_parameter(
             "output",
             set_cmd=":OUTP:STAT {}",
             get_cmd=":OUTP:STAT?",
@@ -119,7 +119,7 @@ class Keithley2400(VisaInstrument):
         )
         """Parameter output"""
 
-        self.nplcv: Parameter = self.add_parameter(
+        self.nplcv: Parameter[float, Self] = self.add_parameter(
             "nplcv",
             get_cmd="SENS:VOLT:NPLC?",
             get_parser=float,
@@ -128,7 +128,7 @@ class Keithley2400(VisaInstrument):
         )
         """Parameter nplcv"""
 
-        self.nplci: Parameter = self.add_parameter(
+        self.nplci: Parameter[float, Self] = self.add_parameter(
             "nplci",
             get_cmd="SENS:CURR:NPLC?",
             get_parser=float,
@@ -137,7 +137,7 @@ class Keithley2400(VisaInstrument):
         )
         """Parameter nplci"""
 
-        self.resistance: Parameter = self.add_parameter(
+        self.resistance: Parameter[float, Self] = self.add_parameter(
             "resistance",
             get_cmd=self._get_read_output_protected,
             get_parser=self._resistance_parser,
