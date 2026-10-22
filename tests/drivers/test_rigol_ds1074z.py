@@ -1,10 +1,15 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from qcodes.instrument_drivers.rigol import RigolDS1074Z
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 
 @pytest.fixture(scope="function")
-def driver():
+def driver() -> "Generator[RigolDS1074Z, None, None]":
     rigol = RigolDS1074Z(
         "rigol",
         address="GPIB::1::INSTR",
@@ -16,7 +21,7 @@ def driver():
     rigol.close()
 
 
-def test_initialize(driver) -> None:
+def test_initialize(driver: RigolDS1074Z) -> None:
     """
     Test that simple initialisation works
     """
@@ -24,32 +29,32 @@ def test_initialize(driver) -> None:
     assert idn_dict["vendor"] == "QCoDeS"
 
 
-def test_gets_correct_waveform_xorigin(driver) -> None:
+def test_gets_correct_waveform_xorigin(driver: RigolDS1074Z) -> None:
     assert driver.waveform_xorigin() == 0
 
 
-def test_gets_correct_waveform_xincrem(driver) -> None:
+def test_gets_correct_waveform_xincrem(driver: RigolDS1074Z) -> None:
     assert driver.waveform_xincrem() == 0.1
 
 
-def test_sets_correct_waveform_npoints(driver) -> None:
+def test_sets_correct_waveform_npoints(driver: RigolDS1074Z) -> None:
     driver.waveform_npoints(1000)
     assert driver.waveform_npoints() == 1000
 
 
-def test_gets_correct_waveform_yorigin(driver) -> None:
+def test_gets_correct_waveform_yorigin(driver: RigolDS1074Z) -> None:
     assert driver.waveform_yorigin() == 0
 
 
-def test_gets_correct_waveform_yincrem(driver) -> None:
+def test_gets_correct_waveform_yincrem(driver: RigolDS1074Z) -> None:
     assert driver.waveform_yincrem() == 0.1
 
 
-def test_gets_correct_waveform_yref(driver) -> None:
+def test_gets_correct_waveform_yref(driver: RigolDS1074Z) -> None:
     assert driver.waveform_yref() == 0
 
 
-def test_sets_correct_trigger_mode(driver) -> None:
+def test_sets_correct_trigger_mode(driver: RigolDS1074Z) -> None:
     driver.trigger_mode("edge")
     assert driver.trigger_mode() == "edge"
     driver.trigger_mode("pattern")
@@ -60,7 +65,7 @@ def test_sets_correct_trigger_mode(driver) -> None:
     assert driver.trigger_mode() == "video"
 
 
-def test_get_data_source(driver) -> None:
+def test_get_data_source(driver: RigolDS1074Z) -> None:
     driver.data_source("ch1")
     assert driver.data_source() == "ch1"
     driver.data_source("ch2")

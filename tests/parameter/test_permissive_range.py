@@ -23,13 +23,13 @@ good_args = [
 
 
 @pytest.mark.parametrize("args", bad_args)
-def test_bad_calls(args) -> None:
+def test_bad_calls(args: list[float | str | None]) -> None:
     with pytest.raises(TypeError):
-        permissive_range(*args)
+        permissive_range(*args)  # pyright: ignore[reportArgumentType]
 
 
 @pytest.mark.parametrize("args,result", good_args)
-def test_good_calls(args, result) -> None:
+def test_good_calls(args: tuple[float, float, float], result: list[float]) -> None:
     # TODO(giulioungaretti)
     # not sure what we are testing here.
     # in python 1.0 and 1 are actually the same

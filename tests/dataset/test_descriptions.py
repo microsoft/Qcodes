@@ -1,4 +1,5 @@
 import json
+from typing import TYPE_CHECKING
 
 import pytest
 from ruamel.yaml import YAML
@@ -8,6 +9,9 @@ from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning import serialization as serial
 from qcodes.dataset.descriptions.versioning.converters import new_to_old
 
+if TYPE_CHECKING:
+    from qcodes.parameters import ParamSpecBase
+
 
 def test_wrong_input_type_raises() -> None:
     for interdeps in ("interdeps", ["p1", "p2"], 0):
@@ -15,7 +19,9 @@ def test_wrong_input_type_raises() -> None:
             RunDescriber(interdeps=interdeps)  # type: ignore[arg-type]
 
 
-def test_equality(some_paramspecbases) -> None:
+def test_equality(
+    some_paramspecbases: "tuple[ParamSpecBase, ParamSpecBase, ParamSpecBase, ParamSpecBase]",
+) -> None:
     (psb1, psb2, psb3, _) = some_paramspecbases
 
     idp1 = InterDependencies_(dependencies={psb1: (psb2, psb3)})
@@ -31,7 +37,7 @@ def test_equality(some_paramspecbases) -> None:
     assert desc_3 != desc_2
 
 
-def test_keys_of_result_of_to_dict(some_interdeps) -> None:
+def test_keys_of_result_of_to_dict(some_interdeps: "list[InterDependencies_]") -> None:
     for idps in some_interdeps:
         desc = RunDescriber(interdeps=idps)
 
@@ -44,7 +50,7 @@ def test_keys_of_result_of_to_dict(some_interdeps) -> None:
         ]
 
 
-def test_to_and_from_dict_roundtrip(some_interdeps) -> None:
+def test_to_and_from_dict_roundtrip(some_interdeps: "list[InterDependencies_]") -> None:
     for idps in some_interdeps:
         desc = RunDescriber(interdeps=idps)
 
@@ -56,7 +62,7 @@ def test_to_and_from_dict_roundtrip(some_interdeps) -> None:
         assert desc == new_desc
 
 
-def test_yaml_creation_and_loading(some_interdeps) -> None:
+def test_yaml_creation_and_loading(some_interdeps: "list[InterDependencies_]") -> None:
     yaml = YAML()
 
     for idps in some_interdeps:
@@ -77,7 +83,9 @@ def test_yaml_creation_and_loading(some_interdeps) -> None:
         assert new_desc == desc
 
 
-def test_jsonization_as_v0_for_storage(some_interdeps) -> None:
+def test_jsonization_as_v0_for_storage(
+    some_interdeps: "list[InterDependencies_]",
+) -> None:
     """
     Test that a RunDescriber can be json-dumped as version 0
     """
@@ -90,7 +98,9 @@ def test_jsonization_as_v0_for_storage(some_interdeps) -> None:
     assert serial.to_json_as_version(new_desc, 0) == old_json
 
 
-def test_default_jsonization_for_storage(some_interdeps) -> None:
+def test_default_jsonization_for_storage(
+    some_interdeps: "list[InterDependencies_]",
+) -> None:
     """
     Test that a RunDescriber is json-dumped as version 2
     """
@@ -110,7 +120,9 @@ def test_default_jsonization_for_storage(some_interdeps) -> None:
     assert serial.to_json_for_storage(new_desc) == expected_json
 
 
-def test_dictization_as_v0_for_storage(some_interdeps) -> None:
+def test_dictization_as_v0_for_storage(
+    some_interdeps: "list[InterDependencies_]",
+) -> None:
     """
     Test that a RunDescriber always gets converted to dict that represents
     an old style RunDescriber, even when given new style interdeps
@@ -125,7 +137,9 @@ def test_dictization_as_v0_for_storage(some_interdeps) -> None:
     assert serial.to_dict_as_version(new_desc, 0) == old_desc
 
 
-def test_default_dictization_for_storage(some_interdeps) -> None:
+def test_default_dictization_for_storage(
+    some_interdeps: "list[InterDependencies_]",
+) -> None:
     """
     Test that a RunDescriber always gets converted to dict that represents
     an old style RunDescriber, even when given new style interdeps
@@ -145,7 +159,9 @@ def test_default_dictization_for_storage(some_interdeps) -> None:
     assert serial.to_dict_for_storage(new_desc) == old_desc
 
 
-def test_dictization_of_current_version(some_interdeps) -> None:
+def test_dictization_of_current_version(
+    some_interdeps: "list[InterDependencies_]",
+) -> None:
     """
     Test conversion to dictionary of a RunDescriber
     """

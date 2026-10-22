@@ -24,29 +24,31 @@ def fixture_tm620() -> "Generator[CryomagneticsModelTM620, None, None]":
     instrument.close()
 
 
-def test_initialization(tm620):
+def test_initialization(tm620: CryomagneticsModelTM620) -> None:
     assert tm620.name == "test_cryo_tm620"
     assert tm620.address == "GPIB0::1::INSTR"
     assert hasattr(tm620, "shield")
     assert hasattr(tm620, "magnet")
 
 
-def test_get_A_success(tm620):
+def test_get_A_success(tm620: CryomagneticsModelTM620) -> None:
     with patch.object(tm620, "ask", return_value="55.12K"):
         assert tm620._get_A() == 55.12
 
 
-def test_get_B_success(tm620):
+def test_get_B_success(tm620: CryomagneticsModelTM620) -> None:
     with patch.object(tm620, "ask", return_value="4.21K"):
         assert tm620._get_B() == 4.21
 
 
-def test_parse_output_valid(tm620):
+def test_parse_output_valid(tm620: CryomagneticsModelTM620) -> None:
     assert tm620._parse_output("55.12K") == "55.12"
     assert tm620._parse_output("4.34C") == "4.34"
 
 
-def test_parse_output_invalid(tm620, caplog):
+def test_parse_output_invalid(
+    tm620: CryomagneticsModelTM620, caplog: pytest.LogCaptureFixture
+) -> None:
     with (
         caplog.at_level("ERROR"),
         pytest.raises(ValueError, match="No floating point number found"),
@@ -55,12 +57,14 @@ def test_parse_output_invalid(tm620, caplog):
     assert "No floating point number found in output" in caplog.text
 
 
-def test_convert_to_numerics_valid(tm620):
+def test_convert_to_numerics_valid(tm620: CryomagneticsModelTM620) -> None:
     assert tm620._convert_to_numeric("55.12") == 55.12
     assert tm620._convert_to_numeric("4.34") == 4.34
 
 
-def test_convert_to_numerics_invalid(tm620, caplog):
+def test_convert_to_numerics_invalid(
+    tm620: CryomagneticsModelTM620, caplog: pytest.LogCaptureFixture
+) -> None:
     with caplog.at_level("ERROR"), pytest.raises(ValueError, match="Unable to convert"):
         tm620._convert_to_numeric("not_a_number")
     assert "Error converting 'not_a_number' to float" in caplog.text

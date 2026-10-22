@@ -1,7 +1,7 @@
 # Test some subscription scenarios
 import logging
 from numbers import Number
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from numpy import ndarray
@@ -11,6 +11,14 @@ from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.sqlite.connection import atomic_transaction
 from qcodes.parameters import ParamSpecBase
 from tests.common import retry_until_does_not_throw
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+if TYPE_CHECKING:
+    from collections.abc import Generator
+    from pathlib import Path
+
+    from qcodes.dataset.data_set import DataSet
 
 log = logging.getLogger(__name__)
 
@@ -28,7 +36,7 @@ class MockSubscriber:
     dataset!
     """
 
-    def __init__(self, ds, lg):
+    def __init__(self, ds: "DataSet", lg: "bool") -> None:
         self.lg = lg
         self.ds = ds
 
@@ -39,8 +47,13 @@ class MockSubscriber:
         state[length] = results
 
 
-def config_subscriber_factory(ds, log):
-    def config_subscriber(results, length, state):
+def config_subscriber_factory(
+    ds: "DataSet", log: "logging.Logger"
+) -> "Callable[[list[tuple[VALUE]], int, dict | None], None]":
+    def config_subscriber(
+        results: "list[tuple[VALUE]]", length: "int", state: "dict | None"
+    ) -> "None":
+        assert state is not None
         state[length] = results
         log.debug(f"got log {log} and dataset {ds.completed}.")
 
@@ -48,20 +61,23 @@ def config_subscriber_factory(ds, log):
 
 
 @pytest.fixture(scope="function")
-def basic_subscriber():
+def basic_subscriber() -> "Callable[[list[tuple[VALUE]], int, dict | None], None]":
     """
     A basic subscriber that just puts results and length into
     state
     """
 
-    def subscriber(results: list[tuple[VALUE]], length: int, state: dict) -> None:
+    def subscriber(
+        results: list[tuple[VALUE]], length: int, state: dict | None
+    ) -> None:
+        assert state is not None
         state[length] = results
 
     return subscriber
 
 
 @pytest.fixture(name="working_subscriber_config")
-def _make_working_subscriber_config(tmp_path):
+def _make_working_subscriber_config(tmp_path: "Path") -> "Generator[None, None, None]":
     # This string represents the config file in the home directory:
     config = """
     {
@@ -90,7 +106,7 @@ def _make_working_subscriber_config(tmp_path):
 
 
 @pytest.fixture(name="broken_subscriber_config")
-def _make_broken_subscriber_config(tmp_path):
+def _make_broken_subscriber_config(tmp_path: "Path") -> "Generator[None, None, None]":
     # This string represents the config file in the home directory:
     config = """
     {
@@ -120,7 +136,10 @@ def _make_broken_subscriber_config(tmp_path):
 
 @pytest.mark.flaky(reruns=5)
 @pytest.mark.serial
-def test_basic_subscription(dataset, basic_subscriber) -> None:
+def test_basic_subscription(
+    dataset: "DataSet",
+    basic_subscriber: "Callable[[list[tuple[VALUE]], int, dict | None], None]",
+) -> None:
     xparam = ParamSpecBase(name="x", paramtype="numeric", label="x parameter", unit="V")
     yparam = ParamSpecBase(
         name="y", paramtype="numeric", label="y parameter", unit="Hz"
@@ -144,7 +163,7 @@ def test_basic_subscription(dataset, basic_subscriber) -> None:
         @retry_until_does_not_throw(
             exception_class_to_expect=AssertionError, delay=0.5, tries=10
         )
-        def assert_expected_state():
+        def assert_expected_state() -> "None":
             assert dataset.subscribers[sub_id].state == expected_state
 
         assert_expected_state()
@@ -161,7 +180,10 @@ def test_basic_subscription(dataset, basic_subscriber) -> None:
 
 
 @pytest.mark.usefixtures("working_subscriber_config")
-def test_subscription_from_config(dataset, basic_subscriber) -> None:
+def test_subscription_from_config(
+    dataset: "DataSet",
+    basic_subscriber: "Callable[[list[tuple[VALUE]], int, dict | None], None]",
+) -> None:
     """
     This test is similar to `test_basic_subscription`, with the only
     difference that another subscriber from a config file is added.
@@ -191,7 +213,7 @@ def test_subscription_from_config(dataset, basic_subscriber) -> None:
         expected_state[x + 1] = [(x, y)]
 
         @retry_until_does_not_throw(exception_class_to_expect=AssertionError, tries=10)
-        def assert_expected_state():
+        def assert_expected_state() -> "None":
             assert dataset.subscribers[sub_id].state == expected_state
             assert dataset.subscribers[sub_id_c].state == expected_state
 
@@ -199,7 +221,7 @@ def test_subscription_from_config(dataset, basic_subscriber) -> None:
 
 
 @pytest.mark.usefixtures("broken_subscriber_config")
-def test_subscription_from_config_wrong_name(dataset) -> None:
+def test_subscription_from_config_wrong_name(dataset: "DataSet") -> None:
     """
     This test checks that an exception is thrown if a wrong name for a
     subscriber is passed

@@ -16,10 +16,10 @@ pytestmark = pytest.mark.skipif(
 
 
 def test_wrapped_dll_singleton_behavior(caplog: LogCaptureFixture) -> None:
-    def using_msg(dll_path):
+    def using_msg(dll_path: str) -> str:
         return f"Using existing instance for DLL path {dll_path}."
 
-    def creating_msg(dll_path):
+    def creating_msg(dll_path: str) -> str:
         return f"Creating new instance for DLL path {dll_path}."
 
     dll_path_1 = "ntdll.dll"

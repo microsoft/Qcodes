@@ -61,7 +61,7 @@ def _make_dummy_instrument() -> Generator[DummyChannelInstrument, None, None]:
 class GettableParam(Parameter):
     """Parameter that keeps track of number of get operations"""
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._get_count = 0
 
@@ -74,7 +74,7 @@ class BetterGettableParam(Parameter):
     """Parameter that keeps track of number of get operations,
     But can actually store values"""
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._get_count = 0
 
@@ -86,7 +86,7 @@ class BetterGettableParam(Parameter):
 class SettableParam(Parameter):
     """Parameter that keeps track of number of set operations"""
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         self._set_count = 0
         super().__init__(*args, **kwargs)
 
@@ -97,7 +97,7 @@ class SettableParam(Parameter):
 class OverwriteGetParam(Parameter):
     """Parameter that overwrites get."""
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._value = 42
         self.set_count = 0
@@ -111,7 +111,7 @@ class OverwriteGetParam(Parameter):
 class OverwriteSetParam(Parameter):
     """Parameter that overwrites set."""
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._value = 42
         self.set_count = 0
@@ -125,7 +125,7 @@ class OverwriteSetParam(Parameter):
 class GetSetRawParameter(Parameter):
     """Parameter that implements get and set raw"""
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
     def get_raw(self) -> ParamRawDataType:
@@ -142,7 +142,7 @@ class BookkeepingValidator[T](vals.Validator[T]):
 
     def __init__(
         self, min_value: float = -float("inf"), max_value: float = float("inf")
-    ):
+    ) -> None:
         self.values_validated: list[T] = []
 
     def validate(self, value: T, context: str = "") -> None:
@@ -152,7 +152,7 @@ class BookkeepingValidator[T](vals.Validator[T]):
 
 
 class MemoryParameter(Parameter):
-    def __init__(self, get_cmd: Callable[[], Any] | None = None, **kwargs: Any):
+    def __init__(self, get_cmd: Callable[[], Any] | None = None, **kwargs: Any) -> None:
         self.set_values: list[Any] = []
         self.get_values: list[Any] = []
         super().__init__(
@@ -177,7 +177,7 @@ class MemoryParameter(Parameter):
 
 
 class VirtualParameter(Parameter):
-    def __init__(self, name: str, param: Parameter, **kwargs: Any):
+    def __init__(self, name: str, param: Parameter, **kwargs: Any) -> None:
         self._param = param
         super().__init__(name=name, **kwargs)
 

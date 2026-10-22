@@ -17,13 +17,21 @@ from qcodes.validators import Numbers
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+    from typing import Unpack
 
     from pytest_mock import MockerFixture
 
+    from qcodes.instrument import VisaInstrumentKWArgs
+
 
 class MockVisa(VisaInstrument):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        name: str,
+        address: str | None = None,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
+    ) -> None:
+        super().__init__(name, address, **kwargs)
         self.state = self.add_parameter(
             "state",
             get_cmd="STAT?",
@@ -58,15 +66,15 @@ class MockVisaHandle(pyvisa.resources.MessageBasedResource):
 
     resource_name: str = "MOCK::INSTR"  # pyright: ignore[reportIncompatibleVariableOverride]
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.state = 0
         self.closed = False
         self._session = None  # required for session property
 
-    def clear(self):
+    def clear(self) -> None:
         self.state = 0
 
-    def close(self):
+    def close(self) -> None:
         # make it an error to ask or write after close
         self.closed = True
 
@@ -89,7 +97,7 @@ class MockVisaHandle(pyvisa.resources.MessageBasedResource):
 
         return len(message)
 
-    def ask(self, cmd):
+    def ask(self, cmd: str) -> float:
         if self.closed:
             raise RuntimeError("Trying to ask a closed instrument")
         if self.state > 10:
@@ -107,7 +115,7 @@ class MockVisaHandle(pyvisa.resources.MessageBasedResource):
         setattr(self, str(name), state)
         return pyvisa.constants.StatusCode.success
 
-    def __del__(self):
+    def __del__(self) -> None:
         pass
 
 
@@ -199,7 +207,7 @@ def test_ask_write_local(mock_visa: MockVisa) -> None:
 def test_visa_backend(mocker: "MockerFixture", request: FixtureRequest) -> None:
     rm_mock = mocker.patch("qcodes.instrument.visa.pyvisa.ResourceManager")
 
-    address_opened = [None]
+    address_opened: list[str | None] = [None]
 
     class MockBackendVisaInstrument(VisaInstrument):
         _visa_handle = MockVisaHandle()
@@ -209,7 +217,7 @@ def test_visa_backend(mocker: "MockerFixture", request: FixtureRequest) -> None:
             return "sim"
 
     class MockRM:
-        def open_resource(self, address):
+        def open_resource(self, address: str) -> MockVisaHandle:
             address_opened[0] = address
             return MockVisaHandle()
 

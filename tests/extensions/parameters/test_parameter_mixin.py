@@ -73,7 +73,7 @@ def test_incorrect_parameter_mixin_naming() -> None:
             ]
 
 
-def test_typeerror_if_multiple_parameterbase_leaves():
+def test_typeerror_if_multiple_parameterbase_leaves() -> None:
     class FakeParam1(ParameterBase):
         pass
 
@@ -187,7 +187,7 @@ def test_multiple_parameter_mixins_without_compatibility() -> None:
             ]
 
 
-def test_sets_common_compatible_bases():
+def test_sets_common_compatible_bases() -> None:
     class BaseA(ParameterBase):
         pass
 
@@ -206,7 +206,7 @@ def test_sets_common_compatible_bases():
     assert ComboParameterMixin._COMPATIBLE_BASES == [BaseB]
 
 
-def test_multiple_mixins_no_compatible():
+def test_multiple_mixins_no_compatible() -> None:
     class DummyBase(ParameterBase):
         pass
 
@@ -224,7 +224,7 @@ def test_multiple_mixins_no_compatible():
             _PARAMETER_MIXIN_CLASSES_COMPATIBLE: Final[bool] = True
 
 
-def test_raises_if_incompatible():
+def test_raises_if_incompatible() -> None:
     class BadBase(ParameterBase):
         pass
 
@@ -310,7 +310,7 @@ def test_mixing_complex_and_intermediate() -> None:
         pass
 
 
-def test_typeerror_multiple_parameter_mixin_with_parameterbase():
+def test_typeerror_multiple_parameter_mixin_with_parameterbase() -> None:
     class MyBase(ParameterBase):
         pass
 
@@ -396,7 +396,7 @@ def test_get_mixin_classes() -> None:
     assert ParameterMixin not in all_mixins
 
 
-def test_leaf_class_detection():
+def test_leaf_class_detection() -> None:
     class MyBase(ParameterBase):
         pass
 

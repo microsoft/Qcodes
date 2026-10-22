@@ -1,5 +1,6 @@
 import logging
 import time
+from typing import Any
 
 import pytest
 
@@ -19,7 +20,7 @@ VISA_LOGGER = f"{InstrumentBase.__module__}.com.visa"
 
 
 class LakeshoreModel336Mock(MockVisaInstrument, LakeshoreModel336):
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         # initial values
@@ -89,11 +90,11 @@ class LakeshoreModel336Mock(MockVisaInstrument, LakeshoreModel336):
         self.simulate_heating = False
         self.start_heating_time = time.perf_counter()
 
-    def start_heating(self):
+    def start_heating(self) -> None:
         self.start_heating_time = time.perf_counter()
         self.simulate_heating = True
 
-    def get_t_when_heating(self):
+    def get_t_when_heating(self) -> float:
         """
         Simply define a fixed setpoint of 4 k for now
         """
@@ -103,7 +104,7 @@ class LakeshoreModel336Mock(MockVisaInstrument, LakeshoreModel336):
         return max(4, 7 - delta)
 
     @query("KRDG?")
-    def temperature(self, output):
+    def temperature(self, output: str) -> float | str:
         chan = self.channel_mock[output]
         if self.simulate_heating:
             return self.get_t_when_heating()
@@ -111,7 +112,7 @@ class LakeshoreModel336Mock(MockVisaInstrument, LakeshoreModel336):
 
 
 @instrument_fixture(scope="function", name="lakeshore_336")
-def _make_lakeshore_336():
+def _make_lakeshore_336() -> LakeshoreModel336Mock:
     return LakeshoreModel336Mock(
         "lakeshore_336_fixture",
         "GPIB::2::INSTR",
@@ -120,7 +121,7 @@ def _make_lakeshore_336():
     )
 
 
-def test_pid_set(lakeshore_336) -> None:
+def test_pid_set(lakeshore_336: LakeshoreModel336Mock) -> None:
     ls = lakeshore_336
     P, I, D = 1, 2, 3  # noqa:  E741
     # Only current source outputs/heaters have PID parameters,
@@ -136,7 +137,9 @@ def test_pid_set(lakeshore_336) -> None:
 @pytest.mark.parametrize("output_num", [1, 2, 3, 4])
 @pytest.mark.parametrize("mode", ["off", "closed_loop", "zone", "open_loop"])
 @pytest.mark.parametrize("input_channel", ["A", "B", "C", "D"])
-def test_output_mode(lakeshore_336, output_num, mode, input_channel) -> None:
+def test_output_mode(
+    lakeshore_336: LakeshoreModel336Mock, output_num: int, mode: str, input_channel: str
+) -> None:
     ls = lakeshore_336
     mode = "off"
     h = getattr(ls, f"output_{output_num}")
@@ -148,7 +151,7 @@ def test_output_mode(lakeshore_336, output_num, mode, input_channel) -> None:
     assert h.powerup_enable()
 
 
-def test_range(lakeshore_336) -> None:
+def test_range(lakeshore_336: LakeshoreModel336Mock) -> None:
     ls = lakeshore_336
     output_range = "medium"
     outputs = [getattr(ls, f"output_{n}") for n in range(1, 5)]
@@ -157,7 +160,7 @@ def test_range(lakeshore_336) -> None:
         assert h.output_range() == output_range
 
 
-def test_tlimit(lakeshore_336) -> None:
+def test_tlimit(lakeshore_336: LakeshoreModel336Mock) -> None:
     ls = lakeshore_336
     tlimit = 5.1
     for ch in ls.channels:
@@ -165,7 +168,7 @@ def test_tlimit(lakeshore_336) -> None:
         assert ch.t_limit() == tlimit
 
 
-def test_setpoint(lakeshore_336) -> None:
+def test_setpoint(lakeshore_336: LakeshoreModel336Mock) -> None:
     ls = lakeshore_336
     setpoint = 5.1
     outputs = [getattr(ls, f"output_{n}") for n in range(1, 5)]
@@ -174,7 +177,7 @@ def test_setpoint(lakeshore_336) -> None:
         assert h.setpoint() == setpoint
 
 
-def test_curve_parameters(lakeshore_336) -> None:
+def test_curve_parameters(lakeshore_336: LakeshoreModel336Mock) -> None:
     # The curve numbers are assigned in the simulation pyvisa sim
     # YAML file for each sensor/channel, and properties of the
     # curves also include curve number in them to help testing
@@ -187,7 +190,7 @@ def test_curve_parameters(lakeshore_336) -> None:
         assert ch.curve_coefficient() == "negative"
 
 
-def test_select_range_limits(lakeshore_336) -> None:
+def test_select_range_limits(lakeshore_336: LakeshoreModel336Mock) -> None:
     h = lakeshore_336.output_1
     ranges = [1, 2, 3]
     h.range_limits(ranges)
@@ -201,14 +204,16 @@ def test_select_range_limits(lakeshore_336) -> None:
     assert h.output_range() == h.INVERSE_RANGES[len(ranges)]
 
 
-def test_set_and_wait_unit_setpoint_reached(lakeshore_336) -> None:
+def test_set_and_wait_unit_setpoint_reached(
+    lakeshore_336: LakeshoreModel336Mock,
+) -> None:
     ls = lakeshore_336
     ls.output_1.setpoint(4)
     ls.start_heating()
     ls.output_1.wait_until_set_point_reached()
 
 
-def test_blocking_t(lakeshore_336) -> None:
+def test_blocking_t(lakeshore_336: LakeshoreModel336Mock) -> None:
     ls = lakeshore_336
     h = ls.output_1
     ranges = [1.2, 2.4, 3.1]

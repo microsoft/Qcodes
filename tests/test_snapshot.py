@@ -19,7 +19,7 @@ from qcodes.instrument_drivers.mock_instruments import SnapShotTestInstrument
     ],
 )
 def test_snapshot_skip_params_update(
-    request: FixtureRequest, params, params_to_skip
+    request: FixtureRequest, params: list[str], params_to_skip: list[str]
 ) -> None:
     """
     Test that params_to_skip_update works as expected, in particular that only
@@ -63,7 +63,7 @@ def test_snapshot_skip_params_update(
     ],
 )
 def test_snapshot_exclude_params(
-    request: FixtureRequest, params, params_to_exclude
+    request: FixtureRequest, params: list[str], params_to_exclude: list[str]
 ) -> None:
     """
     Test that params_to_exclude works as expected, in particular that only

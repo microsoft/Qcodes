@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 class DummyTrackingInstrument(DummyInstrument):
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         super().__init__(name)
         self.add_parameter("a", set_cmd=None, get_cmd=None)
 

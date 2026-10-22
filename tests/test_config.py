@@ -2,6 +2,7 @@ import copy
 import json
 import os
 from functools import partial
+from typing import TYPE_CHECKING, Any
 from unittest.mock import PropertyMock, mock_open
 
 import jsonschema.exceptions
@@ -9,6 +10,12 @@ import pytest
 
 import qcodes
 from qcodes.configuration import Config
+
+if TYPE_CHECKING:
+    from collections.abc import Generator, Mapping
+    from pathlib import Path
+
+    from pytest_mock import MockerFixture, MockType
 
 VALID_JSON = "{}"
 ENV_KEY = "/dev/random"
@@ -107,12 +114,12 @@ BAD_CONFIG_MAP = {
 }
 
 
-def side_effect(map, name):
+def side_effect(map: "Mapping[str, dict[str, Any]]", name: str) -> dict[str, Any]:
     return map[name]
 
 
 @pytest.fixture(scope="function")
-def path_to_config_file_on_disk(tmp_path):
+def path_to_config_file_on_disk(tmp_path: "Path") -> "Generator[str, None, None]":
     contents = {
         "core": {
             "loglevel": "WARNING",
@@ -137,13 +144,13 @@ def path_to_config_file_on_disk(tmp_path):
 
 
 @pytest.fixture(name="config")
-def _make_config():
+def _make_config() -> "Generator[Config, None, None]":
     conf = Config()
     yield conf
 
 
 @pytest.fixture(name="load_config")
-def _make_mock_config(mocker):
+def _make_mock_config(mocker: "MockerFixture") -> "Generator[MockType, None, None]":
     schema = mocker.patch.object(Config, "current_schema", new_callable=PropertyMock)
     env = mocker.patch.object(Config, "env_file_name", new_callable=PropertyMock)
     load_config = mocker.patch.object(Config, "load_config")
@@ -155,42 +162,46 @@ def _make_mock_config(mocker):
     yield load_config
 
 
-def test_missing_config_file(config) -> None:
+def test_missing_config_file(config: Config) -> None:
     with pytest.raises(FileNotFoundError):
         config.load_config("./missing.json")
 
 
-def test_default_config_files(config, load_config) -> None:
+def test_default_config_files(config: Config, load_config: "MockType") -> None:
     load_config.side_effect = partial(side_effect, GOOD_CONFIG_MAP)
     # don't try to load custom schemas
-    config.schema_cwd_file_name = None
-    config.schema_home_file_name = None
-    config.schema_env_file_name = None
+    config.schema_cwd_file_name = None  # pyright: ignore[reportAttributeAccessIssue]
+    config.schema_home_file_name = None  # pyright: ignore[reportAttributeAccessIssue]
+    config.schema_env_file_name = None  # pyright: ignore[reportAttributeAccessIssue]
     config.defaults, _ = config.load_default()
-    config = config.update_config()
-    assert config == CONFIG
+    updated_config = config.update_config()
+    assert updated_config == CONFIG
 
 
-def test_bad_config_files(config, load_config) -> None:
+def test_bad_config_files(config: Config, load_config: "MockType") -> None:
     load_config.side_effect = partial(side_effect, BAD_CONFIG_MAP)
     # don't try to load custom schemas
-    config.schema_cwd_file_name = None
-    config.schema_home_file_name = None
-    config.schema_env_file_name = None
+    config.schema_cwd_file_name = None  # pyright: ignore[reportAttributeAccessIssue]
+    config.schema_home_file_name = None  # pyright: ignore[reportAttributeAccessIssue]
+    config.schema_env_file_name = None  # pyright: ignore[reportAttributeAccessIssue]
     config.defaults, _ = config.load_default()
     with pytest.raises(jsonschema.exceptions.ValidationError):
         config.update_config()
 
 
-def test_user_schema(config, load_config, mocker) -> None:
+def test_user_schema(
+    config: Config, load_config: "MockType", mocker: "MockerFixture"
+) -> None:
     mocker.patch("builtins.open", mock_open(read_data=USER_SCHEMA))
     load_config.side_effect = partial(side_effect, GOOD_CONFIG_MAP)
     config.defaults, _ = config.load_default()
-    config = config.update_config()
-    assert config == CONFIG
+    updated_config = config.update_config()
+    assert updated_config == CONFIG
 
 
-def test_bad_user_schema(config, load_config, mocker) -> None:
+def test_bad_user_schema(
+    config: Config, load_config: "MockType", mocker: "MockerFixture"
+) -> None:
     mocker.patch("builtins.open", mock_open(read_data=USER_SCHEMA))
     load_config.side_effect = partial(side_effect, BAD_CONFIG_MAP)
     config.defaults, _ = config.load_default()
@@ -198,7 +209,7 @@ def test_bad_user_schema(config, load_config, mocker) -> None:
         config.update_config()
 
 
-def test_update_user_config(config, mocker) -> None:
+def test_update_user_config(config: Config, mocker: "MockerFixture") -> None:
     myconfig = mocker.patch.object(Config, "current_config", new_callable=PropertyMock)
     # deep copy because we mutate state
     myconfig.return_value = copy.deepcopy(CONFIG)
@@ -207,7 +218,9 @@ def test_update_user_config(config, mocker) -> None:
     assert config.current_config == UPDATED_CONFIG
 
 
-def test_update_and_validate_user_config(config, mocker) -> None:
+def test_update_and_validate_user_config(
+    config: Config, mocker: "MockerFixture"
+) -> None:
     myconfig = mocker.patch.object(Config, "current_config", new_callable=PropertyMock)
     schema = mocker.patch.object(Config, "current_schema", new_callable=PropertyMock)
     schema.return_value = copy.deepcopy(SCHEMA)
@@ -218,7 +231,7 @@ def test_update_and_validate_user_config(config, mocker) -> None:
     assert config.current_schema == UPDATED_SCHEMA
 
 
-def test_update_from_path(path_to_config_file_on_disk) -> None:
+def test_update_from_path(path_to_config_file_on_disk: str) -> None:
     cfg = qcodes.config
 
     # check that the default is still the default

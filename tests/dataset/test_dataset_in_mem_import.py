@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import json
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -6,11 +9,20 @@ from qcodes.dataset import load_by_guid, load_from_netcdf
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.experiment_container import Experiment
-from qcodes.dataset.sqlite.connection import path_to_dbfile
+from qcodes.dataset.sqlite.connection import AtomicConnection, path_to_dbfile
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from pathlib import Path
+
+    from qcodes.dataset.data_set_protocol import DataSetProtocol
+    from qcodes.dataset.descriptions.dependencies import InterDependencies_
 
 
 def test_basic_roundtrip(
-    two_empty_temp_db_connections, some_interdeps, tmp_path
+    two_empty_temp_db_connections: tuple[AtomicConnection, AtomicConnection],
+    some_interdeps: list[InterDependencies_],
+    tmp_path: Path,
 ) -> None:
     """
     Test that we can export from one db and import into another in
@@ -33,13 +45,11 @@ def test_basic_roundtrip(
             path_to_db=source_path,
         )
         source_datasets.append(source_dataset)
-        source_dataset._set_interdependencies(some_interdeps[1])
-
-        source_dataset._perform_start_actions()
+        source_dataset.prepare(interdeps=some_interdeps[1], snapshot={})
 
         for val in range(10):
             source_dataset._enqueue_results(
-                {name: np.array([val]) for name in some_interdeps[1].names}
+                {param: np.array([val]) for param in some_interdeps[1].paramspecs}
             )
         source_dataset.mark_completed()
         source_dataset.export(export_type="netcdf", path=str(tmp_path))
@@ -68,7 +78,9 @@ def test_basic_roundtrip(
 
 
 def test_roundtrip_to_db_with_existing_meas(
-    two_empty_temp_db_connections, some_interdeps, tmp_path
+    two_empty_temp_db_connections: tuple[AtomicConnection, AtomicConnection],
+    some_interdeps: list[InterDependencies_],
+    tmp_path: Path,
 ) -> None:
     """
     Test that we can export from one db and import into another in
@@ -100,13 +112,11 @@ def test_roundtrip_to_db_with_existing_meas(
             path_to_db=source_path,
         )
         source_datasets.append(source_dataset)
-        source_dataset._set_interdependencies(some_interdeps[1])
-
-        source_dataset._perform_start_actions()
+        source_dataset.prepare(interdeps=some_interdeps[1], snapshot={})
 
         for val in range(10):
             source_dataset._enqueue_results(
-                {name: np.array([val]) for name in some_interdeps[1].names}
+                {param: np.array([val]) for param in some_interdeps[1].paramspecs}
             )
         source_dataset.mark_completed()
         source_dataset.export(export_type="netcdf", path=str(tmp_path))
@@ -123,7 +133,7 @@ def test_roundtrip_to_db_with_existing_meas(
 
         for val in range(10):
             extra_dataset._enqueue_results(
-                {name: np.array([val]) for name in some_interdeps[1].names}
+                {param: np.array([val]) for param in some_interdeps[1].paramspecs}
             )
         extra_dataset.mark_completed()
 
@@ -152,7 +162,9 @@ def test_roundtrip_to_db_with_existing_meas(
 
 
 def test_roundtrip_to_db_with_existing_meas_in_same_exp(
-    two_empty_temp_db_connections, some_interdeps, tmp_path
+    two_empty_temp_db_connections: tuple[AtomicConnection, AtomicConnection],
+    some_interdeps: list[InterDependencies_],
+    tmp_path: Path,
 ) -> None:
     """
     Test that we can export from one db and import into another in
@@ -181,13 +193,11 @@ def test_roundtrip_to_db_with_existing_meas_in_same_exp(
             path_to_db=source_path,
         )
         source_datasets.append(source_dataset)
-        source_dataset._set_interdependencies(some_interdeps[1])
-
-        source_dataset._perform_start_actions()
+        source_dataset.prepare(interdeps=some_interdeps[1], snapshot={})
 
         for val in range(10):
             source_dataset._enqueue_results(
-                {name: np.array([val]) for name in some_interdeps[1].names}
+                {param: np.array([val]) for param in some_interdeps[1].paramspecs}
             )
         source_dataset.mark_completed()
         source_dataset.export(export_type="netcdf", path=str(tmp_path))
@@ -204,7 +214,7 @@ def test_roundtrip_to_db_with_existing_meas_in_same_exp(
 
         for val in range(10):
             extra_dataset._enqueue_results(
-                {name: np.array([val]) for name in some_interdeps[1].names}
+                {param: np.array([val]) for param in some_interdeps[1].paramspecs}
             )
         extra_dataset.mark_completed()
 
@@ -232,8 +242,24 @@ def test_roundtrip_to_db_with_existing_meas_in_same_exp(
     )
 
 
-def _assert_before_writing_metadata(source_datasets, loaded_datasets) -> None:
+def _assert_same_data(expected: DataSetProtocol, actual: DataSetProtocol) -> None:
+    expected_data = expected.get_parameter_data()
+    actual_data = actual.get_parameter_data()
+    assert expected_data.keys() == actual_data.keys()
+    for tree_name, expected_tree in expected_data.items():
+        actual_tree = actual_data[tree_name]
+        assert expected_tree.keys() == actual_tree.keys()
+        for param_name, expected_values in expected_tree.items():
+            np.testing.assert_array_equal(actual_tree[param_name], expected_values)
+
+
+def _assert_before_writing_metadata(
+    source_datasets: Sequence[DataSetInMem], loaded_datasets: Sequence[DataSetInMem]
+) -> None:
     for ds, lds in zip(source_datasets, loaded_datasets):
+        assert ds.number_of_results > 0
+        _assert_same_data(ds, lds)
+
         # these should always be equal
         assert ds.guid == lds.guid
 
@@ -265,14 +291,17 @@ def _assert_before_writing_metadata(source_datasets, loaded_datasets) -> None:
 
 
 def _assert_after_writing_metadata(
-    source_datasets,
-    loaded_datasets,
-    reloaded_ds,
-    offset_total_ds,
-    offset_ds_in_exp,
-    offset_exps,
+    source_datasets: Sequence[DataSetInMem],
+    loaded_datasets: Sequence[DataSetInMem],
+    reloaded_ds: Sequence[DataSetProtocol],
+    offset_total_ds: int,
+    offset_ds_in_exp: int,
+    offset_exps: int,
 ) -> None:
     for ds, lds, rlds in zip(source_datasets, loaded_datasets, reloaded_ds):
+        _assert_same_data(ds, lds)
+        _assert_same_data(ds, rlds)
+
         # these should always be equal
         assert ds.guid == lds.guid
         assert ds.guid == rlds.guid

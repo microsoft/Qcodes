@@ -418,7 +418,9 @@ class TestDataSetWithSplitRawData:
 
         received: list[int] = []
 
-        def callback(results, length, state):
+        def callback(
+            results: list[tuple[object, ...]], length: int, state: object
+        ) -> None:
             received.append(length)
 
         # Subscribe while still pristine - no results table exists yet.

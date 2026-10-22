@@ -10,6 +10,9 @@ from qcodes.dataset.measurements import Measurement
 if TYPE_CHECKING:
     from pytest import LogCaptureFixture
 
+    from qcodes.dataset.experiment_container import Experiment
+    from qcodes.instrument_drivers.mock_instruments import DummyInstrument
+
 
 @given(n_points=hst.integers(min_value=1, max_value=50))
 @example(n_points=5)
@@ -19,7 +22,11 @@ if TYPE_CHECKING:
     suppress_health_check=(HealthCheck.function_scoped_fixture,),
 )
 def test_datasaver_1d(
-    experiment, DAC, DMM, caplog: "LogCaptureFixture", n_points
+    experiment: "Experiment",
+    DAC: "DummyInstrument",
+    DMM: "DummyInstrument",
+    caplog: "LogCaptureFixture",
+    n_points: int,
 ) -> None:
     meas = Measurement()
     meas.register_parameter(DAC.ch1)
@@ -80,7 +87,12 @@ def test_datasaver_1d(
 )
 @example(n_points_1=5, n_points_2=10)
 def test_datasaver_2d(
-    experiment, DAC, DMM, caplog: "LogCaptureFixture", n_points_1, n_points_2
+    experiment: "Experiment",
+    DAC: "DummyInstrument",
+    DMM: "DummyInstrument",
+    caplog: "LogCaptureFixture",
+    n_points_1: int,
+    n_points_2: int,
 ) -> None:
     meas = Measurement()
     meas.register_parameter(DAC.ch1)

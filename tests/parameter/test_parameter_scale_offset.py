@@ -50,7 +50,13 @@ ValuesScalar = hst.shared(hst.booleans(), key="values_scalar")
 
 # the following test stra
 @hst.composite
-def iterable_or_number(draw, values, size, values_scalar, is_values):
+def iterable_or_number(
+    draw: hst.DrawFn,
+    values: hst.SearchStrategy[float],
+    size: hst.SearchStrategy[int],
+    values_scalar: hst.SearchStrategy[bool],
+    is_values: bool,
+) -> float | list[float]:
     if draw(values_scalar):
         # if parameter values are scalar,
         # return scalar for values and scale/offset
@@ -74,7 +80,11 @@ def iterable_or_number(draw, values, size, values_scalar, is_values):
     offsets=iterable_or_number(TestFloats, SharedSize, ValuesScalar, False),
     scales=iterable_or_number(TestFloats, SharedSize, ValuesScalar, False),
 )
-def test_scale_and_offset_raw_value_iterable(values, offsets, scales) -> None:
+def test_scale_and_offset_raw_value_iterable(
+    values: float | list[float],
+    offsets: float | list[float],
+    scales: float | list[float],
+) -> None:
     p = Parameter(name="test_scale_and_offset_raw_value", set_cmd=None)
 
     # test that scale and offset does not change the default behaviour
@@ -95,6 +105,9 @@ def test_scale_and_offset_raw_value_iterable(values, offsets, scales) -> None:
 
     # test set, only for scalar values
     if not isinstance(values, Iterable):
+        # scalar values imply scalar scale/offset (shared ``values_scalar`` draw)
+        assert not isinstance(scales, Iterable)
+        assert not isinstance(offsets, Iterable)
         p(values)
         # No set/get cmd performed
         np.testing.assert_allclose(
@@ -138,7 +151,9 @@ def test_scale_and_offset_raw_value_iterable(values, offsets, scales) -> None:
     scales=iterable_or_number(TestFloats, SharedSize, ValuesScalar, False),
 )
 def test_scale_and_offset_raw_value_iterable_for_set_cache(
-    values, offsets, scales
+    values: float | list[float],
+    offsets: float | list[float],
+    scales: float | list[float],
 ) -> None:
     p = Parameter(name="test_scale_and_offset_raw_value", set_cmd=None)
 
@@ -199,7 +214,7 @@ def test_scale_and_offset_raw_value_iterable_for_set_cache(
 def test_numpy_array_valued_parameter_preserves_type_if_scale_and_offset_are_set() -> (
     None
 ):
-    def rands():
+    def rands() -> np.ndarray:
         return np.random.default_rng().standard_normal(5)
 
     param = Parameter(name="test_param", set_cmd=None, get_cmd=rands)

@@ -70,7 +70,9 @@ def test_gettable_settable_attributes_with_get_set_raw(
     listed as gettable/settable and reverse."""
 
     class GetSetParam(baseclass):  # type: ignore[valid-type,misc]
-        def __init__(self, *args: Any, initial_value: Any = None, **kwargs: Any):
+        def __init__(
+            self, *args: Any, initial_value: Any = None, **kwargs: Any
+        ) -> None:
             self._value = initial_value
             super().__init__(*args, **kwargs)
 

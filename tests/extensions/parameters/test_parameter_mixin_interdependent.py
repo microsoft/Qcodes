@@ -1,5 +1,5 @@
 import re
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 
@@ -8,13 +8,19 @@ from qcodes.instrument import Instrument
 from qcodes.parameters import Parameter
 from qcodes.utils import QCoDeSDeprecationWarning
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Generator
+
 
 class MockInstrument(Instrument):
     """
     A mock instrument that can host parameters.
     """
 
-    def __init__(self, name: str, **kwargs):
+    some_param: "InterdependentParameter"
+    managed_param: "InterdependentParameter"
+
+    def __init__(self, name: str, **kwargs: Any) -> None:
         super().__init__(name, **kwargs)
 
 
@@ -23,7 +29,7 @@ class InterdependentParameter(InterdependentParameterMixin, Parameter):
 
 
 @pytest.fixture
-def store():
+def store() -> dict[str, Any]:
     """
     Provides a dictionary to store parameter values.
     """
@@ -31,7 +37,7 @@ def store():
 
 
 @pytest.fixture
-def callback_flag():
+def callback_flag() -> dict[str, bool]:
     """
     Provides a mutable flag to track callback invocation.
     """
@@ -39,7 +45,7 @@ def callback_flag():
 
 
 @pytest.fixture
-def callback(callback_flag):
+def callback(callback_flag: dict[str, bool]) -> "Callable[[], None]":
     """
     Provides a callback that sets callback_flag["called"] to True.
     """
@@ -51,7 +57,7 @@ def callback(callback_flag):
 
 
 @pytest.fixture
-def callback_data():
+def callback_data() -> list[tuple[tuple[Any, ...], dict[str, Any]]]:
     """
     Provides a list to store callback invocation data.
     """
@@ -59,19 +65,21 @@ def callback_data():
 
 
 @pytest.fixture
-def data_callback(callback_data):
+def data_callback(
+    callback_data: list[tuple[tuple[Any, ...], dict[str, Any]]],
+) -> "Callable[[], None]":
     """
     Provides a callback that records (args, kwargs) into callback_data.
     """
 
-    def _callback(*args, **kwargs):
+    def _callback(*args: Any, **kwargs: Any) -> None:
         callback_data.append((args, kwargs))
 
     return _callback
 
 
 @pytest.fixture
-def mock_instr():
+def mock_instr() -> "Generator[MockInstrument, None, None]":
     """
     Provides a mock instrument for interdependent parameter tests.
     """
@@ -81,7 +89,10 @@ def mock_instr():
 
 
 def test_dependency_update_invoked_on_change(
-    store, callback_flag, callback, mock_instr
+    store: dict[str, Any],
+    callback_flag: dict[str, bool],
+    callback: "Callable[[], None]",
+    mock_instr: MockInstrument,
 ) -> None:
     mock_instr.some_param = cast(
         "InterdependentParameter",
@@ -114,7 +125,10 @@ def test_dependency_update_invoked_on_change(
 
 
 def test_adding_dependent_parameter_later(
-    store, callback_flag, callback, mock_instr
+    store: dict[str, Any],
+    callback_flag: dict[str, bool],
+    callback: "Callable[[], None]",
+    mock_instr: MockInstrument,
 ) -> None:
     mock_instr.some_param = cast(
         "InterdependentParameter",
@@ -148,7 +162,7 @@ def test_adding_dependent_parameter_later(
 
 
 def test_error_on_non_interdependent_dependency(
-    store, mock_instr: MockInstrument
+    store: dict[str, Any], mock_instr: MockInstrument
 ) -> None:
 
     mock_instr.add_parameter(
@@ -180,8 +194,10 @@ def test_error_on_non_interdependent_dependency(
         # Parameter managed_param depends on a non-interdependent param
 
 
-def test_parsers_and_dependency_propagation(store, mock_instr) -> None:
-    def dependency_update():
+def test_parsers_and_dependency_propagation(
+    store: dict[str, Any], mock_instr: MockInstrument
+) -> None:
+    def dependency_update() -> None:
         mock_instr.managed_param.set(999)
 
     mock_instr.some_param = cast(
@@ -218,7 +234,9 @@ def test_parsers_and_dependency_propagation(store, mock_instr) -> None:
     assert mock_instr.managed_param.get() == 999, "Dependency not updated."
 
 
-def test_typeerror_if_dependency_update_method_invalid(mock_instr):
+def test_typeerror_if_dependency_update_method_invalid(
+    mock_instr: MockInstrument,
+) -> None:
     param = mock_instr.add_parameter(
         name="some_param",
         parameter_class=InterdependentParameter,
@@ -229,10 +247,10 @@ def test_typeerror_if_dependency_update_method_invalid(mock_instr):
     with pytest.raises(
         TypeError, match=re.escape("dependency_update_method must be callable or None.")
     ):
-        param.dependency_update_method = 123
+        param.dependency_update_method = 123  # pyright: ignore[reportAttributeAccessIssue]
 
 
-def test_typeerror_if_dependent_on_invalid(mock_instr):
+def test_typeerror_if_dependent_on_invalid(mock_instr: MockInstrument) -> None:
     param = mock_instr.add_parameter(
         name="some_param",
         parameter_class=InterdependentParameter,
@@ -243,10 +261,10 @@ def test_typeerror_if_dependent_on_invalid(mock_instr):
     with pytest.raises(
         TypeError, match=re.escape("dependent_on must be a list of strings.")
     ):
-        param.dependent_on = "not_a_list"
+        param.dependent_on = "not_a_list"  # pyright: ignore[reportAttributeAccessIssue]
 
     # Assign a list with non-string
     with pytest.raises(
         TypeError, match=re.escape("dependent_on must be a list of strings.")
     ):
-        param.dependent_on = [123, None]
+        param.dependent_on = [123, None]  # pyright: ignore[reportAttributeAccessIssue]

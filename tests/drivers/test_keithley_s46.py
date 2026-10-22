@@ -1,4 +1,5 @@
 import logging
+from typing import TYPE_CHECKING
 
 import pytest
 from pytest import FixtureRequest, LogCaptureFixture
@@ -7,6 +8,9 @@ from qcodes.instrument_drivers.Keithley.Keithley_s46 import (
     KeithleyS46,
     KeithleyS46LockAcquisitionError,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 
 def test_aliases_dict() -> None:
@@ -28,7 +32,7 @@ def test_aliases_dict() -> None:
 
 
 @pytest.fixture(scope="function")
-def s46_six():
+def s46_six() -> "Generator[KeithleyS46, None, None]":
     """
     A six channel-per-relay instrument
     """
@@ -43,7 +47,7 @@ def s46_six():
 
 
 @pytest.fixture(scope="function")
-def s46_four():
+def s46_four() -> "Generator[KeithleyS46, None, None]":
     """
     A four channel-per-relay instrument
     """

@@ -1,14 +1,23 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 import pytest
 
 import qcodes.validators as vals
 from qcodes.parameters import Parameter, ParameterWithSetpoints, expand_setpoints_helper
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 _rng = np.random.default_rng()
+
+type SetpointsParameters = tuple[
+    Parameter, Parameter, Parameter, Parameter, Parameter, Parameter
+]
 
 
 @pytest.fixture()
-def parameters():
+def parameters() -> "Generator[SetpointsParameters, None, None]":
     n_points_1 = Parameter("n_points_1", set_cmd=None, vals=vals.Ints())
     n_points_2 = Parameter("n_points_2", set_cmd=None, vals=vals.Ints())
     n_points_3 = Parameter("n_points_3", set_cmd=None, vals=vals.Ints())
@@ -370,7 +379,7 @@ def test_validation_one_sp_dim_missing() -> None:
         param_sp_without_shape.validate(param_sp_without_shape.get())
 
 
-def test_expand_setpoints_1c(parameters) -> None:
+def test_expand_setpoints_1c(parameters: SetpointsParameters) -> None:
     """
     Test that the setpoints expander helper function works correctly
     """
@@ -392,7 +401,7 @@ def test_expand_setpoints_1c(parameters) -> None:
     assert len(data[0][1]) == len(data[1][1])
 
 
-def test_expand_setpoints_2d(parameters) -> None:
+def test_expand_setpoints_2d(parameters: SetpointsParameters) -> None:
     n_points_1, n_points_2, _n_points_3, setpoints_1, setpoints_2, _setpoints_3 = (
         parameters
     )
@@ -420,7 +429,7 @@ def test_expand_setpoints_2d(parameters) -> None:
         np.testing.assert_array_equal(sp2[i, :], np.arange(sp1.shape[1]))
 
 
-def test_expand_setpoints_3d(parameters) -> None:
+def test_expand_setpoints_3d(parameters: SetpointsParameters) -> None:
     n_points_1, n_points_2, n_points_3, setpoints_1, setpoints_2, setpoints_3 = (
         parameters
     )

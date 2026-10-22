@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
 
 import hypothesis.strategies as hst
 import matplotlib.axes
@@ -13,6 +16,7 @@ from qcodes.dataset import do1d, new_experiment
 from qcodes.dataset.data_set import DataSet
 from qcodes.instrument_drivers.mock_instruments import (
     ArraySetPointParam,
+    DummyChannelInstrument,
     Multi2DSetPointParam,
     Multi2DSetPointParam2Sizes,
     MultiSetPointParam,
@@ -20,10 +24,15 @@ from qcodes.instrument_drivers.mock_instruments import (
 from qcodes.parameters import Parameter
 from tests.dataset.conftest import ArrayshapedParam
 
+if TYPE_CHECKING:
+    from qcodes.dataset.experiment_container import Experiment
+
 
 @pytest.mark.usefixtures("plot_close", "experiment")
 @pytest.mark.parametrize("delay", [0, 0.1, 1])
-def test_do1d_with_real_parameter(_param_set, _param, delay) -> None:
+def test_do1d_with_real_parameter(
+    _param_set: Parameter[float | None], _param: Parameter[int], delay: float
+) -> None:
     start = 0
     stop = 1
     num_points = 1
@@ -34,7 +43,12 @@ def test_do1d_with_real_parameter(_param_set, _param, delay) -> None:
 @pytest.mark.usefixtures("plot_close", "experiment")
 @pytest.mark.parametrize("plot", [None, True, False])
 @pytest.mark.parametrize("plot_config", [None, True, False])
-def test_do1d_plot(_param_set, _param, plot, plot_config) -> None:
+def test_do1d_plot(
+    _param_set: Parameter[float | None],
+    _param: Parameter[int],
+    plot: bool | None,
+    plot_config: bool | None,
+) -> None:
     if plot_config is not None:
         config.dataset.dond_plot = plot_config
 
@@ -52,7 +66,11 @@ def test_do1d_plot(_param_set, _param, plot, plot_config) -> None:
 
 @pytest.mark.usefixtures("plot_close", "experiment")
 @pytest.mark.parametrize("delay", [0, 0.1, 1])
-def test_do1d_with_complex_parameter(_param_set, _param_complex, delay) -> None:
+def test_do1d_with_complex_parameter(
+    _param_set: Parameter[float | None],
+    _param_complex: Parameter[complex],
+    delay: float,
+) -> None:
     start = 0
     stop = 1
     num_points = 1
@@ -62,7 +80,12 @@ def test_do1d_with_complex_parameter(_param_set, _param_complex, delay) -> None:
 
 @pytest.mark.usefixtures("plot_close", "experiment")
 @pytest.mark.parametrize("delay", [0, 0.1, 1])
-def test_do1d_with_2_parameter(_param_set, _param, _param_complex, delay) -> None:
+def test_do1d_with_2_parameter(
+    _param_set: Parameter[float | None],
+    _param: Parameter[int],
+    _param_complex: Parameter[complex],
+    delay: float,
+) -> None:
     start = 0
     stop = 1
     num_points = 1
@@ -72,7 +95,9 @@ def test_do1d_with_2_parameter(_param_set, _param, _param_complex, delay) -> Non
 
 @pytest.mark.usefixtures("plot_close", "experiment")
 @pytest.mark.parametrize("delay", [0, 0.1, 1])
-def test_do1d_output_type_real_parameter(_param_set, _param, delay) -> None:
+def test_do1d_output_type_real_parameter(
+    _param_set: Parameter[float | None], _param: Parameter[int], delay: float
+) -> None:
     start = 0
     stop = 1
     num_points = 1
@@ -82,7 +107,9 @@ def test_do1d_output_type_real_parameter(_param_set, _param, delay) -> None:
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_do1d_output_data(_param, _param_set) -> None:
+def test_do1d_output_data(
+    _param: Parameter[int], _param_set: Parameter[float | None]
+) -> None:
     start = 0
     stop = 1
     num_points = 5
@@ -113,13 +140,15 @@ def test_do1d_output_data(_param, _param_set) -> None:
     suppress_health_check=(HealthCheck.function_scoped_fixture,),
 )
 def test_do1d_verify_shape(
-    _param,
-    _param_complex,
-    _param_set,
-    multiparamtype,
-    dummyinstrument,
-    num_points,
-    n_points_pws,
+    _param: Parameter[int],
+    _param_complex: Parameter[complex],
+    _param_set: Parameter[float | None],
+    multiparamtype: type[
+        MultiSetPointParam | Multi2DSetPointParam | Multi2DSetPointParam2Sizes
+    ],
+    dummyinstrument: DummyChannelInstrument,
+    num_points: int,
+    n_points_pws: int,
 ) -> None:
     arrayparam = ArraySetPointParam(name="arrayparam")
     multiparam = multiparamtype(name="multiparam")
@@ -156,7 +185,7 @@ def test_do1d_verify_shape(
 
 
 @pytest.mark.usefixtures("experiment")
-def test_do1d_parameter_with_array_vals(_param_set) -> None:
+def test_do1d_parameter_with_array_vals(_param_set: Parameter[float | None]) -> None:
     param = ArrayshapedParam(
         name="paramwitharrayval", vals=validators.Arrays(shape=(10,))
     )
@@ -179,7 +208,11 @@ def test_do1d_parameter_with_array_vals(_param_set) -> None:
             assert param_data.shape == expected_shapes[name]
 
 
-def test_do1d_explicit_experiment(_param_set, _param, experiment) -> None:
+def test_do1d_explicit_experiment(
+    _param_set: Parameter[float | None],
+    _param: Parameter[int],
+    experiment: Experiment,
+) -> None:
     start = 0
     stop = 1
     num_points = 5
@@ -215,7 +248,9 @@ def test_do1d_explicit_experiment(_param_set, _param, experiment) -> None:
 
 
 @pytest.mark.usefixtures("experiment")
-def test_do1d_explicit_name(_param_set, _param) -> None:
+def test_do1d_explicit_name(
+    _param_set: Parameter[float | None], _param: Parameter[int]
+) -> None:
     start = 0
     stop = 1
     num_points = 5
@@ -235,7 +270,11 @@ def test_do1d_explicit_name(_param_set, _param) -> None:
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_do1d_additional_setpoints(_param, _param_complex, _param_set) -> None:
+def test_do1d_additional_setpoints(
+    _param: Parameter[int],
+    _param_complex: Parameter[complex],
+    _param_set: Parameter[float | None],
+) -> None:
     additional_setpoints = [
         Parameter(f"additional_setter_parameter_{i}", set_cmd=None, get_cmd=None)
         for i in range(2)
@@ -271,7 +310,10 @@ def test_do1d_additional_setpoints(_param, _param_complex, _param_set) -> None:
 @given(num_points_p1=hst.integers(min_value=1, max_value=10))
 @pytest.mark.usefixtures("experiment")
 def test_do1d_additional_setpoints_shape(
-    _param, _param_complex, _param_set, num_points_p1
+    _param: Parameter[int],
+    _param_complex: Parameter[complex],
+    _param_set: Parameter[float | None],
+    num_points_p1: int,
 ) -> None:
     arrayparam = ArraySetPointParam(name="arrayparam")
     array_shape = arrayparam.shape
@@ -307,13 +349,17 @@ def test_do1d_additional_setpoints_shape(
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_do1d_break_condition(caplog: LogCaptureFixture, _param_set, _param) -> None:
+def test_do1d_break_condition(
+    caplog: LogCaptureFixture,
+    _param_set: Parameter[float | None],
+    _param: Parameter[int],
+) -> None:
     start = 0
     stop = 1
     num_points = 5
     delay = 0
 
-    def break_condition():
+    def break_condition() -> bool:
         return True
 
     data = do1d(

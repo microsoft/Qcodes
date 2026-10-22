@@ -6,6 +6,7 @@ import warnings
 from contextlib import contextmanager
 from io import StringIO
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 from ruamel.yaml import YAML
@@ -25,9 +26,12 @@ from qcodes.utils import NumpyJSONEncoder, get_qcodes_path
 
 from .common import DummyComponent
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 
 @pytest.fixture(autouse=True)
-def set_default_station_to_none_automatically():
+def set_default_station_to_none_automatically() -> "Generator[None, None, None]":
     """Makes sure that after startup and teardown there is no default station"""
     Station.default = None
     yield
@@ -35,7 +39,7 @@ def set_default_station_to_none_automatically():
 
 
 @pytest.fixture(autouse=True)
-def close_all_instruments():
+def close_all_instruments() -> "Generator[None, None, None]":
     """Makes sure that after startup and teardown all instruments are closed"""
     Instrument.close_all()
     yield
@@ -43,7 +47,7 @@ def close_all_instruments():
 
 
 @pytest.fixture(autouse=True)
-def treat_validation_warning_as_error():
+def treat_validation_warning_as_error() -> "Generator[None, None, None]":
     warnings.simplefilter("error", ValidationWarning)
     yield
     warnings.simplefilter("default", ValidationWarning)
@@ -252,7 +256,7 @@ def test_update_config_schema() -> None:
 
 
 @contextmanager
-def config_file_context(file_content):
+def config_file_context(file_content: str) -> "Generator[str, None, None]":
     with tempfile.TemporaryDirectory() as tmpdirname:
         filename = Path(tmpdirname, "station_config.yaml")
         with filename.open("w") as f:
@@ -261,7 +265,9 @@ def config_file_context(file_content):
 
 
 @contextmanager
-def config_files_context(file_content1, file_content2):
+def config_files_context(
+    file_content1: str, file_content2: str
+) -> "Generator[list[str], None, None]":
     with tempfile.TemporaryDirectory() as tmpdirname:
         filename1 = Path(tmpdirname, "station_config1.yaml")
         with filename1.open("w") as f:
@@ -273,7 +279,7 @@ def config_files_context(file_content1, file_content2):
 
 
 @pytest.fixture(name="example_station_config")
-def _make_example_station_config():
+def _make_example_station_config() -> "Generator[str, None, None]":
     """
     Returns path to temp yaml file with station config.
     """
@@ -301,7 +307,7 @@ instruments:
         yield filename
 
 
-def test_dynamic_reload_of_file(example_station_config) -> None:
+def test_dynamic_reload_of_file(example_station_config: str) -> None:
     st = Station(config_file=example_station_config)
     mock_dac = st.load_instrument("mock_dac")
     assert "ch1" in mock_dac.parameters
@@ -325,12 +331,12 @@ def station_config_has_been_loaded(st: Station) -> bool:
 
 
 @pytest.fixture(name="example_station")
-def _make_example_station(example_station_config):
+def _make_example_station(example_station_config: str) -> Station:
     return Station(config_file=example_station_config)
 
 
 # instrument loading related tests
-def test_station_config_path_resolution(example_station_config) -> None:
+def test_station_config_path_resolution(example_station_config: str) -> None:
     config = qcodes.config["station"]
 
     # There is no default yaml file present that defines a station
@@ -386,11 +392,13 @@ def test_station_config_path_resolution(example_station_config) -> None:
     assert station_config_has_been_loaded(Station(config_file=str(path)))
 
 
-def test_station_configuration_is_a_component_of_station(example_station) -> None:
+def test_station_configuration_is_a_component_of_station(
+    example_station: Station,
+) -> None:
     assert station_config_has_been_loaded(example_station)
 
 
-def test_station_config_can_be_loaded_from_snapshot(example_station) -> None:
+def test_station_config_can_be_loaded_from_snapshot(example_station: Station) -> None:
     assert station_config_has_been_loaded(example_station)
     # ensure that we can correctly dump config which is a subclass of UserDict
     configdump = json.dumps(example_station.config, cls=NumpyJSONEncoder)
@@ -410,7 +418,7 @@ def test_station_config_can_be_loaded_from_snapshot(example_station) -> None:
 
 
 @pytest.fixture
-def simple_mock_station():
+def simple_mock_station() -> "Generator[Station, None, None]":
     yield station_from_config_str(
         """
 instruments:
@@ -420,7 +428,7 @@ instruments:
     )
 
 
-def test_simple_mock_config(simple_mock_station) -> None:
+def test_simple_mock_config(simple_mock_station: Station) -> None:
     st = simple_mock_station
     assert station_config_has_been_loaded(st)
     assert hasattr(st, "load_mock")
@@ -429,10 +437,11 @@ def test_simple_mock_config(simple_mock_station) -> None:
         mock_snapshot["type"]
         == "qcodes.instrument_drivers.mock_instruments.DummyInstrument"
     )
+    assert st.config is not None
     assert "mock" in st.config["instruments"]
 
 
-def test_simple_mock_load_mock(simple_mock_station) -> None:
+def test_simple_mock_load_mock(simple_mock_station: Station) -> None:
     st = simple_mock_station
     mock = st.load_mock()
     assert isinstance(mock, DummyInstrument)
@@ -440,7 +449,7 @@ def test_simple_mock_load_mock(simple_mock_station) -> None:
     assert st.components["mock"] is mock
 
 
-def test_simple_mock_load_instrument(simple_mock_station) -> None:
+def test_simple_mock_load_instrument(simple_mock_station: Station) -> None:
     st = simple_mock_station
     mock = st.load_instrument("mock")
     assert isinstance(mock, DummyInstrument)
@@ -551,7 +560,7 @@ instruments:
     st.load_instrument("lakeshore")
 
 
-def test_name_init_kwarg(simple_mock_station) -> None:
+def test_name_init_kwarg(simple_mock_station: Station) -> None:
     # special case of `name` as kwarg
     st = simple_mock_station
     mock = st.load_instrument("mock", name="test")
@@ -577,7 +586,7 @@ instruments:
 
 
 class InstrumentWithNameAsNotFirstArgument(Instrument):
-    def __init__(self, first_arg, name):
+    def __init__(self, first_arg: int, name: str) -> None:
         super().__init__(name)
         self._first_arg = first_arg
 
@@ -998,14 +1007,14 @@ instruments:
             st.load_instrument("mock")
 
 
-def test_monitor_not_loaded_by_default(example_station_config) -> None:
+def test_monitor_not_loaded_by_default(example_station_config: str) -> None:
     st = Station(config_file=example_station_config)
     st.load_instrument("mock_dac")
     assert Monitor.running is None
 
 
 def test_monitor_loaded_if_specified(
-    example_station_config, request: pytest.FixtureRequest
+    example_station_config: str, request: pytest.FixtureRequest
 ) -> None:
     st = Station(config_file=example_station_config, use_monitor=True)
     st.load_instrument("mock_dac")
@@ -1016,7 +1025,7 @@ def test_monitor_loaded_if_specified(
 
 
 def test_monitor_loaded_by_default_if_in_config(
-    example_station_config, request: pytest.FixtureRequest
+    example_station_config: str, request: pytest.FixtureRequest
 ) -> None:
     qcodes.config["station"]["use_monitor"] = True
     st = Station(config_file=example_station_config)
@@ -1027,7 +1036,7 @@ def test_monitor_loaded_by_default_if_in_config(
     assert Monitor.running._parameters[0].name == "ch1"
 
 
-def test_monitor_not_loaded_if_specified(example_station_config) -> None:
+def test_monitor_not_loaded_if_specified(example_station_config: str) -> None:
     st = Station(config_file=example_station_config, use_monitor=False)
     st.load_instrument("mock_dac")
     assert Monitor.running is None
@@ -1070,7 +1079,7 @@ def test_config_validation_comprehensive_config() -> None:
 
 
 def test_load_all_instruments_raises_on_both_only_names_and_only_types_passed(
-    example_station,
+    example_station: Station,
 ) -> None:
     with pytest.raises(
         ValueError,
@@ -1081,7 +1090,7 @@ def test_load_all_instruments_raises_on_both_only_names_and_only_types_passed(
         example_station.load_all_instruments(only_names=(), only_types=())
 
 
-def test_load_all_instruments_no_args(example_station) -> None:
+def test_load_all_instruments_no_args(example_station: Station) -> None:
     all_instruments_in_config = {"lakeshore", "mock_dac", "mock_dac2"}
 
     loaded_instruments = example_station.load_all_instruments()
@@ -1093,7 +1102,7 @@ def test_load_all_instruments_no_args(example_station) -> None:
         assert Instrument.exist(instrument)
 
 
-def test_load_all_instruments_only_types(example_station) -> None:
+def test_load_all_instruments_only_types(example_station: Station) -> None:
     all_dummy_instruments = {"mock_dac", "mock_dac2"}
 
     loaded_instruments = example_station.load_all_instruments(
@@ -1106,6 +1115,7 @@ def test_load_all_instruments_only_types(example_station) -> None:
         assert instrument in example_station.components
         assert Instrument.exist(instrument)
 
+    assert example_station.config is not None
     other_instruments = (
         set(example_station.config["instruments"].keys()) - all_dummy_instruments
     )
@@ -1115,7 +1125,7 @@ def test_load_all_instruments_only_types(example_station) -> None:
         assert not Instrument.exist(instrument)
 
 
-def test_load_all_instruments_only_names(example_station) -> None:
+def test_load_all_instruments_only_names(example_station: Station) -> None:
     instruments_to_load = {"lakeshore", "mock_dac"}
 
     loaded_instruments = example_station.load_all_instruments(
@@ -1128,6 +1138,7 @@ def test_load_all_instruments_only_names(example_station) -> None:
         assert instrument in example_station.components
         assert Instrument.exist(instrument)
 
+    assert example_station.config is not None
     other_instruments = (
         set(example_station.config["instruments"].keys()) - instruments_to_load
     )
@@ -1140,7 +1151,7 @@ def test_load_all_instruments_only_names(example_station) -> None:
 def test_load_all_instruments_without_config_raises() -> None:
     station = Station()
     with pytest.raises(ValueError, match="Station has no config"):
-        station.load_all_instruments()  # type: ignore[call-overload]
+        station.load_all_instruments()
 
 
 def test_station_config_created_with_multiple_config_files() -> None:

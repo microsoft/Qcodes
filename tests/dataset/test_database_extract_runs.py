@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import random
 import re
@@ -30,7 +32,7 @@ from qcodes.dataset.experiment_container import (
 )
 from qcodes.dataset.linked_datasets.links import Link
 from qcodes.dataset.measurements import Measurement
-from qcodes.dataset.sqlite.connection import path_to_dbfile
+from qcodes.dataset.sqlite.connection import AtomicConnection, path_to_dbfile
 from qcodes.dataset.sqlite.database import get_db_version_and_newest_available_version
 from qcodes.dataset.sqlite.queries import get_experiments
 from qcodes.instrument_drivers.mock_instruments import DummyInstrument
@@ -38,11 +40,13 @@ from qcodes.station import Station
 from tests.common import error_caused_by, skip_if_no_fixtures
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Generator
+
+    from qcodes.dataset.descriptions.dependencies import InterDependencies_
 
 
 @contextmanager
-def raise_if_file_changed(path_to_file: str):
+def raise_if_file_changed(path_to_file: str) -> Generator[None, None, None]:
     """
     Context manager that raises if a file is modified.
     On Windows, the OS modification time resolution is 100 ns
@@ -57,7 +61,7 @@ def raise_if_file_changed(path_to_file: str):
 
 
 @pytest.fixture(scope="function", name="inst")
-def _make_inst():
+def _make_inst() -> Generator[DummyInstrument, None, None]:
     """
     Dummy instrument for testing, ensuring that it's instance gets closed
     and removed from the global register of instruments, which, if not done,
@@ -68,7 +72,10 @@ def _make_inst():
     inst.close()
 
 
-def test_missing_runs_raises(two_empty_temp_db_connections, some_interdeps) -> None:
+def test_missing_runs_raises(
+    two_empty_temp_db_connections: tuple[AtomicConnection, AtomicConnection],
+    some_interdeps: list[InterDependencies_],
+) -> None:
     """
     Test that an error is raised if we attempt to extract a run not present in
     the source DB
@@ -107,7 +114,10 @@ def test_missing_runs_raises(two_empty_temp_db_connections, some_interdeps) -> N
         extract_runs_into_db(source_path, target_path, *run_ids)
 
 
-def test_basic_extraction(two_empty_temp_db_connections, some_interdeps) -> None:
+def test_basic_extraction(
+    two_empty_temp_db_connections: tuple[AtomicConnection, AtomicConnection],
+    some_interdeps: list[InterDependencies_],
+) -> None:
     source_conn, target_conn = two_empty_temp_db_connections
 
     source_path = path_to_dbfile(source_conn)
@@ -198,7 +208,10 @@ def test_basic_extraction(two_empty_temp_db_connections, some_interdeps) -> None
         extract_runs_into_db(source_path, target_path, source_dataset.run_id)
 
 
-def test_real_dataset_1d(two_empty_temp_db_connections, inst) -> None:
+def test_real_dataset_1d(
+    two_empty_temp_db_connections: tuple[AtomicConnection, AtomicConnection],
+    inst: DummyInstrument,
+) -> None:
     source_conn, target_conn = two_empty_temp_db_connections
 
     source_path = path_to_dbfile(source_conn)
@@ -226,7 +239,10 @@ def test_real_dataset_1d(two_empty_temp_db_connections, inst) -> None:
         assert_array_equal(source_data_vals, target_data_vals)
 
 
-def test_real_dataset_1d_pathlib_path(two_empty_temp_db_connections, inst) -> None:
+def test_real_dataset_1d_pathlib_path(
+    two_empty_temp_db_connections: tuple[AtomicConnection, AtomicConnection],
+    inst: DummyInstrument,
+) -> None:
     source_conn, target_conn = two_empty_temp_db_connections
 
     source_path = Path(path_to_dbfile(source_conn))
@@ -254,7 +270,10 @@ def test_real_dataset_1d_pathlib_path(two_empty_temp_db_connections, inst) -> No
         assert_array_equal(source_data_vals, target_data_vals)
 
 
-def test_real_dataset_2d(two_empty_temp_db_connections, inst) -> None:
+def test_real_dataset_2d(
+    two_empty_temp_db_connections: tuple[AtomicConnection, AtomicConnection],
+    inst: DummyInstrument,
+) -> None:
     source_conn, target_conn = two_empty_temp_db_connections
 
     source_path = path_to_dbfile(source_conn)
@@ -285,7 +304,8 @@ def test_real_dataset_2d(two_empty_temp_db_connections, inst) -> None:
 
 
 def test_correct_experiment_routing(
-    two_empty_temp_db_connections, some_interdeps
+    two_empty_temp_db_connections: tuple[AtomicConnection, AtomicConnection],
+    some_interdeps: list[InterDependencies_],
 ) -> None:
     """
     Test that existing experiments are correctly identified AND that multiple
@@ -382,7 +402,8 @@ def test_correct_experiment_routing(
 
 
 def test_runs_from_different_experiments_raises(
-    two_empty_temp_db_connections, some_interdeps
+    two_empty_temp_db_connections: tuple[AtomicConnection, AtomicConnection],
+    some_interdeps: list[InterDependencies_],
 ) -> None:
     """
     Test that inserting runs from multiple experiments raises
@@ -437,7 +458,9 @@ def test_runs_from_different_experiments_raises(
         extract_runs_into_db(source_path, target_path, *run_ids)
 
 
-def test_extracting_dataless_run(two_empty_temp_db_connections) -> None:
+def test_extracting_dataless_run(
+    two_empty_temp_db_connections: tuple[AtomicConnection, AtomicConnection],
+) -> None:
     """
     Although contrived, it could happen that a run with no data is extracted
     """
@@ -460,7 +483,8 @@ def test_extracting_dataless_run(two_empty_temp_db_connections) -> None:
 
 
 def test_result_table_naming_and_run_id(
-    two_empty_temp_db_connections, some_interdeps
+    two_empty_temp_db_connections: tuple[AtomicConnection, AtomicConnection],
+    some_interdeps: list[InterDependencies_],
 ) -> None:
     """
     Check that a correct result table name is given and that a correct run_id
@@ -505,7 +529,10 @@ def test_result_table_naming_and_run_id(
     assert target_ds.the_same_dataset_as(source_ds_2_2)
 
 
-def test_load_by_X_functions(two_empty_temp_db_connections, some_interdeps) -> None:
+def test_load_by_X_functions(
+    two_empty_temp_db_connections: tuple[AtomicConnection, AtomicConnection],
+    some_interdeps: list[InterDependencies_],
+) -> None:
     """
     Test some different loading functions
     """
@@ -557,7 +584,9 @@ def test_load_by_X_functions(two_empty_temp_db_connections, some_interdeps) -> N
 
 
 def test_combine_runs(
-    two_empty_temp_db_connections, empty_temp_db_connection, some_interdeps
+    two_empty_temp_db_connections: tuple[AtomicConnection, AtomicConnection],
+    empty_temp_db_connection: AtomicConnection,
+    some_interdeps: list[InterDependencies_],
 ) -> None:
     """
     Test that datasets that are exported in random order from 2 datasets
@@ -645,7 +674,8 @@ def test_combine_runs(
 
 
 def test_copy_datasets_and_add_new(
-    two_empty_temp_db_connections, some_interdeps
+    two_empty_temp_db_connections: tuple[AtomicConnection, AtomicConnection],
+    some_interdeps: list[InterDependencies_],
 ) -> None:
     """
     Test that new runs get the correct captured_run_id and captured_counter
@@ -727,7 +757,8 @@ def test_copy_datasets_and_add_new(
 
 
 def test_old_versions_not_touched(
-    two_empty_temp_db_connections, some_interdeps
+    two_empty_temp_db_connections: tuple[AtomicConnection, AtomicConnection],
+    some_interdeps: list[InterDependencies_],
 ) -> None:
     source_conn, target_conn = two_empty_temp_db_connections
 
@@ -782,7 +813,8 @@ def test_old_versions_not_touched(
 
 
 def test_experiments_with_NULL_sample_name(
-    two_empty_temp_db_connections, some_interdeps
+    two_empty_temp_db_connections: tuple[AtomicConnection, AtomicConnection],
+    some_interdeps: list[InterDependencies_],
 ) -> None:
     """
     In older API versions (corresponding to DB version 3),
@@ -833,7 +865,8 @@ def test_experiments_with_NULL_sample_name(
 
 
 def test_integration_station_and_measurement(
-    two_empty_temp_db_connections, inst
+    two_empty_temp_db_connections: tuple[AtomicConnection, AtomicConnection],
+    inst: DummyInstrument,
 ) -> None:
     """
     An integration test where the runs in the source DB file are produced
@@ -869,7 +902,10 @@ def test_integration_station_and_measurement(
     assert datasaver.dataset.the_same_dataset_as(target_ds)
 
 
-def test_atomicity(two_empty_temp_db_connections, some_interdeps) -> None:
+def test_atomicity(
+    two_empty_temp_db_connections: tuple[AtomicConnection, AtomicConnection],
+    some_interdeps: list[InterDependencies_],
+) -> None:
     """
     Test the atomicity of the transaction by extracting and inserting two
     runs where the second one is not completed. The not completed error must
@@ -903,7 +939,11 @@ def test_atomicity(two_empty_temp_db_connections, some_interdeps) -> None:
         extract_runs_into_db(source_path, target_path, 1, 2)
 
 
-def test_column_mismatch(two_empty_temp_db_connections, some_interdeps, inst) -> None:
+def test_column_mismatch(
+    two_empty_temp_db_connections: tuple[AtomicConnection, AtomicConnection],
+    some_interdeps: list[InterDependencies_],
+    inst: DummyInstrument,
+) -> None:
     """
     Test insertion of runs with no metadata and no snapshot into a DB already
     containing a run that has both

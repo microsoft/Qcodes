@@ -38,7 +38,7 @@ dependencies = [
     "pyvisa>=1.12.0, <1.17.0",
     "ruamel.yaml>=0.16.0,!=0.16.6",
     "tabulate>=0.9.0",
-    "typing_extensions>=4.6.0",
+    "typing_extensions>=4.12.0",
     "tqdm>=4.59.0",
     "uncertainties>=3.2.0",
     "versioningit>=2.2.1",
@@ -163,7 +163,6 @@ strict_equality = true
 module = [
     "tests.*",
     "qcodes.instrument_drivers.Harvard.*",
-    "qcodes.instrument_drivers.Keysight.keysightb1500.message_builder.*",
 ]
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
@@ -202,7 +201,6 @@ reportPrivateUsage = "none"
 reportUnknownMemberType = "none"
 reportUnknownParameterType = "none"
 reportMissingTypeArgument = "none"
-reportMissingParameterType = "none"
 reportUnknownArgumentType = "none"
 reportUnusedFunction = "none"
 reportUnusedImport = "none"

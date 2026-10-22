@@ -333,7 +333,9 @@ def test_instrument_connect_message(caplog: LogCaptureFixture) -> None:
     assert any(rec.msg == expected_con_mssg for rec in setup_records)
 
 
-def test_instrument_logger_extra_info(awg5208, caplog: LogCaptureFixture) -> None:
+def test_instrument_logger_extra_info(
+    awg5208: TektronixAWG5208, caplog: LogCaptureFixture
+) -> None:
     """
     Test that the connect_message method logs as expected
 

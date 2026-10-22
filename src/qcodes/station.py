@@ -847,22 +847,30 @@ class Station(Metadatable, DelegateAttributes):
     @overload
     def load_all_instruments(
         self,
-        only_names: None,
-        only_types: Iterable[str],
+        only_names: None = None,
+        only_types: None = None,
     ) -> tuple[str, ...]: ...
 
     @overload
     def load_all_instruments(
         self,
         only_names: Iterable[str],
-        only_types: None,
+        only_types: None = None,
+    ) -> tuple[str, ...]: ...
+
+    @overload
+    def load_all_instruments(
+        self,
+        only_names: None = None,
+        *,
+        only_types: Iterable[str],
     ) -> tuple[str, ...]: ...
 
     @overload
     def load_all_instruments(
         self,
         only_names: None,
-        only_types: None,
+        only_types: Iterable[str],
     ) -> tuple[str, ...]: ...
 
     @overload

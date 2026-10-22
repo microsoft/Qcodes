@@ -6,7 +6,7 @@ from qcodes.parameters import Parameter
 from qcodes.validators import Ints, Numbers
 
 
-def test_add_ints_validator_to_parameter():
+def test_add_ints_validator_to_parameter() -> None:
     p = Parameter("test_param", set_cmd=None, get_cmd=None)
     ints_val = Ints(min_value=0, max_value=10)
     p.add_validator(ints_val)
@@ -15,7 +15,7 @@ def test_add_ints_validator_to_parameter():
     assert p.vals is ints_val
 
 
-def test_remove_ints_validator_from_parameter():
+def test_remove_ints_validator_from_parameter() -> None:
     p = Parameter("test_param", set_cmd=None, get_cmd=None)
     p.add_validator(Ints(min_value=0, max_value=10))
     p.remove_validator()
@@ -148,7 +148,7 @@ def test_validator_snapshot() -> None:
     assert "<Ints 4<=v<=6>" == snapshot["vals"]
 
 
-def test_replace_vals():
+def test_replace_vals() -> None:
     p = Parameter("test_param", set_cmd=None, get_cmd=None)
     val1 = Ints(min_value=0, max_value=10)
     p.add_validator(val1)

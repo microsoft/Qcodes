@@ -66,7 +66,7 @@ def _make_mock_empty_dataset(experiment: Experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset")
-def _make_mock_dataset(experiment) -> DataSet:
+def _make_mock_dataset(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric")
     yparam = ParamSpecBase("y", "numeric")

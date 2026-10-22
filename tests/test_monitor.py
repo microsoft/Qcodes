@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 import random
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import pytest
 import websockets
@@ -19,11 +19,18 @@ from qcodes.instrument_drivers.mock_instruments import (
 from qcodes.monitor import monitor
 from qcodes.parameters import Parameter
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 monitor.WEBSOCKET_PORT = random.randint(50000, 60000)
 
 
 @pytest.fixture(name="inst_and_monitor")
-def _make_inst_and_monitor():
+def _make_inst_and_monitor() -> Generator[
+    tuple[DummyInstrument, monitor.Monitor, tuple[Parameter, ...], Parameter],
+    None,
+    None,
+]:
     instr = DummyInstrument("MonitorDummy")
     param = Parameter("DummyParam", unit="V", get_cmd=None, set_cmd=None)
     param(1)
@@ -39,7 +46,7 @@ def _make_inst_and_monitor():
 
 
 @pytest.fixture(name="channel_instr")
-def _make_channel_instr():
+def _make_channel_instr() -> Generator[DummyChannelInstrument, None, None]:
     instr = DummyChannelInstrument("MonitorDummy")
     try:
         yield instr
@@ -48,7 +55,9 @@ def _make_channel_instr():
 
 
 @pytest.fixture(name="channel_instr_monitor", params=[True, False])
-def _make_channel_instr_monitor(channel_instr, request: FixtureRequest):
+def _make_channel_instr_monitor(
+    channel_instr: DummyChannelInstrument, request: FixtureRequest
+) -> Generator[tuple[monitor.Monitor, bool], None, None]:
     m = monitor.Monitor(
         channel_instr.A.dummy_start,
         channel_instr.B.dummy_start,
@@ -117,7 +126,11 @@ async def test_connection() -> None:
 
 
 @pytest.mark.asyncio
-async def test_instrument_update(inst_and_monitor) -> None:
+async def test_instrument_update(
+    inst_and_monitor: tuple[
+        DummyInstrument, monitor.Monitor, tuple[Parameter, ...], Parameter
+    ],
+) -> None:
     """
     Test instrument updates
     """
@@ -164,7 +177,9 @@ async def test_instrument_update(inst_and_monitor) -> None:
 
 
 @pytest.mark.asyncio
-async def test_monitor_root_instr(channel_instr_monitor) -> None:
+async def test_monitor_root_instr(
+    channel_instr_monitor: tuple[monitor.Monitor, bool],
+) -> None:
     _, use_root_instrument = channel_instr_monitor
     async with websockets.connect(
         f"ws://localhost:{monitor.WEBSOCKET_PORT}"

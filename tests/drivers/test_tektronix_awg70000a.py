@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import zipfile
 from io import BytesIO, StringIO
+from typing import TYPE_CHECKING, Any
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -17,6 +18,11 @@ from qcodes.instrument_drivers.tektronix import (
     TektronixAWG70000Base,
     TektronixAWG70002A,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Generator
+
+    import numpy.typing as npt
 
 
 def strip_outer_tags(sml: str) -> str:
@@ -36,7 +42,7 @@ def strip_outer_tags(sml: str) -> str:
 
 
 @pytest.fixture(scope="function")
-def awg2():
+def awg2() -> Generator[TektronixAWG70002A, None, None]:
     awg2_sim = TektronixAWG70002A(
         "awg2_sim",
         address="GPIB0::2::INSTR",
@@ -48,13 +54,13 @@ def awg2():
 
 
 @pytest.fixture(scope="function")
-def random_wfm_m1_m2_package():
+def random_wfm_m1_m2_package() -> Callable[[], npt.NDArray[np.number]]:
     """
     Make a random 2400 points np.array([wfm, m1, m2]).
     The waveform has values in [-0.1, 0.1)
     """
 
-    def make():
+    def make() -> npt.NDArray[np.number]:
         rng = np.random.default_rng()
         length = rng.integers(2400, 2500)
         wfm = 0.2 * (rng.random(length) - 0.5)
@@ -66,7 +72,7 @@ def random_wfm_m1_m2_package():
 
 
 @pytest.fixture(scope="module", name="forged_sequence")
-def _make_forged_sequence():
+def _make_forged_sequence() -> dict[int, dict[str, Any]]:
     """
     Return an example forged sequence containing a
     subsequence
@@ -76,7 +82,7 @@ def _make_forged_sequence():
     num_chans = 3
     types = ["element"] * (N - 1) + ["subsequence"]
 
-    def random_element(num_chans):
+    def random_element(num_chans: int) -> dict[int, dict[str, npt.NDArray[Any]]]:
         """
         Return an element with random values
 
@@ -109,7 +115,7 @@ def _make_forged_sequence():
     return seq
 
 
-def test_init_awg2(awg2) -> None:
+def test_init_awg2(awg2: TektronixAWG70002A) -> None:
     idn_dict = awg2.IDN()
 
     assert idn_dict["vendor"] == "QCoDeS"
@@ -117,7 +123,7 @@ def test_init_awg2(awg2) -> None:
 
 @settings(deadline=2500, max_examples=7)
 @given(N=hst.integers(1, 100))
-def test_SML_successful_generation_vary_length(N) -> None:
+def test_SML_successful_generation_vary_length(N: int) -> None:
     tw = [0] * N
     nreps = [1] * N
     ejs = [0] * N
@@ -136,18 +142,18 @@ def test_SML_successful_generation_vary_length(N) -> None:
 
 
 @given(num_samples=hst.integers(min_value=2400), markers_included=hst.booleans())
-def test_WFMXHeader_succesful(num_samples, markers_included) -> None:
+def test_WFMXHeader_succesful(num_samples: int, markers_included: bool) -> None:
     xmlstr = TektronixAWG70000Base._makeWFMXFileHeader(num_samples, markers_included)
     etree.parse(StringIO(xmlstr))
 
 
 @given(num_samples=hst.integers(max_value=2399), markers_included=hst.booleans())
-def test_WFMXHeader_failing(num_samples, markers_included) -> None:
+def test_WFMXHeader_failing(num_samples: int, markers_included: bool) -> None:
     with pytest.raises(ValueError):
         TektronixAWG70000Base._makeWFMXFileHeader(num_samples, markers_included)
 
 
-def test_seqxfilefromfs_failing(forged_sequence) -> None:
+def test_seqxfilefromfs_failing(forged_sequence: dict[int, dict[str, Any]]) -> None:
     # typing convenience
     make_seqx = TektronixAWG70000Base.make_SEQX_from_forged_sequence
 
@@ -188,7 +194,9 @@ def test_seqxfilefromfs_failing(forged_sequence) -> None:
         )
 
 
-def test_seqxfilefromfs_warns(forged_sequence, caplog: LogCaptureFixture) -> None:
+def test_seqxfilefromfs_warns(
+    forged_sequence: dict[int, dict[str, Any]], caplog: LogCaptureFixture
+) -> None:
     """
     Test that a warning is logged when waveform is clipped
     """
@@ -203,7 +211,7 @@ def test_seqxfilefromfs_warns(forged_sequence, caplog: LogCaptureFixture) -> Non
         assert "Waveform exceeds specified channel range" in message
 
 
-def test_seqxfile_from_fs(forged_sequence) -> None:
+def test_seqxfile_from_fs(forged_sequence: dict[int, dict[str, Any]]) -> None:
     # typing convenience
     make_seqx = TektronixAWG70000Base.make_SEQX_from_forged_sequence
 
@@ -238,7 +246,10 @@ def test_seqxfile_from_fs(forged_sequence) -> None:
 # TODO: Add some failing tests for inproper input
 
 
-def test_makeSEQXFile(awg2, random_wfm_m1_m2_package) -> None:
+def test_makeSEQXFile(
+    awg2: TektronixAWG70002A,
+    random_wfm_m1_m2_package: Callable[[], npt.NDArray[np.number]],
+) -> None:
     """
     Test that this function works (for some input)
     """

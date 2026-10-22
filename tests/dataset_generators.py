@@ -1,12 +1,21 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.parameters import ParamSpecBase
 
+if TYPE_CHECKING:
+    from qcodes.dataset.data_set import DataSet
+
 
 def dataset_with_outliers_generator(
-    ds, data_offset=5, low_outlier=-3, high_outlier=1, background_noise=True
-):
+    ds: "DataSet",
+    data_offset: float = 5,
+    low_outlier: float = -3,
+    high_outlier: float = 1,
+    background_noise: bool = True,
+) -> "DataSet":
     x = ParamSpecBase("x", "numeric", label="Flux", unit="e^2/hbar")
     t = ParamSpecBase("t", "numeric", label="Time", unit="s")
     z = ParamSpecBase("z", "numeric", label="Majorana number", unit="Anyon")

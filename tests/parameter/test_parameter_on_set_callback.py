@@ -269,12 +269,12 @@ class TestAdvancedFeatures:
 def test_set_callback_for_instance(
     basic_callback: "Callable[[ParameterBase, Any], None]",
     captured_params: list[tuple[ParameterBase, Any]],
-):
+) -> None:
     param_a = Parameter("test_param_a", set_cmd=None, get_cmd=None)
     param_b = Parameter("test_param_b", set_cmd=None, get_cmd=None)
     captured_instance_params = []
 
-    def callback(param: ParameterBase, val):
+    def callback(param: ParameterBase, val: Any) -> None:
         if ParameterBase.global_on_set_callback:
             ParameterBase.global_on_set_callback(param, val)
         captured_instance_params.append(val)

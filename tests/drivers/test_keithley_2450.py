@@ -1,4 +1,5 @@
 import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
@@ -6,9 +7,12 @@ from pytest import LogCaptureFixture
 
 from qcodes.instrument_drivers.Keithley import Keithley2450
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 
 @pytest.fixture(scope="function")
-def k2450():
+def k2450() -> "Generator[Keithley2450, None, None]":
     """
     Create a Keithley 2450 instrument
     """
@@ -34,7 +38,7 @@ def test_wrong_mode(caplog: LogCaptureFixture) -> None:
         instrument.close()
 
 
-def test_change_source_function(k2450) -> None:
+def test_change_source_function(k2450: Keithley2450) -> None:
     """
     The parameters available on the source sub-module depend on the function.
     """
@@ -54,7 +58,7 @@ def test_change_source_function(k2450) -> None:
     )
 
 
-def test_source_change_error(k2450) -> None:
+def test_source_change_error(k2450: Keithley2450) -> None:
     """
     If the sense function is in resistance mode, test that an error is generated
     when we change the source function
@@ -72,7 +76,7 @@ def test_source_change_error(k2450) -> None:
     k2450.source.function("current")
 
 
-def test_sense_current_mode(k2450) -> None:
+def test_sense_current_mode(k2450: Keithley2450) -> None:
     """
     Test that when we are in a sense function, for example, 'current', that
     the sense property is returning to the correct submodule. We also test
@@ -89,7 +93,7 @@ def test_sense_current_mode(k2450) -> None:
             assert not hasattr(k2450.sense, other_sense_function)
 
 
-def test_setpoint_always_follows_source_function(k2450) -> None:
+def test_setpoint_always_follows_source_function(k2450: Keithley2450) -> None:
     """
     Changing the source and/or sense functions should not confuse the setpoints. These
     should always follow the source module
@@ -108,7 +112,7 @@ def test_setpoint_always_follows_source_function(k2450) -> None:
         assert k2450.sense.sweep.setpoints == (k2450.source.sweep_axis,)
 
 
-def test_reset_sweep_on_source_change(k2450) -> None:
+def test_reset_sweep_on_source_change(k2450: Keithley2450) -> None:
     """
     If we change the source function, we need to run the sweep setup again
     """
@@ -123,7 +127,7 @@ def test_reset_sweep_on_source_change(k2450) -> None:
         k2450.source.get_sweep_axis()
 
 
-def test_sweep(k2450) -> None:
+def test_sweep(k2450: Keithley2450) -> None:
     """
     Verify that we can start sweeps
     """

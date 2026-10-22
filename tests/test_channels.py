@@ -1,7 +1,7 @@
 import logging
 import re
 from collections.abc import Generator, Sequence
-from typing import TYPE_CHECKING, assert_type
+from typing import TYPE_CHECKING, Any, assert_type
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -114,7 +114,7 @@ def test_channels_get(dci: DummyChannelInstrument) -> None:
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(value=hst.floats(0, 300), channel=hst.integers(0, 3))
 def test_channel_access_is_identical(
-    dci: DummyChannelInstrument, value, channel
+    dci: DummyChannelInstrument, value: float, channel: int
 ) -> None:
     channel_to_label = {0: "A", 1: "B", 2: "C", 3: "D"}
     label = channel_to_label[channel]
@@ -836,7 +836,7 @@ def test_multi_function_on_empty_channel_tuple_raises(
         channels.multi_function("temperature")
 
 
-def _verify_multiparam_data(data) -> None:
+def _verify_multiparam_data(data: Any) -> None:
     assert "multi_setpoint_param_this_setpoint_set" in data.arrays
     assert_array_equal(
         data.arrays["multi_setpoint_param_this_setpoint_set"].ndarray,
@@ -856,7 +856,7 @@ def _verify_multiparam_data(data) -> None:
     )
 
 
-def _verify_array_data(data, channels=("A",)) -> None:
+def _verify_array_data(data: Any, channels: Sequence[str] = ("A",)) -> None:
     assert "array_setpoint_param_this_setpoint_set" in data.arrays
     assert_array_equal(
         data.arrays["array_setpoint_param_this_setpoint_set"].ndarray,

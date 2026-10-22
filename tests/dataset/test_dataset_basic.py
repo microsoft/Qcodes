@@ -41,12 +41,13 @@ if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
     from qcodes.dataset.experiment_container import Experiment
+    from qcodes.dataset.sqlite.connection import AtomicConnection
     from qcodes.dataset.sqlite.query_helpers import VALUE
 
 n_experiments = 0
 
 
-def make_shadow_dataset(dataset: DataSet):
+def make_shadow_dataset(dataset: DataSet) -> DataSet:
     """
     Creates a new DataSet object that points to the same run_id in the same
     database file as the given dataset object. Note that for a pristine run,
@@ -125,7 +126,7 @@ def test_dataset_length() -> None:
     assert len(ds) == 1
 
 
-def test_dataset_location(empty_temp_db_connection) -> None:
+def test_dataset_location(empty_temp_db_connection: "AtomicConnection") -> None:
     """
     Test that an dataset and experiment points to the correct db file when
     a connection is supplied.
@@ -207,7 +208,7 @@ def test_dataset_states() -> None:
 
 @pytest.mark.parametrize("start_bg_writer", (True, False))
 @pytest.mark.usefixtures("experiment")
-def test_mark_completed_twice(start_bg_writer) -> None:
+def test_mark_completed_twice(start_bg_writer: bool) -> None:
     """
     Ensure that its not an error to call mark_completed
     on an already completed dataset
@@ -247,7 +248,7 @@ def test_integer_timestamps_in_database_are_supported() -> None:
     assert isinstance(ds.completed_timestamp(), str)
 
 
-def test_dataset_read_only_properties(dataset) -> None:
+def test_dataset_read_only_properties(dataset: DataSet) -> None:
     read_only_props = [
         "run_id",
         "path_to_db",
@@ -276,15 +277,19 @@ def test_dataset_read_only_properties(dataset) -> None:
 
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("non_existing_run_id", (1, 0, -1, "number#42"))
-def test_create_dataset_from_non_existing_run_id(non_existing_run_id) -> None:
+def test_create_dataset_from_non_existing_run_id(
+    non_existing_run_id: int | str,
+) -> None:
     with pytest.raises(
         ValueError,
         match=f"Run with run_id {non_existing_run_id} does not exist in the database",
     ):
-        _ = DataSet(run_id=non_existing_run_id)
+        _ = DataSet(run_id=non_existing_run_id)  # pyright: ignore[reportArgumentType]
 
 
-def test_create_dataset_pass_both_connection_and_path_to_db(experiment) -> None:
+def test_create_dataset_pass_both_connection_and_path_to_db(
+    experiment: "Experiment",
+) -> None:
     some_valid_connection = experiment.conn
     with pytest.raises(
         ValueError,
@@ -295,7 +300,7 @@ def test_create_dataset_pass_both_connection_and_path_to_db(experiment) -> None:
         _ = DataSet(path_to_db="some valid path", conn=some_valid_connection)
 
 
-def test_load_by_id(dataset) -> None:
+def test_load_by_id(dataset: DataSet) -> None:
     ds = load_by_id(dataset.run_id)
     assert dataset.run_id == ds.run_id
     assert dataset.path_to_db == ds.path_to_db
@@ -303,7 +308,7 @@ def test_load_by_id(dataset) -> None:
 
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("non_existing_run_id", (1, 0, -1))
-def test_load_by_id_for_nonexisting_run_id(non_existing_run_id) -> None:
+def test_load_by_id_for_nonexisting_run_id(non_existing_run_id: int) -> None:
     with pytest.raises(
         ValueError,
         match=f"Run with run_id {non_existing_run_id} does not exist in the database",
@@ -329,7 +334,9 @@ def test_load_by_id_for_none() -> None:
     ),
 )
 @pytest.mark.usefixtures("empty_temp_db")
-def test_add_experiments(experiment_name, sample_name, dataset_name) -> None:
+def test_add_experiments(
+    experiment_name: str, sample_name: str, dataset_name: str
+) -> None:
     qc.config.GUID_components.GUID_type = "random_sample"
 
     global n_experiments
@@ -398,7 +405,7 @@ def test_dependent_parameters() -> None:
     assert ds.dependent_parameters == (pss[3], pss[0])
 
 
-def test_set_interdependencies(dataset) -> None:
+def test_set_interdependencies(dataset: DataSet) -> None:
     exps = experiments()
     assert len(exps) == 1
     exp = exps[0]
@@ -561,17 +568,21 @@ def test_load_by_counter() -> None:
 
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("nonexisting_counter", (-1, 0, 1, None))
-def test_load_by_counter_for_nonexisting_counter(nonexisting_counter) -> None:
+def test_load_by_counter_for_nonexisting_counter(
+    nonexisting_counter: int | None,
+) -> None:
     exp_id = 1
     with pytest.raises(RuntimeError, match="Expected one row"):
-        _ = load_by_counter(exp_id, nonexisting_counter)
+        _ = load_by_counter(exp_id, nonexisting_counter)  # pyright: ignore[reportArgumentType]
 
 
 @pytest.mark.usefixtures("empty_temp_db")
 @pytest.mark.parametrize("nonexisting_exp_id", (-1, 0, 1, None))
-def test_load_by_counter_for_nonexisting_experiment(nonexisting_exp_id) -> None:
+def test_load_by_counter_for_nonexisting_experiment(
+    nonexisting_exp_id: int | None,
+) -> None:
     with pytest.raises(RuntimeError, match="Expected one row"):
-        _ = load_by_counter(nonexisting_exp_id, 1)
+        _ = load_by_counter(nonexisting_exp_id, 1)  # pyright: ignore[reportArgumentType]
 
 
 @pytest.mark.usefixtures("empty_temp_db")
@@ -580,13 +591,13 @@ def test_dataset_with_no_experiment_raises() -> None:
         new_data_set("test-dataset")
 
 
-def test_guid(dataset) -> None:
+def test_guid(dataset: DataSet) -> None:
     guid = dataset.guid
     assert len(guid) == 36
     parse_guid(guid)
 
 
-def test_numpy_ints(dataset) -> None:
+def test_numpy_ints(dataset: DataSet) -> None:
     """
     Test that we can insert numpy integers in the data set
     """
@@ -603,7 +614,7 @@ def test_numpy_ints(dataset) -> None:
     )
 
 
-def test_numpy_floats(dataset) -> None:
+def test_numpy_floats(dataset: DataSet) -> None:
     """
     Test that we can insert numpy floats in the data set
     """
@@ -619,7 +630,7 @@ def test_numpy_floats(dataset) -> None:
     assert np.allclose(data, expected_result, atol=1e-8)
 
 
-def test_numpy_complex(dataset) -> None:
+def test_numpy_complex(dataset: DataSet) -> None:
     """
     Test that we can insert numpy complex in the data set
     """
@@ -629,13 +640,15 @@ def test_numpy_complex(dataset) -> None:
     dataset.mark_started()
 
     results = [{"x": tp(2.0 + 3.0j)} for tp in numpy_complex]
-    dataset.add_results(results)
+    # TODO: VALUE in qcodes.dataset.sqlite.query_helpers does not include
+    # numpy scalar types although add_results supports them
+    dataset.add_results(results)  # pyright: ignore[reportArgumentType]
     expected_result = np.array([tp(2.0 + 3.0j) for tp in numpy_complex])
     result = dataset.get_parameter_data()
     np.testing.assert_array_equal(result["x"]["x"], expected_result)
 
 
-def test_numpy_nan(dataset) -> None:
+def test_numpy_nan(dataset: DataSet) -> None:
     parameter_m = ParamSpecBase("m", "numeric")
     idps = InterDependencies_(standalones=(parameter_m,))
     dataset.set_interdependencies(idps)
@@ -647,7 +660,7 @@ def test_numpy_nan(dataset) -> None:
     assert np.isnan(retrieved[1])
 
 
-def test_numpy_inf(dataset) -> None:
+def test_numpy_inf(dataset: DataSet) -> None:
     """
     Test that we can insert and retrieve numpy inf in the data set
     """
@@ -671,7 +684,7 @@ def test_backward_compat__adapt_array_v0_33() -> None:
         assert arr == _convert_array(out.read())
 
 
-def test_missing_keys(dataset) -> None:
+def test_missing_keys(dataset: DataSet) -> None:
     """
     Test that we can now have partial results with keys missing. This is for
     example handy when having an interleaved 1D and 2D sweep.
@@ -686,10 +699,10 @@ def test_missing_keys(dataset) -> None:
     dataset.set_interdependencies(idps)
     dataset.mark_started()
 
-    def fa(xv):
+    def fa(xv: int) -> int:
         return xv + 1
 
-    def fb(xv, yv):
+    def fb(xv: int, yv: int) -> int:
         return xv + 2 - yv * 3
 
     results = []
@@ -717,7 +730,9 @@ def test_missing_keys(dataset) -> None:
     )
 
 
-def test_get_description(experiment, some_interdeps) -> None:
+def test_get_description(
+    experiment: "Experiment", some_interdeps: list[InterDependencies_]
+) -> None:
     ds = DataSet()
 
     assert ds.run_id == 1
@@ -743,7 +758,7 @@ def test_get_description(experiment, some_interdeps) -> None:
     assert loaded_ds.description == expected_desc
 
 
-def test_metadata(experiment, request: FixtureRequest) -> None:
+def test_metadata(experiment: "Experiment", request: FixtureRequest) -> None:
     metadata1 = {"number": 1, "string": "Once upon a time..."}
     metadata2 = {"more": "meta"}
 
@@ -803,7 +818,9 @@ def test_metadata(experiment, request: FixtureRequest) -> None:
     assert ds1.metadata["np_scalar"] == 3
 
 
-def test_the_same_dataset_as(some_interdeps, experiment) -> None:
+def test_the_same_dataset_as(
+    some_interdeps: list[InterDependencies_], experiment: "Experiment"
+) -> None:
     ds = DataSet()
     ds.set_interdependencies(some_interdeps[1])
     ds.mark_started()
@@ -841,7 +858,7 @@ def test_parent_dataset_links_invalid_input() -> None:
 
 
 @pytest.mark.usefixtures("experiment")
-def test_parent_dataset_links(some_interdeps) -> None:
+def test_parent_dataset_links(some_interdeps: list[InterDependencies_]) -> None:
     """
     Test that we can set links and retrieve them when loading the dataset
     """
@@ -883,7 +900,7 @@ class TestGetData:
     xdata = np.array(xvals)
 
     @pytest.fixture(autouse=True)
-    def ds_with_vals(self, dataset):
+    def ds_with_vals(self, dataset: DataSet) -> DataSet:
         """
         This fixture creates a DataSet with values that is to be used by all
         the tests in this class
@@ -927,9 +944,13 @@ class TestGetData:
         ],
     )
     def test_get_data_with_start_and_end_args(
-        self, ds_with_vals, start, end, expected
+        self,
+        ds_with_vals: DataSet,
+        start: int | None,
+        end: int | None,
+        expected: npt.NDArray[np.int64] | list[np.int64],
     ) -> None:
-        data = ds_with_vals.get_parameter_data(self.x, start=start, end=end)["x"]
+        data = ds_with_vals.get_parameter_data(self.x.name, start=start, end=end)["x"]
         data = data["x"]
         np.testing.assert_array_equal(data, expected)
 
@@ -939,7 +960,9 @@ class TestGetData:
     start=hst.one_of(hst.integers(1, 10**3), hst.none()),
     end=hst.one_of(hst.integers(1, 10**3), hst.none()),
 )
-def test_get_parameter_data(scalar_dataset, start, end) -> None:
+def test_get_parameter_data(
+    scalar_dataset: DataSet, start: int | None, end: int | None
+) -> None:
     input_names = ["param_3"]
 
     expected_names = {}
@@ -966,7 +989,9 @@ def test_get_parameter_data(scalar_dataset, start, end) -> None:
     )
 
 
-def test_get_scalar_parameter_data_no_nulls(scalar_dataset_with_nulls) -> None:
+def test_get_scalar_parameter_data_no_nulls(
+    scalar_dataset_with_nulls: DataSet,
+) -> None:
     expected_names = {}
     expected_names["first_value"] = ["first_value", "setpoint"]
     expected_names["second_value"] = ["second_value", "setpoint"]
@@ -986,7 +1011,9 @@ def test_get_scalar_parameter_data_no_nulls(scalar_dataset_with_nulls) -> None:
     )
 
 
-def test_get_array_parameter_data_no_nulls(array_dataset_with_nulls) -> None:
+def test_get_array_parameter_data_no_nulls(
+    array_dataset_with_nulls: DataSet,
+) -> None:
     types = [p.type for p in array_dataset_with_nulls.paramspecs.values()]
 
     expected_names = {}
@@ -1018,7 +1045,7 @@ def test_get_array_parameter_data_no_nulls(array_dataset_with_nulls) -> None:
     )
 
 
-def test_get_array_parameter_data(array_dataset) -> None:
+def test_get_array_parameter_data(array_dataset: DataSet) -> None:
     paramspecs = array_dataset.paramspecs
     types = [param.type for param in paramspecs.values()]
     par_name = "array_setpoint_param"
@@ -1047,7 +1074,7 @@ def test_get_array_parameter_data(array_dataset) -> None:
     )
 
 
-def test_get_multi_parameter_data(multi_dataset) -> None:
+def test_get_multi_parameter_data(multi_dataset: DataSet) -> None:
     paramspecs = multi_dataset.paramspecs
     types = [param.type for param in paramspecs.values()]
 
@@ -1106,7 +1133,9 @@ def test_get_multi_parameter_data(multi_dataset) -> None:
     start=hst.one_of(hst.integers(1, 9), hst.none()),
     end=hst.one_of(hst.integers(1, 9), hst.none()),
 )
-def test_get_array_in_scalar_param_data(array_in_scalar_dataset, start, end) -> None:
+def test_get_array_in_scalar_param_data(
+    array_in_scalar_dataset: DataSet, start: int | None, end: int | None
+) -> None:
     par_name = "array_setpoint_param"
     setpoint_name = "array_setpoint_param_this_setpoint"
 
@@ -1148,7 +1177,9 @@ def test_get_array_in_scalar_param_data(array_in_scalar_dataset, start, end) -> 
     )
 
 
-def test_get_varlen_array_in_scalar_param_data(varlen_array_in_scalar_dataset) -> None:
+def test_get_varlen_array_in_scalar_param_data(
+    varlen_array_in_scalar_dataset: DataSet,
+) -> None:
     par_name = "array_setpoint_param"
     setpoint_name = "array_setpoint_param_this_setpoint"
 
@@ -1196,7 +1227,7 @@ def test_get_varlen_array_in_scalar_param_data(varlen_array_in_scalar_dataset) -
     end=hst.one_of(hst.integers(1, 45), hst.none()),
 )
 def test_get_array_in_scalar_param_unrolled(
-    array_in_scalar_dataset_unrolled, start, end
+    array_in_scalar_dataset_unrolled: DataSet, start: int | None, end: int | None
 ) -> None:
     par_name = "array_setpoint_param"
     setpoint_name = "array_setpoint_param_this_setpoint"
@@ -1238,7 +1269,7 @@ def test_get_array_in_scalar_param_unrolled(
     )
 
 
-def test_get_array_in_str_param_data(array_in_str_dataset) -> None:
+def test_get_array_in_str_param_data(array_in_str_dataset: DataSet) -> None:
     paramspecs = array_in_str_dataset.paramspecs
     types = [param.type for param in paramspecs.values()]
 
@@ -1331,7 +1362,7 @@ def parameter_test_helper(
     expected_values: dict[str, list[np.ndarray]],
     start: int | None = None,
     end: int | None = None,
-):
+) -> None:
     """
     A helper function to compare the data we actually read out of a given
     dataset with the expected data.
@@ -1405,18 +1436,24 @@ def parameter_test_helper(
 
 
 def limit_data_to_start_end(
-    start, end, input_names, expected_names, expected_shapes, expected_values
-):
+    start: int | None,
+    end: int | None,
+    input_names: list[str],
+    expected_names: dict[str, list[str]],
+    expected_shapes: dict[str, list[tuple[int, ...]]],
+    expected_values: dict[str, list[np.ndarray]],
+) -> tuple[int | None, int | None]:
     if not (start is None and end is None):
         if start is None:
             start = 1
         elif end is None:
             # all the shapes are the same so pick the first one
             end = expected_shapes[input_names[0]][0][0]
+        assert start is not None and end is not None
         if end < start:
             for name in input_names:
-                expected_shapes[name] = ()
-                expected_values[name] = {}
+                expected_shapes[name] = []
+                expected_values[name] = []
         else:
             for name in input_names:
                 new_shapes = []

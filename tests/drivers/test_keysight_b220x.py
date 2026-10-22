@@ -33,17 +33,17 @@ def uut() -> "Generator[KeysightB220X, None, None]":
     instance.close()
 
 
-def test_idn_command(uut) -> None:
+def test_idn_command(uut: KeysightB220X) -> None:
     assert "AGILENT" in uut.IDN()["vendor"]
     assert 0 == uut.get_status()
 
 
-def test_connect(uut) -> None:
+def test_connect(uut: KeysightB220X) -> None:
     uut.connect(2, 48)
     assert 0 == uut.get_status()
 
 
-def test_connect_throws_at_invalid_channel_number(uut) -> None:
+def test_connect_throws_at_invalid_channel_number(uut: KeysightB220X) -> None:
     with pytest.raises(ValueError):
         uut.connect(2, 49)
     with pytest.raises(ValueError):
@@ -54,7 +54,7 @@ def test_connect_throws_at_invalid_channel_number(uut) -> None:
         uut.connect(15, 10)
 
 
-def test_connect_emits_warning_on_statusbyte_not_null(uut) -> None:
+def test_connect_emits_warning_on_statusbyte_not_null(uut: KeysightB220X) -> None:
     # some tricks are used to trigger an instrument error both in the
     # simulation as well as in the real instrument:
     # 1. with gnd mode enabled, it is illegal to connect to input channel 12,
@@ -74,7 +74,7 @@ def test_connect_emits_warning_on_statusbyte_not_null(uut) -> None:
     uut.gnd_mode(False)
 
 
-def test_disconnect_throws_at_invalid_channel_number(uut) -> None:
+def test_disconnect_throws_at_invalid_channel_number(uut: KeysightB220X) -> None:
     with pytest.raises(ValueError):
         uut.disconnect(2, 49)
     with pytest.raises(ValueError):
@@ -85,35 +85,35 @@ def test_disconnect_throws_at_invalid_channel_number(uut) -> None:
         uut.disconnect(15, 10)
 
 
-def test_connections(uut) -> None:
+def test_connections(uut: KeysightB220X) -> None:
     uut.connect(2, 48)
     uut.connect(10, 12)
     assert {(2, 48), (10, 12)} == uut.connections()
 
 
-def test_to_channel_list(uut) -> None:
+def test_to_channel_list(uut: KeysightB220X) -> None:
     assert "(@00345,01109)" == uut.to_channel_list([(3, 45), (11, 9)])
 
 
-def test_connect_paths(uut) -> None:
+def test_connect_paths(uut: KeysightB220X) -> None:
     uut.disconnect_all()
     uut.connect_paths([(3, 45), (11, 9)])
     assert 0 == uut.get_status()
 
 
-def test_disconnect_paths(uut) -> None:
+def test_disconnect_paths(uut: KeysightB220X) -> None:
     uut.connect_paths([(3, 45), (11, 9)])
     uut.disconnect_paths([(3, 45), (11, 9)])
     assert 0 == uut.get_status()
 
 
-def test_disconnect_all(uut) -> None:
+def test_disconnect_all(uut: KeysightB220X) -> None:
     uut.connect(2, 48)
     uut.disconnect_all()
     assert 0 == uut.get_status()
 
 
-def test_disconnect(uut) -> None:
+def test_disconnect(uut: KeysightB220X) -> None:
     uut.connect(2, 48)
     assert 0 == uut.get_status()
     uut.disconnect(2, 48)
@@ -123,21 +123,23 @@ def test_disconnect(uut) -> None:
 
 
 @pytest.mark.filterwarnings("ignore:When going")
-def test_connection_rule(uut) -> None:
+def test_connection_rule(uut: KeysightB220X) -> None:
     uut.connection_rule("single")
     assert 0 == uut.get_status()
     assert "single" == uut.connection_rule()
     assert 0 == uut.get_status()
 
 
-def test_connection_rule_emits_warning_when_going_from_free_to_single(uut) -> None:
+def test_connection_rule_emits_warning_when_going_from_free_to_single(
+    uut: KeysightB220X,
+) -> None:
     uut.connection_rule("free")  # uut should already be in free mode after reset
 
     with pytest.warns(UserWarning):
         uut.connection_rule("single")
 
 
-def test_connection_sequence(uut) -> None:
+def test_connection_sequence(uut: KeysightB220X) -> None:
     assert "bbm" == uut.connection_sequence()
     assert 0 == uut.get_status()
     uut.connection_sequence("mbb")
@@ -145,74 +147,74 @@ def test_connection_sequence(uut) -> None:
     assert "mbb" == uut.connection_sequence()
 
 
-def test_bias_disable_all_outputs(uut) -> None:
+def test_bias_disable_all_outputs(uut: KeysightB220X) -> None:
     uut.bias_disable_all_outputs()
     assert 0 == uut.get_status()
 
 
-def test_bias_disable_ouput(uut) -> None:
+def test_bias_disable_ouput(uut: KeysightB220X) -> None:
     uut.bias_disable_output(1)
     assert 0 == uut.get_status()
 
 
-def test_bias_enable_all_outputs(uut) -> None:
+def test_bias_enable_all_outputs(uut: KeysightB220X) -> None:
     uut.bias_enable_all_outputs()
     assert 0 == uut.get_status()
 
 
-def test_bias_enable_output(uut) -> None:
+def test_bias_enable_output(uut: KeysightB220X) -> None:
     uut.bias_enable_output(1)
     assert 0 == uut.get_status()
 
 
-def test_bias_input_port(uut) -> None:
+def test_bias_input_port(uut: KeysightB220X) -> None:
     assert 10 == uut.bias_input_port()
     uut.bias_input_port(9)
     assert 9 == uut.bias_input_port()
     assert 0 == uut.get_status()
 
 
-def test_bias_mode(uut) -> None:
+def test_bias_mode(uut: KeysightB220X) -> None:
     uut.bias_mode(True)
     assert uut.bias_mode()
     assert 0 == uut.get_status()
 
 
-def test_gnd_disable_all_outputs(uut) -> None:
+def test_gnd_disable_all_outputs(uut: KeysightB220X) -> None:
     uut.gnd_disable_all_outputs()
     assert 0 == uut.get_status()
 
 
-def test_gnd_disable_output(uut) -> None:
+def test_gnd_disable_output(uut: KeysightB220X) -> None:
     uut.gnd_disable_output(1)
     assert 0 == uut.get_status()
 
 
-def test_gnd_enable_all_outputs(uut) -> None:
+def test_gnd_enable_all_outputs(uut: KeysightB220X) -> None:
     uut.gnd_enable_all_outputs()
     assert 0 == uut.get_status()
 
 
-def test_gnd_enable_output(uut) -> None:
+def test_gnd_enable_output(uut: KeysightB220X) -> None:
     uut.gnd_enable_output(1)
     assert 0 == uut.get_status()
 
 
-def test_gnd_input_port(uut) -> None:
+def test_gnd_input_port(uut: KeysightB220X) -> None:
     assert 12 == uut.gnd_input_port()
     uut.gnd_input_port(5)
     assert 5 == uut.gnd_input_port()
     assert 0 == uut.get_status()
 
 
-def test_gnd_mode(uut) -> None:
+def test_gnd_mode(uut: KeysightB220X) -> None:
     assert not uut.gnd_mode()
     uut.gnd_mode(True)
     assert uut.gnd_mode()
     assert 0 == uut.get_status()
 
 
-def test_unused_inputs(uut) -> None:
+def test_unused_inputs(uut: KeysightB220X) -> None:
     uut.unused_inputs()
     assert 0 == uut.get_status()
 
@@ -225,14 +227,14 @@ def test_unused_inputs(uut) -> None:
     assert [5, 6, 7, 8] == uut.unused_inputs()
 
 
-def test_couple_mode(uut) -> None:
+def test_couple_mode(uut: KeysightB220X) -> None:
     assert not uut.couple_mode()
     uut.couple_mode(True)
     assert uut.couple_mode()
     assert 0 == uut.get_status()
 
 
-def test_couple_ports(uut) -> None:
+def test_couple_ports(uut: KeysightB220X) -> None:
     assert not uut.couple_ports()
     assert 0 == uut.get_status()
 
@@ -250,12 +252,12 @@ def test_couple_ports(uut) -> None:
         uut.couple_ports([2, 3])
 
 
-def test_couple_port_autodetect(uut) -> None:
+def test_couple_port_autodetect(uut: KeysightB220X) -> None:
     uut.couple_port_autodetect()
     assert 0 == uut.get_status()
 
 
-def test_get_error(uut) -> None:
+def test_get_error(uut: KeysightB220X) -> None:
     uut.get_error()
     assert 0 == uut.get_status()
 

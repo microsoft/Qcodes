@@ -1,10 +1,15 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from qcodes.instrument_drivers.Keysight.keysightb1500.message_builder import CommandList
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 
 @pytest.fixture
-def uut():
+def uut() -> "Generator[CommandList, None, None]":
     yield CommandList()
 
 
@@ -15,7 +20,7 @@ def test_append(uut: CommandList) -> None:
     assert ["a", "b"] == uut
 
 
-def test_set_final(uut) -> None:
+def test_set_final(uut: CommandList) -> None:
     uut.append("a")
 
     uut.set_final()
@@ -24,7 +29,7 @@ def test_set_final(uut) -> None:
         uut.append("b")
 
 
-def test_clear(uut) -> None:
+def test_clear(uut: CommandList) -> None:
     uut.append("a")
     uut.set_final()
 
@@ -34,7 +39,7 @@ def test_clear(uut) -> None:
     assert ["b"] == uut
 
 
-def test_string_representation(uut) -> None:
+def test_string_representation(uut: CommandList) -> None:
     uut.append("a")
     uut.append("b")
 

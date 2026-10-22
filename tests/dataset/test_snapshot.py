@@ -1,4 +1,5 @@
 import json
+from typing import TYPE_CHECKING
 
 import numpy
 import pytest
@@ -8,16 +9,21 @@ from qcodes.instrument_drivers.mock_instruments import DummyInstrument
 from qcodes.parameters import ManualParameter, Parameter
 from qcodes.station import Station
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+if TYPE_CHECKING:
+    from qcodes.dataset.experiment_container import Experiment
+
 
 @pytest.fixture  # scope is "function" per default
-def dac():
+def dac() -> "Generator[DummyInstrument, None, None]":
     dac = DummyInstrument("dummy_dac", gates=["ch1", "ch2"])
     yield dac
     dac.close()
 
 
 @pytest.fixture
-def dmm():
+def dmm() -> "Generator[DummyInstrument, None, None]":
     dmm = DummyInstrument("dummy_dmm", gates=["v1", "v2"])
     yield dmm
     dmm.close()
@@ -25,7 +31,10 @@ def dmm():
 
 @pytest.mark.parametrize("pass_station", (True, False))
 def test_station_snapshot_during_measurement(
-    experiment, dac, dmm, pass_station
+    experiment: "Experiment",
+    dac: "DummyInstrument",
+    dmm: "DummyInstrument",
+    pass_station: "bool",
 ) -> None:
     station = Station()
     station.add_component(dac)
@@ -77,7 +86,9 @@ def test_station_snapshot_during_measurement(
     assert expected_snapshot == data_saver.dataset.snapshot
 
 
-def test_snapshot_creation_for_types_not_supported_by_builtin_json(experiment) -> None:
+def test_snapshot_creation_for_types_not_supported_by_builtin_json(
+    experiment: "Experiment",
+) -> None:
     """
     Test that `Measurement`/`Runner`/`DataSaver` infrastructure
     successfully dumps station snapshots in JSON format in cases when the
@@ -119,7 +130,7 @@ def test_snapshot_creation_for_types_not_supported_by_builtin_json(experiment) -
 
 
 def test_station_snapshot_in_measurement_refreshes_only_invalid_caches(
-    experiment,
+    experiment: "Experiment",
 ) -> None:
     """
     The station snapshot taken by a ``Measurement`` uses ``update="Only_invalid"``

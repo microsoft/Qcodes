@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
@@ -13,8 +15,18 @@ from qcodes.dataset.exporters.export_to_xarray import (
 from qcodes.dataset.measurements import Measurement
 from qcodes.parameters import ManualParameter, ParamSpecBase
 
+if TYPE_CHECKING:
+    from pathlib import Path
 
-def test_get_data_by_id_order(dataset) -> None:
+    from qcodes.dataset.data_set import DataSet
+    from qcodes.dataset.experiment_container import Experiment
+    from qcodes.instrument_drivers.mock_instruments import (
+        DummyChannelInstrument,
+        DummyInstrument,
+    )
+
+
+def test_get_data_by_id_order(dataset: "DataSet") -> None:
     """
     Test that the added values of setpoints end up associated with the correct
     setpoint parameter, irrespective of the ordering of those setpoint
@@ -52,7 +64,7 @@ def test_get_data_by_id_order(dataset) -> None:
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_multidimarrayparameter_as_array(
-    SpectrumAnalyzer, bg_writing
+    SpectrumAnalyzer: "DummyInstrument", bg_writing: "bool"
 ) -> None:
     array_param = SpectrumAnalyzer.multidimspectrum
     meas = Measurement()
@@ -101,7 +113,7 @@ def test_datasaver_multidimarrayparameter_as_array(
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_multidimarrayparameter_as_numeric(
-    SpectrumAnalyzer, bg_writing
+    SpectrumAnalyzer: "DummyInstrument", bg_writing: "bool"
 ) -> None:
     """
     Test that storing a multidim Array parameter as numeric unravels the
@@ -165,7 +177,11 @@ def test_datasaver_multidimarrayparameter_as_numeric(
 @pytest.mark.parametrize("storage_type", ["numeric", "array"])
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_array_parameters_channel(
-    channel_array_instrument, DAC, N, storage_type, bg_writing
+    channel_array_instrument: "DummyChannelInstrument",
+    DAC: "DummyInstrument",
+    N: "int",
+    storage_type: "str",
+    bg_writing: "bool",
 ) -> None:
     array_param = channel_array_instrument.A.dummy_array_parameter
     meas = Measurement()
@@ -198,7 +214,10 @@ def test_datasaver_array_parameters_channel(
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("bg_writing", [True, False])
 def test_datasaver_array_parameters_array(
-    channel_array_instrument, DAC, N, bg_writing
+    channel_array_instrument: "DummyChannelInstrument",
+    DAC: "DummyInstrument",
+    N: "int",
+    bg_writing: "bool",
 ) -> None:
     """
     Test that storing array parameters inside a loop works as expected
@@ -243,7 +262,7 @@ def test_datasaver_array_parameters_array(
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_datasaver_multidim_array(experiment, bg_writing) -> None:
+def test_datasaver_multidim_array(experiment: "Experiment", bg_writing: "bool") -> None:
     """
     Test that inserting multidim parameters as arrays works as expected
     """
@@ -290,7 +309,9 @@ def test_datasaver_multidim_array(experiment, bg_writing) -> None:
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_datasaver_multidim_numeric(experiment, bg_writing) -> None:
+def test_datasaver_multidim_numeric(
+    experiment: "Experiment", bg_writing: "bool"
+) -> None:
     """
     Test that inserting multidim parameters as numeric works as expected
     """
@@ -330,7 +351,7 @@ def test_datasaver_multidim_numeric(experiment, bg_writing) -> None:
 
 
 def test_get_data_from_ds_non_unique_setpoint_after_netcdf_reload(
-    experiment, tmp_path
+    experiment: "Experiment", tmp_path: "Path"
 ) -> None:
     """
     Test that _get_data_from_ds works on a dataset reloaded from netcdf when

@@ -8,11 +8,17 @@ from qcodes.metadatable import Metadatable
 from qcodes.utils import diff_param_values
 
 if TYPE_CHECKING:
-    from qcodes.metadatable.metadatable_base import Snapshot
+    from collections.abc import Sequence
+
+    from qcodes.metadatable.metadatable_base import Snapshot, SnapshotUpdate
 
 
 class HasSnapshotBase(Metadatable):
-    def snapshot_base(self, update=False, params_to_skip_update=None):
+    def snapshot_base(
+        self,
+        update: bool | SnapshotUpdate | None = False,
+        params_to_skip_update: Sequence[str] | None = None,
+    ) -> Snapshot:
         return {"cheese": "gruyere"}
 
 

@@ -6,11 +6,14 @@ import pytest
 from qcodes.instrument import Instrument
 
 if TYPE_CHECKING:
-    from qcodes.parameters import Parameter
+    from typing import Unpack
+
+    from qcodes.instrument import InstrumentBaseKWArgs
+    from qcodes.parameters import Parameter, ParameterBase
 
 
 class DummyOverrideInstr(Instrument):
-    def __init__(self, name, **kwargs):
+    def __init__(self, name: str, **kwargs: "Unpack[InstrumentBaseKWArgs]") -> None:
         """
         This instrument errors because it tries to override an attribute with a parameter.
         Removing the parameter using `self.parameters.pop("voltage")` is not safe but
@@ -25,19 +28,19 @@ class DummyOverrideInstr(Instrument):
 
 
 class DummyParameterIsAttrInstr(Instrument):
-    def __init__(self, name, **kwargs):
+    def __init__(self, name: str, **kwargs: "Unpack[InstrumentBaseKWArgs]") -> None:
         """
         This instrument errors because it tries to override an attribute with a parameter.
         """
         super().__init__(name, **kwargs)
         self.voltage = self.add_parameter("voltage", set_cmd=None, get_cmd=None)
 
-    def voltage(self):
+    def voltage(self) -> int:
         return 0
 
 
 class DummyParameterIsPropertyInstr(Instrument):
-    def __init__(self, name, **kwargs):
+    def __init__(self, name: str, **kwargs: "Unpack[InstrumentBaseKWArgs]") -> None:
         """
         We allow overriding a property since this pattern has been seen in the wild
         to define an interface for the instrument.
@@ -46,7 +49,7 @@ class DummyParameterIsPropertyInstr(Instrument):
         self.add_parameter("voltage", set_cmd=None, get_cmd=None)
 
     @property
-    def voltage(self):
+    def voltage(self) -> "ParameterBase":
         return self.parameters["voltage"]
 
 
@@ -56,7 +59,7 @@ class DummyClassAttrInstr(Instrument):
     voltage: "Parameter | None" = None
     frequency: "Parameter | None" = None
 
-    def __init__(self, name, **kwargs):
+    def __init__(self, name: str, **kwargs: "Unpack[InstrumentBaseKWArgs]") -> None:
         """
         We allow overriding a property since this pattern has been seen in the wild
         to define an interface for the instrument.
@@ -68,7 +71,7 @@ class DummyClassAttrInstr(Instrument):
 
 
 class DummyInstr(Instrument):
-    def __init__(self, name, **kwargs):
+    def __init__(self, name: str, **kwargs: "Unpack[InstrumentBaseKWArgs]") -> None:
         """
         We allow overriding a property since this pattern has been seen in the wild
         to define an interface for the instrument.
@@ -79,7 +82,7 @@ class DummyInstr(Instrument):
         self.some_attr = 1
 
 
-def test_overriding_parameter_attribute_with_parameter_raises():
+def test_overriding_parameter_attribute_with_parameter_raises() -> None:
     with pytest.raises(
         KeyError,
         match="Duplicate parameter name voltage on instrument",
@@ -87,19 +90,21 @@ def test_overriding_parameter_attribute_with_parameter_raises():
         DummyOverrideInstr("my_instr")
 
 
-def test_overriding_attribute_with_parameter_raises():
+def test_overriding_attribute_with_parameter_raises() -> None:
     with pytest.warns(
         match="Parameter voltage overrides an attribute of the same name on instrument",
     ):
         DummyParameterIsAttrInstr("my_instr")
 
 
-def test_overriding_property_with_parameter_works(request):
+def test_overriding_property_with_parameter_works(
+    request: pytest.FixtureRequest,
+) -> None:
     request.addfinalizer(DummyParameterIsPropertyInstr.close_all)
     DummyParameterIsPropertyInstr("my_instr")
 
 
-def test_removing_parameter_works(request):
+def test_removing_parameter_works(request: pytest.FixtureRequest) -> None:
     request.addfinalizer(DummyInstr.close_all)
     a = DummyInstr("my_instr")
 
@@ -113,7 +118,9 @@ def test_removing_parameter_works(request):
     assert a.some_attr == 1
 
 
-def test_removed_parameter_from_prop_instrument_works(request):
+def test_removed_parameter_from_prop_instrument_works(
+    request: pytest.FixtureRequest,
+) -> None:
     request.addfinalizer(DummyParameterIsPropertyInstr.close_all)
     a = DummyParameterIsPropertyInstr("my_instr")
     a.remove_parameter("voltage")
@@ -121,7 +128,9 @@ def test_removed_parameter_from_prop_instrument_works(request):
     a.voltage.set(1)
 
 
-def test_remove_parameter_from_class_attr_works(request, caplog):
+def test_remove_parameter_from_class_attr_works(
+    request: pytest.FixtureRequest, caplog: pytest.LogCaptureFixture
+) -> None:
     request.addfinalizer(DummyClassAttrInstr.close_all)
     a = DummyClassAttrInstr("my_instr")
 

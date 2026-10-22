@@ -139,7 +139,7 @@ def skip_if_no_fixtures(dbname: str | Path) -> None:
 class DummyComponent(MetadatableWithName):
     """Docstring for DummyComponent."""
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         super().__init__()
         self.name = name
 

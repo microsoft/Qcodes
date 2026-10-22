@@ -1,4 +1,5 @@
 import logging
+from typing import TYPE_CHECKING
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -9,9 +10,12 @@ from pytest import LogCaptureFixture
 from qcodes.instrument_drivers.oxford.MercuryiPS_VISA import OxfordMercuryiPS
 from qcodes.math_utils.field_vector import FieldVector
 
+if TYPE_CHECKING:
+    from collections.abc import Generator, Iterable
+
 
 @pytest.fixture(scope="function")
-def driver():
+def driver() -> "Generator[OxfordMercuryiPS, None, None]":
     mips = OxfordMercuryiPS(
         "mips", address="GPIB::1::INSTR", pyvisa_sim_file="MercuryiPS.yaml"
     )
@@ -20,12 +24,12 @@ def driver():
 
 
 @pytest.fixture(scope="function")
-def driver_spher_lim():
-    def spherical_limits(x, y, z):
+def driver_spher_lim() -> "Generator[OxfordMercuryiPS, None, None]":
+    def spherical_limits(x: float, y: float, z: float) -> bool:
         """
         Checks that the field is inside a sphere of radius 2
         """
-        return np.sqrt(x**2 + y**2 + z**2) <= 2
+        return bool(np.sqrt(x**2 + y**2 + z**2) <= 2)
 
     mips_sl = OxfordMercuryiPS(
         "mips_sl",
@@ -39,12 +43,12 @@ def driver_spher_lim():
 
 
 @pytest.fixture(scope="function")
-def driver_cyl_lim():
-    def cylindrical_limits(x, y, z):
+def driver_cyl_lim() -> "Generator[OxfordMercuryiPS, None, None]":
+    def cylindrical_limits(x: float, y: float, z: float) -> bool:
         """
         Checks that the field is inside a particular cylinder
         """
-        rho_check = np.sqrt(x**2 + y**2) <= 2
+        rho_check = bool(np.sqrt(x**2 + y**2) <= 2)
         z_check = z < 3 and z > -1
 
         return rho_check and z_check
@@ -60,11 +64,11 @@ def driver_cyl_lim():
     mips_cl.close()
 
 
-def test_idn(driver) -> None:
+def test_idn(driver: OxfordMercuryiPS) -> None:
     assert driver.IDN()["model"] == "SIMULATED MERCURY iPS"
 
 
-def test_simple_setting(driver) -> None:
+def test_simple_setting(driver: OxfordMercuryiPS) -> None:
     """
     Some very simple setting of parameters. Mainly just to
     sanity-check the pyvisa-sim setup.
@@ -74,13 +78,13 @@ def test_simple_setting(driver) -> None:
     assert driver.GRPX.field_target() == 0.1
 
 
-def test_vector_setting(driver) -> None:
+def test_vector_setting(driver: OxfordMercuryiPS) -> None:
     assert driver.field_target().distance(FieldVector(0, 0, 0)) <= 1e-8
     driver.field_target(FieldVector(r=0.1, theta=0, phi=0))
     assert driver.field_target().distance(FieldVector(r=0.1, theta=0, phi=0)) <= 1e-8
 
 
-def test_vector_ramp_rate(driver) -> None:
+def test_vector_ramp_rate(driver: OxfordMercuryiPS) -> None:
     driver.field_ramp_rate(FieldVector(0.1, 0.1, 0.1))
     assert driver.field_ramp_rate().distance(FieldVector(0.1, 0.1, 0.1)) <= 1e-8
 
@@ -102,7 +106,13 @@ def test_wrong_field_limit_raises() -> None:
     y=hst.floats(min_value=-3, max_value=3),
     z=hst.floats(min_value=-3, max_value=3),
 )
-def test_field_limits(x, y, z, driver_spher_lim, driver_cyl_lim) -> None:
+def test_field_limits(
+    x: float,
+    y: float,
+    z: float,
+    driver_spher_lim: OxfordMercuryiPS,
+    driver_cyl_lim: OxfordMercuryiPS,
+) -> None:
     """
     Try with a few different field_limits functions and see if we get no-go
     exceptions when we expect them
@@ -129,7 +139,7 @@ def test_field_limits(x, y, z, driver_spher_lim, driver_cyl_lim) -> None:
                 mip.z_target(z)
 
 
-def get_ramp_order(caplog_records):
+def get_ramp_order(caplog_records: "Iterable[logging.LogRecord]") -> list[str]:
     """
     Helper function used in test_ramp_safely
     """
@@ -148,7 +158,9 @@ def get_ramp_order(caplog_records):
     y=hst.floats(min_value=-3, max_value=3),
     z=hst.floats(min_value=-3, max_value=3),
 )
-def test_ramp_safely(driver, x, y, z, caplog: LogCaptureFixture) -> None:
+def test_ramp_safely(
+    driver: OxfordMercuryiPS, x: float, y: float, z: float, caplog: LogCaptureFixture
+) -> None:
     """
     Test that we get the first-down-then-up order right
     """

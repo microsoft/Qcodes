@@ -1,4 +1,4 @@
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 
@@ -6,13 +6,22 @@ from qcodes.extensions.parameters import OnCacheChangeParameterMixin
 from qcodes.instrument import Instrument
 from qcodes.parameters import Parameter
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from qcodes.extensions.parameters.parameter_mixin_on_cache_change import (
+        OnCacheChangeCallback,
+    )
+
 
 class MockInstrument(Instrument):
     """
     A mock instrument to host parameters.
     """
 
-    def __init__(self, name: str):
+    test_parameter: "OnCacheChangeParameter"
+
+    def __init__(self, name: str) -> None:
         super().__init__(name)
 
 
@@ -23,7 +32,7 @@ class OnCacheChangeParameter(OnCacheChangeParameterMixin, Parameter):
 
 
 @pytest.fixture
-def store():
+def store() -> dict[str, Any]:
     """
     Provides a dictionary to store parameter values.
     """
@@ -31,7 +40,7 @@ def store():
 
 
 @pytest.fixture
-def callback_flag():
+def callback_flag() -> dict[str, bool]:
     """
     Provides a mutable flag to track callback invocation.
     """
@@ -39,7 +48,7 @@ def callback_flag():
 
 
 @pytest.fixture
-def callback(callback_flag):
+def callback(callback_flag: dict[str, bool]) -> "OnCacheChangeCallback":
     """
     Provides a callback that sets callback_flag["called"] to True.
     """
@@ -51,7 +60,7 @@ def callback(callback_flag):
 
 
 @pytest.fixture
-def callback_data():
+def callback_data() -> list[Any]:
     """
     Provides a list to store callback invocation data.
     """
@@ -59,19 +68,19 @@ def callback_data():
 
 
 @pytest.fixture
-def data_callback(callback_data):
+def data_callback(callback_data: list[Any]) -> "OnCacheChangeCallback":
     """
     Provides a callback that records (args, kwargs) into callback_data.
     """
 
-    def _callback(**kwargs):
+    def _callback(**kwargs: Any) -> None:
         callback_data.append(kwargs)
 
     return _callback
 
 
 @pytest.fixture
-def mock_instr():
+def mock_instr() -> "Generator[MockInstrument, None, None]":
     """
     Provides a mock instrument to host parameters.
     """
@@ -81,18 +90,24 @@ def mock_instr():
 
 
 @pytest.mark.parametrize("invalid_callback", ["not_a_callable", 123, [], {}])
-def test_error_on_non_callable_callback(mock_instr, invalid_callback) -> None:
+def test_error_on_non_callable_callback(
+    mock_instr: MockInstrument,
+    invalid_callback: str | int | list[Any] | dict[Any, Any],
+) -> None:
     test_parameter: OnCacheChangeParameter = mock_instr.add_parameter(
         name="test_parameter",
         parameter_class=OnCacheChangeParameter,
         docstring="A parameter for testing non-callable callbacks.",
     )
     with pytest.raises(TypeError):
-        test_parameter.on_cache_change = invalid_callback
+        test_parameter.on_cache_change = invalid_callback  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_no_callback_invocation_on_init_or_get(
-    store, callback_flag, callback, mock_instr
+    store: dict[str, Any],
+    callback_flag: dict[str, bool],
+    callback: "OnCacheChangeCallback",
+    mock_instr: MockInstrument,
 ) -> None:
     test_parameter: OnCacheChangeParameter = mock_instr.add_parameter(
         name="test_parameter",
@@ -107,7 +122,12 @@ def test_no_callback_invocation_on_init_or_get(
     assert not callback_flag["called"], "Callback invoked unexpectedly."
 
 
-def test_callback_invoked_on_set(store, callback_flag, callback, mock_instr) -> None:
+def test_callback_invoked_on_set(
+    store: dict[str, Any],
+    callback_flag: dict[str, bool],
+    callback: "OnCacheChangeCallback",
+    mock_instr: MockInstrument,
+) -> None:
     test_parameter: OnCacheChangeParameter = mock_instr.add_parameter(
         name="test_parameter",
         parameter_class=OnCacheChangeParameter,
@@ -121,7 +141,10 @@ def test_callback_invoked_on_set(store, callback_flag, callback, mock_instr) -> 
 
 
 def test_changing_callback_after_init(
-    store, callback_flag, callback, mock_instr
+    store: dict[str, Any],
+    callback_flag: dict[str, bool],
+    callback: "OnCacheChangeCallback",
+    mock_instr: MockInstrument,
 ) -> None:
     test_parameter: OnCacheChangeParameter = mock_instr.add_parameter(
         name="test_parameter",
@@ -138,7 +161,11 @@ def test_changing_callback_after_init(
     assert callback_flag["called"]
 
 
-def test_callback_on_get_value_change(callback_flag, callback, mock_instr) -> None:
+def test_callback_on_get_value_change(
+    callback_flag: dict[str, bool],
+    callback: "OnCacheChangeCallback",
+    mock_instr: MockInstrument,
+) -> None:
     get_reply = None
 
     test_parameter: OnCacheChangeParameter = mock_instr.add_parameter(
@@ -157,7 +184,10 @@ def test_callback_on_get_value_change(callback_flag, callback, mock_instr) -> No
 
 
 def test_callback_on_direct_cache_update(
-    store, callback_data, data_callback, mock_instr
+    store: dict[str, Any],
+    callback_data: list[dict[str, Any]],
+    data_callback: "OnCacheChangeCallback",
+    mock_instr: MockInstrument,
 ) -> None:
     test_parameter: OnCacheChangeParameter = mock_instr.add_parameter(
         name="test_parameter",
@@ -174,7 +204,10 @@ def test_callback_on_direct_cache_update(
 
 
 def test_no_callback_if_value_unchanged(
-    store, callback_data, data_callback, mock_instr
+    store: dict[str, Any],
+    callback_data: list[dict[str, Any]],
+    data_callback: "OnCacheChangeCallback",
+    mock_instr: MockInstrument,
 ) -> None:
     test_parameter: OnCacheChangeParameter = mock_instr.add_parameter(
         name="test_parameter",
@@ -193,8 +226,12 @@ def test_no_callback_if_value_unchanged(
     assert not callback_data
 
 
-def test_callback_value_parsers(store, callback_data, mock_instr) -> None:
-    def cb(**kwargs):
+def test_callback_value_parsers(
+    store: dict[str, Any],
+    callback_data: list[tuple[Any, Any, Any, Any]],
+    mock_instr: MockInstrument,
+) -> None:
+    def cb(**kwargs: Any) -> None:
         callback_data.append(
             (
                 kwargs.get("value_old"),

@@ -24,6 +24,12 @@ from qcodes.parameters import Parameter
 from qcodes.plotting.axis_labels import _ENGINEERING_PREFIXES, _UNITS_FOR_RESCALING
 
 if TYPE_CHECKING:
+    from hypothesis.strategies import DataObject
+    from numpy.typing import NDArray
+if TYPE_CHECKING:
+    from qcodes.dataset.experiment_container import Experiment
+
+if TYPE_CHECKING:
     from qcodes.dataset.data_export import DSPlotData
 
 
@@ -61,7 +67,11 @@ _RNG = np.random.default_rng()
 )
 @settings(suppress_health_check=[HealthCheck.too_slow])
 def test_rescaled_ticks_and_units(
-    scale, unit, param_name, param_label, data_strategy
+    scale: "int",
+    unit: "str",
+    param_name: "str",
+    param_label: "str",
+    data_strategy: "DataObject | NDArray[np.float64]",
 ) -> None:
     if isinstance(data_strategy, np.ndarray):
         # No need to generate data, because it is being passed
@@ -126,7 +136,9 @@ def test_rescaled_ticks_and_units(
         assert "2.12346" == ticks_formatter(2.123456789 / (10 ** (-scale)))
 
 
-def test_plot_by_id_line_and_heatmap(experiment, request: FixtureRequest) -> None:
+def test_plot_by_id_line_and_heatmap(
+    experiment: "Experiment", request: FixtureRequest
+) -> None:
     """
     Test that line plots and heatmaps can be plotted together
     """
@@ -160,7 +172,10 @@ def test_plot_by_id_line_and_heatmap(experiment, request: FixtureRequest) -> Non
 @pytest.mark.parametrize("nan_setpoints", [True, False])
 @pytest.mark.parametrize("shifted", [True, False])
 def test_plot_dataset_2d_shaped(
-    experiment, request: FixtureRequest, nan_setpoints, shifted
+    experiment: "Experiment",
+    request: FixtureRequest,
+    nan_setpoints: "bool",
+    shifted: "bool",
 ) -> None:
     """
     Test plotting of preshaped data on a grid that may or may not be shifted
@@ -378,7 +393,9 @@ def test__complex_to_real_preparser_complex_setpoint() -> None:
 
 
 @pytest.mark.parametrize("params", [None, "y", "y2", ["y", "y2"]])
-def test_plot_dataset_parameters(experiment, request: FixtureRequest, params) -> None:
+def test_plot_dataset_parameters(
+    experiment: "Experiment", request: FixtureRequest, params: "str | list[str] | None"
+) -> None:
     """
     Test plotting of specified parameters with plot_dataset
     function.
