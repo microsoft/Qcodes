@@ -170,9 +170,9 @@ def test_missing_config_file(config: Config) -> None:
 def test_default_config_files(config: Config, load_config: "MockType") -> None:
     load_config.side_effect = partial(side_effect, GOOD_CONFIG_MAP)
     # don't try to load custom schemas
-    config.schema_cwd_file_name = None  # pyright: ignore[reportAttributeAccessIssue]
-    config.schema_home_file_name = None  # pyright: ignore[reportAttributeAccessIssue]
-    config.schema_env_file_name = None  # pyright: ignore[reportAttributeAccessIssue]
+    config.schema_cwd_file_name = None  # pyright: ignore[reportAttributeAccessIssue]  # ty: ignore[invalid-assignment]
+    config.schema_home_file_name = None  # pyright: ignore[reportAttributeAccessIssue]  # ty: ignore[invalid-assignment]
+    config.schema_env_file_name = None  # pyright: ignore[reportAttributeAccessIssue]  # ty: ignore[invalid-assignment]
     config.defaults, _ = config.load_default()
     updated_config = config.update_config()
     assert updated_config == CONFIG
@@ -181,9 +181,9 @@ def test_default_config_files(config: Config, load_config: "MockType") -> None:
 def test_bad_config_files(config: Config, load_config: "MockType") -> None:
     load_config.side_effect = partial(side_effect, BAD_CONFIG_MAP)
     # don't try to load custom schemas
-    config.schema_cwd_file_name = None  # pyright: ignore[reportAttributeAccessIssue]
-    config.schema_home_file_name = None  # pyright: ignore[reportAttributeAccessIssue]
-    config.schema_env_file_name = None  # pyright: ignore[reportAttributeAccessIssue]
+    config.schema_cwd_file_name = None  # pyright: ignore[reportAttributeAccessIssue]  # ty: ignore[invalid-assignment]
+    config.schema_home_file_name = None  # pyright: ignore[reportAttributeAccessIssue]  # ty: ignore[invalid-assignment]
+    config.schema_env_file_name = None  # pyright: ignore[reportAttributeAccessIssue]  # ty: ignore[invalid-assignment]
     config.defaults, _ = config.load_default()
     with pytest.raises(jsonschema.exceptions.ValidationError):
         config.update_config()

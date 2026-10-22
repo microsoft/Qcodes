@@ -1092,8 +1092,8 @@ def test_dond_2d_multi_datasets_with_callable_output_data(
     exp_1 = dond(
         sweep_1,
         sweep_2,
-        [_string_callable, _param, _param_complex],  # pyright: ignore[reportArgumentType]
-        [_string_callable, _param_2, _param_complex_2],  # pyright: ignore[reportArgumentType]
+        [_string_callable, _param, _param_complex],  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
+        [_string_callable, _param_2, _param_complex_2],  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
     )
     datasets = exp_1[0]
     assert isinstance(datasets, tuple)
