@@ -1,0 +1,41 @@
+spec: "1.0"
+devices:
+  device 1:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "Agilent Technologies, E8267C, US00000000, C.04.84"
+
+    properties:
+      power:
+        default: 0
+        getter:
+          q: "POW?"
+          r: "{}"
+        setter:
+          q: "POW {}"
+
+      power_offset:
+        default: 0
+        getter:
+          q: "POW:OFFS?"
+          r: "{}"
+        setter:
+          q: "POW:OFFS {}"
+
+      pulse_width:
+        # *RST value according to the E8257D/67D SCPI command reference
+        default: "+1.00000000E-006"
+        getter:
+          q: "PULM:INT:PWID?"
+          r: "{}"
+        setter:
+          q: "PULM:INT:PWID {}"
+
+resources:
+  GPIB::1::INSTR:
+    device: device 1
