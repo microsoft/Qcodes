@@ -1,0 +1,7 @@
+The type alias ``VALUE`` in ``qcodes.dataset.sqlite.query_helpers`` now includes
+the numpy integer, floating point and complex scalar types. These are already
+supported at runtime by ``DataSet.add_results`` and the other functions that
+store data in the database, so passing numpy scalars to them no longer produces a
+type checking error. Since ``VALUE`` is also used as the return type of methods
+such as ``DataSet.get_metadata``, code that annotates the returned values may
+need to handle numpy scalar types too.
