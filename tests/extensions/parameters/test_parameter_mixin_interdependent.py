@@ -1,5 +1,5 @@
 import re
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -94,29 +94,23 @@ def test_dependency_update_invoked_on_change(
     callback: "Callable[[], None]",
     mock_instr: MockInstrument,
 ) -> None:
-    mock_instr.some_param = cast(
-        "InterdependentParameter",
-        mock_instr.add_parameter(
-            name="some_param",
-            parameter_class=InterdependentParameter,
-            set_cmd=lambda x: store.update({"some": x}),
-            get_cmd=lambda: store.get("some"),
-            docstring="Parameter some_param represents a primary parameter.",
-        ),
+    mock_instr.some_param = mock_instr.add_parameter(
+        name="some_param",
+        parameter_class=InterdependentParameter,
+        set_cmd=lambda x: store.update({"some": x}),
+        get_cmd=lambda: store.get("some"),
+        docstring="Parameter some_param represents a primary parameter.",
     )
     """Parameter some_param represents a primary parameter."""
 
-    mock_instr.managed_param = cast(
-        "InterdependentParameter",
-        mock_instr.add_parameter(
-            name="managed_param",
-            parameter_class=InterdependentParameter,
-            dependent_on=["some_param"],
-            dependency_update_method=callback,
-            set_cmd=lambda x: store.update({"managed": x}),
-            get_cmd=lambda: store.get("managed"),
-            docstring="Parameter managed_param depends on some_param.",
-        ),
+    mock_instr.managed_param = mock_instr.add_parameter(
+        name="managed_param",
+        parameter_class=InterdependentParameter,
+        dependent_on=["some_param"],
+        dependency_update_method=callback,
+        set_cmd=lambda x: store.update({"managed": x}),
+        get_cmd=lambda: store.get("managed"),
+        docstring="Parameter managed_param depends on some_param.",
     )
     """Parameter managed_param depends on some_param."""
 
@@ -130,29 +124,23 @@ def test_adding_dependent_parameter_later(
     callback: "Callable[[], None]",
     mock_instr: MockInstrument,
 ) -> None:
-    mock_instr.some_param = cast(
-        "InterdependentParameter",
-        mock_instr.add_parameter(
-            name="some_param",
-            parameter_class=InterdependentParameter,
-            set_cmd=lambda x: store.update({"some": x}),
-            get_cmd=lambda: store.get("some"),
-            docstring="Parameter some_param represents a primary parameter.",
-        ),
+    mock_instr.some_param = mock_instr.add_parameter(
+        name="some_param",
+        parameter_class=InterdependentParameter,
+        set_cmd=lambda x: store.update({"some": x}),
+        get_cmd=lambda: store.get("some"),
+        docstring="Parameter some_param represents a primary parameter.",
     )
     """Parameter some_param represents a primary parameter."""
 
-    mock_instr.managed_param = cast(
-        "InterdependentParameter",
-        mock_instr.add_parameter(
-            name="managed_param",
-            parameter_class=InterdependentParameter,
-            dependent_on=["some_param"],
-            dependency_update_method=callback,
-            set_cmd=lambda x: store.update({"managed": x}),
-            get_cmd=lambda: store.get("managed"),
-            docstring="Parameter managed_param depends on some_param.",
-        ),
+    mock_instr.managed_param = mock_instr.add_parameter(
+        name="managed_param",
+        parameter_class=InterdependentParameter,
+        dependent_on=["some_param"],
+        dependency_update_method=callback,
+        set_cmd=lambda x: store.update({"managed": x}),
+        get_cmd=lambda: store.get("managed"),
+        docstring="Parameter managed_param depends on some_param.",
     )
     """Parameter managed_param depends on some_param."""
 
@@ -200,31 +188,25 @@ def test_parsers_and_dependency_propagation(
     def dependency_update() -> None:
         mock_instr.managed_param.set(999)
 
-    mock_instr.some_param = cast(
-        "InterdependentParameter",
-        mock_instr.add_parameter(
-            name="some_param",
-            parameter_class=InterdependentParameter,
-            set_cmd=lambda x: store.update({"some": x}),
-            get_cmd=lambda: store.get("some"),
-            set_parser=lambda v: v * 2,
-            get_parser=lambda v: v + 1 if v is not None else None,
-            docstring="Parameter some_param with parsers.",
-        ),
+    mock_instr.some_param = mock_instr.add_parameter(
+        name="some_param",
+        parameter_class=InterdependentParameter,
+        set_cmd=lambda x: store.update({"some": x}),
+        get_cmd=lambda: store.get("some"),
+        set_parser=lambda v: v * 2,
+        get_parser=lambda v: v + 1 if v is not None else None,
+        docstring="Parameter some_param with parsers.",
     )
     """Parameter some_param with parsers."""
 
-    mock_instr.managed_param = cast(
-        "InterdependentParameter",
-        mock_instr.add_parameter(
-            name="managed_param",
-            parameter_class=InterdependentParameter,
-            dependent_on=["some_param"],
-            dependency_update_method=dependency_update,
-            set_cmd=lambda x: store.update({"managed": x}),
-            get_cmd=lambda: store.get("managed"),
-            docstring="Parameter managed_param depends on some_param.",
-        ),
+    mock_instr.managed_param = mock_instr.add_parameter(
+        name="managed_param",
+        parameter_class=InterdependentParameter,
+        dependent_on=["some_param"],
+        dependency_update_method=dependency_update,
+        set_cmd=lambda x: store.update({"managed": x}),
+        get_cmd=lambda: store.get("managed"),
+        docstring="Parameter managed_param depends on some_param.",
     )
     """Parameter managed_param depends on some_param."""
 
