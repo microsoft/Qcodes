@@ -31,6 +31,7 @@ from qcodes.instrument import (
     VisaInstrument,
     VisaInstrumentKWArgs,
 )
+from qcodes.parameters import create_on_off_val_mapping
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
@@ -156,13 +157,12 @@ class TektronixAWG5014Channel(InstrumentChannel["TektronixAWG5014"]):
         dc_out_cmd = f"AWGControl:DC{i}:VOLTage:OFFSet"
 
         # Set channel first to ensure sensible sorting of pars
-        self.state: Parameter[int, Self] = self.add_parameter(
+        self.state: Parameter[bool, Self] = self.add_parameter(
             "state",
             label=f"Status channel {i}",
             get_cmd=state_cmd + "?",
             set_cmd=state_cmd + " {}",
-            vals=vals.Ints(0, 1),
-            get_parser=int,
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
         )
         """Parameter state"""
         self.amp: Parameter[float, Self] = self.add_parameter(
@@ -194,12 +194,12 @@ class TektronixAWG5014Channel(InstrumentChannel["TektronixAWG5014"]):
             get_parser=parsestr,
         )
         """Parameter waveform"""
-        self.direct_output: Parameter = self.add_parameter(
+        self.direct_output: Parameter[bool, Self] = self.add_parameter(
             "direct_output",
             label=f"Direct output channel {i}",
             get_cmd=directoutput_cmd + "?",
             set_cmd=directoutput_cmd + " {}",
-            vals=vals.Ints(0, 1),
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
         )
         """Parameter direct_output"""
         self.add_input: Parameter[str, Self] = self.add_parameter(
@@ -413,13 +413,12 @@ class TektronixAWG5014(VisaInstrument):
         )
         """Parameter ref_source"""
 
-        self.DC_output: Parameter[int, Self] = self.add_parameter(
+        self.DC_output: Parameter[bool, Self] = self.add_parameter(
             "DC_output",
             label="DC Output (ON/OFF)",
             get_cmd="AWGControl:DC:STATe?",
             set_cmd="AWGControl:DC:STATe {}",
-            vals=vals.Ints(0, 1),
-            get_parser=int,
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
         )
         """Parameter DC_output"""
 
@@ -471,12 +470,13 @@ class TektronixAWG5014(VisaInstrument):
                                20 will be deleted.
                                """
 
-        self.sequence_pos: Parameter = self.add_parameter(
+        self.sequence_pos: Parameter[int, Self] = self.add_parameter(
             "sequence_pos",
             label="Sequence position",
             get_cmd="AWGControl:SEQuencer:POSition?",
             set_cmd="SEQuence:JUMP:IMMediate {}",
             vals=vals.PermissiveInts(1),
+            get_parser=int,
             set_parser=round,
         )
         """Parameter sequence_pos"""
