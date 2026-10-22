@@ -4,7 +4,7 @@ import logging
 import re
 import time
 import warnings
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, NamedTuple, Self
 
 import numpy as np
 from packaging import version
@@ -210,11 +210,11 @@ class RigolDS4000Channel(InstrumentChannel):
     ):
         super().__init__(parent, name, **kwargs)
 
-        self.amplitude: Parameter = self.add_parameter(
+        self.amplitude: Parameter[float, Self] = self.add_parameter(
             "amplitude", get_cmd=f":MEASure:VAMP? chan{channel}", get_parser=float
         )
         """Parameter amplitude"""
-        self.vertical_scale: Parameter = self.add_parameter(
+        self.vertical_scale: Parameter[float, Self] = self.add_parameter(
             "vertical_scale",
             get_cmd=f":CHANnel{channel}:SCALe?",
             set_cmd=":CHANnel{}:SCALe {}".format(channel, "{}"),
@@ -281,7 +281,7 @@ class RigolDS4000(VisaInstrument):
         )
 
         # general parameters
-        self.trigger_type: Parameter = self.add_parameter(
+        self.trigger_type: Parameter[str, Self] = self.add_parameter(
             "trigger_type",
             label="Type of the trigger",
             get_cmd=":TRIGger:MODE?",
@@ -303,7 +303,7 @@ class RigolDS4000(VisaInstrument):
             ),
         )
         """Parameter trigger_type"""
-        self.trigger_mode: Parameter = self.add_parameter(
+        self.trigger_mode: Parameter[str, Self] = self.add_parameter(
             "trigger_mode",
             label="Mode of the trigger",
             get_cmd=":TRIGger:SWEep?",
@@ -311,7 +311,7 @@ class RigolDS4000(VisaInstrument):
             vals=vals.Enum("AUTO", "NORM", "SING"),
         )
         """Parameter trigger_mode"""
-        self.time_base: Parameter = self.add_parameter(
+        self.time_base: Parameter[float, Self] = self.add_parameter(
             "time_base",
             label="Horizontal time base",
             get_cmd=":TIMebase:MAIN:SCALe?",
@@ -320,7 +320,7 @@ class RigolDS4000(VisaInstrument):
             unit="s/div",
         )
         """Parameter time_base"""
-        self.sample_point_count: Parameter = self.add_parameter(
+        self.sample_point_count: Parameter[int, Self] = self.add_parameter(
             "sample_point_count",
             label="Number of the waveform points",
             get_cmd=":WAVeform:POINts?",
@@ -329,7 +329,7 @@ class RigolDS4000(VisaInstrument):
             vals=vals.Ints(min_value=1),
         )
         """Parameter sample_point_count"""
-        self.enable_auto_scale: Parameter = self.add_parameter(
+        self.enable_auto_scale: Parameter[bool, Self] = self.add_parameter(
             "enable_auto_scale",
             label="Enable or disable autoscale",
             get_cmd=":SYSTem:AUToscale?",
