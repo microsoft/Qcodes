@@ -640,9 +640,7 @@ def test_numpy_complex(dataset: DataSet) -> None:
     dataset.mark_started()
 
     results = [{"x": tp(2.0 + 3.0j)} for tp in numpy_complex]
-    # TODO: VALUE in qcodes.dataset.sqlite.query_helpers does not include
-    # numpy scalar types although add_results supports them
-    dataset.add_results(results)  # pyright: ignore[reportArgumentType]
+    dataset.add_results(results)
     expected_result = np.array([tp(2.0 + 3.0j) for tp in numpy_complex])
     result = dataset.get_parameter_data()
     np.testing.assert_array_equal(result["x"]["x"], expected_result)
