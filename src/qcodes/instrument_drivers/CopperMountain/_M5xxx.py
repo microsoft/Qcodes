@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, Self
 
 import numpy as np
 from numpy.typing import NDArray
@@ -58,7 +58,7 @@ class CopperMountainM5xxx(VisaInstrument):
         self.min_points = 2
         self.max_points = 200001
 
-        self.output: Parameter = self.add_parameter(
+        self.output: Parameter[bool, Self] = self.add_parameter(
             name="output",
             label="Output",
             get_parser=int,
@@ -68,7 +68,7 @@ class CopperMountainM5xxx(VisaInstrument):
         )
         """Use to check state of RF signal output (ON/OFF) and turns the RF signal output ON/OFF"""
 
-        self.power: Parameter = self.add_parameter(
+        self.power: Parameter[float, Self] = self.add_parameter(
             name="power",
             label="Power",
             get_parser=float,
@@ -80,7 +80,7 @@ class CopperMountainM5xxx(VisaInstrument):
         )
         """Sets or reads out the power level for the frequency sweep type in dBm."""
 
-        self.if_bandwidth: Parameter = self.add_parameter(
+        self.if_bandwidth: Parameter[float, Self] = self.add_parameter(
             name="if_bandwidth",
             label="IF Bandwidth",
             get_parser=float,
@@ -96,7 +96,7 @@ class CopperMountainM5xxx(VisaInstrument):
         )
         """Sets or reads out the IF bandwidth in Hz."""
 
-        self.averages_enabled: Parameter = self.add_parameter(
+        self.averages_enabled: Parameter[bool, Self] = self.add_parameter(
             name="averages_enabled",
             label="Averages Status",
             get_cmd="SENS1:AVER:STAT?",
@@ -129,7 +129,7 @@ class CopperMountainM5xxx(VisaInstrument):
         """Sets or reads out the averaging factor
         when the averaging function is turned on."""
 
-        self.electrical_delay: Parameter = self.add_parameter(
+        self.electrical_delay: Parameter[float, Self] = self.add_parameter(
             "electrical_delay",
             label="Electrical delay",
             get_cmd="CALC1:CORR:EDEL:TIME?",
@@ -142,7 +142,7 @@ class CopperMountainM5xxx(VisaInstrument):
         )
         """Sets or reads out the value of the electrical delay in seconds."""
 
-        self.electrical_distance: Parameter = self.add_parameter(
+        self.electrical_distance: Parameter[float, Self] = self.add_parameter(
             "electrical_distance",
             label="Electrical distance",
             get_cmd="CALC1:CORR:EDEL:DIST?",
@@ -156,7 +156,7 @@ class CopperMountainM5xxx(VisaInstrument):
         """Sets or reads out the value of the equivalent
         distance in the electrical delay function."""
 
-        self.electrical_distance_units: Parameter = self.add_parameter(
+        self.electrical_distance_units: Parameter[str, Self] = self.add_parameter(
             "electrical_distance_units",
             label="Electrical distance units",
             get_cmd="CALC1:CORR:EDEL:DIST:UNIT?",
@@ -167,7 +167,7 @@ class CopperMountainM5xxx(VisaInstrument):
         )
         """Sets or reads out the distance units in the electrical delay function."""
 
-        self.clock_source: Parameter = self.add_parameter(
+        self.clock_source: Parameter[str, Self] = self.add_parameter(
             name="clock_source",
             label="Clock source",
             get_cmd="SENSe1:ROSCillator:SOURce?",
@@ -194,7 +194,7 @@ class CopperMountainM5xxx(VisaInstrument):
         """Sets or reads out an internal or external
         source of the 10 MHz reference frequency."""
 
-        self.start: Parameter = self.add_parameter(
+        self.start: Parameter[float, Self] = self.add_parameter(
             name="start",
             label="Start Frequency",
             get_parser=float,
@@ -208,7 +208,7 @@ class CopperMountainM5xxx(VisaInstrument):
         """Sets or reads out the stimulus start value of the sweep
         range for linear or logarithmic sweep type."""
 
-        self.stop: Parameter = self.add_parameter(
+        self.stop: Parameter[float, Self] = self.add_parameter(
             name="stop",
             label="Stop Frequency",
             get_parser=float,
@@ -222,7 +222,7 @@ class CopperMountainM5xxx(VisaInstrument):
         """Sets or reads out the stimulus stop value of the sweep
         range for linear or logarithmic sweep type."""
 
-        self.center: Parameter = self.add_parameter(
+        self.center: Parameter[float, Self] = self.add_parameter(
             name="center",
             label="Center Frequency",
             get_parser=float,
@@ -236,7 +236,7 @@ class CopperMountainM5xxx(VisaInstrument):
         """Sets or reads out the stimulus center value of the sweep range for
         linear or logarithmic sweep type."""
 
-        self.span: Parameter = self.add_parameter(
+        self.span: Parameter[float, Self] = self.add_parameter(
             name="span",
             label="Frequency Span",
             get_parser=float,
@@ -250,7 +250,7 @@ class CopperMountainM5xxx(VisaInstrument):
         """Sets or reads out the stimulus span value of the sweep range
         for linear or logarithmic sweep type."""
 
-        self.number_of_points: Parameter = self.add_parameter(
+        self.number_of_points: Parameter[int, Self] = self.add_parameter(
             "number_of_points",
             label="Number of points",
             get_parser=int,
@@ -262,7 +262,7 @@ class CopperMountainM5xxx(VisaInstrument):
         )
         """Sets or reads out the number of measurement points."""
 
-        self.number_of_traces: Parameter = self.add_parameter(
+        self.number_of_traces: Parameter[int, Self] = self.add_parameter(
             name="number_of_traces",
             label="Number of traces",
             get_parser=int,
@@ -275,7 +275,7 @@ class CopperMountainM5xxx(VisaInstrument):
         )
         """Sets or reads out the number of traces in the channel."""
 
-        self.trigger_source: Parameter = self.add_parameter(
+        self.trigger_source: Parameter[str, Self] = self.add_parameter(
             name="trigger_source",
             label="Trigger source",
             get_parser=str,
@@ -286,7 +286,7 @@ class CopperMountainM5xxx(VisaInstrument):
         )
         """Selects the trigger source"""
 
-        self.data_transfer_format: Parameter = self.add_parameter(
+        self.data_transfer_format: Parameter[str, Self] = self.add_parameter(
             name="data_transfer_format",
             label="Data format during transfer",
             get_parser=str,

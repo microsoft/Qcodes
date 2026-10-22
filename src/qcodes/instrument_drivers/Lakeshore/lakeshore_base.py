@@ -1,6 +1,6 @@
 import time
 from bisect import bisect
-from typing import TYPE_CHECKING, Any, ClassVar, Generic
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Self
 
 import numpy as np
 from typing_extensions import TypeVar
@@ -137,7 +137,7 @@ class LakeshoreBaseOutput(InstrumentChannel["LakeshoreBase"]):
                 get_cmd=f"PID? {output_index}",
             )
 
-        self.output_range: Parameter = self.add_parameter(
+        self.output_range: Parameter[str, Self] = self.add_parameter(
             "output_range",
             label="Heater range",
             docstring="Specifies heater output range. The range "
@@ -156,7 +156,7 @@ class LakeshoreBaseOutput(InstrumentChannel["LakeshoreBase"]):
         An output in `Monitor Out` mode is always on.
         """
 
-        self.output: Parameter = self.add_parameter(
+        self.output: Parameter[float, Self] = self.add_parameter(
             "output",
             label="Output",
             unit="% of heater range",
@@ -174,7 +174,7 @@ class LakeshoreBaseOutput(InstrumentChannel["LakeshoreBase"]):
         Note that when the heater is off, this parameter will return the value of 0.005.
         """
 
-        self.setpoint: Parameter = self.add_parameter(
+        self.setpoint: Parameter[float, Self] = self.add_parameter(
             "setpoint",
             label="Setpoint value (in sensor units)",
             docstring="The value of the setpoint in the "
@@ -233,7 +233,7 @@ class LakeshoreBaseOutput(InstrumentChannel["LakeshoreBase"]):
             get_cmd=f"RAMP? {output_index}",
         )
 
-        self.setpoint_ramp_status: Parameter = self.add_parameter(
+        self.setpoint_ramp_status: Parameter[bool, Self] = self.add_parameter(
             "setpoint_ramp_status",
             label="Setpoint is ramping",
             docstring="0 = Not ramping, 1 = Setpoint is ramping",
@@ -265,7 +265,7 @@ class LakeshoreBaseOutput(InstrumentChannel["LakeshoreBase"]):
         instead of doing it directly
         """
 
-        self.wait_cycle_time: Parameter = self.add_parameter(
+        self.wait_cycle_time: Parameter[float, Self] = self.add_parameter(
             "wait_cycle_time",
             set_cmd=None,
             get_cmd=None,
@@ -278,7 +278,7 @@ class LakeshoreBaseOutput(InstrumentChannel["LakeshoreBase"]):
         """Time between two readings when waiting for temperature to equilibrate"""
         self.wait_cycle_time(0.1)
 
-        self.wait_tolerance: Parameter = self.add_parameter(
+        self.wait_tolerance: Parameter[float, Self] = self.add_parameter(
             "wait_tolerance",
             set_cmd=None,
             get_cmd=None,
@@ -291,7 +291,7 @@ class LakeshoreBaseOutput(InstrumentChannel["LakeshoreBase"]):
         """Acceptable tolerance when waiting for temperature to equilibrate"""
         self.wait_tolerance(0.1)
 
-        self.wait_equilibration_time: Parameter = self.add_parameter(
+        self.wait_equilibration_time: Parameter[float, Self] = self.add_parameter(
             "wait_equilibration_time",
             set_cmd=None,
             get_cmd=None,
@@ -303,7 +303,7 @@ class LakeshoreBaseOutput(InstrumentChannel["LakeshoreBase"]):
         """Duration during which temperature has to be within tolerance"""
         self.wait_equilibration_time(0.5)
 
-        self.blocking_t: Parameter = self.add_parameter(
+        self.blocking_t: Parameter[float, Self] = self.add_parameter(
             "blocking_t",
             label="Setpoint value with blocking until it is reached",
             docstring="Sets the setpoint value, and input "
@@ -617,7 +617,7 @@ class LakeshoreBaseSensorChannel(InstrumentChannel):
 
         # Add the various channel parameters
 
-        self.temperature: Parameter = self.add_parameter(
+        self.temperature: Parameter[float, Self] = self.add_parameter(
             "temperature",
             get_cmd=f"KRDG? {self._channel}",
             get_parser=float,
@@ -626,7 +626,7 @@ class LakeshoreBaseSensorChannel(InstrumentChannel):
         )
         """Parameter temperature"""
 
-        self.t_limit: Parameter = self.add_parameter(
+        self.t_limit: Parameter[float, Self] = self.add_parameter(
             "t_limit",
             get_cmd=f"TLIMIT? {self._channel}",
             set_cmd=f"TLIMIT {self._channel}, {{}}",
@@ -645,7 +645,7 @@ class LakeshoreBaseSensorChannel(InstrumentChannel):
         for the given sensor input.
         """
 
-        self.sensor_raw: Parameter = self.add_parameter(
+        self.sensor_raw: Parameter[float, Self] = self.add_parameter(
             "sensor_raw",
             get_cmd=f"SRDG? {self._channel}",
             get_parser=float,
@@ -654,7 +654,7 @@ class LakeshoreBaseSensorChannel(InstrumentChannel):
         )
         """Parameter sensor_raw"""
 
-        self.sensor_status: Parameter = self.add_parameter(
+        self.sensor_status: Parameter[str, Self] = self.add_parameter(
             "sensor_status",
             get_cmd=f"RDGST? {self._channel}",
             get_parser=self._decode_sensor_status,
@@ -662,7 +662,7 @@ class LakeshoreBaseSensorChannel(InstrumentChannel):
         )
         """Parameter sensor_status"""
 
-        self.sensor_name: Parameter = self.add_parameter(
+        self.sensor_name: Parameter[str, Self] = self.add_parameter(
             "sensor_name",
             get_cmd=f"INNAME? {self._channel}",
             get_parser=str,

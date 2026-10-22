@@ -1,5 +1,5 @@
 import math
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes import validators as vals
 from qcodes.instrument import (
@@ -37,7 +37,7 @@ class MiniCircuitsRCSP4TChannel(InstrumentChannel["MiniCircuitsRCSP4T"]):
         chanlist = ["a", "b"]
         self.channel_number = chanlist.index(channel_letter)
 
-        self.switch: Parameter = self.add_parameter(
+        self.switch: Parameter[int, Self] = self.add_parameter(
             "switch",
             label="switch",
             set_cmd=self._set_switch,

@@ -3,6 +3,7 @@ from itertools import takewhile
 from typing import (
     TYPE_CHECKING,
     Any,
+    Self,
     TextIO,
 )
 
@@ -265,7 +266,7 @@ class LakeshoreModel325Sensor(InstrumentChannel["LakeshoreModel325"]):
         super().__init__(parent, name)
         self._input = inp
 
-        self.temperature: Parameter = self.add_parameter(
+        self.temperature: Parameter[float, Self] = self.add_parameter(
             "temperature",
             get_cmd=f"KRDG? {self._input}",
             get_parser=float,
@@ -274,7 +275,7 @@ class LakeshoreModel325Sensor(InstrumentChannel["LakeshoreModel325"]):
         )
         """Parameter temperature"""
 
-        self.status: Parameter = self.add_parameter(
+        self.status: Parameter[str, Self] = self.add_parameter(
             "status",
             get_cmd=f"RDGST? {self._input}",
             get_parser=lambda status: self.decode_sensor_status(int(status)),
@@ -362,7 +363,7 @@ class LakeshoreModel325Heater(InstrumentChannel):
         super().__init__(parent, name, **kwargs)
         self._loop = loop
 
-        self.control_mode: Parameter = self.add_parameter(
+        self.control_mode: Parameter[str, Self] = self.add_parameter(
             "control_mode",
             get_cmd=f"CMODE? {self._loop}",
             set_cmd=f"CMODE {self._loop},{{}}",
@@ -448,7 +449,7 @@ class LakeshoreModel325Heater(InstrumentChannel):
         )
         """Parameter output_range"""
 
-        self.setpoint: Parameter = self.add_parameter(
+        self.setpoint: Parameter[float, Self] = self.add_parameter(
             "setpoint",
             vals=Numbers(0, 400),
             get_parser=float,
@@ -478,12 +479,12 @@ class LakeshoreModel325Heater(InstrumentChannel):
             get_cmd=f"RAMP? {self._loop}",
         )
 
-        self.is_ramping: Parameter = self.add_parameter(
+        self.is_ramping: Parameter[str, Self] = self.add_parameter(
             "is_ramping", get_cmd=f"RAMPST? {self._loop}"
         )
         """Parameter is_ramping"""
 
-        self.resistance: Parameter = self.add_parameter(
+        self.resistance: Parameter[int, Self] = self.add_parameter(
             "resistance",
             get_cmd=f"HTRRES? {self._loop}",
             set_cmd=f"HTRRES {self._loop}, {{}}",
@@ -496,7 +497,7 @@ class LakeshoreModel325Heater(InstrumentChannel):
         )
         """Parameter resistance"""
 
-        self.heater_output: Parameter = self.add_parameter(
+        self.heater_output: Parameter[float, Self] = self.add_parameter(
             "heater_output",
             get_cmd=f"HTR? {self._loop}",
             get_parser=float,
