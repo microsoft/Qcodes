@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 import qcodes.validators as vals
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
@@ -42,7 +42,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
     ) -> None:
         super().__init__(name, address, **kwargs)
 
-        self.frequency: Parameter = self.add_parameter(
+        self.frequency: Parameter[float, Self] = self.add_parameter(
             name="frequency",
             label="Frequency",
             unit="Hz",
@@ -52,7 +52,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             vals=vals.Numbers(1e6, 20e9),
         )
         """Parameter frequency"""
-        self.phase: Parameter = self.add_parameter(
+        self.phase: Parameter[float, Self] = self.add_parameter(
             name="phase",
             label="Phase",
             unit="deg",
@@ -62,7 +62,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             vals=vals.Numbers(0, 360),
         )
         """Parameter phase"""
-        self.power: Parameter = self.add_parameter(
+        self.power: Parameter[float, Self] = self.add_parameter(
             name="power",
             label="Power",
             unit="dBm",
@@ -80,7 +80,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
         )
         """Parameter status"""
-        self.IQ_state: Parameter = self.add_parameter(
+        self.IQ_state: Parameter[bool, Self] = self.add_parameter(
             "IQ_state",
             label="IQ Modulation",
             get_cmd=":IQ:STAT?",
@@ -88,7 +88,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
         )
         """Parameter IQ_state"""
-        self.pulsemod_state: Parameter = self.add_parameter(
+        self.pulsemod_state: Parameter[bool, Self] = self.add_parameter(
             "pulsemod_state",
             label="Pulse Modulation",
             get_cmd=":SOUR:PULM:STAT?",
@@ -96,7 +96,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
         )
         """Parameter pulsemod_state"""
-        self.pulsemod_source: Parameter = self.add_parameter(
+        self.pulsemod_source: Parameter[str, Self] = self.add_parameter(
             "pulsemod_source",
             label="Pulse Modulation Source",
             get_cmd="SOUR:PULM:SOUR?",
@@ -104,7 +104,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             vals=vals.Enum("INT", "EXT", "int", "ext"),
         )
         """Parameter pulsemod_source"""
-        self.ref_osc_source: Parameter = self.add_parameter(
+        self.ref_osc_source: Parameter[str, Self] = self.add_parameter(
             "ref_osc_source",
             label="Reference Oscillator Source",
             get_cmd="SOUR:ROSC:SOUR?",
@@ -113,7 +113,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
         )
         """Parameter ref_osc_source"""
         # Define LO source INT/EXT (Only with K-90 option)
-        self.LO_source: Parameter = self.add_parameter(
+        self.LO_source: Parameter[str, Self] = self.add_parameter(
             "LO_source",
             label="Local Oscillator Source",
             get_cmd="SOUR:LOSC:SOUR?",
@@ -122,7 +122,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
         )
         """Parameter LO_source"""
         # Define output at REF/LO Output (Only with K-90 option)
-        self.ref_LO_out: Parameter = self.add_parameter(
+        self.ref_LO_out: Parameter[str, Self] = self.add_parameter(
             "ref_LO_out",
             label="REF/LO Output",
             get_cmd="CONN:REFL:OUTP?",
@@ -131,7 +131,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
         )
         """Parameter ref_LO_out"""
         # Frequency mw_source outputs when used as a reference
-        self.ref_osc_output_freq: Parameter = self.add_parameter(
+        self.ref_osc_output_freq: Parameter[str, Self] = self.add_parameter(
             "ref_osc_output_freq",
             label="Reference Oscillator Output Frequency",
             get_cmd="SOUR:ROSC:OUTP:FREQ?",
@@ -140,7 +140,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
         )
         """Parameter ref_osc_output_freq"""
         # Frequency of the external reference mw_source uses
-        self.ref_osc_external_freq: Parameter = self.add_parameter(
+        self.ref_osc_external_freq: Parameter[str, Self] = self.add_parameter(
             "ref_osc_external_freq",
             label="Reference Oscillator External Frequency",
             get_cmd="SOUR:ROSC:EXT:FREQ?",
@@ -149,7 +149,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
         )
         """Parameter ref_osc_external_freq"""
         # IQ impairments
-        self.IQ_impairments: Parameter = self.add_parameter(
+        self.IQ_impairments: Parameter[bool, Self] = self.add_parameter(
             "IQ_impairments",
             label="IQ Impairments",
             get_cmd=":SOUR:IQ:IMP:STAT?",
@@ -157,7 +157,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
         )
         """Parameter IQ_impairments"""
-        self.I_offset: Parameter = self.add_parameter(
+        self.I_offset: Parameter[float, Self] = self.add_parameter(
             "I_offset",
             label="I Offset",
             get_cmd="SOUR:IQ:IMP:LEAK:I?",
@@ -168,7 +168,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             docstring="Carrier offset for I channel in percentage of the peak envelope power.",
         )
         """Parameter I_offset. Carrier offset for I channel in percentage of the peak envelope power."""
-        self.Q_offset: Parameter = self.add_parameter(
+        self.Q_offset: Parameter[float, Self] = self.add_parameter(
             "Q_offset",
             label="Q Offset",
             get_cmd="SOUR:IQ:IMP:LEAK:Q?",
@@ -179,7 +179,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             docstring="Carrier offset for Q channel in percentage of the peak envelope power.",
         )
         """Parameter Q_offset. Carrier offset for Q channel in percentage of the peak envelope power."""
-        self.IQ_gain_imbalance: Parameter = self.add_parameter(
+        self.IQ_gain_imbalance: Parameter[float, Self] = self.add_parameter(
             "IQ_gain_imbalance",
             label="IQ Gain Imbalance",
             get_cmd="SOUR:IQ:IMP:IQR?",
@@ -190,7 +190,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             docstring="IQ Gain imbalance. Postive value means the Q vector is amplified more.",
         )
         """Parameter IQ_gain_imbalance. Postive value means the Q vector is amplified more."""
-        self.IQ_angle: Parameter = self.add_parameter(
+        self.IQ_angle: Parameter[float, Self] = self.add_parameter(
             "IQ_angle",
             label="IQ Angle Offset",
             get_cmd="SOUR:IQ:IMP:QUAD?",
@@ -201,7 +201,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
         )
         """Parameter IQ_angle"""
         # Determines the signal at the input/output of the multi purpose [TRIG] connector.
-        self.trigger_connector_mode: Parameter = self.add_parameter(
+        self.trigger_connector_mode: Parameter[str, Self] = self.add_parameter(
             "trigger_connector_mode",
             label="Trigger Connector Mode",
             get_cmd="CONN:TRIG:OMOD?",
@@ -221,7 +221,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
         )
         """Parameter trigger_connector_mode"""
         # Pulse modulator
-        self.pulsemod_delay: Parameter = self.add_parameter(
+        self.pulsemod_delay: Parameter[float, Self] = self.add_parameter(
             "pulsemod_delay",
             label="Pulse delay",
             unit="s",
@@ -231,7 +231,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             vals=vals.Numbers(0, 100),
         )
         """Parameter pulsemod_delay"""
-        self.pulsemod_double_delay: Parameter = self.add_parameter(
+        self.pulsemod_double_delay: Parameter[float, Self] = self.add_parameter(
             "pulsemod_double_delay",
             label="Pulse double delay",
             unit="s",
@@ -241,7 +241,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             vals=vals.Numbers(40e-9, 100),
         )
         """Parameter pulsemod_double_delay"""
-        self.pulsemod_double_width: Parameter = self.add_parameter(
+        self.pulsemod_double_width: Parameter[float, Self] = self.add_parameter(
             "pulsemod_double_width",
             label="Double pulse second width",
             unit="s",
@@ -251,7 +251,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             vals=vals.Numbers(20e-9, 100),
         )
         """Parameter pulsemod_double_width"""
-        self.pulsemod_mode: Parameter = self.add_parameter(
+        self.pulsemod_mode: Parameter[str, Self] = self.add_parameter(
             "pulsemod_mode",
             label="Pulse modulation mode",
             get_cmd="SOUR:PULM:MODE?",
@@ -259,7 +259,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             vals=vals.Enum("SING", "DOUB", "sing", "doub", "single", "double"),
         )
         """Parameter pulsemod_mode"""
-        self.pulsemod_period: Parameter = self.add_parameter(
+        self.pulsemod_period: Parameter[float, Self] = self.add_parameter(
             "pulsemod_period",
             label="Pulse mode period",
             unit="s",
@@ -269,7 +269,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             vals=vals.Numbers(100e-9, 100),
         )
         """Parameter pulsemod_period"""
-        self.pulsemod_polarity: Parameter = self.add_parameter(
+        self.pulsemod_polarity: Parameter[str, Self] = self.add_parameter(
             "pulsemod_polarity",
             label="Pulse modulator signal polarity",
             get_cmd="SOUR:PULM:POL?",
@@ -277,7 +277,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             vals=vals.Enum("NORM", "INV", "norm", "inv", "normal", "inverted"),
         )
         """Parameter pulsemod_polarity"""
-        self.pulsemod_trig_ext_gate_polarity: Parameter = self.add_parameter(
+        self.pulsemod_trig_ext_gate_polarity: Parameter[str, Self] = self.add_parameter(
             "pulsemod_trig_ext_gate_polarity",
             label="Polarity of the Gate signal",
             get_cmd="SOUR:PULM:TRIG:EXT:GATE:POL?",
@@ -285,7 +285,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             vals=vals.Enum("NORM", "INV", "norm", "inv", "normal", "inverted"),
         )
         """Parameter pulsemod_trig_ext_gate_polarity"""
-        self.pulsemod_trig_ext_impedance: Parameter = self.add_parameter(
+        self.pulsemod_trig_ext_impedance: Parameter[str, Self] = self.add_parameter(
             "pulsemod_trig_ext_impedance",
             label="Impedance of the external pulse trigger",
             get_cmd="SOUR:PULM:TRIG:EXT:IMP?",
@@ -294,7 +294,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
         )
         """Parameter pulsemod_trig_ext_impedance"""
         # Sets the polarity of the active slope of an externally applied trigger signal.
-        self.pulsemod_trig_ext_slope: Parameter = self.add_parameter(
+        self.pulsemod_trig_ext_slope: Parameter[str, Self] = self.add_parameter(
             "pulsemod_trig_ext_slope",
             label="external pulse trigger active slope",
             get_cmd="SOUR:PULM:TRIG:EXT:SLOP?",
@@ -302,7 +302,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             vals=vals.Enum("NEG", "POS", "neg", "pos", "negative", "positive"),
         )
         """Parameter pulsemod_trig_ext_slope"""
-        self.pulsemod_trig_mode: Parameter = self.add_parameter(
+        self.pulsemod_trig_mode: Parameter[str, Self] = self.add_parameter(
             "pulsemod_trig_mode",
             label="external pulse trigger active slope",
             get_cmd="SOUR:PULM:TRIG:MODE?",
@@ -312,7 +312,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             ),
         )
         """Parameter pulsemod_trig_mode"""
-        self.pulsemod_width: Parameter = self.add_parameter(
+        self.pulsemod_width: Parameter[float, Self] = self.add_parameter(
             "pulsemod_width",
             label="Pulse width",
             unit="s",
@@ -322,7 +322,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             vals=vals.Numbers(20e-9, 100),
         )
         """Parameter pulsemod_width"""
-        self.operation_mode: Parameter = self.add_parameter(
+        self.operation_mode: Parameter[str, Self] = self.add_parameter(
             "operation_mode",
             label="Operation Mode",
             get_cmd=":SOUR:OPMode?",

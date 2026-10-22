@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes import validators as vals
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
@@ -28,7 +28,7 @@ class SG384(VisaInstrument):
     ):
         super().__init__(name, address, **kwargs)
         # signal synthesis commands
-        self.frequency: Parameter = self.add_parameter(
+        self.frequency: Parameter[float, Self] = self.add_parameter(
             name="frequency",
             label="Frequency",
             unit="Hz",
@@ -38,7 +38,7 @@ class SG384(VisaInstrument):
             vals=vals.Numbers(min_value=9.5e5, max_value=4.05e9),
         )
         """Parameter frequency"""
-        self.phase: Parameter = self.add_parameter(
+        self.phase: Parameter[float, Self] = self.add_parameter(
             name="phase",
             label="Carrier phase",
             unit="deg",
@@ -48,7 +48,7 @@ class SG384(VisaInstrument):
             vals=vals.Numbers(min_value=-360, max_value=360),
         )
         """Parameter phase"""
-        self.amplitude_LF: Parameter = self.add_parameter(
+        self.amplitude_LF: Parameter[float, Self] = self.add_parameter(
             name="amplitude_LF",
             label="Power of BNC output",
             unit="dBm",
@@ -58,7 +58,7 @@ class SG384(VisaInstrument):
             vals=vals.Numbers(min_value=-47, max_value=13),
         )
         """Parameter amplitude_LF"""
-        self.amplitude_RF: Parameter = self.add_parameter(
+        self.amplitude_RF: Parameter[float, Self] = self.add_parameter(
             name="amplitude_RF",
             label="Power of type-N RF output",
             unit="dBm",
@@ -68,7 +68,7 @@ class SG384(VisaInstrument):
             vals=vals.Numbers(min_value=-110, max_value=16.5),
         )
         """Parameter amplitude_RF"""
-        self.amplitude_HF: Parameter = self.add_parameter(
+        self.amplitude_HF: Parameter[float, Self] = self.add_parameter(
             name="amplitude_HF",
             label="Power of RF doubler output",
             unit="dBm",
@@ -78,7 +78,7 @@ class SG384(VisaInstrument):
             vals=vals.Numbers(min_value=-10, max_value=13),
         )
         """Parameter amplitude_HF"""
-        self.amplitude_clock: Parameter = self.add_parameter(
+        self.amplitude_clock: Parameter[float, Self] = self.add_parameter(
             name="amplitude_clock",
             label="Rear clock output",
             unit="Vpp",
@@ -88,7 +88,7 @@ class SG384(VisaInstrument):
             vals=vals.Numbers(min_value=0.4, max_value=1.00),
         )
         """Parameter amplitude_clock"""
-        self.noise_mode: Parameter = self.add_parameter(
+        self.noise_mode: Parameter[str, Self] = self.add_parameter(
             name="noise_mode",
             label="RF PLL loop filter mode",
             get_cmd="NOIS?",
@@ -96,7 +96,7 @@ class SG384(VisaInstrument):
             val_mapping={"Mode 1": 0, "Mode 2": 1},
         )
         """Parameter noise_mode"""
-        self.enable_RF: Parameter = self.add_parameter(
+        self.enable_RF: Parameter[str, Self] = self.add_parameter(
             name="enable_RF",
             label="Type-N RF output",
             get_cmd="ENBR?",
@@ -104,7 +104,7 @@ class SG384(VisaInstrument):
             val_mapping={"OFF": 0, "ON": 1},
         )
         """Parameter enable_RF"""
-        self.enable_LF: Parameter = self.add_parameter(
+        self.enable_LF: Parameter[str, Self] = self.add_parameter(
             name="enable_LF",
             label="BNC output",
             get_cmd="ENBL?",
@@ -112,7 +112,7 @@ class SG384(VisaInstrument):
             val_mapping={"OFF": 0, "ON": 1},
         )
         """Parameter enable_LF"""
-        self.enable_HF: Parameter = self.add_parameter(
+        self.enable_HF: Parameter[str, Self] = self.add_parameter(
             name="enable_HF",
             label="RF doubler output",
             get_cmd="ENBH?",
@@ -120,7 +120,7 @@ class SG384(VisaInstrument):
             val_mapping={"OFF": 0, "ON": 1},
         )
         """Parameter enable_HF"""
-        self.enable_clock: Parameter = self.add_parameter(
+        self.enable_clock: Parameter[str, Self] = self.add_parameter(
             name="enable_clock",
             label="Rear clock output",
             get_cmd="ENBC?",
@@ -128,7 +128,7 @@ class SG384(VisaInstrument):
             val_mapping={"OFF": 0, "ON": 1},
         )
         """Parameter enable_clock"""
-        self.offset_clock: Parameter = self.add_parameter(
+        self.offset_clock: Parameter[float, Self] = self.add_parameter(
             name="offset_clock",
             label="Rear clock offset voltage",
             unit="V",
@@ -138,7 +138,7 @@ class SG384(VisaInstrument):
             vals=vals.Numbers(min_value=-2, max_value=2),
         )
         """Parameter offset_clock"""
-        self.offset_rearDC: Parameter = self.add_parameter(
+        self.offset_rearDC: Parameter[float, Self] = self.add_parameter(
             name="offset_rearDC",
             label="Rear DC offset voltage",
             unit="V",
@@ -148,7 +148,7 @@ class SG384(VisaInstrument):
             vals=vals.Numbers(min_value=-10, max_value=10),
         )
         """Parameter offset_rearDC"""
-        self.offset_bnc: Parameter = self.add_parameter(
+        self.offset_bnc: Parameter[float, Self] = self.add_parameter(
             name="offset_bnc",
             label="Low frequency BNC output",
             unit="V",
@@ -159,7 +159,7 @@ class SG384(VisaInstrument):
         )
         """Parameter offset_bnc"""
         # Modulation commands
-        self.modulation_coupling: Parameter = self.add_parameter(
+        self.modulation_coupling: Parameter[str, Self] = self.add_parameter(
             name="modulation_coupling",
             label="External modulation input coupling",
             get_cmd="COUP?",
@@ -167,7 +167,7 @@ class SG384(VisaInstrument):
             val_mapping={"AC": 0, "DC": 1},
         )
         """Parameter modulation_coupling"""
-        self.FM_deviation: Parameter = self.add_parameter(
+        self.FM_deviation: Parameter[float, Self] = self.add_parameter(
             name="FM_deviation",
             label="Frequency modulation deviation",
             unit="Hz",
@@ -177,7 +177,7 @@ class SG384(VisaInstrument):
             vals=vals.Numbers(min_value=0.1, max_value=32e6),
         )
         """Parameter FM_deviation"""
-        self.modulation_function: Parameter = self.add_parameter(
+        self.modulation_function: Parameter[str, Self] = self.add_parameter(
             name="modulation_function",
             label="Modulation function for AM/FM/PhiM",
             get_cmd="MFNC?",
@@ -192,14 +192,14 @@ class SG384(VisaInstrument):
             },
         )
         """Parameter modulation_function"""
-        self.enable_modulation: Parameter = self.add_parameter(
+        self.enable_modulation: Parameter[str, Self] = self.add_parameter(
             name="enable_modulation",
             get_cmd="MODL?",
             set_cmd="MODL {}",
             val_mapping={"OFF": 0, "ON": 1},
         )
         """Parameter enable_modulation"""
-        self.modulation_rate: Parameter = self.add_parameter(
+        self.modulation_rate: Parameter[float, Self] = self.add_parameter(
             name="modulation_rate",
             get_cmd="RATE?",
             set_cmd="RATE {:.6f}",
@@ -207,7 +207,7 @@ class SG384(VisaInstrument):
             vals=vals.Numbers(min_value=1e-6, max_value=50e3),
         )
         """Parameter modulation_rate"""
-        self.modulation_type: Parameter = self.add_parameter(
+        self.modulation_type: Parameter[str, Self] = self.add_parameter(
             name="modulation_type",
             label="Current modulation type",
             get_cmd="TYPE?",

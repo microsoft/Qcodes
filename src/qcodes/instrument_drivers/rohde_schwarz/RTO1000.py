@@ -3,7 +3,7 @@
 import logging
 import time
 import warnings
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -365,7 +365,7 @@ class RohdeSchwarzRTO1000ScopeMeasurement(InstrumentChannel):
             "MKNegative",
         )
 
-        self.enable: Parameter = self.add_parameter(
+        self.enable: Parameter[str, Self] = self.add_parameter(
             "enable",
             label=f"Measurement {meas_nr} enable",
             set_cmd=f"MEASurement{meas_nr}:ENABle {{}}",
@@ -374,7 +374,7 @@ class RohdeSchwarzRTO1000ScopeMeasurement(InstrumentChannel):
         )
         """Switches the measurement on or off."""
 
-        self.source: Parameter = self.add_parameter(
+        self.source: Parameter[str, Self] = self.add_parameter(
             "source",
             label=f"Measurement {meas_nr} source",
             set_cmd=f"MEASurement{meas_nr}:SOURce {{}}",
@@ -384,7 +384,7 @@ class RohdeSchwarzRTO1000ScopeMeasurement(InstrumentChannel):
         )
         """Set the source of a measurement if the measurement only needs one source."""
 
-        self.source_first: Parameter = self.add_parameter(
+        self.source_first: Parameter[str, Self] = self.add_parameter(
             "source_first",
             label=f"Measurement {meas_nr} first source",
             set_cmd=f"MEASurement{meas_nr}:FSRC {{}}",
@@ -395,7 +395,7 @@ class RohdeSchwarzRTO1000ScopeMeasurement(InstrumentChannel):
         )
         """Set the first source of a measurement if the measurement only needs multiple sources."""
 
-        self.source_second: Parameter = self.add_parameter(
+        self.source_second: Parameter[str, Self] = self.add_parameter(
             "source_second",
             label=f"Measurement {meas_nr} second source",
             set_cmd=f"MEASurement{meas_nr}:SSRC {{}}",
@@ -406,7 +406,7 @@ class RohdeSchwarzRTO1000ScopeMeasurement(InstrumentChannel):
         )
         """Set the second source of a measurement if the measurement only needs multiple sources."""
 
-        self.category: Parameter = self.add_parameter(
+        self.category: Parameter[str, Self] = self.add_parameter(
             "category",
             label=f"Measurement {meas_nr} category",
             set_cmd=f"MEASurement{meas_nr}:CATegory {{}}",
@@ -415,7 +415,7 @@ class RohdeSchwarzRTO1000ScopeMeasurement(InstrumentChannel):
         )
         """Set the category of a measurement."""
 
-        self.main: Parameter = self.add_parameter(
+        self.main: Parameter[str, Self] = self.add_parameter(
             "main",
             label=f"Measurement {meas_nr} main",
             set_cmd=f"MEASurement{meas_nr}:MAIN {{}}",
@@ -424,7 +424,7 @@ class RohdeSchwarzRTO1000ScopeMeasurement(InstrumentChannel):
         )
         """Set the main of a measurement."""
 
-        self.statistics_enable: Parameter = self.add_parameter(
+        self.statistics_enable: Parameter[str, Self] = self.add_parameter(
             "statistics_enable",
             label=f"Measurement {meas_nr} enable statistics",
             set_cmd=f"MEASurement{meas_nr}:STATistics:ENABle {{}}",
@@ -441,7 +441,7 @@ class RohdeSchwarzRTO1000ScopeMeasurement(InstrumentChannel):
         )
         """Clears/reset measurement."""
 
-        self.event_count: Parameter = self.add_parameter(
+        self.event_count: Parameter[int, Self] = self.add_parameter(
             "event_count",
             label=f"Measurement {meas_nr} number of events",
             get_cmd=f"MEASurement{meas_nr}:RESult:EVTCount?",
@@ -450,7 +450,7 @@ class RohdeSchwarzRTO1000ScopeMeasurement(InstrumentChannel):
         )
         """Number of measurement results in the long-term measurement."""
 
-        self.result_avg: Parameter = self.add_parameter(
+        self.result_avg: Parameter[float, Self] = self.add_parameter(
             "result_avg",
             label=f"Measurement {meas_nr} averages",
             get_cmd=f"MEASurement{meas_nr}:RESult:AVG?",
@@ -495,7 +495,7 @@ class RohdeSchwarzRTO1000ScopeChannel(InstrumentChannel["RohdeSchwarzRTO1000"]):
 
         super().__init__(parent, name, **kwargs)
 
-        self.state: Parameter = self.add_parameter(
+        self.state: Parameter[str, Self] = self.add_parameter(
             "state",
             label=f"Channel {channum} state",
             get_cmd=f"CHANnel{channum}:STATe?",
@@ -505,7 +505,7 @@ class RohdeSchwarzRTO1000ScopeChannel(InstrumentChannel["RohdeSchwarzRTO1000"]):
         )
         """Switches the channel on or off"""
 
-        self.coupling: Parameter = self.add_parameter(
+        self.coupling: Parameter[str, Self] = self.add_parameter(
             "coupling",
             label=f"Channel {channum} coupling",
             get_cmd=f"CHANnel{channum}:COUPling?",
@@ -522,7 +522,7 @@ class RohdeSchwarzRTO1000ScopeChannel(InstrumentChannel["RohdeSchwarzRTO1000"]):
         DC: 50 Ohm, DCLimit 1 MOhm, AC: Con. through DC capacitor
         """
 
-        self.ground: Parameter = self.add_parameter(
+        self.ground: Parameter[str, Self] = self.add_parameter(
             "ground",
             label=f"Channel {channum} ground",
             get_cmd=f"CHANnel{channum}:GND?",
@@ -534,7 +534,7 @@ class RohdeSchwarzRTO1000ScopeChannel(InstrumentChannel["RohdeSchwarzRTO1000"]):
 
         # NB (WilliamHPNielsen): This parameter depends on other parameters and
         # should be dynamically updated accordingly. Cf. p 1178 of the manual
-        self.scale: Parameter = self.add_parameter(
+        self.scale: Parameter[float, Self] = self.add_parameter(
             "scale",
             label=f"Channel {channum} Y scale",
             unit="V/div",
@@ -544,7 +544,7 @@ class RohdeSchwarzRTO1000ScopeChannel(InstrumentChannel["RohdeSchwarzRTO1000"]):
         )
         """Parameter scale"""
 
-        self.range: Parameter = self.add_parameter(
+        self.range: Parameter[float, Self] = self.add_parameter(
             "range",
             label=f"Channel {channum} Y range",
             unit="V",
@@ -556,7 +556,7 @@ class RohdeSchwarzRTO1000ScopeChannel(InstrumentChannel["RohdeSchwarzRTO1000"]):
 
         # TODO (WilliamHPNielsen): would it be better to recast this in terms
         # of Volts?
-        self.position: Parameter = self.add_parameter(
+        self.position: Parameter[float, Self] = self.add_parameter(
             "position",
             label=f"Channel {channum} vert. pos.",
             unit="div",
@@ -570,7 +570,7 @@ class RohdeSchwarzRTO1000ScopeChannel(InstrumentChannel["RohdeSchwarzRTO1000"]):
         )
         """Positive values move the waveform up, negative values move it down."""
 
-        self.offset: Parameter = self.add_parameter(
+        self.offset: Parameter[float, Self] = self.add_parameter(
             "offset",
             label=f"Channel {channum} offset",
             unit="V",
@@ -580,7 +580,7 @@ class RohdeSchwarzRTO1000ScopeChannel(InstrumentChannel["RohdeSchwarzRTO1000"]):
         )
         """Parameter offset"""
 
-        self.invert: Parameter = self.add_parameter(
+        self.invert: Parameter[str, Self] = self.add_parameter(
             "invert",
             label=f"Channel {channum} inverted",
             get_cmd=f"CHANnel{channum}:INVert?",
@@ -591,7 +591,7 @@ class RohdeSchwarzRTO1000ScopeChannel(InstrumentChannel["RohdeSchwarzRTO1000"]):
 
         # TODO (WilliamHPNielsen): This parameter should be dynamically
         # validated since 800 MHz BW is only available for 50 Ohm coupling
-        self.bandwidth: Parameter = self.add_parameter(
+        self.bandwidth: Parameter[str, Self] = self.add_parameter(
             "bandwidth",
             label=f"Channel {channum} bandwidth",
             get_cmd=f"CHANnel{channum}:BANDwidth?",
@@ -615,14 +615,14 @@ class RohdeSchwarzRTO1000ScopeChannel(InstrumentChannel["RohdeSchwarzRTO1000"]):
         )
         """Sets the impedance of the channel for power calculations and measurements."""
 
-        self.overload: Parameter = self.add_parameter(
+        self.overload: Parameter[str, Self] = self.add_parameter(
             "overload",
             label=f"Channel {channum} overload",
             get_cmd=f"CHANnel{channum}:OVERload?",
         )
         """Parameter overload"""
 
-        self.arithmetics: Parameter = self.add_parameter(
+        self.arithmetics: Parameter[str, Self] = self.add_parameter(
             "arithmetics",
             label=f"Channel {channum} arithmetics",
             set_cmd=f"CHANnel{channum}:ARIThmetics {{}}",
@@ -726,7 +726,7 @@ class RohdeSchwarzRTO1000(VisaInstrument):
 
         self._horisontal_divs = int(self.ask("TIMebase:DIVisions?"))
 
-        self.display: Parameter = self.add_parameter(
+        self.display: Parameter[str, Self] = self.add_parameter(
             "display",
             label="Display state",
             set_cmd="SYSTem:DISPlay:UPDate {}",
@@ -736,7 +736,7 @@ class RohdeSchwarzRTO1000(VisaInstrument):
 
         # Triggering
 
-        self.trigger_display: Parameter = self.add_parameter(
+        self.trigger_display: Parameter[str, Self] = self.add_parameter(
             "trigger_display",
             label="Trigger display state",
             set_cmd="DISPlay:TRIGger:LINes {}",
@@ -749,7 +749,7 @@ class RohdeSchwarzRTO1000(VisaInstrument):
         # settings than implemented here. See p. 1261 of the manual
         # here we just use trigger1, which is the A-trigger
 
-        self.trigger_source: Parameter = self.add_parameter(
+        self.trigger_source: Parameter[str, Self] = self.add_parameter(
             "trigger_source",
             label="Trigger source",
             set_cmd="TRIGger1:SOURce {}",
@@ -764,7 +764,7 @@ class RohdeSchwarzRTO1000(VisaInstrument):
         )
         """Parameter trigger_source"""
 
-        self.trigger_mode: Parameter = self.add_parameter(
+        self.trigger_mode: Parameter[str, Self] = self.add_parameter(
             "trigger_mode",
             label="Trigger mode",
             set_cmd="TRIGger:MODE {}",
@@ -779,7 +779,7 @@ class RohdeSchwarzRTO1000(VisaInstrument):
         """Sets the trigger mode which determines the behaviour of the instrument if no trigger occurs.
 Options: AUTO, NORMAL, FREERUN."""
 
-        self.trigger_type: Parameter = self.add_parameter(
+        self.trigger_type: Parameter[str, Self] = self.add_parameter(
             "trigger_type",
             label="Trigger type",
             set_cmd="TRIGger1:TYPE {}",
@@ -806,7 +806,7 @@ Options: AUTO, NORMAL, FREERUN."""
         """Parameter trigger_type"""
         # See manual p. 1262 for an explanation of trigger types
 
-        self.trigger_level: Parameter = self.add_parameter(
+        self.trigger_level: Parameter[float, Self] = self.add_parameter(
             "trigger_level",
             label="Trigger level",
             set_cmd=self._set_trigger_level,
@@ -814,7 +814,7 @@ Options: AUTO, NORMAL, FREERUN."""
         )
         """Parameter trigger_level"""
 
-        self.trigger_edge_slope: Parameter = self.add_parameter(
+        self.trigger_edge_slope: Parameter[str, Self] = self.add_parameter(
             "trigger_edge_slope",
             label="Edge trigger slope",
             set_cmd="TRIGger1:EDGE:SLOPe {}",
@@ -825,7 +825,7 @@ Options: AUTO, NORMAL, FREERUN."""
 
         # Horizontal settings
 
-        self.timebase_scale: Parameter = self.add_parameter(
+        self.timebase_scale: Parameter[float, Self] = self.add_parameter(
             "timebase_scale",
             label="Timebase scale",
             set_cmd=self._set_timebase_scale,
@@ -836,7 +836,7 @@ Options: AUTO, NORMAL, FREERUN."""
         )
         """Parameter timebase_scale"""
 
-        self.timebase_range: Parameter = self.add_parameter(
+        self.timebase_range: Parameter[float, Self] = self.add_parameter(
             "timebase_range",
             label="Timebase range",
             set_cmd=self._set_timebase_range,
@@ -847,7 +847,7 @@ Options: AUTO, NORMAL, FREERUN."""
         )
         """Parameter timebase_range"""
 
-        self.timebase_position: Parameter = self.add_parameter(
+        self.timebase_position: Parameter[float, Self] = self.add_parameter(
             "timebase_position",
             label="Horizontal position",
             set_cmd=self._set_timebase_position,
@@ -873,7 +873,7 @@ Options: AUTO, NORMAL, FREERUN."""
 
         self.run_mode("RUN CONT")
 
-        self.num_acquisitions: Parameter = self.add_parameter(
+        self.num_acquisitions: Parameter[int, Self] = self.add_parameter(
             "num_acquisitions",
             label="Number of single acquisitions to perform",
             get_cmd="ACQuire:COUNt?",
@@ -883,7 +883,7 @@ Options: AUTO, NORMAL, FREERUN."""
         )
         """Parameter num_acquisitions"""
 
-        self.completed_acquisitions: Parameter = self.add_parameter(
+        self.completed_acquisitions: Parameter[int, Self] = self.add_parameter(
             "completed_acquisitions",
             label="Number of completed acquisitions",
             get_cmd="ACQuire:CURRent?",
@@ -891,7 +891,7 @@ Options: AUTO, NORMAL, FREERUN."""
         )
         """Parameter completed_acquisitions"""
 
-        self.sampling_rate: Parameter = self.add_parameter(
+        self.sampling_rate: Parameter[int, Self] = self.add_parameter(
             "sampling_rate",
             label="Sample rate",
             docstring="Number of averages for measuring trace.",
@@ -901,7 +901,7 @@ Options: AUTO, NORMAL, FREERUN."""
         )
         """Number of averages for measuring trace."""
 
-        self.acquisition_sample_rate: Parameter = self.add_parameter(
+        self.acquisition_sample_rate: Parameter[float, Self] = self.add_parameter(
             "acquisition_sample_rate",
             label="Acquisition sample rate",
             unit="Sa/s",
@@ -915,7 +915,7 @@ Options: AUTO, NORMAL, FREERUN."""
 
         # Data
 
-        self.dataformat: Parameter = self.add_parameter(
+        self.dataformat: Parameter[str, Self] = self.add_parameter(
             "dataformat",
             label="Export data format",
             set_cmd="FORMat:DATA {}",
@@ -927,7 +927,7 @@ Options: AUTO, NORMAL, FREERUN."""
         # High definition mode (might not be available on all instruments)
 
         if HD:
-            self.high_definition_state: Parameter = self.add_parameter(
+            self.high_definition_state: Parameter[bool, Self] = self.add_parameter(
                 "high_definition_state",
                 label="High definition (16 bit) state",
                 set_cmd=self._set_hd_mode,
@@ -948,7 +948,7 @@ Options: ON, OFF
 
 Warning/Bug: By opening the HD acquisition menu on the scope, this value will be set to "ON"."""
 
-            self.high_definition_bandwidth: Parameter = self.add_parameter(
+            self.high_definition_bandwidth: Parameter[float, Self] = self.add_parameter(
                 "high_definition_bandwidth",
                 label="High definition mode bandwidth",
                 set_cmd="HDEFinition:BWIDth {}",
@@ -959,7 +959,7 @@ Warning/Bug: By opening the HD acquisition menu on the scope, this value will be
             )
             """Parameter high_definition_bandwidth"""
 
-        self.error_count: Parameter = self.add_parameter(
+        self.error_count: Parameter[int, Self] = self.add_parameter(
             "error_count",
             label="Number of errors in the error stack",
             get_cmd="SYSTem:ERRor:COUNt?",
@@ -968,7 +968,7 @@ Warning/Bug: By opening the HD acquisition menu on the scope, this value will be
         )
         """Parameter error_count"""
 
-        self.error_next: Parameter = self.add_parameter(
+        self.error_next: Parameter[str, Self] = self.add_parameter(
             "error_next",
             label="Next error from the error stack",
             get_cmd="SYSTem:ERRor:NEXT?",
@@ -1005,11 +1005,13 @@ Warning/Bug: By opening the HD acquisition menu on the scope, this value will be
 
         self.add_function("stop", call_cmd="STOP")
         self.add_function("reset", call_cmd="*RST")
-        self.opc: Parameter = self.add_parameter("opc", get_cmd="*OPC?")
+        self.opc: Parameter[str, Self] = self.add_parameter("opc", get_cmd="*OPC?")
         """Parameter opc"""
-        self.stop_opc: Parameter = self.add_parameter("stop_opc", get_cmd="STOP;*OPC?")
+        self.stop_opc: Parameter[str, Self] = self.add_parameter(
+            "stop_opc", get_cmd="STOP;*OPC?"
+        )
         """Parameter stop_opc"""
-        self.status_operation: Parameter = self.add_parameter(
+        self.status_operation: Parameter[int, Self] = self.add_parameter(
             "status_operation", get_cmd="STATus:OPERation:CONDition?", get_parser=int
         )
         """Parameter status_operation"""
