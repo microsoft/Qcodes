@@ -768,7 +768,7 @@ class RohdeSchwarzRTO1000(VisaInstrument):
             "trigger_mode",
             label="Trigger mode",
             set_cmd="TRIGger:MODE {}",
-            get_cmd="TRIGger1:SOURce?",
+            get_cmd="TRIGger:MODE?",
             vals=vals.Enum("AUTO", "NORMAL", "FREERUN"),
             docstring="Sets the trigger mode which determines"
             " the behaviour of the instrument if no"

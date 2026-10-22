@@ -33,3 +33,14 @@ def test_trigger_source_level(driver: RTO1000) -> None:
     driver.trigger_level(1.0)
     assert driver.trigger_level() == 1
     driver.trigger_level(0)
+
+
+def test_trigger_mode(driver: RTO1000) -> None:
+    assert driver.trigger_mode() == "AUTO"
+    driver.trigger_mode("NORMAL")
+    assert driver.trigger_mode() == "NORMAL"
+
+
+def test_set_trigger_source(driver: RTO1000) -> None:
+    driver.trigger_source("CH2")
+    assert driver.trigger_source() == "CH2"
