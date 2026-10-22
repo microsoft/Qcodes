@@ -55,7 +55,7 @@ valid_paramspec_kwargs = hst.fixed_dictionaries(
 
 @pytest.fixture
 def version_0_dicts() -> "list[ParamSpecDict]":
-    sers = []
+    sers: list[ParamSpecDict] = []
     sers.append(
         {
             "name": "dmm_v1",
