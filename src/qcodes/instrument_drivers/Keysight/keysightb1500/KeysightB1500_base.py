@@ -1,7 +1,7 @@
 import re
 import textwrap
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Generic, TypedDict, cast
+from typing import TYPE_CHECKING, Any, Generic, Self, TypedDict, cast
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import MultiParameter, Parameter, create_on_off_val_mapping
@@ -55,7 +55,7 @@ class KeysightB1500(VisaInstrument):
 
         self._find_modules()
 
-        self.autozero_enabled: Parameter = self.add_parameter(
+        self.autozero_enabled: Parameter[bool, Self] = self.add_parameter(
             "autozero_enabled",
             unit="",
             label="Autozero enabled of the high-resolution ADC",

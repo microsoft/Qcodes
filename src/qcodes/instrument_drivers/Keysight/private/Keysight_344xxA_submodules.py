@@ -2,7 +2,7 @@ import textwrap
 from bisect import bisect_left
 from contextlib import ExitStack
 from functools import partial
-from typing import TYPE_CHECKING, Any, Literal, get_args
+from typing import TYPE_CHECKING, Any, Literal, Self, get_args
 
 import numpy as np
 import numpy.typing as npt
@@ -118,7 +118,7 @@ class Keysight344xxATrigger(InstrumentChannel["Keysight344xxA"]):
         trigger delay.
         """
 
-        self.auto_delay_enabled: Parameter = self.add_parameter(
+        self.auto_delay_enabled: Parameter[bool, Self] = self.add_parameter(
             "auto_delay_enabled",
             label="Auto Trigger Delay Enabled",
             set_cmd="TRIGger:DELay:AUTO {}",
@@ -144,7 +144,7 @@ class Keysight344xxATrigger(InstrumentChannel["Keysight344xxA"]):
         the automatic trigger delay.
         """
 
-        self.slope: Parameter = self.add_parameter(
+        self.slope: Parameter[str, Self] = self.add_parameter(
             "slope",
             label="Trigger Slope",
             set_cmd="TRIGger:SLOPe {}",
@@ -212,7 +212,7 @@ class Keysight344xxATrigger(InstrumentChannel["Keysight344xxA"]):
                 and set the level and slope with the `trigger.level` and
                 `trigger.slope` parameters.""")
 
-        self.source: Parameter = self.add_parameter(
+        self.source: Parameter[str, Self] = self.add_parameter(
             "source",
             label="Trigger Source",
             set_cmd="TRIGger:SOURce {}",
@@ -320,7 +320,7 @@ by the current number of sample counts as specified via the
 number of sample counts."""
 
         if self.parent.is_34465A_34470A or self.parent.is_34410A_34411A:
-            self.source: Parameter = self.add_parameter(
+            self.source: Parameter[str, Self] = self.add_parameter(
                 "source",
                 label="Sample Timing Source",
                 set_cmd="SAMPle:SOURce {}",
@@ -379,7 +379,7 @@ may generate a timing violation error when making measurements.
 Applying a value less than the absolute minimum will generate an
 error."""
 
-        self.timer_minimum: Parameter = self.add_parameter(
+        self.timer_minimum: Parameter[float, Self] = self.add_parameter(
             "timer_minimum",
             label="Minimal recommended sample time",
             get_cmd="SAMPle:TIMer? MIN",
@@ -436,7 +436,7 @@ class Keysight344xxADisplay(InstrumentChannel["Keysight344xxA"]):
     ):
         super().__init__(parent, name, **kwargs)
 
-        self.enabled: Parameter = self.add_parameter(
+        self.enabled: Parameter[bool, Self] = self.add_parameter(
             "enabled",
             label="Display enabled",
             set_cmd="DISPlay:STATe {}",
@@ -465,7 +465,7 @@ remote interface and provides basic security.
 Displaying text with `display.text` parameter will work even
 when the display is disabled."""
 
-        self.text: Parameter = self.add_parameter(
+        self.text: Parameter[str, Self] = self.add_parameter(
             "text",
             label="Display text",
             set_cmd='DISPLAY:TEXT "{}"',
@@ -709,7 +709,7 @@ class Keysight344xxA(KeysightErrorQueueMixin, VisaInstrument):
 
         # this is the "master" parameter that determines whether the DMM is
         # a voltmeter, an ampmeter, etc.
-        self.sense_function: Parameter = self.add_parameter(
+        self.sense_function: Parameter[str, Self] = self.add_parameter(
             "sense_function",
             label="Instrument sense function",
             get_cmd="SENSe:FUNCtion?",
@@ -725,7 +725,7 @@ class Keysight344xxA(KeysightErrorQueueMixin, VisaInstrument):
         )
         """Parameter sense_function"""
 
-        self.line_frequency: Parameter = self.add_parameter(
+        self.line_frequency: Parameter[int, Self] = self.add_parameter(
             "line_frequency",
             get_cmd="SYSTem:LFRequency?",
             get_parser=int,
@@ -738,7 +738,7 @@ class Keysight344xxA(KeysightErrorQueueMixin, VisaInstrument):
         )
         """The frequency of the power line where the instrument is plugged"""
 
-        self.NPLC: Parameter = self.add_parameter(
+        self.NPLC: Parameter[float, Self] = self.add_parameter(
             "NPLC",
             get_cmd=self._get_with_sense_function("NPLC"),
             get_parser=float,
@@ -775,7 +775,7 @@ Only integration times of 1, 10, or 100 PLC provide normal mode
 Setting the integration time also sets the measurement
 resolution."""
 
-        self.range: Parameter = self.add_parameter(
+        self.range: Parameter[float, Self] = self.add_parameter(
             "range",
             get_cmd="SENSe:VOLTage:DC:RANGe?",
             get_parser=float,
@@ -825,7 +825,7 @@ Refer to "Resolution Table" or "Range, Resolution and NPLC"
 sections of the instrument's manual for the available ranges for
 the resolution values."""
 
-        self.autorange: Parameter = self.add_parameter(
+        self.autorange: Parameter[str, Self] = self.add_parameter(
             "autorange",
             label="Autorange",
             set_cmd=self._set_with_sense_function("RANGe:AUTO"),
@@ -835,7 +835,7 @@ the resolution values."""
         )
         """Parameter autorange"""
 
-        self.autozero: Parameter = self.add_parameter(
+        self.autozero: Parameter[str, Self] = self.add_parameter(
             "autozero",
             label="Autozero",
             set_cmd=self._set_with_sense_function("ZERO:AUTO"),
@@ -921,7 +921,7 @@ the resolution values."""
                 apt_times["34465A"][0] = 20e-6
                 apt_times["34470A"][0] = 20e-6
 
-            self.aperture_mode: Parameter = self.add_parameter(
+            self.aperture_mode: Parameter[str, Self] = self.add_parameter(
                 "aperture_mode",
                 label="Aperture mode",
                 set_cmd=self._set_with_sense_function("APERture:ENABled"),
@@ -995,7 +995,7 @@ mode."""
         # changes on initialization or snapshot update, however the cached
         # (last read) value will still be stored in the snapshot.
 
-        self.volt: Parameter = self.add_parameter(
+        self.volt: Parameter[float, Self] = self.add_parameter(
             "volt",
             get_cmd=partial(self._get_parameter, "DC Voltage"),
             label="Voltage",
@@ -1004,7 +1004,7 @@ mode."""
         )
         """Parameter volt"""
 
-        self.curr: Parameter = self.add_parameter(
+        self.curr: Parameter[float, Self] = self.add_parameter(
             "curr",
             get_cmd=partial(self._get_parameter, "DC Current"),
             label="Current",
@@ -1013,7 +1013,7 @@ mode."""
         )
         """Parameter curr"""
 
-        self.ac_volt: Parameter = self.add_parameter(
+        self.ac_volt: Parameter[float, Self] = self.add_parameter(
             "ac_volt",
             get_cmd=partial(self._get_parameter, "AC Voltage"),
             label="AC Voltage",
@@ -1022,7 +1022,7 @@ mode."""
         )
         """Parameter ac_volt"""
 
-        self.ac_curr: Parameter = self.add_parameter(
+        self.ac_curr: Parameter[float, Self] = self.add_parameter(
             "ac_curr",
             get_cmd=partial(self._get_parameter, "AC Current"),
             label="AC Current",
@@ -1031,7 +1031,7 @@ mode."""
         )
         """Parameter ac_curr"""
 
-        self.res: Parameter = self.add_parameter(
+        self.res: Parameter[float, Self] = self.add_parameter(
             "res",
             get_cmd=partial(self._get_parameter, "2 Wire Resistance"),
             label="Resistance",
@@ -1040,7 +1040,7 @@ mode."""
         )
         """Parameter res"""
 
-        self.four_wire_res: Parameter = self.add_parameter(
+        self.four_wire_res: Parameter[float, Self] = self.add_parameter(
             "four_wire_res",
             get_cmd=partial(self._get_parameter, "4 Wire Resistance"),
             label="Resistance",
@@ -1052,7 +1052,7 @@ mode."""
         #####################################
         # Time trace parameters
 
-        self.timetrace_npts: Parameter = self.add_parameter(
+        self.timetrace_npts: Parameter[int, Self] = self.add_parameter(
             "timetrace_npts",
             label="Time trace number of points",
             initial_value=500,
@@ -1062,7 +1062,7 @@ mode."""
         )
         """Parameter timetrace_npts"""
 
-        self.timetrace_dt: Parameter = self.add_parameter(
+        self.timetrace_dt: Parameter[float, Self] = self.add_parameter(
             "timetrace_dt",
             label="Time trace time interval",
             unit="s",
