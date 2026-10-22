@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 import numpy as np
 from packaging import version
@@ -277,7 +277,7 @@ class AlazarTechATS9360(AlazarTechATS):
         """Parameter aux_io_param"""
 
         # ----- Parameters for the acquire function -----
-        self.mode: Parameter = self.add_parameter(
+        self.mode: Parameter[str, Self] = self.add_parameter(
             name="mode",
             label="Acquisition mode",
             unit=None,
@@ -286,7 +286,7 @@ class AlazarTechATS9360(AlazarTechATS):
             val_mapping={"NPT": 0x200, "TS": 0x400},
         )
         """Parameter mode"""
-        self.samples_per_record: Parameter = self.add_parameter(
+        self.samples_per_record: Parameter[int, Self] = self.add_parameter(
             name="samples_per_record",
             label="Samples per Record",
             unit=None,
@@ -295,7 +295,7 @@ class AlazarTechATS9360(AlazarTechATS):
             vals=validators.Multiples(divisor=self.samples_divisor, min_value=256),
         )
         """Parameter samples_per_record"""
-        self.records_per_buffer: Parameter = self.add_parameter(
+        self.records_per_buffer: Parameter[int, Self] = self.add_parameter(
             name="records_per_buffer",
             label="Records per Buffer",
             unit=None,
@@ -304,7 +304,7 @@ class AlazarTechATS9360(AlazarTechATS):
             vals=validators.Ints(min_value=0),
         )
         """Parameter records_per_buffer"""
-        self.buffers_per_acquisition: Parameter = self.add_parameter(
+        self.buffers_per_acquisition: Parameter[int, Self] = self.add_parameter(
             name="buffers_per_acquisition",
             label="Buffers per Acquisition",
             unit=None,
@@ -313,7 +313,7 @@ class AlazarTechATS9360(AlazarTechATS):
             vals=validators.Ints(min_value=0),
         )
         """Parameter buffers_per_acquisition"""
-        self.channel_selection: Parameter = self.add_parameter(
+        self.channel_selection: Parameter[str, Self] = self.add_parameter(
             name="channel_selection",
             label="Channel Selection",
             unit=None,
@@ -322,7 +322,7 @@ class AlazarTechATS9360(AlazarTechATS):
             val_mapping={"A": 1, "B": 2, "AB": 3},
         )
         """Parameter channel_selection"""
-        self.transfer_offset: Parameter = self.add_parameter(
+        self.transfer_offset: Parameter[int, Self] = self.add_parameter(
             name="transfer_offset",
             label="Transfer Offset",
             unit="Samples",
@@ -331,7 +331,7 @@ class AlazarTechATS9360(AlazarTechATS):
             vals=validators.Ints(min_value=0),
         )
         """Parameter transfer_offset"""
-        self.external_startcapture: Parameter = self.add_parameter(
+        self.external_startcapture: Parameter[str, Self] = self.add_parameter(
             name="external_startcapture",
             label="External Startcapture",
             unit=None,
@@ -340,7 +340,7 @@ class AlazarTechATS9360(AlazarTechATS):
             val_mapping={"DISABLED": 0x0, "ENABLED": 0x1},
         )
         """Parameter external_startcapture"""
-        self.enable_record_headers: Parameter = self.add_parameter(
+        self.enable_record_headers: Parameter[str, Self] = self.add_parameter(
             name="enable_record_headers",
             label="Enable Record Headers",
             unit=None,
@@ -349,7 +349,7 @@ class AlazarTechATS9360(AlazarTechATS):
             val_mapping={"DISABLED": 0x0, "ENABLED": 0x8},
         )
         """Parameter enable_record_headers"""
-        self.alloc_buffers: Parameter = self.add_parameter(
+        self.alloc_buffers: Parameter[str, Self] = self.add_parameter(
             name="alloc_buffers",
             label="Alloc Buffers",
             unit=None,
@@ -358,7 +358,7 @@ class AlazarTechATS9360(AlazarTechATS):
             val_mapping={"DISABLED": 0x0, "ENABLED": 0x20},
         )
         """Parameter alloc_buffers"""
-        self.fifo_only_streaming: Parameter = self.add_parameter(
+        self.fifo_only_streaming: Parameter[str, Self] = self.add_parameter(
             name="fifo_only_streaming",
             label="Fifo Only Streaming",
             unit=None,
@@ -367,7 +367,7 @@ class AlazarTechATS9360(AlazarTechATS):
             val_mapping={"DISABLED": 0x0, "ENABLED": 0x800},
         )
         """Parameter fifo_only_streaming"""
-        self.interleave_samples: Parameter = self.add_parameter(
+        self.interleave_samples: Parameter[str, Self] = self.add_parameter(
             name="interleave_samples",
             label="Interleave Samples",
             unit=None,
@@ -376,7 +376,7 @@ class AlazarTechATS9360(AlazarTechATS):
             val_mapping={"DISABLED": 0x0, "ENABLED": 0x1000},
         )
         """Parameter interleave_samples"""
-        self.get_processed_data: Parameter = self.add_parameter(
+        self.get_processed_data: Parameter[str, Self] = self.add_parameter(
             name="get_processed_data",
             label="Get Processed Data",
             unit=None,
@@ -385,7 +385,7 @@ class AlazarTechATS9360(AlazarTechATS):
             val_mapping={"DISABLED": 0x0, "ENABLED": 0x2000},
         )
         """Parameter get_processed_data"""
-        self.allocated_buffers: Parameter = self.add_parameter(
+        self.allocated_buffers: Parameter[int, Self] = self.add_parameter(
             name="allocated_buffers",
             label="Allocated Buffers",
             unit=None,
@@ -394,7 +394,7 @@ class AlazarTechATS9360(AlazarTechATS):
             vals=validators.Ints(min_value=0),
         )
         """Parameter allocated_buffers"""
-        self.buffer_timeout: Parameter = self.add_parameter(
+        self.buffer_timeout: Parameter[int, Self] = self.add_parameter(
             name="buffer_timeout",
             label="Buffer Timeout",
             unit="ms",
@@ -404,7 +404,7 @@ class AlazarTechATS9360(AlazarTechATS):
         )
         """Parameter buffer_timeout"""
 
-        self.trigger_holdoff: Parameter = self.add_parameter(
+        self.trigger_holdoff: Parameter[bool, Self] = self.add_parameter(
             name="trigger_holdoff",
             label="Trigger Holdoff",
             docstring=f"If enabled Alazar will "

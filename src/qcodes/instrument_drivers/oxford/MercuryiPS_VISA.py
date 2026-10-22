@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import time
 from functools import partial
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Self, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -112,7 +112,7 @@ class OxfordMercuryWorkerPS(InstrumentChannel["OxfordMercuryiPS"]):
         else:
             self.psu_string = "PSU"
 
-        self.heater_switch: Parameter = self.add_parameter(
+        self.heater_switch: Parameter[str, Self] = self.add_parameter(
             "heater_switch",
             label="Heater switch status/set",
             get_cmd=partial(self._param_getter, "SIG:SWHT"),
@@ -121,7 +121,7 @@ class OxfordMercuryWorkerPS(InstrumentChannel["OxfordMercuryiPS"]):
         )
         """Parameter heater switch"""
 
-        self.voltage: Parameter = self.add_parameter(
+        self.voltage: Parameter[float, Self] = self.add_parameter(
             "voltage",
             label="Output voltage",
             get_cmd=partial(self._param_getter, "SIG:VOLT"),
@@ -130,7 +130,7 @@ class OxfordMercuryWorkerPS(InstrumentChannel["OxfordMercuryiPS"]):
         )
         """Parameter voltage"""
 
-        self.current: Parameter = self.add_parameter(
+        self.current: Parameter[float, Self] = self.add_parameter(
             "current",
             label="Output current",
             get_cmd=partial(self._param_getter, "SIG:CURR"),
@@ -139,7 +139,7 @@ class OxfordMercuryWorkerPS(InstrumentChannel["OxfordMercuryiPS"]):
         )
         """Parameter current"""
 
-        self.current_persistent: Parameter = self.add_parameter(
+        self.current_persistent: Parameter[float, Self] = self.add_parameter(
             "current_persistent",
             label="Output persistent current",
             get_cmd=partial(self._param_getter, "SIG:PCUR"),
@@ -148,7 +148,7 @@ class OxfordMercuryWorkerPS(InstrumentChannel["OxfordMercuryiPS"]):
         )
         """Parameter current_persistent"""
 
-        self.current_target: Parameter = self.add_parameter(
+        self.current_target: Parameter[float, Self] = self.add_parameter(
             "current_target",
             label="Target current",
             get_cmd=partial(self._param_getter, "SIG:CSET"),
@@ -158,7 +158,7 @@ class OxfordMercuryWorkerPS(InstrumentChannel["OxfordMercuryiPS"]):
         )
         """Parameter current_target"""
 
-        self.field_target: Parameter = self.add_parameter(
+        self.field_target: Parameter[float, Self] = self.add_parameter(
             "field_target",
             label="Target field",
             get_cmd=partial(self._param_getter, "SIG:FSET"),
@@ -170,7 +170,7 @@ class OxfordMercuryWorkerPS(InstrumentChannel["OxfordMercuryiPS"]):
 
         # NB: The current ramp rate follows the field ramp rate
         # (converted via the ATOB param)
-        self.current_ramp_rate: Parameter = self.add_parameter(
+        self.current_ramp_rate: Parameter[float, Self] = self.add_parameter(
             "current_ramp_rate",
             label="Ramp rate (current)",
             unit="A/s",
@@ -192,7 +192,7 @@ class OxfordMercuryWorkerPS(InstrumentChannel["OxfordMercuryiPS"]):
         )
         """Parameter field_ramp_rate"""
 
-        self.field: Parameter = self.add_parameter(
+        self.field: Parameter[float, Self] = self.add_parameter(
             "field",
             label="Field strength",
             unit="T",
@@ -201,7 +201,7 @@ class OxfordMercuryWorkerPS(InstrumentChannel["OxfordMercuryiPS"]):
         )
         """Parameter field"""
 
-        self.field_persistent: Parameter = self.add_parameter(
+        self.field_persistent: Parameter[float, Self] = self.add_parameter(
             "field_persistent",
             label="Persistent field strength",
             unit="T",
@@ -210,7 +210,7 @@ class OxfordMercuryWorkerPS(InstrumentChannel["OxfordMercuryiPS"]):
         )
         """Parameter field_persistent"""
 
-        self.ATOB: Parameter = self.add_parameter(
+        self.ATOB: Parameter[float, Self] = self.add_parameter(
             "ATOB",
             label="Current to field ratio",
             unit="A/T",
@@ -220,7 +220,7 @@ class OxfordMercuryWorkerPS(InstrumentChannel["OxfordMercuryiPS"]):
         )
         """Parameter ATOB"""
 
-        self.ramp_status: Parameter = self.add_parameter(
+        self.ramp_status: Parameter[str, Self] = self.add_parameter(
             "ramp_status",
             label="Ramp status",
             get_cmd=partial(self._param_getter, "ACTN"),
@@ -363,7 +363,7 @@ class OxfordMercuryiPS(VisaInstrument):
         self._pt1_temp_addr = "DEV:DB8.T1:TEMP"
         self._pt2_temp_addr = "DEV:DB7.T1:TEMP"
 
-        self.magnet_temp: Parameter = self.add_parameter(
+        self.magnet_temp: Parameter[float, Self] = self.add_parameter(
             name="magnet_temp",
             label="Magnet Temperature",
             unit="K",
@@ -373,7 +373,7 @@ class OxfordMercuryiPS(VisaInstrument):
         )
         """Parameter magnet temperature"""
 
-        self.pt1_temp: Parameter = self.add_parameter(
+        self.pt1_temp: Parameter[float, Self] = self.add_parameter(
             name="pt1_temp",
             label="pt1 Temperature",
             unit="K",
@@ -383,7 +383,7 @@ class OxfordMercuryiPS(VisaInstrument):
         )
         """Parameter pt1 temperature"""
 
-        self.pt2_temp: Parameter = self.add_parameter(
+        self.pt2_temp: Parameter[float, Self] = self.add_parameter(
             name="pt2_temp",
             label="pt2 Temperature",
             unit="K",

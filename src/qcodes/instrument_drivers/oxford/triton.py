@@ -2,7 +2,7 @@ import configparser
 import re
 from functools import partial
 from time import sleep
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes.instrument import InstrumentBaseKWArgs, IPInstrument
 from qcodes.validators import Enum, Ints, Numbers
@@ -69,7 +69,7 @@ class OxfordTriton(IPInstrument):
         )
         """Indicates if a magnet is equipped *and* controlled by the Triton."""
 
-        self.time: Parameter = self.add_parameter(
+        self.time: Parameter[str, Self] = self.add_parameter(
             name="time",
             label="System Time",
             get_cmd="READ:SYS:TIME",
@@ -77,7 +77,7 @@ class OxfordTriton(IPInstrument):
         )
         """Parameter time"""
 
-        self.action: Parameter = self.add_parameter(
+        self.action: Parameter[str, Self] = self.add_parameter(
             name="action",
             label="Current action",
             get_cmd="READ:SYS:DR:ACTN",
@@ -85,7 +85,7 @@ class OxfordTriton(IPInstrument):
         )
         """Parameter action"""
 
-        self.status: Parameter = self.add_parameter(
+        self.status: Parameter[str, Self] = self.add_parameter(
             name="status",
             label="Status",
             get_cmd="READ:SYS:DR:STATUS",
@@ -93,7 +93,7 @@ class OxfordTriton(IPInstrument):
         )
         """Parameter status"""
 
-        self.pid_control_channel: Parameter = self.add_parameter(
+        self.pid_control_channel: Parameter[int, Self] = self.add_parameter(
             name="pid_control_channel",
             label="PID control channel",
             get_cmd=self._get_control_channel,
@@ -102,7 +102,7 @@ class OxfordTriton(IPInstrument):
         )
         """Parameter pid_control_channel"""
 
-        self.pid_mode: Parameter = self.add_parameter(
+        self.pid_mode: Parameter[str, Self] = self.add_parameter(
             name="pid_mode",
             label="PID Mode",
             get_cmd=partial(self._get_control_param, "MODE"),
@@ -111,7 +111,7 @@ class OxfordTriton(IPInstrument):
         )
         """Parameter pid_mode"""
 
-        self.pid_ramp: Parameter = self.add_parameter(
+        self.pid_ramp: Parameter[str, Self] = self.add_parameter(
             name="pid_ramp",
             label="PID ramp enabled",
             get_cmd=partial(self._get_control_param, "RAMP:ENAB"),
