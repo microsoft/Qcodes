@@ -1,5 +1,5 @@
 from functools import partial
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Self
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.validators import Bool, Enum, Ints, MultiType, Numbers
@@ -78,7 +78,7 @@ class Keithley2000(VisaInstrument):
         """Parameter mode"""
 
         # Mode specific parameters
-        self.nplc: Parameter = self.add_parameter(
+        self.nplc: Parameter[float, Self] = self.add_parameter(
             "nplc",
             get_cmd=partial(self._get_mode_param, "NPLC", float),
             set_cmd=partial(self._set_mode_param, "NPLC"),
@@ -88,7 +88,7 @@ class Keithley2000(VisaInstrument):
 
         # TODO: validator, this one is more difficult since different modes
         # require different validation ranges
-        self.range: Parameter = self.add_parameter(
+        self.range: Parameter[float, Self] = self.add_parameter(
             "range",
             get_cmd=partial(self._get_mode_param, "RANG", float),
             set_cmd=partial(self._set_mode_param, "RANG"),
@@ -96,7 +96,7 @@ class Keithley2000(VisaInstrument):
         )
         """Parameter range"""
 
-        self.auto_range_enabled: Parameter = self.add_parameter(
+        self.auto_range_enabled: Parameter[bool, Self] = self.add_parameter(
             "auto_range_enabled",
             get_cmd=partial(self._get_mode_param, "RANG:AUTO", _parse_output_bool),
             set_cmd=partial(self._set_mode_param, "RANG:AUTO"),
@@ -104,7 +104,7 @@ class Keithley2000(VisaInstrument):
         )
         """Parameter auto_range_enabled"""
 
-        self.digits: Parameter = self.add_parameter(
+        self.digits: Parameter[int, Self] = self.add_parameter(
             "digits",
             get_cmd=partial(self._get_mode_param, "DIG", int),
             set_cmd=partial(self._set_mode_param, "DIG"),
@@ -112,7 +112,7 @@ class Keithley2000(VisaInstrument):
         )
         """Parameter digits"""
 
-        self.averaging_type: Parameter = self.add_parameter(
+        self.averaging_type: Parameter[str, Self] = self.add_parameter(
             "averaging_type",
             get_cmd=partial(self._get_mode_param, "AVER:TCON", _parse_output_string),
             set_cmd=partial(self._set_mode_param, "AVER:TCON"),
@@ -120,7 +120,7 @@ class Keithley2000(VisaInstrument):
         )
         """Parameter averaging_type"""
 
-        self.averaging_count: Parameter = self.add_parameter(
+        self.averaging_count: Parameter[int, Self] = self.add_parameter(
             "averaging_count",
             get_cmd=partial(self._get_mode_param, "AVER:COUN", int),
             set_cmd=partial(self._set_mode_param, "AVER:COUN"),
@@ -128,7 +128,7 @@ class Keithley2000(VisaInstrument):
         )
         """Parameter averaging_count"""
 
-        self.averaging_enabled: Parameter = self.add_parameter(
+        self.averaging_enabled: Parameter[bool, Self] = self.add_parameter(
             "averaging_enabled",
             get_cmd=partial(self._get_mode_param, "AVER:STAT", _parse_output_bool),
             set_cmd=partial(self._set_mode_param, "AVER:STAT"),
@@ -234,10 +234,15 @@ class Keithley2000(VisaInstrument):
 
         return float(self.ask("SENSE:DATA:FRESH?"))
 
-    def _get_mode_param(
-        self, parameter: str, parser: "Callable[[str], Any]"
-    ) -> float | str | bool:
-        """Read the current Keithley mode and ask for a parameter"""
+    def _get_mode_param[T](self, parameter: str, parser: "Callable[[str], T]") -> T:
+        """Read the current Keithley mode and ask for a parameter.
+
+        Args:
+            parameter: The parameter to query in the current mode.
+            parser: A function that parses the response. It determines the
+                return type.
+
+        """
         mode = _parse_output_string(self._mode_map[self.mode()])
         cmd = f"{mode}:{parameter}?"
 
