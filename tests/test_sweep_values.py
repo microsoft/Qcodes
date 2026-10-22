@@ -61,11 +61,11 @@ def test_errors(c0: Parameter, c1: Parameter, c2: Parameter) -> None:
 
     # improper use of extend
     with pytest.raises(TypeError):
-        c0[0.1].extend(5)  # pyright: ignore[reportArgumentType]
+        c0[0.1].extend(5)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
     # SweepValue object has no getter, even if the parameter does
     with pytest.raises(AttributeError):
-        _ = c0[0.1].get  # pyright: ignore[reportAttributeAccessIssue]
+        _ = c0[0.1].get  # pyright: ignore[reportAttributeAccessIssue]  # ty: ignore[unresolved-attribute]
 
 
 def test_valid(c0: Parameter) -> None:
