@@ -247,7 +247,7 @@ def test_typeerror_if_dependency_update_method_invalid(
     with pytest.raises(
         TypeError, match=re.escape("dependency_update_method must be callable or None.")
     ):
-        param.dependency_update_method = 123  # pyright: ignore[reportAttributeAccessIssue]
+        param.dependency_update_method = 123  # pyright: ignore[reportAttributeAccessIssue]  # ty: ignore[invalid-assignment]
 
 
 def test_typeerror_if_dependent_on_invalid(mock_instr: MockInstrument) -> None:
@@ -261,10 +261,10 @@ def test_typeerror_if_dependent_on_invalid(mock_instr: MockInstrument) -> None:
     with pytest.raises(
         TypeError, match=re.escape("dependent_on must be a list of strings.")
     ):
-        param.dependent_on = "not_a_list"  # pyright: ignore[reportAttributeAccessIssue]
+        param.dependent_on = "not_a_list"  # pyright: ignore[reportAttributeAccessIssue]  # ty: ignore[invalid-assignment]
 
     # Assign a list with non-string
     with pytest.raises(
         TypeError, match=re.escape("dependent_on must be a list of strings.")
     ):
-        param.dependent_on = [123, None]  # pyright: ignore[reportAttributeAccessIssue]
+        param.dependent_on = [123, None]  # pyright: ignore[reportAttributeAccessIssue]  # ty: ignore[invalid-assignment]
