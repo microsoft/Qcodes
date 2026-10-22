@@ -284,7 +284,7 @@ def test_create_dataset_from_non_existing_run_id(
         ValueError,
         match=f"Run with run_id {non_existing_run_id} does not exist in the database",
     ):
-        _ = DataSet(run_id=non_existing_run_id)  # pyright: ignore[reportArgumentType]
+        _ = DataSet(run_id=non_existing_run_id)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
 
 def test_create_dataset_pass_both_connection_and_path_to_db(
@@ -573,7 +573,7 @@ def test_load_by_counter_for_nonexisting_counter(
 ) -> None:
     exp_id = 1
     with pytest.raises(RuntimeError, match="Expected one row"):
-        _ = load_by_counter(exp_id, nonexisting_counter)  # pyright: ignore[reportArgumentType]
+        _ = load_by_counter(exp_id, nonexisting_counter)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
 
 @pytest.mark.usefixtures("empty_temp_db")
@@ -582,7 +582,7 @@ def test_load_by_counter_for_nonexisting_experiment(
     nonexisting_exp_id: int | None,
 ) -> None:
     with pytest.raises(RuntimeError, match="Expected one row"):
-        _ = load_by_counter(nonexisting_exp_id, 1)  # pyright: ignore[reportArgumentType]
+        _ = load_by_counter(nonexisting_exp_id, 1)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
 
 @pytest.mark.usefixtures("empty_temp_db")
