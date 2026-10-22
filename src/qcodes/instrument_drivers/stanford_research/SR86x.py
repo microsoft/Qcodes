@@ -165,10 +165,11 @@ class SR86xBuffer(InstrumentChannel["SR86x"]):
         )
         """Number of bytes captured so far in the buffer. Can be used to track live progress."""
 
-        self.count_capture_kilobytes: Parameter[str, Self] = self.add_parameter(
+        self.count_capture_kilobytes: Parameter[int, Self] = self.add_parameter(
             "count_capture_kilobytes",
             label="captured kilobytes",
             get_cmd="CAPTUREPROG?",
+            get_parser=int,
             unit="kB",
             docstring="Number of kilobytes captured so far in the buffer, "
             "rounded-up to 2 kilobyte chunks. Capture must be "
