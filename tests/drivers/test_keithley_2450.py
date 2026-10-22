@@ -135,3 +135,18 @@ def test_sweep(k2450: Keithley2450) -> None:
     k2450.source.function("voltage")
     k2450.source.sweep_setup(0, 1, 10)
     k2450.sense.sweep.get()
+
+
+def test_sense_count_is_int(k2450: Keithley2450) -> None:
+    assert k2450.sense.count() == 1
+
+    k2450.sense.count(5)
+    count = k2450.sense.count()
+    assert isinstance(count, int)
+    assert count == 5
+
+
+def test_line_frequency_is_int(k2450: Keithley2450) -> None:
+    line_frequency = k2450.line_frequency()
+    assert isinstance(line_frequency, int)
+    assert line_frequency == 50

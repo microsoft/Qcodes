@@ -324,10 +324,11 @@ class Keithley2450Sense(InstrumentChannel["Keithley2450"]):
         )
         """This command enables or disables automatic updates to the internal reference measurements (autozero) of the instrument."""
 
-        self.count: Parameter[str, Self] = self.add_parameter(
+        self.count: Parameter[int, Self] = self.add_parameter(
             "count",
             get_cmd=":SENSe:COUNt?",
             set_cmd=":SENSe:COUNt {}",
+            get_parser=int,
             docstring="The number of measurements to make when a measurement "
             "is requested.",
         )
@@ -648,9 +649,12 @@ class Keithley2450(VisaInstrument):
         )
         """Parameter output_enabled"""
 
-        self.line_frequency: Parameter[str, Self] = self.add_parameter(
+        self.line_frequency: Parameter[int, Self] = self.add_parameter(
             "line_frequency",
             get_cmd=":SYSTem:LFRequency?",
+            # the manual does not document the response format, so accept
+            # both integer and exponent notation
+            get_parser=lambda s: int(float(s)),
             unit="Hz",
             docstring="returns the power line frequency setting that is used "
             "for NPLC calculations",
