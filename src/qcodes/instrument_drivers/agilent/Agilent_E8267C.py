@@ -54,12 +54,13 @@ class AgilentE8267C(VisaInstrument):
             vals=Enum("FIX", "CW", "SWE", "LIST"),
         )
         """Parameter freq_mode"""
-        self.pulse_width: Parameter = self.add_parameter(
+        self.pulse_width: Parameter[float, Self] = self.add_parameter(
             "pulse_width",
             label="Pulse width",
-            unit="ns",
+            unit="s",
             set_cmd="PULM:INT:PWID {}",
             get_cmd="PULM:INT:PWID?",
+            get_parser=float,
             vals=Numbers(min_value=10e-9, max_value=20e-9),
         )
         """Parameter pulse_width"""
