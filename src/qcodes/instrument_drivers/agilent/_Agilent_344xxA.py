@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import Parameter
@@ -64,12 +64,12 @@ class Agilent344xxA(VisaInstrument):
         )
         """Resolution """
 
-        self.volt: Parameter = self.add_parameter(
+        self.volt: Parameter[float, Self] = self.add_parameter(
             "volt", get_cmd="READ?", label="Voltage", get_parser=float, unit="V"
         )
         """Parameter volt"""
 
-        self.fetch: Parameter = self.add_parameter(
+        self.fetch: Parameter[float, Self] = self.add_parameter(
             "fetch",
             get_cmd="FETCH?",
             label="Voltage",
@@ -86,7 +86,7 @@ class Agilent344xxA(VisaInstrument):
         )
         """Parameter fetch"""
 
-        self.NPLC: Parameter = self.add_parameter(
+        self.NPLC: Parameter[float, Self] = self.add_parameter(
             "NPLC",
             get_cmd="VOLT:NPLC?",
             get_parser=float,
@@ -97,12 +97,12 @@ class Agilent344xxA(VisaInstrument):
         )
         """Parameter NPLC"""
 
-        self.terminals: Parameter = self.add_parameter(
+        self.terminals: Parameter[str, Self] = self.add_parameter(
             "terminals", get_cmd="ROUT:TERM?"
         )
         """Parameter terminals"""
 
-        self.range_auto: Parameter = self.add_parameter(
+        self.range_auto: Parameter[str, Self] = self.add_parameter(
             "range_auto",
             get_cmd="VOLT:RANG:AUTO?",
             set_cmd="VOLT:RANG:AUTO {:d}",
@@ -110,7 +110,7 @@ class Agilent344xxA(VisaInstrument):
         )
         """Parameter range_auto"""
 
-        self.range: Parameter = self.add_parameter(
+        self.range: Parameter[float, Self] = self.add_parameter(
             "range",
             get_cmd="SENS:VOLT:DC:RANG?",
             get_parser=float,

@@ -1,5 +1,5 @@
 from functools import partial
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.validators import Bool, Enum, Ints, MultiType, Numbers
@@ -69,7 +69,7 @@ class Keithley2000(VisaInstrument):
             "frequency": '"FREQ"',
         }
 
-        self.mode: Parameter = self.add_parameter(
+        self.mode: Parameter[str, Self] = self.add_parameter(
             "mode",
             get_cmd="SENS:FUNC?",
             set_cmd="SENS:FUNC {}",
@@ -137,7 +137,7 @@ class Keithley2000(VisaInstrument):
         """Parameter averaging_enabled"""
 
         # Global parameters
-        self.display_enabled: Parameter = self.add_parameter(
+        self.display_enabled: Parameter[bool, Self] = self.add_parameter(
             "display_enabled",
             get_cmd="DISP:ENAB?",
             get_parser=_parse_output_bool,
@@ -147,7 +147,7 @@ class Keithley2000(VisaInstrument):
         )
         """Parameter display_enabled"""
 
-        self.trigger_continuous: Parameter = self.add_parameter(
+        self.trigger_continuous: Parameter[bool, Self] = self.add_parameter(
             "trigger_continuous",
             get_cmd="INIT:CONT?",
             get_parser=_parse_output_bool,
@@ -169,7 +169,7 @@ class Keithley2000(VisaInstrument):
         )
         """Parameter trigger_count"""
 
-        self.trigger_delay: Parameter = self.add_parameter(
+        self.trigger_delay: Parameter[float, Self] = self.add_parameter(
             "trigger_delay",
             get_cmd="TRIG:DEL?",
             get_parser=float,
@@ -179,7 +179,7 @@ class Keithley2000(VisaInstrument):
         )
         """Parameter trigger_delay"""
 
-        self.trigger_source: Parameter = self.add_parameter(
+        self.trigger_source: Parameter[str, Self] = self.add_parameter(
             "trigger_source",
             get_cmd="TRIG:SOUR?",
             set_cmd="TRIG:SOUR {}",
@@ -193,7 +193,7 @@ class Keithley2000(VisaInstrument):
         )
         """Parameter trigger_source"""
 
-        self.trigger_timer: Parameter = self.add_parameter(
+        self.trigger_timer: Parameter[float, Self] = self.add_parameter(
             "trigger_timer",
             get_cmd="TRIG:TIM?",
             get_parser=float,
@@ -203,7 +203,7 @@ class Keithley2000(VisaInstrument):
         )
         """Parameter trigger_timer"""
 
-        self.amplitude: Parameter = self.add_parameter(
+        self.amplitude: Parameter[float, Self] = self.add_parameter(
             "amplitude", unit="arb.unit", get_cmd=self._read_next_value
         )
         """Parameter amplitude"""

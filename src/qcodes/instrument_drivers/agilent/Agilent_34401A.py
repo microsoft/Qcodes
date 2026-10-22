@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes.validators import Strings
 
@@ -24,7 +24,7 @@ class Agilent34401A(Agilent344xxA):
     ) -> None:
         super().__init__(name, address, **kwargs)
 
-        self.display_text: Parameter = self.add_parameter(
+        self.display_text: Parameter[str, Self] = self.add_parameter(
             "display_text",
             get_cmd="DISP:TEXT?",
             set_cmd='DISP:TEXT "{}"',
