@@ -2605,7 +2605,7 @@ class MessageBuilder:
 
     @final_command
     def pch_query(self, master: constants.ChNr | int | None = None) -> "MessageBuilder":
-        cmd = "PCH"
+        cmd = "PCH?"
 
         if master is not None:
             cmd += f" {master}"

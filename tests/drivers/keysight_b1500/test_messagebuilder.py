@@ -952,13 +952,15 @@ def test_pax(mb: MessageBuilder) -> None:
 
 
 def test_pch(mb: MessageBuilder) -> None:
-    # assert '' == mb.().message
-    _skip()
+    assert "PCH 1,2" == mb.pch(1, 2).message
 
 
 def test_pch_query(mb: MessageBuilder) -> None:
-    # assert '' == mb.().message
-    _skip()
+    assert "PCH?" == mb.pch_query().message
+
+
+def test_pch_query_with_master(mb: MessageBuilder) -> None:
+    assert "PCH? 1" == mb.pch_query(1).message
 
 
 def test_pdcv(mb: MessageBuilder) -> None:
