@@ -74,8 +74,7 @@ def test_valid(c0: Parameter) -> None:
     assert c0_sv.set == c0.set
     # normal sequence operations access values
     assert list(c0_sv) == [1]
-    # TODO: SweepFixedValues.__getitem__ only accepts slice but int keys work
-    assert c0_sv[0] == 1  # pyright: ignore[reportArgumentType]
+    assert c0_sv[0] == 1
     assert 1 in c0_sv
     assert 2 not in c0_sv
 
