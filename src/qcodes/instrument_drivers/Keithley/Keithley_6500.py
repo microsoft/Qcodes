@@ -135,7 +135,7 @@ class Keithley6500(VisaInstrument):
             "digits",
             get_cmd="DISP:VOLT:DC:DIG?",
             get_parser=int,
-            set_cmd="DISP:VOLT:DC:DIG? {}",
+            set_cmd="DISP:VOLT:DC:DIG {}",
             vals=Ints(min_value=4, max_value=7),
         )
         """Parameter digits"""
