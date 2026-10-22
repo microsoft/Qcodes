@@ -600,12 +600,13 @@ class RohdeSchwarzRTO1000ScopeChannel(InstrumentChannel["RohdeSchwarzRTO1000"]):
         )
         """Parameter bandwidth"""
 
-        self.impedance: Parameter = self.add_parameter(
+        self.impedance: Parameter[float, Self] = self.add_parameter(
             "impedance",
             label=f"Channel {channum} impedance",
             unit="Ohm",
             get_cmd=f"CHANnel{channum}:IMPedance?",
             set_cmd=f"CHANnel{channum}:IMPedance {{}}",
+            get_parser=float,
             vals=vals.Ints(1, 100000),
             docstring=(
                 "Sets the impedance of the channel "

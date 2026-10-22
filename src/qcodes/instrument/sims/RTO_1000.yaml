@@ -57,6 +57,15 @@ devices:
         setter:
           q: "CHANnel1:OFFSet {}"
 
+      channel impedance 1:
+        # *RST value according to the R&S RTO user manual
+        default: 50
+        getter:
+          q: "CHANnel1:IMPedance?"
+          r: "{}"
+        setter:
+          q: "CHANnel1:IMPedance {}"
+
 resources:
   GPIB::1::INSTR:
     device: device 1
