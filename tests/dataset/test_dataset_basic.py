@@ -23,13 +23,17 @@ from qcodes.dataset import (
 )
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.data_set_protocol import CompletedError
-from qcodes.dataset.descriptions.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.dependencies import (
+    FrozenInterDependencies_,
+    InterDependencies_,
+)
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.guids import parse_guid
 from qcodes.dataset.sqlite.connection import atomic, path_to_dbfile
 from qcodes.dataset.sqlite.database import _convert_array, get_DB_location
 from qcodes.dataset.sqlite.queries import _rewrite_timestamps, _unicode_categories
 from qcodes.parameters import ParamSpecBase
+from qcodes.utils import QCoDeSDeprecationWarning
 from qcodes.utils.types import complex_types, numpy_complex, numpy_floats, numpy_ints
 from tests.common import error_caused_by
 from tests.dataset.helper_functions import verify_data_dict
@@ -216,6 +220,69 @@ def test_mark_completed_twice(start_bg_writer) -> None:
     ds.mark_started(start_bg_writer=start_bg_writer)
     ds.mark_completed()
     ds.mark_completed()
+
+
+@pytest.mark.parametrize("start_bg_writer", (True, False))
+@pytest.mark.usefixtures("experiment")
+def test_interdependencies_frozen_once_started(start_bg_writer) -> None:
+    x = ParamSpecBase("x", "numeric")
+    y = ParamSpecBase("y", "numeric")
+    idps = InterDependencies_(dependencies={y: (x,)})
+    ds = DataSet()
+    ds.set_interdependencies(idps)
+    assert not isinstance(ds.description.interdeps, FrozenInterDependencies_)
+
+    ds.mark_started(start_bg_writer=start_bg_writer)
+    assert isinstance(ds.description.interdeps, FrozenInterDependencies_)
+    assert ds.description.interdeps == idps
+
+    ds.add_results([{"x": 1, "y": 2}])
+    ds.mark_completed()
+    assert isinstance(ds.description.interdeps, FrozenInterDependencies_)
+
+    loaded = load_by_id(ds.run_id)
+    assert isinstance(loaded.description.interdeps, FrozenInterDependencies_)
+    assert loaded.description == ds.description
+    assert loaded.the_same_dataset_as(ds)
+
+
+@pytest.mark.usefixtures("experiment")
+def test_set_interdependencies_override_is_deprecated() -> None:
+    x = ParamSpecBase("x", "numeric")
+    y = ParamSpecBase("y", "numeric")
+    idps = InterDependencies_(dependencies={y: (x,)})
+    ds = DataSet()
+    ds.set_interdependencies(idps)
+    ds.mark_started()
+
+    with pytest.raises(RuntimeError, match="has been started"):
+        ds.set_interdependencies(idps)
+
+    match = "The `override` argument of `DataSet.set_interdependencies` is deprecated"
+    with pytest.warns(QCoDeSDeprecationWarning, match=match):
+        ds.set_interdependencies(idps, override=True)  # pyright: ignore[reportDeprecated]
+    assert isinstance(ds.description.interdeps, FrozenInterDependencies_)
+    assert ds.description.interdeps == idps
+
+    with pytest.warns(QCoDeSDeprecationWarning, match=match):
+        ds.set_interdependencies(idps, None, True)  # pyright: ignore[reportDeprecated]
+
+    with (
+        pytest.warns(QCoDeSDeprecationWarning, match=match),
+        pytest.raises(RuntimeError, match="has been started"),
+    ):
+        ds.set_interdependencies(idps, override=False)  # pyright: ignore[reportDeprecated]
+
+
+@pytest.mark.usefixtures("experiment")
+def test_interdependencies_of_pristine_loaded_dataset_not_frozen() -> None:
+    x = ParamSpecBase("x", "numeric")
+    ds = DataSet(specs=InterDependencies_(standalones=(x,)))
+
+    loaded = load_by_id(ds.run_id)
+
+    assert loaded.pristine
+    assert not isinstance(loaded.description.interdeps, FrozenInterDependencies_)
 
 
 @pytest.mark.usefixtures("experiment")

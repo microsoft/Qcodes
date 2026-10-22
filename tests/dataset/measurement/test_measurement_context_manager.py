@@ -21,10 +21,7 @@ from pytest import LogCaptureFixture
 import qcodes as qc
 import qcodes.validators as vals
 from qcodes.dataset.data_set import DataSet, load_by_id
-from qcodes.dataset.descriptions.dependencies import (
-    FrozenInterDependencies_,
-    InterDependencies_,
-)
+from qcodes.dataset.descriptions.dependencies import FrozenInterDependencies_
 from qcodes.dataset.experiment_container import Experiment, new_experiment
 from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.measurements import Measurement
@@ -579,7 +576,7 @@ def test_subscriptions(
             # wrap the assertions. This is going to ensure that some time is
             # given to the Subscriber threads to finish exhausting the queue.
             @retry_until_does_not_throw(
-                exception_class_to_expect=AssertionError, delay=0.5, tries=20
+                exception_class_to_expect=AssertionError, delay=0.05, tries=200
             )
             def assert_states_updated_from_callbacks(
                 num: int, expected_values: list[int]
@@ -743,13 +740,12 @@ def test_datasaver_scalars(
 
     ds = datasaver.dataset
     assert isinstance(ds, DataSet)
-    assert isinstance(ds.description.interdeps, InterDependencies_)
-    assert not isinstance(ds.description.interdeps, FrozenInterDependencies_)
+    assert isinstance(ds.description.interdeps, FrozenInterDependencies_)
 
     loaded_ds = load_by_id(ds.run_id)
 
-    assert isinstance(loaded_ds.description.interdeps, InterDependencies_)
-    assert not isinstance(loaded_ds.description.interdeps, FrozenInterDependencies_)
+    assert isinstance(loaded_ds.description.interdeps, FrozenInterDependencies_)
+    assert loaded_ds.description == ds.description
 
     # More assertions of setpoints, labels and units in the DB!
 

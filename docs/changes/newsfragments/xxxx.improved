@@ -1,0 +1,6 @@
+Loading data from a ``DataSet`` is now faster. Array and complex valued data is read
+several times faster since the header of the stored arrays is only parsed once per
+parameter rather than once per stored value. Repeated calls to ``get_parameter_data``
+on a started ``DataSet``, e.g. when the cache is updated during a measurement, are also
+faster as the run description held by the dataset is used rather than reading and
+parsing it from the database on every call.

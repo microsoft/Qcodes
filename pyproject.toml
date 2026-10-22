@@ -228,7 +228,7 @@ executionEnvironments = [
 [tool.pytest.ini_options]
 minversion = "7.2"
 testpaths = "tests"
-addopts = "-n auto --dist=loadfile --cov-config=pyproject.toml"
+addopts = "-n auto --dist=worksteal --cov-config=pyproject.toml"
 asyncio_default_fixture_loop_scope = "function"
 markers = "serial"
 

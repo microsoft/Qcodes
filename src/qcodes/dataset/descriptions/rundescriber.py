@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
-from qcodes.dataset.descriptions.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.dependencies import (
+    FrozenInterDependencies_,
+    InterDependencies_,
+)
 
 from .versioning.converters import new_to_old, old_to_new
 from .versioning.v0 import InterDependencies
@@ -112,3 +115,17 @@ class RunDescriber:  # noqa: PLW1641
 
     def __repr__(self) -> str:
         return f"RunDescriber({self.interdeps}, Shapes: {self._shapes})"
+
+
+def _freeze_rundescriber(rundescriber: RunDescriber) -> RunDescriber:
+    """
+    Return a :class:`RunDescriber` with frozen interdependencies. The
+    interdependencies of a dataset must not change once it has been started,
+    and freezing them allows caching the dependency lookups that are needed
+    when adding and reading data.
+    """
+    if isinstance(rundescriber.interdeps, FrozenInterDependencies_):
+        return rundescriber
+    return RunDescriber(
+        FrozenInterDependencies_(rundescriber.interdeps), shapes=rundescriber.shapes
+    )

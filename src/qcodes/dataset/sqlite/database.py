@@ -6,13 +6,14 @@ database version and possibly perform database upgrades.
 
 from __future__ import annotations
 
+import functools
 import io
 import math
 import sqlite3
 import sys
 from contextlib import contextmanager
 from os.path import expanduser, normpath
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 import numpy.typing as npt
@@ -52,16 +53,82 @@ def _adapt_array(arr: npt.NDArray) -> sqlite3.Binary:
 
 
 def _convert_array(text: bytes) -> npt.NDArray:
-    # Using np.lib.format.read_array (counterpart of np.lib.format.write_array)
-    # npy format version 3.0 is 3 times faster than previous verions (no clean up step
-    # for python 2 backward compatibility)
-    return np.lib.format.read_array(io.BytesIO(text), allow_pickle=False)
+    """
+    Convert the ``.npy`` serialization of an array (as written by
+    :func:`_adapt_array`) back into an array.
+
+    This is equivalent to :func:`numpy.lib.format.read_array` but caches the
+    parsing of the header, which otherwise dominates the time it takes to
+    load small and medium sized arrays. All rows of a given array parameter
+    typically share the same header. Input that cannot be handled by the fast
+    path is passed on to :func:`numpy.lib.format.read_array`.
+    """
+    header_info = _npy_header_info(text)
+    if header_info is None:
+        return np.lib.format.read_array(io.BytesIO(text), allow_pickle=False)
+    offset, shape, fortran_order, dtype = header_info
+    count = math.prod(shape)
+    if len(text) - offset < count * dtype.itemsize:
+        return np.lib.format.read_array(io.BytesIO(text), allow_pickle=False)
+    # copy since frombuffer returns a read only view of the bytes
+    array = np.frombuffer(text, dtype=dtype, count=count, offset=offset).copy()
+    if fortran_order:
+        return array.reshape(shape[::-1]).transpose()
+    return array.reshape(shape)
+
+
+_NPY_MAGIC_PREFIX = b"\x93NUMPY"
+
+
+def _npy_header_info(
+    text: bytes,
+) -> tuple[int, tuple[int, ...], bool, np.dtype[Any]] | None:
+    """
+    Return the offset of the data, shape, fortran order and dtype of an
+    ``.npy`` serialized array or None if the array should be read with
+    :func:`numpy.lib.format.read_array`.
+    """
+    if len(text) < 12 or not text.startswith(_NPY_MAGIC_PREFIX):
+        return None
+    major_version = text[6]
+    if major_version == 1:
+        offset = 10 + int.from_bytes(text[8:10], "little")
+    elif major_version in (2, 3):
+        offset = 12 + int.from_bytes(text[8:12], "little")
+    else:
+        return None
+    header_info = _parse_npy_header(text[:offset])
+    if header_info is None:
+        return None
+    return (offset, *header_info)
+
+
+@functools.lru_cache(maxsize=128)
+def _parse_npy_header(
+    header: bytes,
+) -> tuple[tuple[int, ...], bool, np.dtype[Any]] | None:
+    # numpy's public header readers decode the header as latin1 while
+    # version 3.0 headers are utf8 encoded. These are only identical for
+    # ascii, which covers all headers written by QCoDeS.
+    header_text_start = 10 if header[6] == 1 else 12
+    if not header[header_text_start:].isascii():
+        return None
+    fp = io.BytesIO(header)
+    try:
+        major_version, _ = np.lib.format.read_magic(fp)
+        if major_version == 1:
+            shape, fortran_order, dtype = np.lib.format.read_array_header_1_0(fp)
+        else:
+            shape, fortran_order, dtype = np.lib.format.read_array_header_2_0(fp)
+    except ValueError:
+        return None
+    if dtype.hasobject or dtype.itemsize == 0:
+        return None
+    return shape, fortran_order, dtype
 
 
 def _convert_complex(text: bytes) -> np.complexfloating:
-    out = io.BytesIO(text)
-    out.seek(0)
-    return np.load(out)[0]
+    return _convert_array(text)[0]
 
 
 this_session_default_encoding = sys.getdefaultencoding()
@@ -89,20 +156,10 @@ def _convert_numeric(value: bytes) -> float | int | str:
         # Let string casting fail if bytes encoding is invalid
         return str(value, encoding=this_session_default_encoding)
 
-    # If that worked, e.g. did not raise an exception, then we check if the outcome is
-    # either an infinity or a NaN
-    # For a single value, math.isfinite is 10 times faster than np.isinfinite (or
-    # combining np.isnan and np.isinf)
-    if not math.isfinite(numeric):
-        return numeric
-
-    # If it is not 'nan' and not 'inf', then we need to see if the value is really an
-    # integer or with floating point digits
-    numeric_int = int(numeric)
-    if numeric != numeric_int:
-        return numeric
-    else:
-        return numeric_int
+    # is_integer is False for NaN and infinity so these are returned as floats
+    if numeric.is_integer():
+        return int(numeric)
+    return numeric
 
 
 def _adapt_float(fl: float) -> float | str:

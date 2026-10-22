@@ -1,4 +1,3 @@
-import time
 from unittest.mock import patch
 
 # importing ipykernel has the side effect
@@ -58,11 +57,9 @@ def test_button_to_text(
     box = interactive_widget.button_to_text("title", "body")
     (button,) = box.children
     button.click()
-    time.sleep(0.5)  # after click
     text_area, back_button = box.children
     assert "body" in text_area.value
     back_button.click()
-    time.sleep(0.5)  # after click
     assert len(box.children) == 1
 
 
@@ -70,7 +67,6 @@ def test_snapshot_button(tab, standalone_parameters_dataset) -> None:
     ds = standalone_parameters_dataset
     snapshot_button = interactive_widget._get_snapshot_button(ds, tab)
     snapshot_button.click()
-    time.sleep(0.5)  # after click
     # maybe use https://github.com/jupyter-widgets/ipywidgets/issues/2417
     assert "snapshot" in tab.get_title(1)
 
@@ -79,7 +75,6 @@ def test_export_button(tab, standalone_parameters_dataset) -> None:
     ds = standalone_parameters_dataset
     export_button = interactive_widget._get_export_button(ds, tab)
     export_button.click()
-    time.sleep(0.5)  # after click
 
 
 @patch("matplotlib.pyplot.show")
@@ -87,7 +82,6 @@ def test_plot_button(tab, standalone_parameters_dataset) -> None:
     ds = standalone_parameters_dataset
     plot_button = interactive_widget._get_plot_button(ds, tab)
     plot_button.click()
-    time.sleep(0.5)  # after click
 
 
 @pytest.mark.parametrize(
@@ -107,7 +101,6 @@ def test_get_experiment_button(
     box = get_button_function(ds)
     snapshot_button = box.children[0]
     snapshot_button.click()
-    time.sleep(0.5)  # after click
     assert len(box.children) == 2
 
 
@@ -132,7 +125,6 @@ def test_editable_metadata(
     test_test = "test value"
     text_area.value = test_test
     save_button.click()
-    time.sleep(0.5)  # after click
     # Test if metadata is saved.
     assert ds.metadata[interactive_widget._META_DATA_KEY] == test_test
 

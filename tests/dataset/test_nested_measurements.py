@@ -221,7 +221,7 @@ def test_subscription_on_dual_datasets(experiment, basic_subscriber) -> None:
         expected_state_2[x + 1] = [(x, y2)]
 
         @retry_until_does_not_throw(
-            exception_class_to_expect=AssertionError, delay=0.5, tries=10
+            exception_class_to_expect=AssertionError, delay=0.05, tries=100
         )
         def assert_expected_state():
             assert dataset1.subscribers[sub_id_1].state == expected_state_1

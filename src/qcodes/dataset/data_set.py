@@ -6,15 +6,17 @@ import logging
 import tempfile
 import time
 import uuid
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from queue import Queue
 from threading import Thread
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 import numpy
 import numpy.typing as npt
 from tqdm.auto import trange
+from typing_extensions import deprecated
 
 import qcodes
 from qcodes.dataset.data_set_protocol import (
@@ -27,7 +29,10 @@ from qcodes.dataset.data_set_protocol import (
     ValuesType,
 )
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.descriptions.rundescriber import (
+    RunDescriber,
+    _freeze_rundescriber,
+)
 from qcodes.dataset.descriptions.versioning.converters import new_to_old, old_to_new
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.experiment_settings import get_default_experiment_id
@@ -81,6 +86,7 @@ from qcodes.dataset.sqlite.query_helpers import (
 )
 from qcodes.utils import (
     NumpyJSONEncoder,
+    QCoDeSDeprecationWarning,
 )
 
 from ._raw_data_storage import (
@@ -119,6 +125,12 @@ if TYPE_CHECKING:
 
 
 log = logging.getLogger(__name__)
+
+_SET_INTERDEPENDENCIES_OVERRIDE_DEPRECATION = (
+    "The `override` argument of `DataSet.set_interdependencies` is deprecated "
+    "and will be removed in a future release. The interdependencies of a "
+    "dataset can not be changed once it has been started."
+)
 
 
 # TODO: storing parameters in separate table as an extension (dropping
@@ -314,6 +326,8 @@ class DataSet(BaseDataSet):
             self._rundescriber = run_desc
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._started = self.run_timestamp_raw is not None
+            if self._started:
+                self._rundescriber = _freeze_rundescriber(self._rundescriber)
             self._parent_dataset_links = str_to_links(
                 get_parent_dataset_links(self.conn, self.run_id)
             )
@@ -629,18 +643,65 @@ class DataSet(BaseDataSet):
         self.conn.close()
         self.conn = connect(path_to_db, self._debug)
 
+    @overload
     def set_interdependencies(
         self,
         interdeps: InterDependencies_,
         shapes: Shapes | None = None,
-        override: bool = False,
+    ) -> None: ...
+
+    @overload
+    @deprecated(_SET_INTERDEPENDENCIES_OVERRIDE_DEPRECATION)
+    def set_interdependencies(
+        self,
+        interdeps: InterDependencies_,
+        shapes: Shapes | None = None,
+        *,
+        override: bool,
+    ) -> None: ...
+
+    @overload
+    @deprecated(_SET_INTERDEPENDENCIES_OVERRIDE_DEPRECATION)
+    def set_interdependencies(
+        self,
+        interdeps: InterDependencies_,
+        shapes: Shapes | None,
+        override: bool,
+    ) -> None: ...
+
+    def set_interdependencies(
+        self,
+        interdeps: InterDependencies_,
+        shapes: Shapes | None = None,
+        override: bool | None = None,
     ) -> None:
         """
         Set the interdependencies object (which holds all added
         parameters and their relationships) of this dataset and
         optionally the shapes object that holds information about
         the shape of the data to be measured.
+
+        Args:
+            interdeps: The interdependencies of the parameters of the dataset.
+            shapes: The expected shapes of the data of the parameters.
+            override: Deprecated. Allows replacing the interdependencies of a
+                dataset that has already been started. The interdependencies
+                of a started dataset are fixed. Replacing them only changes
+                this object (and data exported from it) but not the run
+                description stored in the database, so the two can end up
+                inconsistent.
+
+        Raises:
+            TypeError: If interdeps is not an InterDependencies_ instance.
+            RuntimeError: If the dataset has already been started.
+
         """
+        if override is not None:
+            warnings.warn(
+                _SET_INTERDEPENDENCIES_OVERRIDE_DEPRECATION,
+                QCoDeSDeprecationWarning,
+                stacklevel=2,
+            )
         if not isinstance(interdeps, InterDependencies_):
             raise TypeError(
                 f"Wrong input type. Expected InterDepencies_, got {type(interdeps)}"
@@ -650,6 +711,8 @@ class DataSet(BaseDataSet):
             mssg = "Can not set interdependencies on a DataSet that has been started."
             raise RuntimeError(mssg)
         self._rundescriber = RunDescriber(interdeps, shapes=shapes)
+        if not self.pristine:
+            self._rundescriber = _freeze_rundescriber(self._rundescriber)
 
     def add_metadata(self, tag: str, metadata: Any) -> None:
         """
@@ -748,6 +811,7 @@ class DataSet(BaseDataSet):
         """
         Perform the actions that must take place once the run has been started
         """
+        self._rundescriber = _freeze_rundescriber(self._rundescriber)
         paramspecs = new_to_old(self._rundescriber.interdeps).paramspecs
 
         # Register all parameters in a single transaction (each add_parameter
