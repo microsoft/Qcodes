@@ -435,17 +435,16 @@ class LakeshoreModel325Heater(InstrumentChannel):
             get_cmd=f"PID? {self._loop}",
         )
 
+        # the 25 W high range is only available on loop 1
+        output_ranges = {"Off": "0", "Low (2.5W)": "1"}
         if self._loop == 1:
-            valid_output_ranges = Enum(0, 1, 2)
-        else:
-            valid_output_ranges = Enum(0, 1)
+            output_ranges["High (25W)"] = "2"
 
-        self.output_range: Parameter = self.add_parameter(
+        self.output_range: Parameter[str, Self] = self.add_parameter(
             "output_range",
-            vals=valid_output_ranges,
             set_cmd=f"RANGE {self._loop}, {{}}",
             get_cmd=f"RANGE? {self._loop}",
-            val_mapping={"Off": "0", "Low (2.5W)": "1", "High (25W)": "2"},
+            val_mapping=output_ranges,
         )
         """Parameter output_range"""
 
