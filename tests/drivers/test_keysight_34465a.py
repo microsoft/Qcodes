@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING, Protocol
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -50,9 +51,11 @@ def driver_with_read_and_fetch_mocked(
 
         return ask_with_read_mock
 
-    keysight_sim.ask = get_ask_with_read_mock(keysight_sim.ask, val_volt)
     try:
-        yield keysight_sim
+        with patch.object(
+            keysight_sim, "ask", new=get_ask_with_read_mock(keysight_sim.ask, val_volt)
+        ):
+            yield keysight_sim
     finally:
         Keysight34465A.close_all()
 
