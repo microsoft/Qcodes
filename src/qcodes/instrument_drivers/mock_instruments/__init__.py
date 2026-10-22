@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import time
 from functools import partial
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -87,11 +87,11 @@ class MockParabola(DummyBase):
         )
         """Parameter noise"""
 
-        self.parabola: Parameter = self.add_parameter(
+        self.parabola: Parameter[float, Self] = self.add_parameter(
             "parabola", unit="a.u.", get_cmd=self._measure_parabola
         )
         """Parameter parabola"""
-        self.skewed_parabola: Parameter = self.add_parameter(
+        self.skewed_parabola: Parameter[float, Self] = self.add_parameter(
             "skewed_parabola", unit="a.u.", get_cmd=self._measure_skewed_parabola
         )
         """Parameter skewed_parabola"""
@@ -148,11 +148,11 @@ class MockMetaParabola(InstrumentBase):
         )
         """Parameter gain"""
 
-        self.parabola: Parameter = self.add_parameter(
+        self.parabola: Parameter[float, Self] = self.add_parameter(
             "parabola", unit="a.u.", get_cmd=self._get_parabola
         )
         """Parameter parabola"""
-        self.skewed_parabola: Parameter = self.add_parameter(
+        self.skewed_parabola: Parameter[float, Self] = self.add_parameter(
             "skewed_parabola", unit="a.u.", get_cmd=self._get_skew_parabola
         )
         """Parameter skewed_parabola"""
@@ -431,7 +431,7 @@ class DummyChannel(InstrumentChannel):
         )
         """Parameter dummy_complex_array_parameter"""
 
-        self.dummy_start: Parameter = self.add_parameter(
+        self.dummy_start: Parameter[float, Self] = self.add_parameter(
             "dummy_start",
             initial_value=0,
             unit="some unit",
@@ -442,7 +442,7 @@ class DummyChannel(InstrumentChannel):
         )
         """Parameter dummy_start"""
 
-        self.dummy_stop: Parameter = self.add_parameter(
+        self.dummy_stop: Parameter[float, Self] = self.add_parameter(
             "dummy_stop",
             initial_value=100,
             unit="some unit",
@@ -463,7 +463,7 @@ class DummyChannel(InstrumentChannel):
         )
         """Parameter dummy_n_points"""
 
-        self.dummy_start_2: Parameter = self.add_parameter(
+        self.dummy_start_2: Parameter[float, Self] = self.add_parameter(
             "dummy_start_2",
             initial_value=0,
             unit="some unit",
@@ -474,7 +474,7 @@ class DummyChannel(InstrumentChannel):
         )
         """Parameter dummy_start_2"""
 
-        self.dummy_stop_2: Parameter = self.add_parameter(
+        self.dummy_stop_2: Parameter[float, Self] = self.add_parameter(
             "dummy_stop_2",
             initial_value=100,
             unit="some unit",
@@ -543,7 +543,7 @@ class DummyChannel(InstrumentChannel):
         )
         """Parameter dummy_parameter_with_setpoints_2d"""
 
-        self.dummy_text: Parameter = self.add_parameter(
+        self.dummy_text: Parameter[str, Self] = self.add_parameter(
             name="dummy_text",
             label="Dummy text",
             unit="text unit",

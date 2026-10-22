@@ -1,6 +1,6 @@
 import re
 from time import sleep
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 
@@ -34,7 +34,7 @@ class CryomagneticsModelTM620(VisaInstrument):
     ) -> None:
         super().__init__(name, address, **kwargs)
 
-        self.shield: Parameter = self.add_parameter(
+        self.shield: Parameter[float, Self] = self.add_parameter(
             name="shield",
             unit="K",
             get_cmd=self._get_A,
@@ -43,7 +43,7 @@ class CryomagneticsModelTM620(VisaInstrument):
         )
         """55K shield temperature"""
 
-        self.magnet: Parameter = self.add_parameter(
+        self.magnet: Parameter[float, Self] = self.add_parameter(
             name="magnet",
             unit="K",
             get_cmd=self._get_B,

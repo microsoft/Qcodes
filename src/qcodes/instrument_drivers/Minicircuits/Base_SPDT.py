@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes.instrument import (
     ChannelList,
@@ -47,7 +47,7 @@ class MiniCircuitsSPDTSwitchChannelBase[TINSTR: "MiniCircuitsSPDTBase"](
         _chanlist = ["a", "b", "c", "d", "e", "f", "g", "h"]
         self.channel_number = _chanlist.index(channel_letter)
 
-        self.switch: Parameter = self.add_parameter(
+        self.switch: Parameter[int, Self] = self.add_parameter(
             "switch",
             label=f"switch {self.channel_letter}",
             set_cmd=self._set_switch,

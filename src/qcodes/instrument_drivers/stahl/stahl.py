@@ -7,7 +7,7 @@ import re
 from collections import OrderedDict
 from collections.abc import Callable, Iterable
 from functools import partial
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 import numpy as np
 from pyvisa.resources.serial import SerialInstrument
@@ -84,7 +84,7 @@ class StahlChannel(InstrumentChannel["Stahl"]):
 
         _FLOATING_POINT_RE = r"[+\-]?(?:[.,]\d+|\d+(?:[.,]\d*)?)(?:[eE][-+]?\d+)?"
 
-        self.voltage: Parameter = self.add_parameter(
+        self.voltage: Parameter[float, Self] = self.add_parameter(
             "voltage",
             get_cmd=f"{self.parent.identifier} U{self._channel_string}",
             get_parser=chain(
@@ -98,7 +98,7 @@ class StahlChannel(InstrumentChannel["Stahl"]):
         )
         """Parameter voltage"""
 
-        self.current: Parameter = self.add_parameter(
+        self.current: Parameter[float, Self] = self.add_parameter(
             "current",
             get_cmd=f"{self.parent.identifier} I{self._channel_string}",
             get_parser=chain(
@@ -110,7 +110,7 @@ class StahlChannel(InstrumentChannel["Stahl"]):
         )
         """Parameter current"""
 
-        self.is_locked: Parameter = self.add_parameter(
+        self.is_locked: Parameter[bool, Self] = self.add_parameter(
             "is_locked", get_cmd=self._get_lock_status
         )
         """Parameter is_locked"""
@@ -220,7 +220,7 @@ class Stahl(VisaInstrument):
         )
         """ChannelList of channels"""
 
-        self.temperature: Parameter = self.add_parameter(
+        self.temperature: Parameter[float, Self] = self.add_parameter(
             "temperature",
             get_cmd=f"{self.identifier} TEMP",
             get_parser=chain(re.compile("^TEMP (.*)°C$").findall, float),

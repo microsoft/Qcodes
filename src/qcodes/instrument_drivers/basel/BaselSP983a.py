@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 import numpy as np
 
@@ -69,7 +69,7 @@ class BaselSP983a(VisaInstrument):
             },
         )
         """Parameter fcut"""
-        self.overload_status: Parameter = self.add_parameter(
+        self.overload_status: Parameter[str, Self] = self.add_parameter(
             "overload_status", label="Overload Status", set_cmd=False, get_cmd="GET O"
         )
         """Parameter overload_status"""

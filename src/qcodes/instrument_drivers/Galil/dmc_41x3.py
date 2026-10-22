@@ -6,7 +6,7 @@ Colloquially known as the "stepper motors".
 
 import time
 from math import ceil
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -214,7 +214,7 @@ class GalilDMC4133VectorMode(InstrumentChannel):
             min_value=-2147483648, max_value=2147483647
         )
 
-        self.coordinate_system: Parameter = self.add_parameter(
+        self.coordinate_system: Parameter[str, Self] = self.add_parameter(
             "coordinate_system",
             get_cmd="CA ?",
             get_parser=self._parse_coordinate_system_active,
@@ -227,7 +227,7 @@ class GalilDMC4133VectorMode(InstrumentChannel):
         )
         """activates coordinate system for the motion. Two  coordinate systems are possible with values 'S' and 'T'. All vector mode commands will apply to the active coordinate system."""
 
-        self.vector_acceleration: Parameter = self.add_parameter(
+        self.vector_acceleration: Parameter[int, Self] = self.add_parameter(
             "vector_acceleration",
             get_cmd="VA ?",
             get_parser=lambda s: int(float(s)),
@@ -238,7 +238,7 @@ class GalilDMC4133VectorMode(InstrumentChannel):
         )
         """sets and gets the defined vector's acceleration"""
 
-        self.vector_deceleration: Parameter = self.add_parameter(
+        self.vector_deceleration: Parameter[int, Self] = self.add_parameter(
             "vector_deceleration",
             get_cmd="VD ?",
             get_parser=lambda s: int(float(s)),
@@ -249,7 +249,7 @@ class GalilDMC4133VectorMode(InstrumentChannel):
         )
         """sets and gets the defined vector's deceleration"""
 
-        self.vector_speed: Parameter = self.add_parameter(
+        self.vector_speed: Parameter[int, Self] = self.add_parameter(
             "vector_speed",
             get_cmd="VS ?",
             get_parser=lambda s: int(float(s)),
@@ -342,7 +342,7 @@ class GalilDMC4133Motor(InstrumentChannel["GalilDMC4133Controller"]):
         super().__init__(parent, name, **kwargs)
         self._axis = name
 
-        self.relative_position: Parameter = self.add_parameter(
+        self.relative_position: Parameter[int, Self] = self.add_parameter(
             "relative_position",
             unit="quadrature counts",
             get_cmd=f"MG _PR{self._axis}",
@@ -353,7 +353,7 @@ class GalilDMC4133Motor(InstrumentChannel["GalilDMC4133Controller"]):
         )
         """sets relative position for the motor's move"""
 
-        self.speed: Parameter = self.add_parameter(
+        self.speed: Parameter[int, Self] = self.add_parameter(
             "speed",
             unit="counts/sec",
             get_cmd=f"MG _SP{self._axis}",
@@ -364,7 +364,7 @@ class GalilDMC4133Motor(InstrumentChannel["GalilDMC4133Controller"]):
         )
         """speed for motor's motion"""
 
-        self.acceleration: Parameter = self.add_parameter(
+        self.acceleration: Parameter[int, Self] = self.add_parameter(
             "acceleration",
             unit="counts/sec2",
             get_cmd=f"MG _AC{self._axis}",
@@ -375,7 +375,7 @@ class GalilDMC4133Motor(InstrumentChannel["GalilDMC4133Controller"]):
         )
         """acceleration for motor's motion"""
 
-        self.deceleration: Parameter = self.add_parameter(
+        self.deceleration: Parameter[int, Self] = self.add_parameter(
             "deceleration",
             unit="counts/sec2",
             get_cmd=f"MG _DC{self._axis}",
@@ -386,7 +386,7 @@ class GalilDMC4133Motor(InstrumentChannel["GalilDMC4133Controller"]):
         )
         """deceleration for motor's motion"""
 
-        self.off_when_error_occurs: Parameter = self.add_parameter(
+        self.off_when_error_occurs: Parameter[str, Self] = self.add_parameter(
             "off_when_error_occurs",
             get_cmd=self._get_off_when_error_occurs,
             set_cmd=self._set_off_when_error_occurs,
@@ -401,7 +401,7 @@ class GalilDMC4133Motor(InstrumentChannel["GalilDMC4133Controller"]):
         )
         """enables or disables the motor to automatically turn off when error occurs"""
 
-        self.reverse_sw_limit: Parameter = self.add_parameter(
+        self.reverse_sw_limit: Parameter[int, Self] = self.add_parameter(
             "reverse_sw_limit",
             unit="quadrature counts",
             get_cmd=f"MG _BL{self._axis}",
@@ -415,7 +415,7 @@ class GalilDMC4133Motor(InstrumentChannel["GalilDMC4133Controller"]):
         )
         """can be used to set software reverse limit for the motor. motor motion will stop beyond this limit automatically. default value is -2147483648. this value effectively disables the reverse limit."""
 
-        self.forward_sw_limit: Parameter = self.add_parameter(
+        self.forward_sw_limit: Parameter[int, Self] = self.add_parameter(
             "forward_sw_limit",
             unit="quadrature counts",
             get_cmd=f"MG _FL{self._axis}",
@@ -568,7 +568,7 @@ class GalilDMC4133Controller(GalilMotionController):
         """
         super().__init__(name=name, address=address, **kwargs)
 
-        self.position_format_decimals: Parameter = self.add_parameter(
+        self.position_format_decimals: Parameter[int, Self] = self.add_parameter(
             "position_format_decimals",
             get_cmd=None,
             set_cmd="PF 10.{}",
@@ -586,7 +586,7 @@ class GalilDMC4133Controller(GalilMotionController):
         )
         """gets absolute position of the motors from the set origin"""
 
-        self.wait: Parameter = self.add_parameter(
+        self.wait: Parameter[int, Self] = self.add_parameter(
             "wait",
             get_cmd=None,
             set_cmd="WT {}",

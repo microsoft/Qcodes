@@ -2,7 +2,7 @@ import ctypes as ct
 import logging
 from enum import IntEnum
 from time import sleep
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -246,7 +246,7 @@ class SignalHoundUSBSA124B(Instrument):
 
         This is the set span, the actual span may be subject to round off compared to this value
         """
-        self.npts: Parameter = self.add_parameter(
+        self.npts: Parameter[int, Self] = self.add_parameter(
             "npts",
             label="Number of Points",
             get_cmd=self._get_npts,
@@ -254,7 +254,7 @@ class SignalHoundUSBSA124B(Instrument):
             docstring="Number of points in frequency sweep.",
         )
         """Number of points in frequency sweep."""
-        self.avg: Parameter = self.add_parameter(
+        self.avg: Parameter[int, Self] = self.add_parameter(
             "avg",
             label="Averages",
             initial_value=1,
@@ -301,11 +301,11 @@ class SignalHoundUSBSA124B(Instrument):
         Note that Signal Hound does not support disabling external ref.
         To disable close the connection and restart.
         """
-        self.device_type: Parameter = self.add_parameter(
+        self.device_type: Parameter[str, Self] = self.add_parameter(
             "device_type", set_cmd=False, get_cmd=self._get_device_type
         )
         """Parameter device_type"""
-        self.device_mode: Parameter = self.add_parameter(
+        self.device_mode: Parameter[str, Self] = self.add_parameter(
             "device_mode",
             get_cmd=lambda: "sweeping",
             set_cmd=False,
@@ -319,7 +319,7 @@ class SignalHoundUSBSA124B(Instrument):
 
         It is therefor not possible to set this parameter to anything else
         """
-        self.acquisition_mode: Parameter = self.add_parameter(
+        self.acquisition_mode: Parameter[str, Self] = self.add_parameter(
             "acquisition_mode",
             get_cmd=lambda: "average",
             set_cmd=False,
@@ -383,7 +383,7 @@ class SignalHoundUSBSA124B(Instrument):
             vals=vals.Bool(),
         )
         """Apply software filter to remove undersampling mirroring"""
-        self.sleep_time: Parameter = self.add_parameter(
+        self.sleep_time: Parameter[float, Self] = self.add_parameter(
             "sleep_time",
             label="Sleep time",
             unit="s",
@@ -405,7 +405,7 @@ class SignalHoundUSBSA124B(Instrument):
             parameter_class=FrequencySweep,
         )
         """Parameter trace"""
-        self.power: Parameter = self.add_parameter(
+        self.power: Parameter[float, Self] = self.add_parameter(
             "power",
             label="Power",
             unit="dBm",

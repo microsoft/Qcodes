@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Self
 
 import qcodes.validators as vals
 from qcodes.parameters import Group, GroupParameter, Parameter
@@ -210,7 +210,7 @@ class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):
         )
 
         # Parameters related to temperature calibration curve (CRVHDR)
-        self.curve_number: Parameter = self.add_parameter(
+        self.curve_number: Parameter[int, Self] = self.add_parameter(
             "curve_number",
             get_cmd=f"INCRV? {self._channel}",
             set_cmd=False,
