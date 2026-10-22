@@ -227,11 +227,10 @@ class RigolDG1062Channel(InstrumentChannel["RigolDG1062"]):
         )
         """Parameter sync"""
 
-        self.polarity: Parameter = self.add_parameter(
+        self.polarity: Parameter[int, Self] = self.add_parameter(
             "polarity",
             get_cmd=f":OUTPUT{channel}:GAT:POL?",
             set_cmd=f":OUTPUT{channel}:GAT:POL {{}}",
-            vals=vals.OnOff(),
             val_mapping={1: "POSITIVE", 0: "NEGATIVE"},
         )
         """Parameter polarity"""
