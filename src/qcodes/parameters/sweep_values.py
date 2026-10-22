@@ -372,7 +372,7 @@ class SweepFixedValues(SweepValues):
     def __iter__(self) -> Iterator[Any]:
         return iter(self._values)
 
-    def __getitem__(self, key: slice) -> Any:
+    def __getitem__(self, key: int | slice) -> Any:
         return self._values[key]
 
     def __len__(self) -> int:
