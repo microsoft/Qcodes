@@ -291,10 +291,11 @@ class Keithley2450Sense(InstrumentChannel["Keithley2450"]):
         )
         """Parameter sweep"""
 
-        self.nplc: Parameter = self.add_parameter(
+        self.nplc: Parameter[float, Self] = self.add_parameter(
             "nplc",
             get_cmd=f":SENSe:{self._proper_function}:NPLCycles?",
             set_cmd=f":SENSe:{self._proper_function}:NPLCycles {{}}",
+            get_parser=float,
             vals=Numbers(0.001, 10),
         )
         """Parameter nplc"""
@@ -463,10 +464,11 @@ class Keithley2450Source(InstrumentChannel["Keithley2450"]):
         )
         """Parameter sweep_axis"""
 
-        self.delay: Parameter = self.add_parameter(
+        self.delay: Parameter[float, Self] = self.add_parameter(
             "delay",
             get_cmd=f":SOURce:{self._proper_function}:DELay?",
             set_cmd=f":SOURce:{self._proper_function}:DELay {{}}",
+            get_parser=float,
             vals=Numbers(0, 1e4),
         )
         """Parameter delay"""
