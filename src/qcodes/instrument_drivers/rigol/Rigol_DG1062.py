@@ -70,26 +70,30 @@ class RigolDG1062Burst(InstrumentChannel["RigolDG1062"]):
         )
         """Parameter mode"""
 
-        self.ncycles: Parameter = self.add_parameter(
+        self.ncycles: Parameter[int, Self] = self.add_parameter(
             "ncycles",
             get_cmd=f":SOUR{channel}:BURS:NCYC?",
             set_cmd=f":SOUR{channel}:BURS:NCYC {{}}",
+            # returned in scientific notation, e.g. 1.000000E+01
+            get_parser=lambda s: int(float(s)),
             vals=vals.Numbers(min_value=1, max_value=500000),
         )
         """Parameter ncycles"""
 
-        self.phase: Parameter = self.add_parameter(
+        self.phase: Parameter[float, Self] = self.add_parameter(
             "phase",
             get_cmd=f":SOUR{channel}:BURS:PHAS?",
             set_cmd=f":SOUR{channel}:BURS:PHAS {{}}",
+            get_parser=float,
             vals=vals.Numbers(min_value=0, max_value=360),
         )
         """Parameter phase"""
 
-        self.time_delay: Parameter = self.add_parameter(
+        self.time_delay: Parameter[float, Self] = self.add_parameter(
             "time_delay",
             get_cmd=f":SOUR{channel}:BURS:TDEL?",
             set_cmd=f":SOUR{channel}:BURS:TDEL {{}}",
+            get_parser=float,
             vals=vals.Numbers(min_value=0),
         )
         """Parameter time_delay"""
@@ -191,8 +195,8 @@ class RigolDG1062Channel(InstrumentChannel["RigolDG1062"]):
                 set_cmd=partial(self._set_waveform_param, param),
             )
 
-        self.waveform: Parameter = self.add_parameter(
-            "waveform", get_cmd=partial(self._get_waveform_param, "waveform")
+        self.waveform: Parameter[str, Self] = self.add_parameter(
+            "waveform", get_cmd=self._get_waveform
         )
         """Parameter waveform"""
 
@@ -242,7 +246,7 @@ class RigolDG1062Channel(InstrumentChannel["RigolDG1062"]):
         )
         """Parameter state"""
 
-        self.duty_cycle: Parameter = self.add_parameter(
+        self.duty_cycle: Parameter[float, Self] = self.add_parameter(
             "duty_cycle",
             get_cmd=self._get_duty_cycle,
             set_cmd=self._set_duty_cycle,
@@ -300,6 +304,12 @@ class RigolDG1062Channel(InstrumentChannel["RigolDG1062"]):
     def current_waveform(self) -> dict[Any, Any]:
         """Public interface to get the current waveform"""
         return self._get_waveform_params()
+
+    def _get_waveform(self) -> str:
+        """
+        Get the name of the current waveform, e.g. "SIN" or "SQU".
+        """
+        return self._get_waveform_params()["waveform"]
 
     def _get_waveform_param(self, param: str) -> float | None:
         """
@@ -371,14 +381,16 @@ class RigolDG1062Channel(InstrumentChannel["RigolDG1062"]):
         string += ",".join(values)
         self.parent.write_raw(string)
 
-    def _get_duty_cycle(self) -> str:
+    def _get_duty_cycle(self) -> float:
         """
         Reads the duty cycle after checking waveform
         """
         wf = self.waveform()
 
         if wf in ["PULS", "SQU"]:
-            duty_cycle = self.parent.ask_raw(f":SOUR{self.channel}:FUNC:{wf}:DCYC?")
+            duty_cycle = float(
+                self.parent.ask_raw(f":SOUR{self.channel}:FUNC:{wf}:DCYC?")
+            )
         else:
             raise ValueError(
                 f"Current function does not contain duty cycle. Current function: {wf}"
