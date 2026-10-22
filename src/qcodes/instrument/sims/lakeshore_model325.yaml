@@ -1,0 +1,38 @@
+spec: "1.0"
+devices:
+  device 1:
+    eom:
+      GPIB INSTR:
+        q: "\r\n"
+        r: "\r\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "LSCI,MODEL325,000000,1.0"
+
+    properties:
+      output_range_1:
+        default: 0
+        getter:
+          q: "RANGE? 1"
+          r: "{}"
+        setter:
+          q: "RANGE 1, {}"
+        specs:
+          type: int
+          valid: [0, 1, 2]
+
+      output_range_2:
+        default: 0
+        getter:
+          q: "RANGE? 2"
+          r: "{}"
+        setter:
+          q: "RANGE 2, {}"
+        specs:
+          type: int
+          valid: [0, 1]
+
+resources:
+  GPIB::1::INSTR:
+    device: device 1
