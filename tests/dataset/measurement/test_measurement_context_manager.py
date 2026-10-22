@@ -414,7 +414,7 @@ def test_setting_write_period(wp: float | str) -> None:
 
     if isinstance(wp, str):
         with pytest.raises(ValueError):
-            meas.write_period = wp  # type: ignore[assignment]
+            meas.write_period = wp  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
     elif wp < 1e-3:
         with pytest.raises(ValueError):
             meas.write_period = wp

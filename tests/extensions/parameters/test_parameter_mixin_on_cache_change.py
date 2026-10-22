@@ -100,7 +100,7 @@ def test_error_on_non_callable_callback(
         docstring="A parameter for testing non-callable callbacks.",
     )
     with pytest.raises(TypeError):
-        test_parameter.on_cache_change = invalid_callback  # pyright: ignore[reportAttributeAccessIssue]
+        test_parameter.on_cache_change = invalid_callback  # pyright: ignore[reportAttributeAccessIssue]  # ty: ignore[invalid-assignment]
 
 
 def test_no_callback_invocation_on_init_or_get(
