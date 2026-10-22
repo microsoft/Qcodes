@@ -4,7 +4,7 @@ import logging
 import re
 import time
 import warnings
-from typing import TYPE_CHECKING, NamedTuple, Self
+from typing import TYPE_CHECKING, Any, NamedTuple, Self
 
 import numpy as np
 from packaging import version
@@ -17,7 +17,11 @@ from qcodes.instrument import (
     VisaInstrument,
     VisaInstrumentKWArgs,
 )
-from qcodes.parameters import ArrayParameter, ParamRawDataType
+from qcodes.parameters import (
+    ArrayParameter,
+    ParamRawDataType,
+    create_on_off_val_mapping,
+)
 
 if TYPE_CHECKING:
     from typing import Unpack
@@ -38,6 +42,7 @@ class ScopeArray(ArrayParameter):
         instrument: RigolDS4000Channel,
         channel: int,
         raw: bool = False,
+        **kwargs: Any,
     ):
         super().__init__(
             name=name,
@@ -49,6 +54,7 @@ class ScopeArray(ArrayParameter):
             setpoint_units=("s",),
             docstring="holds an array from scope",
             instrument=instrument,
+            **kwargs,
         )
         self.channel = channel
         self.raw = raw
@@ -334,8 +340,7 @@ class RigolDS4000(VisaInstrument):
             label="Enable or disable autoscale",
             get_cmd=":SYSTem:AUToscale?",
             set_cmd=":SYSTem:AUToscale {}",
-            get_parser=bool,
-            vals=vals.Bool(),
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
         )
         """Parameter enable_auto_scale"""
 
