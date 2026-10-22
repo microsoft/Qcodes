@@ -154,7 +154,7 @@ class RigolDS1074Z(VisaInstrument):
         """Parameter trigger_mode"""
 
         # trigger source
-        self.trigger_level: Parameter = self.add_parameter(
+        self.trigger_level: Parameter[float, Self] = self.add_parameter(
             "trigger_level",
             unit="V",
             get_cmd=self._get_trigger_level,
@@ -230,9 +230,9 @@ class RigolDS1074Z(VisaInstrument):
         xdata = np.linspace(xorigin, npts * xincrem + xorigin, npts)
         return xdata
 
-    def _get_trigger_level(self) -> str:
-        trigger_level = self.ask(f":TRIGger:{self.trigger_mode()}:LEVel?")
-        return trigger_level
+    def _get_trigger_level(self) -> float:
+        # returned in scientific notation, e.g. 1.600000e-01
+        return float(self.ask(f":TRIGger:{self.trigger_mode()}:LEVel?"))
 
-    def _set_trigger_level(self, value: str) -> None:
+    def _set_trigger_level(self, value: float) -> None:
         self.write(f":TRIGger:{self.trigger_mode()}:LEVel {value}")
