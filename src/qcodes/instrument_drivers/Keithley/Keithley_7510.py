@@ -697,7 +697,7 @@ class Keithley7510DigitizeSense(InstrumentChannel["Keithley7510"]):
             "aperture",
             get_cmd=f":SENSe:DIGitize:{self._proper_function}:APERture?",
             set_cmd=f":SENSe:DIGitize:{self._proper_function}:APERture {{}}",
-            unit="us",
+            unit="s",
             docstring="Determine the aperture setting.",
         )
         """Determine the aperture setting."""
