@@ -963,7 +963,7 @@ class TektronixDPOMeasurementParameter(
         if measurement_channel.type.get_latest() != self.name:
             measurement_channel.type(self.name)
 
-        measurement_channel.state(1)
+        measurement_channel.state(True)
         measurement_channel.wait_adjustment_time()
         measurement_number = measurement_channel.measurement_number
 
@@ -1071,7 +1071,7 @@ class TektronixDPOMeasurement(InstrumentChannel):
         self._measurement_number = measurement_number
         self._adjustment_time = time.perf_counter()
 
-        self.state: Parameter = self.add_parameter(
+        self.state: Parameter[bool, Self] = self.add_parameter(
             "state",
             get_cmd=f"MEASUrement:MEAS{self._measurement_number}:STATe?",
             set_cmd=f"MEASUrement:MEAS{self._measurement_number}:STATe {{}}",

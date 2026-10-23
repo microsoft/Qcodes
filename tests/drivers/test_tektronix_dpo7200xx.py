@@ -74,4 +74,16 @@ def test_measurements_return_float(tektronix_dpo: TektronixDPO7000xx) -> None:
 
 def test_measurement_sets_state(tektronix_dpo: TektronixDPO7000xx) -> None:
     tektronix_dpo.measurement[1].frequency()
-    assert tektronix_dpo.measurement[1].state() == 1
+    assert tektronix_dpo.measurement[1].state() is True
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [("ON", True), ("off", False), (1, True), (0, False)],
+)
+def test_measurement_state_accepts_on_off_strings_and_ints(
+    tektronix_dpo: TektronixDPO7000xx, value: str | int, expected: bool
+) -> None:
+    # while it does not type check, on/off strings and ints are accepted
+    tektronix_dpo.measurement[1].state(value)  # pyright: ignore[reportArgumentType]
+    assert tektronix_dpo.measurement[1].state() is expected
