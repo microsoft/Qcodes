@@ -499,14 +499,14 @@ class KeysightPNABase(VisaInstrument):
             val_mapping={True: "1", False: "0"},
         )
         """Parameter averages_enabled"""
-        self.averages: Parameter = self.add_parameter(
+        self.averages: Parameter[int, Self] = self.add_parameter(
             "averages",
             label="Averages",
             get_cmd="SENS:AVER:COUN?",
             get_parser=int,
             set_cmd="SENS:AVER:COUN {:d}",
             unit="",
-            vals=Numbers(min_value=1, max_value=65536),
+            vals=Ints(min_value=1, max_value=65536),
         )
         """Parameter averages"""
 
@@ -563,14 +563,14 @@ class KeysightPNABase(VisaInstrument):
         """Parameter cw"""
 
         # Number of points in a sweep
-        self.points: Parameter = self.add_parameter(
+        self.points: Parameter[int, Self] = self.add_parameter(
             "points",
             label="Points",
             get_cmd="SENS:SWE:POIN?",
             get_parser=int,
             set_cmd="SENS:SWE:POIN {}",
             unit="",
-            vals=Numbers(min_value=1, max_value=100001),
+            vals=Ints(min_value=1, max_value=100001),
         )
         """Parameter points"""
 
@@ -669,13 +669,13 @@ class KeysightPNABase(VisaInstrument):
         """Parameter time_axis"""
 
         # Traces
-        self.active_trace: Parameter = self.add_parameter(
+        self.active_trace: Parameter[int, Self] = self.add_parameter(
             "active_trace",
             label="Active Trace",
             get_cmd="CALC:PAR:MNUM?",
             get_parser=int,
             set_cmd="CALC:PAR:MNUM {}",
-            vals=Numbers(min_value=1, max_value=24),
+            vals=Ints(min_value=1, max_value=24),
         )
         """Parameter active_trace"""
         # Note: Traces will be accessed through the traces property which
