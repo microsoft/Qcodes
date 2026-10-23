@@ -1,0 +1,21 @@
+Most instrument driver parameters are now annotated with the type of their value, e.g.
+``Parameter[float, Self]``, so static type checkers can infer the type returned by ``get``
+and accepted by ``set``. As part of this, the mock instruments no longer pass the default
+``parameter_class=Parameter`` explicitly, and ``Keysight34980A.module`` is typed as a mapping
+from slot number to switch matrix submodule.
+
+Fixed the following driver bugs found along the way:
+
+- ``RigolDS4000.enable_auto_scale`` always read back as ``True``, since ``bool("0")`` is
+  ``True``, and was set with ``True``/``False`` instead of ``1``/``0``.
+- ``RohdeSchwarzRTO1000.trigger_mode`` queried the trigger source instead of the trigger mode.
+- ``Keithley6500.digits`` sent a set command with a stray ``?``.
+- ``MessageBuilder.pch_query`` of the Keysight B1500 sent ``PCH`` instead of ``PCH?``.
+- ``LakeshoreModel325Heater.output_range`` accepted the high (25 W) range on loop 2, which is
+  only supported on loop 1.
+- ``RohdeSchwarzZNBChannel.bandwidth`` failed to read a non-integer bandwidth such as 1.5 Hz,
+  which the instrument supports.
+- The ``current_compliance`` and ``power_compliance`` of the ``KeysightB1517A`` sweep could not
+  be set back to ``None``, which leaves the compliance out of the ``WV`` command.
+- ``Keithley7510DigitizeSense.aperture`` was labelled in ``us`` although the instrument uses
+  seconds; its unit is now ``s``.
