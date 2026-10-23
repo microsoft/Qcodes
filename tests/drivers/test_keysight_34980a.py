@@ -131,3 +131,34 @@ def test_unknown_module_falls_back_to_generic_submodule(
         assert type(module) is Keysight34980ASwitchMatrixSubModule
         assert inst.submodules[f"slot_{slot}_{model}_no_driver"] is module
         assert f"can not find driver for {model} in slot {slot}" in caplog.text
+
+
+def test_rescan_slots_keeps_existing_modules(switch_driver: Keysight34980A) -> None:
+    modules = dict(switch_driver.module)
+    submodules = dict(switch_driver.submodules)
+
+    switch_driver.scan_slots()
+
+    assert switch_driver.module == modules
+    assert switch_driver.submodules == submodules
+
+
+def test_rescan_slots_keeps_existing_generic_modules(
+    request: FixtureRequest,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(keysight_34980a, "KEYSIGHT_MODELS", {})
+    with pytest.warns(UserWarning, match="_no_driver"):
+        inst = Keysight34980A(
+            "keysight_34980A_sim",
+            address="GPIB::1::INSTR",
+            pyvisa_sim_file="keysight_34980A.yaml",
+        )
+    request.addfinalizer(inst.close)
+    modules = dict(inst.module)
+
+    inst.scan_slots()
+
+    assert inst.module == modules
+    for slot, model in ((1, "34934A-8x64"), (3, "34934A-4x32")):
+        assert inst.submodules[f"slot_{slot}_{model}_no_driver"] is inst.module[slot]

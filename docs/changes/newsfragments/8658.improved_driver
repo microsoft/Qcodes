@@ -24,5 +24,7 @@ Fixed the following driver bugs found along the way:
   which the instrument supports.
 - The ``current_compliance`` and ``power_compliance`` of the ``KeysightB1517A`` sweep could not
   be set back to ``None``, which leaves the compliance out of the ``WV`` command.
+- ``Keysight34980A.scan_slots`` can now be called again; it skips slots that already have a
+  module instead of failing to register a duplicate submodule.
 - ``Keithley7510DigitizeSense.aperture`` was labelled in ``us`` although the instrument uses
   seconds; its unit is now ``s``.
