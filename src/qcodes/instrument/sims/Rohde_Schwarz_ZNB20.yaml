@@ -1,0 +1,99 @@
+# SIMULATED INSTRUMENT FOR Rohde&Schwarz ZNB20
+# Only covers what is needed to create the driver with
+# init_s_params=False and reset_channels=False and add a single channel.
+# Commands that are only written are modelled as properties with a setter
+# without a response, so that they do not leave a reply in the read buffer.
+spec: "1.0"
+devices:
+  ZNB20:
+    eom:
+      TCPIP INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "Rohde-Schwarz,ZNB20-2Port,1311601062100104,3.12"
+      - q: "INST:PORT:COUN?"
+        r: "2"
+      - q: "SENS1:SWE:TIME?"
+        r: "0.0201"
+
+    properties:
+
+      display_update:
+        default: "ON"
+        setter:
+          q: "SYST:DISP:UPD {}"
+
+      trace_definition:
+        default: ""
+        setter:
+          q: "CALC1:PAR:SDEF {}"
+
+      # the driver sends "DISP:LAY GRID;:DISP:LAY:GRID r,c", which the
+      # simulator splits at the ";" into two commands
+      display_layout:
+        default: "GRID"
+        setter:
+          q: "DISP:LAY {}"
+
+      display_layout_grid:
+        default: "1,1"
+        setter:
+          q: ":DISP:LAY:GRID {}"
+
+      sweep_time_auto:
+        default: "ON"
+        setter:
+          q: "SENS1:SWE:TIME:AUTO {}"
+
+      trigger_source:
+        default: "IMM"
+        setter:
+          q: "TRIG1:SEQ:SOUR {}"
+
+      averaging:
+        default: "ON"
+        setter:
+          q: "SENS1:AVER:STAT {}"
+
+      start:
+        default: 100e3
+        getter:
+          q: "SENS1:FREQ:START?"
+          r: "{}"
+
+      stop:
+        default: 20e9
+        getter:
+          q: "SENS1:FREQ:STOP?"
+          r: "{}"
+
+      npts:
+        default: 201
+        getter:
+          q: "SENS1:SWE:POIN?"
+          r: "{}"
+
+      sweep_type:
+        default: "LIN"
+        getter:
+          q: "SENS1:SWE:TYPE?"
+          r: "{}"
+        setter:
+          q: "SENS1:SWE:TYPE {}"
+
+      bandwidth:
+        # *RST value is 10 kHz. The value is returned as it was sent, so
+        # after setting 1.5 Hz the instrument returns a non-integer string.
+        default: "10000"
+        getter:
+          q: "SENS1:BAND?"
+          r: "{}"
+        setter:
+          q: "SENS1:BAND {}"
+
+resources:
+  TCPIP0::localhost::inst0::INSTR:
+    device: ZNB20

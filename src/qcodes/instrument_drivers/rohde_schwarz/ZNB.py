@@ -47,7 +47,7 @@ class FixedFrequencyTraceIQ(
         name: str,
         instrument: "RohdeSchwarzZNBChannel",
         npts: int,
-        bandwidth: int,
+        bandwidth: float,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -70,7 +70,7 @@ class FixedFrequencyTraceIQ(
         )
         self.set_cw_sweep(npts, bandwidth)
 
-    def set_cw_sweep(self, npts: int, bandwidth: int) -> None:
+    def set_cw_sweep(self, npts: int, bandwidth: float) -> None:
         """
         Updates config of the software parameter on sweep change. This is
         needed in order to sync the setpoint shape with the returned data
@@ -504,13 +504,14 @@ class RohdeSchwarzZNBChannel(InstrumentChannel["RohdeSchwarzZNBBase"]):
             vals=vals.Numbers(self._min_source_power, self._max_source_power),
         )
         """Parameter power"""
-        self.bandwidth: Parameter = self.add_parameter(
+        self.bandwidth: Parameter[float, Self] = self.add_parameter(
             name="bandwidth",
             label="Bandwidth",
             unit="Hz",
             get_cmd=f"SENS{n}:BAND?",
             set_cmd=self._set_bandwidth,
-            get_parser=int,
+            # The instrument returns e.g. 1.5 for a bandwidth of 1.5 Hz
+            get_parser=float,
             vals=vals.Enum(
                 *np.append(10**6, np.kron([1, 1.5, 2, 3, 5, 7], 10 ** np.arange(6)))
             ),
@@ -843,7 +844,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel["RohdeSchwarzZNBBase"]):
         else:
             self.update_lin_traces()
 
-    def _set_bandwidth(self, val: int) -> None:
+    def _set_bandwidth(self, val: float) -> None:
         channel = self._instrument_channel
         self.write(f"SENS{channel}:BAND {val:.4f}")
         self.update_cw_traces()
