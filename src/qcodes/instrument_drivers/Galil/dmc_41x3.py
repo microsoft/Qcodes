@@ -48,7 +48,7 @@ def _parse_motion_flag(response: str) -> int | None:
         return None
     try:
         return int(float(cleaned))
-    except ValueError:
+    except (ValueError, OverflowError):
         return None
 
 
@@ -57,17 +57,18 @@ def _parse_position_reply(response: str) -> dict[str, int] | None:
     Parse the reply to ``PA ?,?,?`` into a dictionary with keys ``"A"``,
     ``"B"`` and ``"C"``.
 
-    The controller returns the three positions separated by commas and
+    The controller returns exactly three numeric positions separated by commas and
     sometimes terminated by the ``:`` prompt, e.g. ``"100, 200, 300"``.
     Return ``None`` for a bare ``:`` prompt, an empty reply or a malformed
     reply so that the caller can retry.
     """
-    parts = response.replace(":", " ").replace(",", " ").split()
-    if len(parts) < 3:
+    cleaned = response.strip().removesuffix(":").strip()
+    parts = cleaned.split(",")
+    if len(parts) != 3:
         return None
     try:
-        a, b, c = (int(float(part)) for part in parts[:3])
-    except ValueError:
+        a, b, c = (int(float(part)) for part in parts)
+    except (ValueError, OverflowError):
         return None
     return {"A": a, "B": b, "C": c}
 
