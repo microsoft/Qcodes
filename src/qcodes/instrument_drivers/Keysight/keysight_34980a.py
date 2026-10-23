@@ -70,7 +70,7 @@ class Keysight34980A(VisaInstrument):
 
         self._total_slot = 8
         self._system_slots_info_dict: dict[int, dict[str, str]] | None = None
-        self.module = dict.fromkeys(self.system_slots_info.keys())
+        self.module: dict[int, Keysight34980ASwitchMatrixSubModule] = {}
         self.scan_slots()
         self.connect_message()
 
@@ -125,23 +125,22 @@ class Keysight34980A(VisaInstrument):
         """
         for slot in self.system_slots_info:
             model_string = self.system_slots_info[slot]["model"]
+            sub_module: Keysight34980ASwitchMatrixSubModule
             for model, model_class in KEYSIGHT_MODELS.items():
                 if model in model_string:
                     sub_module_name = f"slot_{slot}_{model}"
                     sub_module = model_class(self, sub_module_name, slot)
-                    self.module[slot] = sub_module
-                    self.add_submodule(sub_module_name, sub_module)
                     break
-            if self.module[slot] is None:
+            else:
                 sub_module_name = f"slot_{slot}_{model_string}_no_driver"
-                sub_module_no_driver = Keysight34980ASwitchMatrixSubModule(
+                sub_module = Keysight34980ASwitchMatrixSubModule(
                     self, sub_module_name, slot
                 )
-                self.module[slot] = sub_module_no_driver
-                self.add_submodule(sub_module_name, sub_module_no_driver)
                 self.log.warning(
                     f"can not find driver for {model_string} in slot {slot}"
                 )
+            self.module[slot] = sub_module
+            self.add_submodule(sub_module_name, sub_module)
 
     @property
     def system_slots_info(self) -> dict[int, dict[str, str]]:
