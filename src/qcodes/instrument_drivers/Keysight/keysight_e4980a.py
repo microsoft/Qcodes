@@ -271,10 +271,11 @@ class KeysightE4980A(VisaInstrument):
         )
         """Parameter measurement_function"""
 
-        self.range: Parameter = self.add_parameter(
+        self.range: Parameter[float, Self] = self.add_parameter(
             "range",
             get_cmd=":FUNCtion:IMPedance:RANGe?",
             set_cmd=self._set_range,
+            get_parser=float,
             unit="Ohm",
             vals=self._imp_range,
             docstring="Selects the impedance measurement range, also turns "
@@ -374,7 +375,7 @@ class KeysightE4980A(VisaInstrument):
     def measurement(self) -> KeysightE4980AMeasurementPair:
         return self._measurement()
 
-    def _set_range(self, val: str) -> None:
+    def _set_range(self, val: float) -> None:
         self.write(f":FUNCtion:IMPedance:RANGe {val}")
         self.imp_autorange_enabled.get()
 
@@ -427,7 +428,7 @@ class KeysightE4980A(VisaInstrument):
 
         return float(v_level)
 
-    def _set_voltage_level(self, val: str) -> None:
+    def _set_voltage_level(self, val: float) -> None:
         """
         Sets voltage level
         """
@@ -437,7 +438,7 @@ class KeysightE4980A(VisaInstrument):
 
         self.write(f":VOLTage:LEVel {val}")
 
-    def _set_current_level(self, val: str) -> None:
+    def _set_current_level(self, val: float) -> None:
         """
         Sets current level
         """
