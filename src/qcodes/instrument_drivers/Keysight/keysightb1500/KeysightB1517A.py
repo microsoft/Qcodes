@@ -415,12 +415,14 @@ class KeysightB1500IVSweeper(InstrumentChannel["KeysightB1517A"]):
         1001
         """
 
-        self.current_compliance: Parameter = self.add_parameter(
+        self.current_compliance: Parameter[float | None, Self] = self.add_parameter(
             name="current_compliance",
             set_cmd=self._set_current_compliance,
             get_cmd=self._get_current_compliance,
             unit="A",
-            vals=vals.Numbers(-40, 40),
+            # None omits Icomp (and Pcomp) from the WV command, in which case
+            # the instrument keeps the previous current compliance
+            vals=vals.MultiType(vals.Numbers(-40, 40), vals.Enum(None)),
             snapshot_get=False,
             docstring=textwrap.dedent(
                 """
@@ -448,12 +450,13 @@ class KeysightB1500IVSweeper(InstrumentChannel["KeysightB1517A"]):
         is allowed, regardless of the output range setting.
         """
 
-        self.power_compliance: Parameter = self.add_parameter(
+        self.power_compliance: Parameter[float | None, Self] = self.add_parameter(
             name="power_compliance",
             set_cmd=self._set_power_compliance,
             get_cmd=self._get_power_compliance,
             unit="W",
-            vals=vals.Numbers(0.001, 80),
+            # None omits Pcomp from the WV command, i.e. no power compliance
+            vals=vals.MultiType(vals.Numbers(0.001, 80), vals.Enum(None)),
             snapshot_get=False,
             docstring=textwrap.dedent(
                 """

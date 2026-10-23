@@ -6,7 +6,13 @@ import numpy as np
 
 import qcodes.validators as vals
 from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel
-from qcodes.parameters import Group, GroupParameter, MultiParameter, Parameter
+from qcodes.parameters import (
+    Group,
+    GroupParameter,
+    MultiParameter,
+    Parameter,
+    create_on_off_val_mapping,
+)
 
 from . import constants
 from .constants import MM, ChNr, ModuleKind
@@ -732,26 +738,26 @@ class KeysightB1520A(KeysightB1500Module):
         Look at the ``constants.IMP.MeasurementMode`` for all the modes.
         """
 
-        self.ac_dc_volt_monitor: Parameter = self.add_parameter(
+        self.ac_dc_volt_monitor: Parameter[bool, Self] = self.add_parameter(
             name="ac_dc_volt_monitor",
             set_cmd=self._set_ac_dc_volt_monitor,
             get_cmd=None,
-            vals=vals.Ints(0, 1),
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
             initial_value=False,
             docstring=textwrap.dedent(
                 """
             This command enables or disables the data monitor and data
             output of the MFCMU AC voltage and DC voltage.
-                0: Disables the data monitor and output. Initial setting.
-                1: Enables the data monitor and output.
+                False: Disables the data monitor and output. Initial setting.
+                True: Enables the data monitor and output.
                            """
             ),
         )
         """
         This command enables or disables the data monitor and data
         output of the MFCMU AC voltage and DC voltage.
-        0: Disables the data monitor and output. Initial setting.
-        1: Enables the data monitor and output.
+        False: Disables the data monitor and output. Initial setting.
+        True: Enables the data monitor and output.
         """
 
         self.cv_sweep_voltages: Parameter[tuple[float, ...], Self] = self.add_parameter(
@@ -990,8 +996,8 @@ class KeysightB1520A(KeysightB1500Module):
         if hasattr(self, "run_sweep"):
             self.run_sweep.update_name_label_unit_from_impedance_model(model=val)
 
-    def _set_ac_dc_volt_monitor(self, val: bool) -> None:
-        msg = MessageBuilder().lmn(enable_data_monitor=val)
+    def _set_ac_dc_volt_monitor(self, val: int) -> None:
+        msg = MessageBuilder().lmn(enable_data_monitor=bool(val))
         self.write(msg.message)
 
     def _set_ranging_mode(self, val: constants.RangingMode | int) -> None:
