@@ -525,7 +525,12 @@ class KeysightB1500IVSweeper(InstrumentChannel["KeysightB1517A"]):
         return current_compliance
 
     def _set_power_compliance(self, value: float | None) -> None:
-        if self._sweep_step_parameters["current_compliance"] is None:
+        # Pcomp can only be sent together with Icomp, but clearing it is always
+        # allowed
+        if (
+            value is not None
+            and self._sweep_step_parameters["current_compliance"] is None
+        ):
             raise ValueError(
                 "Current compliance must be set before setting power compliance"
             )
