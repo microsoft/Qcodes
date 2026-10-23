@@ -17,6 +17,21 @@ devices:
           r: "s"
         setter:
           q: "HORizontal:MAIn:UNIts {}"
+      horizontal_mode:
+        default: "MANUAL"
+        getter:
+          q: "HORizontal:MODE?"
+          r: "{}"
+        setter:
+          q: "HORizontal:MODE {}"
+      record_length:
+        # the record length in samples (<NR1>)
+        default: "1000000"
+        getter:
+          q: "HORizontal:MODE:RECOrdlength?"
+          r: "{}"
+        setter:
+          q: "HORizontal:MODE:RECOrdlength {}"
       waveform_horizontal_units:
         getter:
           q: "WFMOutpre:XUNit?"

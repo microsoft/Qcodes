@@ -251,7 +251,7 @@ class TektronixDPOWaveform(InstrumentChannel["TektronixDPOChannel"]):
 
         self._identifier = identifier
 
-        self.raw_data_offset: Parameter = self.add_parameter(
+        self.raw_data_offset: Parameter[float, Self] = self.add_parameter(
             "raw_data_offset",
             get_cmd=self._get_cmd("WFMOutPRE:YOFF?"),
             get_parser=float,
@@ -394,7 +394,10 @@ class TektronixDPOWaveform(InstrumentChannel["TektronixDPOChannel"]):
                 container=np.ndarray,
             )
 
-        return (raw_data - self.raw_data_offset()) * self.scale() + self.offset()
+        # pyvisa returns an ndarray here, but its annotations only promise a
+        # Sequence
+        data = np.asarray(raw_data, dtype=float)
+        return (data - self.raw_data_offset()) * self.scale() + self.offset()
 
     def _get_trace_setpoints(self) -> npt.NDArray:
         """
@@ -636,11 +639,12 @@ class TektronixDPOHorizontal(InstrumentChannel):
         )
         """Parameter unit"""
 
-        self.record_length: Parameter = self.add_parameter(
+        self.record_length: Parameter[int, Self] = self.add_parameter(
             "record_length",
             get_cmd="HORizontal:MODE:RECOrdlength?",
             set_cmd=self._set_record_length,
-            get_parser=float,
+            # the record length in samples, returned as an integer (<NR1>)
+            get_parser=int,
         )
         """Parameter record_length"""
 
