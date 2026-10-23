@@ -139,10 +139,10 @@ class AgilentE8257D(VisaInstrument):
         self.connect_message()
 
     def on(self) -> None:
-        self.output_enabled.set("on")
+        self.output_enabled.set(True)
 
     def off(self) -> None:
-        self.output_enabled.set("off")
+        self.output_enabled.set(False)
 
     # functions to convert between rad and deg
     @staticmethod
