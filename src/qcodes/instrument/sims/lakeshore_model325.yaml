@@ -33,6 +33,23 @@ devices:
           type: int
           valid: [0, 1]
 
+      curve_index_A:
+        # INCRV? returns the curve number in nn format
+        default: "02"
+        getter:
+          q: "INCRV? A"
+          r: "{}"
+        setter:
+          q: "INCRV A, {}"
+
+      curve_index_B:
+        default: "00"
+        getter:
+          q: "INCRV? B"
+          r: "{}"
+        setter:
+          q: "INCRV B, {}"
+
 resources:
   GPIB::1::INSTR:
     device: device 1

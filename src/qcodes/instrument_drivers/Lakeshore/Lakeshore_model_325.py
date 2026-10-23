@@ -7,6 +7,8 @@ from typing import (
     TextIO,
 )
 
+import numpy as np
+
 from qcodes.instrument import (
     ChannelList,
     InstrumentBaseKWArgs,
@@ -15,7 +17,7 @@ from qcodes.instrument import (
     VisaInstrumentKWArgs,
 )
 from qcodes.parameters import Group, GroupParameter, Parameter
-from qcodes.validators import Enum, Numbers
+from qcodes.validators import Enum, Ints, Numbers
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -81,6 +83,16 @@ def _get_sanitize_data(file_data: dict[Any, Any]) -> dict[Any, Any]:
     del data_dict["Units"]
 
     return data_dict
+
+
+def _format_curve_value(value: float) -> str:
+    """
+    Format a curve data point value with 6 significant digits in positional
+    notation, which is the resolution the instrument stores points with.
+    """
+    return np.format_float_positional(
+        value, precision=6, unique=False, fractional=False, trim="-"
+    )
 
 
 class LakeshoreModel325Status(IntFlag):
@@ -159,9 +171,10 @@ class LakeshoreModel325Curve(InstrumentChannel):
         )
 
     def get_data(self) -> dict[Any, Any]:
+        # a curve has up to 200 points
         curve = [
             float(a)
-            for point_index in range(1, 200)
+            for point_index in range(1, 201)
             for a in self.ask(f"CRVPT? {self._index}, {point_index}").split(",")
         ]
 
@@ -234,9 +247,11 @@ class LakeshoreModel325Curve(InstrumentChannel):
         for value_index, (temperature_value, sensor_value) in enumerate(
             zip(temperature_values, sensor_values)
         ):
+            # the instrument stores points to 6 digits
             cmd_str = (
                 f"CRVPT {self._index}, {value_index + 1}, "
-                f"{sensor_value:3.3f}, {temperature_value:3.3f}"
+                f"{_format_curve_value(sensor_value)}, "
+                f"{_format_curve_value(temperature_value)}"
             )
 
             self.write(cmd_str)
@@ -312,12 +327,14 @@ class LakeshoreModel325Sensor(InstrumentChannel["LakeshoreModel325"]):
             get_cmd=f"INTYPE? {self._input}",
         )
 
-        self.curve_index: Parameter = self.add_parameter(
+        self.curve_index: Parameter[int, Self] = self.add_parameter(
             "curve_index",
             set_cmd=f"INCRV {self._input}, {{}}",
             get_cmd=f"INCRV? {self._input}",
             get_parser=int,
-            vals=Numbers(min_value=1, max_value=35),
+            # 0 = none, 1-20 = standard curves, 21-35 = user curves. The
+            # instrument falls back to 0 if the curve does not match the input.
+            vals=Ints(min_value=0, max_value=35),
         )
         """Parameter curve_index"""
 
@@ -564,7 +581,8 @@ class LakeshoreModel325(VisaInstrument):
 
         curves = ChannelList(self, "curve", LakeshoreModel325Curve, snapshotable=False)
 
-        for curve_index in range(1, 35):
+        # curves 1-20 are standard curves and 21-35 user curves
+        for curve_index in range(1, 36):
             curve = LakeshoreModel325Curve(self, curve_index)
             curves.append(curve)
 
