@@ -68,18 +68,16 @@ class MockParabola(DummyBase):
             self.add_parameter(
                 parname,
                 unit="a.u.",
-                parameter_class=Parameter,
                 vals=Numbers(),
                 initial_value=0,
                 get_cmd=None,
                 set_cmd=None,
             )
 
-        self.noise: Parameter = self.add_parameter(
+        self.noise: Parameter[float, Self] = self.add_parameter(
             "noise",
             unit="a.u.",
             label="white noise amplitude",
-            parameter_class=Parameter,
             vals=Numbers(),
             initial_value=0,
             get_cmd=None,
@@ -141,7 +139,6 @@ class MockMetaParabola(InstrumentBase):
             self.parameters[parname] = getattr(mock_parabola_inst, parname)
         self.gain: Parameter = self.add_parameter(
             "gain",
-            parameter_class=Parameter,
             initial_value=1,
             get_cmd=None,
             set_cmd=None,
@@ -189,7 +186,6 @@ class DummyInstrument(DummyBase):
         for _, g in enumerate(gates):
             self.add_parameter(
                 g,
-                parameter_class=Parameter,
                 initial_value=0,
                 label=f"Gate {g}",
                 unit="V",
@@ -383,9 +379,8 @@ class DummyChannel(InstrumentChannel):
         self._channel = channel
 
         # Add the various channel parameters
-        self.temperature: Parameter = self.add_parameter(
+        self.temperature: Parameter[float, Self] = self.add_parameter(
             "temperature",
-            parameter_class=Parameter,
             initial_value=0,
             label=f"Temperature_{channel}",
             unit="K",
@@ -1100,9 +1095,8 @@ class MockField(DummyBase):
         """
         super().__init__(name=name, **kwargs)
         self._field = 0.0
-        self.field: Parameter = self.add_parameter(
+        self.field: Parameter[float, Self] = self.add_parameter(
             "field",
-            parameter_class=Parameter,
             initial_value=0.0,
             unit="T",
             vals=vals,
@@ -1112,7 +1106,6 @@ class MockField(DummyBase):
         """Parameter field"""
         self.ramp_rate: Parameter = self.add_parameter(
             "ramp_rate",
-            parameter_class=Parameter,
             initial_value=0.1,
             unit="T/min",
             get_cmd=None,
@@ -1177,7 +1170,6 @@ class MockLockin(DummyBase):
         super().__init__(name=name, **kwargs)
         self.X: Parameter = self.add_parameter(
             "X",
-            parameter_class=Parameter,
             initial_value=1e-3,
             unit="V",
             get_cmd=None,
@@ -1186,7 +1178,6 @@ class MockLockin(DummyBase):
         """Parameter X"""
         self.Y: Parameter = self.add_parameter(
             "Y",
-            parameter_class=Parameter,
             initial_value=1e-5,
             unit="V",
             get_cmd=None,
@@ -1195,7 +1186,6 @@ class MockLockin(DummyBase):
         """Parameter Y"""
         self.frequency: Parameter = self.add_parameter(
             "frequency",
-            parameter_class=Parameter,
             initial_value=125.0,
             unit="Hz",
             get_cmd=None,
@@ -1204,7 +1194,6 @@ class MockLockin(DummyBase):
         """Parameter frequency"""
         self.amplitude: Parameter = self.add_parameter(
             "amplitude",
-            parameter_class=Parameter,
             initial_value=0.0,
             unit="V",
             get_cmd=None,
@@ -1213,7 +1202,6 @@ class MockLockin(DummyBase):
         """Parameter amplitude"""
         self.phase: Parameter = self.add_parameter(
             "phase",
-            parameter_class=Parameter,
             initial_value=0.0,
             unit="deg",
             get_cmd=None,
@@ -1222,7 +1210,6 @@ class MockLockin(DummyBase):
         """Parameter phase"""
         self.time_constant: Parameter = self.add_parameter(
             "time_constant",
-            parameter_class=Parameter,
             initial_value=1.0e-3,
             unit="s",
             get_cmd=None,
@@ -1246,9 +1233,8 @@ class MockDACChannel(InstrumentChannel):
         super().__init__(parent, name, **kwargs)
 
         self._num = num
-        self.voltage: Parameter = self.add_parameter(
+        self.voltage: Parameter[float, Self] = self.add_parameter(
             "voltage",
-            parameter_class=Parameter,
             initial_value=0.0,
             label=f"Voltage_{name}",
             unit="V",
@@ -1257,36 +1243,32 @@ class MockDACChannel(InstrumentChannel):
             set_cmd=None,
         )
         """Parameter voltage"""
-        self.dac_output: Parameter = self.add_parameter(
+        self.dac_output: Parameter[str, Self] = self.add_parameter(
             "dac_output",
-            parameter_class=Parameter,
             initial_value="off",
             vals=OnOff(),
             get_cmd=None,
             set_cmd=None,
         )
         """Parameter dac_output"""
-        self.smc: Parameter = self.add_parameter(
+        self.smc: Parameter[str, Self] = self.add_parameter(
             "smc",
-            parameter_class=Parameter,
             initial_value="off",
             vals=OnOff(),
             get_cmd=None,
             set_cmd=None,
         )
         """Parameter smc"""
-        self.bus: Parameter = self.add_parameter(
+        self.bus: Parameter[str, Self] = self.add_parameter(
             "bus",
-            parameter_class=Parameter,
             initial_value="off",
             vals=OnOff(),
             get_cmd=None,
             set_cmd=None,
         )
         """Parameter bus"""
-        self.gnd: Parameter = self.add_parameter(
+        self.gnd: Parameter[str, Self] = self.add_parameter(
             "gnd",
-            parameter_class=Parameter,
             initial_value="off",
             vals=OnOff(),
             get_cmd=None,
@@ -1377,9 +1359,8 @@ class MockCustomChannel(InstrumentChannel):
             set_cmd=None,
         )
 
-        self.voltage: Parameter = self.add_parameter(
+        self.voltage: Parameter[float, Self] = self.add_parameter(
             "voltage",
-            parameter_class=Parameter,
             initial_value=0.0,
             label=f"Voltage_{name}",
             unit="V",
