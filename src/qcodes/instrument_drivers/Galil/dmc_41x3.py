@@ -5,6 +5,7 @@ Colloquially known as the "stepper motors".
 """
 
 import time
+from math import ceil
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -165,7 +166,7 @@ class GalilMotionController(Instrument):
         Sets timeout for the instrument
 
         Args:
-            val: time in milliseconds. -1 disables the timeout
+            val: time in milliseconds. -1 restores the initial connection timeout.
 
         """
         if val < -1:
@@ -697,29 +698,59 @@ class GalilDMC4133Controller(GalilMotionController):
         Wait until none of the given axes is moving
 
         The controller is polled at a fixed interval. Transient empty replies
-        are treated as "not yet finished".
+        are treated as "not yet finished". Each query's I/O timeout is capped
+        by the remaining motion timeout (rounded up to milliseconds), and the
+        original I/O timeout is restored afterward. I/O errors before the
+        motion deadline are propagated. If the I/O timeout is -1, the initial
+        connection timeout is not exposed by gclib, so only the remaining
+        motion timeout and the 32767 ms API limit bound the query.
 
         Args:
             axes: axis letters to wait for, e.g. ``"AB"``.
             timeout_s: raise ``TimeoutError`` if the axes are still moving, or
-                keep returning unparsable replies, after this many seconds.
+                keep returning unparsable replies or fail to respond, after
+                this many seconds.
 
         """
         deadline = time.monotonic() + timeout_s
         try:
             while True:
-                flags = {
-                    axis: _parse_motion_flag(self.ask(f"MG _BG{axis}")) for axis in axes
-                }
-                # Done only when every axis reported a definite 0.
-                if all(flag == 0 for flag in flags.values()):
-                    return
-                if time.monotonic() > deadline:
+                flags: dict[str, int | None] = {}
+                for axis in axes:
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        raise TimeoutError(
+                            f"Axes {axes} did not finish moving within "
+                            f"{timeout_s:g}s (motion flags: {flags})."
+                        )
+                    original_timeout = self.g.timeout
+                    # GTimeout takes a signed short in the C API.
+                    query_timeout_ms = min(ceil(remaining * 1000), 32767)
+                    if original_timeout >= 0:
+                        query_timeout_ms = min(query_timeout_ms, original_timeout)
+                    try:
+                        self.timeout(query_timeout_ms)
+                        response = self.ask(f"MG _BG{axis}")
+                    except gclib.GclibError as e:
+                        if time.monotonic() >= deadline:
+                            raise TimeoutError(
+                                f"Axes {axes} did not finish moving within "
+                                f"{timeout_s:g}s (querying axis {axis})."
+                            ) from e
+                        raise
+                    finally:
+                        self.timeout(original_timeout)
+                    flags[axis] = _parse_motion_flag(response)
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
                     raise TimeoutError(
                         f"Axes {axes} did not finish moving within "
                         f"{timeout_s:g}s (motion flags: {flags})."
                     )
-                time.sleep(_POLL_INTERVAL_S)
+                # Done only when every axis reported a definite 0.
+                if all(flag == 0 for flag in flags.values()):
+                    return
+                time.sleep(min(_POLL_INTERVAL_S, remaining))
         except KeyboardInterrupt:
             self.abort()
             self.write(f"MO {axes}")
