@@ -121,9 +121,11 @@ class Keysight34980A(VisaInstrument):
     def scan_slots(self) -> None:
         """
         Scan the occupied slots and make an object for each switch matrix
-        module installed
+        module installed. Slots that already have a module are skipped.
         """
         for slot in self.system_slots_info:
+            if slot in self.module:
+                continue
             model_string = self.system_slots_info[slot]["model"]
             sub_module: Keysight34980ASwitchMatrixSubModule
             for model, model_class in KEYSIGHT_MODELS.items():
@@ -139,8 +141,8 @@ class Keysight34980A(VisaInstrument):
                 self.log.warning(
                     f"can not find driver for {model_string} in slot {slot}"
                 )
-            self.module[slot] = sub_module
             self.add_submodule(sub_module_name, sub_module)
+            self.module[slot] = sub_module
 
     @property
     def system_slots_info(self) -> dict[int, dict[str, str]]:
