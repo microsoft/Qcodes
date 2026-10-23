@@ -1,0 +1,48 @@
+Changelog for QCoDeS 0.17.0
+===========================
+
+The August 2020 release of QCoDeS.
+
+Note: QCoDeS no longer officially supports Python ``3.6``.
+
+
+Breaking Changes:
+_________________
+
+There are no breaking changes in this release of QCoDeS.
+
+
+New:
+____
+
+- Add in-memory cache representation for data of ``DataSet`` (:pr:`2062`)
+
+
+Improved drivers:
+_________________
+
+- Keithley 2600: Add linefreq to pyvisa-sim yml file (:pr:`2100`)
+- Keysight B1500: convert dummy values to NaN for spot measurement (:pr:`2108`)
+
+
+Improved:
+_________
+
+- Station: Pass name as kwarg so that its order in instrument class is not relevant (:pr:`2099`)
+- Add support for matplotlib 3.3 (:pr:`2101`)
+- fix matplotlib deprecation warning (:pr:`2120`)
+- Docs: update qcodes usage link (:pr:`2091`)
+- Docs: Python version 3.6 is updated to 3.7 in ``Getting Started->Requirements`` (:pr:`2107`)
+- Docs: Updating the broken link for conda-environment-update in Qcodes documentation (:pr:`2111`)
+- Update error message for instruments pickling (:pr:`2094`)
+- Fix: convert spyder kernels site print statement to logging message (:pr:`2097`)
+
+
+Under the hood:
+_______________
+
+- Move write cache to from ``DataSaver`` to ``DataSet`` (:pr:`2112`, :pr:`2114`)
+- remove conda ruamel package to fix pipelines build (:pr:`2104`)
+- Add Codacy and PyPi badges to readme (:pr:`2110`)
+- Add supported python versions badge (:pr:`2113`)
+- Bump sphinx from 3.1.2 to 3.2.1 (:pr:`2117`)

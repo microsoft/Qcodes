@@ -1,0 +1,156 @@
+QCoDeS 0.61.0 (2026-10-08)
+==========================
+
+Breaking Changes:
+-----------------
+
+- Remove the deprecated TypeVars and type aliases that were retained as runtime
+  compatibility imports after the conversion to PEP 695 type parameter syntax.
+  Imports of ``typing.TypeVar`` and ``typing.ParamSpec`` are now banned: use PEP
+  695 type parameter syntax unless a default value requires the corresponding
+  ``typing_extensions`` type on Python 3.12. (:pr:`8543`)
+
+
+Improved:
+---------
+
+- The documentation on naming instrument drivers (in the Contributor guide and in the
+  "Creating Instrument Drivers" example notebook) has been updated to state that instrument driver
+  modules should be named using lower case ``snake_case``, e.g. ``weinschel_8320.py``. Vendor and
+  model capitalization belongs in the class name (``Weinschel8320``) and not in the module name. (:pr:`8356`)
+- Exceptions raised by QCoDeS drivers are now more specific.
+
+  The ruff rule ``TRY002`` (``raise-vanilla-class``) has been enabled. A number of drivers raised a
+  bare ``Exception``; these now raise a specific builtin exception instead. Invalid arguments raise
+  ``ValueError``, using the instrument in an unsupported state raises ``RuntimeError`` and selecting an
+  unimplemented acquisition mode on the AlazarTech ATS raises ``NotImplementedError``. Code that
+  catches ``Exception`` is unaffected since all of these are subclasses of ``Exception``.
+
+  In addition, two catch-all exception handlers have been narrowed to the specific exceptions that the
+  guarded code can actually raise: reading a screenshot from the Keysight Infiniium now only handles
+  ``OSError`` and ``VisaIOError``, and waiting for the Tektronix AWG5014 to become ready only handles
+  ``VisaIOError``. Both previously swallowed unrelated errors.
+
+  Finally, the coding style section of the contributor documentation now points at ``ruff check`` and
+  ``ruff format``, configured in ``pyproject.toml``, rather than the long removed ``pycodestyle`` and
+  ``flake8`` based workflow. (:pr:`8368`)
+- Adding metadata that SQLite cannot store in a column now fails with a message naming the tag and its type.
+
+  A nested dict or a sequence previously surfaced as ``sqlite3.ProgrammingError: Error binding parameter 1:
+  type 'list' is not supported``, which said nothing about which tag was at fault. ``validate_dynamic_column_data``
+  now rejects such values with a ``TypeError`` suggesting serialization, alongside its existing checks for invalid
+  tags and ``None``. Values that NumPy registers a SQLite adapter for, such as scalars and arrays, are unaffected. (:pr:`8518`)
+- Fixed NetCDF export of measurements without setpoint dependencies, including
+  scalar and array-valued parameters measured with ``do0d`` or ``dond``.
+  The exported data retains its shape using parameter-specific dimensions. (:pr:`8570`)
+- A second interrupt during a database write rolls the open transaction back instead of leaving the file locked.
+
+
+Improved Drivers:
+-----------------
+
+- The Infiniium driver now tests explicitly for the type of parent instrument when required and
+  used ``cast`` where ``pyvisa`` types the
+  return of ``read_binary_values``/``query_binary_values`` as a ``Sequence[float]``
+  regardless of the requested ``container``. This replaces five type checker
+  suppressions. (:pr:`8457`)
+
+
+New:
+----
+
+- Added **split raw data storage** for the DataSet: an opt-in results
+  backend selected via the ``dataset.raw_data_backend`` config option
+  (set it to ``"sqlite_per_dataset_db"``) that writes raw measurement
+  data into individual per-dataset SQLite files while keeping all metadata
+  in the main database.  This prevents the main DB file from growing
+  excessively large and allows users to have a single main SQLite QCoDeS
+  database on their PC as opposed to many that grow infinitely.  When
+  selected, no results table is created in the main database at all - it
+  holds only metadata - and all public ``DataSet`` APIs continue to work
+  unchanged.  Backend-specific settings (such as the per-dataset file
+  folder ``raw_data_path``) live under ``dataset.raw_data_backend_config``.
+
+  Management helpers included:
+
+  - ``update_raw_data_paths()``: update stored paths after raw data files
+    have been moved to a new folder.
+  - ``purge_orphaned_datasets()``: find and remove dataset records whose
+    raw data files no longer exist on disk (``dry_run=True`` by default).
+  - ``cleanup_datasets()``: remove datasets (DB records and raw data files)
+    by age, sample name, or file size (``dry_run=True`` by default). (:pr:`8219`)
+- The method for setting a parameter's cache from a raw value as reported by the
+  instrument is now public as ``Parameter.cache.set_from_raw_value``. It is the
+  raw-side counterpart of ``Parameter.cache.set`` and applies the same
+  conversions as a ``get`` (``get_parser``, ``scale``, ``offset`` and
+  ``val_mapping``). This is useful for drivers that populate the caches of many
+  parameters from a single bulk instrument reply without issuing a ``get`` per
+  parameter. The previous private ``_set_from_raw_value`` is kept as a
+  backwards-compatible alias. (:pr:`8484`)
+- Instruments can now opt in to a logger of their own, rather than sharing a
+  single logger with every other instrument in the process. Setting the class
+  attribute ``default_logger_scope`` to ``"instrument"`` makes ``Instrument.log``
+  (and ``VisaInstrument.visa_log``) use a logger named after the driver class and
+  the instrument's ``name_parts``, so that levels, handlers and ``propagate`` can
+  be configured per instrument::
+
+      class MyDriver(VisaInstrument):
+          default_logger_scope = "instrument"
+
+  The scoped loggers mirror the instrument hierarchy below the module-qualified
+  driver class. For an instrument ``myinst`` of ``MyDriver``, defined in the
+  module ``vendor.driver``, the loggers are named::
+
+      vendor.driver.MyDriver                    the driver class
+      vendor.driver.MyDriver.myinst             Instrument.log
+      vendor.driver.MyDriver.myinst.my_module   log of a submodule
+      vendor.driver.MyDriver.myinst.com.visa    VisaInstrument.visa_log
+
+  A submodule is named after the key it is added with in ``add_submodule``, for
+  example ``my_module`` for ``self.add_submodule("my_module", MyModule(self))``,
+  and not after its own name or class. A submodule that is not added as an
+  individual submodule, such as a channel that only exists in a channel list, is
+  named after its own name.
+
+  Each logger is a child of the previous one, so a level or handler can be set
+  for a whole driver class, for everything that belongs to one instrument
+  (its own messages, its submodules and its VISA traffic), or for a single
+  submodule or the VISA traffic of one instrument. Setting the level for a whole
+  driver also works before any of its instruments exist, so it can be configured
+  via ``logger_levels`` in ``qcodesrc.json``.
+
+  Because module-qualified scoped loggers are no longer below
+  ``qcodes.instrument.instrument_base``, opted-in drivers do not inherit levels
+  configured on that shared logger or on ``qcodes.instrument.instrument_base.com.visa``.
+  Configure the module-qualified driver class logger instead.
+
+  The default is unchanged: without opting in, all instruments keep sharing one
+  logger exactly as before. (:pr:`8523`)
+
+
+Under the hood:
+---------------
+
+- Enable the ruff rule ``N999`` (``invalid-module-name``). Instrument driver modules that are part of the
+  public ``qcodes`` namespace are exempted via ``lint.pep8-naming.extend-ignore-names`` in ``pyproject.toml``
+  so that no public module names change. Test modules with invalid names have been renamed to lower case. (:pr:`8356`)
+- ``CombinedParameter.parameter`` is now a small dataclass holding the ``name``,
+  ``full_name``, ``label`` and ``unit`` of the combined parameter, replacing a
+  lambda that had those attributes attached to it. It remains callable, and
+  calling it returns ``None`` as before. (:pr:`8364`)
+- Two additional ruff lint rules have been enabled.
+
+  ``TRY004`` (``type-check-without-type-error``) ensures that new code raises ``TypeError`` when
+  rejecting a value because of its type. Existing type checks that raise ``ValueError`` or
+  ``RuntimeError`` are unchanged and carry an explicit ``noqa`` comment, since ``TypeError`` is not a
+  subclass of either and changing them would break user code that catches the current exception.
+
+  ``S110`` (``try-except-pass``) flags exception handlers that silently pass. No behaviour changed as a
+  result: the only remaining silent handlers are in teardown paths that must never raise or log, and
+  they are now explicitly marked as intentional. (:pr:`8368`)
+- Enable the ruff rule ``BLE001`` (``blind-except``). Places where QCoDeS intentionally catches a
+  broad exception are now explicitly marked, and several catch-all handlers now log the full traceback
+  using ``Logger.exception`` rather than only the exception message. The private module level loggers
+  named ``_LOG`` have been renamed to ``_LOGGER``. (:pr:`8498`)
+- The test suite no longer depends on ``deepdiff``. The tests that used it now compare the data directly
+  using ``InterDependencies`` equality and ``numpy.testing.assert_array_equal``. (:pr:`8552`)

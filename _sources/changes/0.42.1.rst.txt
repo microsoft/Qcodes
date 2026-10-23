@@ -1,0 +1,7 @@
+QCoDeS 0.42.1 (2023-11-20)
+==========================
+
+Improved:
+---------
+
+- Avoid warning from OpenTelemetry when exporting datasets to netcdf. (:pr:`5529`)

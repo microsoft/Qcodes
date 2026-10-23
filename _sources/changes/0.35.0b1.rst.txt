@@ -1,0 +1,56 @@
+QCoDeS 0.35.0b1 (2022-07-08)
+============================
+
+This is a beta release of the upcoming QCoDeS 0.35.0 release.
+
+In this release a large refactoring of the QCoDeS modules organization has taken place.
+Among other changes the `instrument` module has been split into a `parameters` and
+`instrument` module, the `dond` functions have been moved to the `dataset` module
+and several methods removed from the public API of the `utils` module.
+
+The new API is documented in the :ref:`api` section of the QCoDeS homepage.
+
+Going forward we aim to establish a policy where the QCoDeS public API is defined
+by modules explicitly documented in the :ref:`api` and importable from submodules at most
+one level deep. I.e. `from qcodes.instrument import InstrumentChannel` is supported but
+`from qcodes.instrument.channel import InstrumentChannel` is considered unsupported.
+
+Importing from previously existing locations should continue to work
+but it is recommended to update to the new API.
+In the future we may deprecate and eventually remove these modules
+but no firm date is set for this.
+
+Please report any issues you may see with importing from the previously existing API
+or if you depend on any functions, classes etc. not available from the new public API.
+
+Breaking Changes:
+-----------------
+
+- Removed deprecated units property from `DataArray`. (:pr:`4358`)
+- Removed deprecated ``qcodes.version`` module. Use ``qcodes.__version__`` (:pr:`4307`)
+
+Improved:
+---------
+
+- :func:`qcodes.dataset.doNd` now  logs more information about how parameters are
+  unpacked and grouped making it easier to debug. (:pr:`4288`)
+- do_nd: save plot with 'tight' bbox to prevent tick marks with long labels
+  pusing out the axis label out of the canvas window and not visible (:pr:`4360`)
+- Significant refactor of internal modules and public API (:pr:`4357`, :pr:`4355`,
+  :pr:`4353`, :pr:`4351`, :pr:`4350`, :pr:`4349`, :pr:`4348`, :pr:`4334`, :pr:`4330`,
+  :pr:`4326`, :pr:`4316`, :pr:`4309`, :pr:`4307`, :pr:`4306`, :pr:`4300`, :pr:`4294`,
+  :pr:`4286`, :pr:`4283`, :pr:`4275`, :pr:`4274`, :pr:`4272`, :pr:`4266`, :pr:`4237`,
+  :pr:`4224`, :pr:`3972`, :pr:`4265`, :pr:`3536`)
+- Fixed bug in fallback code for Sphinx extension breaking documentation of certain attributes (:pr:`4223`)
+
+New Drivers:
+------------
+
+- Add Keithley 2634B model to 2600 driver (:pr:`4290`)
+
+
+Improved Drivers:
+-----------------
+
+- The Keysight N52 series drivers have gained a parameter to control RF output. (:pr:`4301`)
+- Improved Keysight N51x1 driver: make frequency option detection compatible with multiple options installed on device. (:pr:`4342`)
