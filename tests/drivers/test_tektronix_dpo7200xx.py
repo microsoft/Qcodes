@@ -77,6 +77,15 @@ def test_measurement_sets_state(tektronix_dpo: TektronixDPO7000xx) -> None:
     assert tektronix_dpo.measurement[1].state() is True
 
 
+def test_record_length(tektronix_dpo: TektronixDPO7000xx) -> None:
+    record_length = tektronix_dpo.horizontal.record_length()
+    assert record_length == 1_000_000
+    assert isinstance(record_length, int)
+
+    tektronix_dpo.horizontal.record_length(1000)
+    assert tektronix_dpo.horizontal.record_length() == 1000
+
+
 @pytest.mark.parametrize(
     ("value", "expected"),
     [("ON", True), ("off", False), (1, True), (0, False)],
