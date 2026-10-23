@@ -105,7 +105,7 @@ class CopperMountainM5xxx(VisaInstrument):
         )
         """Turns the measurement averaging function ON/OFF on channel 1."""
 
-        self.averages_trigger_enabled: Parameter = self.add_parameter(
+        self.averages_trigger_enabled: Parameter[bool, Self] = self.add_parameter(
             "averages_trigger_enabled",
             label="Trigger average status",
             get_cmd="TRIG:SEQ:AVER?",
@@ -441,7 +441,7 @@ class CopperMountainM5xxx(VisaInstrument):
 
         """
         self.write(f"SENS1:AVER:STAT {averages_enabled}")
-        self.averages_trigger_enabled("ON")
+        self.averages_trigger_enabled(True)
 
     def _set_span(self, val: float) -> None:
         """Sets frequency span and updates linear trace parameters.
