@@ -1,0 +1,5 @@
+The ``__getattr__`` that provides backwards-compatible access to the old flat
+parameter names on the Tektronix AWG5014 now names its parameter ``key``,
+matching ``DelegateAttributes.__getattr__`` which it overrides and delegates to.
+Python only ever calls ``__getattr__`` positionally, so this has no effect at
+runtime.

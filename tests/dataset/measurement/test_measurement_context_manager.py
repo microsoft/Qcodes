@@ -95,10 +95,10 @@ def test_register_parameter_arg_types(
         meas.register_parameter(DMM.v1, setpoints="foo")
 
     with pytest.raises(TypeError):
-        meas.register_parameter(DMM.v1, basis=(DAC.ch1, 3))  # type: ignore[arg-type]
+        meas.register_parameter(DMM.v1, basis=(DAC.ch1, 3))  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
     with pytest.raises(TypeError):
-        meas.register_parameter(DMM.v1, setpoints=(DAC.ch1, 3))  # type: ignore[arg-type]
+        meas.register_parameter(DMM.v1, setpoints=(DAC.ch1, 3))  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 def test_register_parameter_numbers(DAC: DummyInstrument, DMM: DummyInstrument) -> None:
@@ -112,7 +112,7 @@ def test_register_parameter_numbers(DAC: DummyInstrument, DMM: DummyInstrument) 
 
     for not_a_parameter in not_parameters:
         with pytest.raises(ValueError):
-            meas.register_parameter(not_a_parameter)  # type: ignore[arg-type]
+            meas.register_parameter(not_a_parameter)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
     my_param = DAC.ch1
     meas.register_parameter(my_param)
@@ -310,7 +310,7 @@ def test_unregister_parameter(DAC: DummyInstrument, DMM: DummyInstrument) -> Non
     not_parameters = [DAC, DMM, 0.0, 1]
     for notparam in not_parameters:
         with pytest.raises(ValueError):
-            meas.unregister_parameter(notparam)  # pyright: ignore[reportArgumentType]
+            meas.unregister_parameter(notparam)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
     # unregistering something not registered should silently "succeed"
     meas.unregister_parameter("totes_not_registered")
@@ -414,7 +414,7 @@ def test_setting_write_period(wp: float | str) -> None:
 
     if isinstance(wp, str):
         with pytest.raises(ValueError):
-            meas.write_period = wp  # type: ignore[assignment]
+            meas.write_period = wp  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
     elif wp < 1e-3:
         with pytest.raises(ValueError):
             meas.write_period = wp
@@ -1015,7 +1015,7 @@ def test_datasaver_foul_input(bg_writing: bool) -> None:
     with meas.run(bg_writing) as datasaver:
         for ft in foul_stuff:
             with pytest.raises(ValueError):
-                datasaver.add_result(("foul", ft))  # type: ignore[arg-type]
+                datasaver.add_result(("foul", ft))  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 @settings(max_examples=10, deadline=None)

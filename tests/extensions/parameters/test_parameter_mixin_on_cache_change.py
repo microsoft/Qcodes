@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -100,7 +100,7 @@ def test_error_on_non_callable_callback(
         docstring="A parameter for testing non-callable callbacks.",
     )
     with pytest.raises(TypeError):
-        test_parameter.on_cache_change = invalid_callback  # pyright: ignore[reportAttributeAccessIssue]
+        test_parameter.on_cache_change = invalid_callback  # pyright: ignore[reportAttributeAccessIssue]  # ty: ignore[invalid-assignment]
 
 
 def test_no_callback_invocation_on_init_or_get(
@@ -241,18 +241,15 @@ def test_callback_value_parsers(
             )
         )
 
-    mock_instr.test_parameter = cast(
-        "OnCacheChangeParameter",
-        mock_instr.add_parameter(
-            name="test_parameter",
-            parameter_class=OnCacheChangeParameter,
-            on_cache_change=cb,
-            set_cmd=lambda x: store.update({"value": x}),
-            get_cmd=lambda: None if store.get("value") is None else store.get("value"),
-            set_parser=lambda v: v * 2,
-            get_parser=lambda v: None if v is None else v / 2,
-            docstring="A parameter with set_parser.",
-        ),
+    mock_instr.test_parameter = mock_instr.add_parameter(
+        name="test_parameter",
+        parameter_class=OnCacheChangeParameter,
+        on_cache_change=cb,
+        set_cmd=lambda x: store.update({"value": x}),
+        get_cmd=lambda: None if store.get("value") is None else store.get("value"),
+        set_parser=lambda v: v * 2,
+        get_parser=lambda v: None if v is None else v / 2,
+        docstring="A parameter with set_parser.",
     )
 
     assert mock_instr.test_parameter.get() is None

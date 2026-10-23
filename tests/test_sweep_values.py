@@ -61,11 +61,11 @@ def test_errors(c0: Parameter, c1: Parameter, c2: Parameter) -> None:
 
     # improper use of extend
     with pytest.raises(TypeError):
-        c0[0.1].extend(5)  # pyright: ignore[reportArgumentType]
+        c0[0.1].extend(5)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
     # SweepValue object has no getter, even if the parameter does
     with pytest.raises(AttributeError):
-        _ = c0[0.1].get  # pyright: ignore[reportAttributeAccessIssue]
+        _ = c0[0.1].get  # pyright: ignore[reportAttributeAccessIssue]  # ty: ignore[unresolved-attribute]
 
 
 def test_valid(c0: Parameter) -> None:
@@ -74,8 +74,7 @@ def test_valid(c0: Parameter) -> None:
     assert c0_sv.set == c0.set
     # normal sequence operations access values
     assert list(c0_sv) == [1]
-    # TODO: SweepFixedValues.__getitem__ only accepts slice but int keys work
-    assert c0_sv[0] == 1  # pyright: ignore[reportArgumentType]
+    assert c0_sv[0] == 1
     assert 1 in c0_sv
     assert 2 not in c0_sv
 
