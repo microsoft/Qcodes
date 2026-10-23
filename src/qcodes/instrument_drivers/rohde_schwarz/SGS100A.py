@@ -72,7 +72,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             vals=vals.Numbers(-120, 25),
         )
         """Parameter power"""
-        self.status: Parameter = self.add_parameter(
+        self.status: Parameter[bool, Self] = self.add_parameter(
             "status",
             label="RF Output",
             get_cmd=":OUTP:STAT?",
@@ -339,7 +339,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
         self.connect_message()
 
     def on(self) -> None:
-        self.status("on")
+        self.status(True)
 
     def off(self) -> None:
-        self.status("off")
+        self.status(False)
