@@ -13,6 +13,13 @@ Fixed the following driver bugs found along the way:
 - ``MessageBuilder.pch_query`` of the Keysight B1500 sent ``PCH`` instead of ``PCH?``.
 - ``LakeshoreModel325Heater.output_range`` accepted the high (25 W) range on loop 2, which is
   only supported on loop 1.
+- ``LakeshoreModel325Sensor.curve_index`` now accepts ``0`` (no curve), which the instrument
+  also reports when the selected curve does not match the input, and rejects non-integer values.
+- The ``LakeshoreModel325`` curve list now includes user curve 35, so ``upload_curve(35, ...)``
+  no longer raises an ``IndexError``.
+- ``LakeshoreModel325Curve.get_data`` now reads all 200 points of a curve instead of 199.
+- ``LakeshoreModel325Curve.set_data`` now writes curve points with 6 significant digits, the
+  resolution of the instrument, instead of rounding them to 3 decimals.
 - ``RohdeSchwarzZNBChannel.bandwidth`` failed to read a non-integer bandwidth such as 1.5 Hz,
   which the instrument supports.
 - The ``current_compliance`` and ``power_compliance`` of the ``KeysightB1517A`` sweep could not
