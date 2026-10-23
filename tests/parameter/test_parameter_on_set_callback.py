@@ -1,9 +1,7 @@
-import gc
-import sqlite3
 import threading
 import time
 from collections import Counter
-from contextlib import nullcontext, suppress
+from contextlib import nullcontext
 from typing import TYPE_CHECKING, Any
 
 import pytest
@@ -55,23 +53,6 @@ def basic_callback(
 def captured_params() -> list[tuple[ParameterBase, Any]]:
     """Fixture for capturing callback parameters"""
     return []
-
-
-@pytest.fixture(autouse=True, scope="function")  # type: ignore[misc]
-def cleanup_db_connections():
-    """Clean up any open SQLite connections after each test"""
-    yield
-    gc.collect()
-
-    open_connections = [
-        obj for obj in gc.get_objects() if isinstance(obj, sqlite3.Connection)
-    ]
-
-    for conn in open_connections:
-        with suppress(sqlite3.Error):
-            conn.close()
-
-    gc.collect()
 
 
 class TestBasicCallbackBehavior:

@@ -17,6 +17,9 @@ def test_foreground_after_background_raises(empty_temp_db_connection) -> None:
     with pytest.raises(RuntimeError, match="All datasets written"):
         ds2.mark_started(start_bg_writer=False)
 
+    # stop the background writer so that it closes its connection
+    ds1.mark_completed()
+
 
 def test_background_after_foreground_raises(empty_temp_db_connection) -> None:
     new_experiment("test", "test1", conn=empty_temp_db_connection)
@@ -35,6 +38,10 @@ def test_background_twice(empty_temp_db_connection) -> None:
 
     ds2 = DataSet(conn=empty_temp_db_connection)
     ds2.mark_started(start_bg_writer=True)
+
+    # stop the background writer so that it closes its connection
+    ds1.mark_completed()
+    ds2.mark_completed()
 
 
 def test_foreground_twice(empty_temp_db_connection) -> None:

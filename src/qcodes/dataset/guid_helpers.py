@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import ast
-import gc
 from pathlib import Path
 from sqlite3 import DatabaseError
 from typing import TYPE_CHECKING, cast
@@ -39,7 +38,6 @@ def guids_from_dbs(
         finally:
             if conn is not None:
                 conn.close()
-            gc.collect()
     guiddict = {}
     for dbpath, guids in dbdict.items():
         guiddict.update(dict.fromkeys(guids, dbpath))

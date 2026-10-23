@@ -5,7 +5,7 @@ accessible-pygments==0.0.5
     # via furo
 alabaster==1.0.0
     # via sphinx
-ast-serialize==0.12.1
+ast-serialize==0.13.0
     # via mypy
 asttokens==3.0.2
     # via stack-data
@@ -27,7 +27,7 @@ broadbean==0.15.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-certifi==2026.7.22
+certifi==2026.10.19
     # via requests
 cf-xarray==0.11.3
     # via
@@ -99,7 +99,7 @@ h5py==3.16.0
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.168.5
+hypothesis==6.169.1
     # via qcodes (pyproject.toml)
 idna==3.20
     # via requests
@@ -126,7 +126,7 @@ ipywidgets==8.1.9
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-jedi==0.20.0
+jedi==0.20.1
     # via ipython
 jinja2==3.1.6
     # via
@@ -134,7 +134,7 @@ jinja2==3.1.6
     #   nbsphinx
     #   sphinx
     #   towncrier
-jsonpointer==3.2.0
+jsonpointer==3.2.1
     # via sphinx-jsonschema
 jsonref==1.1.0
     # via zhinst-toolkit
@@ -197,7 +197,7 @@ mypy-extensions==1.1.0
     # via mypy
 nbclient==0.11.0
     # via nbconvert
-nbconvert==7.17.1
+nbconvert==7.17.2
     # via nbsphinx
 nbformat==5.11.1
     # via
@@ -212,7 +212,7 @@ networkx==3.7
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-numpy==2.5.3
+numpy==2.5.4
     # via
     #   qcodes (pyproject.toml)
     #   broadbean
@@ -268,12 +268,12 @@ partd==1.4.2
     # via dask
 pathspec==1.1.1
     # via mypy
-pillow==12.3.0
+pillow==13.0.0
     # via
     #   qcodes (pyproject.toml)
     #   matplotlib
     #   qcodes
-platformdirs==4.12.4
+platformdirs==4.13.0
     # via jupyter-core
 pluggy==1.6.0
     # via
@@ -379,7 +379,7 @@ snowballstemmer==3.1.1
     # via sphinx
 sortedcontainers==2.4.0
     # via hypothesis
-soupsieve==2.10
+soupsieve==3.0.3
     # via beautifulsoup4
 sphinx==8.2.3
     # via
@@ -516,7 +516,7 @@ zhinst-core==26.7.2.5
     # via
     #   zhinst-toolkit
     #   zhinst-utils
-zhinst-qcodes==0.8.2
+zhinst-qcodes==0.8.3
     # via qcodes (pyproject.toml)
 zhinst-timing-models==26.7.0
     # via zhinst-utils
