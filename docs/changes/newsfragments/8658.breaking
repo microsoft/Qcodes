@@ -1,0 +1,24 @@
+Several instrument driver parameters now return numbers or booleans instead of the raw string
+from the instrument, or an integer for an on/off state. Code that compares the returned value to
+a string, or to ``0``/``1`` by identity, needs updating:
+
+- ``Keithley2450.line_frequency`` and ``Keithley2450Sense.count`` now return ``int``, and
+  ``Keithley2450Sense.nplc`` and ``Keithley2450Source.delay`` return ``float``.
+- ``Keithley7510Sense.user_delay`` now returns ``float``, and
+  ``Keithley7510Sense.average_count``, ``Keithley7510DigitizeSense.acq_rate`` and
+  ``Keithley7510DigitizeSense.count`` return ``int``.
+- ``SR86xBuffer.count_capture_kilobytes`` now returns ``int``.
+- ``RigolDG1062Burst.ncycles`` now returns ``int``, and ``RigolDG1062Burst.phase``,
+  ``RigolDG1062Burst.time_delay`` and ``RigolDG1062Channel.duty_cycle`` return ``float``.
+- ``RigolDS1074Z.trigger_level`` and ``TektronixTPS2012.trigger_level`` now return ``float``.
+- ``AgilentE8267C.pulse_width`` now returns ``float`` and its unit is ``s`` instead of ``ns``,
+  matching the value sent to and returned by the instrument.
+- ``RohdeSchwarzRTO1000ScopeChannel.impedance`` and ``KeysightE4980A.range`` now return
+  ``float``.
+- ``RohdeSchwarzZNBChannel.bandwidth`` now returns ``float``, e.g. ``10000.0`` instead of
+  ``10000``.
+- The channel ``state`` and ``direct_output`` and the instrument ``DC_output`` of
+  ``TektronixAWG5014`` now return ``bool``. They accept ``True``/``False``, ``1``/``0`` and
+  ``"on"``/``"off"``. ``TektronixAWG5014.sequence_pos`` now returns ``int``.
+- ``KeysightB1520A.ac_dc_volt_monitor`` now returns ``bool`` and also accepts ``1``/``0``
+  and ``"on"``/``"off"``.
