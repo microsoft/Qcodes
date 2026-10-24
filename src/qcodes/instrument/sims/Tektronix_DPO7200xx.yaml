@@ -98,6 +98,54 @@ devices:
         getter:
           q: "MEASUrement:MEAS1:MEAN?"
           r: "0.012"
+      # waveform preamble of the DATa:SOUrce waveform, using the example
+      # replies from the programmer manual
+      waveform_y_multiplier:
+        getter:
+          q: "WFMOutPRE:YMULT?"
+          r: "4.0000E-3"
+      waveform_y_offset:
+        # in digitizing levels
+        getter:
+          q: "WFMOutPRE:YOFF?"
+          r: "-50.0000E+0"
+      waveform_y_zero:
+        getter:
+          q: "WFMOutPRE:YZERO?"
+          r: "-100.0000E-3"
+      waveform_number_of_points:
+        # kept short so tests can supply matching curve data
+        getter:
+          q: "WFMOutpre:NR_Pt?"
+          r: "3"
+      waveform_encoding:
+        default: "ASCII"
+        getter:
+          q: "WFMOutpre:ENCdg?"
+          r: "{}"
+        setter:
+          q: "WFMOutpre:ENCdg {}"
+      waveform_binary_format:
+        default: "RI"
+        getter:
+          q: "WFMOutpre:BN_Fmt?"
+          r: "{}"
+        setter:
+          q: "WFMOutpre:BN_Fmt {}"
+      waveform_bytes_per_sample:
+        default: "1"
+        getter:
+          q: "WFMOutpre:BYT_Nr?"
+          r: "{}"
+        setter:
+          q: "WFMOutpre:BYT_Nr {}"
+      waveform_byte_order:
+        default: "LSB"
+        getter:
+          q: "WFMOutpre:BYT_Or?"
+          r: "{}"
+        setter:
+          q: "WFMOutpre:BYT_Or {}"
 
 
 resources:
