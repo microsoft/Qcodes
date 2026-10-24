@@ -69,6 +69,21 @@ def test_curve_index_rejects_invalid(
         lakeshore_325.sensor_A.curve_index(value)  # pyright: ignore[reportArgumentType]
 
 
+def test_sensor_curve(lakeshore_325: LakeshoreModel325) -> None:
+    sensor_a = lakeshore_325.sensor_A
+    assert sensor_a.curve.short_name == "curve_2"
+
+    sensor_a.curve_index(23)
+    assert sensor_a.curve.short_name == "curve_23"
+
+
+def test_sensor_curve_none_selected(lakeshore_325: LakeshoreModel325) -> None:
+    # curve index 0 means no curve; there is no curve 0 to query
+    assert lakeshore_325.sensor_B.curve_index() == 0
+    with pytest.raises(RuntimeError, match="No curve is selected"):
+        _ = lakeshore_325.sensor_B.curve
+
+
 def _fake_curve_ask(cmd: str) -> str:
     # a header with the V/K format and a point n with units n/1000 at n K
     if cmd.startswith("CRVHDR?"):

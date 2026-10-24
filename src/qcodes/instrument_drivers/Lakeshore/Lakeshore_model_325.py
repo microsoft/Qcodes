@@ -352,7 +352,18 @@ class LakeshoreModel325Sensor(InstrumentChannel["LakeshoreModel325"]):
 
     @property
     def curve(self) -> LakeshoreModel325Curve:
-        return LakeshoreModel325Curve(self.parent, self.curve_index())
+        """
+        The curve the sensor uses for temperature conversion.
+
+        Raises:
+            RuntimeError: If no curve is selected for the sensor
+                (``curve_index`` is 0).
+
+        """
+        index = self.curve_index()
+        if index == 0:
+            raise RuntimeError(f"No curve is selected for {self.full_name}")
+        return LakeshoreModel325Curve(self.parent, index)
 
 
 class LakeshoreModel325Heater(InstrumentChannel):
