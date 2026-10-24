@@ -20,6 +20,8 @@ Fixed the following driver bugs found along the way:
 - ``LakeshoreModel325Curve.get_data`` now reads all 200 points of a curve instead of 199.
 - ``LakeshoreModel325Curve.set_data`` now writes curve points with 6 significant digits, the
   resolution of the instrument, instead of rounding them to 3 decimals.
+- ``LakeshoreModel325Sensor.curve`` now raises a ``RuntimeError`` when no curve is selected for
+  the sensor, instead of returning a curve 0, which the instrument does not have.
 - ``RohdeSchwarzZNBChannel.bandwidth`` failed to read a non-integer bandwidth such as 1.5 Hz,
   which the instrument supports.
 - The ``current_compliance`` and ``power_compliance`` of the ``KeysightB1517A`` sweep could not
