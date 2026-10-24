@@ -1,6 +1,6 @@
 import logging
 from functools import partial
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -47,7 +47,7 @@ class FixedFrequencyTraceIQ(
         name: str,
         instrument: "RohdeSchwarzZNBChannel",
         npts: int,
-        bandwidth: int,
+        bandwidth: float,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -70,7 +70,7 @@ class FixedFrequencyTraceIQ(
         )
         self.set_cw_sweep(npts, bandwidth)
 
-    def set_cw_sweep(self, npts: int, bandwidth: int) -> None:
+    def set_cw_sweep(self, npts: int, bandwidth: float) -> None:
         """
         Updates config of the software parameter on sweep change. This is
         needed in order to sync the setpoint shape with the returned data
@@ -487,14 +487,14 @@ class RohdeSchwarzZNBChannel(InstrumentChannel["RohdeSchwarzZNBBase"]):
         self._max_source_power: float
         self._max_source_power = self._model_max_source_power[model]
 
-        self.vna_parameter: Parameter = self.add_parameter(
+        self.vna_parameter: Parameter[str, Self] = self.add_parameter(
             name="vna_parameter",
             label="VNA parameter",
             get_cmd=f"CALC{self._instrument_channel}:PAR:MEAS? '{self._tracename}'",
             get_parser=self._strip,
         )
         """Parameter vna_parameter"""
-        self.power: Parameter = self.add_parameter(
+        self.power: Parameter[float, Self] = self.add_parameter(
             name="power",
             label="Power",
             unit="dBm",
@@ -504,13 +504,14 @@ class RohdeSchwarzZNBChannel(InstrumentChannel["RohdeSchwarzZNBBase"]):
             vals=vals.Numbers(self._min_source_power, self._max_source_power),
         )
         """Parameter power"""
-        self.bandwidth: Parameter = self.add_parameter(
+        self.bandwidth: Parameter[float, Self] = self.add_parameter(
             name="bandwidth",
             label="Bandwidth",
             unit="Hz",
             get_cmd=f"SENS{n}:BAND?",
             set_cmd=self._set_bandwidth,
-            get_parser=int,
+            # The instrument returns e.g. 1.5 for a bandwidth of 1.5 Hz
+            get_parser=float,
             vals=vals.Enum(
                 *np.append(10**6, np.kron([1, 1.5, 2, 3, 5, 7], 10 ** np.arange(6)))
             ),
@@ -527,7 +528,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel["RohdeSchwarzZNBBase"]):
         There is an 'increased bandwidth option' (p. 4 of manual)
         that does not get taken into account here.
         """
-        self.avg: Parameter = self.add_parameter(
+        self.avg: Parameter[int, Self] = self.add_parameter(
             name="avg",
             label="Averages",
             unit="",
@@ -537,7 +538,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel["RohdeSchwarzZNBBase"]):
             vals=vals.Ints(1, 5000),
         )
         """Parameter avg"""
-        self.start: Parameter = self.add_parameter(
+        self.start: Parameter[float, Self] = self.add_parameter(
             name="start",
             get_cmd=f"SENS{n}:FREQ:START?",
             set_cmd=self._set_start,
@@ -545,7 +546,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel["RohdeSchwarzZNBBase"]):
             vals=vals.Numbers(self._parent._min_freq, self._parent._max_freq - 10),
         )
         """Parameter start"""
-        self.stop: Parameter = self.add_parameter(
+        self.stop: Parameter[float, Self] = self.add_parameter(
             name="stop",
             get_cmd=f"SENS{n}:FREQ:STOP?",
             set_cmd=self._set_stop,
@@ -553,7 +554,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel["RohdeSchwarzZNBBase"]):
             vals=vals.Numbers(self._parent._min_freq + 1, self._parent._max_freq),
         )
         """Parameter stop"""
-        self.center: Parameter = self.add_parameter(
+        self.center: Parameter[float, Self] = self.add_parameter(
             name="center",
             get_cmd=f"SENS{n}:FREQ:CENT?",
             set_cmd=self._set_center,
@@ -563,7 +564,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel["RohdeSchwarzZNBBase"]):
             ),
         )
         """Parameter center"""
-        self.span: Parameter = self.add_parameter(
+        self.span: Parameter[float, Self] = self.add_parameter(
             name="span",
             get_cmd=f"SENS{n}:FREQ:SPAN?",
             set_cmd=self._set_span,
@@ -571,21 +572,21 @@ class RohdeSchwarzZNBChannel(InstrumentChannel["RohdeSchwarzZNBBase"]):
             vals=vals.Numbers(1, self._parent._max_freq - self._parent._min_freq),
         )
         """Parameter span"""
-        self.npts: Parameter = self.add_parameter(
+        self.npts: Parameter[int, Self] = self.add_parameter(
             name="npts",
             get_cmd=f"SENS{n}:SWE:POIN?",
             set_cmd=self._set_npts,
             get_parser=int,
         )
         """Parameter npts"""
-        self.status: Parameter = self.add_parameter(
+        self.status: Parameter[int, Self] = self.add_parameter(
             name="status",
             get_cmd=f"CONF:CHAN{n}:MEAS?",
             set_cmd=f"CONF:CHAN{n}:MEAS {{}}",
             get_parser=int,
         )
         """Parameter status"""
-        self.format: Parameter = self.add_parameter(
+        self.format: Parameter[str, Self] = self.add_parameter(
             name="format",
             get_cmd=partial(self._get_format, tracename=self._tracename),
             set_cmd=self._set_format,
@@ -634,7 +635,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel["RohdeSchwarzZNBBase"]):
             parameter_class=FrequencySweep,
         )
         """Parameter trace"""
-        self.electrical_delay: Parameter = self.add_parameter(
+        self.electrical_delay: Parameter[float, Self] = self.add_parameter(
             name="electrical_delay",
             label="Electrical delay",
             get_cmd=f"SENS{n}:CORR:EDEL2:TIME?",
@@ -643,7 +644,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel["RohdeSchwarzZNBBase"]):
             unit="s",
         )
         """Parameter electrical_delay"""
-        self.sweep_time: Parameter = self.add_parameter(
+        self.sweep_time: Parameter[float, Self] = self.add_parameter(
             name="sweep_time",
             label="Sweep time",
             get_cmd=f"SENS{n}:SWE:TIME?",
@@ -651,7 +652,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel["RohdeSchwarzZNBBase"]):
             unit="s",
         )
         """Parameter sweep_time"""
-        self.sweep_type: Parameter = self.add_parameter(
+        self.sweep_type: Parameter[str, Self] = self.add_parameter(
             name="sweep_type",
             get_cmd=f"SENS{n}:SWE:TYPE?",
             set_cmd=self._set_sweep_type,
@@ -677,7 +678,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel["RohdeSchwarzZNBBase"]):
         Note that at the moment only the linear and CW_Point modes
         have supporting measurement parameters.
         """
-        self.cw_frequency: Parameter = self.add_parameter(
+        self.cw_frequency: Parameter[float, Self] = self.add_parameter(
             name="cw_frequency",
             get_cmd=f"SENS{n}:FREQ:CW?",
             set_cmd=self._set_cw_frequency,
@@ -732,7 +733,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel["RohdeSchwarzZNBBase"]):
             )
         )
         """Parameter point_fixed_frequency_mag_phase"""
-        self.averaging_enabled: Parameter = self.add_parameter(
+        self.averaging_enabled: Parameter[bool, Self] = self.add_parameter(
             name="averaging_enabled",
             initial_value=False,
             get_cmd=None,
@@ -741,7 +742,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel["RohdeSchwarzZNBBase"]):
             val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF"),
         )
         """Parameter averaging_enabled"""
-        self.auto_sweep_time_enabled: Parameter = self.add_parameter(
+        self.auto_sweep_time_enabled: Parameter[bool, Self] = self.add_parameter(
             name="auto_sweep_time_enabled",
             initial_value=False,
             get_cmd=None,
@@ -843,7 +844,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel["RohdeSchwarzZNBBase"]):
         else:
             self.update_lin_traces()
 
-    def _set_bandwidth(self, val: int) -> None:
+    def _set_bandwidth(self, val: float) -> None:
         channel = self._instrument_channel
         self.write(f"SENS{channel}:BAND {val:.4f}")
         self.update_cw_traces()
@@ -1113,7 +1114,7 @@ class RohdeSchwarzZNBBase(VisaInstrument):
         """Parameter num_ports"""
         num_ports = self.num_ports()
 
-        self.rf_power: Parameter = self.add_parameter(
+        self.rf_power: Parameter[bool, Self] = self.add_parameter(
             name="rf_power",
             get_cmd="OUTP1?",
             set_cmd="OUTP1 {}",
@@ -1121,7 +1122,7 @@ class RohdeSchwarzZNBBase(VisaInstrument):
         )
         """Parameter rf_power"""
 
-        self.ref_osc_source: Parameter = self.add_parameter(
+        self.ref_osc_source: Parameter[str, Self] = self.add_parameter(
             name="ref_osc_source",
             label="Reference oscillator source",
             get_cmd="ROSC:SOUR?",
@@ -1132,7 +1133,7 @@ class RohdeSchwarzZNBBase(VisaInstrument):
         )
         """Reference oscillator source"""
 
-        self.ref_osc_external_freq: Parameter = self.add_parameter(
+        self.ref_osc_external_freq: Parameter[float, Self] = self.add_parameter(
             name="ref_osc_external_freq",
             label="Reference oscillator frequency",
             docstring="Frequency of the external reference clock signal at REF IN",
@@ -1146,7 +1147,7 @@ class RohdeSchwarzZNBBase(VisaInstrument):
         )
         """Frequency of the external reference clock signal at REF IN"""
 
-        self.ref_osc_PLL_locked: Parameter = self.add_parameter(
+        self.ref_osc_PLL_locked: Parameter[bool, Self] = self.add_parameter(
             name="ref_osc_PLL_locked",
             label="Reference frequency PLL lock",
             get_cmd=self._get_PLL_locked,

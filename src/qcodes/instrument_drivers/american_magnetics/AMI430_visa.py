@@ -6,7 +6,7 @@ from collections import defaultdict
 from collections.abc import Callable, Iterable, Sequence
 from contextlib import ExitStack
 from functools import partial
-from typing import TYPE_CHECKING, Any, ClassVar, Concatenate, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Concatenate, Self, cast
 
 import numpy as np
 from pyvisa import VisaIOError
@@ -64,7 +64,7 @@ class AMI430SwitchHeater(InstrumentChannel["AMIModel430"]):
         super().__init__(parent, "SwitchHeater", **kwargs)
 
         # Add state parameters
-        self.enabled: Parameter = self.add_parameter(
+        self.enabled: Parameter[bool, Self] = self.add_parameter(
             "enabled",
             label="Switch Heater Enabled",
             get_cmd=self._check_enabled,
@@ -72,7 +72,7 @@ class AMI430SwitchHeater(InstrumentChannel["AMIModel430"]):
             vals=Bool(),
         )
         """Parameter enabled"""
-        self.state: Parameter = self.add_parameter(
+        self.state: Parameter[bool, Self] = self.add_parameter(
             "state",
             label="Switch Heater On",
             get_cmd=self._check_state,
@@ -80,7 +80,7 @@ class AMI430SwitchHeater(InstrumentChannel["AMIModel430"]):
             vals=Bool(),
         )
         """Parameter state. Always False is the switch heater is not enabled"""
-        self.in_persistent_mode: Parameter = self.add_parameter(
+        self.in_persistent_mode: Parameter[bool, Self] = self.add_parameter(
             "in_persistent_mode",
             label="Persistent Mode",
             get_cmd="PERS?",
@@ -89,7 +89,7 @@ class AMI430SwitchHeater(InstrumentChannel["AMIModel430"]):
         """Parameter in_persistent_mode"""
 
         # Configuration Parameters
-        self.current: Parameter = self.add_parameter(
+        self.current: Parameter[float, Self] = self.add_parameter(
             "current",
             label="Switch Heater Current",
             unit="mA",
@@ -99,7 +99,7 @@ class AMI430SwitchHeater(InstrumentChannel["AMIModel430"]):
             vals=Numbers(0, 125),
         )
         """Parameter current"""
-        self.heat_time: Parameter = self.add_parameter(
+        self.heat_time: Parameter[int, Self] = self.add_parameter(
             "heat_time",
             label="Heating Time",
             unit="s",
@@ -109,7 +109,7 @@ class AMI430SwitchHeater(InstrumentChannel["AMIModel430"]):
             vals=Ints(5, 120),
         )
         """Parameter heat_time"""
-        self.cool_time: Parameter = self.add_parameter(
+        self.cool_time: Parameter[int, Self] = self.add_parameter(
             "cool_time",
             label="Cooling Time",
             unit="s",
@@ -249,14 +249,14 @@ class AMIModel430(VisaInstrument):
             self.reset()
 
         # Add parameters setting instrument units
-        self.ramp_rate_units: Parameter = self.add_parameter(
+        self.ramp_rate_units: Parameter[str, Self] = self.add_parameter(
             "ramp_rate_units",
             get_cmd="RAMP:RATE:UNITS?",
             set_cmd=(lambda units: self._update_units(ramp_rate_units=units)),
             val_mapping={"seconds": 0, "minutes": 1},
         )
         """Parameter ramp_rate_units"""
-        self.field_units: Parameter = self.add_parameter(
+        self.field_units: Parameter[str, Self] = self.add_parameter(
             "field_units",
             get_cmd="FIELD:UNITS?",
             set_cmd=(lambda units: self._update_units(field_units=units)),
@@ -265,14 +265,14 @@ class AMIModel430(VisaInstrument):
         """Parameter field_units"""
 
         # Set programmatic safety limits
-        self.current_ramp_limit: Parameter = self.add_parameter(
+        self.current_ramp_limit: Parameter[float, Self] = self.add_parameter(
             "current_ramp_limit",
             get_cmd=lambda: self._current_ramp_limit,
             set_cmd=self._update_ramp_rate_limit,
             unit="A/s",
         )
         """Parameter current_ramp_limit"""
-        self.field_ramp_limit: Parameter = self.add_parameter(
+        self.field_ramp_limit: Parameter[float, Self] = self.add_parameter(
             "field_ramp_limit",
             get_cmd=self.current_ramp_limit.get,
             set_cmd=self.current_ramp_limit.set,
@@ -288,7 +288,7 @@ class AMIModel430(VisaInstrument):
             self._update_ramp_rate_limit(current_ramp_limit, update=False)
 
         # Add solenoid parameters
-        self.coil_constant: Parameter = self.add_parameter(
+        self.coil_constant: Parameter[float, Self] = self.add_parameter(
             "coil_constant",
             get_cmd=self._update_coil_constant,
             set_cmd=self._update_coil_constant,
@@ -296,7 +296,7 @@ class AMIModel430(VisaInstrument):
         )
         """Parameter coil_constant"""
 
-        self.current_limit: Parameter = self.add_parameter(
+        self.current_limit: Parameter[float, Self] = self.add_parameter(
             "current_limit",
             unit="A",
             set_cmd="CONF:CURR:LIMIT {}",
@@ -306,7 +306,7 @@ class AMIModel430(VisaInstrument):
         )  # what are good numbers here?
         """Parameter current_limit"""
 
-        self.field_limit: Parameter = self.add_parameter(
+        self.field_limit: Parameter[float, Self] = self.add_parameter(
             "field_limit",
             set_cmd=self.current_limit.set,
             get_cmd=self.current_limit.get,
@@ -316,24 +316,24 @@ class AMIModel430(VisaInstrument):
 
         # Add current solenoid parameters
         # Note that field is validated in set_field
-        self.field: Parameter = self.add_parameter(
+        self.field: Parameter[float, Self] = self.add_parameter(
             "field", get_cmd="FIELD:MAG?", get_parser=float, set_cmd=self.set_field
         )
         """Parameter field"""
-        self.ramp_rate: Parameter = self.add_parameter(
+        self.ramp_rate: Parameter[float, Self] = self.add_parameter(
             "ramp_rate", get_cmd=self._get_ramp_rate, set_cmd=self._set_ramp_rate
         )
         """Parameter ramp_rate"""
-        self.setpoint: Parameter = self.add_parameter(
+        self.setpoint: Parameter[float, Self] = self.add_parameter(
             "setpoint", get_cmd="FIELD:TARG?", get_parser=float
         )
         """Parameter setpoint"""
-        self.is_quenched: Parameter = self.add_parameter(
+        self.is_quenched: Parameter[bool, Self] = self.add_parameter(
             "is_quenched", get_cmd="QU?", val_mapping={True: 1, False: 0}
         )
         """Parameter is_quenched"""
 
-        self.ramping_state: Parameter = self.add_parameter(
+        self.ramping_state: Parameter[str, Self] = self.add_parameter(
             "ramping_state",
             get_cmd="STATE?",
             get_parser=int,
@@ -351,7 +351,7 @@ class AMIModel430(VisaInstrument):
             },
         )
         """Parameter ramping_state"""
-        self.ramping_state_check_interval: Parameter = self.add_parameter(
+        self.ramping_state_check_interval: Parameter[float, Self] = self.add_parameter(
             "ramping_state_check_interval",
             initial_value=0.05,
             unit="s",
@@ -876,7 +876,7 @@ class AMIModel4303D(Instrument):
         )
         """Parameter rho"""
 
-        self.block_during_ramp: Parameter = self.add_parameter(
+        self.block_during_ramp: Parameter[bool, Self] = self.add_parameter(
             "block_during_ramp", set_cmd=None, initial_value=True, unit="", vals=Bool()
         )
         """Parameter block_during_ramp"""

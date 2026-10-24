@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 from functools import partial
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Self
 
 import numpy as np
 
@@ -286,7 +286,7 @@ class SR830(VisaInstrument):
         super().__init__(name, address, **kwargs)
 
         # Reference and phase
-        self.phase: Parameter = self.add_parameter(
+        self.phase: Parameter[float, Self] = self.add_parameter(
             "phase",
             label="Phase",
             get_cmd="PHAS?",
@@ -297,7 +297,7 @@ class SR830(VisaInstrument):
         )
         """Parameter phase"""
 
-        self.reference_source: Parameter = self.add_parameter(
+        self.reference_source: Parameter[str, Self] = self.add_parameter(
             "reference_source",
             label="Reference source",
             get_cmd="FMOD?",
@@ -310,7 +310,7 @@ class SR830(VisaInstrument):
         )
         """Parameter reference_source"""
 
-        self.frequency: Parameter = self.add_parameter(
+        self.frequency: Parameter[float, Self] = self.add_parameter(
             "frequency",
             label="Frequency",
             get_cmd="FREQ?",
@@ -321,7 +321,7 @@ class SR830(VisaInstrument):
         )
         """Parameter frequency"""
 
-        self.ext_trigger: Parameter = self.add_parameter(
+        self.ext_trigger: Parameter[str, Self] = self.add_parameter(
             "ext_trigger",
             label="External trigger",
             get_cmd="RSLP?",
@@ -334,7 +334,7 @@ class SR830(VisaInstrument):
         )
         """Parameter ext_trigger"""
 
-        self.harmonic: Parameter = self.add_parameter(
+        self.harmonic: Parameter[int, Self] = self.add_parameter(
             "harmonic",
             label="Harmonic",
             get_cmd="HARM?",
@@ -344,7 +344,7 @@ class SR830(VisaInstrument):
         )
         """Parameter harmonic"""
 
-        self.amplitude: Parameter = self.add_parameter(
+        self.amplitude: Parameter[float, Self] = self.add_parameter(
             "amplitude",
             label="Amplitude",
             get_cmd="SLVL?",
@@ -356,7 +356,7 @@ class SR830(VisaInstrument):
         """Parameter amplitude"""
 
         # Input and filter
-        self.input_config: Parameter = self.add_parameter(
+        self.input_config: Parameter[str, Self] = self.add_parameter(
             "input_config",
             label="Input configuration",
             get_cmd="ISRC?",
@@ -367,7 +367,7 @@ class SR830(VisaInstrument):
         )
         """Parameter input_config"""
 
-        self.input_shield: Parameter = self.add_parameter(
+        self.input_shield: Parameter[str, Self] = self.add_parameter(
             "input_shield",
             label="Input shield",
             get_cmd="IGND?",
@@ -379,7 +379,7 @@ class SR830(VisaInstrument):
         )
         """Parameter input_shield"""
 
-        self.input_coupling: Parameter = self.add_parameter(
+        self.input_coupling: Parameter[str, Self] = self.add_parameter(
             "input_coupling",
             label="Input coupling",
             get_cmd="ICPL?",
@@ -391,7 +391,7 @@ class SR830(VisaInstrument):
         )
         """Parameter input_coupling"""
 
-        self.notch_filter: Parameter = self.add_parameter(
+        self.notch_filter: Parameter[str, Self] = self.add_parameter(
             "notch_filter",
             label="Notch filter",
             get_cmd="ILIN?",
@@ -406,7 +406,7 @@ class SR830(VisaInstrument):
         """Parameter notch_filter"""
 
         # Gain and time constant
-        self.sensitivity: Parameter = self.add_parameter(
+        self.sensitivity: Parameter[float, Self] = self.add_parameter(
             name="sensitivity",
             label="Sensitivity",
             get_cmd="SENS?",
@@ -416,7 +416,7 @@ class SR830(VisaInstrument):
         )
         """Parameter sensitivity"""
 
-        self.reserve: Parameter = self.add_parameter(
+        self.reserve: Parameter[str, Self] = self.add_parameter(
             "reserve",
             label="Reserve",
             get_cmd="RMOD?",
@@ -460,7 +460,7 @@ class SR830(VisaInstrument):
         )
         """Parameter time_constant"""
 
-        self.filter_slope: Parameter = self.add_parameter(
+        self.filter_slope: Parameter[int, Self] = self.add_parameter(
             "filter_slope",
             label="Filter slope",
             get_cmd="OFSL?",
@@ -475,7 +475,7 @@ class SR830(VisaInstrument):
         )
         """Parameter filter_slope"""
 
-        self.sync_filter: Parameter = self.add_parameter(
+        self.sync_filter: Parameter[str, Self] = self.add_parameter(
             "sync_filter",
             label="Sync filter",
             get_cmd="SYNC?",
@@ -494,17 +494,17 @@ class SR830(VisaInstrument):
 
         # TODO: Parameters that can be set with multiple arguments
         # For the OEXP command for example two arguments are needed
-        self.X_offset: Parameter = self.add_parameter(
+        self.X_offset: Parameter[tuple[float, int], Self] = self.add_parameter(
             "X_offset", get_cmd="OEXP? 1", get_parser=parse_offset_get
         )
         """Parameter X_offset"""
 
-        self.Y_offset: Parameter = self.add_parameter(
+        self.Y_offset: Parameter[tuple[float, int], Self] = self.add_parameter(
             "Y_offset", get_cmd="OEXP? 2", get_parser=parse_offset_get
         )
         """Parameter Y_offset"""
 
-        self.R_offset: Parameter = self.add_parameter(
+        self.R_offset: Parameter[tuple[float, int], Self] = self.add_parameter(
             "R_offset", get_cmd="OEXP? 3", get_parser=parse_offset_get
         )
         """Parameter R_offset"""
@@ -529,7 +529,7 @@ class SR830(VisaInstrument):
             )
 
         # Setup
-        self.output_interface: Parameter = self.add_parameter(
+        self.output_interface: Parameter[str, Self] = self.add_parameter(
             "output_interface",
             label="Output interface",
             get_cmd="OUTX?",
@@ -542,22 +542,22 @@ class SR830(VisaInstrument):
         """Parameter output_interface"""
 
         # Data transfer
-        self.X: Parameter = self.add_parameter(
+        self.X: Parameter[float, Self] = self.add_parameter(
             "X", get_cmd="OUTP? 1", get_parser=float, unit="V"
         )
         """Parameter X"""
 
-        self.Y: Parameter = self.add_parameter(
+        self.Y: Parameter[float, Self] = self.add_parameter(
             "Y", get_cmd="OUTP? 2", get_parser=float, unit="V"
         )
         """Parameter Y"""
 
-        self.R: Parameter = self.add_parameter(
+        self.R: Parameter[float, Self] = self.add_parameter(
             "R", get_cmd="OUTP? 3", get_parser=float, unit="V"
         )
         """Parameter R"""
 
-        self.P: Parameter = self.add_parameter(
+        self.P: Parameter[float, Self] = self.add_parameter(
             "P", get_cmd="OUTP? 4", get_parser=float, unit="deg"
         )
         """Parameter P"""
@@ -602,7 +602,7 @@ class SR830(VisaInstrument):
         )
         """Parameter buffer_SR"""
 
-        self.buffer_acq_mode: Parameter = self.add_parameter(
+        self.buffer_acq_mode: Parameter[str, Self] = self.add_parameter(
             "buffer_acq_mode",
             label="Buffer acquistion mode",
             get_cmd="SEND ?",
@@ -612,7 +612,7 @@ class SR830(VisaInstrument):
         )
         """Parameter buffer_acq_mode"""
 
-        self.buffer_trig_mode: Parameter = self.add_parameter(
+        self.buffer_trig_mode: Parameter[str, Self] = self.add_parameter(
             "buffer_trig_mode",
             label="Buffer trigger start mode",
             get_cmd="TSTR ?",
@@ -622,7 +622,7 @@ class SR830(VisaInstrument):
         )
         """Parameter buffer_trig_mode"""
 
-        self.buffer_npts: Parameter = self.add_parameter(
+        self.buffer_npts: Parameter[int, Self] = self.add_parameter(
             "buffer_npts",
             label="Buffer number of stored points",
             get_cmd="SPTS ?",

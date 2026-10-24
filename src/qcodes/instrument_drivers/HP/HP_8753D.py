@@ -1,6 +1,6 @@
 import logging
 from functools import partial
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 import numpy as np
 
@@ -128,7 +128,7 @@ class HP8753D(VisaInstrument):
     ) -> None:
         super().__init__(name, address, **kwargs)
 
-        self.start_freq: Parameter = self.add_parameter(
+        self.start_freq: Parameter[float, Self] = self.add_parameter(
             "start_freq",
             label="Sweep start frequency",
             unit="Hz",
@@ -139,7 +139,7 @@ class HP8753D(VisaInstrument):
         )
         """Parameter start_freq"""
 
-        self.stop_freq: Parameter = self.add_parameter(
+        self.stop_freq: Parameter[float, Self] = self.add_parameter(
             "stop_freq",
             label="Sweep stop frequency",
             unit="Hz",
@@ -150,7 +150,7 @@ class HP8753D(VisaInstrument):
         )
         """Parameter stop_freq"""
 
-        self.averaging: Parameter = self.add_parameter(
+        self.averaging: Parameter[str, Self] = self.add_parameter(
             "averaging",
             label="Averaging state",
             set_cmd="AVERO{}",
@@ -159,7 +159,7 @@ class HP8753D(VisaInstrument):
         )
         """Parameter averaging"""
 
-        self.number_of_averages: Parameter = self.add_parameter(
+        self.number_of_averages: Parameter[int, Self] = self.add_parameter(
             "number_of_averages",
             label="Number of averages",
             set_cmd="AVERFACT{}",
@@ -169,7 +169,7 @@ class HP8753D(VisaInstrument):
         )
         """Parameter number_of_averages"""
 
-        self.trace_points: Parameter = self.add_parameter(
+        self.trace_points: Parameter[int, Self] = self.add_parameter(
             "trace_points",
             label="Number of points in trace",
             set_cmd=partial(self.invalidate_trace, "POIN{}"),
@@ -179,7 +179,7 @@ class HP8753D(VisaInstrument):
         )
         """Parameter trace_points"""
 
-        self.sweep_time: Parameter = self.add_parameter(
+        self.sweep_time: Parameter[float, Self] = self.add_parameter(
             "sweep_time",
             label="Sweep time",
             set_cmd="SWET{}",
@@ -190,7 +190,7 @@ class HP8753D(VisaInstrument):
         )
         """Parameter sweep_time"""
 
-        self.output_power: Parameter = self.add_parameter(
+        self.output_power: Parameter[float, Self] = self.add_parameter(
             "output_power",
             label="Output power",
             unit="dBm",
@@ -201,7 +201,7 @@ class HP8753D(VisaInstrument):
         )
         """Parameter output_power"""
 
-        self.s_parameter: Parameter = self.add_parameter(
+        self.s_parameter: Parameter[str, Self] = self.add_parameter(
             "s_parameter",
             label="S-parameter",
             set_cmd=self._s_parameter_setter,
@@ -210,7 +210,7 @@ class HP8753D(VisaInstrument):
         """Parameter s_parameter"""
 
         # DISPLAY / Y SCALE PARAMETERS
-        self.display_format: Parameter = self.add_parameter(
+        self.display_format: Parameter[str, Self] = self.add_parameter(
             "display_format",
             label="Display format",
             set_cmd=self._display_format_setter,
@@ -219,7 +219,7 @@ class HP8753D(VisaInstrument):
         """Parameter display_format"""
 
         # TODO: update this on startup and via display format
-        self.display_reference: Parameter = self.add_parameter(
+        self.display_reference: Parameter[float, Self] = self.add_parameter(
             "display_reference",
             label="Display reference level",
             unit=None,  # will be set by display_format
@@ -230,7 +230,7 @@ class HP8753D(VisaInstrument):
         )
         """Parameter display_reference"""
 
-        self.display_scale: Parameter = self.add_parameter(
+        self.display_scale: Parameter[float, Self] = self.add_parameter(
             "display_scale",
             label="Display scale",
             unit=None,  # will be set by display_format

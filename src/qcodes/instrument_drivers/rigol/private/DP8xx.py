@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes import validators as vals
 from qcodes.instrument import (
@@ -39,7 +39,7 @@ class RigolDP8xxChannel(InstrumentChannel):
         def strstrip(s: str) -> str:
             return str(s).strip()
 
-        self.set_voltage: Parameter = self.add_parameter(
+        self.set_voltage: Parameter[float, Self] = self.add_parameter(
             "set_voltage",
             label="Target voltage output",
             set_cmd="{} :SOURce:VOLTage:LEVel:IMMediate:AMPLitude {}".format(
@@ -51,7 +51,7 @@ class RigolDP8xxChannel(InstrumentChannel):
             vals=vals.Numbers(min(0, self.vmax), max(0, self.vmax)),
         )
         """Parameter set_voltage"""
-        self.set_current: Parameter = self.add_parameter(
+        self.set_current: Parameter[float, Self] = self.add_parameter(
             "set_current",
             label="Target current output",
             set_cmd="{} :SOURce:CURRent:LEVel:IMMediate:AMPLitude {}".format(
@@ -63,7 +63,7 @@ class RigolDP8xxChannel(InstrumentChannel):
             vals=vals.Numbers(0, self.imax),
         )
         """Parameter set_current"""
-        self.state: Parameter = self.add_parameter(
+        self.state: Parameter[str, Self] = self.add_parameter(
             "state",
             label="Output enabled",
             set_cmd="{} :OUTPut:STATe {}".format(select_cmd, "{}"),
@@ -72,7 +72,7 @@ class RigolDP8xxChannel(InstrumentChannel):
             vals=vals.OnOff(),
         )
         """Parameter state"""
-        self.mode: Parameter = self.add_parameter(
+        self.mode: Parameter[str, Self] = self.add_parameter(
             "mode",
             label="Get the output mode",
             get_cmd=f"{select_cmd} :OUTPut:MODE?",
@@ -84,7 +84,7 @@ class RigolDP8xxChannel(InstrumentChannel):
             },
         )
         """Parameter mode"""
-        self.voltage: Parameter = self.add_parameter(
+        self.voltage: Parameter[float, Self] = self.add_parameter(
             "voltage",
             label="Measured voltage",
             get_cmd=f"{select_cmd} :MEASure:VOLTage:DC?",
@@ -92,7 +92,7 @@ class RigolDP8xxChannel(InstrumentChannel):
             unit="V",
         )
         """Parameter voltage"""
-        self.current: Parameter = self.add_parameter(
+        self.current: Parameter[float, Self] = self.add_parameter(
             "current",
             label="Measured current",
             get_cmd=f"{select_cmd} :MEASure:CURRent:DC?",
@@ -100,7 +100,7 @@ class RigolDP8xxChannel(InstrumentChannel):
             unit="A",
         )
         """Parameter current"""
-        self.power: Parameter = self.add_parameter(
+        self.power: Parameter[float, Self] = self.add_parameter(
             "power",
             label="Measured power",
             get_cmd=f"{select_cmd} :MEASure:POWer?",
@@ -108,7 +108,7 @@ class RigolDP8xxChannel(InstrumentChannel):
             unit="W",
         )
         """Parameter power"""
-        self.ovp_value: Parameter = self.add_parameter(
+        self.ovp_value: Parameter[float, Self] = self.add_parameter(
             "ovp_value",
             label="Over Voltage Protection value",
             set_cmd="{} :VOLTage:PROTection:LEVel {}".format(select_cmd, "{}"),
@@ -118,7 +118,7 @@ class RigolDP8xxChannel(InstrumentChannel):
             vals=vals.Numbers(self.ovp_range[0], self.ovp_range[1]),
         )
         """Parameter ovp_value"""
-        self.ovp_state: Parameter = self.add_parameter(
+        self.ovp_state: Parameter[str, Self] = self.add_parameter(
             "ovp_state",
             label="Over Voltage Protection status",
             set_cmd="{} :VOLTage:PROTection:STATe {}".format(select_cmd, "{}"),
@@ -127,7 +127,7 @@ class RigolDP8xxChannel(InstrumentChannel):
             vals=vals.OnOff(),
         )
         """Parameter ovp_state"""
-        self.ocp_value: Parameter = self.add_parameter(
+        self.ocp_value: Parameter[float, Self] = self.add_parameter(
             "ocp_value",
             label="Over Current Protection value",
             set_cmd="{} :CURRent:PROTection:LEVel {}".format(select_cmd, "{}"),
@@ -137,7 +137,7 @@ class RigolDP8xxChannel(InstrumentChannel):
             vals=vals.Numbers(self.ocp_range[0], self.ocp_range[1]),
         )
         """Parameter ocp_value"""
-        self.ocp_state: Parameter = self.add_parameter(
+        self.ocp_state: Parameter[str, Self] = self.add_parameter(
             "ocp_state",
             label="Over Current Protection status",
             set_cmd="{} :CURRent:PROTection:STATe {}".format(select_cmd, "{}"),

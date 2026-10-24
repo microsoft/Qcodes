@@ -1,6 +1,6 @@
 import ctypes
 from functools import partial
-from typing import TYPE_CHECKING, Generic
+from typing import TYPE_CHECKING, Generic, Self
 
 import qcodes.validators as vals
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs
@@ -65,7 +65,7 @@ class KeysightM960x(Instrument):
         self._dll_loc = dll_path
         self._dll = ctypes.cdll.LoadLibrary(self._dll_loc)
 
-        self.output: Parameter = self.add_parameter(
+        self.output: Parameter[bool, Self] = self.add_parameter(
             "output",
             label="Source Output Enable",
             get_cmd=partial(self._get_vi_bool, KtM960xDefs.KTM960X_ATTR_OUTPUT_ENABLED),
@@ -74,7 +74,7 @@ class KeysightM960x(Instrument):
         )
         """Parameter output"""
 
-        self.voltage_level: Parameter = self.add_parameter(
+        self.voltage_level: Parameter[float, Self] = self.add_parameter(
             "voltage_level",
             label="Source Voltage Level",
             unit="Volt",
@@ -88,7 +88,7 @@ class KeysightM960x(Instrument):
         )
         """Parameter voltage_level"""
 
-        self.current_range: Parameter = self.add_parameter(
+        self.current_range: Parameter[float, Self] = self.add_parameter(
             "current_range",
             label="Output Current Range",
             unit="Amp",
@@ -102,7 +102,7 @@ class KeysightM960x(Instrument):
         )
         """Parameter current_range"""
 
-        self.measure_current_range: Parameter = self.add_parameter(
+        self.measure_current_range: Parameter[float, Self] = self.add_parameter(
             "measure_current_range",
             label="Current Measurement Range",
             unit="Amp",
@@ -116,7 +116,7 @@ class KeysightM960x(Instrument):
         )
         """Parameter measure_current_range"""
 
-        self.measure_current_time: Parameter = self.add_parameter(
+        self.measure_current_time: Parameter[float, Self] = self.add_parameter(
             "measure_current_time",
             label="Current Measurement Integration Time",
             unit="Seconds",

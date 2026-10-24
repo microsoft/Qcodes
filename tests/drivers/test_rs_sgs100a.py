@@ -50,6 +50,25 @@ def test_status(sg: RohdeSchwarzSGS100A) -> None:
     verify_property(sg, "status", [True, False])
 
 
+def test_on_off(sg: RohdeSchwarzSGS100A) -> None:
+    sg.on()
+    assert sg.status() is True
+    sg.off()
+    assert sg.status() is False
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [("on", True), ("OFF", False), (1, True), (0, False)],
+)
+def test_status_accepts_on_off_strings_and_ints(
+    sg: RohdeSchwarzSGS100A, value: str | int, expected: bool
+) -> None:
+    # while it does not type check, on/off strings and ints are accepted
+    sg.status(value)  # pyright: ignore[reportArgumentType]
+    assert sg.status() is expected
+
+
 def test_IQ_state(sg: RohdeSchwarzSGS100A) -> None:
     verify_property(sg, "IQ_state", [True, False])
 

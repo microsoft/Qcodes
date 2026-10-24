@@ -59,3 +59,40 @@ def test_set_range_and_nplc(
     assert dmm_7510_driver.sense.range() == upper_limit
     dmm_7510_driver.sense.nplc(nplc)
     assert dmm_7510_driver.sense.nplc() == nplc
+
+
+def test_user_delay_is_float(dmm_7510_driver: Keithley7510) -> None:
+    sense = dmm_7510_driver.sense
+    sense.user_number(1)
+    assert sense.user_delay() == 0.0
+
+    sense.user_delay(0.2)
+    user_delay = sense.user_delay()
+    assert isinstance(user_delay, float)
+    assert user_delay == 0.2
+
+
+def test_average_count_is_int(dmm_7510_driver: Keithley7510) -> None:
+    sense = dmm_7510_driver.sense
+    assert sense.average_count() == 10
+
+    sense.average_count(25)
+    average_count = sense.average_count()
+    assert isinstance(average_count, int)
+    assert average_count == 25
+
+
+def test_digitize_acq_rate_is_int(dmm_7510_driver: Keithley7510) -> None:
+    acq_rate = dmm_7510_driver.digi_sense.acq_rate()
+    assert isinstance(acq_rate, int)
+    assert acq_rate == 1_000_000
+
+
+def test_digitize_count_is_int(dmm_7510_driver: Keithley7510) -> None:
+    digi_sense = dmm_7510_driver.digi_sense
+    assert digi_sense.count() == 10_000
+
+    digi_sense.count(500)
+    count = digi_sense.count()
+    assert isinstance(count, int)
+    assert count == 500

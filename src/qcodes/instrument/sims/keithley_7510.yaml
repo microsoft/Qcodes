@@ -34,6 +34,52 @@ devices:
         setter:
           q: ":SENSe:voltage:NPLCycles {}"
 
+      user_delay_1_voltage:
+        default: 0
+        getter:
+          q: ":SENSe:voltage:DELay:USER1?"
+          r: "{}"
+        setter:
+          q: ":SENSe:voltage:DELay:USER1 {}"
+        specs:
+          type: float
+
+      average_count_voltage:
+        default: 10
+        getter:
+          q: ":SENSe:voltage:AVERage:COUNt?"
+          r: "{}"
+        setter:
+          q: ":SENSe:voltage:AVERage:COUNt {}"
+        specs:
+          type: int
+
+      digitize_function:
+        default: "\"VOLT\""
+        getter:
+          q: ":DIGitize:FUNCtion?"
+          r: "{}"
+        setter:
+          q: ":DIGitize:FUNCtion {}"
+
+      digitize_sample_rate_voltage:
+        default: "1.000000E+06"
+        getter:
+          q: ":SENSe:DIGitize:voltage:SRATE?"
+          r: "{}"
+        setter:
+          q: ":SENSe:DIGitize:voltage:SRATE {}"
+
+      digitize_count:
+        default: 10000
+        getter:
+          q: "SENSe:DIGitize:COUNt?"
+          r: "{}"
+        setter:
+          q: "SENSe:DIGitize:COUNt {}"
+        specs:
+          type: int
+
 resources:
   "GPIB::1::INSTR":
     device: device 1

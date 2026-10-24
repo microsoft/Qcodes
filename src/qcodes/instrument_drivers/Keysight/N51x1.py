@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import Parameter, create_on_off_val_mapping
@@ -47,7 +47,7 @@ class KeysightN51x1(VisaInstrument):
 
         max_freq = freq_dict[frequency_option]
 
-        self.power: Parameter = self.add_parameter(
+        self.power: Parameter[float, Self] = self.add_parameter(
             "power",
             label="Power",
             get_cmd="SOUR:POW?",
@@ -58,7 +58,7 @@ class KeysightN51x1(VisaInstrument):
         )
         """Parameter power"""
 
-        self.frequency: Parameter = self.add_parameter(
+        self.frequency: Parameter[float, Self] = self.add_parameter(
             "frequency",
             label="Frequency",
             get_cmd="SOUR:FREQ?",
@@ -69,7 +69,7 @@ class KeysightN51x1(VisaInstrument):
         )
         """Parameter frequency"""
 
-        self.phase_offset: Parameter = self.add_parameter(
+        self.phase_offset: Parameter[float, Self] = self.add_parameter(
             "phase_offset",
             label="Phase Offset",
             get_cmd="SOUR:PHAS?",
@@ -79,7 +79,7 @@ class KeysightN51x1(VisaInstrument):
         )
         """Parameter phase_offset"""
 
-        self.auto_freq_ref: Parameter = self.add_parameter(
+        self.auto_freq_ref: Parameter[bool, Self] = self.add_parameter(
             "auto_freq_ref",
             get_cmd=":ROSC:SOUR:AUTO?",
             set_cmd=":ROSC:SOUR:AUTO {}",
@@ -87,7 +87,7 @@ class KeysightN51x1(VisaInstrument):
         )
         """Parameter auto_freq_ref"""
 
-        self.rf_output: Parameter = self.add_parameter(
+        self.rf_output: Parameter[bool, Self] = self.add_parameter(
             "rf_output",
             get_cmd="OUTP:STAT?",
             set_cmd="OUTP:STAT {}",
@@ -96,7 +96,7 @@ class KeysightN51x1(VisaInstrument):
         """Parameter rf_output"""
 
         if "UNW" in self._options:
-            self.pulse_modulation: Parameter = self.add_parameter(
+            self.pulse_modulation: Parameter[bool, Self] = self.add_parameter(
                 "pulse_modulation",
                 get_cmd="PULM:STAT?",
                 set_cmd="PULM:STAT {}",
@@ -104,7 +104,7 @@ class KeysightN51x1(VisaInstrument):
             )
             """Parameter pulse_modulation"""
 
-            self.pulse_modulation_source: Parameter = self.add_parameter(
+            self.pulse_modulation_source: Parameter[str, Self] = self.add_parameter(
                 "pulse_modulation_source",
                 get_cmd="PULM:SOUR?",
                 set_cmd="PULM:SOUR {}",

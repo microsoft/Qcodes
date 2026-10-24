@@ -1,0 +1,65 @@
+# SIMULATED INSTRUMENT FOR Keysight PNA N5222B
+# Only covers what is needed to create the driver and a few parameters.
+# The instrument has a single measurement "CH1_S11_1" (trace number 1).
+# Commands that are only written are modelled as properties with a setter
+# without a response, so that they do not leave a reply in the read buffer.
+spec: "1.0"
+devices:
+  N5222B:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "Keysight Technologies,N5222B,MY12345678,A.13.95.09"
+      - q: "*OPT?"
+        r: '""'
+      - q: "CALC:PAR:CAT:EXT?"
+        r: '"CH1_S11_1,S11"'
+
+    properties:
+
+      data_format:
+        default: "REAL,32"
+        setter:
+          q: "FORM {}"
+
+      byte_order:
+        default: "NORM"
+        setter:
+          q: "FORM:BORD {}"
+
+      selected_measurement_name:
+        default: "'CH1_S11_1'"
+        setter:
+          q: "CALC:PAR:SEL {}"
+
+      active_trace:
+        default: 1
+        getter:
+          q: "CALC:PAR:MNUM?"
+          r: "{}"
+        setter:
+          q: "CALC:PAR:MNUM {}"
+
+      averages:
+        default: 1
+        getter:
+          q: "SENS:AVER:COUN?"
+          r: "{}"
+        setter:
+          q: "SENS:AVER:COUN {}"
+
+      points:
+        default: 201
+        getter:
+          q: "SENS:SWE:POIN?"
+          r: "{}"
+        setter:
+          q: "SENS:SWE:POIN {}"
+
+resources:
+  GPIB::1::INSTR:
+    device: N5222B

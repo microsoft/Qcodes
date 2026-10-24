@@ -1,6 +1,15 @@
 import re
 import textwrap
-from typing import TYPE_CHECKING, Any, Generic, Literal, NotRequired, Unpack, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generic,
+    Literal,
+    NotRequired,
+    Self,
+    Unpack,
+    overload,
+)
 
 import numpy as np
 import numpy.typing as npt
@@ -351,7 +360,7 @@ class KeysightB1500IVSweeper(InstrumentChannel["KeysightB1517A"]):
         - Pcomp/output voltage > maximum current for the output range
         """
 
-        self.sweep_start: Parameter = self.add_parameter(
+        self.sweep_start: Parameter[float, Self] = self.add_parameter(
             name="sweep_start",
             set_cmd=self._set_sweep_start,
             get_cmd=self._get_sweep_start,
@@ -370,7 +379,7 @@ class KeysightB1500IVSweeper(InstrumentChannel["KeysightB1517A"]):
         start and stop must have the same polarity.
         """
 
-        self.sweep_end: Parameter = self.add_parameter(
+        self.sweep_end: Parameter[float, Self] = self.add_parameter(
             name="sweep_end",
             set_cmd=self._set_sweep_end,
             get_cmd=self._get_sweep_end,
@@ -389,7 +398,7 @@ class KeysightB1500IVSweeper(InstrumentChannel["KeysightB1517A"]):
         stop must have the same polarity.
         """
 
-        self.sweep_steps: Parameter = self.add_parameter(
+        self.sweep_steps: Parameter[int, Self] = self.add_parameter(
             name="sweep_steps",
             set_cmd=self._set_sweep_steps,
             get_cmd=self._get_sweep_steps,
@@ -406,12 +415,14 @@ class KeysightB1500IVSweeper(InstrumentChannel["KeysightB1517A"]):
         1001
         """
 
-        self.current_compliance: Parameter = self.add_parameter(
+        self.current_compliance: Parameter[float | None, Self] = self.add_parameter(
             name="current_compliance",
             set_cmd=self._set_current_compliance,
             get_cmd=self._get_current_compliance,
             unit="A",
-            vals=vals.Numbers(-40, 40),
+            # None omits Icomp (and Pcomp) from the WV command, in which case
+            # the instrument keeps the previous current compliance
+            vals=vals.MultiType(vals.Numbers(-40, 40), vals.Enum(None)),
             snapshot_get=False,
             docstring=textwrap.dedent(
                 """
@@ -439,12 +450,13 @@ class KeysightB1500IVSweeper(InstrumentChannel["KeysightB1517A"]):
         is allowed, regardless of the output range setting.
         """
 
-        self.power_compliance: Parameter = self.add_parameter(
+        self.power_compliance: Parameter[float | None, Self] = self.add_parameter(
             name="power_compliance",
             set_cmd=self._set_power_compliance,
             get_cmd=self._get_power_compliance,
             unit="W",
-            vals=vals.Numbers(0.001, 80),
+            # None omits Pcomp from the WV command, i.e. no power compliance
+            vals=vals.MultiType(vals.Numbers(0.001, 80), vals.Enum(None)),
             snapshot_get=False,
             docstring=textwrap.dedent(
                 """
@@ -513,7 +525,12 @@ class KeysightB1500IVSweeper(InstrumentChannel["KeysightB1517A"]):
         return current_compliance
 
     def _set_power_compliance(self, value: float | None) -> None:
-        if self._sweep_step_parameters["current_compliance"] is None:
+        # Pcomp can only be sent together with Icomp, but clearing it is always
+        # allowed
+        if (
+            value is not None
+            and self._sweep_step_parameters["current_compliance"] is None
+        ):
             raise ValueError(
                 "Current compliance must be set before setting power compliance"
             )
@@ -1044,7 +1061,7 @@ class KeysightB1517A(KeysightB1500Module):
         output mode (voltage or current).
         """
 
-        self.enable_filter: Parameter = self.add_parameter(
+        self.enable_filter: Parameter[bool, Self] = self.add_parameter(
             name="enable_filter",
             set_cmd=self._set_enable_filter,
             get_cmd=None,

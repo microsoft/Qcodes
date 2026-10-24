@@ -32,6 +32,23 @@ devices:
         setter:
           q: ":CURRent:LEVel {}"
 
+      impedance_range:
+        # preset value according to the E4980A/AL user's guide
+        default: "+1.00000E+02"
+        getter:
+          q: ":FUNCtion:IMPedance:RANGe?"
+          r: "{}"
+        setter:
+          q: ":FUNCtion:IMPedance:RANGe {}"
+
+      impedance_autorange:
+        default: 1
+        getter:
+          q: ":FUNCtion:IMPedance:RANGe:AUTO?"
+          r: "{}"
+        setter:
+          q: ":FUNCtion:IMPedance:RANGe:AUTO {}"
+
 resources:
   GPIB::1::INSTR:
     device: device 1

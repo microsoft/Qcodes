@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.validators import Numbers
@@ -25,7 +25,7 @@ class HP8133A(VisaInstrument):
     ):
         super().__init__(name, address, **kwargs)
 
-        self.frequency: Parameter = self.add_parameter(
+        self.frequency: Parameter[float, Self] = self.add_parameter(
             name="frequency",
             label="Frequency",
             unit="Hz",
@@ -35,7 +35,7 @@ class HP8133A(VisaInstrument):
             vals=Numbers(min_value=31.3e6, max_value=3.5e9),
         )
         """Parameter frequency"""
-        self.period: Parameter = self.add_parameter(
+        self.period: Parameter[float, Self] = self.add_parameter(
             name="period",
             label="Period",
             unit="s",
@@ -45,7 +45,7 @@ class HP8133A(VisaInstrument):
             vals=Numbers(min_value=286e-12, max_value=31.949e-9),
         )
         """Parameter period"""
-        self.phase: Parameter = self.add_parameter(
+        self.phase: Parameter[float, Self] = self.add_parameter(
             name="phase",
             label="Phase",
             unit="deg",
@@ -55,7 +55,7 @@ class HP8133A(VisaInstrument):
             vals=Numbers(min_value=-3.6e3, max_value=3.6e3),
         )
         """Parameter phase"""
-        self.duty_cycle: Parameter = self.add_parameter(
+        self.duty_cycle: Parameter[float, Self] = self.add_parameter(
             name="duty_cycle",
             label="Duty cycle",
             unit="%",
@@ -65,7 +65,7 @@ class HP8133A(VisaInstrument):
             vals=Numbers(min_value=0, max_value=100),
         )
         """Parameter duty_cycle"""
-        self.delay: Parameter = self.add_parameter(
+        self.delay: Parameter[float, Self] = self.add_parameter(
             name="delay",
             label="Delay",
             unit="s",
@@ -75,7 +75,7 @@ class HP8133A(VisaInstrument):
             vals=Numbers(min_value=-5e-9, max_value=5e-9),
         )
         """Parameter delay"""
-        self.width: Parameter = self.add_parameter(
+        self.width: Parameter[float, Self] = self.add_parameter(
             name="width",
             label="Width",
             unit="s",
@@ -85,7 +85,7 @@ class HP8133A(VisaInstrument):
             vals=Numbers(min_value=1e-12, max_value=10.5e-9),
         )
         """Parameter width"""
-        self.amplitude: Parameter = self.add_parameter(
+        self.amplitude: Parameter[float, Self] = self.add_parameter(
             name="amplitude",
             label="Amplitude",
             unit="V",
@@ -95,7 +95,7 @@ class HP8133A(VisaInstrument):
             vals=Numbers(min_value=0.1, max_value=3.3),
         )
         """Parameter amplitude"""
-        self.amplitude_offset: Parameter = self.add_parameter(
+        self.amplitude_offset: Parameter[float, Self] = self.add_parameter(
             name="amplitude_offset",
             label="Offset",
             unit="V",
@@ -105,7 +105,7 @@ class HP8133A(VisaInstrument):
             vals=Numbers(min_value=-2.95, max_value=3.95),
         )
         """Parameter amplitude_offset"""
-        self.output: Parameter = self.add_parameter(
+        self.output: Parameter[str, Self] = self.add_parameter(
             name="output",
             label="Output",
             get_cmd="OUTP?",

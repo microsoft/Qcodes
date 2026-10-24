@@ -3,7 +3,7 @@
 import logging
 import time
 from functools import partial
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 import pyvisa.constants
 from pyvisa.resources.serial import SerialInstrument
@@ -82,7 +82,7 @@ class QDevQDacChannel(InstrumentChannel["QDevQDac"]):
         )
         """Parameter vrange"""
 
-        self.i: Parameter = self.add_parameter(
+        self.i: Parameter[float, Self] = self.add_parameter(
             "i",
             label=f"Channel {channum} current",
             get_cmd=f"get {channum}",
@@ -91,7 +91,7 @@ class QDevQDacChannel(InstrumentChannel["QDevQDac"]):
         )
         """Parameter i"""
 
-        self.irange: Parameter = self.add_parameter(
+        self.irange: Parameter[int, Self] = self.add_parameter(
             "irange",
             label=f"Channel {channum} irange",
             set_cmd=f"cur {channum} {{}}",
@@ -315,13 +315,13 @@ class QDevQDac(VisaInstrument):
                     get_parser=self._num_verbose,
                 )
 
-        self.cal: Parameter = self.add_parameter(
+        self.cal: Parameter[int, Self] = self.add_parameter(
             name="cal", set_cmd="cal {}", vals=self.channel_validator
         )
         """Parameter cal"""
         # TO-DO: maybe it's too dangerous to have this settable.
         # And perhaps ON is a better verbose mode default?
-        self.verbose: Parameter = self.add_parameter(
+        self.verbose: Parameter[bool, Self] = self.add_parameter(
             name="verbose", set_cmd="ver {}", val_mapping={True: 1, False: 0}
         )
         """Parameter verbose"""

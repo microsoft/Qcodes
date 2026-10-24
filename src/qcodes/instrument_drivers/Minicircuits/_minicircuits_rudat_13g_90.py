@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs
 
@@ -23,23 +23,27 @@ class MiniCircuitsRudat13G90Base(Instrument):
         """
         super().__init__(name, **kwargs)
 
-        self.model_name: Parameter = self.add_parameter("model_name", get_cmd=":MN?")
+        self.model_name: Parameter[str, Self] = self.add_parameter(
+            "model_name", get_cmd=":MN?"
+        )
         """Parameter model_name"""
 
-        self.serial_number: Parameter = self.add_parameter(
+        self.serial_number: Parameter[str, Self] = self.add_parameter(
             "serial_number", get_cmd=":SN?"
         )
         """Parameter serial_number"""
 
-        self.firmware: Parameter = self.add_parameter("firmware", get_cmd=":FIRMWARE?")
+        self.firmware: Parameter[str, Self] = self.add_parameter(
+            "firmware", get_cmd=":FIRMWARE?"
+        )
         """Parameter firmware"""
 
-        self.attenuation: Parameter = self.add_parameter(
+        self.attenuation: Parameter[float, Self] = self.add_parameter(
             "attenuation", set_cmd=":SETATT={}", get_cmd=":ATT?", get_parser=float
         )
         """Parameter attenuation"""
 
-        self.startup_attenuation: Parameter = self.add_parameter(
+        self.startup_attenuation: Parameter[float, Self] = self.add_parameter(
             "startup_attenuation",
             set_cmd=":STARTUPATT:VALUE:{}",
             get_cmd=":STARTUPATT:VALUE?",
@@ -47,7 +51,7 @@ class MiniCircuitsRudat13G90Base(Instrument):
         )
         """Parameter startup_attenuation"""
 
-        self.hop_points: Parameter = self.add_parameter(
+        self.hop_points: Parameter[int, Self] = self.add_parameter(
             "hop_points", get_cmd="HOP:POINTS?", get_parser=int
         )
         """Parameter hop_points"""

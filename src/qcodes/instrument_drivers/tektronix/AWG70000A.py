@@ -214,7 +214,7 @@ class Tektronix70000AWGChannel(InstrumentChannel["TektronixAWG70000Base"]):
         # FGEN PARAMETERS
 
         # TODO: Setting high and low will change this parameter's value
-        self.fgen_amplitude: Parameter = self.add_parameter(
+        self.fgen_amplitude: Parameter[float, Self] = self.add_parameter(
             "fgen_amplitude",
             label=f"Channel {channel} {fg} amplitude",
             get_cmd=f"FGEN:CHANnel{channel}:AMPLitude?",
@@ -225,7 +225,7 @@ class Tektronix70000AWGChannel(InstrumentChannel["TektronixAWG70000Base"]):
         )
         """Parameter fgen_amplitude"""
 
-        self.fgen_offset: Parameter = self.add_parameter(
+        self.fgen_offset: Parameter[float, Self] = self.add_parameter(
             "fgen_offset",
             label=f"Channel {channel} {fg} offset",
             get_cmd=f"FGEN:CHANnel{channel}:OFFSet?",
@@ -236,7 +236,7 @@ class Tektronix70000AWGChannel(InstrumentChannel["TektronixAWG70000Base"]):
         )
         """Parameter fgen_offset"""
 
-        self.fgen_frequency: Parameter = self.add_parameter(
+        self.fgen_frequency: Parameter[float, Self] = self.add_parameter(
             "fgen_frequency",
             label=f"Channel {channel} {fg} frequency",
             get_cmd=f"FGEN:CHANnel{channel}:FREQuency?",
@@ -246,7 +246,7 @@ class Tektronix70000AWGChannel(InstrumentChannel["TektronixAWG70000Base"]):
         )
         """Parameter fgen_frequency"""
 
-        self.fgen_dclevel: Parameter = self.add_parameter(
+        self.fgen_dclevel: Parameter[float, Self] = self.add_parameter(
             "fgen_dclevel",
             label=f"Channel {channel} {fg} DC level",
             get_cmd=f"FGEN:CHANnel{channel}:DCLevel?",
@@ -257,7 +257,7 @@ class Tektronix70000AWGChannel(InstrumentChannel["TektronixAWG70000Base"]):
         )
         """Parameter fgen_dclevel"""
 
-        self.fgen_signalpath: Parameter = self.add_parameter(
+        self.fgen_signalpath: Parameter[str, Self] = self.add_parameter(
             "fgen_signalpath",
             label=f"Channel {channel} {fg} signal path",
             set_cmd=f"FGEN:CHANnel{channel}:PATH {{}}",
@@ -266,7 +266,7 @@ class Tektronix70000AWGChannel(InstrumentChannel["TektronixAWG70000Base"]):
         )
         """Parameter fgen_signalpath"""
 
-        self.fgen_period: Parameter = self.add_parameter(
+        self.fgen_period: Parameter[float, Self] = self.add_parameter(
             "fgen_period",
             label=f"Channel {channel} {fg} period",
             get_cmd=f"FGEN:CHANnel{channel}:PERiod?",
@@ -275,7 +275,7 @@ class Tektronix70000AWGChannel(InstrumentChannel["TektronixAWG70000Base"]):
         )
         """Parameter fgen_period"""
 
-        self.fgen_phase: Parameter = self.add_parameter(
+        self.fgen_phase: Parameter[float, Self] = self.add_parameter(
             "fgen_phase",
             label=f"Channel {channel} {fg} phase",
             get_cmd=f"FGEN:CHANnel{channel}:PHASe?",
@@ -286,7 +286,7 @@ class Tektronix70000AWGChannel(InstrumentChannel["TektronixAWG70000Base"]):
         )
         """Parameter fgen_phase"""
 
-        self.fgen_symmetry: Parameter = self.add_parameter(
+        self.fgen_symmetry: Parameter[float, Self] = self.add_parameter(
             "fgen_symmetry",
             label=f"Channel {channel} {fg} symmetry",
             set_cmd=f"FGEN:CHANnel{channel}:SYMMetry {{}}",
@@ -297,7 +297,7 @@ class Tektronix70000AWGChannel(InstrumentChannel["TektronixAWG70000Base"]):
         )
         """Parameter fgen_symmetry"""
 
-        self.fgen_type: Parameter = self.add_parameter(
+        self.fgen_type: Parameter[str, Self] = self.add_parameter(
             "fgen_type",
             label=f"Channel {channel} {fg} type",
             set_cmd=f"FGEN:CHANnel{channel}:TYPE {{}}",
@@ -323,7 +323,7 @@ class Tektronix70000AWGChannel(InstrumentChannel["TektronixAWG70000Base"]):
         # the manual claims that this command only works in AC mode
         # (OUTPut[n]:PATH is AC), but I've tested that it does what
         # one would expect in DIR mode.
-        self.awg_amplitude: Parameter = self.add_parameter(
+        self.awg_amplitude: Parameter[float, Self] = self.add_parameter(
             "awg_amplitude",
             label=f"Channel {channel} AWG peak-to-peak amplitude",
             set_cmd=f"SOURCe{channel}:VOLTage {{}}",
@@ -334,7 +334,7 @@ class Tektronix70000AWGChannel(InstrumentChannel["TektronixAWG70000Base"]):
         )
         """Parameter awg_amplitude"""
 
-        self.offset: Parameter = self.add_parameter(
+        self.offset: Parameter[float, Self] = self.add_parameter(
             "offset",
             label=f"Channel {channel} Offset for DC Output paths",
             set_cmd=f"SOURce{channel}:VOLTage:LEVel:IMMediate:OFFSet {{}}",
@@ -345,7 +345,7 @@ class Tektronix70000AWGChannel(InstrumentChannel["TektronixAWG70000Base"]):
         )
         """Parameter offset"""
 
-        self.assigned_asset: Parameter = self.add_parameter(
+        self.assigned_asset: Parameter[str, Self] = self.add_parameter(
             "assigned_asset",
             label=(f"Waveform/sequence assigned to channel {self.channel}"),
             get_cmd=f"SOURCE{self.channel}:CASSet?",
@@ -394,7 +394,7 @@ class Tektronix70000AWGChannel(InstrumentChannel["TektronixAWG70000Base"]):
         ##################################################
         # MISC.
 
-        self.resolution: Parameter = self.add_parameter(
+        self.resolution: Parameter[int, Self] = self.add_parameter(
             "resolution",
             label=f"Channel {channel} bit resolution",
             get_cmd=f"SOURce{channel}:DAC:RESolution?",
@@ -515,7 +515,7 @@ class TektronixAWG70000Base(VisaInstrument):
                 f"the right driver for your instrument?"
             )
 
-        self.current_directory: Parameter = self.add_parameter(
+        self.current_directory: Parameter[str, Self] = self.add_parameter(
             "current_directory",
             label="Current file system directory",
             set_cmd='MMEMory:CDIRectory "{}"',
@@ -524,7 +524,7 @@ class TektronixAWG70000Base(VisaInstrument):
         )
         """Parameter current_directory"""
 
-        self.mode: Parameter = self.add_parameter(
+        self.mode: Parameter[str, Self] = self.add_parameter(
             "mode",
             label="Instrument operation mode",
             set_cmd="INSTrument:MODE {}",
@@ -536,7 +536,7 @@ class TektronixAWG70000Base(VisaInstrument):
         ##################################################
         # Clock parameters
 
-        self.sample_rate: Parameter = self.add_parameter(
+        self.sample_rate: Parameter[float, Self] = self.add_parameter(
             "sample_rate",
             label="Clock sample rate",
             set_cmd="CLOCk:SRATe {}",
@@ -547,7 +547,7 @@ class TektronixAWG70000Base(VisaInstrument):
         )
         """Parameter sample_rate"""
 
-        self.clock_source: Parameter = self.add_parameter(
+        self.clock_source: Parameter[str, Self] = self.add_parameter(
             "clock_source",
             label="Clock source",
             set_cmd="CLOCk:SOURce {}",
@@ -561,7 +561,7 @@ class TektronixAWG70000Base(VisaInstrument):
         )
         """Parameter clock_source"""
 
-        self.clock_external_frequency: Parameter = self.add_parameter(
+        self.clock_external_frequency: Parameter[float, Self] = self.add_parameter(
             "clock_external_frequency",
             label="External clock frequency",
             set_cmd="CLOCk:ECLock:FREQuency {}",
@@ -572,7 +572,7 @@ class TektronixAWG70000Base(VisaInstrument):
         )
         """Parameter clock_external_frequency"""
 
-        self.run_state: Parameter = self.add_parameter(
+        self.run_state: Parameter[str, Self] = self.add_parameter(
             "run_state",
             label="Run state",
             get_cmd="AWGControl:RSTATe?",
@@ -580,7 +580,7 @@ class TektronixAWG70000Base(VisaInstrument):
         )
         """Parameter run_state"""
 
-        self.all_output_off: Parameter = self.add_parameter(
+        self.all_output_off: Parameter[bool, Self] = self.add_parameter(
             "all_output_off",
             label="All Output Off",
             get_cmd="OUTPut:OFF?",

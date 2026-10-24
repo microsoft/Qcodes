@@ -166,7 +166,7 @@ class TektronixDPOData(InstrumentChannel):
         super().__init__(parent, name, **kwargs)
         # We can choose to retrieve data from arbitrary
         # start and stop indices of the buffer.
-        self.start_index: Parameter = self.add_parameter(
+        self.start_index: Parameter[int, Self] = self.add_parameter(
             "start_index",
             get_cmd="DATa:STARt?",
             set_cmd="DATa:STARt {}",
@@ -174,12 +174,12 @@ class TektronixDPOData(InstrumentChannel):
         )
         """Parameter start_index"""
 
-        self.stop_index: Parameter = self.add_parameter(
+        self.stop_index: Parameter[int, Self] = self.add_parameter(
             "stop_index", get_cmd="DATa:STOP?", set_cmd="DATa:STOP {}", get_parser=int
         )
         """Parameter stop_index"""
 
-        self.source: Parameter = self.add_parameter(
+        self.source: Parameter[str, Self] = self.add_parameter(
             "source",
             get_cmd="DATa:SOU?",
             set_cmd="DATa:SOU {}",
@@ -187,7 +187,7 @@ class TektronixDPOData(InstrumentChannel):
         )
         """Parameter source"""
 
-        self.encoding: Parameter = self.add_parameter(
+        self.encoding: Parameter[str, Self] = self.add_parameter(
             "encoding",
             get_cmd="DATa:ENCdg?",
             set_cmd="DATa:ENCdg {}",
@@ -251,7 +251,7 @@ class TektronixDPOWaveform(InstrumentChannel["TektronixDPOChannel"]):
 
         self._identifier = identifier
 
-        self.raw_data_offset: Parameter = self.add_parameter(
+        self.raw_data_offset: Parameter[float, Self] = self.add_parameter(
             "raw_data_offset",
             get_cmd=self._get_cmd("WFMOutPRE:YOFF?"),
             get_parser=float,
@@ -271,12 +271,12 @@ class TektronixDPOWaveform(InstrumentChannel["TektronixDPOChannel"]):
         the center of this range
         """
 
-        self.x_unit: Parameter = self.add_parameter(
+        self.x_unit: Parameter[str, Self] = self.add_parameter(
             "x_unit", get_cmd=self._get_cmd("WFMOutpre:XUNit?"), get_parser=strip_quotes
         )
         """Parameter x_unit"""
 
-        self.x_increment: Parameter = self.add_parameter(
+        self.x_increment: Parameter[float, Self] = self.add_parameter(
             "x_increment",
             get_cmd=self._get_cmd("WFMOutPRE:XINCR?"),
             unit=self.x_unit(),
@@ -284,12 +284,12 @@ class TektronixDPOWaveform(InstrumentChannel["TektronixDPOChannel"]):
         )
         """Parameter x_increment"""
 
-        self.y_unit: Parameter = self.add_parameter(
+        self.y_unit: Parameter[str, Self] = self.add_parameter(
             "y_unit", get_cmd=self._get_cmd("WFMOutpre:YUNit?"), get_parser=strip_quotes
         )
         """Parameter y_unit"""
 
-        self.offset: Parameter = self.add_parameter(
+        self.offset: Parameter[float, Self] = self.add_parameter(
             "offset",
             get_cmd=self._get_cmd("WFMOutPRE:YZERO?"),
             get_parser=float,
@@ -297,7 +297,7 @@ class TektronixDPOWaveform(InstrumentChannel["TektronixDPOChannel"]):
         )
         """Parameter offset"""
 
-        self.scale: Parameter = self.add_parameter(
+        self.scale: Parameter[float, Self] = self.add_parameter(
             "scale",
             get_cmd=self._get_cmd("WFMOutPRE:YMULT?"),
             get_parser=float,
@@ -305,7 +305,7 @@ class TektronixDPOWaveform(InstrumentChannel["TektronixDPOChannel"]):
         )
         """Parameter scale"""
 
-        self.length: Parameter = self.add_parameter(
+        self.length: Parameter[int, Self] = self.add_parameter(
             "length", get_cmd=self._get_cmd("WFMOutpre:NR_Pt?"), get_parser=int
         )
         """Parameter length"""
@@ -394,7 +394,10 @@ class TektronixDPOWaveform(InstrumentChannel["TektronixDPOChannel"]):
                 container=np.ndarray,
             )
 
-        return (raw_data - self.raw_data_offset()) * self.scale() + self.offset()
+        # pyvisa returns an ndarray here, but its annotations only promise a
+        # Sequence
+        data = np.asarray(raw_data, dtype=float)
+        return (data - self.raw_data_offset()) * self.scale() + self.offset()
 
     def _get_trace_setpoints(self) -> npt.NDArray:
         """
@@ -498,7 +501,7 @@ class TektronixDPOChannel(InstrumentChannel[TektronixDPO7000xx]):
         )
         """Parameter coupling: 'AC', 'DC', 'DCREJECT', 'GND'"""
 
-        self.scale: Parameter = self.add_parameter(
+        self.scale: Parameter[float, Self] = self.add_parameter(
             "scale",
             get_cmd=f"{self._identifier}:SCA?",
             set_cmd=f"{self._identifier}:SCA {{}}",
@@ -507,7 +510,7 @@ class TektronixDPOChannel(InstrumentChannel[TektronixDPO7000xx]):
         )
         """Parameter scale V/div"""
 
-        self.offset: Parameter = self.add_parameter(
+        self.offset: Parameter[float, Self] = self.add_parameter(
             "offset",
             get_cmd=f"{self._identifier}:OFFS?",
             set_cmd=f"{self._identifier}:OFFS {{}}",
@@ -516,7 +519,7 @@ class TektronixDPOChannel(InstrumentChannel[TektronixDPO7000xx]):
         )
         """Parameter offset voltage"""
 
-        self.position: Parameter = self.add_parameter(
+        self.position: Parameter[float, Self] = self.add_parameter(
             "position",
             get_cmd=f"{self._identifier}:POS?",
             set_cmd=f"{self._identifier}:POS {{}}",
@@ -526,7 +529,7 @@ class TektronixDPOChannel(InstrumentChannel[TektronixDPO7000xx]):
         )
         """Parameter position [-8, 8] divisions"""
 
-        self.termination: Parameter = self.add_parameter(
+        self.termination: Parameter[float, Self] = self.add_parameter(
             "termination",
             get_cmd=f"{self._identifier}:TER?",
             set_cmd=f"{self._identifier}:TER {{}}",
@@ -536,7 +539,7 @@ class TektronixDPOChannel(InstrumentChannel[TektronixDPO7000xx]):
         )
         """Parameter termination"""
 
-        self.analog_to_digital_threshold: Parameter = self.add_parameter(
+        self.analog_to_digital_threshold: Parameter[float, Self] = self.add_parameter(
             "analog_to_digital_threshold",
             get_cmd=f"{self._identifier}:THRESH?",
             set_cmd=f"{self._identifier}:THRESH {{}}",
@@ -545,7 +548,7 @@ class TektronixDPOChannel(InstrumentChannel[TektronixDPO7000xx]):
         )
         """Parameter analog_to_digital_threshold"""
 
-        self.termination_voltage: Parameter = self.add_parameter(
+        self.termination_voltage: Parameter[float, Self] = self.add_parameter(
             "termination_voltage",
             get_cmd=f"{self._identifier}:VTERm:BIAS?",
             set_cmd=f"{self._identifier}:VTERm:BIAS {{}}",
@@ -597,7 +600,7 @@ class TektronixDPOHorizontal(InstrumentChannel):
     ) -> None:
         super().__init__(parent, name, **kwargs)
 
-        self.mode: Parameter = self.add_parameter(
+        self.mode: Parameter[str, Self] = self.add_parameter(
             "mode",
             get_cmd="HORizontal:MODE?",
             set_cmd="HORizontal:MODE {}",
@@ -631,20 +634,21 @@ class TektronixDPOHorizontal(InstrumentChannel):
             scale is read only.
             """
 
-        self.unit: Parameter = self.add_parameter(
+        self.unit: Parameter[str, Self] = self.add_parameter(
             "unit", get_cmd="HORizontal:MAIn:UNIts?", get_parser=strip_quotes
         )
         """Parameter unit"""
 
-        self.record_length: Parameter = self.add_parameter(
+        self.record_length: Parameter[int, Self] = self.add_parameter(
             "record_length",
             get_cmd="HORizontal:MODE:RECOrdlength?",
             set_cmd=self._set_record_length,
-            get_parser=float,
+            # the record length in samples, returned as an integer (<NR1>)
+            get_parser=int,
         )
         """Parameter record_length"""
 
-        self.sample_rate: Parameter = self.add_parameter(
+        self.sample_rate: Parameter[float, Self] = self.add_parameter(
             "sample_rate",
             get_cmd="HORizontal:MODE:SAMPLERate?",
             set_cmd="HORizontal:MODE:SAMPLERate {}",
@@ -653,7 +657,7 @@ class TektronixDPOHorizontal(InstrumentChannel):
         )
         """Parameter sample_rate"""
 
-        self.scale: Parameter = self.add_parameter(
+        self.scale: Parameter[float, Self] = self.add_parameter(
             "scale",
             get_cmd="HORizontal:MODE:SCAle?",
             set_cmd=self._set_scale,
@@ -662,7 +666,7 @@ class TektronixDPOHorizontal(InstrumentChannel):
         )
         """Parameter scale"""
 
-        self.position: Parameter = self.add_parameter(
+        self.position: Parameter[float, Self] = self.add_parameter(
             "position",
             get_cmd="HORizontal:POSition?",
             set_cmd="HORizontal:POSition {}",
@@ -686,7 +690,7 @@ class TektronixDPOHorizontal(InstrumentChannel):
         left of the trigger position.
         """
 
-        self.roll: Parameter = self.add_parameter(
+        self.roll: Parameter[str, Self] = self.add_parameter(
             "roll",
             get_cmd="HORizontal:ROLL?",
             set_cmd="HORizontal:ROLL {}",
@@ -789,7 +793,7 @@ class TektronixDPOAcquisition(InstrumentChannel):
 
         """
 
-        self.stop_after: Parameter = self.add_parameter(
+        self.stop_after: Parameter[str, Self] = self.add_parameter(
             "stop_after",
             get_cmd="ACQuire:STOPAfter?",
             set_cmd="ACQuire:STOPAfter {}",
@@ -837,7 +841,7 @@ class TektronixDPOTrigger(InstrumentChannel):
                 ["video", "i2c", "can", "spi", "communication", "serial", "rs232"]
             )
 
-        self.ready: Parameter = self.add_parameter(
+        self.ready: Parameter[str, Self] = self.add_parameter(
             "ready",
             get_cmd=f"TRIGger:{self._identifier}:READY?",
             get_parser=str.lower,
@@ -847,7 +851,7 @@ class TektronixDPOTrigger(InstrumentChannel):
         A value of 0 indicates that the trigger system is not ready to accept a trigger.
         """
 
-        self.state: Parameter = self.add_parameter(
+        self.state: Parameter[str, Self] = self.add_parameter(
             "state",
             get_cmd="TRIGger:STATe?",
             get_parser=str.lower,
@@ -873,7 +877,7 @@ class TektronixDPOTrigger(InstrumentChannel):
             information.
         """
 
-        self.type: Parameter = self.add_parameter(
+        self.type: Parameter[str, Self] = self.add_parameter(
             "type",
             get_cmd=f"TRIGger:{self._identifier}:TYPE?",
             set_cmd=self._trigger_type,
@@ -886,7 +890,7 @@ class TektronixDPOTrigger(InstrumentChannel):
         if self._identifier == "B":
             edge_couplings.append("atrigger")
 
-        self.edge_coupling: Parameter = self.add_parameter(
+        self.edge_coupling: Parameter[str, Self] = self.add_parameter(
             "edge_coupling",
             get_cmd=f"TRIGger:{self._identifier}:EDGE:COUPling?",
             set_cmd=f"TRIGger:{self._identifier}:EDGE:COUPling {{}}",
@@ -898,7 +902,7 @@ class TektronixDPOTrigger(InstrumentChannel):
         Trigger B: 'ac', 'dc', 'hfrej', 'lfrej', 'noiserej', 'atrigger'
         """
 
-        self.edge_slope: Parameter = self.add_parameter(
+        self.edge_slope: Parameter[str, Self] = self.add_parameter(
             "edge_slope",
             get_cmd=f"TRIGger:{self._identifier}:EDGE:SLOpe?",
             set_cmd=f"TRIGger:{self._identifier}:EDGE:SLOpe {{}}",
@@ -918,7 +922,7 @@ class TektronixDPOTrigger(InstrumentChannel):
 
         trigger_sources.append("AUX")
 
-        self.source: Parameter = self.add_parameter(
+        self.source: Parameter[str, Self] = self.add_parameter(
             "source",
             get_cmd=f"TRIGger:{self._identifier}:EDGE:SOUrce?",
             set_cmd=f"TRIGger:{self._identifier}:EDGE:SOUrce {{}}",
@@ -926,7 +930,7 @@ class TektronixDPOTrigger(InstrumentChannel):
         )
         """Trigger source: 'CH1', 'CH2', ..., 'CH4', 'D0', 'D1', ..., 'D15', 'AUX', 'LINE'"""
 
-        self.level: Parameter = self.add_parameter(
+        self.level: Parameter[float, Self] = self.add_parameter(
             "level",
             get_cmd=f"TRIGger:{self._identifier}:LEVel?",
             set_cmd=f"TRIGger:{self._identifier}:LEVel {{}}",
@@ -963,7 +967,7 @@ class TektronixDPOMeasurementParameter(
         if measurement_channel.type.get_latest() != self.name:
             measurement_channel.type(self.name)
 
-        measurement_channel.state(1)
+        measurement_channel.state(True)
         measurement_channel.wait_adjustment_time()
         measurement_number = measurement_channel.measurement_number
 
@@ -1071,7 +1075,7 @@ class TektronixDPOMeasurement(InstrumentChannel):
         self._measurement_number = measurement_number
         self._adjustment_time = time.perf_counter()
 
-        self.state: Parameter = self.add_parameter(
+        self.state: Parameter[bool, Self] = self.add_parameter(
             "state",
             get_cmd=f"MEASUrement:MEAS{self._measurement_number}:STATe?",
             set_cmd=f"MEASUrement:MEAS{self._measurement_number}:STATe {{}}",
@@ -1079,7 +1083,7 @@ class TektronixDPOMeasurement(InstrumentChannel):
         )
         """Parameter state"""
 
-        self.type: Parameter = self.add_parameter(
+        self.type: Parameter[str, Self] = self.add_parameter(
             "type",
             get_cmd=f"MEASUrement:MEAS{self._measurement_number}:TYPe?",
             set_cmd=self._set_measurement_type,
@@ -1142,7 +1146,7 @@ class TektronixDPOMeasurementStatistics(InstrumentChannel):
     ):
         super().__init__(parent=parent, name=name, **kwargs)
 
-        self.mode: Parameter = self.add_parameter(
+        self.mode: Parameter[str, Self] = self.add_parameter(
             "mode",
             get_cmd="MEASUrement:STATIstics:MODe?",
             set_cmd="MEASUrement:STATIstics:MODe {}",
@@ -1163,7 +1167,7 @@ class TektronixDPOMeasurementStatistics(InstrumentChannel):
         )
         """Parameter mode"""
 
-        self.time_constant: Parameter = self.add_parameter(
+        self.time_constant: Parameter[int, Self] = self.add_parameter(
             "time_constant",
             get_cmd="MEASUrement:STATIstics:WEIghting?",
             set_cmd="MEASUrement:STATIstics:WEIghting {}",
@@ -1198,7 +1202,7 @@ class TektronixDPOMeasurementImmediate(InstrumentChannel):
     ) -> None:
         super().__init__(parent, name, **kwargs)
 
-        self.gating: Parameter = self.add_parameter(
+        self.gating: Parameter[str, Self] = self.add_parameter(
             "gating",
             get_cmd="MEASUrement:GATing?",
             set_cmd="MEASUrement:GATing {}",
@@ -1211,7 +1215,7 @@ class TektronixDPOMeasurementImmediate(InstrumentChannel):
         cursor gate (CURSOR), which uses the horizontal positions of the cursors to define the gate.
         """
 
-        self.source1: Parameter = self.add_parameter(
+        self.source1: Parameter[str, Self] = self.add_parameter(
             "source1",
             get_cmd="MEASUrement:IMMed:SOUrce1?",
             set_cmd="MEASUrement:IMMed:SOUrce1 {}",
@@ -1221,7 +1225,7 @@ class TektronixDPOMeasurementImmediate(InstrumentChannel):
         CH1, CH2, CH3, CH4, MATH1, MATH2, MATH3, MATH4,
         REF1, REF2, REF3, REF4, HISTogram"""
 
-        self.source2: Parameter = self.add_parameter(
+        self.source2: Parameter[str, Self] = self.add_parameter(
             "source2",
             get_cmd="MEASUrement:IMMed:SOUrce2?",
             set_cmd="MEASUrement:IMMed:SOUrce2 {}",
@@ -1234,7 +1238,7 @@ class TektronixDPOMeasurementImmediate(InstrumentChannel):
         REF1, REF2, REF3, REF4
         """
 
-        self.type: Parameter = self.add_parameter(
+        self.type: Parameter[str, Self] = self.add_parameter(
             "type",
             get_cmd="MEASUrement:IMMed:TYPE?",
             set_cmd="MEASUrement:IMMed:TYPE {}",
@@ -1301,14 +1305,14 @@ class TektronixDPOMeasurementImmediate(InstrumentChannel):
         https://download.tek.com/manual/MSO-DPO5000-B-DPO7000-C-DPO70000-B-C-D-DX-DSA70000-B-C-D-and-MSO70000-C-DX-_2.pdf
         """
 
-        self.units: Parameter = self.add_parameter(
+        self.units: Parameter[str, Self] = self.add_parameter(
             "units",
             get_cmd="MEASUrement:IMMed:UNITS?",
             get_parser=strip_quotes,
         )
         """Units of the immediate measurement"""
 
-        self.value: Parameter = self.add_parameter(
+        self.value: Parameter[float, Self] = self.add_parameter(
             "value",
             get_cmd="MEASUrement:IMMed:VALue?",
             get_parser=float,
@@ -1342,7 +1346,7 @@ class TektronixDPOCursor(InstrumentChannel):
     ) -> None:
         super().__init__(parent, name, **kwargs)
 
-        self.function: Parameter = self.add_parameter(
+        self.function: Parameter[str, Self] = self.add_parameter(
             "function",
             get_cmd="CURSOR:FUNCtion?",
             set_cmd="CURSOR:FUNCtion {}",
@@ -1357,7 +1361,7 @@ class TektronixDPOCursor(InstrumentChannel):
         )
         """Cursor Type [OFF, HBARS, VBARS, SCREEN, WAVEFORM]"""
 
-        self.state: Parameter = self.add_parameter(
+        self.state: Parameter[str, Self] = self.add_parameter(
             "state",
             get_cmd="CURSOR:STATE?",
             set_cmd="CURSOR:STATE {}",
@@ -1366,7 +1370,7 @@ class TektronixDPOCursor(InstrumentChannel):
         )
         """Cursor state [ON, OFF]"""
 
-        self.x1: Parameter = self.add_parameter(
+        self.x1: Parameter[float, Self] = self.add_parameter(
             "x1",
             get_cmd="CURSOR:VBARS:POSITION1?",
             set_cmd="CURSOR:VBARS:POSITION1 {}",
@@ -1375,7 +1379,7 @@ class TektronixDPOCursor(InstrumentChannel):
         )
         """Cursor x1 position in seconds"""
 
-        self.x2: Parameter = self.add_parameter(
+        self.x2: Parameter[float, Self] = self.add_parameter(
             "x2",
             get_cmd="CURSOR:VBARS:POSITION2?",
             set_cmd="CURSOR:VBARS:POSITION2 {}",
@@ -1384,7 +1388,7 @@ class TektronixDPOCursor(InstrumentChannel):
         )
         """Cursor x2 position in seconds"""
 
-        self.y1: Parameter = self.add_parameter(
+        self.y1: Parameter[float, Self] = self.add_parameter(
             "y1",
             get_cmd="CURSOR:HBARS:POSITION1?",
             set_cmd="CURSOR:HBARS:POSITION1 {}",
@@ -1393,7 +1397,7 @@ class TektronixDPOCursor(InstrumentChannel):
         )
         """Cursor y1 position in Volts"""
 
-        self.y2: Parameter = self.add_parameter(
+        self.y2: Parameter[float, Self] = self.add_parameter(
             "y2",
             get_cmd="CURSOR:HBARS:POSITION2?",
             set_cmd="CURSOR:HBARS:POSITION2 {}",
