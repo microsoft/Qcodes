@@ -149,7 +149,7 @@ class VisaInstrument(Instrument):
     """
 
     def __init__(
-        self,
+        self: Self,
         name: str,
         address: str | None = None,
         timeout: float | Literal["Unset"] | None = "Unset",

@@ -66,7 +66,7 @@ class CryomagneticsModel4G(VisaInstrument):
     default_terminator = "\n"
 
     def __init__(
-        self,
+        self: Self,
         name: str,
         address: str,
         max_current_limits: dict[int, tuple[float, float]],

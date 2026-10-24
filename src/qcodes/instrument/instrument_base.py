@@ -5,7 +5,7 @@ from __future__ import annotations
 import collections.abc
 import logging
 import warnings
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Self, overload
 
 import numpy as np
 from typing_extensions import TypedDict, TypeVar, deprecated
@@ -31,8 +31,6 @@ from qcodes.utils import QCoDeSDeprecationWarning
 
 log = logging.getLogger(__name__)
 
-# Cannot convert to PEP 695: uses default= which requires PEP 696 (Python 3.13+).
-TParameter = TypeVar("TParameter", bound="ParameterBase", default="Parameter")
 TSubmodule = TypeVar(
     "TSubmodule", bound="InstrumentModule | ChannelTuple", default="InstrumentModule"
 )
@@ -247,12 +245,28 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
     def label(self, label: str) -> None:
         self._label = label
 
+    @overload
     def add_parameter(
         self,
         name: str,
-        parameter_class: type[TParameter] | None = None,
+        parameter_class: None = None,
         **kwargs: Any,
-    ) -> TParameter:
+    ) -> Parameter[Any, Self]: ...
+
+    @overload
+    def add_parameter[T: ParameterBase](
+        self,
+        name: str,
+        parameter_class: type[T],
+        **kwargs: Any,
+    ) -> T: ...
+
+    def add_parameter(
+        self,
+        name: str,
+        parameter_class: type[ParameterBase] | None = None,
+        **kwargs: Any,
+    ) -> ParameterBase:
         """
         Bind one Parameter to this instrument.
 
@@ -286,7 +300,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
 
         """
         if parameter_class is None:
-            parameter_class = cast("type[TParameter]", Parameter)
+            parameter_class = Parameter
 
         if "bind_to_instrument" not in kwargs:
             kwargs["bind_to_instrument"] = True
