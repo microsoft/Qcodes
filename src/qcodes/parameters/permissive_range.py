@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import numbers
 from typing import TYPE_CHECKING, SupportsAbs
 
 if TYPE_CHECKING:
@@ -23,6 +24,15 @@ def permissive_range(
         step: Spacing between the values.
 
     """
+    # Do integer arithmetic with Python ints. Fixed width integers such as
+    # numpy.uint16 or numpy.int8 silently wrap around on overflow, and an
+    # unsigned integer cannot represent the negative step of a descending range.
+    if isinstance(start, numbers.Integral):
+        start = int(start)
+    if isinstance(stop, numbers.Integral):
+        stop = int(stop)
+    if isinstance(step, numbers.Integral):
+        step = int(step)
     signed_step = abs(step) * (1 if stop > start else -1)
     # take off a tiny bit for rounding errors
     step_count = math.ceil((stop - start) / signed_step - 1e-10)

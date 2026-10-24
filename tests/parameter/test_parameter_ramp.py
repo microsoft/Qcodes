@@ -7,7 +7,7 @@ from hypothesis import given, settings
 from pytest import LogCaptureFixture
 
 from qcodes.parameters import Parameter
-from qcodes.validators import Numbers
+from qcodes.validators import Ints, Numbers
 
 from .conftest import MemoryParameter
 
@@ -153,6 +153,65 @@ def test_ramp_parsed_scaled(scale: int, value: float) -> None:
     p.set(value)
     np.testing.assert_allclose(p.get(), value)
     assert p.raw_value == -scale * value
+
+
+@pytest.mark.parametrize(
+    "target_type", [np.int32, np.int64, np.float32, np.float64, int, float]
+)
+def test_step_ramp_numpy_scalar_target(
+    target_type: type, caplog: LogCaptureFixture
+) -> None:
+    # regression test for https://github.com/microsoft/Qcodes/issues/7203
+    p = MemoryParameter(name="p", initial_value=0.0)
+    p.step = 1
+    with caplog.at_level(logging.WARNING):
+        p(target_type(3))
+        # set back with a different type so the cached start value is a
+        # numpy scalar
+        p(2.0)
+    assert not caplog.records
+    np.testing.assert_allclose(p.set_values, [0, 1, 2, 3, 2])
+
+
+@pytest.mark.parametrize(
+    "dtype", [np.uint8, np.uint16, np.uint32, np.uint64, np.int8, np.int16]
+)
+def test_step_ramp_numpy_integer_down(dtype: type[np.integer]) -> None:
+    # stepping down must not wrap around for (unsigned) numpy integers
+    p = MemoryParameter(name="p", initial_value=dtype(100))
+    p.step = 25
+    p(dtype(0))
+    assert p.set_values == [100, 75, 50, 25, 0]
+    p(dtype(100))
+    assert p.set_values == [100, 75, 50, 25, 0, 25, 50, 75, 100]
+
+
+def test_step_ramp_numpy_integer_overflow() -> None:
+    p = MemoryParameter(name="p", initial_value=np.int8(100))
+    p.step = 50
+    p(np.int8(-100))
+    assert p.set_values == [100, 50, 0, -50, -100]
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [np.int8, np.int16, np.int32, np.int64, np.uint8, np.uint16, np.uint32, np.uint64],
+)
+def test_step_ramp_numpy_integer_full_span(dtype: type[np.integer]) -> None:
+    # ramping between the limits of the dtype must write every intermediate
+    # step, never more than step apart, in both directions
+    low, high = int(np.iinfo(dtype).min), int(np.iinfo(dtype).max)
+    step = (high - low) // 5 + 1
+    p = MemoryParameter(
+        name="p", initial_value=dtype(low), vals=Ints(min_value=low, max_value=high)
+    )
+    p.step = step
+    p(dtype(high))
+    p(dtype(low))
+    up = [*range(low, high, step), high]
+    down = [*range(high, low, -step), low]
+    assert p.set_values == up + down[1:]
+    assert p() == low
 
 
 def test_stepping_from_invalid_starting_point() -> None:
