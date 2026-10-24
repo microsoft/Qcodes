@@ -1,5 +1,14 @@
+from typing import TYPE_CHECKING
+
+import pytest
+
 from qcodes.extensions import DriverTestCase
 from qcodes.instrument_drivers.agilent import AgilentE8257D
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from pytest_mock import MockerFixture
 
 
 class TestAgilentE8257D(DriverTestCase[AgilentE8257D]):
@@ -95,3 +104,42 @@ class TestAgilentE8257D(DriverTestCase[AgilentE8257D]):
 
         # leave the setup in the initial state
         self.instrument.phase.set(cur_val)
+
+
+@pytest.fixture(name="e8257d")
+def _make_e8257d() -> "Generator[AgilentE8257D, None, None]":
+    # the simulated instrument is closed after each test, so it is never
+    # picked up by the hardware tests in TestAgilentE8257D above
+    driver = AgilentE8257D(
+        "e8257d", address="GPIB::1::INSTR", pyvisa_sim_file="Agilent_E8257D.yaml"
+    )
+    try:
+        yield driver
+    finally:
+        driver.close()
+
+
+def test_on_off(e8257d: AgilentE8257D, mocker: "MockerFixture") -> None:
+    write_raw = mocker.spy(e8257d, "write_raw")
+
+    e8257d.on()
+    assert e8257d.output_enabled() is True
+
+    e8257d.off()
+    assert e8257d.output_enabled() is False
+
+    assert write_raw.call_args_list == [
+        mocker.call("OUTP 1"),
+        mocker.call("OUTP 0"),
+    ]
+
+
+def test_limits_from_options(e8257d: AgilentE8257D) -> None:
+    # frequency option 520 with the 1E1 step attenuator
+    e8257d.frequency.validate(20e9)
+    with pytest.raises(ValueError):
+        e8257d.frequency.validate(21e9)
+
+    e8257d.power.validate(-135)
+    with pytest.raises(ValueError):
+        e8257d.power.validate(11)
