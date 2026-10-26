@@ -497,7 +497,7 @@ name = "Under the hood:"
 # we hard code the default version to match a development version
 # due to
 # https://github.com/orgs/community/discussions/163397#discussioncomment-13888710
-default-version = "0.54.0dev+Unknown"
+default-version = "0.63.0dev+Unknown"
 
 
 [tool.versioningit.format]
