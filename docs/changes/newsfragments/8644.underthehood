@@ -1,3 +1,0 @@
-The minimum supported version of ``typing_extensions`` is now 4.12.0. Older versions do not
-apply the default of a ``TypeVar``, so subscripting a parameter with only its value type at
-runtime, e.g. ``Parameter[int]``, failed with ``TypeError: Too few arguments`` on Python 3.12.

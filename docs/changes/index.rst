@@ -3,6 +3,7 @@ Changelogs
 
 .. toctree::
    Unreleased <unreleased>
+   0.62.0 <0.62.0>
    0.61.1 <0.61.1>
    0.61.0 <0.61.0>
    0.60.0 <0.60.0>
