@@ -1,5 +1,0 @@
-Add :func:`qcodes.dataset.get_open_connections` and
-:func:`qcodes.dataset.close_all_connections` to inspect and close tracked database
-connections. Connections owned by the exiting thread are also closed automatically
-at interpreter shutdown. Test cleanup closes connections opened during each test
-without closing connections owned by broader-scoped fixtures or other threads.

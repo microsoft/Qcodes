@@ -1,6 +1,0 @@
-``AlazarTechATS.acquire`` is now annotated to accept any ``AcquisitionInterface`` as
-``acquisition_controller``, not only an ``AcquisitionController``, matching what it supports
-at runtime. ``AcquisitionController`` now passes its type parameter on to
-``AcquisitionInterface``, so the return type of ``acquire`` is inferred from the
-``post_acquire`` return type of the controller. Subclasses of ``AcquisitionController[T]``
-whose ``post_acquire`` does not return ``T`` will now be reported by static type checkers.
