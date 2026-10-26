@@ -20,7 +20,7 @@ from qcodes.parameters import (
     ParameterWithSetpoints,
     create_on_off_val_mapping,
 )
-from qcodes.validators import Arrays, Bool, Enum, Ints, Numbers
+from qcodes.validators import Arrays, Bool, Enum, Ints, Numbers, PermissiveInts
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -506,7 +506,9 @@ class KeysightPNABase(VisaInstrument):
             get_parser=int,
             set_cmd="SENS:AVER:COUN {:d}",
             unit="",
-            vals=Ints(min_value=1, max_value=65536),
+            # accept whole-number floats such as 2.0 but send them as int
+            vals=PermissiveInts(min_value=1, max_value=65536),
+            set_parser=round,
         )
         """Parameter averages"""
 
@@ -570,7 +572,9 @@ class KeysightPNABase(VisaInstrument):
             get_parser=int,
             set_cmd="SENS:SWE:POIN {}",
             unit="",
-            vals=Ints(min_value=1, max_value=100001),
+            # accept whole-number floats such as 201.0 but send them as int
+            vals=PermissiveInts(min_value=1, max_value=100001),
+            set_parser=round,
         )
         """Parameter points"""
 
@@ -675,7 +679,9 @@ class KeysightPNABase(VisaInstrument):
             get_cmd="CALC:PAR:MNUM?",
             get_parser=int,
             set_cmd="CALC:PAR:MNUM {}",
-            vals=Ints(min_value=1, max_value=24),
+            # accept whole-number floats such as 2.0 but send them as int
+            vals=PermissiveInts(min_value=1, max_value=24),
+            set_parser=round,
         )
         """Parameter active_trace"""
         # Note: Traces will be accessed through the traces property which

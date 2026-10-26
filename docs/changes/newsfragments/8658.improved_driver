@@ -34,4 +34,5 @@ Fixed the following driver bugs found along the way:
   seconds; its unit is now ``s``.
 - ``averages``, ``points`` and ``active_trace`` of the Keysight PNA (``KeysightPNABase``) drivers
   now reject non-integer values. Previously ``averages`` failed to format a float such as
-  ``2.5`` and the others sent it to the instrument.
+  ``2.5`` and the others sent it to the instrument. Whole-number floats such as ``2.0`` are
+  still accepted and sent as integers.
