@@ -1,0 +1,3 @@
+The fallback version reported by ``versioningit`` when QCoDeS is built without git metadata (for example
+from a source archive) has been updated from ``0.54.0dev+Unknown`` to ``0.63.0dev+Unknown`` to match the
+current development version.
