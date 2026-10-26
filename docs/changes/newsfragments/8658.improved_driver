@@ -25,7 +25,9 @@ Fixed the following driver bugs found along the way:
 - ``RohdeSchwarzZNBChannel.bandwidth`` failed to read a non-integer bandwidth such as 1.5 Hz,
   which the instrument supports.
 - The ``current_compliance`` and ``power_compliance`` of the ``KeysightB1517A`` sweep could not
-  be set back to ``None``, which leaves the compliance out of the ``WV`` command.
+  be set back to ``None``, which leaves the compliance out of the ``WV`` command. Since a power
+  compliance can only be sent together with a current compliance, clearing the current
+  compliance also clears the power compliance.
 - ``Keysight34980A.scan_slots`` can now be called again; it skips slots that already have a
   module instead of failing to register a duplicate submodule.
 - ``Keithley7510DigitizeSense.aperture`` was labelled in ``us`` although the instrument uses
