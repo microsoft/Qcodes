@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 import hypothesis.strategies as st
+import numpy as np
 import pytest
 from hypothesis import given
 
@@ -67,6 +68,20 @@ def test_curve_index_rejects_invalid(
 ) -> None:
     with pytest.raises((TypeError, ValueError)):
         lakeshore_325.sensor_A.curve_index(value)  # pyright: ignore[reportArgumentType]
+
+
+@pytest.mark.parametrize("value", [23.0, np.float64(23)], ids=["float", "numpy_float"])
+def test_curve_index_accepts_whole_floats(
+    lakeshore_325: LakeshoreModel325, mocker: "MockerFixture", value: float
+) -> None:
+    # whole-number floats, e.g. from numpy, are accepted and sent as int
+    sensor_a = lakeshore_325.sensor_A
+    write_raw = mocker.spy(lakeshore_325, "write_raw")
+
+    sensor_a.curve_index(value)  # pyright: ignore[reportArgumentType]
+
+    write_raw.assert_called_once_with("INCRV A, 23")
+    assert sensor_a.curve_index() == 23
 
 
 def test_sensor_curve(lakeshore_325: LakeshoreModel325) -> None:

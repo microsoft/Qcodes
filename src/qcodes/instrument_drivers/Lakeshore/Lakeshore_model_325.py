@@ -17,7 +17,7 @@ from qcodes.instrument import (
     VisaInstrumentKWArgs,
 )
 from qcodes.parameters import Group, GroupParameter, Parameter
-from qcodes.validators import Enum, Ints, Numbers
+from qcodes.validators import Enum, Numbers, PermissiveInts
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -334,7 +334,9 @@ class LakeshoreModel325Sensor(InstrumentChannel["LakeshoreModel325"]):
             get_parser=int,
             # 0 = none, 1-20 = standard curves, 21-35 = user curves. The
             # instrument falls back to 0 if the curve does not match the input.
-            vals=Ints(min_value=0, max_value=35),
+            # Whole-number floats such as 23.0 are accepted and sent as int.
+            vals=PermissiveInts(min_value=0, max_value=35),
+            set_parser=round,
         )
         """Parameter curve_index"""
 

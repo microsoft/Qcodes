@@ -15,6 +15,7 @@ Fixed the following driver bugs found along the way:
   only supported on loop 1.
 - ``LakeshoreModel325Sensor.curve_index`` now accepts ``0`` (no curve), which the instrument
   also reports when the selected curve does not match the input, and rejects non-integer values.
+  Whole-number floats such as ``23.0`` are still accepted and sent as integers.
 - The ``LakeshoreModel325`` curve list now includes user curve 35, so ``upload_curve(35, ...)``
   no longer raises an ``IndexError``.
 - ``LakeshoreModel325Curve.get_data`` now reads all 200 points of a curve instead of 199.
