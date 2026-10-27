@@ -20,7 +20,6 @@ from qcodes.instrument import (
 )
 from qcodes.math_utils import FieldVector
 from qcodes.metadatable import normalize_snapshot_update
-from qcodes.parameters import Parameter
 from qcodes.utils.types import NumberType
 from qcodes.validators import Anything, Bool, Enum, Ints, Numbers
 
@@ -28,6 +27,7 @@ if TYPE_CHECKING:
     from typing import Unpack
 
     from qcodes.metadatable import SnapshotUpdate
+    from qcodes.parameters import Parameter
 
 
 log = logging.getLogger(__name__)
@@ -897,28 +897,28 @@ class AMIModel4303D(Instrument):
         )
         """Parameter block_during_ramp"""
 
-        self.ramp_mode = Parameter(
-            name="ramp_mode",
-            instrument=self,
+        self.ramp_mode: Parameter[str, Self] = self.add_parameter(
+            "ramp_mode",
             get_cmd=None,
             set_cmd=None,
             vals=Enum("default", "simultaneous"),
             initial_value="default",
         )
+        """Parameter ramp_mode"""
 
-        self.ramping_state_check_interval = Parameter(
-            name="ramping_state_check_interval",
-            instrument=self,
+        self.ramping_state_check_interval: Parameter[float, Self] = self.add_parameter(
+            "ramping_state_check_interval",
             initial_value=0.05,
             unit="s",
             vals=Numbers(0, 10),
             set_cmd=None,
             get_cmd=None,
         )
+        """Parameter ramping_state_check_interval"""
 
-        self.vector_ramp_rate = Parameter(
-            name="vector_ramp_rate",
-            instrument=self,
+        # None until set, which is checked before a simultaneous ramp
+        self.vector_ramp_rate: Parameter[float | None, Self] = self.add_parameter(
+            "vector_ramp_rate",
             unit="T/s",
             vals=Numbers(min_value=0.0),
             set_cmd=None,
@@ -1120,7 +1120,8 @@ class AMIModel4303D(Instrument):
     def _update_individual_axes_ramp_rates(
         self, values: tuple[float, float, float]
     ) -> None:
-        if self.vector_ramp_rate() is None or self.vector_ramp_rate() == 0:
+        vector_ramp_rate = self.vector_ramp_rate()
+        if vector_ramp_rate is None or vector_ramp_rate == 0:
             raise ValueError(
                 "The value of the `vector_ramp_rate` Parameter is "
                 "currently None or 0. Set it to an appropriate "
@@ -1130,7 +1131,7 @@ class AMIModel4303D(Instrument):
         new_axes_ramp_rates = self.calculate_axes_ramp_rates_from_vector_ramp_rate(
             start=self._get_measured_field_vector(),
             setpoint=FieldVector(x=values[0], y=values[1], z=values[2]),
-            vector_ramp_rate=self.vector_ramp_rate.get(),
+            vector_ramp_rate=vector_ramp_rate,
         )
         instruments = (self._instrument_x, self._instrument_y, self._instrument_z)
         for instrument, new_axis_ramp_rate in zip(instruments, new_axes_ramp_rates):
