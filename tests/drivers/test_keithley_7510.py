@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 import hypothesis.strategies as st
+import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
 
@@ -8,6 +9,8 @@ from qcodes.instrument_drivers.Keithley import Keithley7510
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+
+    from pytest_mock import MockerFixture
 
 
 @pytest.fixture(scope="function")
@@ -80,6 +83,30 @@ def test_average_count_is_int(dmm_7510_driver: Keithley7510) -> None:
     average_count = sense.average_count()
     assert isinstance(average_count, int)
     assert average_count == 25
+
+
+@pytest.mark.parametrize("value", [25.0, np.float64(25)], ids=["float", "numpy_float"])
+def test_average_count_accepts_whole_floats(
+    dmm_7510_driver: Keithley7510, mocker: "MockerFixture", value: float
+) -> None:
+    # whole-number floats, e.g. from numpy, are accepted and sent as int
+    sense = dmm_7510_driver.sense
+    write_raw = mocker.spy(dmm_7510_driver, "write_raw")
+
+    sense.average_count(value)  # pyright: ignore[reportArgumentType]
+
+    write_raw.assert_called_once_with(":SENSe:voltage:AVERage:COUNt 25")
+    assert sense.average_count() == 25
+
+
+def test_average_count_rejects_non_integer(
+    dmm_7510_driver: Keithley7510, mocker: "MockerFixture"
+) -> None:
+    write_raw = mocker.spy(dmm_7510_driver, "write_raw")
+
+    with pytest.raises(TypeError):
+        dmm_7510_driver.sense.average_count(2.5)  # pyright: ignore[reportArgumentType]
+    write_raw.assert_not_called()
 
 
 def test_digitize_acq_rate_is_int(dmm_7510_driver: Keithley7510) -> None:

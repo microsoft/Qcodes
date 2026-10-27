@@ -11,7 +11,7 @@ from qcodes.parameters import (
     ParamRawDataType,
     create_on_off_val_mapping,
 )
-from qcodes.validators import Bool, Enum, Ints, Numbers
+from qcodes.validators import Bool, Enum, Ints, Numbers, PermissiveInts
 
 if TYPE_CHECKING:
     from typing import Unpack
@@ -114,17 +114,18 @@ class CopperMountainM5xxx(VisaInstrument):
         )
         """Turns the averaging trigger function ON/OFF."""
 
-        self.averages: Parameter = self.add_parameter(
+        self.averages: Parameter[int, Self] = self.add_parameter(
             "averages",
             label="Averages",
             get_cmd="SENS1:AVER:COUN?",
             set_cmd="SENS1:AVER:COUN {}",
             get_parser=int,
-            set_parser=int,
+            set_parser=round,
             unit="",
             docstring="Sets or reads out the averaging factor "
             "when the averaging function is turned on.",
-            vals=Numbers(min_value=1, max_value=999),
+            # accept whole-number floats such as 2.0 but send them as int
+            vals=PermissiveInts(min_value=1, max_value=999),
         )
         """Sets or reads out the averaging factor
         when the averaging function is turned on."""

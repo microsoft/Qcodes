@@ -17,7 +17,7 @@ from qcodes.parameters import (
     create_on_off_val_mapping,
     invert_val_mapping,
 )
-from qcodes.validators import Arrays, Enum, Ints, Lists, Numbers
+from qcodes.validators import Arrays, Enum, Ints, Lists, Numbers, PermissiveInts
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -589,7 +589,9 @@ class Keithley7510Sense(InstrumentChannel["Keithley7510"]):
             get_cmd=f":SENSe:{self._proper_function}:AVERage:COUNt?",
             set_cmd=f":SENSe:{self._proper_function}:AVERage:COUNt {{}}",
             get_parser=int,
-            vals=Numbers(1, 100),
+            # accept whole-number floats such as 10.0 but send them as int
+            vals=PermissiveInts(1, 100),
+            set_parser=round,
             docstring="Set the number of measurements that are averaged when "
             "filtering is enabled.",
         )

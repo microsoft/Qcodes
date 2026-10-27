@@ -76,7 +76,9 @@ class RigolDG1062Burst(InstrumentChannel["RigolDG1062"]):
             set_cmd=f":SOUR{channel}:BURS:NCYC {{}}",
             # returned in scientific notation, e.g. 1.000000E+01
             get_parser=lambda s: int(float(s)),
-            vals=vals.Numbers(min_value=1, max_value=500000),
+            # accept whole-number floats such as 10.0 but send them as int
+            vals=vals.PermissiveInts(min_value=1, max_value=500000),
+            set_parser=round,
         )
         """Parameter ncycles"""
 

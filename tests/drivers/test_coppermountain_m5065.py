@@ -1,11 +1,14 @@
 from typing import TYPE_CHECKING
 
+import numpy as np
 import pytest
 
 from qcodes.instrument_drivers.CopperMountain import CopperMountainM5065
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+
+    from pytest_mock import MockerFixture
 
 
 class DummyM5065:
@@ -64,6 +67,30 @@ def test_if_bandwidth_param(vna: CopperMountainM5065) -> None:
 def test_averages_param(vna: CopperMountainM5065) -> None:
     vna.averages(2)
     assert vna.averages() == 2
+
+
+@pytest.mark.parametrize("value", [3.0, np.float64(3)], ids=["float", "numpy_float"])
+def test_averages_accepts_whole_floats(
+    vna: CopperMountainM5065, mocker: "MockerFixture", value: float
+) -> None:
+    # whole-number floats, e.g. from numpy, are accepted and sent as int
+    write_raw = mocker.spy(vna, "write_raw")
+
+    vna.averages(value)  # pyright: ignore[reportArgumentType]
+
+    write_raw.assert_called_once_with("SENS1:AVER:COUN 3")
+    assert vna.averages() == 3
+
+
+def test_averages_rejects_non_integer(
+    vna: CopperMountainM5065, mocker: "MockerFixture"
+) -> None:
+    # previously 2.5 was silently truncated to 2 by set_parser=int
+    write_raw = mocker.spy(vna, "write_raw")
+
+    with pytest.raises(TypeError):
+        vna.averages(2.5)  # pyright: ignore[reportArgumentType]
+    write_raw.assert_not_called()
 
 
 def test_averages_enabled_enables_averages_trigger(
