@@ -279,7 +279,9 @@ class LakeshoreModel372Channel(LakeshoreBaseSensorChannel):
             docstring="Specifies a value for the autoscanning dwell time.",
             unit="s",
             get_parser=int,
-            vals=vals.Numbers(1, 200),
+            # accept whole-number floats such as 10.0 but send them as int
+            vals=vals.PermissiveInts(1, 200),
+            set_parser=round,
             parameter_class=GroupParameter,
         )
         """Specifies a value for the autoscanning dwell time."""
@@ -289,7 +291,8 @@ class LakeshoreModel372Channel(LakeshoreBaseSensorChannel):
             docstring="Specifies a value for the change pause time",
             unit="s",
             get_parser=int,
-            vals=vals.Numbers(3, 200),
+            vals=vals.PermissiveInts(3, 200),
+            set_parser=round,
             parameter_class=GroupParameter,
         )
         """Specifies a value for the change pause time"""
@@ -301,7 +304,8 @@ class LakeshoreModel372Channel(LakeshoreBaseSensorChannel):
             "curves. Do not change this parameter "
             "unless you know what you are doing.",
             get_parser=int,
-            vals=vals.Numbers(0, 59),
+            vals=vals.PermissiveInts(0, 59),
+            set_parser=round,
             parameter_class=GroupParameter,
         )
         """
@@ -363,7 +367,8 @@ class LakeshoreModel372Channel(LakeshoreBaseSensorChannel):
             "current excitation); refer to the manual "
             "for the table of ranges",
             get_parser=int,
-            vals=vals.Numbers(1, 22),
+            vals=vals.PermissiveInts(1, 22),
+            set_parser=round,
             parameter_class=GroupParameter,
         )
         """

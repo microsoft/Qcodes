@@ -6,6 +6,7 @@ import warnings
 from contextlib import suppress
 from typing import TYPE_CHECKING, Any, Literal
 
+import numpy as np
 import pytest
 
 from qcodes.instrument import Instrument, InstrumentBase
@@ -18,6 +19,8 @@ from qcodes.utils import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
+
+    from pytest_mock import MockerFixture
 
 log = logging.getLogger(__name__)
 
@@ -294,6 +297,47 @@ def test_setpoint(lakeshore_372: LakeshoreModel372Mock) -> None:
     for h in (ls.warmup_heater, ls.analog_heater, ls.sample_heater):
         h.setpoint(setpoint)
         assert h.setpoint() == setpoint
+
+
+# the simulated channel 1 starts with INSET 1,100,3,0,1 and INTYPE 0,1,0,5,0,1
+@pytest.mark.parametrize(
+    ("name", "command"),
+    [
+        ("dwell", "INSET 1, 1, 10, 3, 0, 1"),
+        ("pause", "INSET 1, 1, 100, 10, 0, 1"),
+        ("curve_number", "INSET 1, 1, 100, 3, 10, 1"),
+        ("excitation_range_number", "INTYPE 1, 0, 10, 0, 5, 0, 1"),
+    ],
+)
+@pytest.mark.parametrize("value", [10.0, np.float64(10)], ids=["float", "numpy_float"])
+def test_channel_integer_settings_accept_whole_floats(
+    lakeshore_372: LakeshoreModel372Mock,
+    mocker: MockerFixture,
+    name: str,
+    command: str,
+    value: float,
+) -> None:
+    # whole-number floats, e.g. from numpy, are accepted and sent as int
+    param = lakeshore_372.channels[0].parameters[name]
+    write_raw = mocker.patch.object(lakeshore_372, "write_raw")
+
+    param(value)
+
+    write_raw.assert_called_once_with(command)
+
+
+@pytest.mark.parametrize(
+    "name", ["dwell", "pause", "curve_number", "excitation_range_number"]
+)
+def test_channel_integer_settings_reject_non_integer(
+    lakeshore_372: LakeshoreModel372Mock, mocker: MockerFixture, name: str
+) -> None:
+    param = lakeshore_372.channels[0].parameters[name]
+    write_raw = mocker.patch.object(lakeshore_372, "write_raw")
+
+    with pytest.raises(TypeError):
+        param(10.5)
+    write_raw.assert_not_called()
 
 
 def test_select_range_limits(lakeshore_372: LakeshoreModel372Mock) -> None:
