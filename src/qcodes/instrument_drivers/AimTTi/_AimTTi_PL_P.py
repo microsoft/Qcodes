@@ -86,7 +86,6 @@ class AimTTiChannel(InstrumentChannel):
             get_parser=int,
             set_cmd=self._set_current_range,
             label="Current Range",
-            unit="A",
             # accept whole-number floats such as 2.0 but send them as int
             vals=vals.PermissiveInts(1, 2),
             set_parser=round,
