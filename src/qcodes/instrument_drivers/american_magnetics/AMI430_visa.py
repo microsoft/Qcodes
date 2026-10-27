@@ -834,10 +834,14 @@ class AMIModel4303D(Instrument):
             "spherical",
             get_cmd=partial(self._get_setpoints, ("r", "theta", "phi")),
             set_cmd=partial(self._set_setpoints, ("r", "theta", "phi")),
-            unit="tuple?",
             vals=Anything(),
+            docstring="Set point in spherical coordinates (field, theta, phi), "
+            "with the field in T and the angles in degrees.",
         )
-        """Parameter spherical"""
+        """
+        Set point in spherical coordinates (field, theta, phi), with the field in T
+        and the angles in degrees.
+        """
 
         self.phi: Parameter[float, Self] = self.add_parameter(
             "phi",
@@ -870,10 +874,14 @@ class AMIModel4303D(Instrument):
             "cylindrical",
             get_cmd=partial(self._get_setpoints, ("rho", "phi", "z")),
             set_cmd=partial(self._set_setpoints, ("rho", "phi", "z")),
-            unit="tuple?",
             vals=Anything(),
+            docstring="Set point in cylindrical coordinates (rho, phi, z), "
+            "with rho and z in T and phi in degrees.",
         )
-        """Parameter cylindrical"""
+        """
+        Set point in cylindrical coordinates (rho, phi, z), with rho and z in T and
+        phi in degrees.
+        """
 
         self.rho: Parameter[float, Self] = self.add_parameter(
             "rho",
