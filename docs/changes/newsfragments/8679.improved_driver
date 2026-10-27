@@ -2,4 +2,6 @@ The field parameters of ``AMIModel4303D``, such as ``cartesian``, ``x`` and ``fi
 now use the field units of the individual magnets, tesla or kilogauss, instead of always
 reporting tesla. A warning is logged if the magnets use different field units. Also removed the
 placeholder unit ``tuple?`` of ``AMIModel4303D.spherical`` and ``cylindrical``, whose components
-have different units, which are now described in their docstrings.
+have different units, which are now described in their docstrings. Closing an
+``AMIModel4303D`` now detaches its magnets, so ``set_field``, ``zero`` and changing the units of
+a magnet that is still open no longer fail.

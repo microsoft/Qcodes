@@ -259,7 +259,7 @@ class AMIModel430(VisaInstrument):
         self.field_units: Parameter[str, Self] = self.add_parameter(
             "field_units",
             get_cmd="FIELD:UNITS?",
-            set_cmd=(lambda units: self._update_units(field_units=units)),
+            set_cmd=self._set_field_units,
             val_mapping={"kilogauss": 0, "tesla": 1},
         )
         """Parameter field_units"""
@@ -551,6 +551,31 @@ class AMIModel430(VisaInstrument):
         # Return new coil constant
         return new_coil_constant
 
+    def _set_field_units(self, field_units: int) -> None:
+        """
+        Set the field units, 0 for kilogauss and 1 for tesla.
+
+        Raises:
+            RuntimeError: if the units would change while this magnet is part
+                of a 3D driver, whose set point and field limit are in the
+                field units of the magnets.
+
+        """
+        if self._parent_instrument is not None:
+            assert self.field_units.inverse_val_mapping is not None
+            new_units = self._SHORT_UNITS[
+                self.field_units.inverse_val_mapping[field_units]
+            ]
+            if new_units != self.field.unit:
+                raise RuntimeError(
+                    f"Cannot change the field units of {self.name} while it is "
+                    f"part of the 3D driver {self._parent_instrument.name}, "
+                    "since its set point and field limit are in the field "
+                    "units of the magnets. Set the field units before "
+                    "creating the 3D driver, or close the 3D driver first."
+                )
+        self._update_units(field_units=field_units)
+
     def _update_units(
         self, ramp_rate_units: int | None = None, field_units: int | None = None
     ) -> None:
@@ -582,10 +607,6 @@ class AMIModel430(VisaInstrument):
         self.ramp_rate.unit = f"{field_units_short}/{ramp_rate_units_short}"
         self.current_ramp_limit.unit = f"A/{ramp_rate_units_short}"
         self.field_ramp_limit.unit = f"{field_units_short}/{ramp_rate_units_short}"
-
-        # the field parameters of a 3D driver are in the units of the magnets
-        if self._parent_instrument is not None:
-            self._parent_instrument._update_field_units()
 
         # And update scaling factors
         # Note: we don't update field_ramp_limit scale as it redirects
@@ -668,7 +689,9 @@ class AMIModel4303D(Instrument):
             field_limit: a number for maximum allows magnetic field or an
                 iterable of callable field limit functions that define
                 region(s) of allowed values in 3D magnetic field space, in
-                the field units of the magnets (tesla or kilogauss)
+                the field units of the magnets (tesla or kilogauss). The
+                field units of the magnets cannot be changed while they are
+                part of this driver.
             **kwargs: kwargs are forwarded to base class.
 
         """
@@ -962,7 +985,8 @@ class AMIModel4303D(Instrument):
         """
         Use the field units of the magnets (tesla or kilogauss) as the unit of
         the field parameters, since their values are in the units of the
-        magnets. This is called whenever the field units of a magnet change.
+        magnets. The field units of the magnets cannot be changed while they
+        are part of this driver.
         """
         instruments = (self._instrument_x, self._instrument_y, self._instrument_z)
         units = {instrument.field.unit for instrument in instruments}

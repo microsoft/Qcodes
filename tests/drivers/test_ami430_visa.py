@@ -683,35 +683,54 @@ def _field_units(driver: AMIModel4303D) -> set[str]:
     return {parameter.unit for parameter in field_parameters}
 
 
-def test_field_units_follow_magnets(
-    current_driver: AMIModel4303D,
-    magnet_axes_instances: tuple[AMIModel430, AMIModel430, AMIModel430],
-) -> None:
+def test_field_units_follow_magnets(current_driver: AMIModel4303D) -> None:
     # the field values are in the field units of the magnets, which can be
     # tesla or kilogauss
     assert _field_units(current_driver) == {"T"}
-
-    for magnet in magnet_axes_instances:
-        magnet.field_units("kilogauss")
-
-    assert _field_units(current_driver) == {"kG"}
     # the angles are not affected
     assert current_driver.phi.unit == "deg"
     assert current_driver.theta_measured.unit == "deg"
 
 
-def test_mixed_field_units_warn(
+def test_cannot_change_field_units_of_magnet_in_3d_driver(
     current_driver: AMIModel4303D,
+    magnet_axes_instances: tuple[AMIModel430, AMIModel430, AMIModel430],
+    mocker: MockerFixture,
+) -> None:
+    # the set point and field limit of the 3D driver are in the field units of
+    # the magnets, so changing them would silently change their meaning
+    mag_x, _, _ = magnet_axes_instances
+    current_driver.cartesian((0.1, 0.2, 0.3))
+    write = mocker.spy(mag_x, "write")
+
+    with pytest.raises(RuntimeError, match="Cannot change the field units of x"):
+        mag_x.field_units("kilogauss")
+
+    write.assert_not_called()
+    assert mag_x.field.unit == "T"
+    assert _field_units(current_driver) == {"T"}
+    assert np.allclose(current_driver.cartesian(), [0.1, 0.2, 0.3])
+
+    # setting the units that are already used is fine
+    mag_x.field_units("tesla")
+
+
+def test_mixed_field_units_warn(
     magnet_axes_instances: tuple[AMIModel430, AMIModel430, AMIModel430],
     caplog: LogCaptureFixture,
 ) -> None:
     mag_x, _, _ = magnet_axes_instances
+    mag_x.field_units("kilogauss")
 
     with caplog.at_level(logging.WARNING):
-        mag_x.field_units("kilogauss")
-
-    assert _field_units(current_driver) == {""}
-    assert "The magnets use different field units (x: kG, y: T, z: T)" in caplog.text
+        driver = AMIModel4303D("AMI430_3D", *magnet_axes_instances, field_limit)
+    try:
+        assert _field_units(driver) == {""}
+        assert (
+            "The magnets use different field units (x: kG, y: T, z: T)" in caplog.text
+        )
+    finally:
+        driver.close()
 
 
 def test_field_units_at_init_follow_magnets(
@@ -2024,13 +2043,20 @@ def test_calculate_vector_ramp_rate_from_duration() -> None:
     assert np.isclose(rate, 0.5)  # distance=5.0, 5.0/10.0 = 0.5
 
 
-def test_raise_if_not_same_field_units(current_driver: AMIModel4303D) -> None:
+def test_raise_if_not_same_field_units(
+    magnet_axes_instances: tuple[AMIModel430, AMIModel430, AMIModel430],
+) -> None:
     """Test that mismatched field_units raises ValueError."""
-    current_driver._instrument_x.field_units("kilogauss")
-    with pytest.raises(ValueError, match="field_units"):
-        current_driver._raise_if_not_same_field_and_ramp_rate_units()
-    # Clean up
-    current_driver._instrument_x.field_units("tesla")
+    # the field units cannot change while the magnets are part of a 3D
+    # driver, so set up the mismatch first
+    mag_x, _, _ = magnet_axes_instances
+    mag_x.field_units("kilogauss")
+    driver = AMIModel4303D("AMI430_3D", *magnet_axes_instances, field_limit)
+    try:
+        with pytest.raises(ValueError, match="field_units"):
+            driver._raise_if_not_same_field_and_ramp_rate_units()
+    finally:
+        driver.close()
 
 
 def test_raise_if_not_same_ramp_rate_units(current_driver: AMIModel4303D) -> None:
