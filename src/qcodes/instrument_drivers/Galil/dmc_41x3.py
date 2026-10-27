@@ -456,25 +456,25 @@ class GalilDMC4133Motor(InstrumentChannel["GalilDMC4133Controller"]):
         """
         self.write(f"OE{self._axis}={val}")
 
-    def _set_deceleration(self, val: str) -> None:
+    def _set_deceleration(self, val: int) -> None:
         """
         Set deceleration for the motor's motion
         """
         self.write(f"DC{self._axis}={val}")
 
-    def _set_acceleration(self, val: str) -> None:
+    def _set_acceleration(self, val: int) -> None:
         """
         Set acceleration for the motor's motion
         """
         self.write(f"AC{self._axis}={val}")
 
-    def _set_speed(self, val: str) -> None:
+    def _set_speed(self, val: int) -> None:
         """
         Sets speed for motor's motion
         """
         self.write(f"SP{self._axis}={val}")
 
-    def _set_relative_position(self, val: str) -> None:
+    def _set_relative_position(self, val: int) -> None:
         """
         Sets relative position
         """
@@ -577,7 +577,7 @@ class GalilDMC4133Controller(GalilMotionController):
         )
         """sets number of decimals in the format of the position"""
 
-        self.absolute_position: Parameter = self.add_parameter(
+        self.absolute_position: Parameter[dict[str, int], Self] = self.add_parameter(
             "absolute_position",
             get_cmd=self._get_absolute_position,
             set_cmd=None,
