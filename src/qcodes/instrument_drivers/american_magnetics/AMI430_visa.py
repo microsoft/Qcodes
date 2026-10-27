@@ -759,10 +759,12 @@ class AMIModel4303D(Instrument):
         )
 
         # Get-only parameters that return a measured value
-        self.cartesian_measured: Parameter[list[float], Self] = self.add_parameter(
-            "cartesian_measured",
-            get_cmd=partial(self._get_measured, "x", "y", "z"),
-            unit="T",
+        self.cartesian_measured: Parameter[tuple[float, float, float], Self] = (
+            self.add_parameter(
+                "cartesian_measured",
+                get_cmd=partial(self._get_measured, ("x", "y", "z")),
+                unit="T",
+            )
         )
         """Parameter cartesian_measured"""
 
@@ -781,10 +783,12 @@ class AMIModel4303D(Instrument):
         )
         """Parameter z_measured"""
 
-        self.spherical_measured: Parameter[list[float], Self] = self.add_parameter(
-            "spherical_measured",
-            get_cmd=partial(self._get_measured, "r", "theta", "phi"),
-            unit="T",
+        self.spherical_measured: Parameter[tuple[float, float, float], Self] = (
+            self.add_parameter(
+                "spherical_measured",
+                get_cmd=partial(self._get_measured, ("r", "theta", "phi")),
+                unit="T",
+            )
         )
         """Parameter spherical_measured"""
 
@@ -809,10 +813,12 @@ class AMIModel4303D(Instrument):
         )
         """Parameter field_measured"""
 
-        self.cylindrical_measured: Parameter[list[float], Self] = self.add_parameter(
-            "cylindrical_measured",
-            get_cmd=partial(self._get_measured, "rho", "phi", "z"),
-            unit="T",
+        self.cylindrical_measured: Parameter[tuple[float, float, float], Self] = (
+            self.add_parameter(
+                "cylindrical_measured",
+                get_cmd=partial(self._get_measured, ("rho", "phi", "z")),
+                unit="T",
+            )
         )
         """Parameter cylindrical_measured"""
 
@@ -824,7 +830,7 @@ class AMIModel4303D(Instrument):
         """Parameter rho_measured"""
 
         # Get and set parameters for the set points of the coordinates. These
-        # return a list but can be set from any sequence or a numpy array.
+        # return a tuple but can be set from any sequence or a numpy array.
         self.cartesian: Parameter[Sequence[float] | npt.NDArray, Self] = (
             self.add_parameter(
                 "cartesian",
@@ -1377,16 +1383,18 @@ class AMIModel4303D(Instrument):
     def _get_measured_component(self, name: str) -> float:
         return self._get_measured_field_vector().get_components(name)[0]
 
-    def _get_measured(self, *names: str) -> list[float]:
+    def _get_measured(self, names: tuple[str, str, str]) -> tuple[float, float, float]:
         # get_components returns the values in the order of the names
-        return self._get_measured_field_vector().get_components(*names)
+        a, b, c = self._get_measured_field_vector().get_components(*names)
+        return a, b, c
 
     def _get_setpoint(self, name: str) -> float:
         return self._set_point.get_components(name)[0]
 
-    def _get_setpoints(self, names: Sequence[str]) -> list[float]:
+    def _get_setpoints(self, names: tuple[str, str, str]) -> tuple[float, float, float]:
         # get_components returns the values in the order of the names
-        return self._set_point.get_components(*names)
+        a, b, c = self._set_point.get_components(*names)
+        return a, b, c
 
     def _set_setpoint(self, name: str, value: float) -> None:
         self._set_setpoints((name,), (value,))

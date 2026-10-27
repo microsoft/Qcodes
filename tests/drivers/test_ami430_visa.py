@@ -636,7 +636,7 @@ _VECTORS = ("cartesian", "spherical", "cylindrical")
 
 def test_component_and_vector_types(current_driver: AMIModel4303D) -> None:
     # single components are plain floats while the coordinate vectors are
-    # lists of three floats, both for the set points and the measured values
+    # tuples of three floats, both for the set points and the measured values
     current_driver.cartesian((0.1, 0.2, 0.3))
 
     for name in _SINGLE_COMPONENTS:
@@ -647,7 +647,7 @@ def test_component_and_vector_types(current_driver: AMIModel4303D) -> None:
     for name in _VECTORS:
         for parameter_name in (name, f"{name}_measured"):
             value = current_driver.parameters[parameter_name]()
-            assert isinstance(value, list), parameter_name
+            assert isinstance(value, tuple), parameter_name
             assert len(value) == 3
             assert all(isinstance(component, float) for component in value)
 
