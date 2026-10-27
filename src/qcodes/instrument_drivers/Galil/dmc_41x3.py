@@ -38,7 +38,7 @@ _REPLY_RETRIES = 10
 
 def _parse_motion_flag(response: str) -> int | None:
     """
-    Parse the reply to ``MG _BG<axis>``.
+    Parse an integer reply to an ``MG`` query, e.g. ``MG _BG<axis>``.
 
     Under rapid polling gclib can return the bare ``:`` prompt or an empty
     string instead of a number. Return ``None`` for such transient or
@@ -446,9 +446,7 @@ class GalilDMC4133Motor(InstrumentChannel["GalilDMC4133Controller"]):
         Gets the status if motor is automatically set to turn off when error
         occurs.
         """
-        val = self.ask(f"MG _OE{self._axis}")
-
-        return int(val[0])
+        return self._ask_int(f"MG _OE{self._axis}")
 
     def _set_off_when_error_occurs(self, val: int) -> None:
         """
@@ -490,11 +488,27 @@ class GalilDMC4133Motor(InstrumentChannel["GalilDMC4133Controller"]):
         """
         Tells motor on off status
         """
-        val = self.ask(f"MG _MO{self._axis}")
-        if val[0] == "1":
+        if self._ask_int(f"MG _MO{self._axis}") == 1:
             return "off"
         else:
             return "on"
+
+    def _ask_int(self, cmd: str) -> int:
+        """
+        Ask for an integer reply, e.g. to ``MG _MO<axis>``.
+
+        Transient empty replies of the controller are retried.
+        """
+        response = ""
+        for _ in range(_REPLY_RETRIES):
+            response = self.ask(cmd)
+            value = _parse_motion_flag(response)
+            if value is not None:
+                return value
+            time.sleep(_POLL_INTERVAL_S)
+        raise RuntimeError(
+            f"Could not parse reply to {cmd!r} after retries: {response!r}"
+        )
 
     def servo_here(self) -> None:
         """

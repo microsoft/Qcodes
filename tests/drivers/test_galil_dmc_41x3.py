@@ -113,3 +113,27 @@ def test_absolute_position_is_read_only(galil: "GalilDMC4133Controller") -> None
     assert not galil.absolute_position.settable
     with pytest.raises(NotImplementedError):
         galil.absolute_position({"A": 1, "B": 2, "C": 3})
+
+
+@pytest.mark.parametrize(("reply", "expected"), [("1.0000", "off"), ("0.0000", "on")])
+def test_on_off_status(
+    galil: "GalilDMC4133Controller", reply: str, expected: str
+) -> None:
+    # gclib can return an empty reply or the bare ':' prompt under rapid
+    # polling, which is retried
+    _connection(galil).replies["MG _MOA"] = ["", ":", reply]
+
+    assert galil.motor_a.on_off_status() == expected
+
+
+def test_off_when_error_occurs(galil: "GalilDMC4133Controller") -> None:
+    _connection(galil).replies["MG _OEA"] = [":", "3.0000"]
+
+    assert galil.motor_a.off_when_error_occurs() == "enable for all"
+
+
+def test_unparsable_reply_raises(galil: "GalilDMC4133Controller") -> None:
+    _connection(galil).replies["MG _MOA"] = [":"] * 20
+
+    with pytest.raises(RuntimeError, match="Could not parse reply to 'MG _MOA'"):
+        galil.motor_a.on_off_status()
