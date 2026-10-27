@@ -80,14 +80,16 @@ class AimTTiChannel(InstrumentChannel):
         )
         """Parameter curr"""
 
-        self.curr_range: Parameter = self.add_parameter(
+        self.curr_range: Parameter[int, Self] = self.add_parameter(
             "curr_range",
             get_cmd=f"IRANGE{channel}?",
             get_parser=int,
             set_cmd=self._set_current_range,
             label="Current Range",
             unit="A",
-            vals=vals.Numbers(1, 2),
+            # accept whole-number floats such as 2.0 but send them as int
+            vals=vals.PermissiveInts(1, 2),
+            set_parser=round,
             docstring="Set the current range of the output. "
             "Here, the integer 1 is for the Low range, "
             "and integer 2 is for the High range.",
