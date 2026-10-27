@@ -189,7 +189,7 @@ matplotlib-inline==0.2.2
     # via
     #   ipykernel
     #   ipython
-mistune==3.3.4
+mistune==3.4.0
     # via nbconvert
 mypy==2.4.0
     # via qcodes (pyproject.toml)
