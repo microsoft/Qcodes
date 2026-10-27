@@ -120,13 +120,15 @@ class RigolDS1074Z(VisaInstrument):
             "waveform_npoints",
             get_cmd="WAV:POIN?",
             set_cmd="WAV:POIN {}",
-            unit="s",
             get_parser=int,
         )
         """Parameter waveform_npoints"""
 
         self.waveform_yorigin: Parameter[float, Self] = self.add_parameter(
-            "waveform_yorigin", get_cmd="WAVeform:YORigin?", unit="V", get_parser=float
+            # vertical offset in digitizing levels
+            "waveform_yorigin",
+            get_cmd="WAVeform:YORigin?",
+            get_parser=float,
         )
         """Parameter waveform_yorigin"""
 
@@ -139,7 +141,10 @@ class RigolDS1074Z(VisaInstrument):
         """Parameter waveform_yincrem"""
 
         self.waveform_yref: Parameter[float, Self] = self.add_parameter(
-            "waveform_yref", get_cmd=":WAVeform:YREFerence?", unit="V", get_parser=float
+            # vertical reference position in digitizing levels
+            "waveform_yref",
+            get_cmd=":WAVeform:YREFerence?",
+            get_parser=float,
         )
         """Parameter waveform_yref"""
 
@@ -147,7 +152,6 @@ class RigolDS1074Z(VisaInstrument):
             "trigger_mode",
             get_cmd=":TRIGger:MODE?",
             set_cmd=":TRIGger:MODE {}",
-            unit="V",
             vals=Enum("edge", "pulse", "video", "pattern"),
             get_parser=str,
         )
