@@ -1,11 +1,14 @@
 from typing import TYPE_CHECKING
 
+import numpy as np
 import pytest
 
 from qcodes.instrument_drivers.rigol import RigolDG1062
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+
+    from pytest_mock import MockerFixture
 
 
 @pytest.fixture(scope="function", name="dg1062")
@@ -27,6 +30,30 @@ def test_burst_ncycles_is_int(dg1062: RigolDG1062) -> None:
     ncycles = burst.ncycles()
     assert isinstance(ncycles, int)
     assert ncycles == 10
+
+
+@pytest.mark.parametrize("value", [10.0, np.float64(10)], ids=["float", "numpy_float"])
+def test_burst_ncycles_accepts_whole_floats(
+    dg1062: RigolDG1062, mocker: "MockerFixture", value: float
+) -> None:
+    # whole-number floats, e.g. from numpy, are accepted and sent as int
+    burst = dg1062.ch1.burst
+    write_raw = mocker.spy(dg1062, "write_raw")
+
+    burst.ncycles(value)  # pyright: ignore[reportArgumentType]
+
+    write_raw.assert_called_once_with(":SOUR1:BURS:NCYC 10")
+    assert burst.ncycles() == 10
+
+
+def test_burst_ncycles_rejects_non_integer(
+    dg1062: RigolDG1062, mocker: "MockerFixture"
+) -> None:
+    write_raw = mocker.spy(dg1062, "write_raw")
+
+    with pytest.raises(TypeError):
+        dg1062.ch1.burst.ncycles(2.5)  # pyright: ignore[reportArgumentType]
+    write_raw.assert_not_called()
 
 
 def test_burst_phase_is_float(dg1062: RigolDG1062) -> None:
