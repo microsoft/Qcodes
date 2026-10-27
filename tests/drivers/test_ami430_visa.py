@@ -630,6 +630,41 @@ def test_measured(
     assert np.allclose(cylindrical, [cylindrical_rho, spherical_phi, cartesian_z])
 
 
+_SINGLE_COMPONENTS = ("x", "y", "z", "field", "theta", "phi", "rho")
+_VECTORS = ("cartesian", "spherical", "cylindrical")
+
+
+def test_component_and_vector_types(current_driver: AMIModel4303D) -> None:
+    # single components are plain floats while the coordinate vectors are
+    # lists of three floats, both for the set points and the measured values
+    current_driver.cartesian((0.1, 0.2, 0.3))
+
+    for name in _SINGLE_COMPONENTS:
+        for parameter_name in (name, f"{name}_measured"):
+            value = current_driver.parameters[parameter_name]()
+            assert isinstance(value, float), parameter_name
+
+    for name in _VECTORS:
+        for parameter_name in (name, f"{name}_measured"):
+            value = current_driver.parameters[parameter_name]()
+            assert isinstance(value, list), parameter_name
+            assert len(value) == 3
+            assert all(isinstance(component, float) for component in value)
+
+
+def test_set_single_component(current_driver: AMIModel4303D) -> None:
+    current_driver.cartesian((0.1, 0.2, 0.3))
+
+    current_driver.x(0.4)
+    current_driver.field(0.5)
+
+    assert np.isclose(current_driver.field(), 0.5)
+    assert np.isclose(current_driver.field_measured(), 0.5)
+    # setting the field magnitude keeps the direction of (0.4, 0.2, 0.3)
+    direction = np.array([0.4, 0.2, 0.3]) / np.linalg.norm([0.4, 0.2, 0.3])
+    assert np.allclose(current_driver.cartesian(), 0.5 * direction)
+
+
 def get_ramp_down_order(messages: list[str]) -> list[str]:
     order = []
 

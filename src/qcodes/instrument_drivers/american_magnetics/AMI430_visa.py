@@ -729,59 +729,67 @@ class AMIModel4303D(Instrument):
         )
 
         # Get-only parameters that return a measured value
-        self.cartesian_measured: Parameter = self.add_parameter(
+        self.cartesian_measured: Parameter[list[float], Self] = self.add_parameter(
             "cartesian_measured",
             get_cmd=partial(self._get_measured, "x", "y", "z"),
             unit="T",
         )
         """Parameter cartesian_measured"""
 
-        self.x_measured: Parameter = self.add_parameter(
-            "x_measured", get_cmd=partial(self._get_measured, "x"), unit="T"
+        self.x_measured: Parameter[float, Self] = self.add_parameter(
+            "x_measured", get_cmd=partial(self._get_measured_component, "x"), unit="T"
         )
         """Parameter x_measured"""
 
-        self.y_measured: Parameter = self.add_parameter(
-            "y_measured", get_cmd=partial(self._get_measured, "y"), unit="T"
+        self.y_measured: Parameter[float, Self] = self.add_parameter(
+            "y_measured", get_cmd=partial(self._get_measured_component, "y"), unit="T"
         )
         """Parameter y_measured"""
 
-        self.z_measured: Parameter = self.add_parameter(
-            "z_measured", get_cmd=partial(self._get_measured, "z"), unit="T"
+        self.z_measured: Parameter[float, Self] = self.add_parameter(
+            "z_measured", get_cmd=partial(self._get_measured_component, "z"), unit="T"
         )
         """Parameter z_measured"""
 
-        self.spherical_measured: Parameter = self.add_parameter(
+        self.spherical_measured: Parameter[list[float], Self] = self.add_parameter(
             "spherical_measured",
             get_cmd=partial(self._get_measured, "r", "theta", "phi"),
             unit="T",
         )
         """Parameter spherical_measured"""
 
-        self.phi_measured: Parameter = self.add_parameter(
-            "phi_measured", get_cmd=partial(self._get_measured, "phi"), unit="deg"
+        self.phi_measured: Parameter[float, Self] = self.add_parameter(
+            "phi_measured",
+            get_cmd=partial(self._get_measured_component, "phi"),
+            unit="deg",
         )
         """Parameter phi_measured"""
 
-        self.theta_measured: Parameter = self.add_parameter(
-            "theta_measured", get_cmd=partial(self._get_measured, "theta"), unit="deg"
+        self.theta_measured: Parameter[float, Self] = self.add_parameter(
+            "theta_measured",
+            get_cmd=partial(self._get_measured_component, "theta"),
+            unit="deg",
         )
         """Parameter theta_measured"""
 
-        self.field_measured: Parameter = self.add_parameter(
-            "field_measured", get_cmd=partial(self._get_measured, "r"), unit="T"
+        self.field_measured: Parameter[float, Self] = self.add_parameter(
+            "field_measured",
+            get_cmd=partial(self._get_measured_component, "r"),
+            unit="T",
         )
         """Parameter field_measured"""
 
-        self.cylindrical_measured: Parameter = self.add_parameter(
+        self.cylindrical_measured: Parameter[list[float], Self] = self.add_parameter(
             "cylindrical_measured",
             get_cmd=partial(self._get_measured, "rho", "phi", "z"),
             unit="T",
         )
         """Parameter cylindrical_measured"""
 
-        self.rho_measured: Parameter = self.add_parameter(
-            "rho_measured", get_cmd=partial(self._get_measured, "rho"), unit="T"
+        self.rho_measured: Parameter[float, Self] = self.add_parameter(
+            "rho_measured",
+            get_cmd=partial(self._get_measured_component, "rho"),
+            unit="T",
         )
         """Parameter rho_measured"""
 
@@ -795,28 +803,28 @@ class AMIModel4303D(Instrument):
         )
         """Parameter cartesian"""
 
-        self.x: Parameter = self.add_parameter(
+        self.x: Parameter[float, Self] = self.add_parameter(
             "x",
-            get_cmd=partial(self._get_setpoints, ("x",)),
-            set_cmd=partial(self._set_setpoints, ("x",)),
+            get_cmd=partial(self._get_setpoint, "x"),
+            set_cmd=partial(self._set_setpoint, "x"),
             unit="T",
             vals=Numbers(),
         )
         """Parameter x"""
 
-        self.y: Parameter = self.add_parameter(
+        self.y: Parameter[float, Self] = self.add_parameter(
             "y",
-            get_cmd=partial(self._get_setpoints, ("y",)),
-            set_cmd=partial(self._set_setpoints, ("y",)),
+            get_cmd=partial(self._get_setpoint, "y"),
+            set_cmd=partial(self._set_setpoint, "y"),
             unit="T",
             vals=Numbers(),
         )
         """Parameter y"""
 
-        self.z: Parameter = self.add_parameter(
+        self.z: Parameter[float, Self] = self.add_parameter(
             "z",
-            get_cmd=partial(self._get_setpoints, ("z",)),
-            set_cmd=partial(self._set_setpoints, ("z",)),
+            get_cmd=partial(self._get_setpoint, "z"),
+            set_cmd=partial(self._set_setpoint, "z"),
             unit="T",
             vals=Numbers(),
         )
@@ -831,28 +839,28 @@ class AMIModel4303D(Instrument):
         )
         """Parameter spherical"""
 
-        self.phi: Parameter = self.add_parameter(
+        self.phi: Parameter[float, Self] = self.add_parameter(
             "phi",
-            get_cmd=partial(self._get_setpoints, ("phi",)),
-            set_cmd=partial(self._set_setpoints, ("phi",)),
+            get_cmd=partial(self._get_setpoint, "phi"),
+            set_cmd=partial(self._set_setpoint, "phi"),
             unit="deg",
             vals=Numbers(),
         )
         """Parameter phi"""
 
-        self.theta: Parameter = self.add_parameter(
+        self.theta: Parameter[float, Self] = self.add_parameter(
             "theta",
-            get_cmd=partial(self._get_setpoints, ("theta",)),
-            set_cmd=partial(self._set_setpoints, ("theta",)),
+            get_cmd=partial(self._get_setpoint, "theta"),
+            set_cmd=partial(self._set_setpoint, "theta"),
             unit="deg",
             vals=Numbers(),
         )
         """Parameter theta"""
 
-        self.field: Parameter = self.add_parameter(
+        self.field: Parameter[float, Self] = self.add_parameter(
             "field",
-            get_cmd=partial(self._get_setpoints, ("r",)),
-            set_cmd=partial(self._set_setpoints, ("r",)),
+            get_cmd=partial(self._get_setpoint, "r"),
+            set_cmd=partial(self._set_setpoint, "r"),
             unit="T",
             vals=Numbers(),
         )
@@ -867,10 +875,10 @@ class AMIModel4303D(Instrument):
         )
         """Parameter cylindrical"""
 
-        self.rho: Parameter = self.add_parameter(
+        self.rho: Parameter[float, Self] = self.add_parameter(
             "rho",
-            get_cmd=partial(self._get_setpoints, ("rho",)),
-            set_cmd=partial(self._set_setpoints, ("rho",)),
+            get_cmd=partial(self._get_setpoint, "rho"),
+            set_cmd=partial(self._set_setpoint, "rho"),
             unit="T",
             vals=Numbers(),
         )
@@ -1247,11 +1255,11 @@ class AMIModel4303D(Instrument):
         performed by this 3D driver.
         """
         if instrument is self._instrument_x:
-            self._set_setpoints(("x",), (float(value),))
+            self._set_setpoint("x", float(value))
         elif instrument is self._instrument_y:
-            self._set_setpoints(("y",), (float(value),))
+            self._set_setpoint("y", float(value))
         elif instrument is self._instrument_z:
-            self._set_setpoints(("z",), (float(value),))
+            self._set_setpoint("z", float(value))
         else:
             msg = "This magnet doesnt belong to its specified parent {}"
             raise NameError(msg.format(self))
@@ -1263,42 +1271,22 @@ class AMIModel4303D(Instrument):
             z=self._instrument_z.field(),
         )
 
-    def _get_measured(self, *names: str) -> float | list[float]:
-        measured_field_vector = self._get_measured_field_vector()
+    def _get_measured_component(self, name: str) -> float:
+        return self._get_measured_field_vector().get_components(name)[0]
 
-        measured_values = measured_field_vector.get_components(*names)
+    def _get_measured(self, *names: str) -> list[float]:
+        # get_components returns the values in the order of the names
+        return self._get_measured_field_vector().get_components(*names)
 
-        # Convert angles from radians to degrees
-        d = dict(zip(names, measured_values))
+    def _get_setpoint(self, name: str) -> float:
+        return self._set_point.get_components(name)[0]
 
-        # Do not do "return list(d.values())", because then there is
-        # no guaranty that the order in which the values are returned
-        # is the same as the original intention
-        value_list = [d[name] for name in names]
+    def _get_setpoints(self, names: Sequence[str]) -> list[float]:
+        # get_components returns the values in the order of the names
+        return self._set_point.get_components(*names)
 
-        if len(names) == 1:
-            return_value: list[float] | float = value_list[0]
-        else:
-            return_value = value_list
-
-        return return_value
-
-    def _get_setpoints(self, names: Sequence[str]) -> float | list[float]:
-        measured_values = self._set_point.get_components(*names)
-
-        # Convert angles from radians to degrees
-        d = dict(zip(names, measured_values))
-        value_list = [d[name] for name in names]
-        # Do not do "return list(d.values())", because then there is
-        # no guarantee that the order in which the values are returned
-        # is the same as the original intention
-
-        if len(names) == 1:
-            return_value: list[float] | float = value_list[0]
-        else:
-            return_value = value_list
-
-        return return_value
+    def _set_setpoint(self, name: str, value: float) -> None:
+        self._set_setpoints((name,), (value,))
 
     def _set_setpoints(self, names: Sequence[str], values: Sequence[float]) -> None:
         kwargs = dict(zip(names, np.atleast_1d(values)))
