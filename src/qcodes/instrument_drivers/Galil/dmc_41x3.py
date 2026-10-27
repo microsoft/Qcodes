@@ -580,7 +580,7 @@ class GalilDMC4133Controller(GalilMotionController):
         self.absolute_position: Parameter[dict[str, int], Self] = self.add_parameter(
             "absolute_position",
             get_cmd=self._get_absolute_position,
-            set_cmd=None,
+            set_cmd=False,
             unit="quadrature counts",
             docstring="gets absolute position of the motors from the set origin",
         )
