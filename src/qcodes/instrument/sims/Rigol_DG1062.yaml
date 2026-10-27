@@ -1,0 +1,54 @@
+spec: "1.0"
+devices:
+  device 1:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "Rigol Technologies,DG1062Z,DG1ZA000000001,00.01.14"
+      - q: ":SOUR1:APPL?"
+        r: "\"SQU,1.000000E+03,5.000000E+00,0.000000E+00,0.000000E+00\""
+      - q: ":SOUR2:APPL?"
+        r: "\"SIN,1.000000E+03,5.000000E+00,0.000000E+00,0.000000E+00\""
+
+    # query responses use the scientific notation documented in the
+    # DG1000Z Programming Guide
+    properties:
+      burst_ncycles_1:
+        default: "1.000000E+00"
+        getter:
+          q: ":SOUR1:BURS:NCYC?"
+          r: "{}"
+        setter:
+          q: ":SOUR1:BURS:NCYC {}"
+
+      burst_phase_1:
+        default: "0.000000E+00"
+        getter:
+          q: ":SOUR1:BURS:PHAS?"
+          r: "{}"
+        setter:
+          q: ":SOUR1:BURS:PHAS {}"
+
+      burst_time_delay_1:
+        default: "0.000000E+00"
+        getter:
+          q: ":SOUR1:BURS:TDEL?"
+          r: "{}"
+        setter:
+          q: ":SOUR1:BURS:TDEL {}"
+
+      square_duty_cycle_1:
+        default: "5.000000E+01"
+        getter:
+          q: ":SOUR1:FUNC:SQU:DCYC?"
+          r: "{}"
+        setter:
+          q: ":SOUR1:FUNC:SQU:DCYC {}"
+
+resources:
+  GPIB::1::INSTR:
+    device: device 1

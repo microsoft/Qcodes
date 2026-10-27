@@ -65,3 +65,12 @@ def test_raise_error_for_curr_level_query_when_signal_set_as_voltage(
 def test_current_level_set_method(driver: E4980A.KeysightE4980A) -> None:
     driver.current_level(0.003)
     assert driver.current_level() == 0.003
+
+
+def test_range_is_float(driver: E4980A.KeysightE4980A) -> None:
+    impedance_range = driver.range()
+    assert isinstance(impedance_range, float)
+    assert impedance_range == 100.0
+
+    driver.range(1000)
+    assert driver.range() == 1000.0

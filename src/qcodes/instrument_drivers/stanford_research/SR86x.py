@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -103,7 +103,7 @@ class SR86xBuffer(InstrumentChannel["SR86x"]):
     ) -> None:
         super().__init__(parent, name, **kwargs)
 
-        self.capture_length_in_kb: Parameter = self.add_parameter(
+        self.capture_length_in_kb: Parameter[int, Self] = self.add_parameter(
             "capture_length_in_kb",
             label="get/set capture length",
             get_cmd="CAPTURELEN?",
@@ -119,7 +119,7 @@ class SR86xBuffer(InstrumentChannel["SR86x"]):
         # Maximum amount of kB that can be read per single CAPTUREGET command
         self.max_size_per_reading_in_kb = 64
 
-        self.capture_config: Parameter = self.add_parameter(
+        self.capture_config: Parameter[str, Self] = self.add_parameter(
             "capture_config",
             label="capture configuration",
             get_cmd="CAPTURECFG?",
@@ -128,7 +128,7 @@ class SR86xBuffer(InstrumentChannel["SR86x"]):
         )
         """Parameter capture_config configures which parameters we want to capture"""
 
-        self.capture_rate_max: Parameter = self.add_parameter(
+        self.capture_rate_max: Parameter[float, Self] = self.add_parameter(
             "capture_rate_max",
             label="capture rate maximum",
             get_cmd="CAPTURERATEMAX?",
@@ -136,7 +136,7 @@ class SR86xBuffer(InstrumentChannel["SR86x"]):
         )
         """Parameter capture_rate_max"""
 
-        self.capture_rate: Parameter = self.add_parameter(
+        self.capture_rate: Parameter[float, Self] = self.add_parameter(
             "capture_rate",
             label="capture rate raw",
             get_cmd="CAPTURERATE?",
@@ -149,12 +149,12 @@ class SR86xBuffer(InstrumentChannel["SR86x"]):
         max_rate = self.capture_rate_max()
         self.available_frequencies = [max_rate / 2**i for i in range(20)]
 
-        self.capture_status: Parameter = self.add_parameter(
+        self.capture_status: Parameter[str, Self] = self.add_parameter(
             "capture_status", label="capture status", get_cmd="CAPTURESTAT?"
         )
         """Parameter capture_status: Are we capturing at the moment?"""
 
-        self.count_capture_bytes: Parameter = self.add_parameter(
+        self.count_capture_bytes: Parameter[int, Self] = self.add_parameter(
             "count_capture_bytes",
             label="captured bytes",
             get_cmd="CAPTUREBYTES?",
@@ -165,10 +165,11 @@ class SR86xBuffer(InstrumentChannel["SR86x"]):
         )
         """Number of bytes captured so far in the buffer. Can be used to track live progress."""
 
-        self.count_capture_kilobytes: Parameter = self.add_parameter(
+        self.count_capture_kilobytes: Parameter[int, Self] = self.add_parameter(
             "count_capture_kilobytes",
             label="captured kilobytes",
             get_cmd="CAPTUREPROG?",
+            get_parser=int,
             unit="kB",
             docstring="Number of kilobytes captured so far in the buffer, "
             "rounded-up to 2 kilobyte chunks. Capture must be "
@@ -661,7 +662,7 @@ class SR86xDataChannel(InstrumentChannel["SR86x"]):
         self._cmd_id_name = cmd_id_name
         self._color = color
 
-        self.assigned_parameter: Parameter = self.add_parameter(
+        self.assigned_parameter: Parameter[str, Self] = self.add_parameter(
             "assigned_parameter",
             label=f"Data channel {cmd_id} parameter",
             docstring=f"Allows to set and get the "
@@ -802,7 +803,7 @@ class SR86x(VisaInstrument):
         super().__init__(name, address, **kwargs)
         self._max_frequency = max_frequency
         # Reference commands
-        self.frequency: Parameter = self.add_parameter(
+        self.frequency: Parameter[float, Self] = self.add_parameter(
             name="frequency",
             label="Frequency",
             unit="Hz",
@@ -812,7 +813,7 @@ class SR86x(VisaInstrument):
             vals=Numbers(min_value=1e-3, max_value=self._max_frequency),
         )
         """Parameter frequency"""
-        self.sine_outdc: Parameter = self.add_parameter(
+        self.sine_outdc: Parameter[float, Self] = self.add_parameter(
             name="sine_outdc",
             label="Sine out dc level",
             unit="V",
@@ -822,7 +823,7 @@ class SR86x(VisaInstrument):
             vals=Numbers(min_value=-5, max_value=5),
         )
         """Parameter sine_outdc"""
-        self.amplitude: Parameter = self.add_parameter(
+        self.amplitude: Parameter[float, Self] = self.add_parameter(
             name="amplitude",
             label="Amplitude",
             unit="V",
@@ -832,7 +833,7 @@ class SR86x(VisaInstrument):
             vals=Numbers(min_value=0, max_value=2),
         )
         """Parameter amplitude"""
-        self.harmonic: Parameter = self.add_parameter(
+        self.harmonic: Parameter[int, Self] = self.add_parameter(
             name="harmonic",
             label="Harmonic",
             get_cmd="HARM?",
@@ -841,7 +842,7 @@ class SR86x(VisaInstrument):
             vals=Ints(min_value=1, max_value=99),
         )
         """Parameter harmonic"""
-        self.phase: Parameter = self.add_parameter(
+        self.phase: Parameter[float, Self] = self.add_parameter(
             name="phase",
             label="Phase",
             unit="deg",
@@ -852,7 +853,7 @@ class SR86x(VisaInstrument):
         )
         """Parameter phase"""
         # Signal commands
-        self.sensitivity: Parameter = self.add_parameter(
+        self.sensitivity: Parameter[float, Self] = self.add_parameter(
             name="sensitivity",
             label="Sensitivity",
             get_cmd="SCAL?",
@@ -861,7 +862,7 @@ class SR86x(VisaInstrument):
             set_parser=self._set_sensitivity,
         )
         """Parameter sensitivity"""
-        self.filter_slope: Parameter = self.add_parameter(
+        self.filter_slope: Parameter[int, Self] = self.add_parameter(
             name="filter_slope",
             label="Filter slope",
             unit="dB/oct",
@@ -870,7 +871,7 @@ class SR86x(VisaInstrument):
             val_mapping={6: 0, 12: 1, 18: 2, 24: 3},
         )
         """Parameter filter_slope"""
-        self.sync_filter: Parameter = self.add_parameter(
+        self.sync_filter: Parameter[str, Self] = self.add_parameter(
             name="sync_filter",
             label="Sync filter",
             get_cmd="SYNC?",
@@ -878,7 +879,7 @@ class SR86x(VisaInstrument):
             val_mapping={"OFF": 0, "ON": 1},
         )
         """Parameter sync_filter"""
-        self.noise_bandwidth: Parameter = self.add_parameter(
+        self.noise_bandwidth: Parameter[float, Self] = self.add_parameter(
             name="noise_bandwidth",
             label="Noise bandwidth",
             unit="Hz",
@@ -886,14 +887,14 @@ class SR86x(VisaInstrument):
             get_parser=float,
         )
         """Parameter noise_bandwidth"""
-        self.signal_strength: Parameter = self.add_parameter(
+        self.signal_strength: Parameter[int, Self] = self.add_parameter(
             name="signal_strength",
             label="Signal strength indicator",
             get_cmd="ILVL?",
             get_parser=int,
         )
         """Parameter signal_strength"""
-        self.signal_input: Parameter = self.add_parameter(
+        self.signal_input: Parameter[str, Self] = self.add_parameter(
             name="signal_input",
             label="Signal input",
             get_cmd="IVMD?",
@@ -912,7 +913,7 @@ class SR86x(VisaInstrument):
             val_mapping={1: 0, 300e-3: 1, 100e-3: 2, 30e-3: 3, 10e-3: 4},
         )
         """Parameter input_range"""
-        self.input_config: Parameter = self.add_parameter(
+        self.input_config: Parameter[str, Self] = self.add_parameter(
             name="input_config",
             label="Input configuration",
             get_cmd="ISRC?",
@@ -920,7 +921,7 @@ class SR86x(VisaInstrument):
             val_mapping={"a": 0, "a-b": 1},
         )
         """Parameter input_config"""
-        self.input_shield: Parameter = self.add_parameter(
+        self.input_shield: Parameter[str, Self] = self.add_parameter(
             name="input_shield",
             label="Input shield",
             get_cmd="IGND?",
@@ -928,7 +929,7 @@ class SR86x(VisaInstrument):
             val_mapping={"float": 0, "ground": 1},
         )
         """Parameter input_shield"""
-        self.input_gain: Parameter = self.add_parameter(
+        self.input_gain: Parameter[float, Self] = self.add_parameter(
             name="input_gain",
             label="Input gain",
             unit="ohm",
@@ -937,7 +938,7 @@ class SR86x(VisaInstrument):
             val_mapping={1e6: 0, 100e6: 1},
         )
         """Parameter input_gain"""
-        self.adv_filter: Parameter = self.add_parameter(
+        self.adv_filter: Parameter[str, Self] = self.add_parameter(
             name="adv_filter",
             label="Advanced filter",
             get_cmd="ADVFILT?",
@@ -945,7 +946,7 @@ class SR86x(VisaInstrument):
             val_mapping={"OFF": 0, "ON": 1},
         )
         """Parameter adv_filter"""
-        self.input_coupling: Parameter = self.add_parameter(
+        self.input_coupling: Parameter[str, Self] = self.add_parameter(
             name="input_coupling",
             label="Input coupling",
             get_cmd="ICPL?",
@@ -986,7 +987,7 @@ class SR86x(VisaInstrument):
         )
         """Parameter time_constant"""
 
-        self.external_reference_trigger: Parameter = self.add_parameter(
+        self.external_reference_trigger: Parameter[str, Self] = self.add_parameter(
             name="external_reference_trigger",
             label="External reference trigger mode",
             get_cmd="RTRG?",
@@ -1004,7 +1005,7 @@ class SR86x(VisaInstrument):
         )
         """The triggering mode for synchronization of the internal reference signal with the externally provided one"""
 
-        self.reference_source: Parameter = self.add_parameter(
+        self.reference_source: Parameter[str, Self] = self.add_parameter(
             name="reference_source",
             label="Reference source",
             get_cmd="RSRC?",
@@ -1041,7 +1042,7 @@ class SR86x(VisaInstrument):
 
         # Data transfer
         # first 4 parameters from a list of 16 below.
-        self.X: Parameter = self.add_parameter(
+        self.X: Parameter[float, Self] = self.add_parameter(
             "X",
             label="In-phase Magnitude",
             get_cmd="OUTP? 0",
@@ -1049,7 +1050,7 @@ class SR86x(VisaInstrument):
             unit="V",
         )
         """Parameter X"""
-        self.Y: Parameter = self.add_parameter(
+        self.Y: Parameter[float, Self] = self.add_parameter(
             "Y",
             label="Out-phase Magnitude",
             get_cmd="OUTP? 1",
@@ -1057,11 +1058,11 @@ class SR86x(VisaInstrument):
             unit="V",
         )
         """Parameter Y"""
-        self.R: Parameter = self.add_parameter(
+        self.R: Parameter[float, Self] = self.add_parameter(
             "R", label="Magnitude", get_cmd="OUTP? 2", get_parser=float, unit="V"
         )
         """Parameter R"""
-        self.P: Parameter = self.add_parameter(
+        self.P: Parameter[float, Self] = self.add_parameter(
             "P", label="Phase", get_cmd="OUTP? 3", get_parser=float, unit="deg"
         )
         """Parameter P"""
@@ -1076,7 +1077,7 @@ class SR86x(VisaInstrument):
         """Parameter complex_voltage"""
 
         # CH1/CH2 Output Commands
-        self.X_offset: Parameter = self.add_parameter(
+        self.X_offset: Parameter[float, Self] = self.add_parameter(
             "X_offset",
             label="X offset ",
             unit="%",
@@ -1086,7 +1087,7 @@ class SR86x(VisaInstrument):
             vals=Numbers(min_value=-999.99, max_value=999.99),
         )
         """Parameter X_offset"""
-        self.Y_offset: Parameter = self.add_parameter(
+        self.Y_offset: Parameter[float, Self] = self.add_parameter(
             "Y_offset",
             label="Y offset",
             unit="%",
@@ -1096,7 +1097,7 @@ class SR86x(VisaInstrument):
             vals=Numbers(min_value=-999.99, max_value=999.99),
         )
         """Parameter Y_offset"""
-        self.R_offset: Parameter = self.add_parameter(
+        self.R_offset: Parameter[float, Self] = self.add_parameter(
             "R_offset",
             label="R offset",
             unit="%",
@@ -1106,7 +1107,7 @@ class SR86x(VisaInstrument):
             vals=Numbers(min_value=-999.99, max_value=999.99),
         )
         """Parameter R_offset"""
-        self.X_expand: Parameter = self.add_parameter(
+        self.X_expand: Parameter[str, Self] = self.add_parameter(
             "X_expand",
             label="X expand multiplier",
             get_cmd="CEXP? 0",
@@ -1114,7 +1115,7 @@ class SR86x(VisaInstrument):
             val_mapping={"OFF": "0", "X10": "1", "X100": "2"},
         )
         """Parameter X_expand"""
-        self.Y_expand: Parameter = self.add_parameter(
+        self.Y_expand: Parameter[str, Self] = self.add_parameter(
             "Y_expand",
             label="Y expand multiplier",
             get_cmd="CEXP? 1",
@@ -1122,7 +1123,7 @@ class SR86x(VisaInstrument):
             val_mapping={"OFF": 0, "X10": 1, "X100": 2},
         )
         """Parameter Y_expand"""
-        self.R_expand: Parameter = self.add_parameter(
+        self.R_expand: Parameter[str, Self] = self.add_parameter(
             "R_expand",
             label="R expand multiplier",
             get_cmd="CEXP? 2",

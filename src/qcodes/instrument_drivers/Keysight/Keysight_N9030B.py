@@ -200,7 +200,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel["KeysightN9030B"]):
             docstring="Preamplifier selection",
         )
         """Preamplifier selection"""
-        self.preamp_enabled: Parameter = self.add_parameter(
+        self.preamp_enabled: Parameter[bool, Self] = self.add_parameter(
             name="preamp_enabled",
             get_cmd=":SENS:POW:GAIN:STAT?",
             set_cmd=":SENS:POW:GAIN:STAT {}",
@@ -210,7 +210,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel["KeysightN9030B"]):
         """Preamplifier state"""
 
         # Resolution parameters
-        self.res_bw: Parameter = self.add_parameter(
+        self.res_bw: Parameter[float, Self] = self.add_parameter(
             name="res_bw",
             unit="Hz",
             get_cmd=":SENS:BAND:RES?",
@@ -220,7 +220,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel["KeysightN9030B"]):
             docstring="Resolution Bandwidth",
         )
         """Resolution Bandwidth"""
-        self.video_bw: Parameter = self.add_parameter(
+        self.video_bw: Parameter[float, Self] = self.add_parameter(
             name="video_bw",
             unit="Hz",
             get_cmd=":SENS:BAND:VID?",
@@ -230,7 +230,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel["KeysightN9030B"]):
             docstring="Video Filter Bandwidth",
         )
         """Video Filter Bandwidth"""
-        self.res_bw_type: Parameter = self.add_parameter(
+        self.res_bw_type: Parameter[str, Self] = self.add_parameter(
             name="res_bw_type",
             get_cmd=":SENS:BAND:TYPE?",
             set_cmd=":SENS:BAND:TYPE {}",
@@ -267,7 +267,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel["KeysightN9030B"]):
             """
 
         # Input parameters
-        self.detector: Parameter = self.add_parameter(
+        self.detector: Parameter[str, Self] = self.add_parameter(
             name="detector",
             get_cmd=":SENS:DET:TRAC?",
             set_cmd=":SENS:DET:TRAC {}",
@@ -275,7 +275,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel["KeysightN9030B"]):
             docstring="Detector type",
         )
         """Detector type"""
-        self.average_type: Parameter = self.add_parameter(
+        self.average_type: Parameter[str, Self] = self.add_parameter(
             name="average_type",
             get_cmd=":SENS:AVER:TYPE?",
             set_cmd=":SENS:AVER:TYPE {}",
@@ -342,7 +342,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel["KeysightN9030B"]):
            for in the Marker Noise function."""
 
         # Sweep Parameters
-        self.sweep_time: Parameter = self.add_parameter(
+        self.sweep_time: Parameter[float, Self] = self.add_parameter(
             name="sweep_time",
             label="Sweep time",
             get_cmd=":SENSe:SWEep:TIME?",
@@ -352,7 +352,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel["KeysightN9030B"]):
             docstring="gets sweep time",
         )
         """gets sweep time"""
-        self.auto_sweep_time_enabled: Parameter = self.add_parameter(
+        self.auto_sweep_time_enabled: Parameter[bool, Self] = self.add_parameter(
             name="auto_sweep_time_enabled",
             get_cmd=":SENSe:SWEep:TIME:AUTO?",
             set_cmd=":SENSe:SWEep:TIME:AUTO {}",
@@ -360,7 +360,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel["KeysightN9030B"]):
             docstring="enables auto sweep time",
         )
         """enables auto sweep time"""
-        self.auto_sweep_type_enabled: Parameter = self.add_parameter(
+        self.auto_sweep_type_enabled: Parameter[bool, Self] = self.add_parameter(
             name="auto_sweep_type_enabled",
             get_cmd=":SENSe:SWEep:TYPE:AUTO?",
             set_cmd=":SENSe:SWEep:TYPE:AUTO {}",
@@ -368,7 +368,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel["KeysightN9030B"]):
             docstring="enables auto sweep type",
         )
         """enables auto sweep type"""
-        self.sweep_type: Parameter = self.add_parameter(
+        self.sweep_type: Parameter[str, Self] = self.add_parameter(
             name="sweep_type",
             get_cmd=":SENSe:SWEep:TYPE?",
             set_cmd=":SENSe:SWEep:TYPE {}",
@@ -543,7 +543,7 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel["KeysightN9030B"]):
         assert opt is not None
         self._max_freq = self._valid_max_freq[opt]
 
-        self.npts: Parameter = self.add_parameter(
+        self.npts: Parameter[int, Self] = self.add_parameter(
             name="npts",
             get_cmd=":SENSe:LPLot:SWEep:POINts?",
             set_cmd=":SENSe:LPLot:SWEep:POINts {}",
@@ -553,7 +553,7 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel["KeysightN9030B"]):
         )
         """Number of points for the sweep"""
 
-        self.start_offset: Parameter = self.add_parameter(
+        self.start_offset: Parameter[float, Self] = self.add_parameter(
             name="start_offset",
             unit="Hz",
             get_cmd=":SENSe:LPLot:FREQuency:OFFSet:STARt?",
@@ -564,7 +564,7 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel["KeysightN9030B"]):
         )
         """start frequency offset for the plot"""
 
-        self.stop_offset: Parameter = self.add_parameter(
+        self.stop_offset: Parameter[float, Self] = self.add_parameter(
             name="stop_offset",
             unit="Hz",
             get_cmd=":SENSe:LPLot:FREQuency:OFFSet:STOP?",
@@ -575,7 +575,7 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel["KeysightN9030B"]):
         )
         """stop frequency offset for the plot"""
 
-        self.signal_tracking_enabled: Parameter = self.add_parameter(
+        self.signal_tracking_enabled: Parameter[bool, Self] = self.add_parameter(
             name="signal_tracking_enabled",
             get_cmd=":SENSe:FREQuency:CARRier:TRACk?",
             set_cmd=":SENSe:FREQuency:CARRier:TRACk {}",
@@ -750,7 +750,7 @@ class KeysightN9030B(VisaInstrument):
         self._max_freq: float
         self._additional_wait: float = 1
 
-        self.mode: Parameter = self.add_parameter(
+        self.mode: Parameter[str, Self] = self.add_parameter(
             name="mode",
             get_cmd=":INSTrument:SELect?",
             set_cmd=":INSTrument:SELect {}",
@@ -763,7 +763,7 @@ class KeysightN9030B(VisaInstrument):
         for the instrument.
         """
 
-        self.measurement: Parameter = self.add_parameter(
+        self.measurement: Parameter[str, Self] = self.add_parameter(
             name="measurement",
             get_cmd=":CONFigure?",
             set_cmd=":CONFigure:{}",
@@ -773,7 +773,7 @@ class KeysightN9030B(VisaInstrument):
         )
         """Sets measurement type from among the available measurement types."""
 
-        self.cont_meas: Parameter = self.add_parameter(
+        self.cont_meas: Parameter[bool, Self] = self.add_parameter(
             name="cont_meas",
             initial_value=False,
             get_cmd=":INITiate:CONTinuous?",
@@ -786,7 +786,7 @@ class KeysightN9030B(VisaInstrument):
         # Set auto_sweep parameter
         # If we want to return multiple traces per setpoint without sweeping
         # multiple times, or return data on screen, then we can set this value false
-        self.auto_sweep: Parameter = self.add_parameter(
+        self.auto_sweep: Parameter[bool, Self] = self.add_parameter(
             "auto_sweep",
             label="Auto Sweep",
             set_cmd=None,
@@ -798,7 +798,7 @@ class KeysightN9030B(VisaInstrument):
 
         # Set binary format and don't allow change. There isn't much point to
         # allow this value to be varied. Retained for backwards compatibility.
-        self.format: Parameter = self.add_parameter(
+        self.format: Parameter[str, Self] = self.add_parameter(
             name="format",
             get_cmd=lambda: "real64",
             set_cmd=False,

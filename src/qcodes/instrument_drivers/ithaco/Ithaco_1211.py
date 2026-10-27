@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs
 from qcodes.parameters import MultiParameter, Parameter, ParamRawDataType
@@ -93,7 +93,7 @@ class Ithaco1211(Instrument):
         )
         """Parameter sens"""
 
-        self.invert: Parameter = self.add_parameter(
+        self.invert: Parameter[bool, Self] = self.add_parameter(
             "invert",
             initial_value=True,
             label="Inverted output",

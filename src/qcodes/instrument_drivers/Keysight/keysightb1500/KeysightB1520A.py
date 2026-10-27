@@ -1,12 +1,18 @@
 import re
 import textwrap
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Self, cast
 
 import numpy as np
 
 import qcodes.validators as vals
 from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel
-from qcodes.parameters import Group, GroupParameter, MultiParameter, Parameter
+from qcodes.parameters import (
+    Group,
+    GroupParameter,
+    MultiParameter,
+    Parameter,
+    create_on_off_val_mapping,
+)
 
 from . import constants
 from .constants import MM, ChNr, ModuleKind
@@ -481,7 +487,7 @@ class KeysightB1520A(KeysightB1500Module):
         self._ranging_mode: constants.RangingMode = constants.RangingMode.AUTO
         self._measurement_range_for_non_auto: int | None = None
 
-        self.voltage_dc: Parameter = self.add_parameter(
+        self.voltage_dc: Parameter[float, Self] = self.add_parameter(
             name="voltage_dc",
             unit="V",
             set_cmd=self._set_voltage_dc,
@@ -490,7 +496,7 @@ class KeysightB1520A(KeysightB1500Module):
         )
         """Parameter voltage_dc"""
 
-        self.voltage_ac: Parameter = self.add_parameter(
+        self.voltage_ac: Parameter[float, Self] = self.add_parameter(
             name="voltage_ac",
             unit="V",
             set_cmd=self._set_voltage_ac,
@@ -499,7 +505,7 @@ class KeysightB1520A(KeysightB1500Module):
         )
         """Parameter voltage_ac"""
 
-        self.frequency: Parameter = self.add_parameter(
+        self.frequency: Parameter[float, Self] = self.add_parameter(
             name="frequency",
             unit="Hz",
             set_cmd=self._set_frequency,
@@ -508,7 +514,7 @@ class KeysightB1520A(KeysightB1500Module):
         )
         """Parameter frequency"""
 
-        self.capacitance: Parameter = self.add_parameter(
+        self.capacitance: Parameter[tuple[float, float], Self] = self.add_parameter(
             name="capacitance", get_cmd=self._get_capacitance, snapshot_value=False
         )
         """Parameter capacitance"""
@@ -660,19 +666,21 @@ class KeysightB1520A(KeysightB1500Module):
         Possible ranging modes are autorange and fixed range.
         """
 
-        self.measurement_range_for_non_auto: Parameter = self.add_parameter(
-            name="measurement_range_for_non_auto",
-            set_cmd=self._set_measurement_range_for_non_auto,
-            get_cmd=None,
-            docstring=textwrap.dedent(
-                """
+        self.measurement_range_for_non_auto: Parameter[int | None, Self] = (
+            self.add_parameter(
+                name="measurement_range_for_non_auto",
+                set_cmd=self._set_measurement_range_for_non_auto,
+                get_cmd=None,
+                docstring=textwrap.dedent(
+                    """
             Measurement range. Needs to set when ``ranging_mode`` is set to
             PLC. The value should be integer 0 or more. 50 ohm, 100 ohm,
             300 ohm, 1 kilo ohm, 3 kilo ohm, 10 kilo ohm, 30 kilo ohm,
             100 kilo ohm, and 300 kilo ohm are selectable. Available
             measurement ranges depend on the output signal frequency set by
             the FC command."""
-            ),
+                ),
+            )
         )
         """
         Measurement range. Needs to set when ``ranging_mode`` is set to
@@ -730,29 +738,29 @@ class KeysightB1520A(KeysightB1500Module):
         Look at the ``constants.IMP.MeasurementMode`` for all the modes.
         """
 
-        self.ac_dc_volt_monitor: Parameter = self.add_parameter(
+        self.ac_dc_volt_monitor: Parameter[bool, Self] = self.add_parameter(
             name="ac_dc_volt_monitor",
             set_cmd=self._set_ac_dc_volt_monitor,
             get_cmd=None,
-            vals=vals.Ints(0, 1),
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
             initial_value=False,
             docstring=textwrap.dedent(
                 """
             This command enables or disables the data monitor and data
             output of the MFCMU AC voltage and DC voltage.
-                0: Disables the data monitor and output. Initial setting.
-                1: Enables the data monitor and output.
+                False: Disables the data monitor and output. Initial setting.
+                True: Enables the data monitor and output.
                            """
             ),
         )
         """
         This command enables or disables the data monitor and data
         output of the MFCMU AC voltage and DC voltage.
-        0: Disables the data monitor and output. Initial setting.
-        1: Enables the data monitor and output.
+        False: Disables the data monitor and output. Initial setting.
+        True: Enables the data monitor and output.
         """
 
-        self.cv_sweep_voltages: Parameter = self.add_parameter(
+        self.cv_sweep_voltages: Parameter[tuple[float, ...], Self] = self.add_parameter(
             name="cv_sweep_voltages",
             get_cmd=self._cv_sweep_voltages,
             unit="V",
@@ -988,8 +996,8 @@ class KeysightB1520A(KeysightB1500Module):
         if hasattr(self, "run_sweep"):
             self.run_sweep.update_name_label_unit_from_impedance_model(model=val)
 
-    def _set_ac_dc_volt_monitor(self, val: bool) -> None:
-        msg = MessageBuilder().lmn(enable_data_monitor=val)
+    def _set_ac_dc_volt_monitor(self, val: int) -> None:
+        msg = MessageBuilder().lmn(enable_data_monitor=bool(val))
         self.write(msg.message)
 
     def _set_ranging_mode(self, val: constants.RangingMode | int) -> None:

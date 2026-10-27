@@ -1,7 +1,7 @@
 import warnings
 from functools import partial
 from time import sleep
-from typing import TYPE_CHECKING, ClassVar, Literal, cast
+from typing import TYPE_CHECKING, ClassVar, Literal, Self, cast
 
 import numpy as np
 from pyvisa import VisaIOError
@@ -54,7 +54,7 @@ class DynaCool(VisaInstrument):
     ) -> None:
         super().__init__(name=name, address=address, **kwargs)
 
-        self.temperature: Parameter = self.add_parameter(
+        self.temperature: Parameter[float, Self] = self.add_parameter(
             "temperature",
             label="Temperature",
             unit="K",
@@ -66,7 +66,7 @@ class DynaCool(VisaInstrument):
         # Note: from the Lyngby Materials Lab, we have been told that the
         # manual is wrong about the minimal temperature. The manual says
         # 1.8 K, but it is in fact 1.6 K
-        self.temperature_setpoint: Parameter = self.add_parameter(
+        self.temperature_setpoint: Parameter[float, Self] = self.add_parameter(
             "temperature_setpoint",
             label="Temperature setpoint",
             unit="K",
@@ -76,24 +76,28 @@ class DynaCool(VisaInstrument):
         )
         """Parameter temperature_setpoint"""
 
-        self.block_while_ramping_temperature: Parameter = self.add_parameter(
-            "block_while_ramping_temperature",
-            label="Block instrument while ramping temperature",
-            initial_value=False,
-            vals=vals.Bool(),
-            get_cmd=None,
-            set_cmd=None,
+        self.block_while_ramping_temperature: Parameter[bool, Self] = (
+            self.add_parameter(
+                "block_while_ramping_temperature",
+                label="Block instrument while ramping temperature",
+                initial_value=False,
+                vals=vals.Bool(),
+                get_cmd=None,
+                set_cmd=None,
+            )
         )
         """Parameter block_while_ramping_temperature, when set to True,
         will block further interaction while temperature is ramping to setpoint."""
 
-        self.blocking_t_state_check_interval: Parameter = self.add_parameter(
-            name="blocking_t_state_check_interval",
-            initial_value=0.5,
-            unit="s",
-            vals=vals.Numbers(0, 60),
-            set_cmd=None,
-            get_cmd=None,
+        self.blocking_t_state_check_interval: Parameter[float, Self] = (
+            self.add_parameter(
+                name="blocking_t_state_check_interval",
+                initial_value=0.5,
+                unit="s",
+                vals=vals.Numbers(0, 60),
+                set_cmd=None,
+                get_cmd=None,
+            )
         )
         """Parameter blocking_t_state_check_interval sets how often
         temperature_setpoint checks for temperature stability when block_while_ramping_temperature is True."""
@@ -110,7 +114,7 @@ class DynaCool(VisaInstrument):
         )
         """Parameter temperature_rate"""
 
-        self.temperature_settling: Parameter = self.add_parameter(
+        self.temperature_settling: Parameter[str, Self] = self.add_parameter(
             "temperature_settling",
             label="Temperature settling mode",
             val_mapping={"fast settle": 0, "no overshoot": 1},
@@ -119,7 +123,7 @@ class DynaCool(VisaInstrument):
         )
         """Parameter temperature_settling"""
 
-        self.temperature_state: Parameter = self.add_parameter(
+        self.temperature_state: Parameter[str, Self] = self.add_parameter(
             "temperature_state",
             label="Temperature tracking state",
             val_mapping={
@@ -138,7 +142,7 @@ class DynaCool(VisaInstrument):
         )
         """Parameter temperature_state"""
 
-        self.field_measured: Parameter = self.add_parameter(
+        self.field_measured: Parameter[float, Self] = self.add_parameter(
             "field_measured",
             label="Field",
             unit="T",
@@ -146,7 +150,7 @@ class DynaCool(VisaInstrument):
         )
         """Parameter field_measured"""
 
-        self.field_target: Parameter = self.add_parameter(
+        self.field_target: Parameter[float, Self] = self.add_parameter(
             "field_target",
             label="Field target",
             unit="T",
@@ -156,7 +160,7 @@ class DynaCool(VisaInstrument):
         )
         """Parameter field_target"""
 
-        self.field_ramp: Parameter = self.add_parameter(
+        self.field_ramp: Parameter[float, Self] = self.add_parameter(
             "field_ramp",
             label="Field [ramp]",
             unit="T",
@@ -179,7 +183,7 @@ class DynaCool(VisaInstrument):
         )
         """Parameter field_rate"""
 
-        self.field_approach: Parameter = self.add_parameter(
+        self.field_approach: Parameter[str, Self] = self.add_parameter(
             "field_approach",
             label="Field ramp approach",
             val_mapping={"linear": 0, "no overshoot": 1, "oscillate": 2},
@@ -189,7 +193,7 @@ class DynaCool(VisaInstrument):
         )
         """Parameter field_approach"""
 
-        self.magnet_state: Parameter = self.add_parameter(
+        self.magnet_state: Parameter[str, Self] = self.add_parameter(
             "magnet_state",
             label="Magnet state",
             val_mapping={
@@ -214,7 +218,7 @@ class DynaCool(VisaInstrument):
         )
         """Parameter magnet_state"""
 
-        self.chamber_temperature: Parameter = self.add_parameter(
+        self.chamber_temperature: Parameter[float, Self] = self.add_parameter(
             "chamber_temperature",
             label="Chamber Temperature",
             unit="K",
@@ -223,7 +227,7 @@ class DynaCool(VisaInstrument):
         )
         """Parameter chamber_temperature"""
 
-        self.chamber_state: Parameter = self.add_parameter(
+        self.chamber_state: Parameter[str, Self] = self.add_parameter(
             "chamber_state",
             label="Chamber vacuum state",
             val_mapping={
@@ -242,7 +246,7 @@ class DynaCool(VisaInstrument):
         )
         """Parameter chamber_state"""
 
-        self.field_tolerance: Parameter = self.add_parameter(
+        self.field_tolerance: Parameter[float, Self] = self.add_parameter(
             "field_tolerance",
             label="Field Tolerance",
             unit="T",

@@ -1,5 +1,5 @@
 import math
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -46,7 +46,7 @@ class DemodulationAcquisitionController(AcquisitionController[float]):
         # make a call to the parent class and by extension, create the parameter
         # structure of this class
         super().__init__(name, alazar_name, **kwargs)
-        self.acquisition: Parameter = self.add_parameter(
+        self.acquisition: Parameter[float, Self] = self.add_parameter(
             "acquisition", get_cmd=self.do_acquisition
         )
         """Parameter acquisition"""

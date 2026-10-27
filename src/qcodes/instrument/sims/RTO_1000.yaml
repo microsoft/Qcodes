@@ -25,7 +25,7 @@ devices:
           q: "TRIGger1:SOURce?"
           r: "{}"
         setter:
-          q: "TRIGger1:SOURce? {}"
+          q: "TRIGger1:SOURce {}"
 
       trigger level 1:
         default: 0
@@ -34,6 +34,14 @@ devices:
           r: "{}"
         setter:
           q: "TRIGger1:LEVel1 {}"
+
+      trigger mode:
+        default: AUTO
+        getter:
+          q: "TRIGger:MODE?"
+          r: "{}"
+        setter:
+          q: "TRIGger:MODE {}"
 
       channel range 1:
         default: 5
@@ -48,6 +56,15 @@ devices:
           r: "{}"
         setter:
           q: "CHANnel1:OFFSet {}"
+
+      channel impedance 1:
+        # *RST value according to the R&S RTO user manual
+        default: 50
+        getter:
+          q: "CHANnel1:IMPedance?"
+          r: "{}"
+        setter:
+          q: "CHANnel1:IMPedance {}"
 
 resources:
   GPIB::1::INSTR:

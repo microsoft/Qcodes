@@ -2,7 +2,7 @@
 #
 # Written by Bruno Buijtendorp (brunobuijtendorp@gmail.com)
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes import validators as vals
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
@@ -38,7 +38,7 @@ class HP83650A(VisaInstrument):
         log.debug("Initializing instrument")
         super().__init__(name, address, **kwargs)
 
-        self.frequency: Parameter = self.add_parameter(
+        self.frequency: Parameter[float, Self] = self.add_parameter(
             "frequency",
             label="Frequency",
             get_cmd="FREQ:CW?",
@@ -50,7 +50,7 @@ class HP83650A(VisaInstrument):
         )
         """Microwave frequency, ...."""
 
-        self.freqmode: Parameter = self.add_parameter(
+        self.freqmode: Parameter[str, Self] = self.add_parameter(
             "freqmode",
             label="Frequency mode",
             get_cmd="FREQ:MODE?",
@@ -61,7 +61,7 @@ class HP83650A(VisaInstrument):
         )
         """Microwave frequency mode, ...."""
 
-        self.power: Parameter = self.add_parameter(
+        self.power: Parameter[float, Self] = self.add_parameter(
             "power",
             label="Power",
             get_cmd="SOUR:POW?",
@@ -73,7 +73,7 @@ class HP83650A(VisaInstrument):
         )
         """Microwave power, ...."""
 
-        self.rfstatus: Parameter = self.add_parameter(
+        self.rfstatus: Parameter[str, Self] = self.add_parameter(
             "rfstatus",
             label="RF status",
             get_cmd=":POW:STAT?",
@@ -85,7 +85,7 @@ class HP83650A(VisaInstrument):
         )
         """Status, ...."""
 
-        self.fmstatus: Parameter = self.add_parameter(
+        self.fmstatus: Parameter[str, Self] = self.add_parameter(
             "fmstatus",
             label="FM status",
             get_cmd=":FM:STAT?",
@@ -97,7 +97,7 @@ class HP83650A(VisaInstrument):
         )
         """FM status, ...."""
 
-        self.fmcoup: Parameter = self.add_parameter(
+        self.fmcoup: Parameter[str, Self] = self.add_parameter(
             "fmcoup",
             label="FM coupling",
             get_cmd=":FM:COUP?",
@@ -108,7 +108,7 @@ class HP83650A(VisaInstrument):
         )
         """FM coupling, ...."""
 
-        self.amstatus: Parameter = self.add_parameter(
+        self.amstatus: Parameter[str, Self] = self.add_parameter(
             "amstatus",
             label="AM status",
             get_cmd=":AM:STAT?",
@@ -120,7 +120,7 @@ class HP83650A(VisaInstrument):
         )
         """AM status, ...."""
 
-        self.pulsestatus: Parameter = self.add_parameter(
+        self.pulsestatus: Parameter[str, Self] = self.add_parameter(
             "pulsestatus",
             label="Pulse status",
             get_cmd=":PULS:STAT?",
@@ -132,7 +132,7 @@ class HP83650A(VisaInstrument):
         )
         """Pulse status, ...."""
 
-        self.pulsesource: Parameter = self.add_parameter(
+        self.pulsesource: Parameter[str, Self] = self.add_parameter(
             "pulsesource",
             label="Pulse source",
             get_cmd=":PULS:SOUR?",

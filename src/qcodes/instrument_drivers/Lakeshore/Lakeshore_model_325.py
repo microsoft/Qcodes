@@ -3,8 +3,11 @@ from itertools import takewhile
 from typing import (
     TYPE_CHECKING,
     Any,
+    Self,
     TextIO,
 )
+
+import numpy as np
 
 from qcodes.instrument import (
     ChannelList,
@@ -14,7 +17,7 @@ from qcodes.instrument import (
     VisaInstrumentKWArgs,
 )
 from qcodes.parameters import Group, GroupParameter, Parameter
-from qcodes.validators import Enum, Numbers
+from qcodes.validators import Enum, Numbers, PermissiveInts
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -80,6 +83,16 @@ def _get_sanitize_data(file_data: dict[Any, Any]) -> dict[Any, Any]:
     del data_dict["Units"]
 
     return data_dict
+
+
+def _format_curve_value(value: float) -> str:
+    """
+    Format a curve data point value with 6 significant digits in positional
+    notation, which is the resolution the instrument stores points with.
+    """
+    return np.format_float_positional(
+        value, precision=6, unique=False, fractional=False, trim="-"
+    )
 
 
 class LakeshoreModel325Status(IntFlag):
@@ -158,9 +171,10 @@ class LakeshoreModel325Curve(InstrumentChannel):
         )
 
     def get_data(self) -> dict[Any, Any]:
+        # a curve has up to 200 points
         curve = [
             float(a)
-            for point_index in range(1, 200)
+            for point_index in range(1, 201)
             for a in self.ask(f"CRVPT? {self._index}, {point_index}").split(",")
         ]
 
@@ -233,9 +247,11 @@ class LakeshoreModel325Curve(InstrumentChannel):
         for value_index, (temperature_value, sensor_value) in enumerate(
             zip(temperature_values, sensor_values)
         ):
+            # the instrument stores points to 6 digits
             cmd_str = (
                 f"CRVPT {self._index}, {value_index + 1}, "
-                f"{sensor_value:3.3f}, {temperature_value:3.3f}"
+                f"{_format_curve_value(sensor_value)}, "
+                f"{_format_curve_value(temperature_value)}"
             )
 
             self.write(cmd_str)
@@ -265,7 +281,7 @@ class LakeshoreModel325Sensor(InstrumentChannel["LakeshoreModel325"]):
         super().__init__(parent, name)
         self._input = inp
 
-        self.temperature: Parameter = self.add_parameter(
+        self.temperature: Parameter[float, Self] = self.add_parameter(
             "temperature",
             get_cmd=f"KRDG? {self._input}",
             get_parser=float,
@@ -274,7 +290,7 @@ class LakeshoreModel325Sensor(InstrumentChannel["LakeshoreModel325"]):
         )
         """Parameter temperature"""
 
-        self.status: Parameter = self.add_parameter(
+        self.status: Parameter[str, Self] = self.add_parameter(
             "status",
             get_cmd=f"RDGST? {self._input}",
             get_parser=lambda status: self.decode_sensor_status(int(status)),
@@ -311,12 +327,16 @@ class LakeshoreModel325Sensor(InstrumentChannel["LakeshoreModel325"]):
             get_cmd=f"INTYPE? {self._input}",
         )
 
-        self.curve_index: Parameter = self.add_parameter(
+        self.curve_index: Parameter[int, Self] = self.add_parameter(
             "curve_index",
             set_cmd=f"INCRV {self._input}, {{}}",
             get_cmd=f"INCRV? {self._input}",
             get_parser=int,
-            vals=Numbers(min_value=1, max_value=35),
+            # 0 = none, 1-20 = standard curves, 21-35 = user curves. The
+            # instrument falls back to 0 if the curve does not match the input.
+            # Whole-number floats such as 23.0 are accepted and sent as int.
+            vals=PermissiveInts(min_value=0, max_value=35),
+            set_parser=round,
         )
         """Parameter curve_index"""
 
@@ -334,7 +354,18 @@ class LakeshoreModel325Sensor(InstrumentChannel["LakeshoreModel325"]):
 
     @property
     def curve(self) -> LakeshoreModel325Curve:
-        return LakeshoreModel325Curve(self.parent, self.curve_index())
+        """
+        The curve the sensor uses for temperature conversion.
+
+        Raises:
+            RuntimeError: If no curve is selected for the sensor
+                (``curve_index`` is 0).
+
+        """
+        index = self.curve_index()
+        if index == 0:
+            raise RuntimeError(f"No curve is selected for {self.full_name}")
+        return LakeshoreModel325Curve(self.parent, index)
 
 
 class LakeshoreModel325Heater(InstrumentChannel):
@@ -362,7 +393,7 @@ class LakeshoreModel325Heater(InstrumentChannel):
         super().__init__(parent, name, **kwargs)
         self._loop = loop
 
-        self.control_mode: Parameter = self.add_parameter(
+        self.control_mode: Parameter[str, Self] = self.add_parameter(
             "control_mode",
             get_cmd=f"CMODE? {self._loop}",
             set_cmd=f"CMODE {self._loop},{{}}",
@@ -434,21 +465,20 @@ class LakeshoreModel325Heater(InstrumentChannel):
             get_cmd=f"PID? {self._loop}",
         )
 
+        # the 25 W high range is only available on loop 1
+        output_ranges = {"Off": "0", "Low (2.5W)": "1"}
         if self._loop == 1:
-            valid_output_ranges = Enum(0, 1, 2)
-        else:
-            valid_output_ranges = Enum(0, 1)
+            output_ranges["High (25W)"] = "2"
 
-        self.output_range: Parameter = self.add_parameter(
+        self.output_range: Parameter[str, Self] = self.add_parameter(
             "output_range",
-            vals=valid_output_ranges,
             set_cmd=f"RANGE {self._loop}, {{}}",
             get_cmd=f"RANGE? {self._loop}",
-            val_mapping={"Off": "0", "Low (2.5W)": "1", "High (25W)": "2"},
+            val_mapping=output_ranges,
         )
         """Parameter output_range"""
 
-        self.setpoint: Parameter = self.add_parameter(
+        self.setpoint: Parameter[float, Self] = self.add_parameter(
             "setpoint",
             vals=Numbers(0, 400),
             get_parser=float,
@@ -478,12 +508,12 @@ class LakeshoreModel325Heater(InstrumentChannel):
             get_cmd=f"RAMP? {self._loop}",
         )
 
-        self.is_ramping: Parameter = self.add_parameter(
+        self.is_ramping: Parameter[str, Self] = self.add_parameter(
             "is_ramping", get_cmd=f"RAMPST? {self._loop}"
         )
         """Parameter is_ramping"""
 
-        self.resistance: Parameter = self.add_parameter(
+        self.resistance: Parameter[int, Self] = self.add_parameter(
             "resistance",
             get_cmd=f"HTRRES? {self._loop}",
             set_cmd=f"HTRRES {self._loop}, {{}}",
@@ -496,7 +526,7 @@ class LakeshoreModel325Heater(InstrumentChannel):
         )
         """Parameter resistance"""
 
-        self.heater_output: Parameter = self.add_parameter(
+        self.heater_output: Parameter[float, Self] = self.add_parameter(
             "heater_output",
             get_cmd=f"HTR? {self._loop}",
             get_parser=float,
@@ -564,7 +594,8 @@ class LakeshoreModel325(VisaInstrument):
 
         curves = ChannelList(self, "curve", LakeshoreModel325Curve, snapshotable=False)
 
-        for curve_index in range(1, 35):
+        # curves 1-20 are standard curves and 21-35 user curves
+        for curve_index in range(1, 36):
             curve = LakeshoreModel325Curve(self, curve_index)
             curves.append(curve)
 

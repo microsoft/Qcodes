@@ -14,6 +14,7 @@ from typing import (
     ClassVar,
     Literal,
     NamedTuple,
+    Self,
     cast,
 )
 
@@ -30,6 +31,7 @@ from qcodes.instrument import (
     VisaInstrument,
     VisaInstrumentKWArgs,
 )
+from qcodes.parameters import create_on_off_val_mapping
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
@@ -84,7 +86,7 @@ class TektronixAWG5014Marker(InstrumentChannel["TektronixAWG5014Channel"]):
         m_high_cmd = f"SOURce{channel}:MARKer{marker}:VOLTage:LEVel:IMMediate:HIGH"
         m_low_cmd = f"SOURce{channel}:MARKer{marker}:VOLTage:LEVel:IMMediate:LOW"
 
-        self.delay: Parameter = self.add_parameter(
+        self.delay: Parameter[float, Self] = self.add_parameter(
             "delay",
             label=f"Channel {channel} Marker {marker} delay",
             unit="ns",
@@ -94,7 +96,7 @@ class TektronixAWG5014Marker(InstrumentChannel["TektronixAWG5014Channel"]):
             get_parser=float,
         )
         """Parameter delay"""
-        self.high: Parameter = self.add_parameter(
+        self.high: Parameter[float, Self] = self.add_parameter(
             "high",
             label=f"Channel {channel} Marker {marker} high level",
             unit="V",
@@ -104,7 +106,7 @@ class TektronixAWG5014Marker(InstrumentChannel["TektronixAWG5014Channel"]):
             get_parser=float,
         )
         """Parameter high"""
-        self.low: Parameter = self.add_parameter(
+        self.low: Parameter[float, Self] = self.add_parameter(
             "low",
             label=f"Channel {channel} Marker {marker} low level",
             unit="V",
@@ -155,16 +157,15 @@ class TektronixAWG5014Channel(InstrumentChannel["TektronixAWG5014"]):
         dc_out_cmd = f"AWGControl:DC{i}:VOLTage:OFFSet"
 
         # Set channel first to ensure sensible sorting of pars
-        self.state: Parameter = self.add_parameter(
+        self.state: Parameter[bool, Self] = self.add_parameter(
             "state",
             label=f"Status channel {i}",
             get_cmd=state_cmd + "?",
             set_cmd=state_cmd + " {}",
-            vals=vals.Ints(0, 1),
-            get_parser=int,
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
         )
         """Parameter state"""
-        self.amp: Parameter = self.add_parameter(
+        self.amp: Parameter[float, Self] = self.add_parameter(
             "amp",
             label=f"Amplitude channel {i}",
             unit="Vpp",
@@ -174,7 +175,7 @@ class TektronixAWG5014Channel(InstrumentChannel["TektronixAWG5014"]):
             get_parser=float,
         )
         """Parameter amp"""
-        self.offset: Parameter = self.add_parameter(
+        self.offset: Parameter[float, Self] = self.add_parameter(
             "offset",
             label=f"Offset channel {i}",
             unit="V",
@@ -184,7 +185,7 @@ class TektronixAWG5014Channel(InstrumentChannel["TektronixAWG5014"]):
             get_parser=float,
         )
         """Parameter offset"""
-        self.waveform: Parameter = self.add_parameter(
+        self.waveform: Parameter[str, Self] = self.add_parameter(
             "waveform",
             label=f"Waveform channel {i}",
             get_cmd=waveform_cmd + "?",
@@ -193,15 +194,15 @@ class TektronixAWG5014Channel(InstrumentChannel["TektronixAWG5014"]):
             get_parser=parsestr,
         )
         """Parameter waveform"""
-        self.direct_output: Parameter = self.add_parameter(
+        self.direct_output: Parameter[bool, Self] = self.add_parameter(
             "direct_output",
             label=f"Direct output channel {i}",
             get_cmd=directoutput_cmd + "?",
             set_cmd=directoutput_cmd + " {}",
-            vals=vals.Ints(0, 1),
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
         )
         """Parameter direct_output"""
-        self.add_input: Parameter = self.add_parameter(
+        self.add_input: Parameter[str, Self] = self.add_parameter(
             "add_input",
             label=f"Add input channel {i}",
             get_cmd=add_input_cmd + "?",
@@ -220,7 +221,7 @@ class TektronixAWG5014Channel(InstrumentChannel["TektronixAWG5014"]):
             get_parser=self.parent._tek_outofrange_get_parser,
         )
         """Parameter filter"""
-        self.DC_out: Parameter = self.add_parameter(
+        self.DC_out: Parameter[float, Self] = self.add_parameter(
             "DC_out",
             label=f"DC output level channel {i}",
             unit="V",
@@ -380,9 +381,11 @@ class TektronixAWG5014(VisaInstrument):
 
         self.add_function("reset", call_cmd="*RST")
 
-        self.state: Parameter = self.add_parameter("state", get_cmd=self.get_state)
+        self.state: Parameter[str, Self] = self.add_parameter(
+            "state", get_cmd=self.get_state
+        )
         """Parameter state"""
-        self.run_mode: Parameter = self.add_parameter(
+        self.run_mode: Parameter[str, Self] = self.add_parameter(
             "run_mode",
             get_cmd="AWGControl:RMODe?",
             set_cmd="AWGControl:RMODe " + "{}",
@@ -390,7 +393,7 @@ class TektronixAWG5014(VisaInstrument):
             get_parser=self.newlinestripper,
         )
         """Parameter run_mode"""
-        self.clock_source: Parameter = self.add_parameter(
+        self.clock_source: Parameter[str, Self] = self.add_parameter(
             "clock_source",
             label="Clock source",
             get_cmd="AWGControl:CLOCk:SOURce?",
@@ -400,7 +403,7 @@ class TektronixAWG5014(VisaInstrument):
         )
         """Parameter clock_source"""
 
-        self.ref_source: Parameter = self.add_parameter(
+        self.ref_source: Parameter[str, Self] = self.add_parameter(
             "ref_source",
             label="Reference source",
             get_cmd="SOURce1:ROSCillator:SOURce?",
@@ -410,18 +413,17 @@ class TektronixAWG5014(VisaInstrument):
         )
         """Parameter ref_source"""
 
-        self.DC_output: Parameter = self.add_parameter(
+        self.DC_output: Parameter[bool, Self] = self.add_parameter(
             "DC_output",
             label="DC Output (ON/OFF)",
             get_cmd="AWGControl:DC:STATe?",
             set_cmd="AWGControl:DC:STATe {}",
-            vals=vals.Ints(0, 1),
-            get_parser=int,
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
         )
         """Parameter DC_output"""
 
         # sequence parameter(s)
-        self.sequence_length: Parameter = self.add_parameter(
+        self.sequence_length: Parameter[int, Self] = self.add_parameter(
             "sequence_length",
             label="Sequence length",
             get_cmd="SEQuence:LENGth?",
@@ -468,12 +470,13 @@ class TektronixAWG5014(VisaInstrument):
                                20 will be deleted.
                                """
 
-        self.sequence_pos: Parameter = self.add_parameter(
+        self.sequence_pos: Parameter[int, Self] = self.add_parameter(
             "sequence_pos",
             label="Sequence position",
             get_cmd="AWGControl:SEQuencer:POSition?",
             set_cmd="SEQuence:JUMP:IMMediate {}",
             vals=vals.PermissiveInts(1),
+            get_parser=int,
             set_parser=round,
         )
         """Parameter sequence_pos"""
@@ -481,7 +484,7 @@ class TektronixAWG5014(VisaInstrument):
         # Trigger parameters #
         # Warning: `trigger_mode` is the same as `run_mode`, do not use! exists
         # solely for legacy purposes
-        self.trigger_mode: Parameter = self.add_parameter(
+        self.trigger_mode: Parameter[str, Self] = self.add_parameter(
             "trigger_mode",
             get_cmd="AWGControl:RMODe?",
             set_cmd="AWGControl:RMODe " + "{}",
@@ -489,7 +492,7 @@ class TektronixAWG5014(VisaInstrument):
             get_parser=self.newlinestripper,
         )
         """Parameter trigger_mode"""
-        self.trigger_impedance: Parameter = self.add_parameter(
+        self.trigger_impedance: Parameter[float, Self] = self.add_parameter(
             "trigger_impedance",
             label="Trigger impedance",
             unit="Ohm",
@@ -499,7 +502,7 @@ class TektronixAWG5014(VisaInstrument):
             get_parser=float,
         )
         """Parameter trigger_impedance"""
-        self.trigger_level: Parameter = self.add_parameter(
+        self.trigger_level: Parameter[float, Self] = self.add_parameter(
             "trigger_level",
             unit="V",
             label="Trigger level",
@@ -509,7 +512,7 @@ class TektronixAWG5014(VisaInstrument):
             get_parser=float,
         )
         """Parameter trigger_level"""
-        self.trigger_slope: Parameter = self.add_parameter(
+        self.trigger_slope: Parameter[str, Self] = self.add_parameter(
             "trigger_slope",
             get_cmd="TRIGger:SLOPe?",
             set_cmd="TRIGger:SLOPe " + "{}",
@@ -518,7 +521,7 @@ class TektronixAWG5014(VisaInstrument):
         )
         """Parameter trigger_slope"""
 
-        self.trigger_source: Parameter = self.add_parameter(
+        self.trigger_source: Parameter[str, Self] = self.add_parameter(
             "trigger_source",
             get_cmd="TRIGger:SOURce?",
             set_cmd="TRIGger:SOURce " + "{}",
@@ -528,7 +531,7 @@ class TektronixAWG5014(VisaInstrument):
         """Parameter trigger_source"""
 
         # Event parameters
-        self.event_polarity: Parameter = self.add_parameter(
+        self.event_polarity: Parameter[str, Self] = self.add_parameter(
             "event_polarity",
             get_cmd="EVENt:POL?",
             set_cmd="EVENt:POL " + "{}",
@@ -536,7 +539,7 @@ class TektronixAWG5014(VisaInstrument):
             get_parser=self.newlinestripper,
         )
         """Parameter event_polarity"""
-        self.event_impedance: Parameter = self.add_parameter(
+        self.event_impedance: Parameter[float, Self] = self.add_parameter(
             "event_impedance",
             label="Event impedance",
             unit="Ohm",
@@ -546,7 +549,7 @@ class TektronixAWG5014(VisaInstrument):
             get_parser=float,
         )
         """Parameter event_impedance"""
-        self.event_level: Parameter = self.add_parameter(
+        self.event_level: Parameter[float, Self] = self.add_parameter(
             "event_level",
             label="Event level",
             unit="V",
@@ -556,7 +559,7 @@ class TektronixAWG5014(VisaInstrument):
             get_parser=float,
         )
         """Parameter event_level"""
-        self.event_jump_timing: Parameter = self.add_parameter(
+        self.event_jump_timing: Parameter[str, Self] = self.add_parameter(
             "event_jump_timing",
             get_cmd="EVENt:JTIMing?",
             set_cmd="EVENt:JTIMing {}",
@@ -565,7 +568,7 @@ class TektronixAWG5014(VisaInstrument):
         )
         """Parameter event_jump_timing"""
 
-        self.clock_freq: Parameter = self.add_parameter(
+        self.clock_freq: Parameter[float, Self] = self.add_parameter(
             "clock_freq",
             label="Clock frequency",
             unit="Hz",
@@ -576,7 +579,7 @@ class TektronixAWG5014(VisaInstrument):
         )
         """Parameter clock_freq"""
 
-        self.setup_filename: Parameter = self.add_parameter(
+        self.setup_filename: Parameter[str, Self] = self.add_parameter(
             "setup_filename", get_cmd="AWGControl:SNAMe?"
         )
         """Parameter setup_filename"""

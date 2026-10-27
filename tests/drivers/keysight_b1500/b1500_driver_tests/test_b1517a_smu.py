@@ -470,6 +470,76 @@ def test_iv_sweep_mode_start_end_steps_compliance(smu: KeysightB1517A) -> None:
     )
 
 
+def test_iv_sweep_compliance_can_be_unset(smu: KeysightB1517A) -> None:
+    # Icomp and Pcomp are optional in the WV command. Without Pcomp no power
+    # compliance is set, without Icomp the previous current compliance is used.
+    mainframe = smu.parent
+    assert isinstance(mainframe, MagicMock)
+
+    smu.iv_sweep.current_compliance(45e-3)
+    smu.iv_sweep.power_compliance(0.2)
+    smu.iv_sweep.power_compliance(None)
+    smu.iv_sweep.current_compliance(None)
+
+    mainframe.write.assert_has_calls(
+        [
+            call("WV 1,1,0,0.0,0.0,1,0.045"),
+            call("WV 1,1,0,0.0,0.0,1,0.045,0.2"),
+            call("WV 1,1,0,0.0,0.0,1,0.045"),
+            call("WV 1,1,0,0.0,0.0,1"),
+        ]
+    )
+
+
+def test_iv_sweep_clear_current_then_power_compliance(smu: KeysightB1517A) -> None:
+    mainframe = smu.parent
+    assert isinstance(mainframe, MagicMock)
+
+    smu.iv_sweep.current_compliance(45e-3)
+    smu.iv_sweep.power_compliance(0.2)
+    smu.iv_sweep.current_compliance(None)
+    smu.iv_sweep.power_compliance(None)
+
+    mainframe.write.assert_has_calls(
+        [
+            call("WV 1,1,0,0.0,0.0,1,0.045"),
+            call("WV 1,1,0,0.0,0.0,1,0.045,0.2"),
+            call("WV 1,1,0,0.0,0.0,1"),
+            call("WV 1,1,0,0.0,0.0,1"),
+        ]
+    )
+
+
+def test_iv_sweep_clearing_current_compliance_clears_power_compliance(
+    smu: KeysightB1517A,
+) -> None:
+    # Pcomp is only sent together with Icomp, so clearing the current
+    # compliance also removes the power compliance
+    mainframe = smu.parent
+    assert isinstance(mainframe, MagicMock)
+
+    smu.iv_sweep.current_compliance(45e-3)
+    smu.iv_sweep.power_compliance(0.2)
+    smu.iv_sweep.current_compliance(None)
+
+    # the cached value is used in the snapshot (snapshot_get=False)
+    assert smu.iv_sweep.power_compliance.cache.get(get_if_invalid=False) is None
+
+    # setting a current compliance again does not bring back the old power
+    # compliance
+    smu.iv_sweep.current_compliance(45e-3)
+    assert mainframe.write.call_args == call("WV 1,1,0,0.0,0.0,1,0.045")
+
+
+def test_iv_sweep_power_compliance(smu: KeysightB1517A) -> None:
+    # clearing the power compliance is allowed without a current compliance,
+    # but setting one requires a current compliance
+    smu.iv_sweep.power_compliance(None)
+
+    with pytest.raises(ValueError, match="Current compliance must be set"):
+        smu.iv_sweep.power_compliance(0.2)
+
+
 def test_set_sweep_auto_abort(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
     assert isinstance(mainframe, MagicMock)

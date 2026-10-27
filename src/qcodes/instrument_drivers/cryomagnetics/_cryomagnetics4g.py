@@ -88,7 +88,7 @@ class CryomagneticsModel4G(VisaInstrument):
         self._stability_check_interval = 20
 
         # Adding parameters
-        self.units: Parameter = self.add_parameter(
+        self.units: Parameter[str, Self] = self.add_parameter(
             name="units",
             set_cmd="UNITS {}",
             get_cmd="UNITS?",
@@ -107,7 +107,7 @@ class CryomagneticsModel4G(VisaInstrument):
         )
         """Parameter ramping_state_check_interval"""
 
-        self.field: Parameter = self.add_parameter(
+        self.field: Parameter[float, Self] = self.add_parameter(
             name="field",
             unit="T",
             set_cmd=self.set_field,
@@ -118,7 +118,7 @@ class CryomagneticsModel4G(VisaInstrument):
         )
         """Magnetic Field in Tesla"""
 
-        self.rate: Parameter = self.add_parameter(
+        self.rate: Parameter[float, Self] = self.add_parameter(
             name="rate",
             unit="T/min",
             get_cmd=self._get_rate,
@@ -127,7 +127,7 @@ class CryomagneticsModel4G(VisaInstrument):
         )
         """Rate for magnetic field T/min"""
 
-        self.Vmag: Parameter = self.add_parameter(
+        self.Vmag: Parameter[float, Self] = self.add_parameter(
             name="Vmag",
             unit="V",
             get_cmd="VMAG?",
@@ -137,7 +137,7 @@ class CryomagneticsModel4G(VisaInstrument):
         )
         """Magnet sense voltage"""
 
-        self.Vout: Parameter = self.add_parameter(
+        self.Vout: Parameter[float, Self] = self.add_parameter(
             name="Vout",
             unit="V",
             get_cmd="VOUT?",
@@ -147,7 +147,7 @@ class CryomagneticsModel4G(VisaInstrument):
         )
         """Magnet output voltage"""
 
-        self.Iout: Parameter = self.add_parameter(
+        self.Iout: Parameter[float, Self] = self.add_parameter(
             name="Iout",
             unit="A",
             get_cmd="IOUT?",

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 import numpy as np
 
@@ -26,7 +26,7 @@ class AgilentE8267C(VisaInstrument):
     ) -> None:
         super().__init__(name, address, **kwargs)
         # general commands
-        self.frequency: Parameter = self.add_parameter(
+        self.frequency: Parameter[float, Self] = self.add_parameter(
             name="frequency",
             label="Frequency",
             unit="Hz",
@@ -36,7 +36,7 @@ class AgilentE8267C(VisaInstrument):
             vals=Numbers(min_value=100e3, max_value=40e9),
         )
         """Parameter frequency"""
-        self.freq_offset: Parameter = self.add_parameter(
+        self.freq_offset: Parameter[float, Self] = self.add_parameter(
             name="freq_offset",
             label="Frequency offset",
             unit="Hz",
@@ -46,7 +46,7 @@ class AgilentE8267C(VisaInstrument):
             vals=Numbers(min_value=-200e9, max_value=200e9),
         )
         """Parameter freq_offset"""
-        self.freq_mode: Parameter = self.add_parameter(
+        self.freq_mode: Parameter[str, Self] = self.add_parameter(
             "freq_mode",
             label="Frequency mode",
             set_cmd="FREQ:MODE {}",
@@ -54,12 +54,13 @@ class AgilentE8267C(VisaInstrument):
             vals=Enum("FIX", "CW", "SWE", "LIST"),
         )
         """Parameter freq_mode"""
-        self.pulse_width: Parameter = self.add_parameter(
+        self.pulse_width: Parameter[float, Self] = self.add_parameter(
             "pulse_width",
             label="Pulse width",
-            unit="ns",
+            unit="s",
             set_cmd="PULM:INT:PWID {}",
             get_cmd="PULM:INT:PWID?",
+            get_parser=float,
             vals=Numbers(min_value=10e-9, max_value=20e-9),
         )
         """Parameter pulse_width"""
@@ -74,7 +75,7 @@ class AgilentE8267C(VisaInstrument):
             vals=Numbers(min_value=-180, max_value=179),
         )
         """Parameter phase"""
-        self.power: Parameter = self.add_parameter(
+        self.power: Parameter[float, Self] = self.add_parameter(
             name="power",
             label="Power",
             unit="dBm",
@@ -84,7 +85,7 @@ class AgilentE8267C(VisaInstrument):
             vals=Numbers(min_value=-135, max_value=25),
         )
         """Parameter power"""
-        self.power_offset: Parameter = self.add_parameter(
+        self.power_offset: Parameter[float, Self] = self.add_parameter(
             name="power_offset",
             label="Power offset",
             unit="dBm",
@@ -94,14 +95,14 @@ class AgilentE8267C(VisaInstrument):
             vals=Numbers(min_value=-200, max_value=200),
         )
         """Parameter power_offset"""
-        self.output_rf: Parameter = self.add_parameter(
+        self.output_rf: Parameter[str, Self] = self.add_parameter(
             name="output_rf",
             get_cmd="OUTP?",
             set_cmd="OUTP {}",
             val_mapping={"OFF": 0, "ON": 1},
         )
         """Parameter output_rf"""
-        self.modulation_rf: Parameter = self.add_parameter(
+        self.modulation_rf: Parameter[str, Self] = self.add_parameter(
             name="modulation_rf",
             get_cmd="OUTP:MOD?",
             set_cmd="OUTP:MOD {}",

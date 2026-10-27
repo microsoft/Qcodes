@@ -66,6 +66,27 @@ def test_averages_param(vna: CopperMountainM5065) -> None:
     assert vna.averages() == 2
 
 
+def test_averages_enabled_enables_averages_trigger(
+    vna: CopperMountainM5065,
+) -> None:
+    assert vna.averages_trigger_enabled() is False
+    vna.averages_enabled(True)
+    assert vna.averages_enabled() is True
+    assert vna.averages_trigger_enabled() is True
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [("ON", True), ("off", False), (1, True), (0, False)],
+)
+def test_averages_trigger_enabled_accepts_on_off_strings_and_ints(
+    vna: CopperMountainM5065, value: str | int, expected: bool
+) -> None:
+    # while it does not type check, on/off strings and ints are accepted
+    vna.averages_trigger_enabled(value)  # pyright: ignore[reportArgumentType]
+    assert vna.averages_trigger_enabled() is expected
+
+
 def test_frequency_params(vna: CopperMountainM5065) -> None:
     vna.start(1e6)
     vna.stop(2e6)

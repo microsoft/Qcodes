@@ -1,5 +1,5 @@
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes import validators
 
@@ -37,7 +37,7 @@ class Keysight34934A(Keysight34980ASwitchMatrixSubModule):
     ) -> None:
         super().__init__(parent, name, slot, **kwargs)
 
-        self.protection_mode: Parameter = self.add_parameter(
+        self.protection_mode: Parameter[str, Self] = self.add_parameter(
             name="protection_mode",
             get_cmd=self._get_relay_protection_mode,
             set_cmd=self._set_relay_protection_mode,

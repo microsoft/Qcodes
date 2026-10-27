@@ -1,5 +1,5 @@
 import warnings
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 import numpy as np
 
@@ -92,7 +92,7 @@ class AgilentE8257D(VisaInstrument):
             self._min_power = -20
             self._max_power = 5
 
-        self.frequency: Parameter = self.add_parameter(
+        self.frequency: Parameter[float, Self] = self.add_parameter(
             name="frequency",
             label="Frequency",
             unit="Hz",
@@ -116,7 +116,7 @@ class AgilentE8257D(VisaInstrument):
         )
         """Parameter phase"""
 
-        self.power: Parameter = self.add_parameter(
+        self.power: Parameter[float, Self] = self.add_parameter(
             name="power",
             label="Power",
             unit="dBm",
@@ -128,7 +128,7 @@ class AgilentE8257D(VisaInstrument):
         )
         """Parameter power"""
 
-        self.output_enabled: Parameter = self.add_parameter(
+        self.output_enabled: Parameter[bool, Self] = self.add_parameter(
             "output_enabled",
             get_cmd=":OUTP?",
             set_cmd="OUTP {}",
@@ -139,10 +139,10 @@ class AgilentE8257D(VisaInstrument):
         self.connect_message()
 
     def on(self) -> None:
-        self.output_enabled.set("on")
+        self.output_enabled.set(True)
 
     def off(self) -> None:
-        self.output_enabled.set("off")
+        self.output_enabled.set(False)
 
     # functions to convert between rad and deg
     @staticmethod

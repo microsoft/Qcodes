@@ -135,3 +135,36 @@ def test_sweep(k2450: Keithley2450) -> None:
     k2450.source.function("voltage")
     k2450.source.sweep_setup(0, 1, 10)
     k2450.sense.sweep.get()
+
+
+def test_sense_count_is_int(k2450: Keithley2450) -> None:
+    assert k2450.sense.count() == 1
+
+    k2450.sense.count(5)
+    count = k2450.sense.count()
+    assert isinstance(count, int)
+    assert count == 5
+
+
+def test_line_frequency_is_int(k2450: Keithley2450) -> None:
+    line_frequency = k2450.line_frequency()
+    assert isinstance(line_frequency, int)
+    assert line_frequency == 50
+
+
+def test_sense_nplc_is_float(k2450: Keithley2450) -> None:
+    assert k2450.sense.nplc() == 1.0
+
+    k2450.sense.nplc(0.5)
+    nplc = k2450.sense.nplc()
+    assert isinstance(nplc, float)
+    assert nplc == 0.5
+
+
+def test_source_delay_is_float(k2450: Keithley2450) -> None:
+    assert k2450.source.delay() == 0.0
+
+    k2450.source.delay(0.25)
+    delay = k2450.source.delay()
+    assert isinstance(delay, float)
+    assert delay == 0.25

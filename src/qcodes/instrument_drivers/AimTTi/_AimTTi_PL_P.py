@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Self
 
 from qcodes import validators as vals
 from qcodes.instrument import (
@@ -50,7 +50,7 @@ class AimTTiChannel(InstrumentChannel):
         # internally.
         self.set_up_store_slots = [i for i in range(10)]
 
-        self.volt: Parameter = self.add_parameter(
+        self.volt: Parameter[float, Self] = self.add_parameter(
             "volt",
             get_cmd=self._get_voltage_value,
             get_parser=float,
@@ -60,7 +60,7 @@ class AimTTiChannel(InstrumentChannel):
         )
         """Parameter volt"""
 
-        self.volt_step_size: Parameter = self.add_parameter(
+        self.volt_step_size: Parameter[float, Self] = self.add_parameter(
             "volt_step_size",
             get_cmd=self._get_voltage_step_size,
             get_parser=float,
@@ -70,7 +70,7 @@ class AimTTiChannel(InstrumentChannel):
         )
         """Parameter volt_step_size"""
 
-        self.curr: Parameter = self.add_parameter(
+        self.curr: Parameter[float, Self] = self.add_parameter(
             "curr",
             get_cmd=self._get_current_value,
             get_parser=float,
@@ -94,7 +94,7 @@ class AimTTiChannel(InstrumentChannel):
         )
         """Set the current range of the output. Here, the integer 1 is for the Low range, and integer 2 is for the High range."""
 
-        self.curr_step_size: Parameter = self.add_parameter(
+        self.curr_step_size: Parameter[float, Self] = self.add_parameter(
             "curr_step_size",
             get_cmd=self._get_current_step_size,
             get_parser=float,
@@ -104,7 +104,7 @@ class AimTTiChannel(InstrumentChannel):
         )
         """Parameter curr_step_size"""
 
-        self.output: Parameter = self.add_parameter(
+        self.output: Parameter[bool, Self] = self.add_parameter(
             "output",
             get_cmd=f"OP{channel}?",
             get_parser=float,

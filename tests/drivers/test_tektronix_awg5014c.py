@@ -137,6 +137,29 @@ def test_trigger_impedance_get(awg: TektronixAWG5014) -> None:
     assert val == 50.0
 
 
+def test_sequence_pos_is_int(awg: TektronixAWG5014) -> None:
+    val = awg.sequence_pos.get()
+    assert isinstance(val, int)
+    assert val == 1
+
+    awg.sequence_pos.set(3)
+    assert awg.sequence_pos.get() == 3
+
+
+def test_direct_output_is_bool(awg: TektronixAWG5014) -> None:
+    ch1 = awg.ch1
+    assert ch1.direct_output.get() is False
+
+    ch1.direct_output.set(True)
+    assert ch1.direct_output.get() is True
+
+    # the on/off mapping also accepts 0/1 and "on"/"off"
+    ch1.direct_output.set(0)
+    assert ch1.direct_output.get() is False
+    ch1.direct_output.set("on")
+    assert ch1.direct_output.get() is True
+
+
 def test_clock_source_get(awg: TektronixAWG5014) -> None:
     assert awg.clock_source.get() == "INT"
 
@@ -178,7 +201,18 @@ def test_event_jump_timing_get(awg: TektronixAWG5014) -> None:
 
 
 def test_DC_output_get(awg: TektronixAWG5014) -> None:
-    assert awg.DC_output.get() == 0
+    assert awg.DC_output.get() is False
+
+
+def test_DC_output_set(awg: TektronixAWG5014) -> None:
+    awg.DC_output.set(True)
+    assert awg.DC_output.get() is True
+
+    # the on/off mapping also accepts 0/1 and "on"/"off"
+    awg.DC_output.set(0)
+    assert awg.DC_output.get() is False
+    awg.DC_output.set("on")
+    assert awg.DC_output.get() is True
 
 
 def test_sequence_length_get(awg: TektronixAWG5014) -> None:
@@ -193,7 +227,7 @@ def test_get_state(awg: TektronixAWG5014) -> None:
 
 
 def test_channel_state_get(awg: TektronixAWG5014) -> None:
-    assert awg.channels[0].state.get() == 0
+    assert awg.channels[0].state.get() is False
 
 
 def test_channel_amp_get(awg: TektronixAWG5014) -> None:
@@ -216,7 +250,7 @@ def test_channel_filter_get(awg: TektronixAWG5014) -> None:
 def test_all_channels_have_consistent_defaults(awg: TektronixAWG5014) -> None:
     """All four channels should return the same default values."""
     for ch in awg.channels:
-        assert ch.state.get() == 0
+        assert ch.state.get() is False
         assert ch.amp.get() == 0.5
         assert ch.offset.get() == 0.0
 
@@ -254,20 +288,20 @@ def test_all_markers_have_consistent_defaults(awg: TektronixAWG5014) -> None:
 def test_all_channels_off(awg: TektronixAWG5014) -> None:
     awg.all_channels_off()
     for ch in awg.channels:
-        assert ch.state.get() == 0
+        assert ch.state.get() is False
 
 
 def test_all_channels_on(awg: TektronixAWG5014) -> None:
     awg.all_channels_on()
     for ch in awg.channels:
-        assert ch.state.get() == 1
+        assert ch.state.get() is True
 
 
 def test_all_channels_on_then_off(awg: TektronixAWG5014) -> None:
     awg.all_channels_on()
     awg.all_channels_off()
     for ch in awg.channels:
-        assert ch.state.get() == 0
+        assert ch.state.get() is False
 
 
 # ── _pack_waveform ────────────────────────────────────────────────────

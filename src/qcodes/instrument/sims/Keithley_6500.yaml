@@ -1,0 +1,38 @@
+spec: "1.0"
+devices:
+  device 1:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "KEITHLEY INSTRUMENTS,MODEL DMM6500,04000000,1.0.0"
+      - q: "*LANG?"
+        r: "SCPI"
+
+    properties:
+      data_format:
+        default: ASCII
+        getter:
+          q: "FORM:DATA?"
+          r: "{}"
+        setter:
+          q: "FORM:DATA {}"
+
+      display_digits:
+        default: 6
+        getter:
+          q: "DISP:VOLT:DC:DIG?"
+          r: "{}"
+        setter:
+          q: "DISP:VOLT:DC:DIG {}"
+        specs:
+          type: int
+          min: 4
+          max: 7
+
+resources:
+  GPIB::1::INSTR:
+    device: device 1

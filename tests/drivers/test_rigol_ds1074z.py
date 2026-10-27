@@ -65,6 +65,16 @@ def test_sets_correct_trigger_mode(driver: RigolDS1074Z) -> None:
     assert driver.trigger_mode() == "video"
 
 
+def test_trigger_level_is_float(driver: RigolDS1074Z) -> None:
+    driver.trigger_mode("edge")
+    trigger_level = driver.trigger_level()
+    assert isinstance(trigger_level, float)
+    assert trigger_level == 0.16
+
+    driver.trigger_level(0.5)
+    assert driver.trigger_level() == 0.5
+
+
 def test_get_data_source(driver: RigolDS1074Z) -> None:
     driver.data_source("ch1")
     assert driver.data_source() == "ch1"
