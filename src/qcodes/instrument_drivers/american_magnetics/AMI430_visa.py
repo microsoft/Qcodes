@@ -26,6 +26,8 @@ from qcodes.validators import Anything, Bool, Enum, Ints, Numbers
 if TYPE_CHECKING:
     from typing import Unpack
 
+    import numpy.typing as npt
+
     from qcodes.metadatable import SnapshotUpdate
     from qcodes.parameters import Parameter
 
@@ -821,13 +823,16 @@ class AMIModel4303D(Instrument):
         )
         """Parameter rho_measured"""
 
-        # Get and set parameters for the set points of the coordinates
-        self.cartesian: Parameter = self.add_parameter(
-            "cartesian",
-            get_cmd=partial(self._get_setpoints, ("x", "y", "z")),
-            set_cmd=partial(self._set_setpoints, ("x", "y", "z")),
-            unit="T",
-            vals=Anything(),
+        # Get and set parameters for the set points of the coordinates. These
+        # return a list but can be set from any sequence or a numpy array.
+        self.cartesian: Parameter[Sequence[float] | npt.NDArray, Self] = (
+            self.add_parameter(
+                "cartesian",
+                get_cmd=partial(self._get_setpoints, ("x", "y", "z")),
+                set_cmd=partial(self._set_setpoints, ("x", "y", "z")),
+                unit="T",
+                vals=Anything(),
+            )
         )
         """Parameter cartesian"""
 
@@ -858,14 +863,16 @@ class AMIModel4303D(Instrument):
         )
         """Parameter z"""
 
-        self.spherical: Parameter = self.add_parameter(
-            "spherical",
-            get_cmd=partial(self._get_setpoints, ("r", "theta", "phi")),
-            set_cmd=partial(self._set_setpoints, ("r", "theta", "phi")),
-            vals=Anything(),
-            docstring="Set point in spherical coordinates (field, theta, phi), "
-            "with the field in the field units of the magnets and the angles "
-            "in degrees.",
+        self.spherical: Parameter[Sequence[float] | npt.NDArray, Self] = (
+            self.add_parameter(
+                "spherical",
+                get_cmd=partial(self._get_setpoints, ("r", "theta", "phi")),
+                set_cmd=partial(self._set_setpoints, ("r", "theta", "phi")),
+                vals=Anything(),
+                docstring="Set point in spherical coordinates (field, theta, phi), "
+                "with the field in the field units of the magnets and the angles "
+                "in degrees.",
+            )
         )
         """
         Set point in spherical coordinates (field, theta, phi), with the field in
@@ -899,14 +906,16 @@ class AMIModel4303D(Instrument):
         )
         """Parameter field"""
 
-        self.cylindrical: Parameter = self.add_parameter(
-            "cylindrical",
-            get_cmd=partial(self._get_setpoints, ("rho", "phi", "z")),
-            set_cmd=partial(self._set_setpoints, ("rho", "phi", "z")),
-            vals=Anything(),
-            docstring="Set point in cylindrical coordinates (rho, phi, z), "
-            "with rho and z in the field units of the magnets and phi in "
-            "degrees.",
+        self.cylindrical: Parameter[Sequence[float] | npt.NDArray, Self] = (
+            self.add_parameter(
+                "cylindrical",
+                get_cmd=partial(self._get_setpoints, ("rho", "phi", "z")),
+                set_cmd=partial(self._set_setpoints, ("rho", "phi", "z")),
+                vals=Anything(),
+                docstring="Set point in cylindrical coordinates (rho, phi, z), "
+                "with rho and z in the field units of the magnets and phi in "
+                "degrees.",
+            )
         )
         """
         Set point in cylindrical coordinates (rho, phi, z), with rho and z in the
@@ -1382,7 +1391,9 @@ class AMIModel4303D(Instrument):
     def _set_setpoint(self, name: str, value: float) -> None:
         self._set_setpoints((name,), (value,))
 
-    def _set_setpoints(self, names: Sequence[str], values: Sequence[float]) -> None:
+    def _set_setpoints(
+        self, names: Sequence[str], values: Sequence[float] | npt.NDArray
+    ) -> None:
         kwargs = dict(zip(names, np.atleast_1d(values)))
 
         set_point = FieldVector()

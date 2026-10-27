@@ -930,7 +930,8 @@ def test_simultaneous_ramp_mode_does_not_reset_individual_axis_ramp_rates_if_non
     ami3d._instrument_y.ramp_rate(0.10)
     ami3d._instrument_z.ramp_rate(0.11)
 
-    ami3d.vector_ramp_rate(0.05)
+    vector_ramp_rate = 0.05
+    ami3d.vector_ramp_rate(vector_ramp_rate)
 
     with caplog.at_level(logging.DEBUG, logger=LOG_NAME):
         # Initiate the simultaneous ramp
@@ -946,7 +947,7 @@ def test_simultaneous_ramp_mode_does_not_reset_individual_axis_ramp_rates_if_non
         # set by the simultaneous ramp based on the vector_ramp_rate and the
         # setpoint magnetic field
         expected_ramp_rate = pytest.approx(
-            0.5 / np.linalg.norm(ami3d.cartesian(), ord=2) * ami3d.vector_ramp_rate()
+            0.5 / np.linalg.norm(ami3d.cartesian(), ord=2) * vector_ramp_rate
         )
         assert ami3d._instrument_x.ramp_rate() == expected_ramp_rate
         assert ami3d._instrument_y.ramp_rate() == expected_ramp_rate
