@@ -178,7 +178,13 @@ class GalilMotionController(Instrument):
         """
         Close connection to the instrument
         """
-        self.g.GClose()
+        try:
+            # the connection is removed by Instrument.close, so a second close
+            # has nothing to close
+            if hasattr(self, "g"):
+                self.g.GClose()
+        finally:
+            super().close()
 
     def motion_complete(self, axes: str) -> None:
         """

@@ -38,6 +38,7 @@ class FakeGclibConnection:
     def __init__(self) -> None:
         self.replies: dict[str, list[str]] = {}
         self.commands: list[str] = []
+        self.closed = False
 
     def GOpen(self, address: str) -> None:
         pass
@@ -55,7 +56,7 @@ class FakeGclibConnection:
         pass
 
     def GClose(self) -> None:
-        pass
+        self.closed = True
 
 
 def _make_fake_gclib() -> ModuleType:
@@ -79,9 +80,6 @@ def _make_galil(
         yield driver
     finally:
         driver.close()
-        # GalilMotionController.close does not call Instrument.close, so the
-        # instrument would stay registered under its name
-        Instrument.close(driver)
         # do not leave the driver imported with the stand-in gclib
         for name in _DRIVER_MODULES:
             sys.modules.pop(name, None)
@@ -137,3 +135,19 @@ def test_unparsable_reply_raises(galil: "GalilDMC4133Controller") -> None:
 
     with pytest.raises(RuntimeError, match="Could not parse reply to 'MG _MOA'"):
         galil.motor_a.on_off_status()
+
+
+def test_close(galil: "GalilDMC4133Controller") -> None:
+    connection = _connection(galil)
+    driver_class = type(galil)
+
+    galil.close()
+
+    assert connection.closed
+    # the closed controller is no longer registered, so the name can be reused
+    assert not Instrument.exist("galil")
+    reopened = driver_class("galil", address="192.168.1.30")
+    reopened.close()
+
+    # closing again does nothing
+    galil.close()
