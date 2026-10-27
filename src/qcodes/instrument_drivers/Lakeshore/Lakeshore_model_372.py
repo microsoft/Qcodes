@@ -314,7 +314,7 @@ class LakeshoreModel372Channel(LakeshoreBaseSensorChannel):
         """
         self.temperature_coefficient: GroupParameter = self.add_parameter(
             "temperature_coefficient",
-            label="Change pause time",
+            label="Temperature coefficient",
             docstring="Sets the temperature coefficient that "
             "will be used for temperature control if "
             "no curve is selected (negative or "
