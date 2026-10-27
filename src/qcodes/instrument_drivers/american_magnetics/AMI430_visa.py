@@ -18,7 +18,12 @@ from qcodes.instrument import (
     VisaInstrument,
     VisaInstrumentKWArgs,
 )
-from qcodes.math_utils import FieldVector
+from qcodes.math_utils import (
+    CartesianVector,
+    CylindricalVector,
+    FieldVector,
+    SphericalVector,
+)
 from qcodes.metadatable import normalize_snapshot_update
 from qcodes.utils.types import NumberType
 from qcodes.validators import Anything, Bool, Enum, Ints, Numbers
@@ -35,6 +40,16 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 CartesianFieldLimitFunction = Callable[[float, float, float], bool]
+
+# the FieldVector components of each coordinate vector
+_VECTOR_COMPONENTS: dict[
+    type[CartesianVector | SphericalVector | CylindricalVector],
+    tuple[str, str, str],
+] = {
+    CartesianVector: ("x", "y", "z"),
+    SphericalVector: ("r", "theta", "phi"),
+    CylindricalVector: ("rho", "phi", "z"),
+}
 
 
 class AMI430Exception(Exception):
@@ -759,12 +774,10 @@ class AMIModel4303D(Instrument):
         )
 
         # Get-only parameters that return a measured value
-        self.cartesian_measured: Parameter[tuple[float, float, float], Self] = (
-            self.add_parameter(
-                "cartesian_measured",
-                get_cmd=partial(self._get_measured, ("x", "y", "z")),
-                unit="T",
-            )
+        self.cartesian_measured: Parameter[CartesianVector, Self] = self.add_parameter(
+            "cartesian_measured",
+            get_cmd=partial(self._get_measured, CartesianVector),
+            unit="T",
         )
         """Parameter cartesian_measured"""
 
@@ -783,12 +796,10 @@ class AMIModel4303D(Instrument):
         )
         """Parameter z_measured"""
 
-        self.spherical_measured: Parameter[tuple[float, float, float], Self] = (
-            self.add_parameter(
-                "spherical_measured",
-                get_cmd=partial(self._get_measured, ("r", "theta", "phi")),
-                unit="T",
-            )
+        self.spherical_measured: Parameter[SphericalVector, Self] = self.add_parameter(
+            "spherical_measured",
+            get_cmd=partial(self._get_measured, SphericalVector),
+            unit="T",
         )
         """Parameter spherical_measured"""
 
@@ -813,10 +824,10 @@ class AMIModel4303D(Instrument):
         )
         """Parameter field_measured"""
 
-        self.cylindrical_measured: Parameter[tuple[float, float, float], Self] = (
+        self.cylindrical_measured: Parameter[CylindricalVector, Self] = (
             self.add_parameter(
                 "cylindrical_measured",
-                get_cmd=partial(self._get_measured, ("rho", "phi", "z")),
+                get_cmd=partial(self._get_measured, CylindricalVector),
                 unit="T",
             )
         )
@@ -830,11 +841,12 @@ class AMIModel4303D(Instrument):
         """Parameter rho_measured"""
 
         # Get and set parameters for the set points of the coordinates. These
-        # return a tuple but can be set from any sequence or a numpy array.
+        # return a named tuple (CartesianVector, SphericalVector or
+        # CylindricalVector) but can be set from any sequence or a numpy array.
         self.cartesian: Parameter[Sequence[float] | npt.NDArray, Self] = (
             self.add_parameter(
                 "cartesian",
-                get_cmd=partial(self._get_setpoints, ("x", "y", "z")),
+                get_cmd=partial(self._get_setpoints, CartesianVector),
                 set_cmd=partial(self._set_setpoints, ("x", "y", "z")),
                 unit="T",
                 vals=Anything(),
@@ -872,7 +884,7 @@ class AMIModel4303D(Instrument):
         self.spherical: Parameter[Sequence[float] | npt.NDArray, Self] = (
             self.add_parameter(
                 "spherical",
-                get_cmd=partial(self._get_setpoints, ("r", "theta", "phi")),
+                get_cmd=partial(self._get_setpoints, SphericalVector),
                 set_cmd=partial(self._set_setpoints, ("r", "theta", "phi")),
                 vals=Anything(),
                 docstring="Set point in spherical coordinates (field, theta, phi), "
@@ -915,7 +927,7 @@ class AMIModel4303D(Instrument):
         self.cylindrical: Parameter[Sequence[float] | npt.NDArray, Self] = (
             self.add_parameter(
                 "cylindrical",
-                get_cmd=partial(self._get_setpoints, ("rho", "phi", "z")),
+                get_cmd=partial(self._get_setpoints, CylindricalVector),
                 set_cmd=partial(self._set_setpoints, ("rho", "phi", "z")),
                 vals=Anything(),
                 docstring="Set point in cylindrical coordinates (rho, phi, z), "
@@ -1383,18 +1395,22 @@ class AMIModel4303D(Instrument):
     def _get_measured_component(self, name: str) -> float:
         return self._get_measured_field_vector().get_components(name)[0]
 
-    def _get_measured(self, names: tuple[str, str, str]) -> tuple[float, float, float]:
+    def _get_measured[V: (CartesianVector, SphericalVector, CylindricalVector)](
+        self, vector_type: type[V]
+    ) -> V:
         # get_components returns the values in the order of the names
-        a, b, c = self._get_measured_field_vector().get_components(*names)
-        return a, b, c
+        names = _VECTOR_COMPONENTS[vector_type]
+        return vector_type(*self._get_measured_field_vector().get_components(*names))
 
     def _get_setpoint(self, name: str) -> float:
         return self._set_point.get_components(name)[0]
 
-    def _get_setpoints(self, names: tuple[str, str, str]) -> tuple[float, float, float]:
+    def _get_setpoints[V: (CartesianVector, SphericalVector, CylindricalVector)](
+        self, vector_type: type[V]
+    ) -> V:
         # get_components returns the values in the order of the names
-        a, b, c = self._set_point.get_components(*names)
-        return a, b, c
+        names = _VECTOR_COMPONENTS[vector_type]
+        return vector_type(*self._set_point.get_components(*names))
 
     def _set_setpoint(self, name: str, value: float) -> None:
         self._set_setpoints((name,), (value,))

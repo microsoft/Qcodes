@@ -10,6 +10,11 @@ import numpy as np
 from hypothesis import given, settings
 from hypothesis.strategies import floats, tuples
 
+from qcodes.math_utils import (
+    CartesianVector,
+    CylindricalVector,
+    SphericalVector,
+)
 from qcodes.math_utils.field_vector import FieldVector
 from qcodes.utils import NumpyJSONEncoder
 
@@ -161,3 +166,21 @@ def test_all_attributes_are_floats() -> None:
 
             for attr in FieldVector.attributes:
                 assert isinstance(getattr(fv, attr), float)
+
+
+def test_coordinate_named_tuples() -> None:
+    vector = FieldVector(x=0.1, y=0.2, z=0.3)
+
+    cartesian = CartesianVector(*vector.get_components("x", "y", "z"))
+    spherical = SphericalVector(*vector.get_components("r", "theta", "phi"))
+    cylindrical = CylindricalVector(*vector.get_components("rho", "phi", "z"))
+
+    assert cartesian.x == 0.1
+    assert spherical.field == vector.r
+    assert cylindrical.rho == vector.rho
+    # they are tuples, so they compare equal to and unpack like plain tuples
+    assert cartesian == (0.1, 0.2, 0.3)
+    x, y, z = cartesian
+    assert (x, y, z) == (0.1, 0.2, 0.3)
+    # and they are stored as plain lists in JSON, like other tuples
+    assert json.loads(json.dumps(cartesian, cls=NumpyJSONEncoder)) == [0.1, 0.2, 0.3]

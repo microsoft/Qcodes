@@ -21,7 +21,12 @@ from qcodes.instrument_drivers.american_magnetics import (
     AMIModel430,
     AMIModel4303D,
 )
-from qcodes.math_utils import FieldVector
+from qcodes.math_utils import (
+    CartesianVector,
+    CylindricalVector,
+    FieldVector,
+    SphericalVector,
+)
 from qcodes.utils.types import (
     numpy_concrete_floats,
     numpy_concrete_ints,
@@ -631,12 +636,17 @@ def test_measured(
 
 
 _SINGLE_COMPONENTS = ("x", "y", "z", "field", "theta", "phi", "rho")
-_VECTORS = ("cartesian", "spherical", "cylindrical")
+_VECTORS = {
+    "cartesian": CartesianVector,
+    "spherical": SphericalVector,
+    "cylindrical": CylindricalVector,
+}
 
 
 def test_component_and_vector_types(current_driver: AMIModel4303D) -> None:
     # single components are plain floats while the coordinate vectors are
-    # tuples of three floats, both for the set points and the measured values
+    # named tuples of three floats, both for the set points and the measured
+    # values
     current_driver.cartesian((0.1, 0.2, 0.3))
 
     for name in _SINGLE_COMPONENTS:
@@ -644,12 +654,33 @@ def test_component_and_vector_types(current_driver: AMIModel4303D) -> None:
             value = current_driver.parameters[parameter_name]()
             assert isinstance(value, float), parameter_name
 
-    for name in _VECTORS:
+    for name, vector_type in _VECTORS.items():
         for parameter_name in (name, f"{name}_measured"):
             value = current_driver.parameters[parameter_name]()
-            assert isinstance(value, tuple), parameter_name
+            assert type(value) is vector_type, parameter_name
             assert len(value) == 3
             assert all(isinstance(component, float) for component in value)
+
+
+def test_vector_components_by_name(current_driver: AMIModel4303D) -> None:
+    current_driver.cartesian((0.1, 0.2, 0.3))
+
+    cartesian = current_driver.cartesian_measured()
+    assert (cartesian.x, cartesian.y, cartesian.z) == pytest.approx((0.1, 0.2, 0.3))
+
+    spherical = current_driver.spherical()
+    # the settable vectors are typed as what they accept, so narrow the type
+    assert isinstance(spherical, SphericalVector)
+    assert spherical.field == pytest.approx(current_driver.field())
+    assert spherical.theta == pytest.approx(current_driver.theta())
+    assert spherical.phi == pytest.approx(current_driver.phi())
+
+    cylindrical = current_driver.cylindrical_measured()
+    assert cylindrical.rho == pytest.approx(current_driver.rho_measured())
+    assert cylindrical.z == pytest.approx(0.3)
+
+    # named tuples compare equal to plain tuples
+    assert current_driver.cartesian() == tuple(current_driver.cartesian())
 
 
 def test_set_single_component(current_driver: AMIModel4303D) -> None:
