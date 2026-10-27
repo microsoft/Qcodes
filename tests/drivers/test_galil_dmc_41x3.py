@@ -17,12 +17,25 @@ from qcodes.instrument import Instrument
 if TYPE_CHECKING:
     from collections.abc import Generator
 
+    from qcodes.instrument_drivers.Galil.dmc_41x3 import GalilDMC4133Controller
+
 _DRIVER_MODULE = "qcodes.instrument_drivers.Galil.dmc_41x3"
 
 
+class _FakeGclibError(Exception):
+    pass
+
+
 class _FakeGclibConnection:
+    """
+    Fake of ``gclib.py``. Queries are answered from ``replies``, a list of
+    replies per command that are returned in turn.
+    """
+
     def __init__(self) -> None:
         self.is_open = False
+        self.replies: dict[str, list[str]] = {}
+        self.commands: list[str] = []
 
     def GOpen(self, address: str) -> None:
         self.is_open = True
@@ -33,6 +46,15 @@ class _FakeGclibConnection:
     def GInfo(self) -> str:
         return "192.168.1.2, DMC4133 Rev 1.0b, 12345"
 
+    def GCommand(self, command: str) -> str:
+        command = command.removesuffix("\r")
+        self.commands.append(command)
+        replies = self.replies.get(command)
+        return replies.pop(0) if replies else ""
+
+    def GTimeout(self, timeout: int) -> None:
+        pass
+
 
 @pytest.fixture(name="driver_module")
 def _driver_module_with_fake_gclib(
@@ -40,7 +62,7 @@ def _driver_module_with_fake_gclib(
 ) -> "Generator[types.ModuleType, None, None]":
     fake_gclib = types.ModuleType("gclib")
     fake_gclib.py = _FakeGclibConnection  # type: ignore[attr-defined]
-    fake_gclib.GclibError = Exception  # type: ignore[attr-defined]
+    fake_gclib.GclibError = _FakeGclibError  # type: ignore[attr-defined]
     monkeypatch.setitem(sys.modules, "gclib", fake_gclib)
     for name in ("qcodes.instrument_drivers.Galil", _DRIVER_MODULE):
         monkeypatch.delitem(sys.modules, name, raising=False)
@@ -54,6 +76,22 @@ def _driver_module_with_fake_gclib(
             sys.modules.pop(name, None)
         if hasattr(qcodes.instrument_drivers, "Galil"):
             delattr(qcodes.instrument_drivers, "Galil")
+
+
+@pytest.fixture(name="galil")
+def _make_galil(
+    driver_module: types.ModuleType,
+) -> "Generator[GalilDMC4133Controller, None, None]":
+    driver = driver_module.GalilDMC4133Controller("galil", address="192.168.1.2")
+    try:
+        yield driver
+    finally:
+        driver.close()
+
+
+def _connection(galil: "GalilDMC4133Controller") -> _FakeGclibConnection:
+    assert isinstance(galil.g, _FakeGclibConnection)
+    return galil.g
 
 
 def test_close_closes_connection_and_unregisters_instrument(
@@ -71,3 +109,26 @@ def test_close_closes_connection_and_unregisters_instrument(
     controller.close()
     # the name can be reused once the instrument has been closed
     driver_module.GalilMotionController("galil", address="192.168.1.2").close()
+
+
+def test_idn(galil: "GalilDMC4133Controller") -> None:
+    assert galil.IDN() == {
+        "vendor": "Galil Motion Control, Inc.",
+        "model": "DMC4133",
+        "serial": "12345",
+        "firmware": "1.0b",
+    }
+
+
+def test_absolute_position(galil: "GalilDMC4133Controller") -> None:
+    _connection(galil).replies["PA ?,?,?"] = [":", "100, 200, 300:"]
+
+    assert galil.absolute_position() == {"A": 100, "B": 200, "C": 300}
+
+
+def test_absolute_position_is_read_only(galil: "GalilDMC4133Controller") -> None:
+    # setting the absolute position used to only update the cached value
+    # without moving the motors
+    assert not galil.absolute_position.settable
+    with pytest.raises(NotImplementedError):
+        galil.absolute_position({"A": 1, "B": 2, "C": 3})

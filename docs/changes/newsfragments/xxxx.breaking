@@ -1,0 +1,2 @@
+``GalilDMC4133Controller.absolute_position`` is now read-only. Setting it previously only
+updated the cached value without moving the motors, and now raises an error.
