@@ -169,6 +169,10 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         if hasattr(self, "connection") and hasattr(self.connection, "close"):
             self.connection.close()
 
+        # Unregister the instrument before stripping it, so that a stripped
+        # and therefore unusable instrument is never left registered.
+        self.remove_instance(self)
+
         # check for the existense first since this may already
         # have been striped e.g. if the instrument has been closed once before
         if hasattr(self, "instrument_modules"):
@@ -181,7 +185,6 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
                     strip_attrs(channel, whitelist=["_short_name", "_parent"])
 
         strip_attrs(self, whitelist=["_short_name"])
-        self.remove_instance(self)
 
     @classmethod
     def close_all(
@@ -285,15 +288,34 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
             instance: The instance to remove
 
         """
+        if weakref.getweakrefcount(instance) == 0:
+            # Instances are only recorded through weak references, so there is
+            # nothing to remove. This is the case when the garbage collector
+            # finalizes the instance, since it clears all weak references to
+            # the instance before that. Leave the records alone then: before
+            # Python 3.14, weak containers postpone removing dead entries while
+            # being iterated over, but most of their methods apply postponed
+            # removals right away. That would make an iteration that the
+            # garbage collection interrupted fail with
+            # "RuntimeError: dictionary changed size during iteration".
+            return
+
         if instance in getattr(cls, "_instances", weakref.WeakSet()):
             cls._instances.remove(instance)
 
-        # remove from all_instruments too, but don't depend on the
-        # name to do it, in case name has changed or been deleted
+        # Look the instance up by name instead of iterating over all
+        # instruments, which a garbage collection could interrupt as described
+        # above. The identity check ensures that we never remove another
+        # instrument registered under the same name, e.g. when an instrument is
+        # closed again after its name has been reused.
+        try:
+            name = instance.name
+        except AttributeError:
+            # The instance was not initialized far enough to be registered.
+            return
         all_ins = cls._all_instruments
-        for name, ref in list(all_ins.items()):
-            if ref is instance:
-                del all_ins[name]
+        if all_ins.get(name) is instance:
+            del all_ins[name]
 
     @overload
     @classmethod
