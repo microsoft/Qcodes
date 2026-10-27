@@ -665,6 +665,68 @@ def test_set_single_component(current_driver: AMIModel4303D) -> None:
     assert np.allclose(current_driver.cartesian(), 0.5 * direction)
 
 
+def _field_units(driver: AMIModel4303D) -> set[str]:
+    field_parameters = (
+        driver.cartesian,
+        driver.x,
+        driver.y,
+        driver.z,
+        driver.field,
+        driver.rho,
+        driver.cartesian_measured,
+        driver.x_measured,
+        driver.y_measured,
+        driver.z_measured,
+        driver.field_measured,
+        driver.rho_measured,
+    )
+    return {parameter.unit for parameter in field_parameters}
+
+
+def test_field_units_follow_magnets(
+    current_driver: AMIModel4303D,
+    magnet_axes_instances: tuple[AMIModel430, AMIModel430, AMIModel430],
+) -> None:
+    # the field values are in the field units of the magnets, which can be
+    # tesla or kilogauss
+    assert _field_units(current_driver) == {"T"}
+
+    for magnet in magnet_axes_instances:
+        magnet.field_units("kilogauss")
+
+    assert _field_units(current_driver) == {"kG"}
+    # the angles are not affected
+    assert current_driver.phi.unit == "deg"
+    assert current_driver.theta_measured.unit == "deg"
+
+
+def test_mixed_field_units_warn(
+    current_driver: AMIModel4303D,
+    magnet_axes_instances: tuple[AMIModel430, AMIModel430, AMIModel430],
+    caplog: LogCaptureFixture,
+) -> None:
+    mag_x, _, _ = magnet_axes_instances
+
+    with caplog.at_level(logging.WARNING):
+        mag_x.field_units("kilogauss")
+
+    assert _field_units(current_driver) == {""}
+    assert "The magnets use different field units (x: kG, y: T, z: T)" in caplog.text
+
+
+def test_field_units_at_init_follow_magnets(
+    magnet_axes_instances: tuple[AMIModel430, AMIModel430, AMIModel430],
+) -> None:
+    for magnet in magnet_axes_instances:
+        magnet.field_units("kilogauss")
+
+    driver = AMIModel4303D("AMI430_3D", *magnet_axes_instances, field_limit)
+    try:
+        assert _field_units(driver) == {"kG"}
+    finally:
+        driver.close()
+
+
 def get_ramp_down_order(messages: list[str]) -> list[str]:
     order = []
 

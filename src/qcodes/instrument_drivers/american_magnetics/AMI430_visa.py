@@ -583,6 +583,10 @@ class AMIModel430(VisaInstrument):
         self.current_ramp_limit.unit = f"A/{ramp_rate_units_short}"
         self.field_ramp_limit.unit = f"{field_units_short}/{ramp_rate_units_short}"
 
+        # the field parameters of a 3D driver are in the units of the magnets
+        if self._parent_instrument is not None:
+            self._parent_instrument._update_field_units()
+
         # And update scaling factors
         # Note: we don't update field_ramp_limit scale as it redirects
         #       to ramp_rate_limit; we don't update ramp_rate units as
@@ -663,7 +667,8 @@ class AMIModel4303D(Instrument):
                 instance for controlling the Z axis of magnetic field
             field_limit: a number for maximum allows magnetic field or an
                 iterable of callable field limit functions that define
-                region(s) of allowed values in 3D magnetic field space
+                region(s) of allowed values in 3D magnetic field space, in
+                the field units of the magnets (tesla or kilogauss)
             **kwargs: kwargs are forwarded to base class.
 
         """
@@ -836,11 +841,12 @@ class AMIModel4303D(Instrument):
             set_cmd=partial(self._set_setpoints, ("r", "theta", "phi")),
             vals=Anything(),
             docstring="Set point in spherical coordinates (field, theta, phi), "
-            "with the field in T and the angles in degrees.",
+            "with the field in the field units of the magnets and the angles "
+            "in degrees.",
         )
         """
-        Set point in spherical coordinates (field, theta, phi), with the field in T
-        and the angles in degrees.
+        Set point in spherical coordinates (field, theta, phi), with the field in
+        the field units of the magnets and the angles in degrees.
         """
 
         self.phi: Parameter[float, Self] = self.add_parameter(
@@ -876,11 +882,12 @@ class AMIModel4303D(Instrument):
             set_cmd=partial(self._set_setpoints, ("rho", "phi", "z")),
             vals=Anything(),
             docstring="Set point in cylindrical coordinates (rho, phi, z), "
-            "with rho and z in T and phi in degrees.",
+            "with rho and z in the field units of the magnets and phi in "
+            "degrees.",
         )
         """
-        Set point in cylindrical coordinates (rho, phi, z), with rho and z in T and
-        phi in degrees.
+        Set point in cylindrical coordinates (rho, phi, z), with rho and z in the
+        field units of the magnets and phi in degrees.
         """
 
         self.rho: Parameter[float, Self] = self.add_parameter(
@@ -929,11 +936,52 @@ class AMIModel4303D(Instrument):
         )
         """Ramp rate along a line (vector) in 3D field space"""
 
+        # the field parameters are in the field units of the magnets
+        self._update_field_units()
+
         self._exit_stack = ExitStack()
 
     def get_idn(self) -> dict[str, str | None]:
         idparts = ["American Magnetics", self.name, None, None]
         return dict(zip(("vendor", "model", "serial", "firmware"), idparts))
+
+    def _update_field_units(self) -> None:
+        """
+        Use the field units of the magnets (tesla or kilogauss) as the unit of
+        the field parameters, since their values are in the units of the
+        magnets. This is called whenever the field units of a magnet change.
+        """
+        instruments = (self._instrument_x, self._instrument_y, self._instrument_z)
+        units = {instrument.field.unit for instrument in instruments}
+        if len(units) == 1:
+            (unit,) = units
+        else:
+            unit = ""
+            self.log.warning(
+                "The magnets use different field units (%s), so the field "
+                "values of %s combine different units.",
+                ", ".join(
+                    f"{instrument.short_name}: {instrument.field.unit}"
+                    for instrument in instruments
+                ),
+                self.name,
+            )
+        field_parameters: tuple[Parameter, ...] = (
+            self.cartesian,
+            self.x,
+            self.y,
+            self.z,
+            self.field,
+            self.rho,
+            self.cartesian_measured,
+            self.x_measured,
+            self.y_measured,
+            self.z_measured,
+            self.field_measured,
+            self.rho_measured,
+        )
+        for parameter in field_parameters:
+            parameter.unit = unit
 
     def _set_vector_ramp_rate_units(self, val: float) -> float:
         _, common_ramp_rate_units = self._raise_if_not_same_field_and_ramp_rate_units()
