@@ -39,6 +39,7 @@ class FakeGclibConnection:
         self.replies: dict[str, list[str]] = {}
         self.commands: list[str] = []
         self.closed = False
+        self.timeout = 5000
 
     def GOpen(self, address: str) -> None:
         pass
@@ -53,7 +54,7 @@ class FakeGclibConnection:
         return replies.pop(0) if replies else ""
 
     def GTimeout(self, timeout: int) -> None:
-        pass
+        self.timeout = timeout
 
     def GClose(self) -> None:
         self.closed = True
@@ -133,8 +134,40 @@ def test_off_when_error_occurs(galil: "GalilDMC4133Controller") -> None:
 def test_unparsable_reply_raises(galil: "GalilDMC4133Controller") -> None:
     _connection(galil).replies["MG _MOA"] = [":"] * 20
 
-    with pytest.raises(RuntimeError, match="Could not parse reply to 'MG _MOA'"):
+    with pytest.raises(RuntimeError, match="Got only empty replies to 'MG _MOA'"):
         galil.motor_a.on_off_status()
+
+
+def test_parameters_retry_empty_replies(galil: "GalilDMC4133Controller") -> None:
+    # every query retries empty replies, not only the ones that used to
+    # have their own retry loop
+    _connection(galil).replies["MG _SPA"] = ["", ":", "2000.0000"]
+    _connection(galil).replies["VS ?"] = [":", "4000.0000:"]
+
+    assert galil.motor_a.speed() == 2000
+    assert galil.plane_ab.vector_speed() == 4000
+
+
+def test_malformed_position_raises(galil: "GalilDMC4133Controller") -> None:
+    _connection(galil).replies["PA ?,?,?"] = ["100, 200"]
+
+    with pytest.raises(ValueError, match="Expected three positions"):
+        galil.absolute_position()
+
+
+def test_wait_till_motion_complete(galil: "GalilDMC4133Controller") -> None:
+    # an empty reply while waiting counts as "not yet finished" and is polled
+    # again; the wait ends when every axis reports 0
+    connection = _connection(galil)
+    connection.replies["MG _BGA"] = ["1.0000", "", "0.0000"]
+    connection.replies["MG _BGB"] = ["0.0000"] * 3
+    connection.replies["MG _BGC"] = [":", "0.0000", "0.0000"]
+
+    galil.wait_till_motion_complete(timeout_s=5)
+
+    assert connection.commands.count("MG _BGA") == 3
+    # the I/O timeout is restored after polling
+    assert connection.timeout == 5000
 
 
 def test_close(galil: "GalilDMC4133Controller") -> None:
