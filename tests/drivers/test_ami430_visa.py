@@ -727,6 +727,24 @@ def test_field_units_at_init_follow_magnets(
         driver.close()
 
 
+def test_magnets_work_after_3d_driver_is_closed(
+    magnet_axes_instances: tuple[AMIModel430, AMIModel430, AMIModel430],
+) -> None:
+    mag_x, _, _ = magnet_axes_instances
+    driver = AMIModel4303D("AMI430_3D", *magnet_axes_instances, field_limit)
+    assert mag_x._parent_instrument is driver
+
+    driver.close()
+
+    # the magnets no longer delegate to the closed 3D driver
+    assert mag_x._parent_instrument is None
+    mag_x.field_units("kilogauss")
+    assert mag_x.field.unit == "kG"
+    mag_x.set_field(0.1)
+    assert mag_x.field() == pytest.approx(0.1)
+    mag_x.zero()
+
+
 def get_ramp_down_order(messages: list[str]) -> list[str]:
     order = []
 

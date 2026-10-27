@@ -945,6 +945,19 @@ class AMIModel4303D(Instrument):
         idparts = ["American Magnetics", self.name, None, None]
         return dict(zip(("vendor", "model", "serial", "firmware"), idparts))
 
+    def close(self) -> None:
+        # the magnets can stay open after this driver is closed, so they must
+        # no longer delegate to it. A magnet that was closed first no longer
+        # has the attribute.
+        for name in ("_instrument_x", "_instrument_y", "_instrument_z"):
+            instrument: AMIModel430 | None = getattr(self, name, None)
+            if (
+                instrument is not None
+                and getattr(instrument, "_parent_instrument", None) is self
+            ):
+                instrument._parent_instrument = None
+        super().close()
+
     def _update_field_units(self) -> None:
         """
         Use the field units of the magnets (tesla or kilogauss) as the unit of
