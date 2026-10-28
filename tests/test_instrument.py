@@ -85,6 +85,18 @@ def _close_before_and_after() -> Iterator[None]:
         Instrument.close_all()
 
 
+@pytest.fixture(name="automatic_gc_disabled", scope="function")
+def _automatic_gc_disabled() -> Iterator[None]:
+    """Disable automatic garbage collection so that only the test triggers it."""
+    was_enabled = gc.isenabled()
+    gc.disable()
+    try:
+        yield
+    finally:
+        if was_enabled:
+            gc.enable()
+
+
 def test_instrument_type(request: pytest.FixtureRequest) -> None:
     # make sure that the type of the instrument is correct.
     # Due to our use of a metaclass for instrument this could be
@@ -551,6 +563,108 @@ def test_close_all_only_accepts_keyword_arguments() -> None:
     """The ``close_all`` options are keyword-only."""
     with pytest.raises(TypeError):
         Instrument.close_all(True)  # type: ignore[misc]
+
+
+class _RegistryCollectingGarbageWhenIterated(WeakValueDictionary[str, Instrument]):
+    """
+    Instrument registry that runs a garbage collection in the middle of the
+    first iteration over it.
+
+    A garbage collection can run whenever objects are allocated, so this makes
+    a rare but possible situation deterministic.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.collected_garbage = False
+
+    def _collect_garbage_once(self) -> None:
+        if not self.collected_garbage:
+            self.collected_garbage = True
+            gc.collect()
+
+    def __iter__(self) -> Iterator[str]:
+        for name in super().__iter__():
+            yield name
+            self._collect_garbage_once()
+
+    def items(self) -> Iterator[tuple[str, Instrument]]:  # type: ignore[override]
+        for item in super().items():
+            yield item
+            self._collect_garbage_once()
+
+
+def _leak_instrument(name: str) -> None:
+    """
+    Create an instrument and drop it without closing it.
+
+    The instrument references itself through its parameters, so it stays
+    registered until the garbage collector finalizes it.
+    """
+    Instrument(name)
+    assert Instrument.exist(name)
+
+
+@pytest.mark.usefixtures("close_before_and_after", "automatic_gc_disabled")
+def test_close_when_gc_finalizes_instrument_during_registry_iteration(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """
+    Closing an instrument unregisters it, so that its name can be reused, even
+    if a garbage collection that finalizes another instrument interrupts an
+    iteration over the registry.
+    """
+    monkeypatch.setattr(
+        Instrument, "_all_instruments", _RegistryCollectingGarbageWhenIterated()
+    )
+    dummy = DummyInstrument(name="dummy", gates=["dac1"])
+    _leak_instrument("leaked")
+
+    dummy.close()
+
+    assert not Instrument.exist("dummy")
+    DummyInstrument(name="dummy", gates=["dac1"]).close()
+
+    gc.collect()
+    assert len(Instrument._all_instruments) == 0
+
+
+@pytest.mark.usefixtures("close_before_and_after", "automatic_gc_disabled")
+def test_close_all_when_gc_finalizes_instrument_during_registry_iteration(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """
+    ``close_all`` closes all instruments even if a garbage collection that
+    finalizes another instrument runs while it iterates over the registry.
+    """
+    registry = _RegistryCollectingGarbageWhenIterated()
+    monkeypatch.setattr(Instrument, "_all_instruments", registry)
+    dummy = DummyInstrument(name="dummy", gates=["dac1"])
+    _leak_instrument("leaked")
+    parabola = MockParabola("parabola")
+
+    Instrument.close_all()
+
+    assert registry.collected_garbage
+    assert not Instrument.is_valid(dummy)
+    assert not Instrument.is_valid(parabola)
+    assert len(Instrument._all_instruments) == 0
+
+
+@pytest.mark.usefixtures("close_before_and_after")
+def test_closing_instrument_again_keeps_new_instrument_with_same_name() -> None:
+    """
+    Closing an instrument again does not unregister another instrument that
+    has been registered under the same name in the meantime.
+    """
+    old_dummy = DummyInstrument(name="dummy", gates=["dac1"])
+    old_dummy.close()
+    new_dummy = DummyInstrument(name="dummy", gates=["dac1"])
+
+    old_dummy.close()
+
+    assert Instrument.find_instrument("dummy") is new_dummy
+    new_dummy.close()
 
 
 def test_instrument_metadata(request: FixtureRequest) -> None:
