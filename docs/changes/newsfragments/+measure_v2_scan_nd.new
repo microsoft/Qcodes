@@ -1,0 +1,10 @@
+Added ``scan_nd`` to ``qcodes.measure_v2`` for nested multi-dimensional
+sweeps. Sweeps are passed outermost-first
+(``scan_nd(outer, middle, inner, measured=[...])``); the plan-builder reads
+every ``measured`` parameter at each innermost setpoint and emits one
+dataset row per innermost point. Per-sweep ``delay`` and ``get_after_set``
+are honored. On exit (success, error, or cancel), every swept parameter
+is set to ``0.0`` — extending the ``scan_1d`` cancel-safety contract to
+N dimensions. The convenience entrypoint ``qc.measure_v2.scan(*sweeps,
+measure=[...])`` now accepts any number of sweeps and dispatches to
+``scan_1d`` or ``scan_nd`` accordingly.
