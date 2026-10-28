@@ -76,7 +76,7 @@ def test_averages_accepts_whole_floats(
     # whole-number floats, e.g. from numpy, are accepted and sent as int
     write_raw = mocker.spy(vna, "write_raw")
 
-    vna.averages(value)  # pyright: ignore[reportArgumentType]
+    vna.averages(value)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
     write_raw.assert_called_once_with("SENS1:AVER:COUN 3")
     assert vna.averages() == 3
@@ -89,7 +89,7 @@ def test_averages_rejects_non_integer(
     write_raw = mocker.spy(vna, "write_raw")
 
     with pytest.raises(TypeError):
-        vna.averages(2.5)  # pyright: ignore[reportArgumentType]
+        vna.averages(2.5)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
     write_raw.assert_not_called()
 
 
@@ -110,7 +110,7 @@ def test_averages_trigger_enabled_accepts_on_off_strings_and_ints(
     vna: CopperMountainM5065, value: str | int, expected: bool
 ) -> None:
     # while it does not type check, on/off strings and ints are accepted
-    vna.averages_trigger_enabled(value)  # pyright: ignore[reportArgumentType]
+    vna.averages_trigger_enabled(value)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
     assert vna.averages_trigger_enabled() is expected
 
 

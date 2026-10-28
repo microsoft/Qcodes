@@ -65,7 +65,7 @@ def test_status_accepts_on_off_strings_and_ints(
     sg: RohdeSchwarzSGS100A, value: str | int, expected: bool
 ) -> None:
     # while it does not type check, on/off strings and ints are accepted
-    sg.status(value)  # pyright: ignore[reportArgumentType]
+    sg.status(value)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
     assert sg.status() is expected
 
 
