@@ -40,7 +40,7 @@ def test_burst_ncycles_accepts_whole_floats(
     burst = dg1062.ch1.burst
     write_raw = mocker.spy(dg1062, "write_raw")
 
-    burst.ncycles(value)  # pyright: ignore[reportArgumentType]
+    burst.ncycles(value)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
     write_raw.assert_called_once_with(":SOUR1:BURS:NCYC 10")
     assert burst.ncycles() == 10
@@ -52,7 +52,7 @@ def test_burst_ncycles_rejects_non_integer(
     write_raw = mocker.spy(dg1062, "write_raw")
 
     with pytest.raises(TypeError):
-        dg1062.ch1.burst.ncycles(2.5)  # pyright: ignore[reportArgumentType]
+        dg1062.ch1.burst.ncycles(2.5)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
     write_raw.assert_not_called()
 
 

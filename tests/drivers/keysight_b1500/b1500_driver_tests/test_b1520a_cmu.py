@@ -156,7 +156,7 @@ def test_ac_dc_volt_monitor_accepts_on_off_ints_and_strings(
     cmu: KeysightB1520A, value: int | str, expected: bool
 ) -> None:
     # while it does not type check, on/off ints and strings are accepted
-    cmu.ac_dc_volt_monitor(value)  # pyright: ignore[reportArgumentType]
+    cmu.ac_dc_volt_monitor(value)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
     assert cmu.ac_dc_volt_monitor() is expected
 
 
