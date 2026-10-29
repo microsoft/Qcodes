@@ -494,7 +494,7 @@ versioningit==3.3.0
     #   broadbean
     #   qcodes
     #   qcodes-loop
-wcwidth==0.9.2
+wcwidth==0.9.3
     # via prompt-toolkit
 webencodings==0.5.1
     # via
