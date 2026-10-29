@@ -322,7 +322,7 @@ pytest-rerunfailures==16.7
     # via qcodes (pyproject.toml)
 pytest-xdist==3.8.0
     # via qcodes (pyproject.toml)
-python-dateutil==2.9.0.post0
+python-dateutil==3.0.0
     # via
     #   jupyter-client
     #   matplotlib
