@@ -80,6 +80,15 @@ devices:
         specs:
           type: int
 
+      # command-only, no reply
+      auto_zero_once:
+        setter:
+          q: ":SENSe:AZERo:ONCE"
+
+      trigger_in_ext_clear:
+        setter:
+          q: ":TRIGger:EXTernal:IN:CLEar"
+
 resources:
   "GPIB::1::INSTR":
     device: device 1

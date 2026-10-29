@@ -566,14 +566,6 @@ class Keithley7510Sense(InstrumentChannel["Keithley7510"]):
         )
         """Enable or disable automatic updates to the internal reference measurements (autozero) of the instrument."""
 
-        self.auto_zero_once: Parameter = self.add_parameter(
-            "auto_zero_once",
-            set_cmd=":SENSe:AZERo:ONCE",
-            docstring="Cause the instrument to refresh the reference and "
-            "zero measurements once",
-        )
-        """Cause the instrument to refresh the reference and zero measurements once"""
-
         self.average: Parameter[bool, Self] = self.add_parameter(
             "average",
             get_cmd=f":SENSe:{self._proper_function}:AVERage?",
@@ -627,6 +619,13 @@ class Keithley7510Sense(InstrumentChannel["Keithley7510"]):
         Clear the data buffer
         """
         self.write(f":TRACe:CLEar '{buffer_name}'")
+
+    def auto_zero_once(self) -> None:
+        """
+        Cause the instrument to refresh the reference and zero measurements
+        once.
+        """
+        self.write(":SENSe:AZERo:ONCE")
 
 
 class Keithley7510DigitizeSense(InstrumentChannel["Keithley7510"]):
@@ -787,13 +786,6 @@ class Keithley7510(VisaInstrument):
         )
         """Return the settings for all trigger model blocks."""
 
-        self.trigger_in_ext_clear: Parameter = self.add_parameter(
-            "trigger_in_ext_clear",
-            set_cmd=":TRIGger:EXTernal:IN:CLEar",
-            docstring="Clear the trigger event on the external in line.",
-        )
-        """Clear the trigger event on the external in line."""
-
         self.trigger_in_ext_edge: Parameter[str, Self] = self.add_parameter(
             "trigger_in_ext_edge",
             get_cmd=":TRIGger:EXTernal:IN:EDGE?",
@@ -895,6 +887,13 @@ class Keithley7510(VisaInstrument):
         previous overlapped commands are finished.
         """
         self.write("*WAI")
+
+    def trigger_in_ext_clear(self) -> None:
+        """
+        Clear the trigger event on the external in line. This also discards
+        the event history and clears the overrun status.
+        """
+        self.write(":TRIGger:EXTernal:IN:CLEar")
 
     def clear_status(self) -> None:
         """

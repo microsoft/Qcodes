@@ -159,3 +159,26 @@ def test_buffer_index_and_time_parameters(dmm_7510_driver: Keithley7510) -> None
     assert isinstance(t_start, float)
     assert isinstance(t_stop, float)
     assert (t_start, t_stop) == (1.0, 2.0)
+
+
+@pytest.mark.parametrize(
+    ("action", "command"),
+    [
+        ("auto_zero_once", ":SENSe:AZERo:ONCE"),
+        ("trigger_in_ext_clear", ":TRIGger:EXTernal:IN:CLEar"),
+    ],
+)
+def test_action_methods_send_command(
+    dmm_7510_driver: Keithley7510, mocker: "MockerFixture", action: str, command: str
+) -> None:
+    # these used to be parameters, so calling them without an argument only
+    # returned the cached value and did not send anything
+    write_raw = mocker.spy(dmm_7510_driver, "write_raw")
+    if action == "auto_zero_once":
+        dmm_7510_driver.sense.auto_zero_once()
+    else:
+        dmm_7510_driver.trigger_in_ext_clear()
+
+    write_raw.assert_called_once_with(command)
+    # the instrument does not reply, so the next query is unaffected
+    assert dmm_7510_driver.IDN()["model"] == "DMM7510"
