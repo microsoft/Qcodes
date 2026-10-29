@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from qcodes import instrument_drivers
 from qcodes.instrument import Instrument
 
 if TYPE_CHECKING:
@@ -74,6 +75,8 @@ def _make_galil(
     monkeypatch.setitem(sys.modules, "gclib", _make_fake_gclib())
     for name in _DRIVER_MODULES:
         monkeypatch.delitem(sys.modules, name, raising=False)
+    # importing the driver also binds ``Galil`` on the parent package
+    original_galil = instrument_drivers.__dict__.get("Galil")
     dmc_41x3 = importlib.import_module("qcodes.instrument_drivers.Galil.dmc_41x3")
 
     driver = dmc_41x3.GalilDMC4133Controller("galil", address="192.168.1.30")
@@ -84,6 +87,10 @@ def _make_galil(
         # do not leave the driver imported with the stand-in gclib
         for name in _DRIVER_MODULES:
             sys.modules.pop(name, None)
+        if original_galil is None:
+            instrument_drivers.__dict__.pop("Galil", None)
+        else:
+            instrument_drivers.__dict__["Galil"] = original_galil
 
 
 def _connection(galil: "GalilDMC4133Controller") -> FakeGclibConnection:
