@@ -4,7 +4,7 @@ Driver for the Keithley S46 RF switch
 
 import re
 from itertools import product
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Self
 
 from qcodes.instrument import (
     VisaInstrument,
@@ -151,7 +151,7 @@ class KeithleyS46(VisaInstrument):
     ):
         super().__init__(name, address, **kwargs)
         try:
-            self.closed_channels: Parameter = self.add_parameter(
+            self.closed_channels: Parameter[list[str], Self] = self.add_parameter(
                 "closed_channels",
                 get_cmd=":CLOS?",
                 get_parser=self._get_closed_channels_parser,

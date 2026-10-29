@@ -163,7 +163,7 @@ class Keithley7510Buffer(InstrumentChannel["Keithley7510"]):
         )
         """Get the starting index of readings in the reading buffer."""
 
-        self.data_start: Parameter = self.add_parameter(
+        self.data_start: Parameter[int, Self] = self.add_parameter(
             "data_start",
             initial_value=1,
             get_cmd=None,
@@ -172,7 +172,7 @@ class Keithley7510Buffer(InstrumentChannel["Keithley7510"]):
         )
         """First index of the data to be returned."""
 
-        self.data_end: Parameter = self.add_parameter(
+        self.data_end: Parameter[int, Self] = self.add_parameter(
             "data_end",
             initial_value=1,
             get_cmd=None,
@@ -181,7 +181,7 @@ class Keithley7510Buffer(InstrumentChannel["Keithley7510"]):
         )
         """Last index of the data to be returned."""
 
-        self.elements: Parameter = self.add_parameter(
+        self.elements: Parameter[list[str], Self] = self.add_parameter(
             "elements",
             get_cmd=None,
             get_parser=self._from_scpi_to_name,
@@ -223,7 +223,7 @@ class Keithley7510Buffer(InstrumentChannel["Keithley7510"]):
         )
         """Parameter setpoints"""
 
-        self.t_start: Parameter = self.add_parameter(
+        self.t_start: Parameter[float, Self] = self.add_parameter(
             "t_start",
             label="start time",
             unit="s",
@@ -234,7 +234,7 @@ class Keithley7510Buffer(InstrumentChannel["Keithley7510"]):
         )
         """Parameter t_start"""
 
-        self.t_stop: Parameter = self.add_parameter(
+        self.t_stop: Parameter[float, Self] = self.add_parameter(
             "t_stop",
             label="stop time",
             unit="s",
@@ -772,7 +772,7 @@ class Keithley7510(VisaInstrument):
         )
         """Make readings using the active digitize function."""
 
-        self.buffer_name: Parameter = self.add_parameter(
+        self.buffer_name: Parameter[str, Self] = self.add_parameter(
             "buffer_name",
             get_cmd=None,
             set_cmd=None,

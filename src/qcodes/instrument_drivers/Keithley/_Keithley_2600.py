@@ -959,7 +959,7 @@ class Keithley2600Channel(InstrumentChannel["Keithley2600"]):
             ... )
         """
 
-        self.timetrace_npts: Parameter = self.add_parameter(
+        self.timetrace_npts: Parameter[int, Self] = self.add_parameter(
             "timetrace_npts",
             initial_value=500,
             label="Number of points",
@@ -968,7 +968,7 @@ class Keithley2600Channel(InstrumentChannel["Keithley2600"]):
         )
         """Parameter timetrace_npts"""
 
-        self.timetrace_dt: Parameter = self.add_parameter(
+        self.timetrace_dt: Parameter[float, Self] = self.add_parameter(
             "timetrace_dt",
             initial_value=1e-3,
             label="Time resolution",
