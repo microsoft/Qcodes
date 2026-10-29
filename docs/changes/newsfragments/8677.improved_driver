@@ -1,0 +1,7 @@
+All queries of the Galil DMC-41x3 driver now retry the empty or bare ``:`` replies that gclib
+can return under rapid polling, instead of only ``is_in_motion`` and ``absolute_position``.
+Non-empty replies that cannot be parsed, such as an absolute position with fewer than three
+values, now raise immediately instead of being retried. ``GalilDMC4133Motor.on_off_status`` and
+``off_when_error_occurs`` now parse the whole reply instead of only its first character.
+``GalilMotionController.close`` now also closes the QCoDeS instrument, so a closed controller
+can be created again with the same name.
