@@ -121,7 +121,15 @@ def test_absolute_position_is_read_only(galil: "GalilDMC4133Controller") -> None
         galil.absolute_position({"A": 1, "B": 2, "C": 3})
 
 
-@pytest.mark.parametrize(("reply", "expected"), [("1.0000", "off"), ("0.0000", "on")])
+@pytest.mark.parametrize(
+    ("reply", "expected"),
+    [
+        ("1.0000", "off"),
+        ("0.0000", "on"),
+        # with LZ0 the controller does not strip leading zeros
+        ("0000000001.0000", "off"),
+    ],
+)
 def test_on_off_status(
     galil: "GalilDMC4133Controller", reply: str, expected: str
 ) -> None:
