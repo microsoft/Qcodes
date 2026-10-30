@@ -64,7 +64,7 @@ class AgilentE8267C(VisaInstrument):
             vals=Numbers(min_value=10e-9, max_value=20e-9),
         )
         """Parameter pulse_width"""
-        self.phase: Parameter = self.add_parameter(
+        self.phase: Parameter[float, Self] = self.add_parameter(
             name="phase",
             label="Phase",
             unit="deg",

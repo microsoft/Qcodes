@@ -104,7 +104,7 @@ class AgilentE8257D(VisaInstrument):
         )
         """Parameter frequency"""
 
-        self.phase: Parameter = self.add_parameter(
+        self.phase: Parameter[float, Self] = self.add_parameter(
             name="phase",
             label="Phase",
             unit="deg",
