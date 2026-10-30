@@ -163,7 +163,7 @@ class Keithley7510Buffer(InstrumentChannel["Keithley7510"]):
         )
         """Get the starting index of readings in the reading buffer."""
 
-        self.data_start: Parameter = self.add_parameter(
+        self.data_start: Parameter[int, Self] = self.add_parameter(
             "data_start",
             initial_value=1,
             get_cmd=None,
@@ -172,7 +172,7 @@ class Keithley7510Buffer(InstrumentChannel["Keithley7510"]):
         )
         """First index of the data to be returned."""
 
-        self.data_end: Parameter = self.add_parameter(
+        self.data_end: Parameter[int, Self] = self.add_parameter(
             "data_end",
             initial_value=1,
             get_cmd=None,
@@ -181,7 +181,7 @@ class Keithley7510Buffer(InstrumentChannel["Keithley7510"]):
         )
         """Last index of the data to be returned."""
 
-        self.elements: Parameter = self.add_parameter(
+        self.elements: Parameter[list[str], Self] = self.add_parameter(
             "elements",
             get_cmd=None,
             get_parser=self._from_scpi_to_name,
@@ -223,7 +223,7 @@ class Keithley7510Buffer(InstrumentChannel["Keithley7510"]):
         )
         """Parameter setpoints"""
 
-        self.t_start: Parameter = self.add_parameter(
+        self.t_start: Parameter[float, Self] = self.add_parameter(
             "t_start",
             label="start time",
             unit="s",
@@ -234,7 +234,7 @@ class Keithley7510Buffer(InstrumentChannel["Keithley7510"]):
         )
         """Parameter t_start"""
 
-        self.t_stop: Parameter = self.add_parameter(
+        self.t_stop: Parameter[float, Self] = self.add_parameter(
             "t_stop",
             label="stop time",
             unit="s",
@@ -566,14 +566,6 @@ class Keithley7510Sense(InstrumentChannel["Keithley7510"]):
         )
         """Enable or disable automatic updates to the internal reference measurements (autozero) of the instrument."""
 
-        self.auto_zero_once: Parameter = self.add_parameter(
-            "auto_zero_once",
-            set_cmd=":SENSe:AZERo:ONCE",
-            docstring="Cause the instrument to refresh the reference and "
-            "zero measurements once",
-        )
-        """Cause the instrument to refresh the reference and zero measurements once"""
-
         self.average: Parameter[bool, Self] = self.add_parameter(
             "average",
             get_cmd=f":SENSe:{self._proper_function}:AVERage?",
@@ -627,6 +619,13 @@ class Keithley7510Sense(InstrumentChannel["Keithley7510"]):
         Clear the data buffer
         """
         self.write(f":TRACe:CLEar '{buffer_name}'")
+
+    def auto_zero_once(self) -> None:
+        """
+        Cause the instrument to refresh the reference and zero measurements
+        once.
+        """
+        self.write(":SENSe:AZERo:ONCE")
 
 
 class Keithley7510DigitizeSense(InstrumentChannel["Keithley7510"]):
@@ -772,7 +771,7 @@ class Keithley7510(VisaInstrument):
         )
         """Make readings using the active digitize function."""
 
-        self.buffer_name: Parameter = self.add_parameter(
+        self.buffer_name: Parameter[str, Self] = self.add_parameter(
             "buffer_name",
             get_cmd=None,
             set_cmd=None,
@@ -786,13 +785,6 @@ class Keithley7510(VisaInstrument):
             docstring="Return the settings for all trigger model blocks.",
         )
         """Return the settings for all trigger model blocks."""
-
-        self.trigger_in_ext_clear: Parameter = self.add_parameter(
-            "trigger_in_ext_clear",
-            set_cmd=":TRIGger:EXTernal:IN:CLEar",
-            docstring="Clear the trigger event on the external in line.",
-        )
-        """Clear the trigger event on the external in line."""
 
         self.trigger_in_ext_edge: Parameter[str, Self] = self.add_parameter(
             "trigger_in_ext_edge",
@@ -895,6 +887,13 @@ class Keithley7510(VisaInstrument):
         previous overlapped commands are finished.
         """
         self.write("*WAI")
+
+    def trigger_in_ext_clear(self) -> None:
+        """
+        Clear the trigger event on the external in line. This also discards
+        the event history and clears the overrun status.
+        """
+        self.write(":TRIGger:EXTernal:IN:CLEar")
 
     def clear_status(self) -> None:
         """

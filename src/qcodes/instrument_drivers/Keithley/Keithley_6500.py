@@ -2,7 +2,7 @@ from functools import partial
 from typing import TYPE_CHECKING, Self
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
-from qcodes.validators import Bool, Enum, Ints, MultiType, Numbers
+from qcodes.validators import Bool, Enum, Ints, Numbers, PermissiveInts
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -184,17 +184,18 @@ class Keithley6500(VisaInstrument):
         )
         """Control the brightness of the display backligt. Off turns the display off andBlackout also turns off indicators and key lights on the device."""
 
-        self.trigger_count: Parameter = self.add_parameter(
+        self.trigger_count: Parameter[int, Self] = self.add_parameter(
             "trigger_count",
             get_parser=int,
             get_cmd="ROUT:SCAN:COUN:SCAN?",
             set_cmd="ROUT:SCAN:COUN:SCAN {}",
-            vals=MultiType(
-                Ints(min_value=1, max_value=9999),
-                Enum("inf", "default", "minimum", "maximum"),
-            ),
+            # accept whole-number floats such as 10.0 but send them as int
+            vals=PermissiveInts(0, 100_000_000),
+            set_parser=round,
+            docstring="Number of times the scan is repeated. "
+            "Set to 0 to repeat the scan until it is aborted.",
         )
-        """Parameter trigger_count"""
+        """Number of times the scan is repeated. Set to 0 to repeat the scan until it is aborted."""
 
         for trigger in range(1, 5):
             self.add_parameter(

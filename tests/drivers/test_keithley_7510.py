@@ -123,3 +123,62 @@ def test_digitize_count_is_int(dmm_7510_driver: Keithley7510) -> None:
     count = digi_sense.count()
     assert isinstance(count, int)
     assert count == 500
+
+
+def test_buffer_elements_round_trip(dmm_7510_driver: Keithley7510) -> None:
+    buffer = dmm_7510_driver.buffer("defbuffer1")
+    assert dmm_7510_driver.buffer_name() == "defbuffer1"
+    assert buffer.elements() == []
+
+    elements = ["relative_time", "measurement"]
+    buffer.elements(elements)
+    # the SCPI names are stored, and get translates them back
+    assert buffer.elements.raw_value == [
+        buffer.buffer_elements[element] for element in elements
+    ]
+    assert buffer.elements() == elements
+
+    with pytest.raises(ValueError):
+        buffer.elements(["not_an_element"])
+
+
+def test_buffer_index_and_time_parameters(dmm_7510_driver: Keithley7510) -> None:
+    buffer = dmm_7510_driver.buffer("defbuffer1")
+    assert buffer.data_start() == 1
+    assert buffer.data_end() == 1
+
+    buffer.data_end(10)
+    n_pts = buffer.n_pts()
+    assert isinstance(n_pts, int)
+    assert n_pts == 10
+
+    buffer.t_start(1)
+    buffer.t_stop(2)
+    t_start = buffer.t_start()
+    t_stop = buffer.t_stop()
+    assert isinstance(t_start, float)
+    assert isinstance(t_stop, float)
+    assert (t_start, t_stop) == (1.0, 2.0)
+
+
+@pytest.mark.parametrize(
+    ("action", "command"),
+    [
+        ("auto_zero_once", ":SENSe:AZERo:ONCE"),
+        ("trigger_in_ext_clear", ":TRIGger:EXTernal:IN:CLEar"),
+    ],
+)
+def test_action_methods_send_command(
+    dmm_7510_driver: Keithley7510, mocker: "MockerFixture", action: str, command: str
+) -> None:
+    # these used to be parameters, so calling them without an argument only
+    # returned the cached value and did not send anything
+    write_raw = mocker.spy(dmm_7510_driver, "write_raw")
+    if action == "auto_zero_once":
+        dmm_7510_driver.sense.auto_zero_once()
+    else:
+        dmm_7510_driver.trigger_in_ext_clear()
+
+    write_raw.assert_called_once_with(command)
+    # the instrument does not reply, so the next query is unaffected
+    assert dmm_7510_driver.IDN()["model"] == "DMM7510"

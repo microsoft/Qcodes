@@ -40,7 +40,7 @@ class BaselSP983a(VisaInstrument):
 
         self.connect_message()
 
-        self.gain: Parameter = self.add_parameter(
+        self.gain: Parameter[float, Self] = self.add_parameter(
             "gain",
             label="Gain",
             unit="V/A",
@@ -49,7 +49,7 @@ class BaselSP983a(VisaInstrument):
             vals=vals.Enum(1e5, 1e6, 1e7, 1e8, 1e9),
         )
         """Parameter gain"""
-        self.fcut: Parameter = self.add_parameter(
+        self.fcut: Parameter[float, Self] = self.add_parameter(
             "fcut",
             unit="Hz",
             label="Filter Cut-Off Frequency",

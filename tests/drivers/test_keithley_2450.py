@@ -168,3 +168,20 @@ def test_source_delay_is_float(k2450: Keithley2450) -> None:
     delay = k2450.source.delay()
     assert isinstance(delay, float)
     assert delay == 0.25
+
+
+def test_buffer_elements_round_trip(k2450: Keithley2450) -> None:
+    assert k2450.buffer_name() == "defbuffer1"
+    buffer = k2450.buffer(k2450.buffer_name())
+    assert buffer.elements() == []
+
+    elements = ["time", "measurement_formatted"]
+    buffer.elements(elements)
+    # the SCPI names are stored, and get translates them back
+    assert buffer.elements.raw_value == [
+        buffer.buffer_elements[element] for element in elements
+    ]
+    assert buffer.elements() == elements
+
+    with pytest.raises(ValueError):
+        buffer.elements(["not_an_element"])
