@@ -2,7 +2,7 @@ import textwrap
 from bisect import bisect_left
 from contextlib import ExitStack
 from functools import partial
-from typing import TYPE_CHECKING, Any, Literal, Self, get_args
+from typing import TYPE_CHECKING, Any, Literal, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -1273,8 +1273,11 @@ mode."""
         # convert both value*range and the resolution factors
         # to strings with few digits, so we avoid floating point
         # rounding errors.
-        if value in get_args(NumericScpiMnemonic):
-            str_value = str(value)  # already str, but mypy does not know this
+        str_value: str
+        if isinstance(value, str):
+            # one of the NumericScpiMnemonic strings, as enforced by the
+            # validator
+            str_value = value
         else:
             res_fac_strs = [f"{(v * rang):.1e}" for v in self._resolution_factors]
             str_value = f"{value:.1e}"

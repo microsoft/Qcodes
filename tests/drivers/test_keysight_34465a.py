@@ -10,6 +10,8 @@ from qcodes.instrument_drivers.Keysight import (
 if TYPE_CHECKING:
     from collections.abc import Generator
 
+    from pytest_mock import MockerFixture
+
 
 class _AskCallable(Protocol):
     def __call__(self, cmd: str) -> str: ...
@@ -167,3 +169,25 @@ def test_display_text(driver: Keysight34465A) -> None:
     driver.display.text(original_text)
     restored_text = driver.display.text()
     assert restored_text == original_text
+
+
+@pytest.mark.parametrize("value", ["MIN", "MAX", "DEF"])
+def test_set_resolution_to_mnemonic(
+    driver: Keysight34465A, mocker: "MockerFixture", value: str
+) -> None:
+    write_raw = mocker.spy(driver, "write_raw")
+
+    driver.resolution(value)
+
+    write_raw.assert_any_call(f"VOLT:DC:RES {value}")
+
+
+def test_set_resolution_to_number(
+    driver: Keysight34465A, mocker: "MockerFixture"
+) -> None:
+    write_raw = mocker.spy(driver, "write_raw")
+    driver.range(1)
+
+    driver.resolution(3e-5)
+
+    write_raw.assert_any_call("VOLT:DC:RES 3.0e-05")
