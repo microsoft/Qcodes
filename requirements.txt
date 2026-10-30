@@ -381,7 +381,7 @@ sortedcontainers==2.4.0
     # via hypothesis
 soupsieve==3.0.4
     # via beautifulsoup4
-sphinx==8.2.3
+sphinx==9.1.1
     # via
     #   qcodes (pyproject.toml)
     #   autodocsumm
@@ -405,7 +405,7 @@ sphinxcontrib-devhelp==2.0.0
     # via sphinx
 sphinxcontrib-htmlhelp==2.1.0
     # via sphinx
-sphinxcontrib-jsmath==1.0.1
+sphinxcontrib-jsmath==2.0.0
     # via sphinx
 sphinxcontrib-qthelp==2.0.0
     # via sphinx
