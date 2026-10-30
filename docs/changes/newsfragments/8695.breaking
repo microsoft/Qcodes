@@ -1,0 +1,6 @@
+The ``open`` and ``short`` parameters of ``KeysightE4980ACorrection`` have been replaced by
+methods of the same name. Both were command-only parameters, so calling them without an
+argument, e.g. ``meter.correction.open()`` as in the example notebook, only returned the cached
+value and did not execute the OPEN or SHORT correction. Calling them like this now sends the
+command. Code that passed a value to them, e.g. ``meter.correction.open(None)``, must drop the
+argument, and they are no longer part of the instrument's parameters or snapshot.
