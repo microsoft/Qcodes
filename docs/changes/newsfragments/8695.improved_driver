@@ -7,3 +7,9 @@ as well. The ``post_sweep_voltage_val`` argument of ``KeysightB1517A.setup_stair
 now typed as ``constants.WM.Post``, the enum used by the B1517A sweep, instead of
 ``constants.WMDCV.Post``, which belongs to the B1520A CV sweep. Both have the same values, so
 existing calls keep working.
+
+Parameters of the Keysight 344xxA DMMs and 33XXX waveform generators that can also be set to
+SCPI keywords such as ``"MIN"``, ``"MAX"``, ``"DEF"`` or ``"INF"``, e.g.
+``Keysight344xxASample.timer``, are annotated as ``Parameter[float | str, Self]`` (or
+``int | str`` for counts). Getting them always returns a number, but the cached value is the
+string that was set until the parameter is read again, as now explained in their docstrings.
