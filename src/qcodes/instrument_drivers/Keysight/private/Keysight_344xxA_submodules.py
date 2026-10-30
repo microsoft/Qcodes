@@ -46,7 +46,7 @@ class Keysight344xxATrigger(InstrumentChannel["Keysight344xxA"]):
         else:
             _max_trigger_count = 1e6
 
-        self.count: Parameter = self.add_parameter(
+        self.count: Parameter[float | str, Self] = self.add_parameter(
             "count",
             label="Trigger Count",
             set_cmd="TRIGger:COUNt {}",
@@ -67,7 +67,13 @@ class Keysight344xxATrigger(InstrumentChannel["Keysight344xxA"]):
 
             A variable trigger count is not available from the front panel.
             However, when you return to remote control of the instrument,
-            the trigger count returns to the previous value you selected."""
+            the trigger count returns to the previous value you selected.
+
+            Besides a number, the count can be set to "MIN", "MAX", "DEF" or
+            "INF" (infinite, read back as 9.9e37), which the instrument converts
+            to the corresponding number. Getting the parameter always returns a
+            number, but until it is read again, the cached value is the string
+            that was set. The value is therefore annotated as ``float | str``."""
             ),
         )
         """
@@ -81,9 +87,15 @@ class Keysight344xxATrigger(InstrumentChannel["Keysight344xxA"]):
         A variable trigger count is not available from the front panel.
         However, when you return to remote control of the instrument,
         the trigger count returns to the previous value you selected.
+
+        Besides a number, the count can be set to "MIN", "MAX", "DEF" or
+        "INF" (infinite, read back as 9.9e37), which the instrument converts
+        to the corresponding number. Getting the parameter always returns a
+        number, but until it is read again, the cached value is the string
+        that was set. The value is therefore annotated as ``float | str``.
         """
 
-        self.delay: Parameter = self.add_parameter(
+        self.delay: Parameter[float | str, Self] = self.add_parameter(
             "delay",
             label="Trigger Delay",
             unit="s",
@@ -102,7 +114,13 @@ class Keysight344xxATrigger(InstrumentChannel["Keysight344xxA"]):
             measurements, step size depends on AC bandwidth.
 
             Selecting a specific trigger delay disables the automatic
-            trigger delay."""
+            trigger delay.
+
+            Besides a number, the delay can be set to "MIN", "MAX" or "DEF",
+            which the instrument converts to the corresponding number. Getting
+            the parameter always returns a number, but until it is read again,
+            the cached value is the string that was set. The value is therefore
+            annotated as ``float | str``."""
             ),
         )
         """
@@ -116,6 +134,12 @@ class Keysight344xxATrigger(InstrumentChannel["Keysight344xxA"]):
 
         Selecting a specific trigger delay disables the automatic
         trigger delay.
+
+        Besides a number, the delay can be set to "MIN", "MAX" or "DEF",
+        which the instrument converts to the corresponding number. Getting
+        the parameter always returns a number, but until it is read again,
+        the cached value is the string that was set. The value is therefore
+        annotated as ``float | str``.
         """
 
         self.auto_delay_enabled: Parameter[bool, Self] = self.add_parameter(
@@ -154,7 +178,7 @@ class Keysight344xxATrigger(InstrumentChannel["Keysight344xxA"]):
         """Parameter slope"""
 
         if self.parent.has_DIG or (self.parent.model == "34411A"):
-            self.level: Parameter = self.add_parameter(
+            self.level: Parameter[float | str, Self] = self.add_parameter(
                 "level",
                 label="Trigger Level",
                 unit="V",
@@ -171,7 +195,14 @@ class Keysight344xxATrigger(InstrumentChannel["Keysight344xxA"]):
 
                 Note that for 100 mV to 100 V ranges and autorange is off,
                 the trigger level can only be set within ±120% of the
-                range."""
+                range.
+
+                Besides a number, the level can be set to "MIN", "MAX" or
+                "DEF", which the instrument converts to the corresponding
+                number. Getting the parameter always returns a number, but
+                until it is read again, the cached value is the string that
+                was set. The value is therefore annotated as
+                ``float | str``."""
                 ),
             )
             """
@@ -181,6 +212,13 @@ class Keysight344xxATrigger(InstrumentChannel["Keysight344xxA"]):
             Note that for 100 mV to 100 V ranges and autorange is off,
             the trigger level can only be set within ±120% of the
             range.
+
+            Besides a number, the level can be set to "MIN", "MAX" or
+            "DEF", which the instrument converts to the corresponding
+            number. Getting the parameter always returns a number, but
+            until it is read again, the cached value is the string that
+            was set. The value is therefore annotated as
+            ``float | str``.
             """
 
         _trigger_source_docstring = textwrap.dedent("""\
@@ -245,7 +283,7 @@ class Keysight344xxASample(InstrumentChannel["Keysight344xxA"]):
         else:
             _max_sample_count = int(1e6)
 
-        self.count: Parameter = self.add_parameter(
+        self.count: Parameter[int | str, Self] = self.add_parameter(
             "count",
             label="Sample Count",
             set_cmd="SAMPle:COUNt {}",
@@ -265,7 +303,13 @@ class Keysight344xxASample(InstrumentChannel["Keysight344xxA"]):
             MEM option).
             For the model 34410A the maximum is 50,000 readings, and for the
             model 34411A the maximum is 1,000,000 readings. The latter does
-            not depend on the pretrigger count."""
+            not depend on the pretrigger count.
+
+            Besides a number, the count can be set to "MIN", "MAX" or "DEF",
+            which the instrument converts to the corresponding number. Getting
+            the parameter always returns a number, but until it is read again,
+            the cached value is the string that was set. The value is therefore
+            annotated as ``int | str``."""
             ),
         )
         """Specifies the number of measurements (samples) the instrument
@@ -277,7 +321,13 @@ readings (without the MEM option) or 2,000,000 readings (with the
 MEM option).
 For the model 34410A the maximum is 50,000 readings, and for the
 model 34411A the maximum is 1,000,000 readings. The latter does
-not depend on the pretrigger count."""
+not depend on the pretrigger count.
+
+Besides a number, the count can be set to "MIN", "MAX" or "DEF",
+which the instrument converts to the corresponding number. Getting
+the parameter always returns a number, but until it is read again,
+the cached value is the string that was set. The value is therefore
+annotated as ``int | str``."""
 
         if self.parent.has_DIG or (self.parent.model == "34411A"):
             if self.parent.model == "34411A":
@@ -287,7 +337,7 @@ not depend on the pretrigger count."""
             else:
                 _max_pretrig_count = int(5e4) - 1
 
-            self.pretrigger_count: Parameter = self.add_parameter(
+            self.pretrigger_count: Parameter[int | str, Self] = self.add_parameter(
                 "pretrigger_count",
                 label="Sample Pretrigger Count",
                 set_cmd="SAMPle:COUNt:PRETrigger {}",
@@ -306,7 +356,13 @@ not depend on the pretrigger count."""
                 by the current number of sample counts as specified via the
                 ``sample.count`` parameter. Refer to the doc of the
                 ``sample.count`` parameter for information on the maximum
-                number of sample counts."""
+                number of sample counts.
+
+                Besides a number, the count can be set to "MIN", "MAX" or
+                "DEF", which the instrument converts to the corresponding
+                number. Getting the parameter always returns a number, but
+                until it is read again, the cached value is the string that
+                was set. The value is therefore annotated as ``int | str``."""
                 ),
             )
             """Allows collection of the data being digitized the trigger.
@@ -317,7 +373,13 @@ Note that the maximum number of pretrigger counts is bounded
 by the current number of sample counts as specified via the
 ``sample.count`` parameter. Refer to the doc of the
 ``sample.count`` parameter for information on the maximum
-number of sample counts."""
+number of sample counts.
+
+Besides a number, the count can be set to "MIN", "MAX" or
+"DEF", which the instrument converts to the corresponding
+number. Getting the parameter always returns a number, but
+until it is read again, the cached value is the string that
+was set. The value is therefore annotated as ``int | str``."""
 
         if self.parent.is_34465A_34470A or self.parent.is_34410A_34411A:
             self.source: Parameter[str, Self] = self.add_parameter(
@@ -332,7 +394,7 @@ number of sample counts."""
             )
             """Determines sampling time, immediate or using `sample.timer`"""
 
-        self.timer: Parameter = self.add_parameter(
+        self.timer: Parameter[float | str, Self] = self.add_parameter(
             "timer",
             label="Sample Timer",
             set_cmd="SAMPle:TIMer {}",
@@ -358,7 +420,12 @@ number of sample counts."""
             may generate a timing violation error when making measurements.
 
             Applying a value less than the absolute minimum will generate an
-            error."""
+            error.
+
+            Getting the parameter always returns a number, but until it is
+            read again after setting one of the special values, the cached
+            value is the string that was set. The value is therefore annotated
+            as ``float | str``."""
             ),
         )
         """The value is rounded by the instrument to the nearest step. For DC
@@ -377,7 +444,12 @@ no range changes) and the recommended minimum value,
 may generate a timing violation error when making measurements.
 
 Applying a value less than the absolute minimum will generate an
-error."""
+error.
+
+Getting the parameter always returns a number, but until it is
+read again after setting one of the special values, the cached
+value is the string that was set. The value is therefore annotated
+as ``float | str``."""
 
         self.timer_minimum: Parameter[float, Self] = self.add_parameter(
             "timer_minimum",
@@ -784,7 +856,7 @@ resolution."""
         )
         """Parameter range"""
 
-        self.resolution: Parameter = self.add_parameter(
+        self.resolution: Parameter[float | str, Self] = self.add_parameter(
             "resolution",
             get_cmd="SENSe:VOLTage:DC:RESolution?",
             get_parser=float,
@@ -798,8 +870,8 @@ resolution."""
             measurements. The resolution is specified in the same units as the
             selected measurement function, not in number of digits.
 
-            You can also specify MIN (best resolution) or MAX (worst
-            resolution).
+            You can also specify MIN (best resolution), MAX (worst
+            resolution) or DEF (default resolution).
 
             To achieve normal mode (line frequency noise) rejection,
             use a resolution that corresponds to an integration time that is
@@ -807,15 +879,20 @@ resolution."""
 
             Refer to "Resolution Table" or "Range, Resolution and NPLC"
             sections of the instrument's manual for the available ranges for
-            the resolution values."""
+            the resolution values.
+
+            Getting the parameter always returns a number, but until it is
+            read again after setting MIN, MAX or DEF, the cached value is the
+            string that was set. The value is therefore annotated as
+            ``float | str``."""
             ),
         )
         """Selects the measurement resolution for DC voltage and ratio
 measurements. The resolution is specified in the same units as the
 selected measurement function, not in number of digits.
 
-You can also specify MIN (best resolution) or MAX (worst
-resolution).
+You can also specify MIN (best resolution), MAX (worst
+resolution) or DEF (default resolution).
 
 To achieve normal mode (line frequency noise) rejection,
 use a resolution that corresponds to an integration time that is
@@ -823,7 +900,12 @@ an integral number of power line cycles.
 
 Refer to "Resolution Table" or "Range, Resolution and NPLC"
 sections of the instrument's manual for the available ranges for
-the resolution values."""
+the resolution values.
+
+Getting the parameter always returns a number, but until it is
+read again after setting MIN, MAX or DEF, the cached value is the
+string that was set. The value is therefore annotated as
+``float | str``."""
 
         self.autorange: Parameter[str, Self] = self.add_parameter(
             "autorange",
@@ -941,7 +1023,7 @@ aperture time) for DC voltage measurements. If aperture time
 mode is disabled (default), the integration time is set in PLC
 (power-line cycles)."""
 
-            self.aperture_time: Parameter = self.add_parameter(
+            self.aperture_time: Parameter[float | str, Self] = self.add_parameter(
                 "aperture_time",
                 label="Aperture time",
                 set_cmd=self._set_apt_time,
@@ -960,7 +1042,14 @@ mode is disabled (default), the integration time is set in PLC
                 rejection characteristics (NPLC > 1).
 
                 Setting the aperture time automatically enables the aperture
-                mode."""
+                mode.
+
+                Besides a number, the aperture time can be set to "MIN",
+                "MAX" or "DEF", which the instrument converts to the
+                corresponding number. Getting the parameter always returns a
+                number, but until it is read again, the cached value is the
+                string that was set. The value is therefore annotated as
+                ``float | str``."""
                 ),
             )
             """Specifies the integration time in seconds (called aperture
@@ -971,7 +1060,14 @@ integration time. Use `NPLC` for better power-line noise
 rejection characteristics (NPLC > 1).
 
 Setting the aperture time automatically enables the aperture
-mode."""
+mode.
+
+Besides a number, the aperture time can be set to "MIN",
+"MAX" or "DEF", which the instrument converts to the
+corresponding number. Getting the parameter always returns a
+number, but until it is read again, the cached value is the
+string that was set. The value is therefore annotated as
+``float | str``."""
 
         ####################################
         # Submodules
