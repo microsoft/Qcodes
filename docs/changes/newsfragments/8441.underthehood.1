@@ -1,0 +1,9 @@
+:class:`.Parameter` no longer replaces its own ``get_raw``/``set_raw`` methods
+with the implementation generated from ``get_cmd``/``set_cmd``. The generated
+implementation is stored on the parameter instead, and ``get_raw``/``set_raw``
+are now regular methods that dispatch to it. Assigning over the methods made
+static type checkers infer ``get_raw``/``set_raw`` to be instance attributes of
+:class:`.Parameter`, which in turn made every subclass implementing them as
+regular methods an invalid override. There is no change in behaviour; note only
+that ``parameter.get_raw`` is now always a bound method rather than, depending
+on the arguments, a ``Command`` instance.

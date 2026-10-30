@@ -67,7 +67,7 @@ def test_curve_index_rejects_invalid(
     lakeshore_325: LakeshoreModel325, value: float
 ) -> None:
     with pytest.raises((TypeError, ValueError)):
-        lakeshore_325.sensor_A.curve_index(value)  # pyright: ignore[reportArgumentType]
+        lakeshore_325.sensor_A.curve_index(value)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
 
 @pytest.mark.parametrize("value", [23.0, np.float64(23)], ids=["float", "numpy_float"])
@@ -78,7 +78,7 @@ def test_curve_index_accepts_whole_floats(
     sensor_a = lakeshore_325.sensor_A
     write_raw = mocker.spy(lakeshore_325, "write_raw")
 
-    sensor_a.curve_index(value)  # pyright: ignore[reportArgumentType]
+    sensor_a.curve_index(value)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
     write_raw.assert_called_once_with("INCRV A, 23")
     assert sensor_a.curve_index() == 23

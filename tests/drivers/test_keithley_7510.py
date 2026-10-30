@@ -93,7 +93,7 @@ def test_average_count_accepts_whole_floats(
     sense = dmm_7510_driver.sense
     write_raw = mocker.spy(dmm_7510_driver, "write_raw")
 
-    sense.average_count(value)  # pyright: ignore[reportArgumentType]
+    sense.average_count(value)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
     write_raw.assert_called_once_with(":SENSe:voltage:AVERage:COUNt 25")
     assert sense.average_count() == 25
@@ -105,7 +105,7 @@ def test_average_count_rejects_non_integer(
     write_raw = mocker.spy(dmm_7510_driver, "write_raw")
 
     with pytest.raises(TypeError):
-        dmm_7510_driver.sense.average_count(2.5)  # pyright: ignore[reportArgumentType]
+        dmm_7510_driver.sense.average_count(2.5)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
     write_raw.assert_not_called()
 
 

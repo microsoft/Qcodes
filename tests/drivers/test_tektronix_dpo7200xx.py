@@ -95,7 +95,7 @@ def test_measurement_state_accepts_on_off_strings_and_ints(
     tektronix_dpo: TektronixDPO7000xx, value: str | int, expected: bool
 ) -> None:
     # while it does not type check, on/off strings and ints are accepted
-    tektronix_dpo.measurement[1].state(value)  # pyright: ignore[reportArgumentType]
+    tektronix_dpo.measurement[1].state(value)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
     assert tektronix_dpo.measurement[1].state() is expected
 
 

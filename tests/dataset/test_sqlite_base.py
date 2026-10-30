@@ -64,7 +64,7 @@ def _make_simple_run_describer() -> "Generator[RunDescriber, None, None]":
     t = ParamSpecBase("t", "numeric")
     y = ParamSpecBase("y", "numeric")
 
-    paramtree = {y: (x, t)}
+    paramtree: dict[ParamSpecBase, tuple[ParamSpecBase, ...]] = {y: (x, t)}
 
     interdependencies = InterDependencies_(dependencies=paramtree)
     rundescriber = RunDescriber(interdependencies)
@@ -236,7 +236,7 @@ def test_get_layout_id_with_invalid_parameter_type(dataset: "DataSet") -> None:
     with pytest.raises(ValueError, match="Wrong parameter type, must be ParamSpec"):
         mut_queries._get_layout_id(
             dataset.conn,
-            42,  # type: ignore[arg-type]
+            42,  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
             dataset.run_id,
         )
 
