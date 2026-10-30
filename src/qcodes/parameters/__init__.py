@@ -78,6 +78,12 @@ from .grouped_parameter import DelegateGroup, DelegateGroupParameter, GroupedPar
 from .multi_channel_instrument_parameter import MultiChannelInstrumentParameter
 from .multi_parameter import MultiParameter
 from .parameter import ManualParameter, Parameter, ParameterKWArgs
+from .parameter_access import (
+    ParameterAccess,
+    ParameterAccessKind,
+    log_parameter_accesses,
+    record_parameter_accesses,
+)
 from .parameter_base import (
     ParamDataType,
     ParameterBase,
@@ -85,15 +91,6 @@ from .parameter_base import (
     ParameterSet,
     ParamRawDataType,
     invert_val_mapping,
-)
-from .parameter_observers import (
-    ParameterAccess,
-    ParameterAccessKind,
-    ParameterObserver,
-    add_parameter_observer,
-    observe_parameters,
-    registered_parameter_observers,
-    remove_parameter_observer,
 )
 from .parameter_with_setpoints import ParameterWithSetpoints, expand_setpoints_helper
 from .scaled_paramter import ScaledParameter
@@ -126,18 +123,15 @@ __all__ = [
     "ParameterBase",
     "ParameterBaseKWArgs",
     "ParameterKWArgs",
-    "ParameterObserver",
     "ParameterSet",
     "ParameterWithSetpoints",
     "ScaledParameter",
     "SweepFixedValues",
     "SweepValues",
-    "add_parameter_observer",
     "combine",
     "create_on_off_val_mapping",
     "expand_setpoints_helper",
     "invert_val_mapping",
-    "observe_parameters",
-    "registered_parameter_observers",
-    "remove_parameter_observer",
+    "log_parameter_accesses",
+    "record_parameter_accesses",
 ]
