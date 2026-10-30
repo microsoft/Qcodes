@@ -1,0 +1,8 @@
+Added recording of parameter access: inside a ``with qcodes.parameters.record_parameter_accesses() as accesses:`` block,
+every ``get`` and ``set`` of a parameter made by the current thread (or asyncio task) is appended to ``accesses`` as a
+``qcodes.parameters.ParameterAccess``: the names of the parameter and its instrument, the value and raw value, when the
+access started, how long it took and the error it raised, if any. A set that ramps in steps is recorded once per step.
+``qcodes.parameters.log_parameter_accesses`` logs the accesses to the ``qcodes.parameters.parameter_access`` logger
+instead. Recording only stores data: no user code runs while a parameter is accessed, and a record holds names rather
+than the parameter or instrument. This makes it possible to see all instrument communication made by a piece of code
+without changing it.
