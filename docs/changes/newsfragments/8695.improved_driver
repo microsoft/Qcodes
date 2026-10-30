@@ -1,7 +1,8 @@
 The enum parameters of the ``KeysightB1517A`` and ``KeysightB1520A`` modules of the Keysight
 B1500, such as ``sweep_mode``, ``measurement_mode`` and ``impedance_model``, are now annotated
 with their enum type, e.g. ``Parameter[constants.SweepMode, Self]``, and
-``KeysightB1517A.time_axis`` as a numpy array. The parameters of the Keysight B220x are annotated
+``KeysightB1517A.time_axis`` as a numpy array. The parameters of the Keysight B220x and the
+``phase`` of the ``AgilentE8257D`` and ``AgilentE8267C`` (``float``, in degrees) are annotated
 as well. The ``post_sweep_voltage_val`` argument of ``KeysightB1517A.setup_staircase_sweep`` is
 now typed as ``constants.WM.Post``, the enum used by the B1517A sweep, instead of
 ``constants.WMDCV.Post``, which belongs to the B1520A CV sweep. Both have the same values, so
