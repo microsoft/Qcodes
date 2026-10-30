@@ -18,21 +18,38 @@ from qcodes.instrument import (
     VisaInstrument,
     VisaInstrumentKWArgs,
 )
-from qcodes.math_utils import FieldVector
+from qcodes.math_utils import (
+    CartesianVector,
+    CylindricalVector,
+    FieldVector,
+    SphericalVector,
+)
 from qcodes.metadatable import normalize_snapshot_update
-from qcodes.parameters import Parameter
 from qcodes.utils.types import NumberType
 from qcodes.validators import Anything, Bool, Enum, Ints, Numbers
 
 if TYPE_CHECKING:
     from typing import Unpack
 
+    import numpy.typing as npt
+
     from qcodes.metadatable import SnapshotUpdate
+    from qcodes.parameters import Parameter
 
 
 log = logging.getLogger(__name__)
 
 CartesianFieldLimitFunction = Callable[[float, float, float], bool]
+
+# the FieldVector components of each coordinate vector
+_VECTOR_COMPONENTS: dict[
+    type[CartesianVector | SphericalVector | CylindricalVector],
+    tuple[str, str, str],
+] = {
+    CartesianVector: ("x", "y", "z"),
+    SphericalVector: ("r", "theta", "phi"),
+    CylindricalVector: ("rho", "phi", "z"),
+}
 
 
 class AMI430Exception(Exception):
@@ -259,7 +276,7 @@ class AMIModel430(VisaInstrument):
         self.field_units: Parameter[str, Self] = self.add_parameter(
             "field_units",
             get_cmd="FIELD:UNITS?",
-            set_cmd=(lambda units: self._update_units(field_units=units)),
+            set_cmd=self._set_field_units,
             val_mapping={"kilogauss": 0, "tesla": 1},
         )
         """Parameter field_units"""
@@ -551,6 +568,31 @@ class AMIModel430(VisaInstrument):
         # Return new coil constant
         return new_coil_constant
 
+    def _set_field_units(self, field_units: int) -> None:
+        """
+        Set the field units, 0 for kilogauss and 1 for tesla.
+
+        Raises:
+            RuntimeError: if the units would change while this magnet is part
+                of a 3D driver, whose set point and field limit are in the
+                field units of the magnets.
+
+        """
+        if self._parent_instrument is not None:
+            assert self.field_units.inverse_val_mapping is not None
+            new_units = self._SHORT_UNITS[
+                self.field_units.inverse_val_mapping[field_units]
+            ]
+            if new_units != self.field.unit:
+                raise RuntimeError(
+                    f"Cannot change the field units of {self.name} while it is "
+                    f"part of the 3D driver {self._parent_instrument.name}, "
+                    "since its set point and field limit are in the field "
+                    "units of the magnets. Set the field units before "
+                    "creating the 3D driver, or close the 3D driver first."
+                )
+        self._update_units(field_units=field_units)
+
     def _update_units(
         self, ramp_rate_units: int | None = None, field_units: int | None = None
     ) -> None:
@@ -663,7 +705,10 @@ class AMIModel4303D(Instrument):
                 instance for controlling the Z axis of magnetic field
             field_limit: a number for maximum allows magnetic field or an
                 iterable of callable field limit functions that define
-                region(s) of allowed values in 3D magnetic field space
+                region(s) of allowed values in 3D magnetic field space, in
+                the field units of the magnets (tesla or kilogauss). The
+                field units of the magnets cannot be changed while they are
+                part of this driver.
             **kwargs: kwargs are forwarded to base class.
 
         """
@@ -729,148 +774,176 @@ class AMIModel4303D(Instrument):
         )
 
         # Get-only parameters that return a measured value
-        self.cartesian_measured: Parameter = self.add_parameter(
+        self.cartesian_measured: Parameter[CartesianVector, Self] = self.add_parameter(
             "cartesian_measured",
-            get_cmd=partial(self._get_measured, "x", "y", "z"),
+            get_cmd=partial(self._get_measured, CartesianVector),
             unit="T",
         )
         """Parameter cartesian_measured"""
 
-        self.x_measured: Parameter = self.add_parameter(
-            "x_measured", get_cmd=partial(self._get_measured, "x"), unit="T"
+        self.x_measured: Parameter[float, Self] = self.add_parameter(
+            "x_measured", get_cmd=partial(self._get_measured_component, "x"), unit="T"
         )
         """Parameter x_measured"""
 
-        self.y_measured: Parameter = self.add_parameter(
-            "y_measured", get_cmd=partial(self._get_measured, "y"), unit="T"
+        self.y_measured: Parameter[float, Self] = self.add_parameter(
+            "y_measured", get_cmd=partial(self._get_measured_component, "y"), unit="T"
         )
         """Parameter y_measured"""
 
-        self.z_measured: Parameter = self.add_parameter(
-            "z_measured", get_cmd=partial(self._get_measured, "z"), unit="T"
+        self.z_measured: Parameter[float, Self] = self.add_parameter(
+            "z_measured", get_cmd=partial(self._get_measured_component, "z"), unit="T"
         )
         """Parameter z_measured"""
 
-        self.spherical_measured: Parameter = self.add_parameter(
+        self.spherical_measured: Parameter[SphericalVector, Self] = self.add_parameter(
             "spherical_measured",
-            get_cmd=partial(self._get_measured, "r", "theta", "phi"),
+            get_cmd=partial(self._get_measured, SphericalVector),
             unit="T",
         )
         """Parameter spherical_measured"""
 
-        self.phi_measured: Parameter = self.add_parameter(
-            "phi_measured", get_cmd=partial(self._get_measured, "phi"), unit="deg"
+        self.phi_measured: Parameter[float, Self] = self.add_parameter(
+            "phi_measured",
+            get_cmd=partial(self._get_measured_component, "phi"),
+            unit="deg",
         )
         """Parameter phi_measured"""
 
-        self.theta_measured: Parameter = self.add_parameter(
-            "theta_measured", get_cmd=partial(self._get_measured, "theta"), unit="deg"
+        self.theta_measured: Parameter[float, Self] = self.add_parameter(
+            "theta_measured",
+            get_cmd=partial(self._get_measured_component, "theta"),
+            unit="deg",
         )
         """Parameter theta_measured"""
 
-        self.field_measured: Parameter = self.add_parameter(
-            "field_measured", get_cmd=partial(self._get_measured, "r"), unit="T"
+        self.field_measured: Parameter[float, Self] = self.add_parameter(
+            "field_measured",
+            get_cmd=partial(self._get_measured_component, "r"),
+            unit="T",
         )
         """Parameter field_measured"""
 
-        self.cylindrical_measured: Parameter = self.add_parameter(
-            "cylindrical_measured",
-            get_cmd=partial(self._get_measured, "rho", "phi", "z"),
-            unit="T",
+        self.cylindrical_measured: Parameter[CylindricalVector, Self] = (
+            self.add_parameter(
+                "cylindrical_measured",
+                get_cmd=partial(self._get_measured, CylindricalVector),
+                unit="T",
+            )
         )
         """Parameter cylindrical_measured"""
 
-        self.rho_measured: Parameter = self.add_parameter(
-            "rho_measured", get_cmd=partial(self._get_measured, "rho"), unit="T"
+        self.rho_measured: Parameter[float, Self] = self.add_parameter(
+            "rho_measured",
+            get_cmd=partial(self._get_measured_component, "rho"),
+            unit="T",
         )
         """Parameter rho_measured"""
 
-        # Get and set parameters for the set points of the coordinates
-        self.cartesian: Parameter = self.add_parameter(
-            "cartesian",
-            get_cmd=partial(self._get_setpoints, ("x", "y", "z")),
-            set_cmd=partial(self._set_setpoints, ("x", "y", "z")),
-            unit="T",
-            vals=Anything(),
+        # Get and set parameters for the set points of the coordinates. These
+        # return a named tuple (CartesianVector, SphericalVector or
+        # CylindricalVector) but can be set from any sequence or a numpy array.
+        self.cartesian: Parameter[Sequence[float] | npt.NDArray, Self] = (
+            self.add_parameter(
+                "cartesian",
+                get_cmd=partial(self._get_setpoints, CartesianVector),
+                set_cmd=partial(self._set_setpoints, ("x", "y", "z")),
+                unit="T",
+                vals=Anything(),
+            )
         )
         """Parameter cartesian"""
 
-        self.x: Parameter = self.add_parameter(
+        self.x: Parameter[float, Self] = self.add_parameter(
             "x",
-            get_cmd=partial(self._get_setpoints, ("x",)),
-            set_cmd=partial(self._set_setpoints, ("x",)),
+            get_cmd=partial(self._get_setpoint, "x"),
+            set_cmd=partial(self._set_setpoint, "x"),
             unit="T",
             vals=Numbers(),
         )
         """Parameter x"""
 
-        self.y: Parameter = self.add_parameter(
+        self.y: Parameter[float, Self] = self.add_parameter(
             "y",
-            get_cmd=partial(self._get_setpoints, ("y",)),
-            set_cmd=partial(self._set_setpoints, ("y",)),
+            get_cmd=partial(self._get_setpoint, "y"),
+            set_cmd=partial(self._set_setpoint, "y"),
             unit="T",
             vals=Numbers(),
         )
         """Parameter y"""
 
-        self.z: Parameter = self.add_parameter(
+        self.z: Parameter[float, Self] = self.add_parameter(
             "z",
-            get_cmd=partial(self._get_setpoints, ("z",)),
-            set_cmd=partial(self._set_setpoints, ("z",)),
+            get_cmd=partial(self._get_setpoint, "z"),
+            set_cmd=partial(self._set_setpoint, "z"),
             unit="T",
             vals=Numbers(),
         )
         """Parameter z"""
 
-        self.spherical: Parameter = self.add_parameter(
-            "spherical",
-            get_cmd=partial(self._get_setpoints, ("r", "theta", "phi")),
-            set_cmd=partial(self._set_setpoints, ("r", "theta", "phi")),
-            unit="tuple?",
-            vals=Anything(),
+        self.spherical: Parameter[Sequence[float] | npt.NDArray, Self] = (
+            self.add_parameter(
+                "spherical",
+                get_cmd=partial(self._get_setpoints, SphericalVector),
+                set_cmd=partial(self._set_setpoints, ("r", "theta", "phi")),
+                vals=Anything(),
+                docstring="Set point in spherical coordinates (field, theta, phi), "
+                "with the field in the field units of the magnets and the angles "
+                "in degrees.",
+            )
         )
-        """Parameter spherical"""
+        """
+        Set point in spherical coordinates (field, theta, phi), with the field in
+        the field units of the magnets and the angles in degrees.
+        """
 
-        self.phi: Parameter = self.add_parameter(
+        self.phi: Parameter[float, Self] = self.add_parameter(
             "phi",
-            get_cmd=partial(self._get_setpoints, ("phi",)),
-            set_cmd=partial(self._set_setpoints, ("phi",)),
+            get_cmd=partial(self._get_setpoint, "phi"),
+            set_cmd=partial(self._set_setpoint, "phi"),
             unit="deg",
             vals=Numbers(),
         )
         """Parameter phi"""
 
-        self.theta: Parameter = self.add_parameter(
+        self.theta: Parameter[float, Self] = self.add_parameter(
             "theta",
-            get_cmd=partial(self._get_setpoints, ("theta",)),
-            set_cmd=partial(self._set_setpoints, ("theta",)),
+            get_cmd=partial(self._get_setpoint, "theta"),
+            set_cmd=partial(self._set_setpoint, "theta"),
             unit="deg",
             vals=Numbers(),
         )
         """Parameter theta"""
 
-        self.field: Parameter = self.add_parameter(
+        self.field: Parameter[float, Self] = self.add_parameter(
             "field",
-            get_cmd=partial(self._get_setpoints, ("r",)),
-            set_cmd=partial(self._set_setpoints, ("r",)),
+            get_cmd=partial(self._get_setpoint, "r"),
+            set_cmd=partial(self._set_setpoint, "r"),
             unit="T",
             vals=Numbers(),
         )
         """Parameter field"""
 
-        self.cylindrical: Parameter = self.add_parameter(
-            "cylindrical",
-            get_cmd=partial(self._get_setpoints, ("rho", "phi", "z")),
-            set_cmd=partial(self._set_setpoints, ("rho", "phi", "z")),
-            unit="tuple?",
-            vals=Anything(),
+        self.cylindrical: Parameter[Sequence[float] | npt.NDArray, Self] = (
+            self.add_parameter(
+                "cylindrical",
+                get_cmd=partial(self._get_setpoints, CylindricalVector),
+                set_cmd=partial(self._set_setpoints, ("rho", "phi", "z")),
+                vals=Anything(),
+                docstring="Set point in cylindrical coordinates (rho, phi, z), "
+                "with rho and z in the field units of the magnets and phi in "
+                "degrees.",
+            )
         )
-        """Parameter cylindrical"""
+        """
+        Set point in cylindrical coordinates (rho, phi, z), with rho and z in the
+        field units of the magnets and phi in degrees.
+        """
 
-        self.rho: Parameter = self.add_parameter(
+        self.rho: Parameter[float, Self] = self.add_parameter(
             "rho",
-            get_cmd=partial(self._get_setpoints, ("rho",)),
-            set_cmd=partial(self._set_setpoints, ("rho",)),
+            get_cmd=partial(self._get_setpoint, "rho"),
+            set_cmd=partial(self._set_setpoint, "rho"),
             unit="T",
             vals=Numbers(),
         )
@@ -881,28 +954,28 @@ class AMIModel4303D(Instrument):
         )
         """Parameter block_during_ramp"""
 
-        self.ramp_mode = Parameter(
-            name="ramp_mode",
-            instrument=self,
+        self.ramp_mode: Parameter[str, Self] = self.add_parameter(
+            "ramp_mode",
             get_cmd=None,
             set_cmd=None,
             vals=Enum("default", "simultaneous"),
             initial_value="default",
         )
+        """Parameter ramp_mode"""
 
-        self.ramping_state_check_interval = Parameter(
-            name="ramping_state_check_interval",
-            instrument=self,
+        self.ramping_state_check_interval: Parameter[float, Self] = self.add_parameter(
+            "ramping_state_check_interval",
             initial_value=0.05,
             unit="s",
             vals=Numbers(0, 10),
             set_cmd=None,
             get_cmd=None,
         )
+        """Parameter ramping_state_check_interval"""
 
-        self.vector_ramp_rate = Parameter(
-            name="vector_ramp_rate",
-            instrument=self,
+        # None until set, which is checked before a simultaneous ramp
+        self.vector_ramp_rate: Parameter[float | None, Self] = self.add_parameter(
+            "vector_ramp_rate",
             unit="T/s",
             vals=Numbers(min_value=0.0),
             set_cmd=None,
@@ -913,11 +986,66 @@ class AMIModel4303D(Instrument):
         )
         """Ramp rate along a line (vector) in 3D field space"""
 
+        # the field parameters are in the field units of the magnets
+        self._update_field_units()
+
         self._exit_stack = ExitStack()
 
     def get_idn(self) -> dict[str, str | None]:
         idparts = ["American Magnetics", self.name, None, None]
         return dict(zip(("vendor", "model", "serial", "firmware"), idparts))
+
+    def close(self) -> None:
+        # the magnets can stay open after this driver is closed, so they must
+        # no longer delegate to it. A magnet that was closed first no longer
+        # has the attribute.
+        for name in ("_instrument_x", "_instrument_y", "_instrument_z"):
+            instrument: AMIModel430 | None = getattr(self, name, None)
+            if (
+                instrument is not None
+                and getattr(instrument, "_parent_instrument", None) is self
+            ):
+                instrument._parent_instrument = None
+        super().close()
+
+    def _update_field_units(self) -> None:
+        """
+        Use the field units of the magnets (tesla or kilogauss) as the unit of
+        the field parameters, since their values are in the units of the
+        magnets. The field units of the magnets cannot be changed while they
+        are part of this driver.
+        """
+        instruments = (self._instrument_x, self._instrument_y, self._instrument_z)
+        units = {instrument.field.unit for instrument in instruments}
+        if len(units) == 1:
+            (unit,) = units
+        else:
+            unit = ""
+            self.log.warning(
+                "The magnets use different field units (%s), so the field "
+                "values of %s combine different units.",
+                ", ".join(
+                    f"{instrument.short_name}: {instrument.field.unit}"
+                    for instrument in instruments
+                ),
+                self.name,
+            )
+        field_parameters: tuple[Parameter, ...] = (
+            self.cartesian,
+            self.x,
+            self.y,
+            self.z,
+            self.field,
+            self.rho,
+            self.cartesian_measured,
+            self.x_measured,
+            self.y_measured,
+            self.z_measured,
+            self.field_measured,
+            self.rho_measured,
+        )
+        for parameter in field_parameters:
+            parameter.unit = unit
 
     def _set_vector_ramp_rate_units(self, val: float) -> float:
         _, common_ramp_rate_units = self._raise_if_not_same_field_and_ramp_rate_units()
@@ -1104,7 +1232,8 @@ class AMIModel4303D(Instrument):
     def _update_individual_axes_ramp_rates(
         self, values: tuple[float, float, float]
     ) -> None:
-        if self.vector_ramp_rate() is None or self.vector_ramp_rate() == 0:
+        vector_ramp_rate = self.vector_ramp_rate()
+        if vector_ramp_rate is None or vector_ramp_rate == 0:
             raise ValueError(
                 "The value of the `vector_ramp_rate` Parameter is "
                 "currently None or 0. Set it to an appropriate "
@@ -1114,7 +1243,7 @@ class AMIModel4303D(Instrument):
         new_axes_ramp_rates = self.calculate_axes_ramp_rates_from_vector_ramp_rate(
             start=self._get_measured_field_vector(),
             setpoint=FieldVector(x=values[0], y=values[1], z=values[2]),
-            vector_ramp_rate=self.vector_ramp_rate.get(),
+            vector_ramp_rate=vector_ramp_rate,
         )
         instruments = (self._instrument_x, self._instrument_y, self._instrument_z)
         for instrument, new_axis_ramp_rate in zip(instruments, new_axes_ramp_rates):
@@ -1247,11 +1376,11 @@ class AMIModel4303D(Instrument):
         performed by this 3D driver.
         """
         if instrument is self._instrument_x:
-            self._set_setpoints(("x",), (float(value),))
+            self._set_setpoint("x", float(value))
         elif instrument is self._instrument_y:
-            self._set_setpoints(("y",), (float(value),))
+            self._set_setpoint("y", float(value))
         elif instrument is self._instrument_z:
-            self._set_setpoints(("z",), (float(value),))
+            self._set_setpoint("z", float(value))
         else:
             msg = "This magnet doesnt belong to its specified parent {}"
             raise NameError(msg.format(self))
@@ -1263,44 +1392,32 @@ class AMIModel4303D(Instrument):
             z=self._instrument_z.field(),
         )
 
-    def _get_measured(self, *names: str) -> float | list[float]:
-        measured_field_vector = self._get_measured_field_vector()
+    def _get_measured_component(self, name: str) -> float:
+        return self._get_measured_field_vector().get_components(name)[0]
 
-        measured_values = measured_field_vector.get_components(*names)
+    def _get_measured[V: (CartesianVector, SphericalVector, CylindricalVector)](
+        self, vector_type: type[V]
+    ) -> V:
+        # get_components returns the values in the order of the names
+        names = _VECTOR_COMPONENTS[vector_type]
+        return vector_type(*self._get_measured_field_vector().get_components(*names))
 
-        # Convert angles from radians to degrees
-        d = dict(zip(names, measured_values))
+    def _get_setpoint(self, name: str) -> float:
+        return self._set_point.get_components(name)[0]
 
-        # Do not do "return list(d.values())", because then there is
-        # no guaranty that the order in which the values are returned
-        # is the same as the original intention
-        value_list = [d[name] for name in names]
+    def _get_setpoints[V: (CartesianVector, SphericalVector, CylindricalVector)](
+        self, vector_type: type[V]
+    ) -> V:
+        # get_components returns the values in the order of the names
+        names = _VECTOR_COMPONENTS[vector_type]
+        return vector_type(*self._set_point.get_components(*names))
 
-        if len(names) == 1:
-            return_value: list[float] | float = value_list[0]
-        else:
-            return_value = value_list
+    def _set_setpoint(self, name: str, value: float) -> None:
+        self._set_setpoints((name,), (value,))
 
-        return return_value
-
-    def _get_setpoints(self, names: Sequence[str]) -> float | list[float]:
-        measured_values = self._set_point.get_components(*names)
-
-        # Convert angles from radians to degrees
-        d = dict(zip(names, measured_values))
-        value_list = [d[name] for name in names]
-        # Do not do "return list(d.values())", because then there is
-        # no guarantee that the order in which the values are returned
-        # is the same as the original intention
-
-        if len(names) == 1:
-            return_value: list[float] | float = value_list[0]
-        else:
-            return_value = value_list
-
-        return return_value
-
-    def _set_setpoints(self, names: Sequence[str], values: Sequence[float]) -> None:
+    def _set_setpoints(
+        self, names: Sequence[str], values: Sequence[float] | npt.NDArray
+    ) -> None:
         kwargs = dict(zip(names, np.atleast_1d(values)))
 
         set_point = FieldVector()

@@ -1,0 +1,12 @@
+The field units of an ``AMIModel430`` can no longer be changed while it is part of an
+``AMIModel4303D``, and doing so now raises a ``RuntimeError``. The set point and field limit of
+the 3D driver are in the field units of the magnets, so changing them silently changed their
+meaning by a factor of 10. Set the field units before creating the 3D driver, or close the 3D
+driver first.
+
+The coordinate vectors of ``AMIModel4303D`` (``cartesian``, ``spherical``, ``cylindrical`` and
+their ``*_measured`` versions) now return a named tuple (``CartesianVector``,
+``SphericalVector`` or ``CylindricalVector`` from ``qcodes.math_utils``) instead of a list, so
+the components can also be accessed by name, e.g. ``cartesian_measured().z``. Code that compares
+the result to a list, or modifies it, needs updating. Setting these parameters still accepts
+lists, tuples and numpy arrays.

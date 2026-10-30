@@ -21,7 +21,12 @@ from qcodes.instrument_drivers.american_magnetics import (
     AMIModel430,
     AMIModel4303D,
 )
-from qcodes.math_utils import FieldVector
+from qcodes.math_utils import (
+    CartesianVector,
+    CylindricalVector,
+    FieldVector,
+    SphericalVector,
+)
 from qcodes.utils.types import (
     numpy_concrete_floats,
     numpy_concrete_ints,
@@ -630,6 +635,166 @@ def test_measured(
     assert np.allclose(cylindrical, [cylindrical_rho, spherical_phi, cartesian_z])
 
 
+_SINGLE_COMPONENTS = ("x", "y", "z", "field", "theta", "phi", "rho")
+_VECTORS = {
+    "cartesian": CartesianVector,
+    "spherical": SphericalVector,
+    "cylindrical": CylindricalVector,
+}
+
+
+def test_component_and_vector_types(current_driver: AMIModel4303D) -> None:
+    # single components are plain floats while the coordinate vectors are
+    # named tuples of three floats, both for the set points and the measured
+    # values
+    current_driver.cartesian((0.1, 0.2, 0.3))
+
+    for name in _SINGLE_COMPONENTS:
+        for parameter_name in (name, f"{name}_measured"):
+            value = current_driver.parameters[parameter_name]()
+            assert isinstance(value, float), parameter_name
+
+    for name, vector_type in _VECTORS.items():
+        for parameter_name in (name, f"{name}_measured"):
+            value = current_driver.parameters[parameter_name]()
+            assert type(value) is vector_type, parameter_name
+            assert len(value) == 3
+            assert all(isinstance(component, float) for component in value)
+
+
+def test_vector_components_by_name(current_driver: AMIModel4303D) -> None:
+    current_driver.cartesian((0.1, 0.2, 0.3))
+
+    cartesian = current_driver.cartesian_measured()
+    assert (cartesian.x, cartesian.y, cartesian.z) == pytest.approx((0.1, 0.2, 0.3))
+
+    spherical = current_driver.spherical()
+    # the settable vectors are typed as what they accept, so narrow the type
+    assert isinstance(spherical, SphericalVector)
+    assert spherical.field == pytest.approx(current_driver.field())
+    assert spherical.theta == pytest.approx(current_driver.theta())
+    assert spherical.phi == pytest.approx(current_driver.phi())
+
+    cylindrical = current_driver.cylindrical_measured()
+    assert cylindrical.rho == pytest.approx(current_driver.rho_measured())
+    assert cylindrical.z == pytest.approx(0.3)
+
+    # named tuples compare equal to plain tuples
+    assert current_driver.cartesian() == tuple(current_driver.cartesian())
+
+
+def test_set_single_component(current_driver: AMIModel4303D) -> None:
+    current_driver.cartesian((0.1, 0.2, 0.3))
+
+    current_driver.x(0.4)
+    current_driver.field(0.5)
+
+    assert np.isclose(current_driver.field(), 0.5)
+    assert np.isclose(current_driver.field_measured(), 0.5)
+    # setting the field magnitude keeps the direction of (0.4, 0.2, 0.3)
+    direction = np.array([0.4, 0.2, 0.3]) / np.linalg.norm([0.4, 0.2, 0.3])
+    assert np.allclose(current_driver.cartesian(), 0.5 * direction)
+
+
+def _field_units(driver: AMIModel4303D) -> set[str]:
+    field_parameters = (
+        driver.cartesian,
+        driver.x,
+        driver.y,
+        driver.z,
+        driver.field,
+        driver.rho,
+        driver.cartesian_measured,
+        driver.x_measured,
+        driver.y_measured,
+        driver.z_measured,
+        driver.field_measured,
+        driver.rho_measured,
+    )
+    return {parameter.unit for parameter in field_parameters}
+
+
+def test_field_units_follow_magnets(current_driver: AMIModel4303D) -> None:
+    # the field values are in the field units of the magnets, which can be
+    # tesla or kilogauss
+    assert _field_units(current_driver) == {"T"}
+    # the angles are not affected
+    assert current_driver.phi.unit == "deg"
+    assert current_driver.theta_measured.unit == "deg"
+
+
+def test_cannot_change_field_units_of_magnet_in_3d_driver(
+    current_driver: AMIModel4303D,
+    magnet_axes_instances: tuple[AMIModel430, AMIModel430, AMIModel430],
+    mocker: MockerFixture,
+) -> None:
+    # the set point and field limit of the 3D driver are in the field units of
+    # the magnets, so changing them would silently change their meaning
+    mag_x, _, _ = magnet_axes_instances
+    current_driver.cartesian((0.1, 0.2, 0.3))
+    write = mocker.spy(mag_x, "write")
+
+    with pytest.raises(RuntimeError, match="Cannot change the field units of x"):
+        mag_x.field_units("kilogauss")
+
+    write.assert_not_called()
+    assert mag_x.field.unit == "T"
+    assert _field_units(current_driver) == {"T"}
+    assert np.allclose(current_driver.cartesian(), [0.1, 0.2, 0.3])
+
+    # setting the units that are already used is fine
+    mag_x.field_units("tesla")
+
+
+def test_mixed_field_units_warn(
+    magnet_axes_instances: tuple[AMIModel430, AMIModel430, AMIModel430],
+    caplog: LogCaptureFixture,
+) -> None:
+    mag_x, _, _ = magnet_axes_instances
+    mag_x.field_units("kilogauss")
+
+    with caplog.at_level(logging.WARNING):
+        driver = AMIModel4303D("AMI430_3D", *magnet_axes_instances, field_limit)
+    try:
+        assert _field_units(driver) == {""}
+        assert (
+            "The magnets use different field units (x: kG, y: T, z: T)" in caplog.text
+        )
+    finally:
+        driver.close()
+
+
+def test_field_units_at_init_follow_magnets(
+    magnet_axes_instances: tuple[AMIModel430, AMIModel430, AMIModel430],
+) -> None:
+    for magnet in magnet_axes_instances:
+        magnet.field_units("kilogauss")
+
+    driver = AMIModel4303D("AMI430_3D", *magnet_axes_instances, field_limit)
+    try:
+        assert _field_units(driver) == {"kG"}
+    finally:
+        driver.close()
+
+
+def test_magnets_work_after_3d_driver_is_closed(
+    magnet_axes_instances: tuple[AMIModel430, AMIModel430, AMIModel430],
+) -> None:
+    mag_x, _, _ = magnet_axes_instances
+    driver = AMIModel4303D("AMI430_3D", *magnet_axes_instances, field_limit)
+    assert mag_x._parent_instrument is driver
+
+    driver.close()
+
+    # the magnets no longer delegate to the closed 3D driver
+    assert mag_x._parent_instrument is None
+    mag_x.field_units("kilogauss")
+    assert mag_x.field.unit == "kG"
+    mag_x.set_field(0.1)
+    assert mag_x.field() == pytest.approx(0.1)
+    mag_x.zero()
+
+
 def get_ramp_down_order(messages: list[str]) -> list[str]:
     order = []
 
@@ -796,7 +961,8 @@ def test_simultaneous_ramp_mode_does_not_reset_individual_axis_ramp_rates_if_non
     ami3d._instrument_y.ramp_rate(0.10)
     ami3d._instrument_z.ramp_rate(0.11)
 
-    ami3d.vector_ramp_rate(0.05)
+    vector_ramp_rate = 0.05
+    ami3d.vector_ramp_rate(vector_ramp_rate)
 
     with caplog.at_level(logging.DEBUG, logger=LOG_NAME):
         # Initiate the simultaneous ramp
@@ -812,7 +978,7 @@ def test_simultaneous_ramp_mode_does_not_reset_individual_axis_ramp_rates_if_non
         # set by the simultaneous ramp based on the vector_ramp_rate and the
         # setpoint magnetic field
         expected_ramp_rate = pytest.approx(
-            0.5 / np.linalg.norm(ami3d.cartesian(), ord=2) * ami3d.vector_ramp_rate()
+            0.5 / np.linalg.norm(ami3d.cartesian(), ord=2) * vector_ramp_rate
         )
         assert ami3d._instrument_x.ramp_rate() == expected_ramp_rate
         assert ami3d._instrument_y.ramp_rate() == expected_ramp_rate
@@ -1909,13 +2075,20 @@ def test_calculate_vector_ramp_rate_from_duration() -> None:
     assert np.isclose(rate, 0.5)  # distance=5.0, 5.0/10.0 = 0.5
 
 
-def test_raise_if_not_same_field_units(current_driver: AMIModel4303D) -> None:
+def test_raise_if_not_same_field_units(
+    magnet_axes_instances: tuple[AMIModel430, AMIModel430, AMIModel430],
+) -> None:
     """Test that mismatched field_units raises ValueError."""
-    current_driver._instrument_x.field_units("kilogauss")
-    with pytest.raises(ValueError, match="field_units"):
-        current_driver._raise_if_not_same_field_and_ramp_rate_units()
-    # Clean up
-    current_driver._instrument_x.field_units("tesla")
+    # the field units cannot change while the magnets are part of a 3D
+    # driver, so set up the mismatch first
+    mag_x, _, _ = magnet_axes_instances
+    mag_x.field_units("kilogauss")
+    driver = AMIModel4303D("AMI430_3D", *magnet_axes_instances, field_limit)
+    try:
+        with pytest.raises(ValueError, match="field_units"):
+            driver._raise_if_not_same_field_and_ramp_rate_units()
+    finally:
+        driver.close()
 
 
 def test_raise_if_not_same_ramp_rate_units(current_driver: AMIModel4303D) -> None:
