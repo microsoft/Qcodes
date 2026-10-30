@@ -8,6 +8,8 @@ import qcodes.instrument_drivers.Keysight.keysight_e4980a as E4980A
 if TYPE_CHECKING:
     from collections.abc import Generator
 
+    from pytest_mock import MockerFixture
+
 
 @pytest.fixture(name="driver")
 def _make_driver() -> "Generator[E4980A.KeysightE4980A, None, None]":
@@ -74,3 +76,23 @@ def test_range_is_float(driver: E4980A.KeysightE4980A) -> None:
 
     driver.range(1000)
     assert driver.range() == 1000.0
+
+
+@pytest.mark.parametrize(
+    ("action", "command"),
+    [("open", ":CORRection:OPEN"), ("short", ":CORRection:SHORt")],
+)
+def test_correction_methods_send_command(
+    driver: E4980A.KeysightE4980A, mocker: "MockerFixture", action: str, command: str
+) -> None:
+    # these used to be parameters, so calling them without an argument only
+    # returned the cached value and did not send anything
+    write_raw = mocker.spy(driver, "write_raw")
+    if action == "open":
+        driver.correction.open()
+    else:
+        driver.correction.short()
+
+    write_raw.assert_called_once_with(command)
+    # the instrument does not reply, so the next query is unaffected
+    assert driver.IDN()["model"] == "E4980A"
