@@ -12,6 +12,8 @@ class NumpyJSONEncoder(json.JSONEncoder):
     This JSON encoder adds support for serializing types that the built-in
     ``json`` module does not support out-of-the-box. See the docstring of the
     ``default`` method for the description of all conversions.
+
+    To deserialize JSON data produced by this encoder, see :class:`NumpyJSONDecoder`.
     """
 
     def default(self, o: Any) -> Any:
@@ -93,6 +95,41 @@ class NumpyJSONDecoder(json.JSONDecoder):
     """
     This JSON decoder adds support for deserializing types encoded by
     :class:`NumpyJSONEncoder`, such as complex numbers and UFloat instances.
+
+    Because Python's standard library ``json`` module does not provide a
+    pluggable global registry for custom decoders, this decoder should be
+    passed explicitly to :func:`json.loads` or :func:`json.load` via the
+    ``cls`` argument, or by passing :meth:`default_object_hook` as the
+    ``object_hook`` parameter.
+
+    Examples:
+        Decode a JSON string containing complex numbers and uncertainties::
+
+            import json
+            import uncertainties
+            from qcodes.utils import NumpyJSONDecoder, NumpyJSONEncoder
+
+            data = {
+                "voltage": 1.5 + 2.0j,
+                "resistance": uncertainties.ufloat(100.0, 0.5),
+            }
+            encoded = json.dumps(data, cls=NumpyJSONEncoder)
+            decoded = json.loads(encoded, cls=NumpyJSONDecoder)
+
+            assert decoded["voltage"] == 1.5 + 2.0j
+            assert decoded["resistance"] == uncertainties.ufloat(100.0, 0.5)
+
+        Alternatively, pass :meth:`default_object_hook` directly as ``object_hook``::
+
+            decoded = json.loads(
+                encoded, object_hook=NumpyJSONDecoder.default_object_hook
+            )
+
+        Read and decode from a JSON file using :func:`json.load`::
+
+            with open("data.json", "r") as f:
+                data = json.load(f, cls=NumpyJSONDecoder)
+
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -102,6 +139,22 @@ class NumpyJSONDecoder(json.JSONDecoder):
 
     @staticmethod
     def default_object_hook(dct: dict[str, Any]) -> Any:
+        """
+        Convert dictionary representations of encoded types back to Python objects.
+
+        If ``dct`` contains ``{"__dtype__": "complex", "re": ..., "im": ...}``,
+        a :class:`complex` number is returned. If ``dct`` contains
+        ``{"__dtype__": "UFloat", "nominal_value": ..., "std_dev": ...}``, an
+        :class:`uncertainties.UFloat` instance is returned. Otherwise, ``dct``
+        is returned unchanged.
+
+        Args:
+            dct: Dictionary parsed from JSON.
+
+        Returns:
+            The decoded object or the original dictionary if unrecognized.
+
+        """
         dtype = dct.get("__dtype__")
         if dtype == "complex" and "re" in dct and "im" in dct:
             return complex(dct["re"], dct["im"])

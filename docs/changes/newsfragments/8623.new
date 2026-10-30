@@ -1,0 +1,3 @@
+Added :class:`qcodes.utils.NumpyJSONDecoder` to deserialize types encoded by
+:class:`~qcodes.utils.NumpyJSONEncoder` (such as complex numbers and
+:class:`uncertainties.UFloat` objects) back into their native Python types.

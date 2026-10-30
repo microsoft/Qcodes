@@ -1,3 +1,4 @@
+import io
 import json
 from collections import OrderedDict, UserDict
 
@@ -238,3 +239,32 @@ def test_numpy_json_decoder_custom_object_hook() -> None:
     data = '{"custom_tag": 1, "c": {"__dtype__": "complex", "re": 1.0, "im": 2.0}}'
     decoded = json.loads(data, cls=NumpyJSONDecoder, object_hook=custom_hook)
     assert decoded == "hooked"
+
+
+def test_numpy_json_decoder_direct_object_hook() -> None:
+    u = uncertainties.ufloat(10.0, 0.2)
+    encoded = json.dumps(
+        {"c": 1.0 + 2.0j, "u": u},
+        cls=NumpyJSONEncoder,
+    )
+    decoded = json.loads(encoded, object_hook=NumpyJSONDecoder.default_object_hook)
+
+    assert decoded["c"] == 1.0 + 2.0j
+    assert isinstance(decoded["c"], complex)
+    assert isinstance(decoded["u"], uncertainties.UFloat)
+    assert decoded["u"].nominal_value == 10.0
+    assert decoded["u"].std_dev == 0.2
+
+
+def test_numpy_json_decoder_load_from_stream() -> None:
+    encoded = json.dumps({"val": 3.0 + 4.0j}, cls=NumpyJSONEncoder)
+    stream = io.StringIO(encoded)
+    decoded = json.load(stream, cls=NumpyJSONDecoder)
+
+    assert decoded["val"] == 3.0 + 4.0j
+    assert isinstance(decoded["val"], complex)
+
+
+def test_numpy_json_decoder_unrecognized_dict() -> None:
+    regular_dict = {"a": 1, "b": "hello", "c": [1, 2, 3]}
+    assert NumpyJSONDecoder.default_object_hook(regular_dict) == regular_dict
