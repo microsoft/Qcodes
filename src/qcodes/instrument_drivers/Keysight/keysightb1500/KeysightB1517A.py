@@ -79,7 +79,7 @@ class KeysightB1500IVSweeper(InstrumentChannel["KeysightB1517A"]):
             "power_compliance": None,
         }
 
-        self.sweep_auto_abort: Parameter = self.add_parameter(
+        self.sweep_auto_abort: Parameter[constants.Abort, Self] = self.add_parameter(
             name="sweep_auto_abort",
             set_cmd=self._set_sweep_auto_abort,
             get_cmd=self._get_sweep_auto_abort,
@@ -127,20 +127,22 @@ class KeysightB1500IVSweeper(InstrumentChannel["KeysightB1517A"]):
         sweep source forces the pulse base value after sweep.
         """
 
-        self.post_sweep_voltage_condition: Parameter = self.add_parameter(
-            name="post_sweep_voltage_condition",
-            set_cmd=self._set_post_sweep_voltage_condition,
-            get_cmd=self._get_post_sweep_voltage_condition,
-            set_parser=constants.WM.Post,
-            get_parser=constants.WM.Post,
-            vals=vals.Enum(*list(constants.WM.Post)),
-            initial_cache_value=constants.WM.Post.START,
-            docstring=textwrap.dedent(
-                """
+        self.post_sweep_voltage_condition: Parameter[constants.WM.Post, Self] = (
+            self.add_parameter(
+                name="post_sweep_voltage_condition",
+                set_cmd=self._set_post_sweep_voltage_condition,
+                get_cmd=self._get_post_sweep_voltage_condition,
+                set_parser=constants.WM.Post,
+                get_parser=constants.WM.Post,
+                vals=vals.Enum(*list(constants.WM.Post)),
+                initial_cache_value=constants.WM.Post.START,
+                docstring=textwrap.dedent(
+                    """
         Source output value after the measurement is normally completed. If
         this parameter is not set, the sweep sources force the start value.
                                  """
-            ),
+                ),
+            )
         )
         """
         Source output value after the measurement is normally completed. If
@@ -294,7 +296,7 @@ class KeysightB1500IVSweeper(InstrumentChannel["KeysightB1517A"]):
             get_parser=self._get_sweep_delays_parser,
         )
 
-        self.sweep_mode: Parameter = self.add_parameter(
+        self.sweep_mode: Parameter[constants.SweepMode, Self] = self.add_parameter(
             name="sweep_mode",
             set_cmd=self._set_sweep_mode,
             get_cmd=self._get_sweep_mode,
@@ -323,7 +325,7 @@ class KeysightB1500IVSweeper(InstrumentChannel["KeysightB1517A"]):
             4: Log sweep (double stair, start to stop to start.)
         """
 
-        self.sweep_range: Parameter = self.add_parameter(
+        self.sweep_range: Parameter[constants.VOutputRange, Self] = self.add_parameter(
             name="sweep_range",
             set_cmd=self._set_sweep_range,
             get_cmd=self._get_sweep_range,
@@ -955,7 +957,7 @@ class KeysightB1517A(KeysightB1500Module):
             IOutputRange.MIN_100mA,
         ]
 
-        self.measurement_mode: Parameter = self.add_parameter(
+        self.measurement_mode: Parameter[MM.Mode, Self] = self.add_parameter(
             name="measurement_mode",
             get_cmd=None,
             set_cmd=self._set_measurement_mode,
@@ -1022,7 +1024,7 @@ class KeysightB1517A(KeysightB1500Module):
         )
         """Parameter current"""
 
-        self.time_axis: Parameter = self.add_parameter(
+        self.time_axis: Parameter[npt.NDArray, Self] = self.add_parameter(
             name="time_axis",
             get_cmd=self._get_time_axis,
             vals=vals.Arrays(shape=(self._get_number_of_samples,)),
@@ -1358,7 +1360,7 @@ class KeysightB1517A(KeysightB1500Module):
         v_start: float,
         v_end: float,
         n_steps: int,
-        post_sweep_voltage_val: constants.WMDCV.Post | int = constants.WMDCV.Post.STOP,
+        post_sweep_voltage_val: constants.WM.Post | int = constants.WM.Post.STOP,
         av_coef: int = -1,
         enable_filter: bool = True,
         v_src_range: constants.OutputRange = constants.VOutputRange.AUTO,
@@ -1420,10 +1422,12 @@ class KeysightB1517A(KeysightB1500Module):
         self.iv_sweep.delay(delay)
         self.iv_sweep.step_delay(step_delay)
         self.iv_sweep.measure_delay(measure_delay)
-        self.iv_sweep.sweep_auto_abort(abort_enabled)
-        self.iv_sweep.post_sweep_voltage_condition(post_sweep_voltage_val)
-        self.iv_sweep.sweep_mode(sweep_mode)
-        self.iv_sweep.sweep_range(v_src_range)
+        self.iv_sweep.sweep_auto_abort(constants.Abort(abort_enabled))
+        self.iv_sweep.post_sweep_voltage_condition(
+            constants.WM.Post(post_sweep_voltage_val)
+        )
+        self.iv_sweep.sweep_mode(constants.SweepMode(sweep_mode))
+        self.iv_sweep.sweep_range(constants.VOutputRange(v_src_range))
         self.iv_sweep.sweep_start(v_start)
         self.iv_sweep.sweep_end(v_end)
         self.iv_sweep.sweep_steps(n_steps)

@@ -53,7 +53,7 @@ class KeysightB1500CVSweeper(InstrumentChannel["KeysightB1520A"]):
     ):
         super().__init__(parent, name, **kwargs)
 
-        self.sweep_auto_abort: Parameter = self.add_parameter(
+        self.sweep_auto_abort: Parameter[constants.Abort, Self] = self.add_parameter(
             name="sweep_auto_abort",
             set_cmd=self._set_sweep_auto_abort,
             get_cmd=self._get_sweep_auto_abort,
@@ -86,16 +86,17 @@ class KeysightB1500CVSweeper(InstrumentChannel["KeysightB1520A"]):
         - Overflow on the AD converter
         """
 
-        self.post_sweep_voltage_condition: Parameter = self.add_parameter(
-            name="post_sweep_voltage_condition",
-            set_cmd=self._set_post_sweep_voltage_condition,
-            get_cmd=self._get_post_sweep_voltage_condition,
-            set_parser=constants.WMDCV.Post,
-            get_parser=constants.WMDCV.Post,
-            vals=vals.Enum(*list(constants.WMDCV.Post)),
-            initial_cache_value=constants.WMDCV.Post.START,
-            docstring=textwrap.dedent(
-                """
+        self.post_sweep_voltage_condition: Parameter[constants.WMDCV.Post, Self] = (
+            self.add_parameter(
+                name="post_sweep_voltage_condition",
+                set_cmd=self._set_post_sweep_voltage_condition,
+                get_cmd=self._get_post_sweep_voltage_condition,
+                set_parser=constants.WMDCV.Post,
+                get_parser=constants.WMDCV.Post,
+                vals=vals.Enum(*list(constants.WMDCV.Post)),
+                initial_cache_value=constants.WMDCV.Post.START,
+                docstring=textwrap.dedent(
+                    """
                            This command also sets the post measurement
                            condition of the MFCMU. After the measurement is
                            normally completed, the DC bias sweep source
@@ -107,7 +108,8 @@ class KeysightB1500CVSweeper(InstrumentChannel["KeysightB1520A"]):
                            the start value, and the pulsed bias sweep source
                            forces the pulse base value after sweep.
                            """
-            ),
+                ),
+            )
         )
         """
         This command also sets the post measurement
@@ -524,13 +526,14 @@ class KeysightB1520A(KeysightB1500Module):
         )
         """Instrument module correction"""
 
-        self.phase_compensation_mode: Parameter = self.add_parameter(
-            name="phase_compensation_mode",
-            set_cmd=self._set_phase_compensation_mode,
-            get_cmd=None,
-            set_parser=constants.ADJ.Mode,
-            docstring=textwrap.dedent(
-                """
+        self.phase_compensation_mode: Parameter[constants.ADJ.Mode, Self] = (
+            self.add_parameter(
+                name="phase_compensation_mode",
+                set_cmd=self._set_phase_compensation_mode,
+                get_cmd=None,
+                set_parser=constants.ADJ.Mode,
+                docstring=textwrap.dedent(
+                    """
             This parameter selects the MFCMU phase compensation mode. This
             command initializes the MFCMU. The available modes are captured
             in :class:`constants.ADJ.Mode`:
@@ -546,7 +549,8 @@ class KeysightB1520A(KeysightB1500Module):
             For mode=2, the KeysightB1500 performs the phase compensation
             before every measurement. It is useful when there are wide load
             fluctuations by changing the bias and so on."""
-            ),
+                ),
+            )
         )
         """
         This parameter selects the MFCMU phase compensation mode. This
@@ -642,7 +646,7 @@ class KeysightB1520A(KeysightB1500Module):
             get_parser=self._get_adc_mode_parser,
         )
 
-        self.ranging_mode: Parameter = self.add_parameter(
+        self.ranging_mode: Parameter[constants.RangingMode, Self] = self.add_parameter(
             name="ranging_mode",
             set_cmd=self._set_ranging_mode,
             vals=vals.Enum(*list(constants.RangingMode)),
@@ -691,7 +695,7 @@ class KeysightB1520A(KeysightB1500Module):
         the FC command.
         """
 
-        self.measurement_mode: Parameter = self.add_parameter(
+        self.measurement_mode: Parameter[MM.Mode, Self] = self.add_parameter(
             name="measurement_mode",
             get_cmd=None,
             set_cmd=self._set_measurement_mode,
@@ -719,19 +723,21 @@ class KeysightB1520A(KeysightB1500Module):
         guide for more information.
         """
 
-        self.impedance_model: Parameter = self.add_parameter(
-            name="impedance_model",
-            set_cmd=self._set_impedance_model,
-            get_cmd=None,
-            vals=vals.Enum(*list(constants.IMP.MeasurementMode)),
-            set_parser=constants.IMP.MeasurementMode,
-            initial_value=constants.IMP.MeasurementMode.Cp_D,
-            docstring=textwrap.dedent(
-                """
+        self.impedance_model: Parameter[constants.IMP.MeasurementMode, Self] = (
+            self.add_parameter(
+                name="impedance_model",
+                set_cmd=self._set_impedance_model,
+                get_cmd=None,
+                vals=vals.Enum(*list(constants.IMP.MeasurementMode)),
+                set_parser=constants.IMP.MeasurementMode,
+                initial_value=constants.IMP.MeasurementMode.Cp_D,
+                docstring=textwrap.dedent(
+                    """
             The IMP command specifies the parameter measured by the MFCMU.
             Look at the ``constants.IMP.MeasurementMode`` for all the modes.
                            """
-            ),
+                ),
+            )
         )
         """
         The IMP command specifies the parameter measured by the MFCMU.
@@ -1124,8 +1130,10 @@ class KeysightB1520A(KeysightB1500Module):
         self.adc_coef(adc_coef)
         self.frequency(freq)
         self.voltage_ac(ac_rms)
-        self.cv_sweep.sweep_auto_abort(abort_enabled)
-        self.cv_sweep.post_sweep_voltage_condition(post_sweep_voltage_condition)
+        self.cv_sweep.sweep_auto_abort(constants.Abort(abort_enabled))
+        self.cv_sweep.post_sweep_voltage_condition(
+            constants.WMDCV.Post(post_sweep_voltage_condition)
+        )
         self.cv_sweep.hold_time(hold_delay)
         self.cv_sweep.delay(delay)
         self.cv_sweep.step_delay(step_delay)
@@ -1136,9 +1144,9 @@ class KeysightB1520A(KeysightB1500Module):
         self.cv_sweep.sweep_end(v_end)
         self.cv_sweep.sweep_steps(n_steps)
         self.measurement_mode(constants.MM.Mode.CV_DC_SWEEP)
-        self.impedance_model(imp_model)
+        self.impedance_model(constants.IMP.MeasurementMode(imp_model))
         self.ac_dc_volt_monitor(volt_monitor)
-        self.ranging_mode(ranging_mode)
+        self.ranging_mode(constants.RangingMode(ranging_mode))
         self.measurement_range_for_non_auto(fixed_range_val)
 
         self.setup_fnc_already_run = True

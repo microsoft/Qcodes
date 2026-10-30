@@ -153,13 +153,6 @@ class KeysightE4980ACorrection(InstrumentChannel):
     ) -> None:
         super().__init__(parent, name, **kwargs)
 
-        self.open: Parameter = self.add_parameter(
-            "open",
-            set_cmd=":CORRection:OPEN",
-            docstring="Executes OPEN correction based on all frequency points.",
-        )
-        """Executes OPEN correction based on all frequency points."""
-
         self.open_state: Parameter[bool, Self] = self.add_parameter(
             "open_state",
             get_cmd=":CORRection:OPEN:STATe?",
@@ -169,13 +162,6 @@ class KeysightE4980ACorrection(InstrumentChannel):
         )
         """Enables or disable OPEN correction"""
 
-        self.short: Parameter = self.add_parameter(
-            "short",
-            set_cmd=":CORRection:SHORt",
-            docstring="Executes SHORT correction based on all frequency points.",
-        )
-        """Executes SHORT correction based on all frequency points."""
-
         self.short_state: Parameter[bool, Self] = self.add_parameter(
             "short_state",
             get_cmd=":CORRection:SHORt:STATe?",
@@ -184,6 +170,18 @@ class KeysightE4980ACorrection(InstrumentChannel):
             docstring="Enables or disable SHORT correction.",
         )
         """Enables or disable SHORT correction."""
+
+    def open(self) -> None:
+        """
+        Executes OPEN correction based on all frequency points.
+        """
+        self.write(":CORRection:OPEN")
+
+    def short(self) -> None:
+        """
+        Executes SHORT correction based on all frequency points.
+        """
+        self.write(":CORRection:SHORt")
 
 
 class KeysightE4980A(VisaInstrument):
