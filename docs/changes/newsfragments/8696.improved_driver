@@ -1,0 +1,13 @@
+The remaining parameters of the Stanford Research ``SR560``, ``SR830`` and ``SR86x`` drivers
+are now annotated with the type of their value, e.g. ``SR830.buffer_SR`` is
+``Parameter[float | Literal["Trigger"], Self]``. Fixed the following SR830 driver bugs found
+along the way:
+
+- The time setpoints of the data buffer (``ch1_databuffer``, ``ch2_databuffer`` and
+  ``sweep_setpoints``) are now spaced by the sample period, ``1 / buffer_SR``. Previously
+  N points spanned ``N / buffer_SR``, so the spacing was too large by a factor ``N / (N - 1)``.
+- ``sweep_setpoints`` now keeps the unit and label of the sweep parameter given to
+  ``set_sweep_parameters`` when the sample rate is switched back to ``"Trigger"``, and shows
+  ``s`` / ``Time`` while a constant sample rate is used.
+- Creating an ``SR830`` no longer emits a ``QCoDeSDeprecationWarning`` about ``ChannelBuffer``
+  not forwarding its keyword arguments.
