@@ -129,6 +129,23 @@ def test_set_sweep_parameters_with_trigger(sr830: SR830) -> None:
     assert (setpoints.unit, setpoints.label) == ("s", "Time")
 
 
+def test_sweep_setpoints_keep_directly_assigned_unit(sr830: SR830) -> None:
+    # As in the SR830 example notebook: assign the unit and label directly
+    setpoints = sr830.sweep_setpoints
+    sr830.buffer_SR("Trigger")
+    setpoints.unit = "V"
+    setpoints.label = "Gate voltage"
+
+    sr830.buffer_SR("Trigger")
+    assert (setpoints.unit, setpoints.label) == ("V", "Gate voltage")
+
+    sr830.buffer_SR(1)
+    assert (setpoints.unit, setpoints.label) == ("s", "Time")
+
+    sr830.buffer_SR("Trigger")
+    assert (setpoints.unit, setpoints.label) == ("V", "Gate voltage")
+
+
 @pytest.fixture(name="not_an_sr830")
 def _make_not_an_sr830() -> "Generator[DummyInstrument, None, None]":
     instrument = DummyInstrument("not_an_sr830", gates=[])
