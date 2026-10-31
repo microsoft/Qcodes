@@ -991,17 +991,23 @@ class SR830(VisaInstrument):
         label: str | None = None,
     ) -> None:
         self.sweep_setpoints.sweep_array = np.linspace(start, stop, n_points)
-        self.sweep_setpoints.unit = sweep_param.unit
+        self.sweep_setpoints.sweep_unit = sweep_param.unit
         if label is not None:
-            self.sweep_setpoints.label = label
+            self.sweep_setpoints.sweep_label = label
         elif sweep_param.label is not None:
-            self.sweep_setpoints.label = sweep_param.label
+            self.sweep_setpoints.sweep_label = sweep_param.label
+        self.sweep_setpoints.update_units_if_constant_sample_rate()
 
 
 class GeneratedSetPoints(Parameter):
     """
     A parameter that generates a setpoint array from start, stop and num points
     parameters.
+
+    With a constant sample rate the setpoints are the sample times, in "s" and
+    labelled "Time". With the "Trigger" sample rate they are ``sweep_array``,
+    with ``sweep_unit`` and ``sweep_label`` (set by
+    ``SR830.set_sweep_parameters``).
     """
 
     def __init__(
@@ -1012,19 +1018,24 @@ class GeneratedSetPoints(Parameter):
     ) -> None:
         super().__init__(*args, **kwargs)
         self.sweep_array = sweep_array
+        self.sweep_unit: str = self.unit
+        self.sweep_label: str = self.label
         self.update_units_if_constant_sample_rate()
 
     def update_units_if_constant_sample_rate(self) -> None:
         """
-        If the buffer is filled at a constant sample rate,
-        update the unit to "s" and label to "Time";
-        otherwise do nothing
+        Update the unit and label to match the current sample rate: "s" and
+        "Time" if the buffer is filled at a constant sample rate, otherwise
+        ``sweep_unit`` and ``sweep_label``.
         """
         assert isinstance(self.root_instrument, SR830)
         SR = self.root_instrument.buffer_SR.get()
         if SR != "Trigger":
             self.unit = "s"
             self.label = "Time"
+        else:
+            self.unit = self.sweep_unit
+            self.label = self.sweep_label
 
     def set_raw(self, value: Iterable[float | int]) -> None:
         self.sweep_array = value

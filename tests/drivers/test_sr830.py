@@ -17,6 +17,7 @@ from qcodes.instrument_drivers.stanford_research.SR830 import (
     ChannelBuffer,
     ChannelTrace,
 )
+from qcodes.parameters import Parameter
 from qcodes.validators import Arrays
 
 if TYPE_CHECKING:
@@ -92,6 +93,40 @@ def test_buffer_setpoints_with_trigger(sr830: SR830) -> None:
     assert buffer.setpoint_names == ("trig_events",)
     assert buffer.setpoints is not None
     np.testing.assert_array_equal(np.asarray(buffer.setpoints[0]), np.arange(5))
+
+
+def test_sweep_setpoints_unit_follows_sample_rate(sr830: SR830) -> None:
+    gate = Parameter("gate", label="Gate voltage", unit="V", set_cmd=None)
+    setpoints = sr830.sweep_setpoints
+
+    # the sim starts at a constant sample rate (1 Hz), so setpoints are times
+    sr830.set_sweep_parameters(gate, 0, 1, n_points=5)
+    assert (setpoints.unit, setpoints.label) == ("s", "Time")
+
+    sr830.buffer_SR("Trigger")
+    assert (setpoints.unit, setpoints.label) == ("V", "Gate voltage")
+    np.testing.assert_allclose(setpoints(), np.linspace(0, 1, 5))
+
+    sr830.buffer_SR(1)
+    assert (setpoints.unit, setpoints.label) == ("s", "Time")
+
+    # switching back to Trigger restores the sweep unit and label
+    sr830.buffer_SR("Trigger")
+    assert (setpoints.unit, setpoints.label) == ("V", "Gate voltage")
+
+
+def test_set_sweep_parameters_with_trigger(sr830: SR830) -> None:
+    gate = Parameter("gate", label="Gate voltage", unit="V", set_cmd=None)
+    setpoints = sr830.sweep_setpoints
+
+    sr830.buffer_SR("Trigger")
+    assert (setpoints.unit, setpoints.label) == ("", "sweep_setpoints")
+
+    sr830.set_sweep_parameters(gate, 0, 1, n_points=5, label="Gate")
+    assert (setpoints.unit, setpoints.label) == ("V", "Gate")
+
+    sr830.buffer_SR(1)
+    assert (setpoints.unit, setpoints.label) == ("s", "Time")
 
 
 @pytest.fixture(name="not_an_sr830")
