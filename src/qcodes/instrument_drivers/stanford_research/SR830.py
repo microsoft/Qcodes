@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 from functools import partial
-from typing import TYPE_CHECKING, Any, ClassVar, Self
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Self
 
 import numpy as np
 
@@ -434,7 +434,7 @@ class SR830(VisaInstrument):
         )
         """Parameter reserve"""
 
-        self.time_constant: Parameter = self.add_parameter(
+        self.time_constant: Parameter[float, Self] = self.add_parameter(
             "time_constant",
             label="Time constant",
             get_cmd="OFLT?",
@@ -567,7 +567,7 @@ class SR830(VisaInstrument):
         )
         """Parameter P"""
 
-        self.complex_voltage: Parameter = self.add_parameter(
+        self.complex_voltage: Parameter[complex, Self] = self.add_parameter(
             "complex_voltage",
             label="Voltage",
             get_cmd=self._get_complex_voltage,
@@ -580,30 +580,32 @@ class SR830(VisaInstrument):
         """Complex voltage parameter calculated from X, Y phase using Z = X +j*Y"""
 
         # Data buffer settings
-        self.buffer_SR: Parameter = self.add_parameter(
-            "buffer_SR",
-            label="Buffer sample rate",
-            get_cmd="SRAT ?",
-            set_cmd=self._set_buffer_SR,
-            unit="Hz",
-            val_mapping={
-                62.5e-3: 0,
-                0.125: 1,
-                0.250: 2,
-                0.5: 3,
-                1: 4,
-                2: 5,
-                4: 6,
-                8: 7,
-                16: 8,
-                32: 9,
-                64: 10,
-                128: 11,
-                256: 12,
-                512: 13,
-                "Trigger": 14,
-            },
-            get_parser=int,
+        self.buffer_SR: Parameter[float | Literal["Trigger"], Self] = (
+            self.add_parameter(
+                "buffer_SR",
+                label="Buffer sample rate",
+                get_cmd="SRAT ?",
+                set_cmd=self._set_buffer_SR,
+                unit="Hz",
+                val_mapping={
+                    62.5e-3: 0,
+                    0.125: 1,
+                    0.250: 2,
+                    0.5: 3,
+                    1: 4,
+                    2: 5,
+                    4: 6,
+                    8: 7,
+                    16: 8,
+                    32: 9,
+                    64: 10,
+                    128: 11,
+                    256: 12,
+                    512: 13,
+                    "Trigger": 14,
+                },
+                get_parser=int,
+            )
         )
         """Parameter buffer_SR"""
 

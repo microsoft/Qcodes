@@ -47,3 +47,21 @@ def test_external_reference_trigger_input_resistance_int_alias(
     # compatibility, but get always returns the name.
     sr860.external_reference_trigger_input_resistance.set(value)
     assert sr860.external_reference_trigger_input_resistance() == expected
+
+
+@pytest.mark.parametrize("value", [1, 300e-3, 100e-3, 30e-3, 10e-3])
+def test_input_range(sr860: SR860, value: float) -> None:
+    sr860.input_range(value)
+    assert sr860.input_range() == value
+
+
+@pytest.mark.parametrize("value", [1e-6, 100e-3, 1, 1.0, 30e3])
+def test_time_constant(sr860: SR860, value: float) -> None:
+    sr860.time_constant(value)
+    assert sr860.time_constant() == value
+
+
+def test_complex_voltage(sr860: SR860) -> None:
+    value = sr860.complex_voltage()
+    assert isinstance(value, complex)
+    assert value == complex(1.5e-3, -2.5e-4)

@@ -6,7 +6,7 @@ that guard is exercised with a dummy instrument.
 """
 
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 import pytest
@@ -45,6 +45,24 @@ def test_channel_buffers_are_created(sr830: SR830) -> None:
         assert isinstance(buffer, ChannelBuffer)
         assert buffer.instrument is sr830
         assert buffer.channel == channel
+
+
+@pytest.mark.parametrize("value", [10e-6, 100e-3, 1, 1.0, 30e3])
+def test_time_constant(sr830: SR830, value: float) -> None:
+    sr830.time_constant(value)
+    assert sr830.time_constant() == value
+
+
+def test_complex_voltage(sr830: SR830) -> None:
+    value = sr830.complex_voltage()
+    assert isinstance(value, complex)
+    assert value == complex(1.5e-3, -2.5e-4)
+
+
+@pytest.mark.parametrize("value", [62.5e-3, 0.5, 1, 512, "Trigger"])
+def test_buffer_sample_rate(sr830: SR830, value: float | Literal["Trigger"]) -> None:
+    sr830.buffer_SR(value)
+    assert sr830.buffer_SR() == value
 
 
 @pytest.mark.parametrize(("sample_rate", "dt"), [(0.25, 4.0), (1, 1.0), (512, 1 / 512)])

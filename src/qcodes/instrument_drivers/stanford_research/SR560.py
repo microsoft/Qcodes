@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Literal, Self
 
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs
 from qcodes.parameters import MultiParameter, Parameter, ParamRawDataType
@@ -132,7 +132,7 @@ class SR560(Instrument):
             50000,
         ]
 
-        self.cutoff_lo: Parameter = self.add_parameter(
+        self.cutoff_lo: Parameter[float | Literal["DC"], Self] = self.add_parameter(
             "cutoff_lo",
             get_cmd=None,
             set_cmd=None,
@@ -143,7 +143,7 @@ class SR560(Instrument):
         )
         """Parameter cutoff_lo"""
 
-        self.cutoff_hi: Parameter = self.add_parameter(
+        self.cutoff_hi: Parameter[float, Self] = self.add_parameter(
             "cutoff_hi",
             get_cmd=None,
             set_cmd=None,
@@ -164,7 +164,7 @@ class SR560(Instrument):
         )
         """Parameter invert"""
 
-        self.gain: Parameter = self.add_parameter(
+        self.gain: Parameter[int, Self] = self.add_parameter(
             "gain",
             get_cmd=None,
             set_cmd=None,
