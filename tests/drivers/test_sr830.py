@@ -8,6 +8,7 @@ that guard is exercised with a dummy instrument.
 import re
 from typing import TYPE_CHECKING
 
+import numpy as np
 import pytest
 
 from qcodes.instrument_drivers.mock_instruments import DummyInstrument
@@ -44,6 +45,35 @@ def test_channel_buffers_are_created(sr830: SR830) -> None:
         assert isinstance(buffer, ChannelBuffer)
         assert buffer.instrument is sr830
         assert buffer.channel == channel
+
+
+@pytest.mark.parametrize(("sample_rate", "dt"), [(0.25, 4.0), (1, 1.0), (512, 1 / 512)])
+def test_sweep_setpoints_are_sample_times(
+    sr830: SR830, sample_rate: float, dt: float
+) -> None:
+    sr830.buffer_SR(sample_rate)
+    # bin k is sampled at k / sample_rate; the sim reports 5 stored points
+    np.testing.assert_allclose(sr830.sweep_setpoints(), np.arange(5) * dt)
+
+
+def test_buffer_setpoints_are_sample_times(sr830: SR830) -> None:
+    sr830.buffer_SR(4)
+    buffer = sr830.ch1_databuffer
+    assert isinstance(buffer, ChannelBuffer)
+    buffer.prepare_buffer_readout()
+    assert buffer.shape == (5,)
+    assert buffer.setpoints is not None
+    np.testing.assert_allclose(np.asarray(buffer.setpoints[0]), np.arange(5) * 0.25)
+
+
+def test_buffer_setpoints_with_trigger(sr830: SR830) -> None:
+    sr830.buffer_SR("Trigger")
+    buffer = sr830.ch1_databuffer
+    assert isinstance(buffer, ChannelBuffer)
+    buffer.prepare_buffer_readout()
+    assert buffer.setpoint_names == ("trig_events",)
+    assert buffer.setpoints is not None
+    np.testing.assert_array_equal(np.asarray(buffer.setpoints[0]), np.arange(5))
 
 
 @pytest.fixture(name="not_an_sr830")
