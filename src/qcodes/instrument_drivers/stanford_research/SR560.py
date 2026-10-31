@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Literal, Self
 
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs
 from qcodes.parameters import MultiParameter, Parameter, ParamRawDataType
@@ -88,8 +88,13 @@ class SR560(Instrument):
     def __init__(self, name: str, **kwargs: "Unpack[InstrumentBaseKWArgs]"):
         super().__init__(name, **kwargs)
 
-        cutoffs = [
-            "DC",
+        # The SR560 manual (Rev. 3.1, "Filters" on page 8 and the HFRQ / LFRQ
+        # commands on page A-1) gives the low-pass cutoff (``cutoff_hi``) as
+        # 0.03 Hz to 1 MHz and the high-pass cutoff (``cutoff_lo``) as 0.03 Hz
+        # to 10 kHz: high-pass filters are not available for the four highest
+        # settings. ``cutoff_lo="DC"`` means that no high-pass filter is in
+        # the signal path.
+        cutoffs_hi = [
             0.03,
             0.1,
             0.3,
@@ -107,6 +112,7 @@ class SR560(Instrument):
             300000,
             1000000,
         ]
+        cutoffs_lo = ["DC", *cutoffs_hi[:-4]]
 
         gains = [
             1,
@@ -126,25 +132,25 @@ class SR560(Instrument):
             50000,
         ]
 
-        self.cutoff_lo: Parameter = self.add_parameter(
+        self.cutoff_lo: Parameter[float | Literal["DC"], Self] = self.add_parameter(
             "cutoff_lo",
             get_cmd=None,
             set_cmd=None,
             initial_value="DC",
             label="High pass",
             unit="Hz",
-            vals=Enum(*cutoffs),
+            vals=Enum(*cutoffs_lo),
         )
         """Parameter cutoff_lo"""
 
-        self.cutoff_hi: Parameter = self.add_parameter(
+        self.cutoff_hi: Parameter[float, Self] = self.add_parameter(
             "cutoff_hi",
             get_cmd=None,
             set_cmd=None,
             initial_value=1e6,
             label="Low pass",
             unit="Hz",
-            vals=Enum(*cutoffs),
+            vals=Enum(*cutoffs_hi),
         )
         """Parameter cutoff_hi"""
 
@@ -158,7 +164,7 @@ class SR560(Instrument):
         )
         """Parameter invert"""
 
-        self.gain: Parameter = self.add_parameter(
+        self.gain: Parameter[int, Self] = self.add_parameter(
             "gain",
             get_cmd=None,
             set_cmd=None,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 from functools import partial
-from typing import TYPE_CHECKING, Any, ClassVar, Self
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Self
 
 import numpy as np
 
@@ -95,13 +95,16 @@ class ChannelBuffer(ArrayParameter):
     The instrument natively supports this in its TRCL call.
     """
 
-    def __init__(self, name: str, instrument: SR830, channel: int) -> None:
+    def __init__(
+        self, name: str, instrument: SR830, channel: int, **kwargs: Any
+    ) -> None:
         """
         Args:
             name: The name of the parameter
             instrument: The parent instrument
             channel: The relevant channel (1 or 2). The name should
                 should match this.
+            **kwargs: kwargs are forwarded to base class.
 
         """
         self._valid_channels = (1, 2)
@@ -125,6 +128,7 @@ class ChannelBuffer(ArrayParameter):
             setpoint_units=("s",),
             docstring="Holds an acquired (part of the) data buffer of one channel.",
             instrument=instrument,
+            **kwargs,
         )
 
         self.channel = channel
@@ -148,7 +152,8 @@ class ChannelBuffer(ArrayParameter):
             self.setpoint_units = ("s",)
             self.setpoint_names = ("Time",)
             self.setpoint_labels = ("Time",)
-            self.setpoints = (tuple(np.linspace(0, N * dt, N)),)
+            # bin k is sampled at k / SR (SR830 manual, page 5-12)
+            self.setpoints = (tuple(np.arange(N) * dt),)
 
         self.shape = (N,)
 
@@ -429,7 +434,7 @@ class SR830(VisaInstrument):
         )
         """Parameter reserve"""
 
-        self.time_constant: Parameter = self.add_parameter(
+        self.time_constant: Parameter[float, Self] = self.add_parameter(
             "time_constant",
             label="Time constant",
             get_cmd="OFLT?",
@@ -562,7 +567,7 @@ class SR830(VisaInstrument):
         )
         """Parameter P"""
 
-        self.complex_voltage: Parameter = self.add_parameter(
+        self.complex_voltage: Parameter[complex, Self] = self.add_parameter(
             "complex_voltage",
             label="Voltage",
             get_cmd=self._get_complex_voltage,
@@ -575,30 +580,32 @@ class SR830(VisaInstrument):
         """Complex voltage parameter calculated from X, Y phase using Z = X +j*Y"""
 
         # Data buffer settings
-        self.buffer_SR: Parameter = self.add_parameter(
-            "buffer_SR",
-            label="Buffer sample rate",
-            get_cmd="SRAT ?",
-            set_cmd=self._set_buffer_SR,
-            unit="Hz",
-            val_mapping={
-                62.5e-3: 0,
-                0.125: 1,
-                0.250: 2,
-                0.5: 3,
-                1: 4,
-                2: 5,
-                4: 6,
-                8: 7,
-                16: 8,
-                32: 9,
-                64: 10,
-                128: 11,
-                256: 12,
-                512: 13,
-                "Trigger": 14,
-            },
-            get_parser=int,
+        self.buffer_SR: Parameter[float | Literal["Trigger"], Self] = (
+            self.add_parameter(
+                "buffer_SR",
+                label="Buffer sample rate",
+                get_cmd="SRAT ?",
+                set_cmd=self._set_buffer_SR,
+                unit="Hz",
+                val_mapping={
+                    62.5e-3: 0,
+                    0.125: 1,
+                    0.250: 2,
+                    0.5: 3,
+                    1: 4,
+                    2: 5,
+                    4: 6,
+                    8: 7,
+                    16: 8,
+                    32: 9,
+                    64: 10,
+                    128: 11,
+                    256: 12,
+                    512: 13,
+                    "Trigger": 14,
+                },
+                get_parser=int,
+            )
         )
         """Parameter buffer_SR"""
 
@@ -984,17 +991,22 @@ class SR830(VisaInstrument):
         label: str | None = None,
     ) -> None:
         self.sweep_setpoints.sweep_array = np.linspace(start, stop, n_points)
-        self.sweep_setpoints.unit = sweep_param.unit
-        if label is not None:
-            self.sweep_setpoints.label = label
-        elif sweep_param.label is not None:
-            self.sweep_setpoints.label = sweep_param.label
+        self.sweep_setpoints.set_sweep_unit_and_label(
+            sweep_param.unit, label if label is not None else sweep_param.label
+        )
 
 
 class GeneratedSetPoints(Parameter):
     """
     A parameter that generates a setpoint array from start, stop and num points
     parameters.
+
+    With a constant sample rate the setpoints are the sample times, in "s" and
+    labelled "Time". With the "Trigger" sample rate they are ``sweep_array``,
+    with the unit and label of the sweep, set by
+    ``SR830.set_sweep_parameters`` or by assigning ``unit`` and ``label``
+    directly. The sweep unit and label are kept while a constant sample rate
+    is used, and restored when the sample rate is set to "Trigger" again.
     """
 
     def __init__(
@@ -1005,19 +1017,39 @@ class GeneratedSetPoints(Parameter):
     ) -> None:
         super().__init__(*args, **kwargs)
         self.sweep_array = sweep_array
+        # The unit and label of the sweep while ``unit`` and ``label`` show
+        # the sample times ("s" and "Time"); None while they show the sweep.
+        self._saved_sweep_unit_and_label: tuple[str, str] | None = None
         self.update_units_if_constant_sample_rate()
+
+    def set_sweep_unit_and_label(self, unit: str, label: str) -> None:
+        """
+        Set the unit and label of the sweep, used with the "Trigger" sample
+        rate. With a constant sample rate they are saved until the sample
+        rate is set to "Trigger".
+        """
+        if self._saved_sweep_unit_and_label is None:
+            self.unit = unit
+            self.label = label
+        else:
+            self._saved_sweep_unit_and_label = (unit, label)
 
     def update_units_if_constant_sample_rate(self) -> None:
         """
-        If the buffer is filled at a constant sample rate,
-        update the unit to "s" and label to "Time";
-        otherwise do nothing
+        Update the unit and label to match the current sample rate: "s" and
+        "Time" if the buffer is filled at a constant sample rate, otherwise
+        the unit and label of the sweep.
         """
         assert isinstance(self.root_instrument, SR830)
         SR = self.root_instrument.buffer_SR.get()
         if SR != "Trigger":
+            if self._saved_sweep_unit_and_label is None:
+                self._saved_sweep_unit_and_label = (self.unit, self.label)
             self.unit = "s"
             self.label = "Time"
+        elif self._saved_sweep_unit_and_label is not None:
+            self.unit, self.label = self._saved_sweep_unit_and_label
+            self._saved_sweep_unit_and_label = None
 
     def set_raw(self, value: Iterable[float | int]) -> None:
         self.sweep_array = value
@@ -1031,4 +1063,5 @@ class GeneratedSetPoints(Parameter):
             N = self.root_instrument.buffer_npts.get()
             dt = 1 / SR
 
-            return np.linspace(0, N * dt, N)
+            # bin k is sampled at k / SR (SR830 manual, page 5-12)
+            return np.arange(N) * dt

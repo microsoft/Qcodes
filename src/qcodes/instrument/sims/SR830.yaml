@@ -1,0 +1,50 @@
+spec: "1.0"
+devices:
+  device 1:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "Stanford_Research_Systems,SR830,s/n00001,ver1.07"
+      - q: "ISRC?"
+        r: "0"
+      # display X (channel 1) / Y (channel 2), no ratio
+      - q: "DDEF ? 1"
+        r: "0,0"
+      - q: "DDEF ? 2"
+        r: "0,0"
+      - q: "SPTS ?"
+        r: "5"
+      - q: "SNAP? 1,2"
+        r: "1.5e-3,-2.5e-4"
+
+    properties:
+      time_constant:
+        default: 10
+        getter:
+          q: "OFLT?"
+          r: "{}"
+        setter:
+          q: "OFLT {}"
+        specs:
+          type: int
+          min: 0
+          max: 19
+      buffer_SR:
+        default: 4
+        getter:
+          q: "SRAT ?"
+          r: "{}"
+        setter:
+          q: "SRAT {}"
+        specs:
+          type: int
+          min: 0
+          max: 14
+
+resources:
+  GPIB::1::INSTR:
+    device: device 1
