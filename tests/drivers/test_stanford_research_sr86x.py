@@ -21,3 +21,29 @@ def test_count_capture_kilobytes_is_int(sr860: SR860) -> None:
     captured = sr860.buffer.count_capture_kilobytes()
     assert isinstance(captured, int)
     assert captured == 12
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("50", "50OHMS"),
+        ("50OHMS", "50OHMS"),
+        ("1M", "1MEG"),
+        ("1MEG", "1MEG"),
+    ],
+)
+def test_external_reference_trigger_input_resistance_returns_name(
+    sr860: SR860, value: str, expected: str
+) -> None:
+    sr860.external_reference_trigger_input_resistance(value)
+    assert sr860.external_reference_trigger_input_resistance() == expected
+
+
+@pytest.mark.parametrize(("value", "expected"), [(0, "50OHMS"), (1, "1MEG")])
+def test_external_reference_trigger_input_resistance_int_alias(
+    sr860: SR860, value: int, expected: str
+) -> None:
+    # The instrument's integer values are still accepted for backwards
+    # compatibility, but get always returns the name.
+    sr860.external_reference_trigger_input_resistance.set(value)
+    assert sr860.external_reference_trigger_input_resistance() == expected
