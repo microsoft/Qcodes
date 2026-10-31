@@ -522,8 +522,8 @@ class YokogawaGS200(VisaInstrument):
             "voltage",
             label="Voltage",
             unit="V",
-            set_cmd=partial(self._get_set_output, "VOLT"),
-            get_cmd=partial(self._get_set_output, "VOLT"),
+            set_cmd=partial(self._set_output_level, "VOLT"),
+            get_cmd=partial(self._get_output_level, "VOLT"),
             snapshot_exclude=self.source_mode() == "CURR",
         )
         """Parameter voltage"""
@@ -532,8 +532,8 @@ class YokogawaGS200(VisaInstrument):
             "current",
             label="Current",
             unit="I",
-            set_cmd=partial(self._get_set_output, "CURR"),
-            get_cmd=partial(self._get_set_output, "CURR"),
+            set_cmd=partial(self._set_output_level, "CURR"),
+            get_cmd=partial(self._get_output_level, "CURR"),
             snapshot_exclude=self.source_mode() == "VOLT",
         )
         """Parameter current"""
@@ -936,23 +936,30 @@ class YokogawaGS200(VisaInstrument):
             case _:
                 raise ValueError(f"Unknown ramp mode: {self.ramp_mode()}")
 
-    def _get_set_output(
-        self, mode: ModeType, output_level: float | None = None
-    ) -> float | None:
+    def _get_output_level(self, mode: ModeType) -> float:
         """
-        Get or set the output level.
+        Get the output level.
 
         Args:
-            mode: "CURR" or "VOLT"
-            output_level: If missing, we assume that we are getting the
-                current level. Else we are setting it
+            mode: "CURR" or "VOLT". Raises a ValueError if the instrument
+                is in the other source mode.
 
         """
         self._assert_mode(mode)
-        if output_level is not None:
-            self._ramp_source(output_level)
-            return None
         return float(self.ask(":SOUR:LEV?"))
+
+    def _set_output_level(self, mode: ModeType, output_level: float) -> None:
+        """
+        Set the output level according to :attr:`ramp_mode`.
+
+        Args:
+            mode: "CURR" or "VOLT". Raises a ValueError if the instrument
+                is in the other source mode.
+            output_level: The output level in Volt or Ampere.
+
+        """
+        self._assert_mode(mode)
+        self._ramp_source(output_level)
 
     def _set_output(self, output_level: float) -> None:
         """
