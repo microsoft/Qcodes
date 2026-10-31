@@ -309,7 +309,7 @@ class YokogawaGS200Monitor(InstrumentChannel["YokogawaGS200"]):
         self._unit = unit
         if self._unit == "VOLT":
             self.measure.label = "Source Current"
-            self.measure.unit = "I"
+            self.measure.unit = "A"
         else:
             self.measure.label = "Source Voltage"
             self.measure.unit = "V"
@@ -506,7 +506,7 @@ class YokogawaGS200(VisaInstrument):
         self.current_range: Parameter[float, Self] = self.add_parameter(
             "current_range",
             label="Current Source Range",
-            unit="I",
+            unit="A",
             get_cmd=partial(self._get_range, "CURR"),
             set_cmd=partial(self._set_range, "CURR"),
             vals=Enum(1e-3, 10e-3, 100e-3, 200e-3),
@@ -545,7 +545,7 @@ class YokogawaGS200(VisaInstrument):
         self.current: Parameter[float, Self] = self.add_parameter(
             "current",
             label="Current",
-            unit="I",
+            unit="A",
             set_cmd=partial(self._set_output_level, "CURR"),
             get_cmd=partial(self._get_output_level, "CURR"),
             snapshot_exclude=self.source_mode() == "VOLT",
@@ -589,7 +589,7 @@ class YokogawaGS200(VisaInstrument):
         self.current_limit: Parameter[float, Self] = self.add_parameter(
             "current_limit",
             label="Current Protection Limit",
-            unit="I",
+            unit="A",
             vals=Numbers(1e-3, 200e-3),
             get_cmd=":SOUR:PROT:CURR?",
             set_cmd=":SOUR:PROT:CURR {:.3f}",
@@ -744,7 +744,7 @@ class YokogawaGS200(VisaInstrument):
             "ramp_rate",
             ManualParameter,
             label="Ramp Rate",
-            unit="V/s",
+            unit="V/s" if self.source_mode() == "VOLT" else "A/s",
             vals=Numbers(1e-3 / 3600, float("inf")),
             initial_value=10e-3 if self.source_mode() == "VOLT" else 100e-6,
         )
@@ -754,7 +754,7 @@ class YokogawaGS200(VisaInstrument):
             "ramp_step",
             ManualParameter,
             label="Ramp step",
-            unit="V",
+            unit="V" if self.source_mode() == "VOLT" else "A",
             vals=Numbers(0, float("inf")),
             initial_value=0,
         )

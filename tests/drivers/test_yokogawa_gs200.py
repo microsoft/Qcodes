@@ -297,6 +297,34 @@ def test_program_save_sends_file_name(
     assert gs200.program.save() == "test1.csv"
 
 
+def test_current_parameters_use_ampere(gs200: YokogawaGS200) -> None:
+    assert gs200.current.unit == "A"
+    assert gs200.current_range.unit == "A"
+    assert gs200.current_limit.unit == "A"
+
+
+def test_ramp_units_follow_source_mode_at_init(mocker: MockerFixture) -> None:
+    # The simulator always starts in VOLT mode, so pretend that the
+    # instrument was left in CURR mode before connecting.
+    original_ask_raw = YokogawaGS200.ask_raw
+
+    def ask_raw(self: YokogawaGS200, cmd: str) -> str:
+        if cmd == ":SOUR:FUNC?":
+            return "CURR"
+        return original_ask_raw(self, cmd)
+
+    mocker.patch.object(YokogawaGS200, "ask_raw", ask_raw)
+    gs200 = YokogawaGS200(
+        "GS200_curr", address="GPIB0::1::INSTR", pyvisa_sim_file="Yokogawa_GS200.yaml"
+    )
+    try:
+        assert gs200.source_mode() == "CURR"
+        assert gs200.ramp_rate.unit == "A/s"
+        assert gs200.ramp_step.unit == "A"
+    finally:
+        gs200.close()
+
+
 def test_hardware_ramp_still_requires_output_enabled(gs200: YokogawaGS200) -> None:
     gs200.voltage_range(10)
     gs200.ramp_mode("HARDWARE")
