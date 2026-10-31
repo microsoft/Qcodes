@@ -1,8 +1,8 @@
-"""Tests for the parameter classes of the SR830 driver.
+"""Tests for the SR830 driver.
 
-The driver itself needs a connected instrument, but the buffer parameters
-guard against being attached to anything other than an SR830 and that guard
-can be exercised with any instrument.
+Most tests use the pyvisa-sim simulation in ``SR830.yaml``. The buffer
+parameters guard against being attached to anything other than an SR830 and
+that guard is exercised with a dummy instrument.
 """
 
 import re
@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from qcodes.instrument_drivers.mock_instruments import DummyInstrument
+from qcodes.instrument_drivers.stanford_research import SR830
 from qcodes.instrument_drivers.stanford_research.SR830 import (
     ChannelBuffer,
     ChannelTrace,
@@ -19,6 +20,30 @@ from qcodes.validators import Arrays
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+
+
+@pytest.fixture(name="sr830")
+def _make_sr830() -> "Generator[SR830, None, None]":
+    driver = SR830(
+        "sr830",
+        address="GPIB::1::INSTR",
+        pyvisa_sim_file="SR830.yaml",
+        terminator="\n",
+    )
+    try:
+        yield driver
+    finally:
+        driver.close()
+
+
+def test_channel_buffers_are_created(sr830: SR830) -> None:
+    # Creating the driver must not warn that ChannelBuffer drops the kwargs
+    # that add_parameter passes on (warnings are errors in the test suite).
+    for channel in (1, 2):
+        buffer = sr830.parameters[f"ch{channel}_databuffer"]
+        assert isinstance(buffer, ChannelBuffer)
+        assert buffer.instrument is sr830
+        assert buffer.channel == channel
 
 
 @pytest.fixture(name="not_an_sr830")

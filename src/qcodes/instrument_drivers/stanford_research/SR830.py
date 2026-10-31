@@ -95,13 +95,16 @@ class ChannelBuffer(ArrayParameter):
     The instrument natively supports this in its TRCL call.
     """
 
-    def __init__(self, name: str, instrument: SR830, channel: int) -> None:
+    def __init__(
+        self, name: str, instrument: SR830, channel: int, **kwargs: Any
+    ) -> None:
         """
         Args:
             name: The name of the parameter
             instrument: The parent instrument
             channel: The relevant channel (1 or 2). The name should
                 should match this.
+            **kwargs: kwargs are forwarded to base class.
 
         """
         self._valid_channels = (1, 2)
@@ -125,6 +128,7 @@ class ChannelBuffer(ArrayParameter):
             setpoint_units=("s",),
             docstring="Holds an acquired (part of the) data buffer of one channel.",
             instrument=instrument,
+            **kwargs,
         )
 
         self.channel = channel
