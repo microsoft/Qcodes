@@ -6,6 +6,12 @@ from typing import TYPE_CHECKING, Literal
 import pytest
 
 from qcodes.instrument_drivers.yokogawa import YokogawaGS200
+from qcodes.instrument_drivers.yokogawa.Yokogawa_GS200 import (
+    ConditionRegister,
+    ExtendedEventRegister,
+    StandardEventRegister,
+    StatusByte,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -216,6 +222,79 @@ def test_nominal_ranges_and_protection_limits_unchanged(
     with pytest.raises(ValueError):
         gs200.parameters[parameter](value)
     write.assert_not_called()
+
+
+@pytest.mark.parametrize("mode", ("VOLT", "CURR"))
+def test_range_and_output_level_are_floats(
+    gs200: YokogawaGS200, mode: Literal["VOLT", "CURR"]
+) -> None:
+    gs200.source_mode(mode)
+    if mode == "VOLT":
+        gs200.voltage_range(1)
+        gs200.voltage(0.5)
+        source_range, level = gs200.voltage_range, gs200.voltage
+    else:
+        gs200.current_range(10e-3)
+        gs200.current(5e-3)
+        source_range, level = gs200.current_range, gs200.current
+
+    for parameter in (source_range, gs200.range, level, gs200.output_level):
+        value = parameter.get()
+        assert type(value) is float
+
+    assert source_range.get() == gs200.range.get()
+    assert level.get() == gs200.output_level.get()
+
+
+def test_status_registers_return_flags(gs200: YokogawaGS200) -> None:
+    status_byte = gs200.status_byte()
+    assert isinstance(status_byte, StatusByte)
+    assert status_byte == StatusByte.RQS | StatusByte.EAV
+
+    standard_event_register = gs200.standard_event_register()
+    assert isinstance(standard_event_register, StandardEventRegister)
+    assert standard_event_register == StandardEventRegister.CME
+
+    extended_event_register = gs200.extended_event_register()
+    assert isinstance(extended_event_register, ExtendedEventRegister)
+    assert (
+        extended_event_register == ExtendedEventRegister.EOP | ExtendedEventRegister.SCG
+    )
+
+    condition_register = gs200.condition_register()
+    assert isinstance(condition_register, ConditionRegister)
+    assert condition_register == ConditionRegister.RFP
+
+
+@pytest.mark.parametrize("keyword", ("MIN", "MAX"))
+def test_program_count_accepts_keywords(
+    gs200: YokogawaGS200, mocker: MockerFixture, keyword: Literal["MIN", "MAX"]
+) -> None:
+    write = mocker.spy(gs200, "write")
+
+    gs200.program.count(keyword)
+
+    write.assert_called_once_with(f":PROG:COUN {keyword}")
+    # The cache holds the keyword until the parameter is read again.
+    assert gs200.program.count.cache.get(get_if_invalid=False) == keyword
+
+
+def test_program_count_returns_int(gs200: YokogawaGS200) -> None:
+    gs200.program.count(3)
+    value = gs200.program.count.get()
+    assert type(value) is int
+    assert value == 3
+
+
+def test_program_save_sends_file_name(
+    gs200: YokogawaGS200, mocker: MockerFixture
+) -> None:
+    write = mocker.patch.object(gs200, "write")
+
+    gs200.program.save("test1.csv")
+
+    write.assert_called_once_with(":PROG:SAVE 'test1.csv'")
+    assert gs200.program.save() == "test1.csv"
 
 
 def test_hardware_ramp_still_requires_output_enabled(gs200: YokogawaGS200) -> None:
