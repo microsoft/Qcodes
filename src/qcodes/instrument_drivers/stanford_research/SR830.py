@@ -152,7 +152,8 @@ class ChannelBuffer(ArrayParameter):
             self.setpoint_units = ("s",)
             self.setpoint_names = ("Time",)
             self.setpoint_labels = ("Time",)
-            self.setpoints = (tuple(np.linspace(0, N * dt, N)),)
+            # bin k is sampled at k / SR (SR830 manual, page 5-12)
+            self.setpoints = (tuple(np.arange(N) * dt),)
 
         self.shape = (N,)
 
@@ -1035,4 +1036,5 @@ class GeneratedSetPoints(Parameter):
             N = self.root_instrument.buffer_npts.get()
             dt = 1 / SR
 
-            return np.linspace(0, N * dt, N)
+            # bin k is sampled at k / SR (SR830 manual, page 5-12)
+            return np.arange(N) * dt
