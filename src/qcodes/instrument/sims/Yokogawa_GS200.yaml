@@ -11,6 +11,19 @@ devices:
         r: "QCoDeS Yokogawa Mock,GS200,xxxxxxxx,MOCKFW"
       - q: "*OPT?"
         r: "NO OPTIONS"
+      # Status registers, see GS200 User's Manual IM GS210-01EN, 13.3.
+      # *STB?: RQS (bit 6) and EAV (bit 2)
+      - q: "*STB?"
+        r: "68"
+      # *ESR?: CME (bit 5)
+      - q: "*ESR?"
+        r: "32"
+      # :STAT:EVEN?: EOP (bit 7) and SCG (bit 5)
+      - q: ":STAT:EVEN?"
+        r: "160"
+      # :STAT:COND?: RFP (bit 8)
+      - q: ":STAT:COND?"
+        r: "256"
 
     properties:
       mode:
@@ -45,6 +58,13 @@ devices:
           q: ":SOUR:LEV {:e}"
         specs:
           type: float
+      program_count:
+        default: 1
+        getter:
+          q: ":PROG:COUN?"
+          r: "{}"
+        setter:
+          q: ":PROG:COUN {}"
       auto_level:
         default: 0.0
         setter:

@@ -371,7 +371,7 @@ class YokogawaGS200Program(InstrumentChannel["YokogawaGS200"]):
             )
             """Parameter trigger"""
 
-        self.save: Parameter = self.add_parameter(
+        self.save: Parameter[str, Self] = self.add_parameter(
             "save",
             set_cmd=":PROG:SAVE '{}'",
             docstring="save the program to the system memory (.csv file)",
@@ -394,15 +394,29 @@ class YokogawaGS200Program(InstrumentChannel["YokogawaGS200"]):
             val_mapping={"OFF": 0, "ON": 1},
         )
         """Parameter repeat"""
-        self.count: Parameter = self.add_parameter(
+        self.count: Parameter[int | Literal["MIN", "MAX"], Self] = self.add_parameter(
             "count",
             label="step of the current program",
             get_cmd=":PROG:COUN?",
             set_cmd=":PROG:COUN {}",
             get_parser=int,
             vals=MultiTypeOr(Ints(1, 10000), Enum("MIN", "MAX")),
+            docstring=(
+                "The step at which the program begins execution. Besides an "
+                "integer, this can be set to 'MIN' (step 1) or 'MAX' "
+                "(step 10000). Getting the parameter always returns an integer, "
+                "but until it is read again, the cached value is the string that "
+                "was set. The value is therefore annotated as "
+                "``int | Literal['MIN', 'MAX']``."
+            ),
         )
-        """Parameter count"""
+        """
+        The step at which the program begins execution. Besides an integer, this
+        can be set to "MIN" (step 1) or "MAX" (step 10000). Getting the parameter
+        always returns an integer, but until it is read again, the cached value
+        is the string that was set. The value is therefore annotated as
+        ``int | Literal["MIN", "MAX"]``.
+        """
 
         self.add_function(
             "start", call_cmd=":PROG:EDIT:STAR", docstring="start program editing"
@@ -478,7 +492,7 @@ class YokogawaGS200(VisaInstrument):
         # instrument (in a previous session or via the frontpanel).
         self.source_mode()
 
-        self.voltage_range: Parameter = self.add_parameter(
+        self.voltage_range: Parameter[float, Self] = self.add_parameter(
             "voltage_range",
             label="Voltage Source Range",
             unit="V",
@@ -489,7 +503,7 @@ class YokogawaGS200(VisaInstrument):
         )
         """Parameter voltage_range"""
 
-        self.current_range: Parameter = self.add_parameter(
+        self.current_range: Parameter[float, Self] = self.add_parameter(
             "current_range",
             label="Current Source Range",
             unit="I",
@@ -500,7 +514,7 @@ class YokogawaGS200(VisaInstrument):
         )
         """Parameter current_range"""
 
-        self.range: DelegateParameter = self.add_parameter(
+        self.range: DelegateParameter[float] = self.add_parameter(
             "range", parameter_class=DelegateParameter, source=None
         )
         """Parameter range"""
@@ -518,7 +532,7 @@ class YokogawaGS200(VisaInstrument):
         )
         """Parameter auto_range"""
 
-        self.voltage: Parameter = self.add_parameter(
+        self.voltage: Parameter[float, Self] = self.add_parameter(
             "voltage",
             label="Voltage",
             unit="V",
@@ -528,7 +542,7 @@ class YokogawaGS200(VisaInstrument):
         )
         """Parameter voltage"""
 
-        self.current: Parameter = self.add_parameter(
+        self.current: Parameter[float, Self] = self.add_parameter(
             "current",
             label="Current",
             unit="I",
@@ -538,7 +552,7 @@ class YokogawaGS200(VisaInstrument):
         )
         """Parameter current"""
 
-        self.output_level: DelegateParameter = self.add_parameter(
+        self.output_level: DelegateParameter[float] = self.add_parameter(
             "output_level", parameter_class=DelegateParameter, source=None
         )
         """Parameter output_level"""
@@ -660,7 +674,7 @@ class YokogawaGS200(VisaInstrument):
         )
         """returns the oldest unread error message from the event log and removes it from the log."""
 
-        self.status_byte: Parameter = self.add_parameter(
+        self.status_byte: Parameter[StatusByte, Self] = self.add_parameter(
             "status_byte",
             get_cmd="*STB?",
             get_parser=lambda x: StatusByte(int(x)),
@@ -668,27 +682,33 @@ class YokogawaGS200(VisaInstrument):
         )
         """Query the instrument status byte."""
 
-        self.standard_event_register: Parameter = self.add_parameter(
-            "standard_event_register",
-            get_cmd="*ESR?",
-            get_parser=lambda x: StandardEventRegister(int(x)),
-            label="Standard Event Register",
+        self.standard_event_register: Parameter[StandardEventRegister, Self] = (
+            self.add_parameter(
+                "standard_event_register",
+                get_cmd="*ESR?",
+                get_parser=lambda x: StandardEventRegister(int(x)),
+                label="Standard Event Register",
+            )
         )
         """Query the instrument standard event register."""
 
-        self.extended_event_register: Parameter = self.add_parameter(
-            "extended_event_register",
-            get_cmd=":STAT:EVEN?",
-            get_parser=lambda x: ExtendedEventRegister(int(x)),
-            label="Extended Event Register",
+        self.extended_event_register: Parameter[ExtendedEventRegister, Self] = (
+            self.add_parameter(
+                "extended_event_register",
+                get_cmd=":STAT:EVEN?",
+                get_parser=lambda x: ExtendedEventRegister(int(x)),
+                label="Extended Event Register",
+            )
         )
         """Query the instrument extended event register."""
 
-        self.condition_register: Parameter = self.add_parameter(
-            "condition_register",
-            get_cmd=":STAT:COND?",
-            get_parser=lambda x: ConditionRegister(int(x)),
-            label="Condition Register",
+        self.condition_register: Parameter[ConditionRegister, Self] = (
+            self.add_parameter(
+                "condition_register",
+                get_cmd=":STAT:COND?",
+                get_parser=lambda x: ConditionRegister(int(x)),
+                label="Condition Register",
+            )
         )
         """Query the instrument condition register."""
 
