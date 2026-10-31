@@ -1004,9 +1004,9 @@ class GeneratedSetPoints(Parameter):
     With a constant sample rate the setpoints are the sample times, in "s" and
     labelled "Time". With the "Trigger" sample rate they are ``sweep_array``,
     with the unit and label of the sweep, set by
-    ``SR830.set_sweep_parameters`` or by assigning ``unit`` and ``label``
-    directly. The sweep unit and label are kept while a constant sample rate
-    is used, and restored when the sample rate is set to "Trigger" again.
+    ``SR830.set_sweep_parameters`` or ``set_sweep_unit_and_label``. The sweep
+    unit and label are kept while a constant sample rate is used, and
+    restored when the sample rate is set to "Trigger" again.
     """
 
     def __init__(

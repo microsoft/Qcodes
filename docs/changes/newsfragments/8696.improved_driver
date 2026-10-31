@@ -6,8 +6,9 @@ along the way:
 - The time setpoints of the data buffer (``ch1_databuffer``, ``ch2_databuffer`` and
   ``sweep_setpoints``) are now spaced by the sample period, ``1 / buffer_SR``. Previously
   N points spanned ``N / buffer_SR``, so the spacing was too large by a factor ``N / (N - 1)``.
-- ``sweep_setpoints`` now keeps the unit and label of the sweep parameter given to
-  ``set_sweep_parameters`` when the sample rate is switched back to ``"Trigger"``, and shows
-  ``s`` / ``Time`` while a constant sample rate is used.
+- ``sweep_setpoints`` now keeps the unit and label of the sweep when the sample rate is
+  switched back to ``"Trigger"``, and shows ``s`` / ``Time`` while a constant sample rate is
+  used. Set the unit and label of the sweep with ``set_sweep_parameters`` or, together with a
+  custom ``sweep_array``, with the new ``sweep_setpoints.set_sweep_unit_and_label``.
 - Creating an ``SR830`` no longer emits a ``QCoDeSDeprecationWarning`` about ``ChannelBuffer``
   not forwarding its keyword arguments.
