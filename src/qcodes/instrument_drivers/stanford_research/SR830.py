@@ -991,12 +991,9 @@ class SR830(VisaInstrument):
         label: str | None = None,
     ) -> None:
         self.sweep_setpoints.sweep_array = np.linspace(start, stop, n_points)
-        self.sweep_setpoints.sweep_unit = sweep_param.unit
-        if label is not None:
-            self.sweep_setpoints.sweep_label = label
-        elif sweep_param.label is not None:
-            self.sweep_setpoints.sweep_label = sweep_param.label
-        self.sweep_setpoints.update_units_if_constant_sample_rate()
+        self.sweep_setpoints.set_sweep_unit_and_label(
+            sweep_param.unit, label if label is not None else sweep_param.label
+        )
 
 
 class GeneratedSetPoints(Parameter):
@@ -1006,8 +1003,10 @@ class GeneratedSetPoints(Parameter):
 
     With a constant sample rate the setpoints are the sample times, in "s" and
     labelled "Time". With the "Trigger" sample rate they are ``sweep_array``,
-    with ``sweep_unit`` and ``sweep_label`` (set by
-    ``SR830.set_sweep_parameters``).
+    with the unit and label of the sweep, set by
+    ``SR830.set_sweep_parameters`` or by assigning ``unit`` and ``label``
+    directly. The sweep unit and label are kept while a constant sample rate
+    is used, and restored when the sample rate is set to "Trigger" again.
     """
 
     def __init__(
@@ -1018,24 +1017,39 @@ class GeneratedSetPoints(Parameter):
     ) -> None:
         super().__init__(*args, **kwargs)
         self.sweep_array = sweep_array
-        self.sweep_unit: str = self.unit
-        self.sweep_label: str = self.label
+        # The unit and label of the sweep while ``unit`` and ``label`` show
+        # the sample times ("s" and "Time"); None while they show the sweep.
+        self._saved_sweep_unit_and_label: tuple[str, str] | None = None
         self.update_units_if_constant_sample_rate()
+
+    def set_sweep_unit_and_label(self, unit: str, label: str) -> None:
+        """
+        Set the unit and label of the sweep, used with the "Trigger" sample
+        rate. With a constant sample rate they are saved until the sample
+        rate is set to "Trigger".
+        """
+        if self._saved_sweep_unit_and_label is None:
+            self.unit = unit
+            self.label = label
+        else:
+            self._saved_sweep_unit_and_label = (unit, label)
 
     def update_units_if_constant_sample_rate(self) -> None:
         """
         Update the unit and label to match the current sample rate: "s" and
         "Time" if the buffer is filled at a constant sample rate, otherwise
-        ``sweep_unit`` and ``sweep_label``.
+        the unit and label of the sweep.
         """
         assert isinstance(self.root_instrument, SR830)
         SR = self.root_instrument.buffer_SR.get()
         if SR != "Trigger":
+            if self._saved_sweep_unit_and_label is None:
+                self._saved_sweep_unit_and_label = (self.unit, self.label)
             self.unit = "s"
             self.label = "Time"
-        else:
-            self.unit = self.sweep_unit
-            self.label = self.sweep_label
+        elif self._saved_sweep_unit_and_label is not None:
+            self.unit, self.label = self._saved_sweep_unit_and_label
+            self._saved_sweep_unit_and_label = None
 
     def set_raw(self, value: Iterable[float | int]) -> None:
         self.sweep_array = value
