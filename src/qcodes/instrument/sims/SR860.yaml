@@ -32,6 +32,28 @@ devices:
         specs:
           type: int
           valid: [0, 1]
+      input_range:
+        default: 0
+        getter:
+          q: "IRNG?"
+          r: "{}"
+        setter:
+          q: "IRNG {}"
+        specs:
+          type: int
+          min: 0
+          max: 4
+      time_constant:
+        default: 12
+        getter:
+          q: "OFLT?"
+          r: "{}"
+        setter:
+          q: "OFLT {}"
+        specs:
+          type: int
+          min: 0
+          max: 21
 
 resources:
   GPIB::1::INSTR:

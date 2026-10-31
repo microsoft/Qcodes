@@ -46,4 +46,15 @@ def test_cutoff_hi_accepts_low_pass_settings(sr560: SR560, value: float) -> None
 
 def test_cutoff_hi_rejects_dc(sr560: SR560) -> None:
     with pytest.raises(ValueError, match="is not in"):
-        sr560.cutoff_hi("DC")
+        sr560.cutoff_hi("DC")  # type: ignore[call-overload]
+
+
+@pytest.mark.parametrize("value", [1, 2, 5, 100, 50000])
+def test_gain(sr560: SR560, value: int) -> None:
+    sr560.gain(value)
+    assert sr560.gain() == value
+
+
+def test_gain_rejects_vernier_values(sr560: SR560) -> None:
+    with pytest.raises(ValueError, match="is not in"):
+        sr560.gain(3)

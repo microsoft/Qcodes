@@ -904,7 +904,7 @@ class SR86x(VisaInstrument):
             vals=Enum(*self._INPUT_SIGNAL_TO_N.keys()),
         )
         """Parameter signal_input"""
-        self.input_range: Parameter = self.add_parameter(
+        self.input_range: Parameter[float, Self] = self.add_parameter(
             name="input_range",
             label="Input range",
             unit="V",
@@ -954,7 +954,7 @@ class SR86x(VisaInstrument):
             val_mapping={"ac": 0, "dc": 1},
         )
         """Parameter input_coupling"""
-        self.time_constant: Parameter = self.add_parameter(
+        self.time_constant: Parameter[float, Self] = self.add_parameter(
             name="time_constant",
             label="Time constant",
             unit="s",
@@ -1015,7 +1015,7 @@ class SR86x(VisaInstrument):
         )
         """The source of the reference signal"""
 
-        self.external_reference_trigger_input_resistance: Parameter = (
+        self.external_reference_trigger_input_resistance: Parameter[str, Self] = (
             self.add_parameter(
                 name="external_reference_trigger_input_resistance",
                 label="External reference trigger input resistance",
@@ -1076,7 +1076,7 @@ class SR86x(VisaInstrument):
         )
         """Parameter P"""
 
-        self.complex_voltage: Parameter = self.add_parameter(
+        self.complex_voltage: Parameter[complex, Self] = self.add_parameter(
             "complex_voltage",
             label="Voltage",
             get_cmd=self._get_complex_voltage,
