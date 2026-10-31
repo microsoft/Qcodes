@@ -1021,19 +1021,28 @@ class SR86x(VisaInstrument):
                 label="External reference trigger input resistance",
                 get_cmd="REFZ?",
                 set_cmd="REFZ {}",
+                # Get returns the last name for each instrument value, so the
+                # integer aliases (kept for backwards compatibility) come
+                # first and get returns "50OHMS" or "1MEG".
                 val_mapping={
+                    0: 0,
                     "50": 0,
                     "50OHMS": 0,
-                    0: 0,
+                    1: 1,
                     "1M": 1,
                     "1MEG": 1,
-                    1: 1,
                 },
                 docstring="Input resistance of the input for the external "
-                "reference signal",
+                "reference signal. Can be set to '50' or '50OHMS' for "
+                "50 Ohm and '1M' or '1MEG' for 1 MOhm; get returns "
+                "'50OHMS' or '1MEG'.",
             )
         )
-        """Input resistance of the input for the external reference signal"""
+        """
+        Input resistance of the input for the external reference signal.
+        Can be set to ``"50"`` or ``"50OHMS"`` for 50 Ohm and ``"1M"`` or
+        ``"1MEG"`` for 1 MOhm; get returns ``"50OHMS"`` or ``"1MEG"``.
+        """
 
         # Auto functions
         self.add_function("auto_range", call_cmd="ARNG")
