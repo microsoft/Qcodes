@@ -12,6 +12,7 @@ from qcodes.instrument_drivers.yokogawa.Yokogawa_GS200 import (
     StandardEventRegister,
     StatusByte,
 )
+from qcodes.utils import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -379,12 +380,68 @@ def test_program_execution_control(gs200: YokogawaGS200, mocker: MockerFixture) 
     ]
 
 
+def test_ramp_voltage(gs200: YokogawaGS200, mocker: MockerFixture) -> None:
+    gs200.voltage_range(10)
+    gs200.voltage(1)
+    gs200.ramp_step(0.5)
+    gs200.ramp_rate(1000)
+    write = mocker.spy(gs200, "write")
+
+    gs200.ramp_voltage(2, ramp_mode="SOFTWARE")
+
+    assert [call.args[0] for call in write.call_args_list] == [
+        f":SOUR:LEV {voltage:.5e}" for voltage in (1.5, 2)
+    ]
+    assert gs200.voltage() == 2
+    # The ramp settings are only changed for the duration of the ramp.
+    assert gs200.ramp_mode() == "JUMP"
+    assert gs200.ramp_step() == 0.5
+    assert gs200.ramp_rate() == 1000
+
+
+def test_ramp_current(gs200: YokogawaGS200, mocker: MockerFixture) -> None:
+    gs200.source_mode("CURR")
+    gs200.current_range(10e-3)
+    gs200.current(1e-3)
+    gs200.ramp_step(0.5e-3)
+    gs200.ramp_rate(1)
+    write = mocker.spy(gs200, "write")
+
+    gs200.ramp_current(2e-3, ramp_mode="SOFTWARE")
+
+    assert [call.args[0] for call in write.call_args_list] == [
+        f":SOUR:LEV {current:.5e}" for current in (1.5e-3, 2e-3)
+    ]
+    assert gs200.current() == pytest.approx(2e-3)
+
+
 def test_ramp_requires_matching_source_mode(gs200: YokogawaGS200) -> None:
     with pytest.raises(ValueError, match="Cannot get/set CURR settings"):
         gs200.ramp_current(1e-3)
     gs200.source_mode("CURR")
     with pytest.raises(ValueError, match="Cannot get/set VOLT settings"):
         gs200.ramp_voltage(1)
+
+
+def test_ramp_deprecated_step_and_delay(
+    gs200: YokogawaGS200, mocker: MockerFixture
+) -> None:
+    gs200.voltage_range(10)
+    gs200.voltage(1)
+    write = mocker.spy(gs200, "write")
+
+    with pytest.warns(QCoDeSDeprecationWarning) as record:
+        gs200.ramp_voltage(2, step=0.5, delay=1e-3, ramp_mode="SOFTWARE")
+
+    messages = [str(warning.message) for warning in record]
+    assert any("step parameter is deprecated" in msg for msg in messages)
+    assert any("delay parameter is deprecated" in msg for msg in messages)
+    assert [call.args[0] for call in write.call_args_list] == [
+        f":SOUR:LEV {voltage:.5e}" for voltage in (1.5, 2)
+    ]
+    # step and delay only apply to this ramp
+    assert gs200.ramp_step() == 0
+    assert gs200.ramp_rate() == 10e-3
 
 
 @pytest.fixture(name="gs200_hw_ramp")
