@@ -635,3 +635,19 @@ def test_monitor_settings(gs200_mon: YokogawaGS200, mocker: MockerFixture) -> No
 
     monitor.interval(2.5)
     assert monitor.interval() == 2.5
+
+
+def test_monitor_delay_in_ms(gs200_mon: YokogawaGS200, mocker: MockerFixture) -> None:
+    # The instrument takes and returns the delay in seconds (GS200 User's
+    # Manual IM GS210-01EN, p. 13-15), while the parameter is in ms.
+    monitor = gs200_mon.measure
+    assert monitor.delay() == 0
+
+    write = mocker.spy(gs200_mon, "write")
+    monitor.delay(500)
+    write.assert_called_once_with(":SENS:DEL 500E-3")
+    assert monitor.delay() == 500
+
+    # e.g. set to 1.5 s on the front panel
+    gs200_mon.write(":SENS:DEL +1.5E+0")
+    assert monitor.delay() == 1500
