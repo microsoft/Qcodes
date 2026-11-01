@@ -1,0 +1,5 @@
+The ``current``, ``current_range`` and ``current_limit`` parameters of the ``YokogawaGS200``,
+and its ``measure`` parameter in voltage source mode, now use the unit ``A`` instead of ``I``.
+The ``ramp_rate`` and ``ramp_step`` parameters now start with the units ``A/s`` and ``A``
+instead of ``V/s`` and ``V`` if the instrument is in current source mode when connecting, as
+they already did after changing the source mode.

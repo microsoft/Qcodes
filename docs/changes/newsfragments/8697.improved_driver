@@ -1,0 +1,7 @@
+The remaining parameters of the ``YokogawaGS200`` driver are now annotated with the type of
+their value, e.g. ``Parameter[float, Self]``. ``YokogawaGS200Program.count`` is annotated as
+``int | Literal["MIN", "MAX"]``: it can be set to ``"MIN"`` or ``"MAX"``, and getting it
+always returns an integer, but until it is read again the cached value is the keyword that was
+set. The status register parameters return the ``StatusByte``, ``StandardEventRegister``,
+``ExtendedEventRegister`` and ``ConditionRegister`` flags as before, and are now annotated as
+such.
