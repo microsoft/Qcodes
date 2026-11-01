@@ -5,7 +5,14 @@ from typing import TYPE_CHECKING, Literal
 
 import pytest
 
-from qcodes.instrument_drivers.yokogawa import YokogawaGS200
+from qcodes.instrument_drivers.yokogawa import YokogawaGS200, YokogawaGS200Exception
+from qcodes.instrument_drivers.yokogawa.Yokogawa_GS200 import (
+    ConditionRegister,
+    ExtendedEventRegister,
+    StandardEventRegister,
+    StatusByte,
+)
+from qcodes.utils import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -30,6 +37,17 @@ SOURCE_LIMITS = (
 def _make_gs200() -> Iterator[YokogawaGS200]:
     gs200 = YokogawaGS200(
         "GS200", address="GPIB0::1::INSTR", pyvisa_sim_file="Yokogawa_GS200.yaml"
+    )
+    yield gs200
+
+    gs200.close()
+
+
+@pytest.fixture(scope="function", name="gs200_mon")
+def _make_gs200_with_monitor() -> Iterator[YokogawaGS200]:
+    """A GS200 with the /MON (monitoring) option."""
+    gs200 = YokogawaGS200(
+        "GS200_mon", address="GPIB0::2::INSTR", pyvisa_sim_file="Yokogawa_GS200.yaml"
     )
     yield gs200
 
@@ -218,8 +236,418 @@ def test_nominal_ranges_and_protection_limits_unchanged(
     write.assert_not_called()
 
 
+@pytest.mark.parametrize("mode", ("VOLT", "CURR"))
+def test_range_and_output_level_are_floats(
+    gs200: YokogawaGS200, mode: Literal["VOLT", "CURR"]
+) -> None:
+    gs200.source_mode(mode)
+    if mode == "VOLT":
+        gs200.voltage_range(1)
+        gs200.voltage(0.5)
+        source_range, level = gs200.voltage_range, gs200.voltage
+    else:
+        gs200.current_range(10e-3)
+        gs200.current(5e-3)
+        source_range, level = gs200.current_range, gs200.current
+
+    for parameter in (source_range, gs200.range, level, gs200.output_level):
+        value = parameter.get()
+        assert type(value) is float
+
+    assert source_range.get() == gs200.range.get()
+    assert level.get() == gs200.output_level.get()
+
+
+def test_status_registers_return_flags(gs200: YokogawaGS200) -> None:
+    status_byte = gs200.status_byte()
+    assert isinstance(status_byte, StatusByte)
+    assert status_byte == StatusByte.RQS | StatusByte.EAV
+
+    standard_event_register = gs200.standard_event_register()
+    assert isinstance(standard_event_register, StandardEventRegister)
+    assert standard_event_register == StandardEventRegister.CME
+
+    extended_event_register = gs200.extended_event_register()
+    assert isinstance(extended_event_register, ExtendedEventRegister)
+    assert (
+        extended_event_register == ExtendedEventRegister.EOP | ExtendedEventRegister.SCG
+    )
+
+    condition_register = gs200.condition_register()
+    assert isinstance(condition_register, ConditionRegister)
+    assert condition_register == ConditionRegister.RFP
+
+
+@pytest.mark.parametrize("keyword,step", (("MIN", 1), ("MAX", 10000)))
+def test_program_count_accepts_keywords(
+    gs200: YokogawaGS200,
+    mocker: MockerFixture,
+    keyword: Literal["MIN", "MAX"],
+    step: int,
+) -> None:
+    write = mocker.spy(gs200, "write")
+
+    gs200.program.count(keyword)
+
+    write.assert_called_once_with(f":PROG:COUN {keyword}")
+    # The cache holds the keyword until the parameter is read again.
+    assert gs200.program.count.cache.get(get_if_invalid=False) == keyword
+
+    # The instrument converts the keyword to step 1 or 10000 (GS200 User's
+    # Manual IM GS210-01EN, p. 13-14), but the simulator stores it verbatim,
+    # so answer the query as the instrument would.
+    ask_raw = mocker.patch.object(gs200, "ask_raw", return_value=str(step))
+
+    value = gs200.program.count.get()
+
+    ask_raw.assert_called_once_with(":PROG:COUN?")
+    assert type(value) is int
+    assert value == step
+    assert gs200.program.count.cache.get(get_if_invalid=False) == step
+
+
+def test_program_count_returns_int(gs200: YokogawaGS200) -> None:
+    gs200.program.count(3)
+    value = gs200.program.count.get()
+    assert type(value) is int
+    assert value == 3
+
+
+def test_program_save_sends_file_name(
+    gs200: YokogawaGS200, mocker: MockerFixture
+) -> None:
+    write = mocker.patch.object(gs200, "write")
+
+    gs200.program.save("test1.csv")
+
+    write.assert_called_once_with(":PROG:SAVE 'test1.csv'")
+    assert gs200.program.save() == "test1.csv"
+
+
+def test_current_parameters_use_ampere(gs200: YokogawaGS200) -> None:
+    assert gs200.current.unit == "A"
+    assert gs200.current_range.unit == "A"
+    assert gs200.current_limit.unit == "A"
+
+
+def test_ramp_units_follow_source_mode_at_init(mocker: MockerFixture) -> None:
+    # The simulator always starts in VOLT mode, so pretend that the
+    # instrument was left in CURR mode before connecting.
+    original_ask_raw = YokogawaGS200.ask_raw
+
+    def ask_raw(self: YokogawaGS200, cmd: str) -> str:
+        if cmd == ":SOUR:FUNC?":
+            return "CURR"
+        return original_ask_raw(self, cmd)
+
+    mocker.patch.object(YokogawaGS200, "ask_raw", ask_raw)
+    gs200 = YokogawaGS200(
+        "GS200_curr", address="GPIB0::1::INSTR", pyvisa_sim_file="Yokogawa_GS200.yaml"
+    )
+    try:
+        assert gs200.source_mode() == "CURR"
+        assert gs200.ramp_rate.unit == "A/s"
+        assert gs200.ramp_step.unit == "A"
+    finally:
+        gs200.close()
+
+
 def test_hardware_ramp_still_requires_output_enabled(gs200: YokogawaGS200) -> None:
     gs200.voltage_range(10)
     gs200.ramp_mode("HARDWARE")
     with pytest.raises(RuntimeError, match="Need to enable output"):
         gs200.voltage(12)
+
+
+def test_cannot_switch_source_mode_with_output_on(gs200: YokogawaGS200) -> None:
+    gs200.output("on")
+    with pytest.raises(YokogawaGS200Exception, match="Cannot switch mode"):
+        gs200.source_mode("CURR")
+    assert gs200.source_mode() == "VOLT"
+
+
+def test_program_execution_control(gs200: YokogawaGS200, mocker: MockerFixture) -> None:
+    write = mocker.patch.object(gs200, "write")
+
+    gs200.program.hold()
+    gs200.program.pause()
+    gs200.program.cont()
+
+    assert [call.args[0] for call in write.call_args_list] == [
+        ":PROG:HOLD",
+        ":PROG:PAUS",
+        ":PROG:CONT",
+    ]
+
+
+def test_ramp_voltage(gs200: YokogawaGS200, mocker: MockerFixture) -> None:
+    gs200.voltage_range(10)
+    gs200.voltage(1)
+    gs200.ramp_step(0.5)
+    gs200.ramp_rate(1000)
+    write = mocker.spy(gs200, "write")
+
+    gs200.ramp_voltage(2, ramp_mode="SOFTWARE")
+
+    assert [call.args[0] for call in write.call_args_list] == [
+        f":SOUR:LEV {voltage:.5e}" for voltage in (1.5, 2)
+    ]
+    assert gs200.voltage() == 2
+    # The ramp settings are only changed for the duration of the ramp.
+    assert gs200.ramp_mode() == "JUMP"
+    assert gs200.ramp_step() == 0.5
+    assert gs200.ramp_rate() == 1000
+
+
+def test_ramp_current(gs200: YokogawaGS200, mocker: MockerFixture) -> None:
+    gs200.source_mode("CURR")
+    gs200.current_range(10e-3)
+    gs200.current(1e-3)
+    gs200.ramp_step(0.5e-3)
+    gs200.ramp_rate(1)
+    write = mocker.spy(gs200, "write")
+
+    gs200.ramp_current(2e-3, ramp_mode="SOFTWARE")
+
+    assert [call.args[0] for call in write.call_args_list] == [
+        f":SOUR:LEV {current:.5e}" for current in (1.5e-3, 2e-3)
+    ]
+    assert gs200.current() == pytest.approx(2e-3)
+
+
+def test_ramp_requires_matching_source_mode(gs200: YokogawaGS200) -> None:
+    with pytest.raises(ValueError, match="Cannot get/set CURR settings"):
+        gs200.ramp_current(1e-3)
+    gs200.source_mode("CURR")
+    with pytest.raises(ValueError, match="Cannot get/set VOLT settings"):
+        gs200.ramp_voltage(1)
+
+
+def test_ramp_deprecated_step_and_delay(
+    gs200: YokogawaGS200, mocker: MockerFixture
+) -> None:
+    gs200.voltage_range(10)
+    gs200.voltage(1)
+    write = mocker.spy(gs200, "write")
+
+    with pytest.warns(QCoDeSDeprecationWarning) as record:
+        gs200.ramp_voltage(2, step=0.5, delay=1e-3, ramp_mode="SOFTWARE")
+
+    messages = [str(warning.message) for warning in record]
+    assert any("step parameter is deprecated" in msg for msg in messages)
+    assert any("delay parameter is deprecated" in msg for msg in messages)
+    assert [call.args[0] for call in write.call_args_list] == [
+        f":SOUR:LEV {voltage:.5e}" for voltage in (1.5, 2)
+    ]
+    # step and delay only apply to this ramp
+    assert gs200.ramp_step() == 0
+    assert gs200.ramp_rate() == 10e-3
+
+
+@pytest.fixture(name="gs200_hw_ramp")
+def _make_gs200_for_hardware_ramp(
+    gs200: YokogawaGS200,
+) -> YokogawaGS200:
+    gs200.voltage_range(10)
+    gs200.voltage(1)
+    gs200.output("on")
+    gs200.ramp_mode("HARDWARE")
+    return gs200
+
+
+def test_hardware_ramp_skips_zero_delta(
+    gs200_hw_ramp: YokogawaGS200, mocker: MockerFixture
+) -> None:
+    write = mocker.spy(gs200_hw_ramp, "write")
+
+    gs200_hw_ramp.voltage(1)
+
+    write.assert_not_called()
+
+
+def test_hardware_ramp_jumps_below_ramp_step(
+    gs200_hw_ramp: YokogawaGS200, mocker: MockerFixture
+) -> None:
+    gs200_hw_ramp.ramp_step(0.5)
+    write = mocker.spy(gs200_hw_ramp, "write")
+
+    gs200_hw_ramp.voltage(1.2)
+
+    write.assert_called_once_with(f":SOUR:LEV {1.2:.5e}")
+
+
+def test_hardware_ramp_clips_slope_time(
+    gs200_hw_ramp: YokogawaGS200,
+    mocker: MockerFixture,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    gs200_hw_ramp.ramp_blocking(False)
+    gs200_hw_ramp.ramp_rate(1e-6)
+    # The simulator does not know the program commands.
+    write = mocker.patch.object(gs200_hw_ramp, "write")
+
+    with caplog.at_level("INFO"):
+        gs200_hw_ramp.voltage(2)
+
+    assert "Slope time > 3600s. Clipping." in caplog.text
+    (command,) = write.call_args.args
+    assert ":PROG:SLOP 3.600000E+03" in command
+    assert ":PROG:INT 3.600000E+03" in command
+
+
+def test_hardware_ramp_blocks_until_end_of_program(
+    gs200_hw_ramp: YokogawaGS200,
+    mocker: MockerFixture,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    gs200_hw_ramp.ramp_rate(20)
+    write = mocker.patch.object(gs200_hw_ramp, "write")
+    mocker.patch.object(
+        gs200_hw_ramp.extended_event_register,
+        "get",
+        side_effect=[ExtendedEventRegister(0), ExtendedEventRegister.EOP],
+    )
+    status_byte = mocker.patch.object(
+        gs200_hw_ramp.status_byte, "get", return_value=StatusByte(0)
+    )
+
+    with caplog.at_level("INFO"):
+        gs200_hw_ramp.voltage(2)
+
+    assert "Interval time < 0.1s. Clipping." in caplog.text
+    assert write.call_args.args[0] == (
+        "*CLS;"
+        ":PROG:REP 0;"
+        ":PROG:SLOP 5.000000E-02;"
+        ":PROG:INT 1.000000E-01;"
+        ":PROG:EDIT:STAR;"
+        ":SOUR:LEV 2.000000E+00;"
+        ":PROG:EDIT:END;"
+        ":PROG:RUN"
+    )
+    status_byte.assert_called_once()
+
+
+def test_hardware_ramp_raises_on_instrument_error(
+    gs200_hw_ramp: YokogawaGS200, mocker: MockerFixture
+) -> None:
+    mocker.patch.object(gs200_hw_ramp, "write")
+    mocker.patch.object(
+        gs200_hw_ramp.extended_event_register,
+        "get",
+        return_value=ExtendedEventRegister(0),
+    )
+
+    # The simulated status byte reports an error (EAV)
+    with pytest.raises(RuntimeError, match="Ramp failed with errors: -222"):
+        gs200_hw_ramp.voltage(2)
+
+
+def test_monitor_only_with_mon_option(
+    gs200: YokogawaGS200, gs200_mon: YokogawaGS200
+) -> None:
+    assert not gs200.measure.present
+    assert "measure" not in gs200.measure.parameters
+    assert "trigger" not in gs200.program.parameters
+
+    assert gs200_mon.measure.present
+    assert "measure" in gs200_mon.measure.parameters
+    assert "trigger" in gs200_mon.program.parameters
+
+
+def test_monitor_label_and_unit_follow_source_mode(
+    gs200_mon: YokogawaGS200,
+) -> None:
+    measure = gs200_mon.measure.measure
+
+    gs200_mon.source_mode("CURR")
+    assert measure.label == "Source Voltage"
+    assert measure.unit == "V"
+
+    gs200_mon.source_mode("VOLT")
+    assert measure.label == "Source Current"
+    assert measure.unit == "A"
+
+
+def test_monitor_measure(gs200_mon: YokogawaGS200) -> None:
+    monitor = gs200_mon.measure
+
+    with pytest.raises(YokogawaGS200Exception, match="not initialized"):
+        monitor.measure()
+
+    gs200_mon.source_mode("VOLT")
+    with pytest.raises(YokogawaGS200Exception, match="Output is off"):
+        monitor.measure()
+
+    gs200_mon.output("on")
+    with pytest.raises(YokogawaGS200Exception, match="Measurements are disabled"):
+        monitor.measure()
+
+    monitor.enabled("on")
+    assert monitor.enabled() == "on"
+    assert monitor.measure() == 1.2345e-3
+
+    gs200_mon.output("off")
+    with pytest.raises(YokogawaGS200Exception, match="Output is off"):
+        monitor.measure()
+    gs200_mon.output("on")
+
+    monitor.enabled("off")
+    assert monitor.enabled() == "off"
+    with pytest.raises(YokogawaGS200Exception, match="Measurements are disabled"):
+        monitor.measure()
+
+
+def test_monitor_measure_unavailable_in_low_voltage_range_and_auto_range(
+    gs200_mon: YokogawaGS200,
+) -> None:
+    monitor = gs200_mon.measure
+    gs200_mon.source_mode("VOLT")
+    gs200_mon.output("on")
+
+    gs200_mon.voltage_range(100e-3)
+    monitor.enabled("on")
+    with pytest.raises(YokogawaGS200Exception, match="will not work"):
+        monitor.measure()
+
+    gs200_mon.voltage_range(10)
+    monitor.enabled("on")
+    gs200_mon.auto_range(True)
+    with pytest.raises(YokogawaGS200Exception, match="will not work"):
+        monitor.measure()
+
+    gs200_mon.auto_range(False)
+    # Enabling auto range turned the measurement off
+    with pytest.raises(YokogawaGS200Exception, match="Measurements are disabled"):
+        monitor.measure()
+
+
+def test_monitor_settings(gs200_mon: YokogawaGS200, mocker: MockerFixture) -> None:
+    monitor = gs200_mon.measure
+    assert monitor.NPLC() == 1
+    monitor.NPLC(10)
+    assert monitor.NPLC() == 10
+
+    write = mocker.spy(gs200_mon, "write")
+    monitor.trigger("TIMER")
+    write.assert_called_once_with(":SENS:TRIG TIM")
+    assert monitor.trigger() == "TIM"
+
+    monitor.interval(2.5)
+    assert monitor.interval() == 2.5
+
+
+def test_monitor_delay_in_ms(gs200_mon: YokogawaGS200, mocker: MockerFixture) -> None:
+    # The instrument takes and returns the delay in seconds (GS200 User's
+    # Manual IM GS210-01EN, p. 13-15), while the parameter is in ms.
+    monitor = gs200_mon.measure
+    assert monitor.delay() == 0
+
+    write = mocker.spy(gs200_mon, "write")
+    monitor.delay(500)
+    write.assert_called_once_with(":SENS:DEL 500E-3")
+    assert monitor.delay() == 500
+
+    # e.g. set to 1.5 s on the front panel
+    gs200_mon.write(":SENS:DEL +1.5E+0")
+    assert monitor.delay() == 1500
