@@ -833,7 +833,8 @@ class YokogawaGS200(VisaInstrument):
         with (
             self.ramp_step.set_to(step),
             self.ramp_rate.set_to(rate),
-            self.ramp_mode.set_to(ramp_mode),
+            # A software ramp temporarily switches ramp_mode to "JUMP".
+            self.ramp_mode.set_to(ramp_mode, allow_changes=True),
             self.ramp_blocking.set_to(True),
         ):
             self._ramp_source(ramp_to)
@@ -863,7 +864,8 @@ class YokogawaGS200(VisaInstrument):
         with (
             self.ramp_step.set_to(step),
             self.ramp_rate.set_to(rate),
-            self.ramp_mode.set_to(ramp_mode),
+            # A software ramp temporarily switches ramp_mode to "JUMP".
+            self.ramp_mode.set_to(ramp_mode, allow_changes=True),
             self.ramp_blocking.set_to(True),
         ):
             self._ramp_source(ramp_to)
