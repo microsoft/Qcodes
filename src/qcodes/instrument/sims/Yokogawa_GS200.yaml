@@ -58,6 +58,8 @@ devices:
           q: ":SOUR:LEV {:e}"
         specs:
           type: float
+      # pyvisa-sim cannot convert MIN/MAX to the step numbers 1/10000 as the
+      # instrument does, so only set this to integers when reading it back.
       program_count:
         default: 1
         getter:
