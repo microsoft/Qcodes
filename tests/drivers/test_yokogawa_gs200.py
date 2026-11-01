@@ -266,9 +266,12 @@ def test_status_registers_return_flags(gs200: YokogawaGS200) -> None:
     assert condition_register == ConditionRegister.RFP
 
 
-@pytest.mark.parametrize("keyword", ("MIN", "MAX"))
+@pytest.mark.parametrize("keyword,step", (("MIN", 1), ("MAX", 10000)))
 def test_program_count_accepts_keywords(
-    gs200: YokogawaGS200, mocker: MockerFixture, keyword: Literal["MIN", "MAX"]
+    gs200: YokogawaGS200,
+    mocker: MockerFixture,
+    keyword: Literal["MIN", "MAX"],
+    step: int,
 ) -> None:
     write = mocker.spy(gs200, "write")
 
@@ -277,6 +280,18 @@ def test_program_count_accepts_keywords(
     write.assert_called_once_with(f":PROG:COUN {keyword}")
     # The cache holds the keyword until the parameter is read again.
     assert gs200.program.count.cache.get(get_if_invalid=False) == keyword
+
+    # The instrument converts the keyword to step 1 or 10000 (GS200 User's
+    # Manual IM GS210-01EN, p. 13-14), but the simulator stores it verbatim,
+    # so answer the query as the instrument would.
+    ask_raw = mocker.patch.object(gs200, "ask_raw", return_value=str(step))
+
+    value = gs200.program.count.get()
+
+    ask_raw.assert_called_once_with(":PROG:COUN?")
+    assert type(value) is int
+    assert value == step
+    assert gs200.program.count.cache.get(get_if_invalid=False) == step
 
 
 def test_program_count_returns_int(gs200: YokogawaGS200) -> None:
