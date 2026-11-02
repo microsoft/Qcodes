@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+import contextvars
 import logging
 import threading
 from collections import UserList
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -17,6 +18,31 @@ from qcodes.parameters import (
     record_parameter_accesses,
 )
 from qcodes.validators import Numbers
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+ACCESS_LOGGER = "qcodes.parameters.parameter_access"
+ERROR_LOGGER = "qcodes.parameters.parameter_access_errors"
+
+
+class _FailingFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        raise ValueError("broken filter")
+
+
+@pytest.fixture
+def failing_access_log() -> Generator[None, None, None]:
+    access_log = logging.getLogger(ACCESS_LOGGER)
+    level = access_log.level
+    failing = _FailingFilter()
+    access_log.setLevel(logging.DEBUG)
+    access_log.addFilter(failing)
+    try:
+        yield
+    finally:
+        access_log.removeFilter(failing)
+        access_log.setLevel(level)
 
 
 def test_records_get_and_set() -> None:
@@ -111,6 +137,26 @@ def test_records_failed_get() -> None:
     assert access.value is None
     assert access.raw_value is None
     assert access.error == "RuntimeError: instrument did not answer"
+
+
+def test_records_error_that_cannot_be_described() -> None:
+    class UnprintableError(Exception):
+        def __str__(self) -> str:
+            raise ValueError("no description")
+
+    def fail() -> float:
+        raise UnprintableError
+
+    param = Parameter("p", get_cmd=fail)
+
+    with (
+        record_parameter_accesses() as accesses,
+        pytest.raises(UnprintableError),
+    ):
+        param()
+
+    (access,) = accesses
+    assert access.error == "UnprintableError: <exception str() failed>"
 
 
 def test_records_failed_set() -> None:
@@ -238,6 +284,44 @@ def test_recording_follows_asyncio_tasks() -> None:
     assert [a.value for a in asyncio.run(main())] == [1]
 
 
+def test_copied_context_in_other_thread_is_not_recorded() -> None:
+    param = Parameter("p", set_cmd=None)
+
+    async def main() -> list[ParameterAccess]:
+        with record_parameter_accesses() as recorded:
+            # to_thread runs the function in a copy of the current context.
+            await asyncio.to_thread(param, 1)
+            context = contextvars.copy_context()
+            worker = threading.Thread(target=context.run, args=(param, 2))
+            worker.start()
+            worker.join()
+            param(3)
+        return recorded
+
+    assert [a.value for a in asyncio.run(main())] == [3]
+
+
+def test_task_is_not_recorded_after_the_block() -> None:
+    param = Parameter("p", set_cmd=None)
+
+    async def main() -> list[ParameterAccess]:
+        block_exited = asyncio.Event()
+
+        async def set_values() -> None:
+            param(1)
+            await block_exited.wait()
+            param(2)
+
+        with record_parameter_accesses() as recorded:
+            task = asyncio.create_task(set_values())
+            await asyncio.sleep(0)
+        block_exited.set()
+        await task
+        return recorded
+
+    assert [a.value for a in asyncio.run(main())] == [1]
+
+
 def test_logs_accesses(caplog: pytest.LogCaptureFixture) -> None:
     param = Parameter("logged_p", set_cmd=None, get_cmd=None)
 
@@ -294,3 +378,102 @@ def test_recording_and_logging_together(caplog: pytest.LogCaptureFixture) -> Non
 
     assert [a.value for a in accesses] == [1]
     assert any(r.name == "qcodes.parameters.parameter_access" for r in caplog.records)
+
+
+def test_accesses_made_while_logging_are_not_logged(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    param = Parameter("p", set_cmd=None, get_cmd=None, initial_value=0)
+    status = Parameter("status", set_cmd=None, get_cmd=None, initial_value=0)
+
+    class StatusHandler(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            status()
+
+    handler = StatusHandler()
+    access_log = logging.getLogger(ACCESS_LOGGER)
+    access_log.addHandler(handler)
+    try:
+        with (
+            caplog.at_level(logging.DEBUG, logger=ACCESS_LOGGER),
+            record_parameter_accesses() as accesses,
+            log_parameter_accesses(),
+        ):
+            param()
+    finally:
+        access_log.removeHandler(handler)
+
+    # The handler reads status after p was appended, while p is logged.
+    assert [a.parameter_name for a in accesses] == ["p", "status"]
+    assert [r.getMessage() for r in caplog.records if r.name == ACCESS_LOGGER] == [
+        "get p = 0"
+    ]
+
+
+@pytest.mark.usefixtures("failing_access_log")
+def test_failing_log_does_not_affect_the_access(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    param = Parameter("p", set_cmd=None, get_cmd=None)
+
+    with (
+        caplog.at_level(logging.DEBUG, logger=ACCESS_LOGGER),
+        log_parameter_accesses(),
+        record_parameter_accesses() as accesses,
+    ):
+        param(1)
+        assert param() == 1
+
+    # Sinks after the failing one still receive every access.
+    assert [(a.kind, a.value) for a in accesses] == [("set", 1), ("get", 1)]
+    errors = [r for r in caplog.records if r.name == ERROR_LOGGER]
+    assert [r.getMessage() for r in errors] == [
+        "Recording the set of p failed",
+        "Recording the get of p failed",
+    ]
+    assert errors[0].exc_info is not None
+    assert isinstance(errors[0].exc_info[1], ValueError)
+
+
+@pytest.mark.usefixtures("failing_access_log")
+def test_failing_log_keeps_the_original_error() -> None:
+    def fail(value: float) -> None:
+        raise RuntimeError("instrument refused")
+
+    param = Parameter("p", set_cmd=fail)
+
+    with (
+        log_parameter_accesses(),
+        pytest.raises(RuntimeError, match="instrument refused"),
+    ):
+        param(1)
+
+
+@pytest.mark.usefixtures("failing_access_log")
+def test_failing_log_does_not_stop_a_ramp() -> None:
+    param = Parameter("p", set_cmd=None, initial_value=0, vals=Numbers())
+    param.step = 1
+
+    with log_parameter_accesses(), record_parameter_accesses() as accesses:
+        param(3)
+
+    assert [a.value for a in accesses] == [1, 2, 3]
+    assert param.cache.get() == 3
+
+
+@pytest.mark.usefixtures("failing_access_log")
+def test_failure_to_log_a_failure_does_not_affect_the_access(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    param = Parameter("p", set_cmd=None)
+    error_log = logging.getLogger(ERROR_LOGGER)
+    failing = _FailingFilter()
+    error_log.addFilter(failing)
+    try:
+        with log_parameter_accesses():
+            param(1)
+    finally:
+        error_log.removeFilter(failing)
+
+    assert param.cache.get() == 1
+    assert "broken filter" in capsys.readouterr().err

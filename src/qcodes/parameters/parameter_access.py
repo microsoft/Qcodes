@@ -16,21 +16,32 @@ to the instruments it controls without changing the code or the drivers::
 Recording is deliberately restricted to storing what happened:
 
 * Accesses are appended to a plain :class:`list` or logged to a fixed logger
-  (:func:`log_parameter_accesses`). No user-supplied code runs while a
-  parameter is accessed, so recording cannot react to an access, for example
-  by setting another parameter.
+  (:func:`log_parameter_accesses`). Recording calls no user-supplied code, so
+  it cannot react to an access, for example by setting another parameter.
+  Logging an access runs the handlers and filters configured for logging, as
+  any log call does. An access made by such a handler is recorded in lists but
+  not logged, so a handler cannot log accesses recursively.
+* Recording never changes the outcome of an access. If recording an access
+  raises, for example because a logging handler or filter raised, the error
+  is logged to the ``qcodes.parameters.parameter_access_errors`` logger and the
+  access returns or raises as it would without recording.
 * A :class:`ParameterAccess` holds data only: the names of the parameter and
   its instrument rather than the objects themselves, and a description of an
   error rather than the exception.
-* Recording is local to the context it was started in: the current thread, or
-  the current :mod:`asyncio` task. Accesses made in other threads are not
-  recorded. Recordings can be nested; each one receives every access made
-  while it is active.
+* Recording is local to the thread it was started in and ends when its block
+  exits. Accesses made in other threads are never recorded, not even by code
+  running in a copy of the recording context, such as a function run with
+  :func:`asyncio.to_thread`. In the recording thread, the current
+  :mod:`asyncio` task and the tasks it starts are recorded while the block
+  runs. Recordings can be nested; each one receives every access made while
+  it is active.
 """
 
 from __future__ import annotations
 
 import logging
+import threading
+import traceback
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
@@ -43,6 +54,10 @@ if TYPE_CHECKING:
 
 LOG = logging.getLogger(__name__)
 """The logger :func:`log_parameter_accesses` logs accesses to."""
+
+# Not a child of LOG, so that a failing handler or filter of LOG does not
+# also prevent the failure from being logged.
+_ERROR_LOG = logging.getLogger(f"{__name__}_errors")
 
 ParameterAccessKind = Literal["get", "set"]
 
@@ -90,24 +105,42 @@ class ParameterAccess:
     """
 
 
-class _ListSink:
+class _Sink:
+    """Where the accesses of one recording go."""
+
+    __slots__ = ("active", "thread")
+
+    def __init__(self) -> None:
+        # The thread that started the recording.
+        self.thread = threading.get_ident()
+        # Contexts copied into tasks and threads share the sink, so it is
+        # switched off rather than removed when the recording ends.
+        self.active = True
+
+    def record(self, access: ParameterAccess) -> None:
+        raise NotImplementedError
+
+
+class _ListSink(_Sink):
     """Appends accesses to a list."""
 
     __slots__ = ("_records",)
 
     def __init__(self, records: list[ParameterAccess]) -> None:
+        super().__init__()
         self._records = records
 
     def record(self, access: ParameterAccess) -> None:
         self._records.append(access)
 
 
-class _LogSink:
+class _LogSink(_Sink):
     """Logs accesses to :data:`LOG`."""
 
     __slots__ = ("_level",)
 
     def __init__(self, level: int) -> None:
+        super().__init__()
         self._level = level
 
     def record(self, access: ParameterAccess) -> None:
@@ -143,11 +176,14 @@ class _LogSink:
         )
 
 
-_Sink = _ListSink | _LogSink
-
 _active_sinks: ContextVar[tuple[_Sink, ...]] = ContextVar(
     "qcodes_parameter_access_sinks", default=()
 )
+
+_recording: ContextVar[bool] = ContextVar(
+    "qcodes_parameter_access_recording", default=False
+)
+"""Whether an access is being recorded, e.g. while logging handlers run."""
 
 
 @contextmanager
@@ -157,9 +193,10 @@ def record_parameter_accesses(
     """
     Record every parameter access made in the current context in a list.
 
-    Accesses made by the current thread (or asyncio task) while the block runs
-    are appended to the list, in the order they complete. An access that
-    raises is recorded too, with its :attr:`ParameterAccess.error`.
+    Accesses made by the current thread while the block runs, by the current
+    asyncio task and the tasks it starts, are appended to the list in the
+    order they complete. An access that raises is recorded too, with its
+    :attr:`ParameterAccess.error`.
 
     Args:
         records: The list to append to. A new list is used if ``None``.
@@ -190,11 +227,17 @@ def log_parameter_accesses(
     """
     Log every parameter access made in the current context.
 
-    Accesses made by the current thread (or asyncio task) while the block runs
-    are logged to the ``qcodes.parameters.parameter_access`` logger. Each log
-    record carries the :class:`ParameterAccess` as its ``parameter_access``
-    attribute, and the parameter and instrument names as its
-    ``parameter_name`` and ``instrument_name`` attributes.
+    Accesses made by the current thread while the block runs, by the current
+    asyncio task and the tasks it starts, are logged to the
+    ``qcodes.parameters.parameter_access`` logger. Each log record carries the
+    :class:`ParameterAccess` as its ``parameter_access`` attribute, and the
+    parameter and instrument names as its ``parameter_name`` and
+    ``instrument_name`` attributes.
+
+    Accesses that logging handlers or filters make while an access is logged
+    are not logged. If a handler or filter raises, the error is logged to the
+    ``qcodes.parameters.parameter_access_errors`` logger and the access is
+    not affected.
 
     Args:
         level: The level to log accesses at.
@@ -210,6 +253,7 @@ def _sink_active(sink: _Sink) -> Generator[None, None, None]:
     try:
         yield
     finally:
+        sink.active = False
         _active_sinks.reset(token)
 
 
@@ -223,6 +267,19 @@ def _record(
     duration: float,
     exception: BaseException | None = None,
 ) -> None:
+    thread = threading.get_ident()
+    # An access made while another one is logged comes from a logging handler
+    # or filter. Logging it could recurse without end.
+    nested = _recording.get()
+    sinks = tuple(
+        sink
+        for sink in sinks
+        if sink.active
+        and sink.thread == thread
+        and not (nested and isinstance(sink, _LogSink))
+    )
+    if not sinks:
+        return
     root = parameter.root_instrument
     access = ParameterAccess(
         parameter_name=parameter.full_name,
@@ -235,14 +292,37 @@ def _record(
         duration=duration,
         error=None if exception is None else _describe(exception),
     )
-    for sink in sinks:
-        sink.record(access)
+    token = _recording.set(True)
+    try:
+        for sink in sinks:
+            try:
+                sink.record(access)
+            except Exception:  # noqa: BLE001 recording must never affect the access
+                _report_failure(access)
+    finally:
+        _recording.reset(token)
+
+
+def _report_failure(access: ParameterAccess) -> None:
+    try:
+        _ERROR_LOG.exception(
+            "Recording the %s of %s failed", access.kind, access.parameter_name
+        )
+    except Exception:  # noqa: BLE001 reported below; the access must not fail
+        # Logging fails too, e.g. because a handler of the root logger
+        # raises. Report it the way logging reports its own errors.
+        if logging.raiseExceptions:
+            traceback.print_exc()
 
 
 def _describe(exception: BaseException) -> str:
     # The arguments only: the context QCoDeS appends to e.args (e.g.
     # "getting dac_ch1") is added after the access is recorded.
-    return f"{type(exception).__name__}: {exception}"
+    try:
+        message = str(exception)
+    except Exception:  # noqa: BLE001 the access must not fail; as traceback does
+        message = "<exception str() failed>"
+    return f"{type(exception).__name__}: {message}"
 
 
 __all__ = [
