@@ -27,7 +27,8 @@ Recording is deliberately restricted to storing what happened:
   access returns or raises as it would without recording.
 * A :class:`ParameterAccess` holds data only: the names of the parameter and
   its instrument rather than the objects themselves, and a description of an
-  error rather than the exception.
+  error rather than the exception. Metadata such as the unit is not recorded,
+  since a driver may read it from the instrument.
 * Recording is local to the thread it was started in and ends when its block
   exits. Accesses made in other threads are never recorded, not even by code
   running in a copy of the recording context, such as a function run with
@@ -89,8 +90,6 @@ class ParameterAccess:
     The raw value returned by ``get_raw`` or passed to ``set_raw``. ``None`` if
     a get failed before the raw value was obtained.
     """
-    unit: str
-    """The unit of the parameter."""
     timestamp: float
     """Time the access started, in seconds since the epoch (:func:`time.time`)."""
     duration: float
@@ -271,43 +270,62 @@ def _record(
     # An access made while another one is logged comes from a logging handler
     # or filter. Logging it could recurse without end.
     nested = _recording.get()
-    sinks = tuple(
-        sink
-        for sink in sinks
-        if sink.active
-        and sink.thread == thread
-        and not (nested and isinstance(sink, _LogSink))
+    eligible = [sink for sink in sinks if sink.active and sink.thread == thread]
+    # Lists first: a logging handler that accesses a parameter must not come
+    # between the appends of one access, or simultaneous recordings would see
+    # accesses in different orders.
+    sinks = (
+        *(sink for sink in eligible if not isinstance(sink, _LogSink)),
+        *(sink for sink in eligible if isinstance(sink, _LogSink) and not nested),
     )
     if not sinks:
         return
+    token = _recording.set(True)
+    try:
+        try:
+            access = _make_access(
+                parameter, kind, value, raw_value, timestamp, duration, exception
+            )
+        except Exception:  # noqa: BLE001 recording must never affect the access
+            _report_failure(kind, parameter.short_name)
+            return
+        for sink in sinks:
+            try:
+                sink.record(access)
+            except Exception:  # noqa: BLE001 recording must never affect the access
+                _report_failure(kind, access.parameter_name)
+    finally:
+        _recording.reset(token)
+
+
+def _make_access(
+    parameter: ParameterBase,
+    kind: ParameterAccessKind,
+    value: Any,
+    raw_value: Any,
+    timestamp: float,
+    duration: float,
+    exception: BaseException | None,
+) -> ParameterAccess:
+    # Only names, which QCoDeS derives without talking to the instrument.
+    # Metadata such as the unit can be a property that a driver implements by
+    # querying the instrument, so recording would add communication of its own.
     root = parameter.root_instrument
-    access = ParameterAccess(
+    return ParameterAccess(
         parameter_name=parameter.full_name,
         instrument_name=None if root is None else root.full_name,
         kind=kind,
         value=value,
         raw_value=raw_value,
-        unit=getattr(parameter, "unit", ""),
         timestamp=timestamp,
         duration=duration,
         error=None if exception is None else _describe(exception),
     )
-    token = _recording.set(True)
-    try:
-        for sink in sinks:
-            try:
-                sink.record(access)
-            except Exception:  # noqa: BLE001 recording must never affect the access
-                _report_failure(access)
-    finally:
-        _recording.reset(token)
 
 
-def _report_failure(access: ParameterAccess) -> None:
+def _report_failure(kind: ParameterAccessKind, parameter_name: str) -> None:
     try:
-        _ERROR_LOG.exception(
-            "Recording the %s of %s failed", access.kind, access.parameter_name
-        )
+        _ERROR_LOG.exception("Recording the %s of %s failed", kind, parameter_name)
     except Exception:  # noqa: BLE001 reported below; the access must not fail
         # Logging fails too, e.g. because a handler of the root logger
         # raises. Report it the way logging reports its own errors.

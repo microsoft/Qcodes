@@ -15,6 +15,7 @@ from qcodes.parameters import (
     Parameter,
     ParameterAccess,
     log_parameter_accesses,
+    parameter_access,
     record_parameter_accesses,
 )
 from qcodes.validators import Numbers
@@ -52,9 +53,9 @@ def test_records_get_and_set() -> None:
         param(1.5)
         assert param() == 1.5
 
-    assert [(a.parameter_name, a.kind, a.value, a.unit) for a in accesses] == [
-        ("p", "set", 1.5, "V"),
-        ("p", "get", 1.5, "V"),
+    assert [(a.parameter_name, a.kind, a.value) for a in accesses] == [
+        ("p", "set", 1.5),
+        ("p", "get", 1.5),
     ]
     assert all(a.error is None for a in accesses)
     assert all(a.duration >= 0 for a in accesses)
@@ -73,10 +74,57 @@ def test_records_names_not_objects() -> None:
     assert access.parameter_name == "recorded_dac_ch1"
     assert access.instrument_name == "recorded_dac"
     # A record is data: it holds no reference to a parameter or instrument.
-    for field_value in (access.parameter_name, access.instrument_name, access.unit):
+    for field_value in (access.parameter_name, access.instrument_name):
         assert isinstance(field_value, str)
     with pytest.raises(AttributeError):
         access.parameter  # type: ignore[attr-defined]  # noqa: B018
+
+
+def test_unit_is_not_read() -> None:
+    class InstrumentUnitParameter(Parameter):
+        # Like a driver that queries the unit from the instrument.
+        unit_queries = 0
+
+        @property
+        def unit(self) -> str:
+            self.unit_queries += 1
+            return "V"
+
+        @unit.setter
+        def unit(self, unit: str) -> None:
+            pass
+
+    param = InstrumentUnitParameter("p", set_cmd=None, get_cmd=None)
+    queries_before = param.unit_queries
+
+    with record_parameter_accesses() as accesses:
+        param(1)
+        param()
+
+    assert [a.value for a in accesses] == [1, 1]
+    assert param.unit_queries == queries_before
+
+
+def test_failure_to_build_a_record_does_not_affect_the_access(
+    caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fail(*args: Any) -> ParameterAccess:
+        raise RuntimeError("no record")
+
+    monkeypatch.setattr(parameter_access, "_make_access", fail)
+    param = Parameter("p", set_cmd=None)
+
+    with (
+        caplog.at_level(logging.ERROR, logger=ERROR_LOGGER),
+        record_parameter_accesses() as accesses,
+    ):
+        param(1)
+
+    assert param.cache.get() == 1
+    assert accesses == []
+    assert [r.getMessage() for r in caplog.records if r.name == ERROR_LOGGER] == [
+        "Recording the set of p failed"
+    ]
 
 
 def test_records_are_immutable() -> None:
@@ -408,6 +456,34 @@ def test_accesses_made_while_logging_are_not_logged(
     assert [r.getMessage() for r in caplog.records if r.name == ACCESS_LOGGER] == [
         "get p = 0"
     ]
+
+
+def test_simultaneous_recordings_see_the_same_order() -> None:
+    param = Parameter("p", set_cmd=None, get_cmd=None, initial_value=0)
+    status = Parameter("status", set_cmd=None, get_cmd=None, initial_value=0)
+
+    class StatusHandler(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            status()
+
+    handler = StatusHandler()
+    access_log = logging.getLogger(ACCESS_LOGGER)
+    level = access_log.level
+    access_log.setLevel(logging.DEBUG)
+    access_log.addHandler(handler)
+    try:
+        with (
+            record_parameter_accesses() as outer,
+            log_parameter_accesses(),
+            record_parameter_accesses() as inner,
+        ):
+            param()
+    finally:
+        access_log.removeHandler(handler)
+        access_log.setLevel(level)
+
+    assert [a.parameter_name for a in outer] == ["p", "status"]
+    assert [a.parameter_name for a in inner] == ["p", "status"]
 
 
 @pytest.mark.usefixtures("failing_access_log")
