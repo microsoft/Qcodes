@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 
 import pytest
+from typing_extensions import Sentinel
 
 import qcodes.validators as vals
 from qcodes.instrument_drivers.mock_instruments import DummyChannelInstrument
@@ -14,35 +15,39 @@ if TYPE_CHECKING:
     from qcodes.instrument import InstrumentBase
     from qcodes.metadatable import SnapshotUpdate
 
-NOT_PASSED: Literal["NOT_PASSED"] = "NOT_PASSED"
+# typing_extensions 4.16 renamed Sentinel to sentinel (matching builtins.sentinel
+# in Python 3.15) and kept Sentinel as a soft-deprecated alias. We still use
+# Sentinel because pyright (as of 1.1.414) does not yet ship typeshed stubs
+# that export typing_extensions.sentinel. Switch once it does.
+NOT_PASSED = Sentinel("NOT_PASSED")
 
 
 @pytest.fixture(params=(True, False, NOT_PASSED))
-def snapshot_get(request: pytest.FixtureRequest) -> bool | Literal["NOT_PASSED"]:
+def snapshot_get(request: pytest.FixtureRequest) -> bool | NOT_PASSED:
     return request.param
 
 
 @pytest.fixture(params=(True, False, NOT_PASSED))
-def snapshot_value(request: pytest.FixtureRequest) -> bool | Literal["NOT_PASSED"]:
+def snapshot_value(request: pytest.FixtureRequest) -> bool | NOT_PASSED:
     return request.param
 
 
 @pytest.fixture(params=(None, False, NOT_PASSED))
 def get_cmd(
     request: pytest.FixtureRequest,
-) -> Literal[False, "NOT_PASSED"] | None:
+) -> Literal[False] | NOT_PASSED | None:
     return request.param
 
 
 @pytest.fixture(params=(True, False, NOT_PASSED))
-def get_if_invalid(request: pytest.FixtureRequest) -> bool | Literal["NOT_PASSED"]:
+def get_if_invalid(request: pytest.FixtureRequest) -> bool | NOT_PASSED:
     return request.param
 
 
 @pytest.fixture(params=("All", "Never", "Only_invalid", NOT_PASSED))
 def update(
     request: pytest.FixtureRequest,
-) -> SnapshotUpdate | Literal["NOT_PASSED"]:
+) -> SnapshotUpdate | NOT_PASSED:
     return request.param
 
 
