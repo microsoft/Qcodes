@@ -5,8 +5,9 @@ import contextvars
 import logging
 import threading
 import time
-from collections import UserList
-from typing import TYPE_CHECKING, Any
+from collections import UserList, deque
+from dataclasses import replace
+from typing import TYPE_CHECKING, Any, assert_type
 
 import pytest
 
@@ -22,7 +23,7 @@ from qcodes.parameters import (
 from qcodes.validators import Numbers
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
+    from collections.abc import Callable, Generator, MutableSequence
 
 ACCESS_LOGGER = "qcodes.parameters.parameter_access"
 ERROR_LOGGER = "qcodes.parameters.parameter_access_errors"
@@ -302,9 +303,21 @@ def test_nothing_is_recorded_outside_the_block() -> None:
     assert [a.value for a in accesses] == [1]
 
 
-def test_records_into_a_given_list() -> None:
+@pytest.mark.parametrize("records", [(), set(), {}, "access"])
+def test_only_a_mutable_sequence_is_accepted(records: Any) -> None:
+    with (
+        pytest.raises(TypeError, match="only be recorded in a MutableSequence"),
+        record_parameter_accesses(records),
+    ):
+        pass
+
+
+@pytest.mark.parametrize("factory", [list, deque, UserList])
+def test_records_into_any_mutable_sequence(
+    factory: Callable[[], MutableSequence[ParameterAccess]],
+) -> None:
     param = Parameter("p", set_cmd=None)
-    records: list[ParameterAccess] = []
+    records = factory()
 
     with record_parameter_accesses(records) as accesses:
         param(1)
@@ -313,13 +326,27 @@ def test_records_into_a_given_list() -> None:
     assert [a.value for a in records] == [1]
 
 
-@pytest.mark.parametrize("records", [(), set(), UserList(), type("L", (list,), {})()])
-def test_only_a_plain_list_is_accepted(records: Any) -> None:
-    with (
-        pytest.raises(TypeError, match="only be recorded in a list"),
-        record_parameter_accesses(records),
-    ):
+def test_records_into_a_custom_sequence() -> None:
+    class Values(UserList[ParameterAccess]):
+        # Stores only part of each access, as a custom sequence may.
+        def append(self, item: ParameterAccess) -> None:
+            super().append(replace(item, value=None, raw_value=None))
+
+    param = Parameter("p", set_cmd=None)
+
+    with record_parameter_accesses(Values()) as accesses:
+        param(1)
+
+    assert_type(accesses, Values)
+    assert [(a.parameter_name, a.value) for a in accesses] == [("p", None)]
+
+
+def test_a_new_list_is_recorded_into_by_default() -> None:
+    with record_parameter_accesses() as accesses:
         pass
+
+    assert_type(accesses, list[ParameterAccess])
+    assert type(accesses) is list
 
 
 def test_nested_recordings_both_record() -> None:

@@ -15,12 +15,15 @@ to the instruments it controls without changing the code or the drivers::
 
 Recording is deliberately restricted to storing what happened:
 
-* Accesses are appended to a plain :class:`list` or logged to a fixed logger
-  (:func:`log_parameter_accesses`). Recording calls no user-supplied code, so
-  it cannot react to an access, for example by setting another parameter.
+* Accesses are appended to a mutable sequence, such as a :class:`list`, or
+  logged to a fixed logger (:func:`log_parameter_accesses`). Recording calls
+  no other code, so it cannot react to an access, for example by setting
+  another parameter. A custom sequence may be used to store accesses
+  differently, but its ``append`` must only store the access and must not run
+  any other code, such as accessing a parameter or an instrument.
   Logging an access runs the handlers and filters configured for logging, as
-  any log call does. An access made by such a handler is recorded in lists but
-  not logged, so a handler cannot log accesses recursively.
+  any log call does. An access made by such a handler is recorded in
+  sequences but not logged, so a handler cannot log accesses recursively.
 * Recording never changes the outcome of an access. If recording an access
   raises, for example because a logging handler or filter raised, the error
   is logged to the ``qcodes.parameters.parameter_access_errors`` logger and the
@@ -43,13 +46,15 @@ from __future__ import annotations
 import logging
 import threading
 import traceback
+from collections.abc import MutableSequence
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+    from contextlib import AbstractContextManager
 
     from .parameter_base import ParameterBase
 
@@ -124,12 +129,12 @@ class _Sink:
         raise NotImplementedError
 
 
-class _ListSink(_Sink):
-    """Appends accesses to a list."""
+class _SequenceSink(_Sink):
+    """Appends accesses to a mutable sequence."""
 
     __slots__ = ("_records",)
 
-    def __init__(self, records: list[ParameterAccess]) -> None:
+    def __init__(self, records: MutableSequence[ParameterAccess]) -> None:
         super().__init__()
         self._records = records
 
@@ -194,37 +199,60 @@ class _Dispatch(threading.local):
 _dispatch = _Dispatch()
 
 
-@contextmanager
+@overload
 def record_parameter_accesses(
-    records: list[ParameterAccess] | None = None,
-) -> Generator[list[ParameterAccess], None, None]:
+    records: None = None,
+) -> AbstractContextManager[list[ParameterAccess]]: ...
+
+
+@overload
+def record_parameter_accesses[RecordsT: MutableSequence[ParameterAccess]](
+    records: RecordsT,
+) -> AbstractContextManager[RecordsT]: ...
+
+
+def record_parameter_accesses(
+    records: MutableSequence[ParameterAccess] | None = None,
+) -> AbstractContextManager[MutableSequence[ParameterAccess]]:
     """
-    Record every parameter access made in the current context in a list.
+    Record every parameter access made in the current context in a sequence.
 
     Accesses made by the current thread while the block runs, by the current
-    asyncio task and the tasks it starts, are appended to the list in the
+    asyncio task and the tasks it starts, are appended to the sequence in the
     order they complete. An access that raises is recorded too, with its
     :attr:`ParameterAccess.error`.
 
     Args:
-        records: The list to append to. A new list is used if ``None``.
+        records: The mutable sequence to append to. A new :class:`list` is
+            used if ``None``. A custom sequence may store accesses
+            differently, but its ``append`` must only store the access. It
+            must not run any other code, such as accessing a parameter or an
+            instrument, since recording is not a way to react to an access.
 
-    Yields:
-        The list the accesses are appended to.
+    Returns:
+        A context manager that records while its block runs, and yields the
+        sequence the accesses are appended to.
 
     Raises:
-        TypeError: If ``records`` is not a :class:`list`. Subclasses are
-            refused too, so that recording can only ever append.
+        TypeError: If ``records`` is not a
+            :class:`~collections.abc.MutableSequence`.
 
     """
     if records is None:
         records = []
-    if type(records) is not list:
+    if not isinstance(records, MutableSequence):
         raise TypeError(
-            "Parameter accesses can only be recorded in a list, "
+            "Parameter accesses can only be recorded in a MutableSequence, "
             f"not in {type(records).__name__}."
         )
-    with _sink_active(_ListSink(records)):
+    return _record_into(records)
+
+
+@contextmanager
+def _record_into[RecordsT: MutableSequence[ParameterAccess]](
+    records: RecordsT,
+) -> Generator[RecordsT, None, None]:
+    with _sink_active(_SequenceSink(records)):
         yield records
 
 
@@ -280,7 +308,7 @@ def _record(
     # or filter. Logging it could recurse without end.
     nested = _dispatch.active
     eligible = [sink for sink in sinks if sink.active and sink.thread == thread]
-    # Lists first: a logging handler that accesses a parameter must not come
+    # Sequences first: a logging handler that accesses a parameter must not come
     # between the appends of one access, or simultaneous recordings would see
     # accesses in different orders.
     sinks = (
