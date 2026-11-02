@@ -1058,7 +1058,13 @@ class ParameterBase(
                     # steps that are not so validate them too
                     self.validate(val_step)
 
+                    sinks = _parameter_access._active_sinks.get()
+                    conversion_start = time.perf_counter() if sinks else 0.0
                     raw_val_step = self._from_value_to_raw_value(val_step)
+                    # Part of the access's duration, which excludes the delays.
+                    conversion_time = (
+                        time.perf_counter() - conversion_start if sinks else 0.0
+                    )
 
                     # Check if delay between set operations is required
                     t_elapsed = time.perf_counter() - self._t_last_set
@@ -1069,7 +1075,6 @@ class ParameterBase(
 
                     # Start timer to measure execution time of set_function
                     t0 = time.perf_counter()
-                    sinks = _parameter_access._active_sinks.get()
                     timestamp = time.time() if sinks else 0.0
 
                     try:
@@ -1083,7 +1088,7 @@ class ParameterBase(
                                 value=val_step,
                                 raw_value=raw_val_step,
                                 timestamp=timestamp,
-                                duration=time.perf_counter() - t0,
+                                duration=conversion_time + time.perf_counter() - t0,
                                 exception=e,
                             )
                         raise
@@ -1109,7 +1114,7 @@ class ParameterBase(
                             value=val_step,
                             raw_value=raw_val_step,
                             timestamp=timestamp,
-                            duration=t_elapsed,
+                            duration=conversion_time + t_elapsed,
                         )
 
             except Exception as e:

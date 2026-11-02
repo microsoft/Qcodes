@@ -4,6 +4,7 @@ import asyncio
 import contextvars
 import logging
 import threading
+import time
 from collections import UserList
 from typing import TYPE_CHECKING, Any
 
@@ -166,6 +167,36 @@ def test_records_every_ramp_step() -> None:
         ("set", 2),
         ("set", 3),
     ]
+
+
+@pytest.mark.parametrize("kind", ["get", "set"])
+def test_duration_includes_conversion_but_not_delays(kind: str) -> None:
+    conversion_time = 0.05
+    post_delay = 0.5
+
+    def slow_parser(value: float) -> float:
+        # Like a parser that queries another parameter of the instrument.
+        time.sleep(conversion_time)
+        return value
+
+    param = Parameter(
+        "p",
+        set_cmd=lambda raw_value: None,
+        get_cmd=lambda: 0,
+        set_parser=slow_parser,
+        get_parser=slow_parser,
+        post_delay=post_delay,
+    )
+
+    with record_parameter_accesses() as accesses:
+        if kind == "get":
+            param()
+        else:
+            param(1)
+
+    (access,) = accesses
+    # A little slack for the resolution of the sleep.
+    assert 0.9 * conversion_time <= access.duration < post_delay
 
 
 def test_records_failed_get() -> None:
@@ -484,6 +515,42 @@ def test_simultaneous_recordings_see_the_same_order() -> None:
 
     assert [a.parameter_name for a in outer] == ["p", "status"]
     assert [a.parameter_name for a in inner] == ["p", "status"]
+
+
+def test_task_started_by_a_handler_is_logged(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    param = Parameter("p", set_cmd=None, get_cmd=None, initial_value=0)
+    status = Parameter("status", set_cmd=None, get_cmd=None, initial_value=0)
+    tasks: list[asyncio.Task[None]] = []
+
+    async def read_status() -> None:
+        status()
+
+    class TaskHandler(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            # The task copies the context of the dispatch, but runs after it.
+            if record.getMessage().startswith("get p"):
+                tasks.append(asyncio.get_running_loop().create_task(read_status()))
+
+    async def main() -> None:
+        with log_parameter_accesses():
+            param()
+            await asyncio.gather(*tasks)
+
+    handler = TaskHandler()
+    access_log = logging.getLogger(ACCESS_LOGGER)
+    access_log.addHandler(handler)
+    try:
+        with caplog.at_level(logging.DEBUG, logger=ACCESS_LOGGER):
+            asyncio.run(main())
+    finally:
+        access_log.removeHandler(handler)
+
+    assert [r.getMessage() for r in caplog.records if r.name == ACCESS_LOGGER] == [
+        "get p = 0",
+        "get status = 0",
+    ]
 
 
 @pytest.mark.usefixtures("failing_access_log")

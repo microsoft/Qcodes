@@ -91,11 +91,15 @@ class ParameterAccess:
     a get failed before the raw value was obtained.
     """
     timestamp: float
-    """Time the access started, in seconds since the epoch (:func:`time.time`)."""
+    """
+    Time ``get_raw`` or ``set_raw`` was called, in seconds since the epoch
+    (:func:`time.time`).
+    """
     duration: float
     """
-    Seconds spent in ``get_raw`` or ``set_raw`` and the conversions around it.
-    Delays configured on the parameter, such as ``post_delay``, are excluded.
+    Seconds spent in ``get_raw`` or ``set_raw`` and the value conversions
+    around it, such as a ``get_parser`` or ``set_parser``. Delays configured on
+    the parameter, such as ``inter_delay`` and ``post_delay``, are excluded.
     """
     error: str | None = None
     """
@@ -179,10 +183,15 @@ _active_sinks: ContextVar[tuple[_Sink, ...]] = ContextVar(
     "qcodes_parameter_access_sinks", default=()
 )
 
-_recording: ContextVar[bool] = ContextVar(
-    "qcodes_parameter_access_recording", default=False
-)
-"""Whether an access is being recorded, e.g. while logging handlers run."""
+
+class _Dispatch(threading.local):
+    # Thread-local rather than a ContextVar: a task that a logging handler
+    # creates would copy a ContextVar and keep it set after dispatch ends.
+    active = False
+    """Whether this thread is passing an access to the sinks."""
+
+
+_dispatch = _Dispatch()
 
 
 @contextmanager
@@ -269,7 +278,7 @@ def _record(
     thread = threading.get_ident()
     # An access made while another one is logged comes from a logging handler
     # or filter. Logging it could recurse without end.
-    nested = _recording.get()
+    nested = _dispatch.active
     eligible = [sink for sink in sinks if sink.active and sink.thread == thread]
     # Lists first: a logging handler that accesses a parameter must not come
     # between the appends of one access, or simultaneous recordings would see
@@ -280,7 +289,7 @@ def _record(
     )
     if not sinks:
         return
-    token = _recording.set(True)
+    _dispatch.active = True
     try:
         try:
             access = _make_access(
@@ -295,7 +304,7 @@ def _record(
             except Exception:  # noqa: BLE001 recording must never affect the access
                 _report_failure(kind, access.parameter_name)
     finally:
-        _recording.reset(token)
+        _dispatch.active = nested
 
 
 def _make_access(
