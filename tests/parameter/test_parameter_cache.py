@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -245,7 +245,7 @@ def test_no_get_max_val_age() -> None:
 
 
 def test_no_get_max_val_age_runtime_error(
-    get_if_invalid: bool | Literal["NOT_PASSED"],
+    get_if_invalid: bool | NOT_PASSED,
 ) -> None:
     """
     ParameterBase does not have a check on creation time that
@@ -269,7 +269,7 @@ def test_no_get_max_val_age_runtime_error(
     if get_if_invalid is True:
         with pytest.raises(RuntimeError, match="max_val_age` is not supported"):
             local_parameter.cache.get(get_if_invalid=get_if_invalid)
-    elif get_if_invalid == NOT_PASSED:
+    elif get_if_invalid is NOT_PASSED:
         with pytest.raises(RuntimeError, match="max_val_age` is not supported"):
             local_parameter.cache.get()
     else:
@@ -277,7 +277,7 @@ def test_no_get_max_val_age_runtime_error(
 
 
 def test_no_get_timestamp_none_runtime_error(
-    get_if_invalid: bool | Literal["NOT_PASSED"],
+    get_if_invalid: bool | NOT_PASSED,
 ) -> None:
     """
     Test that a parameter that has never been
@@ -289,7 +289,7 @@ def test_no_get_timestamp_none_runtime_error(
     if get_if_invalid is True:
         with pytest.raises(RuntimeError, match="Value of parameter test_param"):
             local_parameter.cache.get(get_if_invalid=get_if_invalid)
-    elif get_if_invalid == NOT_PASSED:
+    elif get_if_invalid is NOT_PASSED:
         with pytest.raises(RuntimeError, match="Value of parameter test_param"):
             local_parameter.cache.get()
     else:

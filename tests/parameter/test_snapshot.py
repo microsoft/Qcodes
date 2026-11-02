@@ -17,11 +17,11 @@ if TYPE_CHECKING:
 
 
 def create_parameter(
-    snapshot_get: bool | Literal["NOT_PASSED"],
-    snapshot_value: bool | Literal["NOT_PASSED"],
+    snapshot_get: bool | NOT_PASSED,
+    snapshot_value: bool | NOT_PASSED,
     cache_is_valid: bool,
-    get_cmd: Callable[..., Any] | bool | Literal["NOT_PASSED"] | None,
-    offset: float | Literal["NOT_PASSED"] = NOT_PASSED,
+    get_cmd: Callable[..., Any] | bool | NOT_PASSED | None,
+    offset: float | NOT_PASSED = NOT_PASSED,
 ) -> Parameter:
     kwargs: dict[str, Any] = {
         "set_cmd": None,
@@ -30,16 +30,16 @@ def create_parameter(
         "docstring": "some docs",
     }
 
-    if offset != NOT_PASSED:
+    if offset is not NOT_PASSED:
         kwargs.update(offset=offset)
 
-    if snapshot_get != NOT_PASSED:
+    if snapshot_get is not NOT_PASSED:
         kwargs.update(snapshot_get=snapshot_get)
 
-    if snapshot_value != NOT_PASSED:
+    if snapshot_value is not NOT_PASSED:
         kwargs.update(snapshot_value=snapshot_value)
 
-    if get_cmd != NOT_PASSED:
+    if get_cmd is not NOT_PASSED:
         kwargs.update(get_cmd=get_cmd)
 
     p = Parameter("p", **kwargs)
@@ -75,15 +75,15 @@ def create_parameter(
 
 
 def test_snapshot_contains_parameter_attributes(
-    snapshot_get: bool | Literal["NOT_PASSED"],
-    snapshot_value: bool | Literal["NOT_PASSED"],
-    get_cmd: Literal[False, "NOT_PASSED"] | None,
+    snapshot_get: bool | NOT_PASSED,
+    snapshot_value: bool | NOT_PASSED,
+    get_cmd: Literal[False] | NOT_PASSED | None,
     cache_is_valid: bool,
-    update: SnapshotUpdate | Literal["NOT_PASSED"],
+    update: SnapshotUpdate | NOT_PASSED,
 ) -> None:
     p = create_parameter(snapshot_get, snapshot_value, cache_is_valid, get_cmd)
 
-    if update != NOT_PASSED:
+    if update is not NOT_PASSED:
         s = p.snapshot(update=update)
     else:
         s = p.snapshot()
@@ -123,16 +123,16 @@ def test_snapshot_contains_parameter_attributes(
 
 
 def test_snapshot_timestamp_of_non_gettable_depends_only_on_cache_validity(
-    snapshot_get: bool | Literal["NOT_PASSED"],
-    snapshot_value: bool | Literal["NOT_PASSED"],
-    update: SnapshotUpdate | Literal["NOT_PASSED"],
+    snapshot_get: bool | NOT_PASSED,
+    snapshot_value: bool | NOT_PASSED,
+    update: SnapshotUpdate | NOT_PASSED,
     cache_is_valid: bool,
 ) -> None:
     p = create_parameter(snapshot_get, snapshot_value, cache_is_valid, get_cmd=False)
 
     t0 = p.cache.timestamp
 
-    if update != NOT_PASSED:
+    if update is not NOT_PASSED:
         s = p.snapshot(update=update)
     else:
         s = p.snapshot()
@@ -148,9 +148,9 @@ def test_snapshot_timestamp_of_non_gettable_depends_only_on_cache_validity(
 
 
 def test_snapshot_timestamp_for_valid_cache_depends_on_cache_update(
-    snapshot_get: bool | Literal["NOT_PASSED"],
-    snapshot_value: bool | Literal["NOT_PASSED"],
-    update: SnapshotUpdate | Literal["NOT_PASSED"],
+    snapshot_get: bool | NOT_PASSED,
+    snapshot_value: bool | NOT_PASSED,
+    update: SnapshotUpdate | NOT_PASSED,
 ) -> None:
     p = create_parameter(
         snapshot_get, snapshot_value, get_cmd=lambda: 69, cache_is_valid=True
@@ -164,7 +164,7 @@ def test_snapshot_timestamp_for_valid_cache_depends_on_cache_update(
     tu = datetime.now(UTC)
     assert p.cache.timestamp is not None
     assert p.cache.timestamp < tu  # pre-condition
-    if update != NOT_PASSED:
+    if update is not NOT_PASSED:
         s = p.snapshot(update=update)
     else:
         s = p.snapshot()
@@ -172,7 +172,7 @@ def test_snapshot_timestamp_for_valid_cache_depends_on_cache_update(
     ts = datetime.fromisoformat(s["ts"])
     tu_up_to_seconds = tu.replace(microsecond=0)
 
-    effective = "Only_invalid" if update == NOT_PASSED else update
+    effective = "Only_invalid" if update is NOT_PASSED else update
     cache_gets_updated_on_snapshot_call = (
         snapshot_value is not False and snapshot_get is not False and effective == "All"
     )
@@ -184,15 +184,15 @@ def test_snapshot_timestamp_for_valid_cache_depends_on_cache_update(
 
 
 def test_snapshot_timestamp_for_invalid_cache_depends_only_on_snapshot_flags(
-    snapshot_get: bool | Literal["NOT_PASSED"],
-    snapshot_value: bool | Literal["NOT_PASSED"],
-    update: SnapshotUpdate | Literal["NOT_PASSED"],
+    snapshot_get: bool | NOT_PASSED,
+    snapshot_value: bool | NOT_PASSED,
+    update: SnapshotUpdate | NOT_PASSED,
 ) -> None:
     p = create_parameter(
         snapshot_get, snapshot_value, get_cmd=lambda: 69, cache_is_valid=False
     )
 
-    effective = "Only_invalid" if update == NOT_PASSED else update
+    effective = "Only_invalid" if update is NOT_PASSED else update
     cache_gets_updated_on_snapshot_call = (
         snapshot_value is not False
         and snapshot_get is not False
@@ -204,7 +204,7 @@ def test_snapshot_timestamp_for_invalid_cache_depends_only_on_snapshot_flags(
     else:
         tu = None
 
-    if update != NOT_PASSED:
+    if update is not NOT_PASSED:
         s = p.snapshot(update=update)
     else:
         s = p.snapshot()
@@ -219,10 +219,10 @@ def test_snapshot_timestamp_for_invalid_cache_depends_only_on_snapshot_flags(
 
 
 def test_snapshot_when_snapshot_value_is_false(
-    snapshot_get: bool | Literal["NOT_PASSED"],
-    get_cmd: Literal[False, "NOT_PASSED"] | None,
+    snapshot_get: bool | NOT_PASSED,
+    get_cmd: Literal[False] | NOT_PASSED | None,
     cache_is_valid: bool,
-    update: SnapshotUpdate | Literal["NOT_PASSED"],
+    update: SnapshotUpdate | NOT_PASSED,
 ) -> None:
     p = create_parameter(
         snapshot_get=snapshot_get,
@@ -231,7 +231,7 @@ def test_snapshot_when_snapshot_value_is_false(
         cache_is_valid=cache_is_valid,
     )
 
-    if update != NOT_PASSED:
+    if update is not NOT_PASSED:
         s = p.snapshot(update=update)
     else:
         s = p.snapshot()
@@ -244,8 +244,8 @@ def test_snapshot_when_snapshot_value_is_false(
 
 
 def test_snapshot_value_is_true_by_default(
-    snapshot_get: bool | Literal["NOT_PASSED"],
-    get_cmd: Literal[False, "NOT_PASSED"] | None,
+    snapshot_get: bool | NOT_PASSED,
+    get_cmd: Literal[False] | NOT_PASSED | None,
 ) -> None:
     p = create_parameter(
         snapshot_value=NOT_PASSED,
@@ -257,8 +257,8 @@ def test_snapshot_value_is_true_by_default(
 
 
 def test_snapshot_get_is_true_by_default(
-    snapshot_value: bool | Literal["NOT_PASSED"],
-    get_cmd: Literal[False, "NOT_PASSED"] | None,
+    snapshot_value: bool | NOT_PASSED,
+    get_cmd: Literal[False] | NOT_PASSED | None,
 ) -> None:
     p = create_parameter(
         snapshot_get=NOT_PASSED,
@@ -270,8 +270,8 @@ def test_snapshot_get_is_true_by_default(
 
 
 def test_snapshot_when_snapshot_get_is_false(
-    get_cmd: Literal[False, "NOT_PASSED"] | None,
-    update: SnapshotUpdate | Literal["NOT_PASSED"],
+    get_cmd: Literal[False] | NOT_PASSED | None,
+    update: SnapshotUpdate | NOT_PASSED,
     cache_is_valid: bool,
 ) -> None:
     p = create_parameter(
@@ -282,7 +282,7 @@ def test_snapshot_when_snapshot_get_is_false(
         offset=4,
     )
 
-    if update != NOT_PASSED:
+    if update is not NOT_PASSED:
         s = p.snapshot(update=update)
     else:
         s = p.snapshot()
@@ -299,7 +299,7 @@ def test_snapshot_when_snapshot_get_is_false(
 
 
 def test_snapshot_of_non_gettable_parameter_mirrors_cache(
-    update: SnapshotUpdate | Literal["NOT_PASSED"], cache_is_valid: bool
+    update: SnapshotUpdate | NOT_PASSED, cache_is_valid: bool
 ) -> None:
     p = create_parameter(
         snapshot_get=True,
@@ -309,7 +309,7 @@ def test_snapshot_of_non_gettable_parameter_mirrors_cache(
         offset=4,
     )
 
-    if update != NOT_PASSED:
+    if update is not NOT_PASSED:
         s = p.snapshot(update=update)
     else:
         s = p.snapshot()
@@ -323,7 +323,7 @@ def test_snapshot_of_non_gettable_parameter_mirrors_cache(
 
 
 def test_snapshot_of_gettable_parameter_depends_on_update(
-    update: SnapshotUpdate | Literal["NOT_PASSED"], cache_is_valid: bool
+    update: SnapshotUpdate | NOT_PASSED, cache_is_valid: bool
 ) -> None:
     p = create_parameter(
         snapshot_get=True,
@@ -333,12 +333,12 @@ def test_snapshot_of_gettable_parameter_depends_on_update(
         offset=4,
     )
 
-    if update != NOT_PASSED:
+    if update is not NOT_PASSED:
         s = p.snapshot(update=update)
     else:
         s = p.snapshot()
 
-    effective = "Only_invalid" if update == NOT_PASSED else update
+    effective = "Only_invalid" if update is NOT_PASSED else update
     should_get = effective == "All" or (
         effective == "Only_invalid" and not cache_is_valid
     )
