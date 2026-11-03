@@ -13,6 +13,8 @@ devices:
         r: "1.25e6"
       - q: "ISRC?"
         r: "0"
+      - q: "SNAP? 0,1"
+        r: "1.5e-3,-2.5e-4"
 
     properties:
       capture_progress:
@@ -20,6 +22,38 @@ devices:
         getter:
           q: "CAPTUREPROG?"
           r: "{}"
+      external_reference_trigger_input_resistance:
+        default: 1
+        getter:
+          q: "REFZ?"
+          r: "{}"
+        setter:
+          q: "REFZ {}"
+        specs:
+          type: int
+          valid: [0, 1]
+      input_range:
+        default: 0
+        getter:
+          q: "IRNG?"
+          r: "{}"
+        setter:
+          q: "IRNG {}"
+        specs:
+          type: int
+          min: 0
+          max: 4
+      time_constant:
+        default: 12
+        getter:
+          q: "OFLT?"
+          r: "{}"
+        setter:
+          q: "OFLT {}"
+        specs:
+          type: int
+          min: 0
+          max: 21
 
 resources:
   GPIB::1::INSTR:

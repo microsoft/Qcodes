@@ -1,0 +1,7 @@
+The ``cutoff_lo`` (high-pass) and ``cutoff_hi`` (low-pass) parameters of the virtual ``SR560``
+driver now only accept the filter cutoffs that the instrument has: ``cutoff_lo`` accepts
+``"DC"`` and 0.03 Hz to 10 kHz, and ``cutoff_hi`` 0.03 Hz to 1 MHz. Previously ``cutoff_lo``
+also accepted 30 kHz to 1 MHz, and ``cutoff_hi`` accepted ``"DC"``.
+
+``SR86x.external_reference_trigger_input_resistance`` now returns ``"50OHMS"`` or ``"1MEG"``
+instead of ``0`` or ``1``. Setting it to ``0`` or ``1`` still works.
