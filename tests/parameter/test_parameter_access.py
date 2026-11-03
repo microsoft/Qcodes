@@ -601,7 +601,7 @@ def test_failing_log_does_not_affect_the_access(
         "Recording the set of p failed",
         "Recording the get of p failed",
     ]
-    assert errors[0].exc_info is not None
+    assert errors[0].exc_info
     assert isinstance(errors[0].exc_info[1], ValueError)
 
 
