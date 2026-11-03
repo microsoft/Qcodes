@@ -161,7 +161,7 @@ class Tektronix70000AWGChannel(InstrumentChannel["TektronixAWG70000Base"]):
     """
 
     def __init__(
-        self,
+        self: Self,
         parent: TektronixAWG70000Base,
         name: str,
         channel: int,
@@ -487,7 +487,7 @@ class TektronixAWG70000Base(VisaInstrument):
     default_timeout = 10
 
     def __init__(
-        self,
+        self: Self,
         name: str,
         address: str,
         num_channels: int,

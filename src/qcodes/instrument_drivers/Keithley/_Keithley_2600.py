@@ -645,7 +645,7 @@ class Keithley2600Channel(InstrumentChannel["Keithley2600"]):
     SMUA and SMUB.
     """
 
-    def __init__(self, parent: Keithley2600, name: str, channel: str) -> None:
+    def __init__(self: Self, parent: Keithley2600, name: str, channel: str) -> None:
         """
         Args:
             parent: The Instrument instance to which the channel is
