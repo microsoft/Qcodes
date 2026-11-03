@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs
 from qcodes.parameters import DelegateParameter, Parameter
@@ -44,7 +44,7 @@ class BaselSP983(Instrument):
     ):
         super().__init__(name, **kwargs)
 
-        self.gain: Parameter = self.add_parameter(
+        self.gain: Parameter[float, Self] = self.add_parameter(
             "gain",
             initial_value=1e8,
             label="Gain",
@@ -55,7 +55,7 @@ class BaselSP983(Instrument):
         )
         """Parameter gain"""
 
-        self.fcut: Parameter = self.add_parameter(
+        self.fcut: Parameter[float, Self] = self.add_parameter(
             "fcut",
             initial_value=1e3,
             label="Cutoff frequency",

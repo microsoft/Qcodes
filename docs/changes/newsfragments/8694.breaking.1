@@ -1,0 +1,7 @@
+The ``trigger_count`` parameter of ``Keithley6500``, which sets the number of times a scan is
+repeated (``ROUT:SCAN:COUN:SCAN``), now accepts the full range documented in the DMM6500
+Reference Manual: 0 to 100,000,000, where 0 repeats the scan until it is aborted. It previously
+only accepted 1 to 9999 or the strings ``"inf"``, ``"default"``, ``"minimum"`` and ``"maximum"``,
+which were copied from the Keithley 2000 and are not documented for this command. These strings
+are now rejected; use 0 instead of ``"inf"``. Whole-number floats are accepted and sent as
+integers, and the parameter is annotated as ``Parameter[int, Self]``.

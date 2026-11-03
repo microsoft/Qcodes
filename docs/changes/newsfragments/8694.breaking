@@ -1,0 +1,7 @@
+The ``auto_zero_once`` parameter of ``Keithley7510Sense`` and the ``trigger_in_ext_clear``
+parameter of ``Keithley7510`` have been replaced by methods of the same name. Both were
+command-only parameters, so calling them without an argument, e.g.
+``dmm.sense.auto_zero_once()``, only returned the cached value and did not send anything to the
+instrument. Calling them like this now sends the command. Code that passed a value to them, e.g.
+``dmm.trigger_in_ext_clear(None)``, must drop the argument, and they are no longer part of the
+instrument's parameters or snapshot.

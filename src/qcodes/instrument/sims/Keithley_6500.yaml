@@ -33,6 +33,18 @@ devices:
           min: 4
           max: 7
 
+      scan_count:
+        default: 1
+        getter:
+          q: "ROUT:SCAN:COUN:SCAN?"
+          r: "{}"
+        setter:
+          q: "ROUT:SCAN:COUN:SCAN {}"
+        specs:
+          type: int
+          min: 0
+          max: 100000000
+
 resources:
   GPIB::1::INSTR:
     device: device 1

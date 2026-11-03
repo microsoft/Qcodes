@@ -1,0 +1,5 @@
+The "Creating Instrument Drivers" example notebook now explains how to annotate a parameter with
+the type of its value, e.g. ``Parameter[float, Self]``, and all of its example drivers are
+annotated this way. This also fixed bugs in the example code: the Ithaco example passed ``units``
+instead of ``unit``, the Keithley 2600 example lacked its ``model`` attribute and
+``_display_settext`` method, and the Alazar example used outdated ``TraceParameter`` arguments.

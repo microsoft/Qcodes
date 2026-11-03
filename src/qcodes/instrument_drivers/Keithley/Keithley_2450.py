@@ -113,7 +113,7 @@ class Keithley2450Buffer(InstrumentChannel["Keithley2450"]):
         )
         """To get the number of readings in the reading buffer."""
 
-        self.elements: Parameter = self.add_parameter(
+        self.elements: Parameter[list[str], Self] = self.add_parameter(
             "elements",
             get_cmd=None,
             get_parser=self.from_scpi_to_name,
@@ -455,7 +455,7 @@ class Keithley2450Source(InstrumentChannel["Keithley2450"]):
             snapshot_value=False,
         )
 
-        self.sweep_axis: Parameter = self.add_parameter(
+        self.sweep_axis: Parameter[npt.NDArray, Self] = self.add_parameter(
             "sweep_axis",
             label=self._proper_function,
             get_cmd=self.get_sweep_axis,
@@ -663,7 +663,7 @@ class Keithley2450(VisaInstrument):
         )
         """returns the power line frequency setting that is used for NPLC calculations"""
 
-        self.buffer_name: Parameter = self.add_parameter(
+        self.buffer_name: Parameter[str, Self] = self.add_parameter(
             "buffer_name",
             get_cmd=None,
             set_cmd=None,
