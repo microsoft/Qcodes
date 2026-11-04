@@ -28,3 +28,18 @@ def test_pulse_width_is_float_in_seconds(e8267c: AgilentE8267C) -> None:
 
     e8267c.pulse_width(15e-9)
     assert e8267c.pulse_width() == pytest.approx(15e-9)
+
+
+def test_phase_is_float_in_degrees(e8267c: AgilentE8267C) -> None:
+    assert e8267c.phase.unit == "deg"
+
+    phase = e8267c.phase()
+    assert isinstance(phase, float)
+    assert phase == 0.0
+
+    # the instrument takes and returns the phase in radians
+    e8267c.phase(-90)
+    assert e8267c.phase() == pytest.approx(-90)
+
+    with pytest.raises(ValueError):
+        e8267c.phase(180)

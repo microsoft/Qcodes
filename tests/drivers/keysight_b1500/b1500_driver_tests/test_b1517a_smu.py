@@ -334,7 +334,7 @@ def test_measurement_mode_to_enum_value(smu: KeysightB1517A) -> None:
 def test_measurement_mode_to_int_value(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
     assert isinstance(mainframe, MagicMock)
-    smu.measurement_mode(10)
+    smu.measurement_mode(10)  # pyright: ignore[reportArgumentType]
     mainframe.write.assert_called_once_with("MM 10,1")
 
     new_mode = smu.measurement_mode()
@@ -561,7 +561,7 @@ def test_set_post_sweep_voltage_cond(smu: KeysightB1517A) -> None:
     mainframe = smu.parent
     assert isinstance(mainframe, MagicMock)
     mainframe.ask.return_value = "WM2,2;WT1.0,0.0,0.0,0.0,0.0"
-    smu.iv_sweep.post_sweep_voltage_condition(constants.WMDCV.Post.STOP)
+    smu.iv_sweep.post_sweep_voltage_condition(constants.WM.Post.STOP)
 
     mainframe.write.assert_called_once_with("WM 2,2")
 

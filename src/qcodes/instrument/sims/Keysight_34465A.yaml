@@ -127,7 +127,8 @@ devices:
           q: "SENSe:VOLTage:DC:RESolution?"
           r: "{}"
         setter:
-          q: "SENSe:VOLTage:DC:RESolution {}"
+          # the driver sets the resolution with the short form
+          q: "VOLT:DC:RES {}"
       current_ac_autorange:
         default: 0
         getter:

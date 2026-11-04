@@ -180,7 +180,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         )
         """Parameter pulse_width"""
 
-        self.edges: Parameter = self.add_parameter(
+        self.edges: Parameter[float | str, Self] = self.add_parameter(
             "edges",
             label=f"Channel {channum} edges width",
             set_cmd=f"SOURce{channum}:FUNCtion:PULSe:TRANsition {{}}",
@@ -188,8 +188,22 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
             get_parser=float,
             unit="s",
             vals=vals.MultiType(vals.Numbers(), vals.Enum("MIN", "MAX")),
+            docstring=(
+                "Sets the transition times for the leading and trailing edges of "
+                "the pulse. Besides a number, this can be set to 'MIN' or 'MAX', "
+                "which the instrument converts to the corresponding number. "
+                "Getting the parameter always returns a number, but until it is "
+                "read again, the cached value is the string that was set. The "
+                "value is therefore annotated as ``float | str``."
+            ),
         )
-        """Sets the transition times for the leading and trailing edges of the pulse."""
+        """
+        Sets the transition times for the leading and trailing edges of the pulse.
+        Besides a number, this can be set to "MIN" or "MAX", which the instrument
+        converts to the corresponding number. Getting the parameter always returns
+        a number, but until it is read again, the cached value is the string that
+        was set. The value is therefore annotated as ``float | str``.
+        """
 
         # TRIGGER MENU
         self.trigger_source: Parameter[str, Self] = self.add_parameter(
@@ -214,15 +228,24 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
 
         # Older models do not have all the fancy trigger options
         if self._parent.model[2] in ["5", "6"]:
-            self.trigger_count: Parameter = self.add_parameter(
+            self.trigger_count: Parameter[float, Self] = self.add_parameter(
                 "trigger_count",
                 label=f"Channel {channum} trigger count",
                 set_cmd=f"TRIGger{channum}:COUNt {{}}",
                 get_cmd=f"TRIGger{channum}:COUNt?",
                 vals=vals.Ints(1, 1000000),
                 get_parser=partial(val_parser, int),
+                docstring=(
+                    "Number of triggers. Reads back as ``float('inf')`` if the "
+                    "instrument reports an infinite count (9.9e37), so the value "
+                    "is annotated as ``float``."
+                ),
             )
-            """Parameter trigger_count"""
+            """
+            Number of triggers. Reads back as ``float("inf")`` if the instrument
+            reports an infinite count (9.9e37), so the value is annotated as
+            ``float``.
+            """
 
             self.trigger_delay: Parameter[float, Self] = self.add_parameter(
                 "trigger_delay",
@@ -279,15 +302,29 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         )
         """Parameter burst_mode"""
 
-        self.burst_ncycles: Parameter = self.add_parameter(
+        self.burst_ncycles: Parameter[float | str, Self] = self.add_parameter(
             "burst_ncycles",
             label=f"Channel {channum} burst no. of cycles",
             set_cmd=f"SOURce{channum}:BURSt:NCYCles {{}}",
             get_cmd=f"SOURce{channum}:BURSt:NCYCLes?",
             get_parser=partial(val_parser, int),
             vals=vals.MultiType(vals.Ints(1), vals.Enum("MIN", "MAX", "INF")),
+            docstring=(
+                "Number of cycles in a burst. Besides a number, this can be set "
+                "to 'MIN', 'MAX' or 'INF', which the instrument converts to the "
+                "corresponding number. Getting the parameter always returns a "
+                "number, ``float('inf')`` for an infinite count, but until it is "
+                "read again, the cached value is the string that was set. The "
+                "value is therefore annotated as ``float | str``."
+            ),
         )
-        """Parameter burst_ncycles"""
+        """
+        Number of cycles in a burst. Besides a number, this can be set to "MIN",
+        "MAX" or "INF", which the instrument converts to the corresponding number.
+        Getting the parameter always returns a number, ``float("inf")`` for an
+        infinite count, but until it is read again, the cached value is the string
+        that was set. The value is therefore annotated as ``float | str``.
+        """
 
         self.burst_phase: Parameter[float, Self] = self.add_parameter(
             "burst_phase",
@@ -325,7 +362,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
         )
         """The burst period is the time between the starts of consecutive bursts when trigger is immediate."""
 
-        self.output_load: Parameter = self.add_parameter(
+        self.output_load: Parameter[float | str, Self] = self.add_parameter(
             "output_load",
             label=f"Channel {channum} output load",
             set_cmd=f"OUTPut{channum}:LOAD {{}}",
@@ -333,8 +370,26 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
             get_parser=partial(val_parser, float),
             unit="ohms",
             vals=vals.MultiType(vals.Numbers(1, 10000), vals.Enum("INF", "MIN", "MAX")),
+            docstring=(
+                "Sets expected output termination. Should equal the load "
+                "impedance attached to the output. Besides a number, this can be "
+                "set to 'INF' (high impedance), 'MIN' or 'MAX', which the "
+                "instrument converts to the corresponding number. Getting the "
+                "parameter always returns a number, ``float('inf')`` for high "
+                "impedance, but until it is read again, the cached value is the "
+                "string that was set. The value is therefore annotated as "
+                "``float | str``."
+            ),
         )
-        """Sets expected output termination. Should equal the load impedance attached to the output."""
+        """
+        Sets expected output termination. Should equal the load impedance attached
+        to the output. Besides a number, this can be set to "INF" (high
+        impedance), "MIN" or "MAX", which the instrument converts to the
+        corresponding number. Getting the parameter always returns a number,
+        ``float("inf")`` for high impedance, but until it is read again, the
+        cached value is the string that was set. The value is therefore annotated
+        as ``float | str``.
+        """
 
         self.auto_range: Parameter[str, Self] = self.add_parameter(
             "auto_range",
@@ -352,7 +407,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
             "6",
         ]:  # Older models do not support all arbitrary options
             max_srate = self._parent._max_srate[self.model]
-            self.srate: Parameter = self.add_parameter(
+            self.srate: Parameter[float | str, Self] = self.add_parameter(
                 "srate",
                 label=f"Channel {channum} sample rate",
                 set_cmd=f"SOURce{channum}:FUNCtion:ARBitrary:SRATe {{}}",
@@ -362,8 +417,22 @@ class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
                 vals=vals.MultiType(
                     vals.Numbers(1e-6, max_srate), vals.Enum("MIN", "MAX", "DEF")
                 ),
+                docstring=(
+                    "Sets the sample rate for the arbitrary waveform. Besides a "
+                    "number, this can be set to 'MIN', 'MAX' or 'DEF', which the "
+                    "instrument converts to the corresponding number. Getting the "
+                    "parameter always returns a number, but until it is read "
+                    "again, the cached value is the string that was set. The "
+                    "value is therefore annotated as ``float | str``."
+                ),
             )
-            """Sets the sample rate for the arbitrary waveform."""
+            """
+            Sets the sample rate for the arbitrary waveform. Besides a number, this
+            can be set to "MIN", "MAX" or "DEF", which the instrument converts to
+            the corresponding number. Getting the parameter always returns a
+            number, but until it is read again, the cached value is the string
+            that was set. The value is therefore annotated as ``float | str``.
+            """
 
             self.add_function(
                 "load_arb",

@@ -49,6 +49,15 @@ devices:
         setter:
           q: ":FUNCtion:IMPedance:RANGe:AUTO {}"
 
+      # command-only, no reply
+      correction_open:
+        setter:
+          q: ":CORRection:OPEN"
+
+      correction_short:
+        setter:
+          q: ":CORRection:SHORt"
+
 resources:
   GPIB::1::INSTR:
     device: device 1

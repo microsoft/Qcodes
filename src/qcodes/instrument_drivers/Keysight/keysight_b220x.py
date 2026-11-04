@@ -147,7 +147,7 @@ class KeysightB220X(VisaInstrument):
         'mbb' (make before break)
         """
 
-        self.bias_input_port: Parameter = self.add_parameter(
+        self.bias_input_port: Parameter[int, Self] = self.add_parameter(
             name="bias_input_port",
             get_cmd=f":BIAS:PORT? {self._card}",
             set_cmd=f":BIAS:PORT {self._card},{{}}",
@@ -175,7 +175,7 @@ class KeysightB220X(VisaInstrument):
         )
         """Param: True for ON, False for OFF"""
 
-        self.gnd_input_port: Parameter = self.add_parameter(
+        self.gnd_input_port: Parameter[int, Self] = self.add_parameter(
             name="gnd_input_port",
             get_cmd=f":AGND:PORT? {self._card}",
             set_cmd=f":AGND:PORT {self._card},{{}}",
@@ -201,7 +201,7 @@ class KeysightB220X(VisaInstrument):
         )
         """Parameter gnd_mode"""
 
-        self.unused_inputs: Parameter = self.add_parameter(
+        self.unused_inputs: Parameter[list[int], Self] = self.add_parameter(
             name="unused_inputs",
             get_cmd=f":AGND:UNUSED? {self._card}",
             set_cmd=f":AGND:UNUSED {self._card},'{{}}'",
@@ -213,7 +213,7 @@ class KeysightB220X(VisaInstrument):
         )
         """Parameter unused_inputs"""
 
-        self.couple_ports: Parameter = self.add_parameter(
+        self.couple_ports: Parameter[list[int], Self] = self.add_parameter(
             name="couple_ports",
             get_cmd=f":COUP:PORT? {self._card}",
             set_cmd=f":COUP:PORT {self._card},'{{}}'",
