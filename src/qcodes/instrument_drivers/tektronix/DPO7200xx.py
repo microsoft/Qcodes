@@ -149,7 +149,7 @@ class TektronixDPO7000xx(VisaInstrument):
         self.visa_log.debug(f"Response: {response}")
         return response
 
-    def single(self):
+    def single(self) -> None:
         """
         Set scope into single acquisition mode and wait for triggered acquisition
         """
