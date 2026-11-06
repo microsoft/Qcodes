@@ -30,21 +30,19 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.11", "3.12", "3.13", "3.14"]
+        python-version: ["3.12", "3.13", "3.14", "3.15"]
         min-version: [false]
         include:
           - os: ubuntu-latest
-            python-version: "3.11"
+            python-version: "3.12"
             min-version: true
         exclude:
-          - os: ubuntu-latest
-            python-version: "3.11"
-          - os: windows-latest
-            python-version: "3.11"
           - os: windows-latest
             python-version: "3.13"
           - os: windows-latest
             python-version: "3.14"
+          - os: windows-latest
+            python-version: "3.15"
     env:
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}
@@ -52,23 +50,34 @@ jobs:
     steps:
 
     - name: Harden Runner
-      uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+      uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
       with:
         egress-policy: audit
 
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         submodules: true
         # we need full history with tags for the version number
         fetch-depth: '0'
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
       with:
         python-version: ${{ matrix.python-version }}
+        # Python 3.15.0 final is not yet in the actions/python-versions manifest.
+        # This only has an effect when no stable release of the version exists.
+        allow-prereleases: true
         cache: 'pip'
         cache-dependency-path: |
           pyproject.toml
           requirements.txt
+    # h5py does not ship wheels for Python 3.15 yet so it is built from source,
+    # which requires the HDF5 headers. Remove once h5py ships cp315 wheels.
+    - name: Install HDF5 headers to build h5py from source
+      if: ${{ matrix.python-version == '3.15' }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libhdf5-dev
+      shell: bash
     - name: upgrade pip setuptools wheel
       run: python -m pip install --upgrade pip setuptools wheel
       shell: bash
@@ -107,19 +116,27 @@ jobs:
       run: mypy -p qcodes
       if: ${{ !matrix.min-version && always() }}
       id: mypy
+    - name: Set pytest basetemp
+      if: ${{ runner.os == 'Windows' }}
+      run: echo "PYTEST_BASETEMP=--basetemp=D:\\tmp" >> $GITHUB_ENV
+      shell: bash
     - name: Run parallel tests
       if: ${{ always() }}
+      shell: bash
       run: |
-        pytest -m "not serial" --cov --cov-report xml --hypothesis-profile ci  --durations=20 $PYTEST_OPT tests
+        set -x
+        pytest -m "not serial" --cov --cov-report xml --hypothesis-profile ci  --durations=20 $PYTEST_OPT $PYTEST_BASETEMP tests
       id: parallel_tests
 # a subset of the tests fails when run in parallel on Windows so run those in serial here
     - name: Run serial tests
       if: ${{ always() }}
+      shell: bash
       run: |
-        pytest -m "serial" -n 0 --dist no --cov --cov-report xml --cov-append --hypothesis-profile ci $PYTEST_OPT tests
+        set -x
+        pytest -m "serial" -n 0 --dist no --cov --cov-report xml --cov-append --hypothesis-profile ci $PYTEST_OPT $PYTEST_BASETEMP tests
       id: serial_tests
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
+      uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
       with:
         files: ./coverage.xml
         env_vars: OS,PYTHON

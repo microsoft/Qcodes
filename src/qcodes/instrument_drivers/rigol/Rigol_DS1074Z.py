@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -14,12 +14,12 @@ from qcodes.parameters import ParameterWithSetpoints
 from qcodes.validators import Arrays, Enum, Numbers
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.parameters import Parameter
 
 
-class RigolDS1074ZChannel(InstrumentChannel):
+class RigolDS1074ZChannel(InstrumentChannel["RigolDS1074Z"]):
     """
     Contains methods and attributes specific to the Rigol
     oscilloscope channels.
@@ -38,7 +38,7 @@ class RigolDS1074ZChannel(InstrumentChannel):
         super().__init__(parent, name, **kwargs)
         self.channel = channel
 
-        self.vertical_scale: Parameter = self.add_parameter(
+        self.vertical_scale: Parameter[float, Self] = self.add_parameter(
             "vertical_scale",
             get_cmd=f":CHANnel{channel}:SCALe?",
             set_cmd=":CHANnel{}:SCALe {}".format(channel, "{}"),
@@ -58,9 +58,9 @@ class RigolDS1074ZChannel(InstrumentChannel):
         """Parameter trace"""
 
     def _get_full_trace(self) -> npt.NDArray:
-        y_ori = self.root_instrument.waveform_yorigin()
-        y_increm = self.root_instrument.waveform_yincrem()
-        y_ref = self.root_instrument.waveform_yref()
+        y_ori = self.parent.waveform_yorigin()
+        y_increm = self.parent.waveform_yincrem()
+        y_ref = self.parent.waveform_yref()
         y_raw = self._get_raw_trace()
         y_raw_shifted = y_raw - y_ori - y_ref
         full_data = np.multiply(y_raw_shifted, y_increm)
@@ -68,13 +68,13 @@ class RigolDS1074ZChannel(InstrumentChannel):
 
     def _get_raw_trace(self) -> npt.NDArray:
         # set the out type from oscilloscope channels to WORD
-        self.root_instrument.write(":WAVeform:FORMat WORD")
+        self.parent.write(":WAVeform:FORMat WORD")
 
         # set the channel from where data will be obtained
-        self.root_instrument.data_source(f"ch{self.channel}")
+        self.parent.data_source(f"ch{self.channel}")
 
         # Obtain the trace
-        raw_trace_val = self.root_instrument.visa_handle.query_binary_values(
+        raw_trace_val = self.parent.visa_handle.query_binary_values(
             "WAV:DATA?", datatype="h", is_big_endian=False, expect_termination=False
         )
         return np.array(raw_trace_val)
@@ -103,12 +103,12 @@ class RigolDS1074Z(VisaInstrument):
     ):
         super().__init__(name, address, **kwargs)
 
-        self.waveform_xorigin: Parameter = self.add_parameter(
+        self.waveform_xorigin: Parameter[float, Self] = self.add_parameter(
             "waveform_xorigin", get_cmd="WAVeform:XORigin?", unit="s", get_parser=float
         )
         """Parameter waveform_xorigin"""
 
-        self.waveform_xincrem: Parameter = self.add_parameter(
+        self.waveform_xincrem: Parameter[float, Self] = self.add_parameter(
             "waveform_xincrem",
             get_cmd=":WAVeform:XINCrement?",
             unit="s",
@@ -116,21 +116,23 @@ class RigolDS1074Z(VisaInstrument):
         )
         """Parameter waveform_xincrem"""
 
-        self.waveform_npoints: Parameter = self.add_parameter(
+        self.waveform_npoints: Parameter[int, Self] = self.add_parameter(
             "waveform_npoints",
             get_cmd="WAV:POIN?",
             set_cmd="WAV:POIN {}",
-            unit="s",
             get_parser=int,
         )
         """Parameter waveform_npoints"""
 
-        self.waveform_yorigin: Parameter = self.add_parameter(
-            "waveform_yorigin", get_cmd="WAVeform:YORigin?", unit="V", get_parser=float
+        self.waveform_yorigin: Parameter[float, Self] = self.add_parameter(
+            # vertical offset in digitizing levels
+            "waveform_yorigin",
+            get_cmd="WAVeform:YORigin?",
+            get_parser=float,
         )
         """Parameter waveform_yorigin"""
 
-        self.waveform_yincrem: Parameter = self.add_parameter(
+        self.waveform_yincrem: Parameter[float, Self] = self.add_parameter(
             "waveform_yincrem",
             get_cmd=":WAVeform:YINCrement?",
             unit="V",
@@ -138,23 +140,25 @@ class RigolDS1074Z(VisaInstrument):
         )
         """Parameter waveform_yincrem"""
 
-        self.waveform_yref: Parameter = self.add_parameter(
-            "waveform_yref", get_cmd=":WAVeform:YREFerence?", unit="V", get_parser=float
+        self.waveform_yref: Parameter[float, Self] = self.add_parameter(
+            # vertical reference position in digitizing levels
+            "waveform_yref",
+            get_cmd=":WAVeform:YREFerence?",
+            get_parser=float,
         )
         """Parameter waveform_yref"""
 
-        self.trigger_mode: Parameter = self.add_parameter(
+        self.trigger_mode: Parameter[str, Self] = self.add_parameter(
             "trigger_mode",
             get_cmd=":TRIGger:MODE?",
             set_cmd=":TRIGger:MODE {}",
-            unit="V",
             vals=Enum("edge", "pulse", "video", "pattern"),
             get_parser=str,
         )
         """Parameter trigger_mode"""
 
         # trigger source
-        self.trigger_level: Parameter = self.add_parameter(
+        self.trigger_level: Parameter[float, Self] = self.add_parameter(
             "trigger_level",
             unit="V",
             get_cmd=self._get_trigger_level,
@@ -163,7 +167,7 @@ class RigolDS1074Z(VisaInstrument):
         )
         """Parameter trigger_level"""
 
-        self.trigger_edge_source: Parameter = self.add_parameter(
+        self.trigger_edge_source: Parameter[str, Self] = self.add_parameter(
             "trigger_edge_source",
             label="Source channel for the edge trigger",
             get_cmd=":TRIGger:EDGE:SOURce?",
@@ -177,7 +181,7 @@ class RigolDS1074Z(VisaInstrument):
         )
         """Parameter trigger_edge_source"""
 
-        self.trigger_edge_slope: Parameter = self.add_parameter(
+        self.trigger_edge_slope: Parameter[str, Self] = self.add_parameter(
             "trigger_edge_slope",
             label="Slope of the edge trigger",
             get_cmd=":TRIGger:EDGE:SLOPe?",
@@ -186,7 +190,7 @@ class RigolDS1074Z(VisaInstrument):
         )
         """Parameter trigger_edge_slope"""
 
-        self.data_source: Parameter = self.add_parameter(
+        self.data_source: Parameter[str, Self] = self.add_parameter(
             "data_source",
             label="Waveform Data source",
             get_cmd=":WAVeform:SOURce?",
@@ -230,11 +234,9 @@ class RigolDS1074Z(VisaInstrument):
         xdata = np.linspace(xorigin, npts * xincrem + xorigin, npts)
         return xdata
 
-    def _get_trigger_level(self) -> str:
-        trigger_level = self.root_instrument.ask(
-            f":TRIGger:{self.trigger_mode()}:LEVel?"
-        )
-        return trigger_level
+    def _get_trigger_level(self) -> float:
+        # returned in scientific notation, e.g. 1.600000e-01
+        return float(self.ask(f":TRIGger:{self.trigger_mode()}:LEVel?"))
 
-    def _set_trigger_level(self, value: str) -> None:
-        self.root_instrument.write(f":TRIGger:{self.trigger_mode()}:LEVel {value}")
+    def _set_trigger_level(self, value: float) -> None:
+        self.write(f":TRIGger:{self.trigger_mode()}:LEVel {value}")

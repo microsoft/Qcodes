@@ -1,0 +1,9 @@
+``CopperMountainM5xxx.averages``, ``AimTTiChannel.curr_range``, ``RigolDG1062Burst.ncycles``,
+``Keithley7510Sense.average_count`` and the ``dwell``, ``pause``, ``curve_number`` and
+``excitation_range_number`` of ``LakeshoreModel372Channel`` now reject non-integer values.
+Previously these were sent to the instrument, or for ``CopperMountainM5xxx.averages`` silently
+truncated. Whole-number floats such as ``2.0`` are still accepted and sent as integers.
+Also removed the incorrect unit of ``AimTTiChannel.curr_range``, which is a range number, fixed
+the label of ``LakeshoreModel372Channel.temperature_coefficient``, and removed incorrect units
+from ``RigolDS1074Z.trigger_mode``, ``waveform_npoints``, ``waveform_yorigin`` and
+``waveform_yref``.

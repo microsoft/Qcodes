@@ -13,6 +13,7 @@ import os
 import pkgutil
 import warnings
 from collections import deque
+from collections.abc import Mapping
 from contextlib import suppress
 from copy import copy, deepcopy
 from functools import partial
@@ -35,8 +36,12 @@ import qcodes
 import qcodes.instrument_drivers
 from qcodes import validators
 from qcodes.instrument import Instrument, InstrumentBase
-from qcodes.instrument.channel import ChannelTuple
-from qcodes.metadatable import Metadatable, MetadatableWithName
+from qcodes.instrument.channel import ChannelTuple, InstrumentModule
+from qcodes.metadatable import (
+    Metadatable,
+    MetadatableWithName,
+    normalize_snapshot_update,
+)
 from qcodes.monitor.monitor import Monitor
 from qcodes.parameters import (
     DelegateParameter,
@@ -56,6 +61,8 @@ if TYPE_CHECKING:
     from pathlib import Path
     from types import ModuleType
 
+    from qcodes.metadatable import SnapshotUpdate
+
 log = logging.getLogger(__name__)
 
 PARAMETER_ATTRIBUTES = [
@@ -67,6 +74,24 @@ PARAMETER_ATTRIBUTES = [
     "step",
     "offset",
 ]
+
+# Keys of a per-instrument section in the station configuration that are
+# handled explicitly by :meth:`Station.load_instrument`. Any other key in an
+# instrument section is interpreted as the name of a submodule or channel
+# list/tuple on the instrument on which parameters should be set. See
+# :meth:`Station.load_instrument` for details.
+INSTRUMENT_CONFIG_RESERVED_KEYS = frozenset(
+    {
+        "type",
+        "driver",
+        "address",
+        "port",
+        "enable_forced_reconnect",
+        "init",
+        "parameters",
+        "add_parameters",
+    }
+)
 
 SCHEMA_TEMPLATE_PATH = os.path.join(
     get_qcodes_path("dist", "schemas"), "station-template.schema.json"
@@ -96,8 +121,6 @@ ChannelOrInstrumentBase = InstrumentBase | ChannelTuple
 
 class ValidationWarning(Warning):
     """Replacement for jsonschema.error.ValidationError as warning."""
-
-    pass
 
 
 class StationConfig(dict[Any, Any]):
@@ -185,7 +208,7 @@ class Station(Metadatable, DelegateAttributes):
 
     def snapshot_base(
         self,
-        update: bool | None = True,
+        update: bool | SnapshotUpdate | None = "Only_invalid",
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         """
@@ -198,18 +221,18 @@ class Station(Metadatable, DelegateAttributes):
         from the station during the execution of this function.
 
         Args:
-            update: If ``True``, update the state by querying the
-                all the children: f.ex. instruments, parameters,
-                components, etc. If None only update if the state
-                is known to be invalid.
-                If ``False``, just use the latest
-                values in memory and never update the state.
+            update: What to do about the values stored in the snapshot of the
+                children (f.ex. instruments, parameters, components, etc.).
+                ``"All"`` updates every value, ``"Only_invalid"`` (the default)
+                only updates values whose cache is invalid, and ``"Never"``
+                never updates and uses the latest values in memory.
             params_to_skip_update: Not used.
 
         Returns:
             dict: Base snapshot.
 
         """
+        update = normalize_snapshot_update(update)
         snap: dict[str, Any] = {
             "instruments": {},
             "parameters": {},
@@ -261,13 +284,16 @@ class Station(Metadatable, DelegateAttributes):
         """
         try:
             if not (isinstance(component, Parameter) and component.snapshot_exclude):
-                component.snapshot(update=update_snapshot)
+                component.snapshot(update="All" if update_snapshot else "Never")
         except Exception:
-            pass
+            log.exception(
+                "Failed to snapshot component %s when adding it to the station",
+                component,
+            )
         if name is None:
             name = getattr(component, "name", f"component{len(self.components)}")
         namestr = str(name)
-        if namestr in self.components.keys():
+        if namestr in self.components:
             raise RuntimeError(
                 f'Cannot add component "{namestr}", because a '
                 "component of that name is already registered to the station"
@@ -297,7 +323,7 @@ class Station(Metadatable, DelegateAttributes):
             if name in str(e):
                 raise KeyError(f"Component {name} is not part of the station")
             else:
-                raise e
+                raise
 
     def get_component(self, full_name: str) -> MetadatableWithName:
         """
@@ -438,7 +464,7 @@ class Station(Metadatable, DelegateAttributes):
         if len(filenames) == 0:
             self.load_config_file()
         else:
-            paths = list()
+            paths = []
             for filename in filenames:
                 assert isinstance(filename, str)
                 path = self._get_config_file_path(filename)
@@ -476,7 +502,7 @@ class Station(Metadatable, DelegateAttributes):
                 delattr(self, self._added_methods.pop())
 
             # add shortcut methods
-            for instrument_name in self._instrument_config.keys():
+            for instrument_name in self._instrument_config:
                 method_name = f"load_{instrument_name}"
                 if method_name.isidentifier():
                     setattr(
@@ -541,6 +567,41 @@ class Station(Metadatable, DelegateAttributes):
         Creates an :class:`~.Instrument` instance as described by the
         loaded configuration file.
 
+        In addition to the reserved keys (``type``, ``init``, ``address``,
+        ``port``, ``enable_forced_reconnect``, ``parameters`` and
+        ``add_parameters``), an instrument section may contain keys naming a
+        submodule or channel list/tuple of the instrument. The value of such a
+        key is a mapping of parameter names to their settings, in the same form
+        as the ``parameters`` section (e.g. ``initial_value: 27``). Configuring
+        a parameter of a channel list/tuple applies it to every channel in the
+        container. These mappings can be nested to reach submodules of
+        submodules. For example::
+
+            instruments:
+              instr1:
+                type: ...
+                mychannels:
+                  myparam:
+                    initial_value: 27
+
+        sets ``myparam`` to ``27`` on every channel of the ``mychannels``
+        channel list/tuple of ``instr1``. This is equivalent to using a dotted
+        path in the ``parameters`` section::
+
+            instruments:
+              instr1:
+                type: ...
+                parameters:
+                  mychannels.myparam:
+                    initial_value: 27
+
+        The configuration is applied in a well-defined order: the
+        ``parameters`` section first, then the ``add_parameters`` section, and
+        finally the nested submodule/channel list/tuple settings. This means
+        that when the same parameter is configured in more than one of these,
+        the nested submodule/channel settings take precedence (they are applied
+        last).
+
         Args:
             identifier: The identifying string that is looked up in the yaml
                 configuration file, which identifies the instrument to be added.
@@ -562,7 +623,7 @@ class Station(Metadatable, DelegateAttributes):
         self.load_config_files(*self.config_file)
 
         # load from config
-        if identifier not in self._instrument_config.keys():
+        if identifier not in self._instrument_config:
             raise RuntimeError(
                 f"Instrument {identifier} not found in instrument config file"
             )
@@ -644,7 +705,7 @@ class Station(Metadatable, DelegateAttributes):
                 )
 
         def setup_parameter_from_dict(
-            parameter: ParameterBase, options: dict[str, Any]
+            parameter: ParameterBase, options: Mapping[str, Any]
         ) -> None:
             for attr, val in options.items():
                 if attr in PARAMETER_ATTRIBUTES:
@@ -694,6 +755,64 @@ class Station(Metadatable, DelegateAttributes):
             instr.add_parameter(name, param_type, **kwargs)
             setup_parameter_from_dict(instr.parameters[name], options)
 
+        def set_component_parameters_from_dict(
+            component: ChannelOrInstrumentBase,
+            settings: Mapping[str, Any],
+            path: str,
+        ) -> None:
+            """
+            Configure parameters on a submodule or channel list/tuple of an
+            instrument from a nested mapping in the station configuration.
+
+            For every ``name: value`` pair in ``settings`` the attribute
+            ``name`` is looked up on ``component``:
+
+            * if it is a parameter, ``value`` must be a mapping of parameter
+              attributes (the same form as the ``parameters`` section, e.g.
+              ``initial_value: 27``) and is applied to it. Configuring a
+              parameter of a channel list/tuple applies it to every channel in
+              the container;
+            * if it is a submodule or channel list/tuple, ``value`` must be a
+              mapping which is applied recursively.
+            """
+            for name, value in settings.items():
+                child_path = f"{path}.{name}"
+                try:
+                    attribute = getattr(component, name)
+                except AttributeError:
+                    raise RuntimeError(
+                        f"Cannot resolve `{name}` in `{child_path}`: "
+                        f"{component!r} has no parameter, submodule or "
+                        f"channel list/tuple with that name."
+                    ) from None
+                if isinstance(attribute, (InstrumentModule, ChannelTuple)):
+                    if not isinstance(value, Mapping):
+                        raise RuntimeError(  # noqa: TRY004
+                            f"Cannot configure `{child_path}`: `{name}` on "
+                            f"{component!r} is a submodule or channel "
+                            f"list/tuple, so its configuration must be a "
+                            f"mapping of parameter names (or nested "
+                            f"submodules) to their settings, but got a "
+                            f"{type(value).__name__}."
+                        )
+                    set_component_parameters_from_dict(attribute, value, child_path)
+                elif isinstance(attribute, ParameterBase):
+                    if not isinstance(value, Mapping):
+                        raise RuntimeError(  # noqa: TRY004
+                            f"Cannot configure parameter `{child_path}`: its "
+                            f"settings must be a mapping of parameter "
+                            f"attributes (e.g. `initial_value: ...`), but got "
+                            f"a {type(value).__name__}."
+                        )
+                    setup_parameter_from_dict(attribute, value)
+                else:
+                    raise RuntimeError(  # noqa: TRY004
+                        f"Cannot configure `{child_path}`: `{name}` on "
+                        f"{component!r} is neither a parameter nor a "
+                        f"submodule/channel list/tuple but a "
+                        f"{type(attribute).__name__}."
+                    )
+
         def update_monitor() -> None:
             if (
                 self.use_monitor is None and get_config_use_monitor()
@@ -712,8 +831,15 @@ class Station(Metadatable, DelegateAttributes):
                 else resolve_instrument_identifier(instr, ".".join(parts[:-1]))
             )
             if isinstance(local_instr, ChannelTuple):
-                raise RuntimeError("A parameter cannot be added to an ChannelTuple")
+                raise RuntimeError("A parameter cannot be added to an ChannelTuple")  # noqa: TRY004
             add_parameter_from_dict(local_instr, parts[-1], options)
+        component_settings = {
+            name: settings
+            for name, settings in instr_cfg.items()
+            if name not in INSTRUMENT_CONFIG_RESERVED_KEYS
+        }
+        if component_settings:
+            set_component_parameters_from_dict(instr, component_settings, identifier)
         self.add_component(instr, update_snapshot=update_snapshot)
         update_monitor()
         return instr
@@ -721,22 +847,30 @@ class Station(Metadatable, DelegateAttributes):
     @overload
     def load_all_instruments(
         self,
-        only_names: None,
-        only_types: Iterable[str],
+        only_names: None = None,
+        only_types: None = None,
     ) -> tuple[str, ...]: ...
 
     @overload
     def load_all_instruments(
         self,
         only_names: Iterable[str],
-        only_types: None,
+        only_types: None = None,
+    ) -> tuple[str, ...]: ...
+
+    @overload
+    def load_all_instruments(
+        self,
+        only_names: None = None,
+        *,
+        only_types: Iterable[str],
     ) -> tuple[str, ...]: ...
 
     @overload
     def load_all_instruments(
         self,
         only_names: None,
-        only_types: None,
+        only_types: Iterable[str],
     ) -> tuple[str, ...]: ...
 
     @overload
@@ -783,7 +917,7 @@ class Station(Metadatable, DelegateAttributes):
             instrument_names_to_load = set(only_names)
         elif only_types is not None and only_names is None:
             for inst_name, inst_dict in config["instruments"].items():
-                if "driver" in inst_dict.keys():
+                if "driver" in inst_dict:
                     # fallback for old format where type was used
                     # together with the driver key.
                     inst_type = inst_dict["type"]
@@ -826,6 +960,11 @@ def update_config_schema(
                     importlib.import_module(s.name), inspect.isclass
                 )
             except Exception:
+                log.exception(
+                    "Failed to import submodule %s from module %s",
+                    s.name,
+                    module.__name__,
+                )
                 ms = []
             new_members = [
                 f"{instr[1].__module__}.{instr[1].__name__}"
@@ -851,9 +990,10 @@ def update_config_schema(
             json.dump(data, f, indent=4)
 
     additional_instrument_modules = additional_instrument_modules or []
-    instrument_modules: set[ModuleType] = set(
-        [qcodes.instrument_drivers, *additional_instrument_modules]
-    )
+    instrument_modules: set[ModuleType] = {
+        qcodes.instrument_drivers,
+        *additional_instrument_modules,
+    }
 
     instrument_names = tuple(
         itertools.chain.from_iterable(
@@ -905,7 +1045,7 @@ def _merge_yamls(*yamls: str | Path) -> str:
     while len(deq) > 1:
         data2, data1 = deq[0], deq[1]
         for entry in data2[top_key]:
-            if entry not in data1[top_key].keys():
+            if entry not in data1[top_key]:
                 data1[top_key].update({entry: data2[top_key][entry]})
             else:
                 raise KeyError(

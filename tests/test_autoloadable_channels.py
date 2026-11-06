@@ -76,7 +76,7 @@ class MockBackend(MockBackendBase):
         super().__init__()
         self._channel_catalog: list[str] = ["1", "2", "4", "5"]  # Pre-existing
         # channels
-        self._greetings = {chn: "Hello" for chn in self._channel_catalog}
+        self._greetings = dict.fromkeys(self._channel_catalog, "Hello")
 
         self._command_dict = {
             r":INST:CHN(\d):HLO": lambda chn: (
@@ -103,7 +103,7 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
 
     @classmethod
     def _discover_from_instrument(
-        cls, parent: InstrumentBase, **kwargs
+        cls, parent: InstrumentBase, **kwargs: Any
     ) -> list[dict[Any, Any]]:
         """
         New channels need `name` and `channel` keyword arguments.
@@ -131,7 +131,7 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
 
     @classmethod
     def _get_new_instance_kwargs(
-        cls, parent: InstrumentBase | None = None, **kwargs
+        cls, parent: InstrumentBase | None = None, **kwargs: Any
     ) -> dict[Any, Any]:
         """
         Find the smallest channel number not yet occupied. An optional keyword

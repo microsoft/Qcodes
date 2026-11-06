@@ -7,7 +7,7 @@ import re
 from collections import OrderedDict
 from collections.abc import Callable, Iterable
 from functools import partial
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 import numpy as np
 from pyvisa.resources.serial import SerialInstrument
@@ -23,7 +23,7 @@ from qcodes.instrument import (
 from qcodes.validators import Numbers
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.parameters import Parameter
 
@@ -57,12 +57,12 @@ def chain(*functions: Callable[..., Any]) -> Callable[..., Any]:
     return inner
 
 
-class StahlChannel(InstrumentChannel):
+class StahlChannel(InstrumentChannel["Stahl"]):
     acknowledge_reply = chr(6)
 
     def __init__(
         self,
-        parent: VisaInstrument,
+        parent: "Stahl",
         name: str,
         channel_number: int,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
@@ -84,7 +84,7 @@ class StahlChannel(InstrumentChannel):
 
         _FLOATING_POINT_RE = r"[+\-]?(?:[.,]\d+|\d+(?:[.,]\d*)?)(?:[eE][-+]?\d+)?"
 
-        self.voltage: Parameter = self.add_parameter(
+        self.voltage: Parameter[float, Self] = self.add_parameter(
             "voltage",
             get_cmd=f"{self.parent.identifier} U{self._channel_string}",
             get_parser=chain(
@@ -98,7 +98,7 @@ class StahlChannel(InstrumentChannel):
         )
         """Parameter voltage"""
 
-        self.current: Parameter = self.add_parameter(
+        self.current: Parameter[float, Self] = self.add_parameter(
             "current",
             get_cmd=f"{self.parent.identifier} I{self._channel_string}",
             get_parser=chain(
@@ -110,7 +110,7 @@ class StahlChannel(InstrumentChannel):
         )
         """Parameter current"""
 
-        self.is_locked: Parameter = self.add_parameter(
+        self.is_locked: Parameter[bool, Self] = self.add_parameter(
             "is_locked", get_cmd=self._get_lock_status
         )
         """Parameter is_locked"""
@@ -215,9 +215,12 @@ class Stahl(VisaInstrument):
             self.add_submodule(name, channel)
             channels.append(channel)
 
-        self.add_submodule("channel", channels)
+        self.channels: ChannelList[StahlChannel] = self.add_submodule(
+            "channel", channels
+        )
+        """ChannelList of channels"""
 
-        self.temperature: Parameter = self.add_parameter(
+        self.temperature: Parameter[float, Self] = self.add_parameter(
             "temperature",
             get_cmd=f"{self.identifier} TEMP",
             get_parser=chain(re.compile("^TEMP (.*)°C$").findall, float),

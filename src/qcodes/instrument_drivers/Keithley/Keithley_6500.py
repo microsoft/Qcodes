@@ -1,17 +1,14 @@
 from functools import partial
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Self
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
-from qcodes.validators import Bool, Enum, Ints, MultiType, Numbers
+from qcodes.validators import Bool, Enum, Ints, Numbers, PermissiveInts
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.parameters import Parameter
-
-T = TypeVar("T")
 
 
 def _parse_output_string(string_value: str) -> str:
@@ -31,7 +28,7 @@ def _parse_output_string(string_value: str) -> str:
         s = s[1:-1]
 
     conversions = {"mov": "moving", "rep": "repeat"}
-    if s in conversions.keys():
+    if s in conversions:
         s = conversions[s]
     return s
 
@@ -100,7 +97,7 @@ class Keithley6500(VisaInstrument):
             "frequency": "FREQ",
         }
 
-        self.mode: Parameter = self.add_parameter(
+        self.mode: Parameter[str, Self] = self.add_parameter(
             "mode",
             get_cmd="SENS:FUNC?",
             set_cmd="SENS:FUNC '{}'",
@@ -108,7 +105,7 @@ class Keithley6500(VisaInstrument):
         )
         """Parameter mode"""
 
-        self.nplc: Parameter = self.add_parameter(
+        self.nplc: Parameter[float, Self] = self.add_parameter(
             "nplc",
             get_cmd=partial(self._get_mode_param, "NPLC", float),
             set_cmd=partial(self._set_mode_param, "NPLC"),
@@ -118,7 +115,7 @@ class Keithley6500(VisaInstrument):
 
         #  TODO: validator, this one is more difficult since different modes
         #  require different validation ranges.
-        self.range: Parameter = self.add_parameter(
+        self.range: Parameter[float, Self] = self.add_parameter(
             "range",
             get_cmd=partial(self._get_mode_param, "RANG", float),
             set_cmd=partial(self._set_mode_param, "RANG"),
@@ -126,7 +123,7 @@ class Keithley6500(VisaInstrument):
         )
         """Parameter range"""
 
-        self.auto_range_enabled: Parameter = self.add_parameter(
+        self.auto_range_enabled: Parameter[bool, Self] = self.add_parameter(
             "auto_range_enabled",
             get_cmd=partial(self._get_mode_param, "RANG:AUTO", _parse_output_bool),
             set_cmd=partial(self._set_mode_param, "RANG:AUTO"),
@@ -134,16 +131,16 @@ class Keithley6500(VisaInstrument):
         )
         """Parameter auto_range_enabled"""
 
-        self.digits: Parameter = self.add_parameter(
+        self.digits: Parameter[int, Self] = self.add_parameter(
             "digits",
             get_cmd="DISP:VOLT:DC:DIG?",
             get_parser=int,
-            set_cmd="DISP:VOLT:DC:DIG? {}",
+            set_cmd="DISP:VOLT:DC:DIG {}",
             vals=Ints(min_value=4, max_value=7),
         )
         """Parameter digits"""
 
-        self.averaging_type: Parameter = self.add_parameter(
+        self.averaging_type: Parameter[str, Self] = self.add_parameter(
             "averaging_type",
             get_cmd=partial(self._get_mode_param, "AVER:TCON", _parse_output_string),
             set_cmd=partial(self._set_mode_param, "AVER:TCON"),
@@ -151,7 +148,7 @@ class Keithley6500(VisaInstrument):
         )
         """Parameter averaging_type"""
 
-        self.averaging_count: Parameter = self.add_parameter(
+        self.averaging_count: Parameter[int, Self] = self.add_parameter(
             "averaging_count",
             get_cmd=partial(self._get_mode_param, "AVER:COUN", int),
             set_cmd=partial(self._set_mode_param, "AVER:COUN"),
@@ -159,7 +156,7 @@ class Keithley6500(VisaInstrument):
         )
         """Parameter averaging_count"""
 
-        self.averaging_enabled: Parameter = self.add_parameter(
+        self.averaging_enabled: Parameter[bool, Self] = self.add_parameter(
             "averaging_enabled",
             get_cmd=partial(self._get_mode_param, "AVER:STAT", _parse_output_bool),
             set_cmd=partial(self._set_mode_param, "AVER:STAT"),
@@ -168,7 +165,7 @@ class Keithley6500(VisaInstrument):
         """Parameter averaging_enabled"""
 
         # Global parameters
-        self.display_backlight: Parameter = self.add_parameter(
+        self.display_backlight: Parameter[str, Self] = self.add_parameter(
             "display_backlight",
             docstring="Control the brightness of the display "
             "backligt. Off turns the display off and"
@@ -187,17 +184,18 @@ class Keithley6500(VisaInstrument):
         )
         """Control the brightness of the display backligt. Off turns the display off andBlackout also turns off indicators and key lights on the device."""
 
-        self.trigger_count: Parameter = self.add_parameter(
+        self.trigger_count: Parameter[int, Self] = self.add_parameter(
             "trigger_count",
             get_parser=int,
             get_cmd="ROUT:SCAN:COUN:SCAN?",
             set_cmd="ROUT:SCAN:COUN:SCAN {}",
-            vals=MultiType(
-                Ints(min_value=1, max_value=9999),
-                Enum("inf", "default", "minimum", "maximum"),
-            ),
+            # accept whole-number floats such as 10.0 but send them as int
+            vals=PermissiveInts(0, 100_000_000),
+            set_parser=round,
+            docstring="Number of times the scan is repeated. "
+            "Set to 0 to repeat the scan until it is aborted.",
         )
-        """Parameter trigger_count"""
+        """Number of times the scan is repeated. Set to 0 to repeat the scan until it is aborted."""
 
         for trigger in range(1, 5):
             self.add_parameter(
@@ -232,7 +230,7 @@ class Keithley6500(VisaInstrument):
 
         # Control interval between scans; the default value from the instrument is 0,
         # hence 0 is included in the validator's range of this parameter.
-        self.trigger_timer: Parameter = self.add_parameter(
+        self.trigger_timer: Parameter[float, Self] = self.add_parameter(
             "trigger_timer",
             get_parser=float,
             get_cmd="ROUT:SCAN:INT?",
@@ -242,7 +240,7 @@ class Keithley6500(VisaInstrument):
         )
         """Parameter trigger_timer"""
 
-        self.amplitude: Parameter = self.add_parameter(
+        self.amplitude: Parameter[float, Self] = self.add_parameter(
             "amplitude", get_cmd=self._read_next_value, set_cmd=False, unit="a.u."
         )
         """Parameter amplitude"""
@@ -259,7 +257,7 @@ class Keithley6500(VisaInstrument):
     def _read_next_value(self) -> float:
         return float(self.ask("READ?"))
 
-    def _get_mode_param(self, parameter: str, parser: "Callable[[str], T]") -> T:
+    def _get_mode_param[T](self, parameter: str, parser: "Callable[[str], T]") -> T:
         """Reads the current mode of the multimeter and ask for the given parameter.
 
         Args:

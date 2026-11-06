@@ -41,7 +41,7 @@ def test_valid_values() -> None:
     assert a123_val.valid_values == (1, 2, 3)
 
 
-def test_missing_generic_arg_raises_at_runtime():
+def test_missing_generic_arg_raises_at_runtime() -> None:
     wrong_validator = LiteralValidator()
 
     with pytest.raises(

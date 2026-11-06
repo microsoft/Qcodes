@@ -1,6 +1,6 @@
 import ctypes
 from functools import partial
-from typing import TYPE_CHECKING, Generic
+from typing import TYPE_CHECKING, Generic, Self
 
 import qcodes.validators as vals
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs
@@ -15,11 +15,14 @@ from qcodes.parameters.parameter_base import ParameterDataTypeVar
 from . import KtM960xDefs
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 class Measure(
-    MultiParameter[ParameterDataTypeVar, "KeysightM960x"], Generic[ParameterDataTypeVar]
+    MultiParameter[ParameterDataTypeVar, "KeysightM960x"],
+    # Generic can be replaced with PEP 695 type params once Python 3.12
+    # support is dropped (TypeVars use default= which requires PEP 696)
+    Generic[ParameterDataTypeVar],  # noqa: UP046
 ):
     def __init__(self, name: str, instrument: "KeysightM960x") -> None:
         super().__init__(
@@ -37,10 +40,10 @@ class Measure(
 
 
 class KeysightM960x(Instrument):
-    """
+    r"""
     Provide a wrapper for the Keysight KtM960x DAC. This driver provides an
     interface into the IVI-C driver provided by Keysight. The .dll is installed
-    by default into C:\\Program Files\\IVI Foundation\\IVI\\Bin\\KtM960x_64.dll
+    by default into C:\Program Files\IVI Foundation\IVI\Bin\KtM960x_64.dll
     but a different path can be supplied to the constructor
     """
 
@@ -62,7 +65,7 @@ class KeysightM960x(Instrument):
         self._dll_loc = dll_path
         self._dll = ctypes.cdll.LoadLibrary(self._dll_loc)
 
-        self.output: Parameter = self.add_parameter(
+        self.output: Parameter[bool, Self] = self.add_parameter(
             "output",
             label="Source Output Enable",
             get_cmd=partial(self._get_vi_bool, KtM960xDefs.KTM960X_ATTR_OUTPUT_ENABLED),
@@ -71,7 +74,7 @@ class KeysightM960x(Instrument):
         )
         """Parameter output"""
 
-        self.voltage_level: Parameter = self.add_parameter(
+        self.voltage_level: Parameter[float, Self] = self.add_parameter(
             "voltage_level",
             label="Source Voltage Level",
             unit="Volt",
@@ -85,7 +88,7 @@ class KeysightM960x(Instrument):
         )
         """Parameter voltage_level"""
 
-        self.current_range: Parameter = self.add_parameter(
+        self.current_range: Parameter[float, Self] = self.add_parameter(
             "current_range",
             label="Output Current Range",
             unit="Amp",
@@ -99,7 +102,7 @@ class KeysightM960x(Instrument):
         )
         """Parameter current_range"""
 
-        self.measure_current_range: Parameter = self.add_parameter(
+        self.measure_current_range: Parameter[float, Self] = self.add_parameter(
             "measure_current_range",
             label="Current Measurement Range",
             unit="Amp",
@@ -113,7 +116,7 @@ class KeysightM960x(Instrument):
         )
         """Parameter measure_current_range"""
 
-        self.measure_current_time: Parameter = self.add_parameter(
+        self.measure_current_time: Parameter[float, Self] = self.add_parameter(
             "measure_current_time",
             label="Current Measurement Integration Time",
             unit="Seconds",
@@ -225,7 +228,7 @@ class KeysightM960x(Instrument):
     def get_errors(self) -> dict[int, str]:
         error_code = ctypes.c_int(-1)
         error_message = ctypes.create_string_buffer(256)
-        error_dict = dict()
+        error_dict = {}
         while error_code.value != 0:
             status = self._dll.KtM960x_error_query(
                 self._session, ctypes.byref(error_code), error_message
@@ -294,7 +297,3 @@ class KeysightM960x(Instrument):
     def close(self) -> None:
         self._dll.KtM960x_close(self._session)
         super().close()
-
-
-KtM960x = KeysightM960x
-"Alias for backwards compatibility"

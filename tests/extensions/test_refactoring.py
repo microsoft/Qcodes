@@ -148,7 +148,7 @@ def test_transform_add_parameter_multiline_docstring() -> None:
     assert output_lines[-2] == '"""This is the first line This is the second line"""'
 
 
-def test_transform_add_parameter_dedent():
+def test_transform_add_parameter_dedent() -> None:
     code = dedent(
         """
             self.add_parameter(

@@ -9,9 +9,6 @@ from qcodes.instrument_drivers.Keysight.keysightb1500 import constants
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module import (
     MeasurementNotTaken,
 )
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1511B import (
-    KeysightB1511B,
-)
 
 if TYPE_CHECKING:
     from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base import (
@@ -30,8 +27,8 @@ def smu(b1500: "KeysightB1500") -> "KeysightB1511B":
 @pytest.fixture
 def smu_output() -> tuple[int, npt.NDArray[np.float64]]:
     n_samples = 7
-    np.random.seed(1)
-    data_to_return = np.random.rand(n_samples)
+    rng = np.random.default_rng(1)
+    data_to_return = rng.random(n_samples)
     return n_samples, data_to_return
 
 
@@ -54,7 +51,7 @@ def smu_sampling_measurement(
         else:
             return original_ask(cmd)
 
-    smu_sm.root_instrument.ask = Mock(spec_set=smu.root_instrument.ask)  # type: ignore
+    smu_sm.root_instrument.ask = Mock(spec_set=smu.root_instrument.ask)  # pyright: ignore[reportAttributeAccessIssue]
     smu_sm.root_instrument.ask.side_effect = return_predefined_data_on_xe
     return smu_sm, status, channel, type_
 

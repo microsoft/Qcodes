@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-#
 # QCoDeS documentation build configuration file, created by
 # sphinx-quickstart on Thu Jun  2 10:41:37 2016.
 #
@@ -24,6 +22,7 @@ from importlib import reload
 # before qcodes imports pyplot and automatically
 # sets the backend
 import matplotlib
+from intersphinx_registry import get_intersphinx_mapping
 from packaging.version import parse
 
 # setting the metaclass will cause sphinx
@@ -43,7 +42,7 @@ reload(qcodes.instrument.ip)
 reload(qcodes.instrument.visa)
 reload(qcodes.instrument)
 
-import qcodes  # noqa F402
+import qcodes  # noqa: E402
 
 # sphinx 6.2 -> 7.1 produces a warning
 # Debugger warning: It seems that frozen modules are being used, which may
@@ -434,14 +433,9 @@ texinfo_show_urls = "footnote"
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {
-    "pandas": ("https://pandas.pydata.org/pandas-docs/stable", None),
-    "matplotlib": ("https://matplotlib.org/stable", None),
-    "python": ("https://docs.python.org/3", None),
-    "numpy": ("https://numpy.org/doc/stable", None),
-    "pyvisa": ("https://pyvisa.readthedocs.io/en/stable", None),
-    "IPython": ("https://ipython.readthedocs.io/en/stable", None),
-}
+intersphinx_mapping = get_intersphinx_mapping(
+    packages={"ipython", "matplotlib", "numpy", "pandas", "python", "pyvisa", "xarray"}
+)
 
 autoclass_content = "both"
 # classes should include both the

@@ -40,7 +40,7 @@ def test_step_ramp(caplog: LogCaptureFixture) -> None:
 
 
 @given(scale=hst.integers(1, 100), value=hst.floats(min_value=1e-9, max_value=10))
-def test_ramp_scaled(scale, value) -> None:
+def test_ramp_scaled(scale: int, value: float) -> None:
     start_point = 0.0
     p = MemoryParameter(name="p", scale=scale, initial_value=start_point)
     assert p() == start_point
@@ -75,7 +75,7 @@ def test_ramp_scaled(scale, value) -> None:
 
 
 @given(value=hst.floats(min_value=1e-9, max_value=10))
-def test_ramp_parser(value) -> None:
+def test_ramp_parser(value: float) -> None:
     start_point = 0.0
     p = MemoryParameter(
         name="p",
@@ -118,7 +118,7 @@ def test_ramp_parser(value) -> None:
 
 @given(scale=hst.integers(1, 100), value=hst.floats(min_value=1e-9, max_value=10))
 @settings(deadline=None)
-def test_ramp_parsed_scaled(scale, value) -> None:
+def test_ramp_parsed_scaled(scale: int, value: float) -> None:
     start_point = 0.0
     p = MemoryParameter(
         name="p",
@@ -158,11 +158,11 @@ def test_ramp_parsed_scaled(scale, value) -> None:
 def test_stepping_from_invalid_starting_point() -> None:
     the_value = -10
 
-    def set_function(value):
+    def set_function(value: float) -> None:
         nonlocal the_value
         the_value = value
 
-    def get_function():
+    def get_function() -> float:
         return the_value
 
     a = Parameter(

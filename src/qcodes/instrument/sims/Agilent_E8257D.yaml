@@ -1,0 +1,30 @@
+# SIMULATED INSTRUMENT FOR Agilent E8257D
+# Only covers what is needed to create the driver and switch the RF output.
+# The installed options are frequency option 520 (20 GHz) and the step
+# attenuator (1E1).
+spec: "1.0"
+devices:
+  device 1:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "Agilent Technologies, E8257D, US00000000, C.06.28"
+      - q: "DIAG:CPU:INFO:OPT:DET?"
+        r: "1E1,520,UNT"
+
+    properties:
+      output_enabled:
+        default: "0"
+        getter:
+          q: ":OUTP?"
+          r: "{}"
+        setter:
+          q: "OUTP {}"
+
+resources:
+  GPIB::1::INSTR:
+    device: device 1

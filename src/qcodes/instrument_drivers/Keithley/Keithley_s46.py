@@ -4,17 +4,16 @@ Driver for the Keithley S46 RF switch
 
 import re
 from itertools import product
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Self
 
 from qcodes.instrument import (
-    Instrument,
     VisaInstrument,
     VisaInstrumentKWArgs,
 )
 from qcodes.parameters import Parameter, ParamRawDataType
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 class KeithleyS46LockAcquisitionError(Exception):
@@ -56,7 +55,7 @@ class KeithleyS46RelayLock:
             self._locked_by = None
 
 
-class S46Parameter(Parameter):
+class S46Parameter(Parameter[ParamRawDataType, "KeithleyS46"]):
     """
     A parameter class for S46 channels. We do not use the QCoDeS
     InstrumentChannel class because our channel has one state parameter,
@@ -73,7 +72,7 @@ class S46Parameter(Parameter):
     def __init__(
         self,
         name: str,
-        instrument: Instrument | None,
+        instrument: "KeithleyS46",
         channel_number: int,
         lock: KeithleyS46RelayLock,
         **kwargs: Any,
@@ -95,7 +94,6 @@ class S46Parameter(Parameter):
                 ) from e
 
     def _get(self, get_cached: bool) -> str:
-        assert isinstance(self.instrument, KeithleyS46)
         closed_channels = self.instrument.closed_channels.get_latest()
 
         if not get_cached or closed_channels is None:
@@ -153,7 +151,7 @@ class KeithleyS46(VisaInstrument):
     ):
         super().__init__(name, address, **kwargs)
         try:
-            self.closed_channels: Parameter = self.add_parameter(
+            self.closed_channels: Parameter[list[str], Self] = self.add_parameter(
                 "closed_channels",
                 get_cmd=":CLOS?",
                 get_parser=self._get_closed_channels_parser,
@@ -183,11 +181,11 @@ class KeithleyS46(VisaInstrument):
                     )
 
                     self._available_channels.append(alias)
-        except RuntimeError as err:
+        except RuntimeError:
             # If we error on undesirable state we want to make sure
             # we also close the visa connection
             self.close()
-            raise err
+            raise
 
     @staticmethod
     def _get_closed_channels_parser(reply: str) -> list[str]:

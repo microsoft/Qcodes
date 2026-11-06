@@ -6,17 +6,23 @@ performing nested atomic transactions on an SQLite database.
 
 from __future__ import annotations
 
+import atexit
 import logging
 import sqlite3
+import threading
+import weakref
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any
 
 from qcodes.utils import DelayedKeyboardInterrupt
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Generator
 
 log = logging.getLogger(__name__)
+
+_open_connections: weakref.WeakSet[AtomicConnection] = weakref.WeakSet()
+_open_connections_lock = threading.RLock()
 
 
 class AtomicConnection(sqlite3.Connection):
@@ -38,20 +44,67 @@ class AtomicConnection(sqlite3.Connection):
     """
     Path to the database file of the connection.
     """
+    owner_thread_id: int
+    """
+    Identifier (as returned by :func:`threading.get_ident`) of the thread
+    that created the connection.
+    """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         self.path_to_dbfile = path_to_dbfile(self)
+        self.owner_thread_id = threading.get_ident()
+        with _open_connections_lock:
+            _open_connections.add(self)
+
+    def close(self) -> None:
+        super().close()
+        with _open_connections_lock:
+            _open_connections.discard(self)
+
+
+def get_open_connections() -> tuple[AtomicConnection, ...]:
+    """
+    Return all :class:`AtomicConnection` objects that have been opened in
+    this process and have not yet been closed or garbage collected.
+    """
+    with _open_connections_lock:
+        return tuple(_open_connections)
+
+
+def close_all_connections() -> None:
+    """
+    Close all :class:`AtomicConnection` objects that are currently open and
+    were created by the calling thread, e.g. to release the file handles on
+    database files. Connections owned by other threads are left open, since
+    sqlite connections are by default bound to the thread that created them.
+
+    Any uncommitted changes on these connections are discarded, and objects
+    holding one of them (such as a ``DataSet``) can no longer use it to
+    access the database.
+
+    This function is registered to run automatically when the Python
+    interpreter exits.
+    """
+    thread_id = threading.get_ident()
+    for conn in get_open_connections():
+        if conn.owner_thread_id == thread_id:
+            conn.close()
+
+
+atexit.register(close_all_connections)
 
 
 @contextmanager
-def atomic(conn: AtomicConnection) -> Iterator[AtomicConnection]:
+def atomic(conn: AtomicConnection) -> Generator[AtomicConnection, None, None]:
     """
     Guard a series of transactions as atomic.
 
     If one transaction fails, all the previous transactions are rolled back
     and no more transactions are performed.
+
+    A KeyboardInterrupt rolls the transaction back and is re-raised.
 
     NB: 'BEGIN' is by default only inserted before INSERT/UPDATE/DELETE/REPLACE
     but we want to guard any transaction that modifies the database (e.g. also
@@ -63,7 +116,7 @@ def atomic(conn: AtomicConnection) -> Iterator[AtomicConnection]:
     """
     with DelayedKeyboardInterrupt(context={"reason": "sqlite atomic operation"}):
         if not isinstance(conn, AtomicConnection):
-            raise ValueError(
+            raise ValueError(  # noqa: TRY004
                 "atomic context manager only accepts "
                 "AtomicConnection database connection objects."
             )
@@ -87,6 +140,10 @@ def atomic(conn: AtomicConnection) -> Iterator[AtomicConnection]:
                 conn.isolation_level = None
                 conn.cursor().execute("BEGIN")
             yield conn
+        except KeyboardInterrupt:
+            conn.rollback()
+            log.exception("Rolling back due to unhandled exception")
+            raise
         except Exception as e:
             conn.rollback()
             log.exception("Rolling back due to unhandled exception")

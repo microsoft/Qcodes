@@ -1,13 +1,23 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 import pytest
-from numpy.random import rand
 
 import qcodes.validators as vals
 from qcodes.parameters import Parameter, ParameterWithSetpoints, expand_setpoints_helper
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+_rng = np.random.default_rng()
+
+type SetpointsParameters = tuple[
+    Parameter, Parameter, Parameter, Parameter, Parameter, Parameter
+]
+
 
 @pytest.fixture()
-def parameters():
+def parameters() -> "Generator[SetpointsParameters, None, None]":
     n_points_1 = Parameter("n_points_1", set_cmd=None, vals=vals.Ints())
     n_points_2 = Parameter("n_points_2", set_cmd=None, vals=vals.Ints())
     n_points_3 = Parameter("n_points_3", set_cmd=None, vals=vals.Ints())
@@ -48,18 +58,18 @@ def test_validation_shapes() -> None:
 
     setpoints_1 = Parameter(
         "setpoints_1",
-        get_cmd=lambda: rand(n_points_1()),
+        get_cmd=lambda: _rng.random(n_points_1()),
         vals=vals.Arrays(shape=(n_points_1,)),
     )
     setpoints_2 = Parameter(
         "setpoints_2",
-        get_cmd=lambda: rand(n_points_2()),
+        get_cmd=lambda: _rng.random(n_points_2()),
         vals=vals.Arrays(shape=(n_points_2,)),
     )
 
     param_with_setpoints_1 = ParameterWithSetpoints(
         "param_1",
-        get_cmd=lambda: rand(n_points_1()),
+        get_cmd=lambda: _rng.random(n_points_1()),
         setpoints=(setpoints_1,),
         vals=vals.Arrays(shape=(n_points_1,)),
     )
@@ -75,7 +85,7 @@ def test_validation_shapes() -> None:
 
     param_with_setpoints_2 = ParameterWithSetpoints(
         "param_2",
-        get_cmd=lambda: rand(n_points_1(), n_points_2()),
+        get_cmd=lambda: _rng.random((n_points_1(), n_points_2())),
         vals=vals.Arrays(shape=(n_points_1, n_points_2)),
     )
 
@@ -101,14 +111,14 @@ def test_setpoints_non_parameter_raises() -> None:
     with pytest.raises(TypeError, match=err_msg):
         param_with_setpoints_1 = ParameterWithSetpoints(
             "param_1",
-            get_cmd=lambda: rand(n_points_1()),
+            get_cmd=lambda: _rng.random(n_points_1()),
             setpoints=(lambda x: x,),  # type: ignore[arg-type]
             vals=vals.Arrays(shape=(n_points_1,)),
         )
 
     param_with_setpoints_1 = ParameterWithSetpoints(
         "param_1",
-        get_cmd=lambda: rand(n_points_1()),
+        get_cmd=lambda: _rng.random(n_points_1()),
         vals=vals.Arrays(shape=(n_points_1,)),
     )
 
@@ -129,13 +139,13 @@ def test_validation_inconsistent_shape() -> None:
 
     setpoints_1 = Parameter(
         "setpoints_1",
-        get_cmd=lambda: rand(n_points_1()),
+        get_cmd=lambda: _rng.random(n_points_1()),
         vals=vals.Arrays(shape=(n_points_1,)),
     )
 
     param_with_diff_length = ParameterWithSetpoints(
         "param_1",
-        get_cmd=lambda: rand(n_points_2()),
+        get_cmd=lambda: _rng.random(n_points_2()),
         setpoints=(setpoints_1,),
         vals=vals.Arrays(shape=(n_points_2,)),
     )
@@ -166,13 +176,13 @@ def test_validation_wrong_validator() -> None:
     n_points_2.set(20)
     setpoints_1 = Parameter(
         "setpoints_1",
-        get_cmd=lambda: rand(n_points_1()),
+        get_cmd=lambda: _rng.random(n_points_1()),
         vals=vals.Arrays(shape=(n_points_1,)),
     )
     # output is not consistent with validator
     param_with_wrong_validator = ParameterWithSetpoints(
         "param_2",
-        get_cmd=lambda: rand(n_points_2()),
+        get_cmd=lambda: _rng.random(n_points_2()),
         setpoints=(setpoints_1,),
         vals=vals.Arrays(shape=(n_points_1,)),
     )
@@ -199,7 +209,7 @@ def test_validation_no_validator() -> None:
     n_points_1.set(10)
     setpoints_1 = Parameter(
         "setpoints_1",
-        get_cmd=lambda: rand(n_points_1()),
+        get_cmd=lambda: _rng.random(n_points_1()),
         vals=vals.Arrays(shape=(n_points_1,)),
     )
     # output does not have a validator
@@ -211,7 +221,9 @@ def test_validation_no_validator() -> None:
         r"<class 'NoneType'>",
     ):
         ParameterWithSetpoints(
-            "param_3", get_cmd=lambda: rand(n_points_1()), setpoints=(setpoints_1,)
+            "param_3",
+            get_cmd=lambda: _rng.random(n_points_1()),
+            setpoints=(setpoints_1,),
         )
 
 
@@ -224,10 +236,10 @@ def test_validation_sp_no_validator() -> None:
 
     n_points_2.set(20)
     # setpoints do not have a validator
-    setpoints_2 = Parameter("setpoints_2", get_cmd=lambda: rand(n_points_2()))
+    setpoints_2 = Parameter("setpoints_2", get_cmd=lambda: _rng.random(n_points_2()))
     param_sp_without_validator = ParameterWithSetpoints(
         "param_4",
-        get_cmd=lambda: rand(n_points_2()),
+        get_cmd=lambda: _rng.random(n_points_2()),
         setpoints=(setpoints_2,),
         vals=vals.Arrays(shape=(n_points_2,)),
     )
@@ -252,7 +264,7 @@ def test_validation_without_shape() -> None:
     n_points_1.set(10)
     setpoints_1 = Parameter(
         "setpoints_1",
-        get_cmd=lambda: rand(n_points_1()),
+        get_cmd=lambda: _rng.random(n_points_1()),
         vals=vals.Arrays(shape=(n_points_1,)),
     )
     with pytest.raises(
@@ -263,7 +275,7 @@ def test_validation_without_shape() -> None:
     ):
         ParameterWithSetpoints(
             "param_5",
-            get_cmd=lambda: rand(n_points_1()),
+            get_cmd=lambda: _rng.random(n_points_1()),
             setpoints=(setpoints_1,),
             vals=vals.Arrays(),
         )
@@ -280,11 +292,11 @@ def test_validation_without_sp_shape() -> None:
     n_points_2.set(20)
 
     setpoints_1 = Parameter(
-        "setpoints_1", get_cmd=lambda: rand(n_points_1()), vals=vals.Arrays()
+        "setpoints_1", get_cmd=lambda: _rng.random(n_points_1()), vals=vals.Arrays()
     )
     param_sp_without_shape = ParameterWithSetpoints(
         "param_6",
-        get_cmd=lambda: rand(n_points_1()),
+        get_cmd=lambda: _rng.random(n_points_1()),
         setpoints=(setpoints_1,),
         vals=vals.Arrays(shape=(n_points_1,)),
     )
@@ -312,12 +324,12 @@ def test_validation_one_dim_missing() -> None:
     n_points_2.set(20)
     setpoints_1 = Parameter(
         "setpoints_1",
-        get_cmd=lambda: rand(n_points_1()),
+        get_cmd=lambda: _rng.random(n_points_1()),
         vals=vals.Arrays(shape=(n_points_1, n_points_2)),
     )
     param_sp_without_shape = ParameterWithSetpoints(
         "param_6",
-        get_cmd=lambda: rand(n_points_1()),
+        get_cmd=lambda: _rng.random(n_points_1()),
         setpoints=(setpoints_1,),
         vals=vals.Arrays(shape=(n_points_1, None)),  # type: ignore[arg-type]
     )
@@ -345,12 +357,12 @@ def test_validation_one_sp_dim_missing() -> None:
     n_points_2.set(20)
     setpoints_1 = Parameter(
         "setpoints_1",
-        get_cmd=lambda: rand(n_points_1()),
+        get_cmd=lambda: _rng.random(n_points_1()),
         vals=vals.Arrays(shape=(n_points_1, None)),  # type: ignore[arg-type]
     )
     param_sp_without_shape = ParameterWithSetpoints(
         "param_6",
-        get_cmd=lambda: rand(n_points_1()),
+        get_cmd=lambda: _rng.random(n_points_1()),
         setpoints=(setpoints_1,),
         vals=vals.Arrays(shape=(n_points_1, n_points_2)),
     )
@@ -367,7 +379,7 @@ def test_validation_one_sp_dim_missing() -> None:
         param_sp_without_shape.validate(param_sp_without_shape.get())
 
 
-def test_expand_setpoints_1c(parameters) -> None:
+def test_expand_setpoints_1c(parameters: SetpointsParameters) -> None:
     """
     Test that the setpoints expander helper function works correctly
     """
@@ -378,7 +390,7 @@ def test_expand_setpoints_1c(parameters) -> None:
 
     param_with_setpoints_1 = ParameterWithSetpoints(
         "param_1",
-        get_cmd=lambda: rand(n_points_1()),
+        get_cmd=lambda: _rng.random(n_points_1()),
         setpoints=(setpoints_1,),
         vals=vals.Arrays(shape=(n_points_1,)),
     )
@@ -389,14 +401,14 @@ def test_expand_setpoints_1c(parameters) -> None:
     assert len(data[0][1]) == len(data[1][1])
 
 
-def test_expand_setpoints_2d(parameters) -> None:
+def test_expand_setpoints_2d(parameters: SetpointsParameters) -> None:
     n_points_1, n_points_2, _n_points_3, setpoints_1, setpoints_2, _setpoints_3 = (
         parameters
     )
 
     param_with_setpoints_2 = ParameterWithSetpoints(
         "param_2",
-        get_cmd=lambda: rand(n_points_1(), n_points_2()),
+        get_cmd=lambda: _rng.random((n_points_1(), n_points_2())),
         vals=vals.Arrays(shape=(n_points_1, n_points_2)),
     )
     param_with_setpoints_2.setpoints = (setpoints_1, setpoints_2)
@@ -417,14 +429,14 @@ def test_expand_setpoints_2d(parameters) -> None:
         np.testing.assert_array_equal(sp2[i, :], np.arange(sp1.shape[1]))
 
 
-def test_expand_setpoints_3d(parameters) -> None:
+def test_expand_setpoints_3d(parameters: SetpointsParameters) -> None:
     n_points_1, n_points_2, n_points_3, setpoints_1, setpoints_2, setpoints_3 = (
         parameters
     )
 
     param_with_setpoints_3 = ParameterWithSetpoints(
         "param_2",
-        get_cmd=lambda: rand(n_points_1(), n_points_2(), n_points_3()),
+        get_cmd=lambda: _rng.random((n_points_1(), n_points_2(), n_points_3())),
         vals=vals.Arrays(shape=(n_points_1, n_points_2, n_points_3)),
     )
     param_with_setpoints_3.setpoints = (setpoints_1, setpoints_2, setpoints_3)
@@ -447,3 +459,29 @@ def test_expand_setpoints_3d(parameters) -> None:
     for i in range(sp3.shape[0]):
         for j in range(sp3.shape[1]):
             np.testing.assert_array_equal(sp3[i, j, :], np.arange(sp3.shape[2]))
+
+
+def test_validate_consistent_shape_without_arrays_validator() -> None:
+    """The parameter itself must keep an Arrays validator for its shape to be
+    validated against the shape of its setpoints."""
+    n_points = Parameter("n_points", set_cmd=None, vals=vals.Ints())
+    n_points.set(10)
+    setpoints = Parameter(
+        "setpoints",
+        get_cmd=lambda: _rng.random(n_points()),
+        vals=vals.Arrays(shape=(n_points,)),
+    )
+    param = ParameterWithSetpoints(
+        "param",
+        get_cmd=lambda: _rng.random(n_points()),
+        setpoints=(setpoints,),
+        vals=vals.Arrays(shape=(n_points,)),
+    )
+    param.vals = vals.Ints()
+
+    with pytest.raises(
+        ValueError,
+        match=r"Can only validate shapes for parameters with Arrays validator. "
+        r"param does not have an Arrays validator.",
+    ):
+        param.validate_consistent_shape()

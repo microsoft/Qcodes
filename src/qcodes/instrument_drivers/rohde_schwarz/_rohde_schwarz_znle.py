@@ -7,16 +7,12 @@ class RohdeSchwarzZNLE3(RohdeSchwarzZNBBase):
 
     """
 
-    pass
-
 
 class RohdeSchwarzZNLE4(RohdeSchwarzZNBBase):
     """
     QCoDeS driver for Rohde & Schwarz ZNLE4
 
     """
-
-    pass
 
 
 class RohdeSchwarzZNLE6(RohdeSchwarzZNBBase):
@@ -25,8 +21,6 @@ class RohdeSchwarzZNLE6(RohdeSchwarzZNBBase):
 
     """
 
-    pass
-
 
 class RohdeSchwarzZNLE14(RohdeSchwarzZNBBase):
     """
@@ -34,13 +28,9 @@ class RohdeSchwarzZNLE14(RohdeSchwarzZNBBase):
 
     """
 
-    pass
-
 
 class RohdeSchwarzZNLE18(RohdeSchwarzZNBBase):
     """
     QCoDeS driver for Rohde & Schwarz ZNLE18
 
     """
-
-    pass

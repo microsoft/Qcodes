@@ -8,7 +8,7 @@ from .conftest import blank_instruments, named_instrument
 
 
 class SimpleMultiParam(MultiParameter):
-    def __init__(self, return_val: Any, *args: Any, **kwargs: Any):
+    def __init__(self, return_val: Any, *args: Any, **kwargs: Any) -> None:
         self._return_val = return_val
         self._get_count = 0
         super().__init__(*args, **kwargs)
@@ -28,7 +28,9 @@ def test_default_attributes() -> None:
     name = "mixed_dimensions"
     names = ("0D", "1D", "2D")
     shapes = ((), (3,), (2, 2))
-    p = SimpleMultiParam([0, [1, 2, 3], [[4, 5], [6, 7]]], name, names, shapes)
+    p = SimpleMultiParam(
+        [0, [1, 2, 3], [[4, 5], [6, 7]]], name, names=names, shapes=shapes
+    )
 
     assert p.name == name
     assert p.names == names
@@ -43,7 +45,7 @@ def test_default_attributes() -> None:
     assert str(p) == name
 
     assert p._get_count == 0
-    snap = p.snapshot(update=True)
+    snap = p.snapshot(update="All")
     assert p._get_count == 0
     snap_expected = {
         "name": name,
@@ -65,6 +67,31 @@ def test_default_attributes() -> None:
     assert not hasattr(p, "unit")
 
 
+def test_snapshot_value_default_false() -> None:
+    """snapshot_value defaults to False for MultiParameter."""
+    p = SimpleMultiParam([0], "mp", names=("x",), shapes=((),))
+    assert p._snapshot_value is False
+    snap = p.snapshot(update="All")
+    assert "value" not in snap
+    assert "raw_value" not in snap
+
+
+def test_snapshot_value_explicit_true() -> None:
+    """snapshot_value=True includes value in snapshot for MultiParameter."""
+    p = SimpleMultiParam([0], "mp", names=("x",), shapes=((),), snapshot_value=True)
+    assert p._snapshot_value is True
+    snap = p.snapshot(update="All")
+    assert snap["value"] == [0]
+
+
+def test_snapshot_value_explicit_false() -> None:
+    """snapshot_value=False excludes value from snapshot for MultiParameter."""
+    p = SimpleMultiParam([0], "mp", names=("x",), shapes=((),), snapshot_value=False)
+    assert p._snapshot_value is False
+    snap = p.snapshot(update="All")
+    assert "value" not in snap
+
+
 def test_explicit_attributes() -> None:
     name = "mixed_dimensions"
     names = ("0D", "1D", "2D")
@@ -79,8 +106,8 @@ def test_explicit_attributes() -> None:
     p = SimpleMultiParam(
         [0, [1, 2, 3], [[4, 5], [6, 7]]],
         name,
-        names,
-        shapes,
+        names=names,
+        shapes=shapes,
         labels=labels,
         units=units,
         setpoints=setpoints,
@@ -105,7 +132,7 @@ def test_explicit_attributes() -> None:
     assert p.setpoint_labels == setpoint_labels
 
     assert p._get_count == 0
-    snap = p.snapshot(update=True)
+    snap = p.snapshot(update="All")
     assert p._get_count == 1
     snap_expected = {
         "name": name,
@@ -132,10 +159,10 @@ def test_has_set_get() -> None:
     names = ["0D", "1D", "2D"]
     shapes = ((), (3,), (2, 2))
     with pytest.raises(AttributeError):
-        MultiParameter(name, names, shapes)
+        MultiParameter(name, names=names, shapes=shapes)
 
     original_value = [0, [1, 2, 3], [[4, 5], [6, 7]]]
-    p = SimpleMultiParam(original_value, name, names, shapes)
+    p = SimpleMultiParam(original_value, name, names=names, shapes=shapes)
 
     assert hasattr(p, "get")
     assert p.gettable
@@ -153,7 +180,9 @@ def test_has_set_get() -> None:
 
     # We allow creation of Multiparameters with set to support
     # instruments that already make use of them.
-    p = SettableMulti([0, [1, 2, 3], [[4, 5], [6, 7]]], name, names, shapes)
+    p = SettableMulti(
+        [0, [1, 2, 3], [[4, 5], [6, 7]]], name, names=names, shapes=shapes
+    )
     assert hasattr(p, "get")
     assert p.gettable
     assert hasattr(p, "set")
@@ -178,8 +207,8 @@ def test_full_name_s() -> None:
         p = SimpleMultiParam(
             [0, [1, 2, 3], [[4, 5], [6, 7]]],
             name,
-            names,
-            shapes,
+            names=names,
+            shapes=shapes,
             setpoint_names=setpoint_names,
         )
         p._instrument = instrument  # type: ignore[assignment]
@@ -195,8 +224,8 @@ def test_full_name_s() -> None:
     p = SimpleMultiParam(
         [0, [1, 2, 3], [[4, 5], [6, 7]]],
         name,
-        names,
-        shapes,
+        names=names,
+        shapes=shapes,
         setpoint_names=setpoint_names,
     )
     p._instrument = named_instrument  # type: ignore[assignment]

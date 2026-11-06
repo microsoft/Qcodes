@@ -18,7 +18,7 @@ from inspect import signature
 from itertools import chain
 from numbers import Number
 from time import perf_counter, perf_counter_ns
-from typing import TYPE_CHECKING, Any, TypeAlias, TypeVar, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -74,8 +74,8 @@ SubscriberType = tuple[
     Callable[..., Any], MutableSequence[Any] | MutableMapping[Any, Any]
 ]
 
-ParameterResultType: TypeAlias = tuple[ParameterBase, ValuesType]
-DatasetResultDict: TypeAlias = dict[ParamSpecBase, npt.NDArray]
+type ParameterResultType = tuple[ParameterBase, ValuesType]
+type DatasetResultDict = dict[ParamSpecBase, npt.NDArray]
 
 
 class ParameterTypeError(Exception):
@@ -539,7 +539,7 @@ class Runner:
         experiment: Experiment | None = None,
         station: Station | None = None,
         write_period: float | None = None,
-        interdeps: InterDependencies_ = InterDependencies_(),
+        interdeps: InterDependencies_ | None = None,
         name: str = "",
         subscribers: Sequence[SubscriberType] | None = None,
         parent_datasets: Sequence[Mapping[Any, Any]] = (),
@@ -554,6 +554,8 @@ class Runner:
         if in_memory_cache is None:
             in_memory_cache = qc.config.dataset.in_memory_cache
             in_memory_cache = cast("bool", in_memory_cache)
+        if interdeps is None:
+            interdeps = InterDependencies_()
 
         self._dataset_class = dataset_class
         self.write_period = self._calculate_write_period(
@@ -571,7 +573,7 @@ class Runner:
         self.station = station
         self._interdependencies = interdeps
         self._shapes: Shapes | None = shapes
-        self.name = name if name else "results"
+        self.name = name or "results"
         self._parent_datasets = parent_datasets
         self._extra_log_info = extra_log_info
         self._write_in_background = write_in_background
@@ -663,17 +665,17 @@ class Runner:
             station = self.station
 
         if station is not None:
-            snapshot = {"station": station.snapshot()}
+            snapshot = {"station": station.snapshot(update="Only_invalid")}
         else:
             snapshot = {}
         if self._registered_parameters is not None:
             parameter_snapshot = {
-                param.short_name: param.snapshot()
+                param.short_name: param.snapshot(update="Never")
                 for param in self._registered_parameters
             }
             parameter_snapshot.update(
                 {
-                    param.register_name: param.snapshot()
+                    param.register_name: param.snapshot(update="Never")
                     for param in self._registered_parameters
                 }
             )
@@ -804,9 +806,6 @@ class Runner:
             self._exit_stack.close()
 
 
-T = TypeVar("T", bound="Measurement")
-
-
 class Measurement:
     """
     Measurement procedure container. Note that multiple measurement
@@ -855,7 +854,7 @@ class Measurement:
     @write_period.setter
     def write_period(self, wp: float) -> None:
         if not isinstance(wp, Number):
-            raise ValueError("The write period must be a number (of seconds).")
+            raise ValueError("The write period must be a number (of seconds).")  # noqa: TRY004
         wp_float = float(wp)
         if wp_float < 1e-3:
             raise ValueError("The write period must be at least 1 ms.")
@@ -1125,9 +1124,9 @@ class Measurement:
         return_paramtype: str
         if paramtype is not None:  # override with argument
             return_paramtype = paramtype
-        elif isinstance(parameter.vals, vals.Arrays):
-            return_paramtype = "array"
-        elif isinstance(parameter, ArrayParameter):
+        elif isinstance(parameter.vals, vals.Arrays) or isinstance(
+            parameter, ArrayParameter
+        ):
             return_paramtype = "array"
         elif isinstance(parameter.vals, vals.Strings):
             return_paramtype = "text"
@@ -1268,7 +1267,7 @@ class Measurement:
         my_setpoints = list(setpoints) if setpoints else []
         for sp in parameter.setpoints:
             if not isinstance(sp, Parameter):
-                raise RuntimeError(
+                raise RuntimeError(  # noqa: TRY004
                     "The setpoints of a ParameterWithSetpoints must be a Parameter"
                 )
             spname = sp.register_name
@@ -1401,7 +1400,7 @@ class Measurement:
         elif isinstance(parameter, str):
             param_name = parameter
         else:
-            raise ValueError(
+            raise ValueError(  # noqa: TRY004
                 "Wrong input type. Must be a QCoDeS parameter or"
                 " the name (a string) of a parameter."
             )

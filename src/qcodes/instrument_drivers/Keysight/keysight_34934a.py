@@ -1,6 +1,5 @@
-import logging
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes import validators
 
@@ -8,15 +7,14 @@ from .keysight_34980a_submodules import Keysight34980ASwitchMatrixSubModule
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.instrument import (
         InstrumentBaseKWArgs,
-        InstrumentChannel,
-        VisaInstrument,
     )
     from qcodes.parameters import Parameter
+
+    from .keysight_34980a import Keysight34980A
 
 
 class Keysight34934A(Keysight34980ASwitchMatrixSubModule):
@@ -32,14 +30,14 @@ class Keysight34934A(Keysight34980ASwitchMatrixSubModule):
 
     def __init__(
         self,
-        parent: "VisaInstrument | InstrumentChannel",
+        parent: "Keysight34980A",
         name: str,
         slot: int,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
         super().__init__(parent, name, slot, **kwargs)
 
-        self.protection_mode: Parameter = self.add_parameter(
+        self.protection_mode: Parameter[str, Self] = self.add_parameter(
             name="protection_mode",
             get_cmd=self._get_relay_protection_mode,
             set_cmd=self._set_relay_protection_mode,
@@ -65,7 +63,7 @@ class Keysight34934A(Keysight34980ASwitchMatrixSubModule):
         layout = self.ask(f"SYSTEM:MODule:TERMinal:TYPE? {self.slot}")
         self._is_locked = layout == "NONE"
         if self._is_locked:
-            logging.warning(
+            self.log.warning(
                 f"For slot {slot}, no configuration module"
                 f"connected, or safety interlock jumper removed. "
                 "Making any connection is not allowed"
@@ -80,7 +78,7 @@ class Keysight34934A(Keysight34980ASwitchMatrixSubModule):
         connections. There will be no effect when try to connect any channels.
         """
         if self._is_locked:
-            logging.warning(
+            self.log.warning(
                 "Warning: no configuration module connected, "
                 "or safety interlock enabled. "
                 "Making any connection is not allowed"

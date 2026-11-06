@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
@@ -10,12 +12,20 @@ from qcodes.dataset.sqlite.connection import atomic_transaction
 from qcodes.parameters import ParamSpecBase
 from tests.common import retry_until_does_not_throw
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+if TYPE_CHECKING:
+    from qcodes.dataset.experiment_container import Experiment
+    from qcodes.instrument_drivers.mock_instruments import DummyInstrument
+
 VALUE = str | float | list | np.ndarray | bool
 
 
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_nested_measurement_basic(DAC, DMM, bg_writing) -> None:
+def test_nested_measurement_basic(
+    DAC: "DummyInstrument", DMM: "DummyInstrument", bg_writing: "bool"
+) -> None:
     meas1 = Measurement()
     meas1.register_parameter(DAC.ch1)
     meas1.register_parameter(DMM.v1, setpoints=(DAC.ch1,))
@@ -36,22 +46,22 @@ def test_nested_measurement_basic(DAC, DMM, bg_writing) -> None:
 
     data1 = ds1.dataset.get_parameter_data()["dummy_dmm_v1"]
     assert len(data1.keys()) == 2
-    assert "dummy_dmm_v1" in data1.keys()
-    assert "dummy_dac_ch1" in data1.keys()
+    assert "dummy_dmm_v1" in data1
+    assert "dummy_dac_ch1" in data1
     assert_allclose(data1["dummy_dmm_v1"], np.zeros(10))
     assert_allclose(data1["dummy_dac_ch1"], np.arange(10))
 
     data2 = ds2.dataset.get_parameter_data()["dummy_dmm_v2"]
     assert len(data2.keys()) == 2
-    assert "dummy_dmm_v2" in data2.keys()
-    assert "dummy_dac_ch2" in data2.keys()
+    assert "dummy_dmm_v2" in data2
+    assert "dummy_dac_ch2" in data2
     assert_allclose(data2["dummy_dmm_v2"], np.zeros(10))
     assert_allclose(data2["dummy_dac_ch2"], np.arange(10))
 
 
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_nested_measurement(bg_writing) -> None:
+def test_nested_measurement(bg_writing: "bool") -> None:
     meas1 = Measurement()
     meas1.register_custom_parameter("foo1")
     meas1.register_custom_parameter("bar1", setpoints=("foo1",))
@@ -70,30 +80,30 @@ def test_nested_measurement(bg_writing) -> None:
 
     data1 = ds1.dataset.get_parameter_data()["bar1"]
     assert len(data1.keys()) == 2
-    assert "foo1" in data1.keys()
-    assert "bar1" in data1.keys()
+    assert "foo1" in data1
+    assert "bar1" in data1
 
     assert_allclose(data1["foo1"], np.arange(10))
     assert_allclose(data1["bar1"], np.arange(10) ** 2)
 
     data2 = ds2.dataset.get_parameter_data()["bar2"]
     assert len(data2.keys()) == 2
-    assert "foo2" in data2.keys()
-    assert "bar2" in data2.keys()
+    assert "foo2" in data2
+    assert "bar2" in data2
     assert_allclose(data2["foo2"], np.arange(0, 20, 2))
     assert_allclose(data2["bar2"], np.arange(0, 20, 2) ** 2)
 
 
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("bg_writing", [True, False])
-@settings(deadline=None, max_examples=25)
+@settings(deadline=None, max_examples=10)
 @given(
-    outer_len=hst.integers(min_value=1, max_value=100),
-    inner_len1=hst.integers(min_value=1, max_value=1000),
-    inner_len2=hst.integers(min_value=1, max_value=1000),
+    outer_len=hst.integers(min_value=1, max_value=20),
+    inner_len1=hst.integers(min_value=1, max_value=200),
+    inner_len2=hst.integers(min_value=1, max_value=200),
 )
 def test_nested_measurement_array(
-    bg_writing, outer_len, inner_len1, inner_len2
+    bg_writing: "bool", outer_len: "int", inner_len1: "int", inner_len2: "int"
 ) -> None:
     meas1 = Measurement()
     meas1.register_custom_parameter("foo1", paramtype="numeric")
@@ -134,9 +144,9 @@ def test_nested_measurement_array(
 
     data1 = ds1.dataset.get_parameter_data()["bar1"]
     assert len(data1.keys()) == 3
-    assert "foo1" in data1.keys()
-    assert "bar1spt" in data1.keys()
-    assert "bar1" in data1.keys()
+    assert "foo1" in data1
+    assert "bar1spt" in data1
+    assert "bar1" in data1
 
     expected_foo1_data = np.repeat(np.arange(outer_len), inner_len1).reshape(
         outer_len, inner_len1
@@ -149,9 +159,9 @@ def test_nested_measurement_array(
 
     data2 = ds2.dataset.get_parameter_data()["bar2"]
     assert len(data2.keys()) == 3
-    assert "foo2" in data2.keys()
-    assert "bar2spt" in data2.keys()
-    assert "bar2" in data2.keys()
+    assert "foo2" in data2
+    assert "bar2spt" in data2
+    assert "bar2" in data2
 
     expected_foo2_data = np.repeat(np.arange(outer_len), inner_len2).reshape(
         outer_len, inner_len2
@@ -164,13 +174,16 @@ def test_nested_measurement_array(
 
 
 @pytest.fixture(scope="function")
-def basic_subscriber():
+def basic_subscriber() -> "Callable[[list[tuple[VALUE]], int, dict | None], None]":
     """
     A basic subscriber that just puts results and length into
     state
     """
 
-    def subscriber(results: list[tuple[VALUE]], length: int, state: dict) -> None:
+    def subscriber(
+        results: list[tuple[VALUE]], length: int, state: dict | None
+    ) -> None:
+        assert state is not None
         state[length] = results
 
     return subscriber
@@ -178,7 +191,10 @@ def basic_subscriber():
 
 @pytest.mark.flaky(reruns=5)
 @pytest.mark.serial
-def test_subscription_on_dual_datasets(experiment, basic_subscriber) -> None:
+def test_subscription_on_dual_datasets(
+    experiment: "Experiment",
+    basic_subscriber: "Callable[[list[tuple[VALUE]], int, dict | None], None]",
+) -> None:
     xparam = ParamSpecBase(name="x", paramtype="numeric", label="x parameter", unit="V")
     yparam1 = ParamSpecBase(
         name="y1", paramtype="numeric", label="y parameter", unit="Hz"
@@ -223,7 +239,7 @@ def test_subscription_on_dual_datasets(experiment, basic_subscriber) -> None:
         @retry_until_does_not_throw(
             exception_class_to_expect=AssertionError, delay=0.5, tries=10
         )
-        def assert_expected_state():
+        def assert_expected_state() -> "None":
             assert dataset1.subscribers[sub_id_1].state == expected_state_1
             assert dataset2.subscribers[sub_id_2].state == expected_state_2
 

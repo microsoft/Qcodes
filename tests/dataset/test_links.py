@@ -1,7 +1,7 @@
 import json
 import random
 import re
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import hypothesis.strategies as hst
 import pytest
@@ -27,7 +27,9 @@ def generate_some_links(N: int) -> list[Link]:
         Return a random timestamp that is approximately
         one day in the past.
         """
-        timestamp = datetime.now() - timedelta(days=1, seconds=random.randint(1, 1000))
+        timestamp = datetime.now(UTC) - timedelta(
+            days=1, seconds=random.randint(1, 1000)
+        )
         return round(timestamp.timestamp() * 1000)
 
     known_types = ("fit", "analysis", "step")
@@ -70,7 +72,7 @@ def test_link_construction_passes() -> None:
 
 @settings(max_examples=20)
 @given(not_guid=hst.text())
-def test_link_construction_raises(not_guid) -> None:
+def test_link_construction_raises(not_guid: "str") -> None:
     head_guid = generate_guid()
     tail_guid = generate_guid()
     edge_type = "fit"
@@ -144,7 +146,7 @@ def test_link_to_string_and_back() -> None:
 
 @settings(max_examples=5, deadline=1200)
 @given(N=hst.integers(min_value=0, max_value=25))
-def test_links_to_str_and_back(N) -> None:
+def test_links_to_str_and_back(N: "int") -> None:
     links = generate_some_links(N)
 
     new_links = str_to_links(links_to_str(links))

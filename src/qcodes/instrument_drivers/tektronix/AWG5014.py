@@ -4,6 +4,7 @@ import array as arr
 import logging
 import re
 import struct
+import warnings
 from collections import abc
 from io import BytesIO
 from time import localtime, sleep
@@ -13,6 +14,7 @@ from typing import (
     ClassVar,
     Literal,
     NamedTuple,
+    Self,
     cast,
 )
 
@@ -21,12 +23,20 @@ import numpy.typing as npt
 from pyvisa.errors import VisaIOError
 
 from qcodes import validators as vals
-from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
+from qcodes.instrument import (
+    ChannelList,
+    ChannelTuple,
+    InstrumentBaseKWArgs,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
+from qcodes.parameters import create_on_off_val_mapping
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.parameters import Parameter
 
@@ -40,6 +50,197 @@ class _MarkerDescriptor(NamedTuple):
 
 def parsestr(v: str) -> str:
     return v.strip().strip('"')
+
+
+class TektronixAWG5014Marker(InstrumentChannel["TektronixAWG5014Channel"]):
+    """
+    Class to hold a marker of an AWG5014 channel.
+
+    Each marker has delay, high level, and low level parameters.
+    """
+
+    def __init__(
+        self,
+        parent: TektronixAWG5014Channel,
+        name: str,
+        channel: int,
+        marker: int,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
+    ) -> None:
+        """
+        Args:
+            parent: The channel instance to which the marker is
+                to be attached.
+            name: The name used in the DataSet.
+            channel: The channel number (1-4).
+            marker: The marker number (1-2).
+            **kwargs: Forwarded to base class.
+
+        """
+        super().__init__(parent, name, **kwargs)
+
+        self.channel = channel
+        self.marker = marker
+
+        m_del_cmd = f"SOURce{channel}:MARKer{marker}:DELay"
+        m_high_cmd = f"SOURce{channel}:MARKer{marker}:VOLTage:LEVel:IMMediate:HIGH"
+        m_low_cmd = f"SOURce{channel}:MARKer{marker}:VOLTage:LEVel:IMMediate:LOW"
+
+        self.delay: Parameter[float, Self] = self.add_parameter(
+            "delay",
+            label=f"Channel {channel} Marker {marker} delay",
+            unit="ns",
+            get_cmd=m_del_cmd + "?",
+            set_cmd=m_del_cmd + " {:.3f}e-9",
+            vals=vals.Numbers(0, 1),
+            get_parser=float,
+        )
+        """Parameter delay"""
+        self.high: Parameter[float, Self] = self.add_parameter(
+            "high",
+            label=f"Channel {channel} Marker {marker} high level",
+            unit="V",
+            get_cmd=m_high_cmd + "?",
+            set_cmd=m_high_cmd + " {:.3f}",
+            vals=vals.Numbers(-0.9, 2.7),
+            get_parser=float,
+        )
+        """Parameter high"""
+        self.low: Parameter[float, Self] = self.add_parameter(
+            "low",
+            label=f"Channel {channel} Marker {marker} low level",
+            unit="V",
+            get_cmd=m_low_cmd + "?",
+            set_cmd=m_low_cmd + " {:.3f}",
+            vals=vals.Numbers(-1.0, 2.6),
+            get_parser=float,
+        )
+        """Parameter low"""
+
+
+class TektronixAWG5014Channel(InstrumentChannel["TektronixAWG5014"]):
+    """
+    Class to hold a channel of the AWG5014.
+
+    Each channel has analog output parameters (amplitude, offset, waveform,
+    etc.) and two marker sub-channels with delay, high, and low parameters.
+    """
+
+    def __init__(
+        self,
+        parent: TektronixAWG5014,
+        name: str,
+        channel: int,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
+    ) -> None:
+        """
+        Args:
+            parent: The Instrument instance to which the channel is
+                to be attached.
+            name: The name used in the DataSet.
+            channel: The channel number (1-4).
+            **kwargs: Forwarded to base class.
+
+        """
+        super().__init__(parent, name, **kwargs)
+
+        self.channel = channel
+
+        i = channel
+        amp_cmd = f"SOURce{i}:VOLTage:LEVel:IMMediate:AMPLitude"
+        offset_cmd = f"SOURce{i}:VOLTage:LEVel:IMMediate:OFFS"
+        state_cmd = f"OUTPUT{i}:STATE"
+        waveform_cmd = f"SOURce{i}:WAVeform"
+        directoutput_cmd = f"AWGControl:DOUTput{i}:STATE"
+        filter_cmd = f"OUTPut{i}:FILTer:FREQuency"
+        add_input_cmd = f"SOURce{i}:COMBine:FEED"
+        dc_out_cmd = f"AWGControl:DC{i}:VOLTage:OFFSet"
+
+        # Set channel first to ensure sensible sorting of pars
+        self.state: Parameter[bool, Self] = self.add_parameter(
+            "state",
+            label=f"Status channel {i}",
+            get_cmd=state_cmd + "?",
+            set_cmd=state_cmd + " {}",
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
+        )
+        """Parameter state"""
+        self.amp: Parameter[float, Self] = self.add_parameter(
+            "amp",
+            label=f"Amplitude channel {i}",
+            unit="Vpp",
+            get_cmd=amp_cmd + "?",
+            set_cmd=amp_cmd + " {:.6f}",
+            vals=vals.Numbers(0.02, 4.5),
+            get_parser=float,
+        )
+        """Parameter amp"""
+        self.offset: Parameter[float, Self] = self.add_parameter(
+            "offset",
+            label=f"Offset channel {i}",
+            unit="V",
+            get_cmd=offset_cmd + "?",
+            set_cmd=offset_cmd + " {:.3f}",
+            vals=vals.Numbers(-2.25, 2.25),
+            get_parser=float,
+        )
+        """Parameter offset"""
+        self.waveform: Parameter[str, Self] = self.add_parameter(
+            "waveform",
+            label=f"Waveform channel {i}",
+            get_cmd=waveform_cmd + "?",
+            set_cmd=waveform_cmd + ' "{}"',
+            vals=vals.Strings(),
+            get_parser=parsestr,
+        )
+        """Parameter waveform"""
+        self.direct_output: Parameter[bool, Self] = self.add_parameter(
+            "direct_output",
+            label=f"Direct output channel {i}",
+            get_cmd=directoutput_cmd + "?",
+            set_cmd=directoutput_cmd + " {}",
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
+        )
+        """Parameter direct_output"""
+        self.add_input: Parameter[str, Self] = self.add_parameter(
+            "add_input",
+            label=f"Add input channel {i}",
+            get_cmd=add_input_cmd + "?",
+            set_cmd=add_input_cmd + " {}",
+            vals=vals.Enum('"ESIG"', '"ESIGnal"', '""'),
+            get_parser=self.parent.newlinestripper,
+        )
+        """Parameter add_input"""
+        self.filter: Parameter = self.add_parameter(
+            "filter",
+            label=f"Low pass filter channel {i}",
+            unit="Hz",
+            get_cmd=filter_cmd + "?",
+            set_cmd=filter_cmd + " {}",
+            vals=vals.Enum(20e6, 100e6, float("inf"), "INF", "INFinity"),
+            get_parser=self.parent._tek_outofrange_get_parser,
+        )
+        """Parameter filter"""
+        self.DC_out: Parameter[float, Self] = self.add_parameter(
+            "DC_out",
+            label=f"DC output level channel {i}",
+            unit="V",
+            get_cmd=dc_out_cmd + "?",
+            set_cmd=dc_out_cmd + " {}",
+            vals=vals.Numbers(-3, 5),
+            get_parser=float,
+        )
+        """Parameter DC_out"""
+
+        # Marker sub-channels
+        self.m1: TektronixAWG5014Marker = self.add_submodule(
+            "m1", TektronixAWG5014Marker(self, "m1", i, 1)
+        )
+        """Marker 1 subchannel"""
+        self.m2: TektronixAWG5014Marker = self.add_submodule(
+            "m2", TektronixAWG5014Marker(self, "m2", i, 2)
+        )
+        """Marker 2 subchannel"""
 
 
 class TektronixAWG5014(VisaInstrument):
@@ -173,7 +374,6 @@ class TektronixAWG5014(VisaInstrument):
         """
         super().__init__(name, address, **kwargs)
 
-        self._address = address
         self.num_channels = num_channels
 
         self._values: dict[str, dict[str, dict[str, npt.NDArray | float | None]]] = {}
@@ -181,9 +381,11 @@ class TektronixAWG5014(VisaInstrument):
 
         self.add_function("reset", call_cmd="*RST")
 
-        self.state: Parameter = self.add_parameter("state", get_cmd=self.get_state)
+        self.state: Parameter[str, Self] = self.add_parameter(
+            "state", get_cmd=self.get_state
+        )
         """Parameter state"""
-        self.run_mode: Parameter = self.add_parameter(
+        self.run_mode: Parameter[str, Self] = self.add_parameter(
             "run_mode",
             get_cmd="AWGControl:RMODe?",
             set_cmd="AWGControl:RMODe " + "{}",
@@ -191,7 +393,7 @@ class TektronixAWG5014(VisaInstrument):
             get_parser=self.newlinestripper,
         )
         """Parameter run_mode"""
-        self.clock_source: Parameter = self.add_parameter(
+        self.clock_source: Parameter[str, Self] = self.add_parameter(
             "clock_source",
             label="Clock source",
             get_cmd="AWGControl:CLOCk:SOURce?",
@@ -201,7 +403,7 @@ class TektronixAWG5014(VisaInstrument):
         )
         """Parameter clock_source"""
 
-        self.ref_source: Parameter = self.add_parameter(
+        self.ref_source: Parameter[str, Self] = self.add_parameter(
             "ref_source",
             label="Reference source",
             get_cmd="SOURce1:ROSCillator:SOURce?",
@@ -211,18 +413,17 @@ class TektronixAWG5014(VisaInstrument):
         )
         """Parameter ref_source"""
 
-        self.DC_output: Parameter = self.add_parameter(
+        self.DC_output: Parameter[bool, Self] = self.add_parameter(
             "DC_output",
             label="DC Output (ON/OFF)",
             get_cmd="AWGControl:DC:STATe?",
             set_cmd="AWGControl:DC:STATe {}",
-            vals=vals.Ints(0, 1),
-            get_parser=int,
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
         )
         """Parameter DC_output"""
 
         # sequence parameter(s)
-        self.sequence_length: Parameter = self.add_parameter(
+        self.sequence_length: Parameter[int, Self] = self.add_parameter(
             "sequence_length",
             label="Sequence length",
             get_cmd="SEQuence:LENGth?",
@@ -269,12 +470,13 @@ class TektronixAWG5014(VisaInstrument):
                                20 will be deleted.
                                """
 
-        self.sequence_pos: Parameter = self.add_parameter(
+        self.sequence_pos: Parameter[int, Self] = self.add_parameter(
             "sequence_pos",
             label="Sequence position",
             get_cmd="AWGControl:SEQuencer:POSition?",
             set_cmd="SEQuence:JUMP:IMMediate {}",
             vals=vals.PermissiveInts(1),
+            get_parser=int,
             set_parser=round,
         )
         """Parameter sequence_pos"""
@@ -282,7 +484,7 @@ class TektronixAWG5014(VisaInstrument):
         # Trigger parameters #
         # Warning: `trigger_mode` is the same as `run_mode`, do not use! exists
         # solely for legacy purposes
-        self.trigger_mode: Parameter = self.add_parameter(
+        self.trigger_mode: Parameter[str, Self] = self.add_parameter(
             "trigger_mode",
             get_cmd="AWGControl:RMODe?",
             set_cmd="AWGControl:RMODe " + "{}",
@@ -290,7 +492,7 @@ class TektronixAWG5014(VisaInstrument):
             get_parser=self.newlinestripper,
         )
         """Parameter trigger_mode"""
-        self.trigger_impedance: Parameter = self.add_parameter(
+        self.trigger_impedance: Parameter[float, Self] = self.add_parameter(
             "trigger_impedance",
             label="Trigger impedance",
             unit="Ohm",
@@ -300,7 +502,7 @@ class TektronixAWG5014(VisaInstrument):
             get_parser=float,
         )
         """Parameter trigger_impedance"""
-        self.trigger_level: Parameter = self.add_parameter(
+        self.trigger_level: Parameter[float, Self] = self.add_parameter(
             "trigger_level",
             unit="V",
             label="Trigger level",
@@ -310,7 +512,7 @@ class TektronixAWG5014(VisaInstrument):
             get_parser=float,
         )
         """Parameter trigger_level"""
-        self.trigger_slope: Parameter = self.add_parameter(
+        self.trigger_slope: Parameter[str, Self] = self.add_parameter(
             "trigger_slope",
             get_cmd="TRIGger:SLOPe?",
             set_cmd="TRIGger:SLOPe " + "{}",
@@ -319,7 +521,7 @@ class TektronixAWG5014(VisaInstrument):
         )
         """Parameter trigger_slope"""
 
-        self.trigger_source: Parameter = self.add_parameter(
+        self.trigger_source: Parameter[str, Self] = self.add_parameter(
             "trigger_source",
             get_cmd="TRIGger:SOURce?",
             set_cmd="TRIGger:SOURce " + "{}",
@@ -329,7 +531,7 @@ class TektronixAWG5014(VisaInstrument):
         """Parameter trigger_source"""
 
         # Event parameters
-        self.event_polarity: Parameter = self.add_parameter(
+        self.event_polarity: Parameter[str, Self] = self.add_parameter(
             "event_polarity",
             get_cmd="EVENt:POL?",
             set_cmd="EVENt:POL " + "{}",
@@ -337,7 +539,7 @@ class TektronixAWG5014(VisaInstrument):
             get_parser=self.newlinestripper,
         )
         """Parameter event_polarity"""
-        self.event_impedance: Parameter = self.add_parameter(
+        self.event_impedance: Parameter[float, Self] = self.add_parameter(
             "event_impedance",
             label="Event impedance",
             unit="Ohm",
@@ -347,7 +549,7 @@ class TektronixAWG5014(VisaInstrument):
             get_parser=float,
         )
         """Parameter event_impedance"""
-        self.event_level: Parameter = self.add_parameter(
+        self.event_level: Parameter[float, Self] = self.add_parameter(
             "event_level",
             label="Event level",
             unit="V",
@@ -357,7 +559,7 @@ class TektronixAWG5014(VisaInstrument):
             get_parser=float,
         )
         """Parameter event_level"""
-        self.event_jump_timing: Parameter = self.add_parameter(
+        self.event_jump_timing: Parameter[str, Self] = self.add_parameter(
             "event_jump_timing",
             get_cmd="EVENt:JTIMing?",
             set_cmd="EVENt:JTIMing {}",
@@ -366,7 +568,7 @@ class TektronixAWG5014(VisaInstrument):
         )
         """Parameter event_jump_timing"""
 
-        self.clock_freq: Parameter = self.add_parameter(
+        self.clock_freq: Parameter[float, Self] = self.add_parameter(
             "clock_freq",
             label="Clock frequency",
             unit="Hz",
@@ -377,130 +579,74 @@ class TektronixAWG5014(VisaInstrument):
         )
         """Parameter clock_freq"""
 
-        self.setup_filename: Parameter = self.add_parameter(
+        self.setup_filename: Parameter[str, Self] = self.add_parameter(
             "setup_filename", get_cmd="AWGControl:SNAMe?"
         )
         """Parameter setup_filename"""
 
         # Channel parameters #
+        channels = ChannelList(
+            self, "channels", TektronixAWG5014Channel, snapshotable=True
+        )
         for i in range(1, self.num_channels + 1):
-            amp_cmd = f"SOURce{i}:VOLTage:LEVel:IMMediate:AMPLitude"
-            offset_cmd = f"SOURce{i}:VOLTage:LEVel:IMMediate:OFFS"
-            state_cmd = f"OUTPUT{i}:STATE"
-            waveform_cmd = f"SOURce{i}:WAVeform"
-            directoutput_cmd = f"AWGControl:DOUTput{i}:STATE"
-            filter_cmd = f"OUTPut{i}:FILTer:FREQuency"
-            add_input_cmd = f"SOURce{i}:COMBine:FEED"
-            dc_out_cmd = f"AWGControl:DC{i}:VOLTage:OFFSet"
-
-            # Set channel first to ensure sensible sorting of pars
-            self.add_parameter(
-                f"ch{i}_state",
-                label=f"Status channel {i}",
-                get_cmd=state_cmd + "?",
-                set_cmd=state_cmd + " {}",
-                vals=vals.Ints(0, 1),
-                get_parser=int,
-            )
-            self.add_parameter(
-                f"ch{i}_amp",
-                label=f"Amplitude channel {i}",
-                unit="Vpp",
-                get_cmd=amp_cmd + "?",
-                set_cmd=amp_cmd + " {:.6f}",
-                vals=vals.Numbers(0.02, 4.5),
-                get_parser=float,
-            )
-            self.add_parameter(
-                f"ch{i}_offset",
-                label=f"Offset channel {i}",
-                unit="V",
-                get_cmd=offset_cmd + "?",
-                set_cmd=offset_cmd + " {:.3f}",
-                vals=vals.Numbers(-2.25, 2.25),
-                get_parser=float,
-            )
-            self.add_parameter(
-                f"ch{i}_waveform",
-                label=f"Waveform channel {i}",
-                get_cmd=waveform_cmd + "?",
-                set_cmd=waveform_cmd + ' "{}"',
-                vals=vals.Strings(),
-                get_parser=parsestr,
-            )
-            self.add_parameter(
-                f"ch{i}_direct_output",
-                label=f"Direct output channel {i}",
-                get_cmd=directoutput_cmd + "?",
-                set_cmd=directoutput_cmd + " {}",
-                vals=vals.Ints(0, 1),
-            )
-            self.add_parameter(
-                f"ch{i}_add_input",
-                label="Add input channel {}",
-                get_cmd=add_input_cmd + "?",
-                set_cmd=add_input_cmd + " {}",
-                vals=vals.Enum('"ESIG"', '"ESIGnal"', '""'),
-                get_parser=self.newlinestripper,
-            )
-            self.add_parameter(
-                f"ch{i}_filter",
-                label=f"Low pass filter channel {i}",
-                unit="Hz",
-                get_cmd=filter_cmd + "?",
-                set_cmd=filter_cmd + " {}",
-                vals=vals.Enum(20e6, 100e6, float("inf"), "INF", "INFinity"),
-                get_parser=self._tek_outofrange_get_parser,
-            )
-            self.add_parameter(
-                f"ch{i}_DC_out",
-                label=f"DC output level channel {i}",
-                unit="V",
-                get_cmd=dc_out_cmd + "?",
-                set_cmd=dc_out_cmd + " {}",
-                vals=vals.Numbers(-3, 5),
-                get_parser=float,
-            )
-
-            # Marker channels
-            for j in range(1, 3):
-                m_del_cmd = f"SOURce{i}:MARKer{j}:DELay"
-                m_high_cmd = f"SOURce{i}:MARKer{j}:VOLTage:LEVel:IMMediate:HIGH"
-                m_low_cmd = f"SOURce{i}:MARKer{j}:VOLTage:LEVel:IMMediate:LOW"
-
-                self.add_parameter(
-                    f"ch{i}_m{j}_del",
-                    label=f"Channel {i} Marker {j} delay",
-                    unit="ns",
-                    get_cmd=m_del_cmd + "?",
-                    set_cmd=m_del_cmd + " {:.3f}e-9",
-                    vals=vals.Numbers(0, 1),
-                    get_parser=float,
-                )
-                self.add_parameter(
-                    f"ch{i}_m{j}_high",
-                    label=f"Channel {i} Marker {j} high level",
-                    unit="V",
-                    get_cmd=m_high_cmd + "?",
-                    set_cmd=m_high_cmd + " {:.3f}",
-                    vals=vals.Numbers(-0.9, 2.7),
-                    get_parser=float,
-                )
-                self.add_parameter(
-                    f"ch{i}_m{j}_low",
-                    label=f"Channel {i} Marker {j} low level",
-                    unit="V",
-                    get_cmd=m_low_cmd + "?",
-                    set_cmd=m_low_cmd + " {:.3f}",
-                    vals=vals.Numbers(-1.0, 2.6),
-                    get_parser=float,
-                )
+            channel = TektronixAWG5014Channel(self, f"ch{i}", i)
+            channels.append(channel)
+            self.add_submodule(f"ch{i}", channel)
+        self.channels: ChannelTuple[TektronixAWG5014Channel] = self.add_submodule(
+            "channels",
+            channels.to_channel_tuple(),
+        )
+        """The collection of all AWG output channels."""
 
         self.trigger_impedance.set(50)
         if self.clock_freq.get() != 1e9:
             log.info("AWG clock freq not set to 1GHz")
 
         self.connect_message()
+
+    _LEGACY_CHANNEL_RE = re.compile(
+        r"^ch(?P<ch>[1-4])_(?:(?P<marker>m[12])_)?(?P<param>.+)$"
+    )
+
+    def __getattr__(self, name: str) -> Any:
+        """
+        Provide backwards-compatible access to the old flat parameter names
+        like ``ch1_amp``, ``ch1_m1_high``, etc.
+
+        These now live on channel / marker submodules but are still
+        reachable via the old names with a deprecation warning.
+        """
+        m = self._LEGACY_CHANNEL_RE.match(name)
+        if m is not None:
+            ch_num = int(m.group("ch"))
+            marker = m.group("marker")
+            param = m.group("param")
+            ch = self.submodules.get(f"ch{ch_num}")
+            if ch is not None:
+                if marker is not None:
+                    mrk = ch.submodules.get(marker)
+                    if mrk is not None:
+                        # Old marker param names were e.g. m1_del, m1_high;
+                        # new names are delay, high, low
+                        new_param = {"del": "delay"}.get(param, param)
+                        if hasattr(mrk, new_param):
+                            new_name = f"ch{ch_num}.{marker}.{new_param}"
+                            warnings.warn(
+                                f"Accessing '{name}' is deprecated. "
+                                f"Use '{new_name}' instead.",
+                                category=QCoDeSDeprecationWarning,
+                                stacklevel=2,
+                            )
+                            return getattr(mrk, new_param)
+                elif hasattr(ch, param):
+                    new_name = f"ch{ch_num}.{param}"
+                    warnings.warn(
+                        f"Accessing '{name}' is deprecated. Use '{new_name}' instead.",
+                        category=QCoDeSDeprecationWarning,
+                        stacklevel=2,
+                    )
+                    return getattr(ch, param)
+        return super().__getattr__(name)
 
     # Convenience parser
     def newlinestripper(self, string: str) -> str:
@@ -667,13 +813,13 @@ class TektronixAWG5014(VisaInstrument):
         Set the state of all channels to be ON. Note: only channels with
         defined waveforms can be ON.
         """
-        for i in range(1, self.num_channels + 1):
-            self.parameters[f"ch{i}_state"].set(1)
+        for ch in self.channels:
+            ch.state.set(1)
 
     def all_channels_off(self) -> None:
         """Set the state of all channels to be OFF."""
-        for i in range(1, self.num_channels + 1):
-            self.parameters[f"ch{i}_state"].set(0)
+        for ch in self.channels:
+            ch.state.set(0)
 
     #####################
     # Sequences section #
@@ -1024,13 +1170,6 @@ class TektronixAWG5014(VisaInstrument):
         """
         log.info("Getting channel configurations.")
 
-        dirouts = [
-            self.ch1_direct_output.get_latest(),
-            self.ch2_direct_output.get_latest(),
-            self.ch3_direct_output.get_latest(),
-            self.ch4_direct_output.get_latest(),
-        ]
-
         # the return value of the parameter is different from what goes
         # into the .awg file, so we translate it
         filtertrans = {
@@ -1042,113 +1181,68 @@ class TektronixAWG5014(VisaInstrument):
             float("inf"): 10,
             None: None,
         }
-        filters = [
-            filtertrans[self.ch1_filter.get_latest()],
-            filtertrans[self.ch2_filter.get_latest()],
-            filtertrans[self.ch3_filter.get_latest()],
-            filtertrans[self.ch4_filter.get_latest()],
-        ]
 
-        amps = [
-            self.ch1_amp.get_latest(),
-            self.ch2_amp.get_latest(),
-            self.ch3_amp.get_latest(),
-            self.ch4_amp.get_latest(),
-        ]
+        addinptrans: dict[str | None, int | None] = {
+            '"ESIG"': 1,
+            '"ESIGnal"': 1,
+            '""': 0,
+            None: None,
+        }
 
-        offsets = [
-            self.ch1_offset.get_latest(),
-            self.ch2_offset.get_latest(),
-            self.ch3_offset.get_latest(),
-            self.ch4_offset.get_latest(),
-        ]
-
-        mrk1highs = [
-            self.ch1_m1_high.get_latest(),
-            self.ch2_m1_high.get_latest(),
-            self.ch3_m1_high.get_latest(),
-            self.ch4_m1_high.get_latest(),
-        ]
-
-        mrk1lows = [
-            self.ch1_m1_low.get_latest(),
-            self.ch2_m1_low.get_latest(),
-            self.ch3_m1_low.get_latest(),
-            self.ch4_m1_low.get_latest(),
-        ]
-
-        mrk2highs = [
-            self.ch1_m2_high.get_latest(),
-            self.ch2_m2_high.get_latest(),
-            self.ch3_m2_high.get_latest(),
-            self.ch4_m2_high.get_latest(),
-        ]
-
-        mrk2lows = [
-            self.ch1_m2_low.get_latest(),
-            self.ch2_m2_low.get_latest(),
-            self.ch3_m2_low.get_latest(),
-            self.ch4_m2_low.get_latest(),
-        ]
-
-        # the return value of the parameter is different from what goes
-        # into the .awg file, so we translate it
-        addinptrans = {'"ESIG"': 1, '""': 0, None: None}
-        addinputs = [
-            addinptrans[self.ch1_add_input.get_latest()],
-            addinptrans[self.ch2_add_input.get_latest()],
-            addinptrans[self.ch3_add_input.get_latest()],
-            addinptrans[self.ch4_add_input.get_latest()],
-        ]
-
-        # the return value of the parameter is different from what goes
-        # into the .awg file, so we translate it
         def mrkdeltrans(x: float | None) -> float | None:
             if x is None:
                 return None
             else:
                 return x * 1e-9
 
-        mrk1delays = [
-            mrkdeltrans(self.ch1_m1_del.get_latest()),
-            mrkdeltrans(self.ch2_m1_del.get_latest()),
-            mrkdeltrans(self.ch3_m1_del.get_latest()),
-            mrkdeltrans(self.ch4_m1_del.get_latest()),
-        ]
-        mrk2delays = [
-            mrkdeltrans(self.ch1_m2_del.get_latest()),
-            mrkdeltrans(self.ch2_m2_del.get_latest()),
-            mrkdeltrans(self.ch3_m2_del.get_latest()),
-            mrkdeltrans(self.ch4_m2_del.get_latest()),
-        ]
-
         AWG_channel_cfg: dict[str, float | None] = {}
 
-        for chan in range(1, self.num_channels + 1):
-            if dirouts[chan - 1] is not None:
-                AWG_channel_cfg.update(
-                    {f"ANALOG_DIRECT_OUTPUT_{chan}": int(dirouts[chan - 1])}
-                )
-            if filters[chan - 1] is not None:
-                AWG_channel_cfg.update({f"ANALOG_FILTER_{chan}": filters[chan - 1]})
-            if amps[chan - 1] is not None:
-                AWG_channel_cfg.update({f"ANALOG_AMPLITUDE_{chan}": amps[chan - 1]})
-            if offsets[chan - 1] is not None:
-                AWG_channel_cfg.update({f"ANALOG_OFFSET_{chan}": offsets[chan - 1]})
-            if mrk1highs[chan - 1] is not None:
-                AWG_channel_cfg.update({f"MARKER1_HIGH_{chan}": mrk1highs[chan - 1]})
-            if mrk1lows[chan - 1] is not None:
-                AWG_channel_cfg.update({f"MARKER1_LOW_{chan}": mrk1lows[chan - 1]})
-            if mrk2highs[chan - 1] is not None:
-                AWG_channel_cfg.update({f"MARKER2_HIGH_{chan}": mrk2highs[chan - 1]})
-            if mrk2lows[chan - 1] is not None:
-                AWG_channel_cfg.update({f"MARKER2_LOW_{chan}": mrk2lows[chan - 1]})
-            if mrk1delays[chan - 1] is not None:
-                AWG_channel_cfg.update({f"MARKER1_SKEW_{chan}": mrk1delays[chan - 1]})
-            if mrk2delays[chan - 1] is not None:
-                AWG_channel_cfg.update({f"MARKER2_SKEW_{chan}": mrk2delays[chan - 1]})
-            if addinputs[chan - 1] is not None:
-                AWG_channel_cfg.update({f"EXTERNAL_ADD_{chan}": addinputs[chan - 1]})
+        for ch in self.channels:
+            chan = ch.channel
+
+            dirout = ch.direct_output.get_latest()
+            if dirout is not None:
+                AWG_channel_cfg[f"ANALOG_DIRECT_OUTPUT_{chan}"] = int(dirout)
+
+            filt = filtertrans[ch.filter.get_latest()]
+            if filt is not None:
+                AWG_channel_cfg[f"ANALOG_FILTER_{chan}"] = filt
+
+            amp = ch.amp.get_latest()
+            if amp is not None:
+                AWG_channel_cfg[f"ANALOG_AMPLITUDE_{chan}"] = amp
+
+            offset = ch.offset.get_latest()
+            if offset is not None:
+                AWG_channel_cfg[f"ANALOG_OFFSET_{chan}"] = offset
+
+            mrk1high = ch.m1.high.get_latest()
+            if mrk1high is not None:
+                AWG_channel_cfg[f"MARKER1_HIGH_{chan}"] = mrk1high
+
+            mrk1low = ch.m1.low.get_latest()
+            if mrk1low is not None:
+                AWG_channel_cfg[f"MARKER1_LOW_{chan}"] = mrk1low
+
+            mrk2high = ch.m2.high.get_latest()
+            if mrk2high is not None:
+                AWG_channel_cfg[f"MARKER2_HIGH_{chan}"] = mrk2high
+
+            mrk2low = ch.m2.low.get_latest()
+            if mrk2low is not None:
+                AWG_channel_cfg[f"MARKER2_LOW_{chan}"] = mrk2low
+
+            mrk1del = mrkdeltrans(ch.m1.delay.get_latest())
+            if mrk1del is not None:
+                AWG_channel_cfg[f"MARKER1_SKEW_{chan}"] = mrk1del
+
+            mrk2del = mrkdeltrans(ch.m2.delay.get_latest())
+            if mrk2del is not None:
+                AWG_channel_cfg[f"MARKER2_SKEW_{chan}"] = mrk2del
+
+            addinput = addinptrans[ch.add_input.get_latest()]
+            if addinput is not None:
+                AWG_channel_cfg[f"EXTERNAL_ADD_{chan}"] = addinput
 
         return AWG_channel_cfg
 
@@ -1263,12 +1357,10 @@ class TektronixAWG5014(VisaInstrument):
                 log.warning(f"AWG: {k} not recognized as valid AWG channel setting")
 
         # waveforms
-        ii = 21
-
         wf_record_str = BytesIO()
         wlist = list(packed_waveforms.keys())
         wlist.sort()
-        for wf in wlist:
+        for ii, wf in enumerate(wlist, start=21):
             wfdat = packed_waveforms[wf]
             lenwfdat = len(wfdat)
 
@@ -1281,13 +1373,11 @@ class TektronixAWG5014(VisaInstrument):
                 + self._pack_record(f"WAVEFORM_TIMESTAMP_{ii}", timetuple[:-1], "8H")
                 + self._pack_record(f"WAVEFORM_DATA_{ii}", wfdat, f"{lenwfdat}H")
             )
-            ii += 1
 
         # sequence
-        kk = 1
         seq_record_str = BytesIO()
 
-        for segment in wfname_l.transpose():
+        for kk, segment in enumerate(wfname_l.transpose(), start=1):
             seq_record_str.write(
                 self._pack_record(f"SEQUENCE_WAIT_{kk}", trig_wait[kk - 1], "h")
                 + self._pack_record(f"SEQUENCE_LOOP_{kk}", int(nrep[kk - 1]), "l")
@@ -1306,7 +1396,6 @@ class TektronixAWG5014(VisaInstrument):
                             "{}s".format(len(wfname + "\x00")),
                         )
                     )
-            kk += 1
 
         awg_file = (
             head_str.getvalue()
@@ -1481,9 +1570,9 @@ class TektronixAWG5014(VisaInstrument):
         filename: str = "customawgfile.awg",
         preservechannelsettings: bool = True,
     ) -> None:
-        """
+        r"""
         Makes an .awg-file, sends it to the AWG and loads it. The .awg-file
-        is uploaded to C:\\\\Users\\\\OEM\\\\Documents. The waveforms appear in
+        is uploaded to C:\Users\OEM\Documents. The waveforms appear in
         the user defined waveform list with names wfm001ch1, wfm002ch1, ...
 
         Args:
@@ -1667,7 +1756,7 @@ class TektronixAWG5014(VisaInstrument):
             An array of unsigned 16 bit integers.
 
         Raises:
-            Exception: if the lengths of w, m1, and m2 don't match
+            ValueError: if the lengths of w, m1, and m2 don't match
             TypeError: if the waveform contains values outside (-1, 1)
             TypeError: if the markers contain values that are not 0 or 1
 
@@ -1675,7 +1764,7 @@ class TektronixAWG5014(VisaInstrument):
 
         # Input validation
         if not ((len(wf) == len(m1)) and (len(m1) == len(m2))):
-            raise Exception("error: sizes of the waveforms do not match")
+            raise ValueError("error: sizes of the waveforms do not match")
         if np.min(wf) < -1 or np.max(wf) > 1:
             raise TypeError(
                 "Waveform values out of bonds. Allowed values: -1 to 1 (inclusive)"
@@ -1764,13 +1853,9 @@ class TektronixAWG5014(VisaInstrument):
             length (float): The time to wait before resetting (s).
 
         """
-        DC_channel_number -= 1
-        chandcs = [self.ch1_DC_out, self.ch2_DC_out, self.ch3_DC_out, self.ch4_DC_out]
-
-        restore = chandcs[DC_channel_number].get()
-        chandcs[DC_channel_number].set(set_level)
-        sleep(length)
-        chandcs[DC_channel_number].set(restore)
+        ch = self.channels[DC_channel_number - 1]
+        with ch.DC_out.set_to(set_level):
+            sleep(length)
 
     def is_awg_ready(self) -> bool:
         """
@@ -1783,9 +1868,8 @@ class TektronixAWG5014(VisaInstrument):
         try:
             self.ask("*OPC?")
         # makes the awg read again if there is a timeout
-        except Exception as e:
-            log.warning(e)
-            log.warning("AWG is not ready")
+        except VisaIOError:
+            log.exception("AWG is not ready")
             self.visa_handle.read()
         return True
 
@@ -1805,7 +1889,7 @@ class TektronixAWG5014(VisaInstrument):
             wfmname: waveform name
 
         Raises:
-            Exception: if the lengths of w, m1, and m2 don't match
+            ValueError: if the lengths of w, m1, and m2 don't match
             TypeError: if the waveform contains values outside (-1, 1)
             TypeError: if the markers contain values that are not 0 or 1
 
@@ -1816,7 +1900,7 @@ class TektronixAWG5014(VisaInstrument):
 
         # Input validation
         if not ((len(w) == len(m1)) and (len(m1) == len(m2))):
-            raise Exception("error: sizes of the waveforms do not match")
+            raise ValueError("error: sizes of the waveforms do not match")
         if min(w) < -1 or max(w) > 1:
             raise TypeError(
                 "Waveform values out of bonds. Allowed values: -1 to 1 (inclusive)"
@@ -1880,11 +1964,3 @@ class TektronixAWG5014(VisaInstrument):
             except VisaIOError:
                 gotexception = True
         self.visa_handle.timeout = original_timeout
-
-
-class Tektronix_AWG5014(TektronixAWG5014):
-    """
-    Alias with non-conformant name left for backwards compatibility
-    """
-
-    pass

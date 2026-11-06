@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING, Protocol
+
 import numpy as np
 import pytest
 
@@ -5,9 +7,16 @@ from qcodes.instrument_drivers.Keysight import (
     Keysight34465A,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+
+class _AskCallable(Protocol):
+    def __call__(self, cmd: str) -> str: ...
+
 
 @pytest.fixture(scope="function")
-def driver():
+def driver() -> "Generator[Keysight34465A, None, None]":
     keysight_sim = Keysight34465A(
         "keysight_34465A_sim",
         address="GPIB::1::INSTR",
@@ -21,14 +30,18 @@ def driver():
 
 
 @pytest.fixture(scope="function")
-def driver_with_read_and_fetch_mocked(val_volt):
+def driver_with_read_and_fetch_mocked(
+    val_volt: str,
+) -> "Generator[Keysight34465A, None, None]":
     keysight_sim = Keysight34465A(
         "keysight_34465A_sim",
         address="GPIB::1::INSTR",
         pyvisa_sim_file="Keysight_34465A.yaml",
     )
 
-    def get_ask_with_read_mock(original_ask, read_value):
+    def get_ask_with_read_mock(
+        original_ask: _AskCallable, read_value: str
+    ) -> _AskCallable:
         def ask_with_read_mock(cmd: str) -> str:
             if cmd in ("READ?", "FETCH?"):
                 return read_value
@@ -44,25 +57,25 @@ def driver_with_read_and_fetch_mocked(val_volt):
         Keysight34465A.close_all()
 
 
-def test_init(driver) -> None:
+def test_init(driver: Keysight34465A) -> None:
     idn = driver.IDN()
     assert idn["vendor"] == "Keysight"
     assert idn["model"] == "34465A"
 
 
-def test_has_dig_option(driver) -> None:
+def test_has_dig_option(driver: Keysight34465A) -> None:
     assert True is driver.has_DIG
 
 
-def test_model_flag(driver) -> None:
+def test_model_flag(driver: Keysight34465A) -> None:
     assert True is driver.is_34465A_34470A
 
 
-def test_reset(driver) -> None:
+def test_reset(driver: Keysight34465A) -> None:
     driver.reset()
 
 
-def test_NPLC(driver) -> None:
+def test_NPLC(driver: Keysight34465A) -> None:
     assert driver.NPLC.get() == 10.0
     driver.NPLC.set(0.2)
     assert driver.NPLC.get() == 0.2
@@ -70,39 +83,40 @@ def test_NPLC(driver) -> None:
 
 
 @pytest.mark.parametrize("val_volt", ["100.0"])
-def test_get_voltage(driver_with_read_and_fetch_mocked, val_volt) -> None:
+def test_get_voltage(
+    driver_with_read_and_fetch_mocked: Keysight34465A, val_volt: str
+) -> None:
     voltage = driver_with_read_and_fetch_mocked.volt.get()
     assert voltage == 100.0
 
 
 @pytest.mark.parametrize("val_volt", ["9.9e37"])
-def test_get_voltage_plus_inf(driver_with_read_and_fetch_mocked, val_volt) -> None:
+def test_get_voltage_plus_inf(
+    driver_with_read_and_fetch_mocked: Keysight34465A, val_volt: str
+) -> None:
     voltage = driver_with_read_and_fetch_mocked.volt.get()
     assert voltage == np.inf
 
 
 @pytest.mark.parametrize("val_volt", ["-9.9e37"])
-def test_get_voltage_minus_inf(driver_with_read_and_fetch_mocked, val_volt) -> None:
+def test_get_voltage_minus_inf(
+    driver_with_read_and_fetch_mocked: Keysight34465A, val_volt: str
+) -> None:
     voltage = driver_with_read_and_fetch_mocked.volt.get()
     assert voltage == -np.inf
 
 
-@pytest.mark.xfail(
-    run=False,
-    reason="If the test is run, it will pass "
-    "but all tests after this one will "
-    "fail. The problem is coming from "
-    "timetrace().",
-)
 @pytest.mark.parametrize("val_volt", ["10, 9.9e37, -9.9e37"])
-def test_get_timetrace(driver_with_read_and_fetch_mocked, val_volt) -> None:
+def test_get_timetrace(
+    driver_with_read_and_fetch_mocked: Keysight34465A, val_volt: str
+) -> None:
     driver_with_read_and_fetch_mocked.timetrace_npts(3)
     assert driver_with_read_and_fetch_mocked.timetrace_npts() == 3
     voltage = driver_with_read_and_fetch_mocked.timetrace()
     assert (voltage == np.array([10.0, np.inf, -np.inf])).all()
 
 
-def test_set_get_autorange(driver) -> None:
+def test_set_get_autorange(driver: Keysight34465A) -> None:
     ar = driver.autorange.get()
     assert ar == "OFF"
     driver.autorange.set("ON")
@@ -113,7 +127,7 @@ def test_set_get_autorange(driver) -> None:
     assert ar == "OFF"
 
 
-def test_increase_decrease_range(driver) -> None:
+def test_increase_decrease_range(driver: Keysight34465A) -> None:
     driver_range_user = driver.ranges[2]
     driver.increase_range(driver_range_user)
     assert driver.range() == driver.ranges[3]
@@ -128,7 +142,7 @@ def test_increase_decrease_range(driver) -> None:
     assert driver.range() == driver.ranges[1]
 
 
-def test_display_text(driver) -> None:
+def test_display_text(driver: Keysight34465A) -> None:
     original_text = driver.display.text()
     assert original_text == ""
 

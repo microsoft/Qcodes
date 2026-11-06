@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import json
 import logging
 import os
@@ -29,17 +30,17 @@ from qcodes.dataset import (
     load_from_netcdf,
     new_data_set,
 )
-from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.versioning import serialization as serial
-from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.exporters.export_to_pandas import _generate_pandas_index
-from qcodes.dataset.exporters.export_to_xarray import _calculate_index_shape
+from qcodes.dataset.exporters.export_to_xarray import (
+    _calculate_index_shape,
+    _xarray_data_set_direct,
+)
 from qcodes.dataset.linked_datasets.links import links_to_str
 from qcodes.parameters import ManualParameter, Parameter, ParamSpecBase
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from collections.abc import Hashable
@@ -65,7 +66,7 @@ def _make_mock_empty_dataset(experiment: Experiment) -> DataSet:
 
 
 @pytest.fixture(name="mock_dataset")
-def _make_mock_dataset(experiment) -> DataSet:
+def _make_mock_dataset(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric")
     yparam = ParamSpecBase("y", "numeric")
@@ -178,6 +179,31 @@ def _make_mock_dataset_grid_with_shapes(experiment: Experiment) -> DataSet:
     return dataset
 
 
+@pytest.fixture(name="direct_export_dataset")
+def _make_direct_export_dataset(experiment: Experiment) -> DataSet:
+    dataset = new_data_set("direct_export_dataset")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    signalparam = ParamSpecBase("signal", "numeric")
+    inferredparam = ParamSpecBase("inferred", "numeric")
+    idps = InterDependencies_(
+        dependencies={signalparam: (xparam, yparam)},
+        inferences={inferredparam: (xparam,)},
+    )
+    dataset.set_interdependencies(idps, shapes={"signal": (2, 2)})
+    return dataset
+
+
+@pytest.fixture(name="independent_export_dataset")
+def _make_independent_export_dataset(experiment: Experiment) -> DataSet:
+    dataset = new_data_set("independent_export_dataset")
+    signalparam = ParamSpecBase("signal", "numeric")
+    inferredparam = ParamSpecBase("inferred", "numeric")
+    idps = InterDependencies_(inferences={inferredparam: (signalparam,)})
+    dataset.set_interdependencies(idps)
+    return dataset
+
+
 @pytest.fixture(name="mock_dataset_grid_incomplete")
 def _make_mock_dataset_grid_incomplete(experiment: Experiment) -> DataSet:
     dataset = new_data_set("dataset")
@@ -285,6 +311,62 @@ def _make_mock_dataset_non_grid(experiment: Experiment) -> DataSet:
     for x, y in zip(x_vals, y_vals):
         results = [{"x": x, "y": y, "z": x + y}]
         dataset.add_results(results)
+    dataset.mark_completed()
+    return dataset
+
+
+@pytest.fixture(name="mock_dataset_non_grid_inferred")
+def _make_mock_dataset_non_grid_inferred(experiment: Experiment) -> DataSet:
+    """Non grid dataset where an inferred parameter is inferred from z."""
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    zparam = ParamSpecBase("z", "numeric")
+    tparam = ParamSpecBase("t", "numeric")
+    idps = InterDependencies_(
+        dependencies={zparam: (xparam, yparam)},
+        inferences={tparam: (zparam,)},
+    )
+    dataset.set_interdependencies(idps)
+
+    num_samples = 50
+
+    rng = np.random.default_rng(1234)
+
+    x_vals = rng.random(num_samples) * 10
+    y_vals = 20 + rng.random(num_samples) * 5
+
+    dataset.mark_started()
+
+    for i, (x, y) in enumerate(zip(x_vals, y_vals)):
+        dataset.add_results([{"x": x, "y": y, "z": x + y, "t": float(i)}])
+    dataset.mark_completed()
+    return dataset
+
+
+@pytest.fixture(name="mock_dataset_non_unique_index_inferred")
+def _make_mock_dataset_non_unique_index_inferred(experiment: Experiment) -> DataSet:
+    """Dataset with a non unique MultiIndex and an inferred parameter."""
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    zparam = ParamSpecBase("z", "numeric")
+    tparam = ParamSpecBase("t", "numeric")
+    idps = InterDependencies_(
+        dependencies={zparam: (xparam, yparam)},
+        inferences={tparam: (zparam,)},
+    )
+    dataset.set_interdependencies(idps)
+
+    num_samples = 20
+    # every (x, y) pair is measured twice making the index non unique
+    x_vals = np.repeat(np.arange(num_samples // 2, dtype=float), 2)
+    y_vals = np.repeat(np.arange(num_samples // 2, dtype=float), 2)
+
+    dataset.mark_started()
+
+    for i, (x, y) in enumerate(zip(x_vals, y_vals)):
+        dataset.add_results([{"x": x, "y": y, "z": x + y, "t": float(i)}])
     dataset.mark_completed()
     return dataset
 
@@ -847,7 +929,7 @@ def test_partally_overlapping_setpoint_xarray_export_two_params_partial(
     expected_size = (5, 4)
 
     # Each variable should be 2D and have matching coords
-    for _, da in xrds.data_vars.items():
+    for da in xrds.data_vars.values():
         assert len(da.dims) == 2
         for dim, size in zip(da.dims, expected_size):
             assert dim in xrds.coords
@@ -865,16 +947,6 @@ def test_export_to_xarray_dataset_empty_ds(mock_empty_dataset: DataSet) -> None:
     assert len(ds.coords) == 1
     assert "x" in ds.coords
     _assert_xarray_metadata_is_as_expected(ds, mock_empty_dataset)
-
-
-def test_export_to_xarray_dataarray_empty_ds(mock_empty_dataset: DataSet) -> None:
-    with pytest.warns(QCoDeSDeprecationWarning, match="to_xarray_dataarray_dict"):
-        dad = mock_empty_dataset.to_xarray_dataarray_dict()  # pyright: ignore[reportDeprecated]
-    assert len(dad) == 2
-    assert len(dad["y"].coords) == 1
-    assert "x" in dad["y"].coords
-    assert len(dad["z"].coords) == 1
-    assert "x" in dad["z"].coords
 
 
 def test_export_to_xarray_dataset_dict_empty_ds(mock_empty_dataset: DataSet) -> None:
@@ -906,7 +978,7 @@ def test_export_to_xarray_non_unique_dependent_parameter(
     _assert_xarray_metadata_is_as_expected(ds, mock_dataset_nonunique)
 
     for array_name in ds.data_vars:
-        assert "snapshot" not in ds[array_name].attrs.keys()
+        assert "snapshot" not in ds[array_name].attrs
 
 
 def test_export_to_xarray_extra_metadata(mock_dataset: DataSet) -> None:
@@ -917,17 +989,7 @@ def test_export_to_xarray_extra_metadata(mock_dataset: DataSet) -> None:
     _assert_xarray_metadata_is_as_expected(ds, mock_dataset)
 
     for array_name in ds.data_vars:
-        assert "snapshot" not in ds[array_name].attrs.keys()
-
-
-def test_export_to_xarray_da_dict_extra_metadata(mock_dataset: DataSet) -> None:
-    mock_dataset.add_metadata("mytag", "somestring")
-    mock_dataset.add_metadata("myothertag", 1)
-    with pytest.warns(QCoDeSDeprecationWarning, match="to_xarray_dataarray_dict"):
-        da_dict = mock_dataset.to_xarray_dataarray_dict()  # pyright: ignore[reportDeprecated]
-
-    for datarray in da_dict.values():
-        _assert_xarray_metadata_is_as_expected(datarray, mock_dataset)
+        assert "snapshot" not in ds[array_name].attrs
 
 
 def test_export_to_xarray_ds_dict_extra_metadata(mock_dataset: DataSet) -> None:
@@ -964,7 +1026,7 @@ def test_export_to_xarray_extra_metadata_can_be_stored(
     # dataset
     # export info is only set after the export so its not part of
     # the exported metadata so skip it here.
-    for key in mock_dataset.metadata.keys():
+    for key in mock_dataset.metadata:
         if key != "export_info":
             assert mock_dataset.metadata[key] == loaded_data.attrs[key]
     # check that the added metadata roundtrip correctly
@@ -988,24 +1050,6 @@ def test_to_xarray_ds_paramspec_metadata_is_preserved(
         assert xr_ds.data_vars[param_name].attrs == _get_expected_param_spec_attrs(
             mock_dataset_label_unit, param_name
         )
-
-
-def test_to_xarray_da_dict_paramspec_metadata_is_preserved(
-    mock_dataset_label_unit: DataSet,
-) -> None:
-    with pytest.warns(QCoDeSDeprecationWarning, match="to_xarray_dataarray_dict"):
-        xr_das = mock_dataset_label_unit.to_xarray_dataarray_dict()  # pyright: ignore[reportDeprecated]
-
-    for outer_param_name, xr_da in xr_das.items():
-        for param_name in xr_da.dims:
-            assert xr_da.coords[param_name].attrs == _get_expected_param_spec_attrs(
-                mock_dataset_label_unit, param_name
-            )
-        expected_param_spec_attrs = _get_expected_param_spec_attrs(
-            mock_dataset_label_unit, outer_param_name
-        )
-        for spec_name, spec_value in expected_param_spec_attrs.items():
-            assert xr_da.attrs[spec_name] == spec_value
 
 
 def test_to_xarray_ds_dict_paramspec_metadata_is_preserved(
@@ -1481,6 +1525,115 @@ def _assert_xarray_metadata_is_as_expected(
     )
 
 
+def _assert_timestamp_str_matches_raw(
+    timestamp_str: object, raw_timestamp: float
+) -> None:
+    """
+    Assert that an exported timestamp string is timezone aware and describes the
+    same instant as the raw (POSIX) timestamp it was generated from.
+    """
+    assert isinstance(timestamp_str, str)
+    # parsing with an explicit ``%z`` fails unless the string carries a UTC offset
+    parsed = datetime.datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S%z")
+    assert parsed.tzinfo is not None
+    expected_offset = (
+        datetime.datetime.fromtimestamp(raw_timestamp, tz=datetime.UTC)
+        .astimezone()
+        .utcoffset()
+    )
+    assert parsed.utcoffset() == expected_offset
+    # the exported string is truncated to whole seconds
+    assert 0 <= raw_timestamp - parsed.timestamp() < 1
+
+
+def test_export_to_xarray_timestamps_are_timezone_aware(
+    mock_dataset: DataSet,
+) -> None:
+    run_timestamp_raw = mock_dataset.run_timestamp_raw
+    completed_timestamp_raw = mock_dataset.completed_timestamp_raw
+    assert run_timestamp_raw is not None
+    assert completed_timestamp_raw is not None
+
+    xr_ds = mock_dataset.to_xarray_dataset()
+
+    _assert_timestamp_str_matches_raw(xr_ds.attrs["run_timestamp"], run_timestamp_raw)
+    _assert_timestamp_str_matches_raw(
+        xr_ds.attrs["completed_timestamp"], completed_timestamp_raw
+    )
+    assert xr_ds.attrs["run_timestamp_raw"] == run_timestamp_raw
+    assert xr_ds.attrs["completed_timestamp_raw"] == completed_timestamp_raw
+
+
+def test_export_to_xarray_dataset_dict_timestamps_are_timezone_aware(
+    mock_dataset: DataSet,
+) -> None:
+    run_timestamp_raw = mock_dataset.run_timestamp_raw
+    completed_timestamp_raw = mock_dataset.completed_timestamp_raw
+    assert run_timestamp_raw is not None
+    assert completed_timestamp_raw is not None
+
+    xr_dss = mock_dataset.to_xarray_dataset_dict()
+
+    for xr_ds in xr_dss.values():
+        _assert_timestamp_str_matches_raw(
+            xr_ds.attrs["run_timestamp"], run_timestamp_raw
+        )
+        _assert_timestamp_str_matches_raw(
+            xr_ds.attrs["completed_timestamp"], completed_timestamp_raw
+        )
+
+
+def test_export_netcdf_timestamps_are_timezone_aware(
+    tmp_path_factory: TempPathFactory, mock_dataset: DataSet
+) -> None:
+    run_timestamp_raw = mock_dataset.run_timestamp_raw
+    completed_timestamp_raw = mock_dataset.completed_timestamp_raw
+    assert run_timestamp_raw is not None
+    assert completed_timestamp_raw is not None
+
+    path = str(tmp_path_factory.mktemp("export_netcdf_timestamps"))
+    mock_dataset.export(export_type="netcdf", path=path, prefix="qcodes_")
+    file_path = os.path.join(
+        path, f"qcodes_{mock_dataset.captured_run_id}_{mock_dataset.guid}.nc"
+    )
+
+    loaded_ds = xr.open_dataset(file_path)
+    _assert_timestamp_str_matches_raw(
+        loaded_ds.attrs["run_timestamp"], run_timestamp_raw
+    )
+    _assert_timestamp_str_matches_raw(
+        loaded_ds.attrs["completed_timestamp"], completed_timestamp_raw
+    )
+
+    reloaded_dataset = load_from_netcdf(file_path)
+    assert reloaded_dataset.run_timestamp_raw == run_timestamp_raw
+    assert reloaded_dataset.completed_timestamp_raw == completed_timestamp_raw
+    assert reloaded_dataset.run_timestamp() == mock_dataset.run_timestamp()
+    assert reloaded_dataset.completed_timestamp() == mock_dataset.completed_timestamp()
+
+
+def test_export_to_xarray_timestamps_of_incomplete_dataset(
+    experiment: Experiment,
+) -> None:
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    idps = InterDependencies_(dependencies={yparam: (xparam,)})
+    dataset.set_interdependencies(idps)
+    dataset.mark_started()
+    dataset.add_results([{"x": 0, "y": 1}])
+
+    run_timestamp_raw = dataset.run_timestamp_raw
+    assert run_timestamp_raw is not None
+    assert dataset.completed_timestamp_raw is None
+
+    xr_ds = dataset.to_xarray_dataset()
+
+    _assert_timestamp_str_matches_raw(xr_ds.attrs["run_timestamp"], run_timestamp_raw)
+    assert xr_ds.attrs["completed_timestamp"] == ""
+    assert xr_ds.attrs["completed_timestamp_raw"] == -1
+
+
 def test_multi_index_options_grid(mock_dataset_grid: DataSet) -> None:
     assert mock_dataset_grid.description.shapes is None
 
@@ -1515,6 +1668,147 @@ def test_multi_index_options_grid_with_shape(
         use_multi_index="always"
     )
     assert xds_always.sizes == {"multi_index": 50}
+
+
+def test_export_to_xarray_dataset_permuted_grid(experiment: Experiment) -> None:
+    dataset = new_data_set("permuted_grid")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    signalparam = ParamSpecBase("signal", "numeric")
+    idps = InterDependencies_(dependencies={signalparam: (xparam, yparam)})
+    dataset.set_interdependencies(idps, shapes={"signal": (3, 3)})
+
+    x_values = np.array([[1, 0, 2], [1, 1, 2], [0, 2, 0]])
+    y_values = np.array([[0, 0, 0], [1, 2, 1], [1, 2, 2]])
+
+    dataset.mark_started()
+    for x, y in zip(x_values.ravel(), y_values.ravel()):
+        dataset.add_results([{"x": x, "y": y, "signal": 10 * x + y}])
+    dataset.mark_completed()
+
+    xarray_dataset = dataset.to_xarray_dataset()
+
+    assert_array_equal(xarray_dataset.coords["x"], [1, 0, 2])
+    assert_array_equal(xarray_dataset.coords["y"], [0, 1, 2])
+    assert_array_equal(
+        xarray_dataset["signal"],
+        np.array([[10, 11, 12], [0, 1, 2], [20, 21, 22]]),
+    )
+
+
+@pytest.mark.parametrize(
+    ("data", "error"),
+    [
+        (
+            {
+                "signal": np.arange(4),
+                "x": np.array([0, 0, 1, 1]),
+                "y": np.array([0, 1, 0, 1]),
+            },
+            "has shape .* but has 2 dependencies",
+        ),
+        (
+            {
+                "signal": np.arange(4).reshape(2, 2),
+                "x": np.array([0, 0, 1]),
+                "y": np.array([[0, 1], [0, 1]]),
+            },
+            "Dependency 'x' contains 3 values, but 4 were expected",
+        ),
+        (
+            {
+                "signal": np.arange(4).reshape(2, 2),
+                "x": np.array([[0, 1], [2, 3]]),
+                "y": np.array([[0, 1], [0, 1]]),
+            },
+            "Dependency 'x' does not define an axis of length 2",
+        ),
+        (
+            {
+                "signal": np.arange(4).reshape(2, 2),
+                "x": np.array([[0, 0], [1, 1]]),
+                "y": np.array([[0, 0], [1, 1]]),
+            },
+            "do not form a complete Cartesian grid",
+        ),
+        (
+            {
+                "signal": np.arange(4).reshape(2, 2),
+                "x": np.array([[0, 0], [1, 1]]),
+                "y": np.array([[0, 1], [0, 1]]),
+                "inferred": np.arange(3),
+            },
+            "Parameter contains 3 values, but 4 were expected",
+        ),
+    ],
+)
+def test_xarray_data_set_direct_rejects_invalid_grid(
+    direct_export_dataset: DataSet,
+    data: dict[str, np.ndarray],
+    error: str,
+) -> None:
+    with pytest.raises(ValueError, match=error):
+        _xarray_data_set_direct(direct_export_dataset, "signal", data)
+
+
+def test_xarray_data_set_direct_skips_missing_inferred_data(
+    direct_export_dataset: DataSet,
+) -> None:
+    data = {
+        "signal": np.arange(4).reshape(2, 2),
+        "x": np.array([[0, 0], [1, 1]]),
+        "y": np.array([[0, 1], [0, 1]]),
+    }
+
+    xarray_dataset = _xarray_data_set_direct(direct_export_dataset, "signal", data)
+
+    assert set(xarray_dataset.coords) == {"x", "y"}
+    assert set(xarray_dataset.data_vars) == {"signal"}
+
+
+@pytest.mark.parametrize("shape", [(), (1,), (4,), (2, 2)])
+@pytest.mark.parametrize("include_inferred", [True, False])
+def test_xarray_data_set_direct_without_dependencies(
+    independent_export_dataset: DataSet,
+    shape: tuple[int, ...],
+    include_inferred: bool,
+) -> None:
+    signal = np.arange(np.prod(shape, dtype=int)).reshape(shape)
+    data = {"signal": signal}
+    if include_inferred:
+        data["inferred"] = (signal + 10).ravel()
+
+    xarray_dataset = _xarray_data_set_direct(independent_export_dataset, "signal", data)
+
+    dimensions = tuple(f"signal_dim_{axis}" for axis in range(len(shape)))
+    assert set(xarray_dataset.coords) == set()
+    assert xarray_dataset["signal"].dims == dimensions
+    assert xarray_dataset["signal"].shape == shape
+    assert_array_equal(xarray_dataset["signal"].values, signal)
+    if include_inferred:
+        assert set(xarray_dataset.data_vars) == {"signal", "inferred"}
+        assert xarray_dataset["inferred"].dims == dimensions
+        assert xarray_dataset["inferred"].shape == shape
+        assert_array_equal(xarray_dataset["inferred"].values, signal + 10)
+    else:
+        assert set(xarray_dataset.data_vars) == {"signal"}
+
+
+@pytest.mark.parametrize("inferred_size", [0, 3, 5])
+def test_xarray_data_set_direct_without_dependencies_rejects_invalid_inferred_size(
+    independent_export_dataset: DataSet,
+    inferred_size: int,
+) -> None:
+    data = {
+        "signal": np.arange(4).reshape(2, 2),
+        "inferred": np.arange(inferred_size),
+    }
+
+    with pytest.raises(
+        ValueError,
+        match=f"^Parameter contains {inferred_size} values, but 4 were expected$",
+    ):
+        _xarray_data_set_direct(independent_export_dataset, "signal", data)
 
 
 def test_multi_index_options_incomplete_grid(
@@ -1575,6 +1869,34 @@ def test_multi_index_options_non_grid(mock_dataset_non_grid: DataSet) -> None:
 
     xds_always = mock_dataset_non_grid.to_xarray_dataset(use_multi_index="always")
     assert xds_always.sizes == {"multi_index": 50}
+
+
+@pytest.mark.parametrize("use_multi_index", ["auto", "always"])
+def test_multi_index_export_with_inferred_parameter(
+    mock_dataset_non_grid_inferred: DataSet, use_multi_index: str
+) -> None:
+    """Inferred parameters must export correctly when a MultiIndex dim is used."""
+    xds = mock_dataset_non_grid_inferred.to_xarray_dataset(
+        use_multi_index=use_multi_index  # pyright: ignore[reportArgumentType]
+    )
+
+    assert xds.sizes == {"multi_index": 50}
+    assert "t" in xds.data_vars
+    assert xds["t"].dims == ("multi_index",)
+    np.testing.assert_array_equal(xds["t"].values, np.arange(50, dtype=float))
+
+
+def test_non_unique_multi_index_export_with_inferred_parameter(
+    mock_dataset_non_unique_index_inferred: DataSet,
+) -> None:
+    """A non unique MultiIndex must not break export of inferred parameters."""
+    xds = mock_dataset_non_unique_index_inferred.to_xarray_dataset()
+
+    assert "t" in xds.data_vars
+    assert xds["t"].dims == xds["z"].dims
+    np.testing.assert_array_equal(
+        np.asarray(xds["t"].values).ravel(), np.arange(20, dtype=float)
+    )
 
 
 def test_multi_index_wrong_option(mock_dataset_non_grid: DataSet) -> None:
@@ -2310,3 +2632,60 @@ def test_with_without_shape_is_the_same(experiment: Experiment) -> None:
     # however data for a given coordinate is the same
     assert bool((dsx2 - dsx1)["z"].max() == 0)
     assert bool((dsx2 - dsx1)["x"].max() == 0)
+
+
+def test_incomplete_measurement_with_shared_setpoint(
+    experiment: Experiment,
+) -> None:
+    """
+    Regression test for a MergeError when exporting an incomplete measurement
+    where a shared setpoint parameter ends up as a coordinate in one
+    sub-dataset and a data variable in another.
+
+    The scenario: a 2D sweep (x, y) where y is an array-type parameter with
+    constant values (non-unique MultiIndex), plus a 1D dependent on x alone.
+    When the measurement is incomplete (actual rows < declared shape), the
+    direct export path is bypassed and the pandas fallback is used.  The 1D
+    dependent produces a unique index (x as coordinate) while the 2D
+    dependents produce a non-unique index (x becomes a data variable via
+    reset_index).  Without the fix, xr.merge raises MergeError because x has
+    conflicting roles across sub-datasets.
+    """
+    n_expected = 10
+    n_actual = 7  # incomplete: fewer rows than declared shape
+    n_array = 5
+
+    x_vals = np.linspace(0.0, 1.0, n_actual)
+    # y is constant across all points (triggers non-unique MultiIndex)
+    y_const = 0.42
+
+    meas = Measurement(exp=experiment, name="incomplete_shared_setpoint")
+    meas.register_custom_parameter("x", paramtype="numeric")
+    meas.register_custom_parameter("y", paramtype="array")
+    meas.register_custom_parameter("signal_2d", setpoints=("x", "y"), paramtype="array")
+    meas.register_custom_parameter("signal_1d", setpoints=("x",), paramtype="numeric")
+    # Declare shapes larger than actual data to force pandas fallback
+    meas.set_shapes({"signal_2d": (n_expected, n_array), "signal_1d": (n_expected,)})
+
+    with meas.run() as datasaver:
+        for ix in range(n_actual):
+            x = float(x_vals[ix])
+            y_arr = np.full(n_array, y_const)
+            sig_2d = np.arange(n_array, dtype=float) * x
+            datasaver.add_result(
+                ("x", x),
+                ("y", y_arr),
+                ("signal_2d", sig_2d),
+                ("signal_1d", x * 2.0),
+            )
+
+    ds = datasaver.dataset
+
+    # This previously raised:
+    # MergeError: unable to determine if these variables should be
+    # coordinates or not in the merged result: {'x'}
+    xr_ds = ds.to_xarray_dataset()
+
+    assert "signal_1d" in xr_ds.data_vars
+    assert "signal_2d" in xr_ds.data_vars
+    assert "x" in xr_ds.coords

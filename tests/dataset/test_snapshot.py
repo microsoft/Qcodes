@@ -1,23 +1,29 @@
 import json
+from typing import TYPE_CHECKING
 
 import numpy
 import pytest
 
 from qcodes.dataset.measurements import Measurement
 from qcodes.instrument_drivers.mock_instruments import DummyInstrument
-from qcodes.parameters import ManualParameter
+from qcodes.parameters import ManualParameter, Parameter
 from qcodes.station import Station
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+if TYPE_CHECKING:
+    from qcodes.dataset.experiment_container import Experiment
 
 
 @pytest.fixture  # scope is "function" per default
-def dac():
+def dac() -> "Generator[DummyInstrument, None, None]":
     dac = DummyInstrument("dummy_dac", gates=["ch1", "ch2"])
     yield dac
     dac.close()
 
 
 @pytest.fixture
-def dmm():
+def dmm() -> "Generator[DummyInstrument, None, None]":
     dmm = DummyInstrument("dummy_dmm", gates=["v1", "v2"])
     yield dmm
     dmm.close()
@@ -25,7 +31,10 @@ def dmm():
 
 @pytest.mark.parametrize("pass_station", (True, False))
 def test_station_snapshot_during_measurement(
-    experiment, dac, dmm, pass_station
+    experiment: "Experiment",
+    dac: "DummyInstrument",
+    dmm: "DummyInstrument",
+    pass_station: "bool",
 ) -> None:
     station = Station()
     station.add_component(dac)
@@ -77,7 +86,9 @@ def test_station_snapshot_during_measurement(
     assert expected_snapshot == data_saver.dataset.snapshot
 
 
-def test_snapshot_creation_for_types_not_supported_by_builtin_json(experiment) -> None:
+def test_snapshot_creation_for_types_not_supported_by_builtin_json(
+    experiment: "Experiment",
+) -> None:
     """
     Test that `Measurement`/`Runner`/`DataSaver` infrastructure
     successfully dumps station snapshots in JSON format in cases when the
@@ -116,3 +127,58 @@ def test_snapshot_creation_for_types_not_supported_by_builtin_json(experiment) -
 
     assert False is snapshot["station"]["parameters"]["p_np_bool"]["value"]
     assert False is snapshot["station"]["parameters"]["p_np_bool"]["raw_value"]
+
+
+def test_station_snapshot_in_measurement_refreshes_only_invalid_caches(
+    experiment: "Experiment",
+) -> None:
+    """
+    The station snapshot taken by a ``Measurement`` uses ``update="Only_invalid"``
+    so that parameters with an invalid cache are refreshed via a single ``get``,
+    while parameters with a valid cache are not gotten.
+    """
+    invalid_calls = {"n": 0}
+    valid_calls = {"n": 0}
+
+    def invalid_getter() -> int:
+        invalid_calls["n"] += 1
+        return 42
+
+    def valid_getter() -> int:
+        valid_calls["n"] += 1
+        return 99
+
+    p_invalid = Parameter("p_invalid", get_cmd=invalid_getter, set_cmd=None)
+    p_valid = Parameter("p_valid", get_cmd=valid_getter, set_cmd=None)
+
+    # add components without updating their snapshot (which would call ``get``)
+    station = Station()
+    station.add_component(p_invalid, update_snapshot=False)
+    station.add_component(p_valid, update_snapshot=False)
+
+    # make ``p_valid``'s cache valid without triggering a ``get``
+    p_valid.set(7)
+
+    assert not p_invalid.cache.valid
+    assert p_valid.cache.valid
+    assert invalid_calls["n"] == 0
+    assert valid_calls["n"] == 0
+
+    measurement = Measurement(experiment, station)
+    # we need at least 1 parameter to be able to run the measurement
+    measurement.register_custom_parameter("dummy")
+
+    with measurement.run() as data_saver:
+        pass
+
+    snapshot = data_saver.dataset.snapshot
+    assert snapshot is not None
+    params = snapshot["station"]["parameters"]
+
+    # invalid cache -> refreshed via a single get
+    assert invalid_calls["n"] == 1
+    assert params["p_invalid"]["value"] == 42
+
+    # valid cache -> not gotten, cached value used
+    assert valid_calls["n"] == 0
+    assert params["p_valid"]["value"] == 7

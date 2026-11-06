@@ -1,15 +1,10 @@
-from typing import TYPE_CHECKING, TypeVar
-
-from typing_extensions import ParamSpec
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-input = ParamSpec("input")
-output = TypeVar("output")
 
-
-def qcodes_abstractmethod(
+def qcodes_abstractmethod[**input, output](
     funcobj: "Callable[input, output]",
 ) -> "Callable[input, output]":
     """

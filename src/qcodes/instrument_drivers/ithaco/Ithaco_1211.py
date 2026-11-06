@@ -1,11 +1,11 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs
 from qcodes.parameters import MultiParameter, Parameter, ParamRawDataType
 from qcodes.validators import Bool, Enum
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 class CurrentParameter(
@@ -59,7 +59,7 @@ class CurrentParameter(
         self.units = (p_unit, "A")
 
     def get_raw(self) -> tuple[ParamRawDataType, ...]:
-        assert isinstance(self.instrument, Ithaco_1211)
+        assert isinstance(self.instrument, Ithaco1211)
         volt = self._measured_param.get()
         current = (
             self.instrument.sens.get() * self.instrument.sens_factor.get()
@@ -82,7 +82,7 @@ class Ithaco1211(Instrument):
     def __init__(self, name: str, **kwargs: "Unpack[InstrumentBaseKWArgs]"):
         super().__init__(name, **kwargs)
 
-        self.sens: Parameter = self.add_parameter(
+        self.sens: Parameter[float, Self] = self.add_parameter(
             "sens",
             initial_value=1e-8,
             label="Sensitivity",
@@ -93,7 +93,7 @@ class Ithaco1211(Instrument):
         )
         """Parameter sens"""
 
-        self.invert: Parameter = self.add_parameter(
+        self.invert: Parameter[bool, Self] = self.add_parameter(
             "invert",
             initial_value=True,
             label="Inverted output",
@@ -103,7 +103,7 @@ class Ithaco1211(Instrument):
         )
         """Parameter invert"""
 
-        self.sens_factor: Parameter = self.add_parameter(
+        self.sens_factor: Parameter[float, Self] = self.add_parameter(
             "sens_factor",
             initial_value=1,
             label="Sensitivity factor",
@@ -114,7 +114,7 @@ class Ithaco1211(Instrument):
         )
         """Parameter sens_factor"""
 
-        self.suppression: Parameter = self.add_parameter(
+        self.suppression: Parameter[float, Self] = self.add_parameter(
             "suppression",
             initial_value=1e-7,
             label="Suppression",
@@ -125,7 +125,7 @@ class Ithaco1211(Instrument):
         )
         """Parameter suppression"""
 
-        self.risetime: Parameter = self.add_parameter(
+        self.risetime: Parameter[float, Self] = self.add_parameter(
             "risetime",
             initial_value=0.3,
             label="Rise Time",
@@ -147,9 +147,3 @@ class Ithaco1211(Instrument):
             "serial": serial,
             "firmware": firmware,
         }
-
-
-class Ithaco_1211(Ithaco1211):
-    """
-    Old alias for Itaco1211. Will eventually be deprecated and removed.
-    """

@@ -116,7 +116,7 @@ def test_wrapped_parameter(instrument: DummyInstrument) -> None:
     assert instrument.scaler.wrapped_parameter == instrument.target_parameter
 
 
-def test_divider(instrument) -> None:
+def test_divider(instrument: DummyInstrument) -> None:
     test_division = 10
     test_value = 5
 

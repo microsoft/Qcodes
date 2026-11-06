@@ -26,7 +26,7 @@ def dataframe_to_csv(
 ) -> None:
     import pandas as pd
 
-    dfs_to_save = list()
+    dfs_to_save = []
     for parametername, df in dfdict.items():
         if not single_file:
             dst = os.path.join(path, f"{parametername}.dat")

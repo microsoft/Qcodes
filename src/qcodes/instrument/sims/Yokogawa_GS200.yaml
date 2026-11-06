@@ -9,6 +9,8 @@ devices:
     dialogues:
       - q: "*IDN?"
         r: "QCoDeS Yokogawa Mock,GS200,xxxxxxxx,MOCKFW"
+      - q: "*OPT?"
+        r: "NO OPTIONS"
 
     properties:
       mode:
@@ -25,6 +27,30 @@ devices:
           r: "{}"
         setter:
           q: "OUTPUT {}"
+      range:
+        default: 10.0
+        getter:
+          q: ":SOUR:RANG?"
+          r: "{:.6e}"
+        setter:
+          q: ":SOUR:RANG {}"
+        specs:
+          type: float
+      level:
+        default: 0.0
+        getter:
+          q: ":SOUR:LEV?"
+          r: "{:.6e}"
+        setter:
+          q: ":SOUR:LEV {:e}"
+        specs:
+          type: float
+      auto_level:
+        default: 0.0
+        setter:
+          q: ":SOUR:LEV:AUTO {:e}"
+        specs:
+          type: float
 
 
 

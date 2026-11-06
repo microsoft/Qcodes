@@ -37,7 +37,9 @@ def dependent_parameters() -> (
     yield dep1, indep1, indep2
 
 
-def test_registering_control_param_registers_components(control_parameters) -> None:
+def test_registering_control_param_registers_components(
+    control_parameters: tuple[ManualParameter, ManualParameter, ManualParameter],
+) -> None:
     control1, comp1, comp2 = control_parameters
     meas = Measurement()
     meas.register_parameter(control1)
@@ -46,7 +48,9 @@ def test_registering_control_param_registers_components(control_parameters) -> N
     assert comp2 in meas._registered_parameters
 
 
-def test_registering_component_param_registers_control(control_parameters) -> None:
+def test_registering_component_param_registers_control(
+    control_parameters: tuple[ManualParameter, ManualParameter, ManualParameter],
+) -> None:
     control1, comp1, comp2 = control_parameters
     meas = Measurement()
     meas.register_parameter(comp1)
@@ -55,7 +59,9 @@ def test_registering_component_param_registers_control(control_parameters) -> No
     assert comp2 in meas._registered_parameters
 
 
-def test_registering_dependent_param_registers_indeps(dependent_parameters) -> None:
+def test_registering_dependent_param_registers_indeps(
+    dependent_parameters: tuple[ManualParameter, ManualParameter, ManualParameter],
+) -> None:
     dep1, indep1, indep2 = dependent_parameters
     meas = Measurement()
     meas.register_parameter(dep1)
@@ -65,7 +71,9 @@ def test_registering_dependent_param_registers_indeps(dependent_parameters) -> N
     # Note, registering indep1 is not expected to also register dep1 automatically
 
 
-def test_registering_chain_of_control_parameters(control_parameters) -> None:
+def test_registering_chain_of_control_parameters(
+    control_parameters: tuple[ManualParameter, ManualParameter, ManualParameter],
+) -> None:
     control1, comp1, comp2 = control_parameters
     comp11 = ManualParameter("comp11")
     comp12 = ManualParameter("comp12")
@@ -89,7 +97,9 @@ def test_registering_chain_of_control_parameters(control_parameters) -> None:
     assert comp22 in meas._registered_parameters
 
 
-def test_registering_dependent_param_with_setpoints(dependent_parameters) -> None:
+def test_registering_dependent_param_with_setpoints(
+    dependent_parameters: tuple[ManualParameter, ManualParameter, ManualParameter],
+) -> None:
     dep1, indep1, indep2 = dependent_parameters
     setpoints1 = ManualParameter("setpoints1")
     setpoints2 = ManualParameter("setpoints2")
@@ -103,7 +113,7 @@ def test_registering_dependent_param_with_setpoints(dependent_parameters) -> Non
 
     dependency_tree = meas._interdeps.dependencies
     assert len(dependency_tree) == 1
-    assert dep1.param_spec in dependency_tree.keys()
+    assert dep1.param_spec in dependency_tree
 
     # Ensure that order in the dependency spec tree is preserved
     # Explicit Setpoints first, then internal depends_on parameters

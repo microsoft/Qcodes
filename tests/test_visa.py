@@ -2,7 +2,7 @@ import gc
 import logging
 import re
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 import pyvisa
@@ -15,11 +15,24 @@ from qcodes.instrument_drivers.AimTTi import AimTTiPL601
 from qcodes.instrument_drivers.american_magnetics import AMIModel430
 from qcodes.validators import Numbers
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+    from typing import Unpack
+
+    from pytest_mock import MockerFixture
+
+    from qcodes.instrument import VisaInstrumentKWArgs
+
 
 class MockVisa(VisaInstrument):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.add_parameter(
+    def __init__(
+        self,
+        name: str,
+        address: str | None = None,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
+    ) -> None:
+        super().__init__(name, address, **kwargs)
+        self.state = self.add_parameter(
             "state",
             get_cmd="STAT?",
             get_parser=float,
@@ -29,10 +42,14 @@ class MockVisa(VisaInstrument):
 
     def _open_resource(
         self, address: str, visalib: str | None
-    ) -> tuple[pyvisa.resources.MessageBasedResource, str, pyvisa.ResourceManager]:
+    ) -> pyvisa.resources.MessageBasedResource:
         if visalib is None:
             visalib = "MockVisaLib"
-        return MockVisaHandle(), visalib, pyvisa.ResourceManager("@sim")
+        return MockVisaHandle()
+
+    @property
+    def visabackend(self) -> str:
+        return "sim"
 
 
 class MockVisaHandle(pyvisa.resources.MessageBasedResource):
@@ -47,15 +64,17 @@ class MockVisaHandle(pyvisa.resources.MessageBasedResource):
     - a state > 10 throws an error
     """
 
-    def __init__(self):
+    resource_name: str = "MOCK::INSTR"  # pyright: ignore[reportIncompatibleVariableOverride]
+
+    def __init__(self) -> None:
         self.state = 0
         self.closed = False
         self._session = None  # required for session property
 
-    def clear(self):
+    def clear(self) -> None:
         self.state = 0
 
-    def close(self):
+    def close(self) -> None:
         # make it an error to ask or write after close
         self.closed = True
 
@@ -78,7 +97,7 @@ class MockVisaHandle(pyvisa.resources.MessageBasedResource):
 
         return len(message)
 
-    def ask(self, cmd):
+    def ask(self, cmd: str) -> float:
         if self.closed:
             raise RuntimeError("Trying to ask a closed instrument")
         if self.state > 10:
@@ -96,7 +115,7 @@ class MockVisaHandle(pyvisa.resources.MessageBasedResource):
         setattr(self, str(name), state)
         return pyvisa.constants.StatusCode.success
 
-    def __del__(self):
+    def __del__(self) -> None:
         pass
 
 
@@ -115,7 +134,7 @@ args3 = ["I'm out of fingers", "asking 'STAT?' to <MockVisa: Joe>", "getting Joe
 
 
 @pytest.fixture(name="mock_visa")
-def _make_mock_visa():
+def _make_mock_visa() -> "Generator[MockVisa, None, None]":
     mv = MockVisa("Joe", "none_address")
     try:
         yield mv
@@ -123,7 +142,7 @@ def _make_mock_visa():
         mv.close()
 
 
-def test_visa_gc_closes_connection(caplog) -> None:
+def test_visa_gc_closes_connection(caplog: pytest.LogCaptureFixture) -> None:
     def use_magnet() -> pyvisa.ResourceManager:
         x = AMIModel430(
             "x",
@@ -132,6 +151,7 @@ def test_visa_gc_closes_connection(caplog) -> None:
             terminator="\n",
         )
         assert list(Instrument._all_instruments.keys()) == ["x"]
+        assert x.resource_manager is not None
         assert len(x.resource_manager.list_opened_resources()) == 1
         assert x.resource_manager.list_opened_resources() == [x.visa_handle]
         return x.resource_manager
@@ -157,7 +177,7 @@ def test_visa_gc_closes_connection(caplog) -> None:
     )
 
 
-def test_ask_write_local(mock_visa) -> None:
+def test_ask_write_local(mock_visa: MockVisa) -> None:
     # test normal ask and write behavior
     mock_visa.state.set(2)
     assert mock_visa.state.get() == 2
@@ -184,16 +204,20 @@ def test_ask_write_local(mock_visa) -> None:
         assert arg in str(eee.value)
 
 
-def test_visa_backend(mocker, request: FixtureRequest) -> None:
+def test_visa_backend(mocker: "MockerFixture", request: FixtureRequest) -> None:
     rm_mock = mocker.patch("qcodes.instrument.visa.pyvisa.ResourceManager")
 
-    address_opened = [None]
+    address_opened: list[str | None] = [None]
 
     class MockBackendVisaInstrument(VisaInstrument):
-        visa_handle = MockVisaHandle()
+        _visa_handle = MockVisaHandle()
+
+        @property
+        def visabackend(self) -> str:
+            return "sim"
 
     class MockRM:
-        def open_resource(self, address):
+        def open_resource(self, address: str) -> MockVisaHandle:
             address_opened[0] = address
             return MockVisaHandle()
 
@@ -249,11 +273,11 @@ def test_load_pyvisa_sim_file_implict_module(request: FixtureRequest) -> None:
     )
     request.addfinalizer(driver.close)
     assert driver.visabackend == "sim"
-    assert driver.visalib is not None
-    path_str, backend = driver.visalib.split("@")
-    assert backend == "sim"
-    path = Path(path_str)
-    assert path.match("qcodes/instrument/sims/AimTTi_PL601P.yaml")
+
+    assert Path(driver.visa_handle.visalib.library_path).match(
+        "qcodes/instrument/sims/AimTTi_PL601P.yaml"
+    )
+    assert driver.visa_handle.visalib.__class__.__name__ == "SimVisaLibrary"
 
 
 def test_load_pyvisa_sim_file_explicit_module(request: FixtureRequest) -> None:
@@ -264,11 +288,10 @@ def test_load_pyvisa_sim_file_explicit_module(request: FixtureRequest) -> None:
     )
     request.addfinalizer(driver.close)
     assert driver.visabackend == "sim"
-    assert driver.visalib is not None
-    path_str, backend = driver.visalib.split("@")
-    assert backend == "sim"
-    path = Path(path_str)
-    assert path.match("qcodes/instrument/sims/AimTTi_PL601P.yaml")
+    assert Path(driver.visa_handle.visalib.library_path).match(
+        "qcodes/instrument/sims/AimTTi_PL601P.yaml"
+    )
+    assert driver.visa_handle.visalib.__class__.__name__ == "SimVisaLibrary"
 
 
 def test_load_pyvisa_sim_file_invalid_file_raises(request: FixtureRequest) -> None:
@@ -295,3 +318,52 @@ def test_load_pyvisa_sim_file_invalid_module_raises(request: FixtureRequest) -> 
             address="GPIB::1::INSTR",
             pyvisa_sim_file="qcodes.instrument.not_a_module:AimTTi_PL601P.yaml",
         )
+
+
+def test_existing_resource(request: FixtureRequest) -> None:
+    handle = MockVisaHandle()
+    mv = MockVisa("from_resource", resource=handle)
+    request.addfinalizer(mv.close)
+    assert mv.visa_handle is handle
+    assert mv.address == "MOCK::INSTR"
+    mv.state.set(5)
+    assert mv.state.get() == 5
+
+
+def test_existing_resource_with_address_raises() -> None:
+    handle = MockVisaHandle()
+    with pytest.raises(
+        TypeError,
+        match=re.escape("'address' and 'resource' are mutually exclusive"),
+    ):
+        MockVisa("bad", address="some_address", resource=handle)
+
+
+def test_existing_resource_with_visalib_raises() -> None:
+    handle = MockVisaHandle()
+    with pytest.raises(
+        TypeError,
+        match=re.escape(
+            "Cannot supply visalib or pyvisa_sim_file when using an existing resource"
+        ),
+    ):
+        MockVisa("bad", resource=handle, visalib="@py")
+
+
+def test_existing_resource_with_pyvisa_sim_file_raises() -> None:
+    handle = MockVisaHandle()
+    with pytest.raises(
+        TypeError,
+        match=re.escape(
+            "Cannot supply visalib or pyvisa_sim_file when using an existing resource"
+        ),
+    ):
+        MockVisa("bad", resource=handle, pyvisa_sim_file="somefile.yaml")
+
+
+def test_no_address_or_resource_raises() -> None:
+    with pytest.raises(
+        TypeError,
+        match=re.escape("Either 'address' or 'resource' must be provided"),
+    ):
+        MockVisa("bad")

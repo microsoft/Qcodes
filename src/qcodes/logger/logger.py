@@ -14,11 +14,11 @@ import sys
 from collections import OrderedDict
 from contextlib import contextmanager
 from copy import copy
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Self
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Generator, Sequence
     from types import TracebackType
 
 import qcodes as qc
@@ -129,7 +129,7 @@ def get_level_name(level: str | int) -> str:
     elif isinstance(level, int):
         return logging.getLevelName(level)
     else:
-        raise RuntimeError(
+        raise RuntimeError(  # noqa: TRY004
             "get_level_name: "
             f"Cannot to convert level {level} of type "
             f"{type(level)} to logging level name. Need "
@@ -148,7 +148,7 @@ def get_level_code(level: str | int) -> int:
     elif isinstance(level, str):
         return logging.getLevelNamesMapping()[level]
     else:
-        raise RuntimeError(
+        raise RuntimeError(  # noqa: TRY004
             "get_level_code: "
             f"Cannot to convert level {level} of type "
             f"{type(level)} to logging level code. Need "
@@ -163,8 +163,8 @@ def generate_log_file_name() -> str:
     """
 
     pid = str(os.getpid())
-    dt_str = datetime.now().strftime("%y%m%d")
-    python_log_name = "-".join([dt_str, pid, PYTHON_LOG_NAME])
+    dt_str = datetime.now(UTC).astimezone().strftime("%y%m%d")
+    python_log_name = f"{dt_str}-{pid}-{PYTHON_LOG_NAME}"
     return python_log_name
 
 
@@ -352,7 +352,7 @@ def conditionally_start_all_logging() -> None:
 @contextmanager
 def handler_level(
     level: LevelType, handler: "logging.Handler | Sequence[logging.Handler]"
-) -> "Iterator[None]":
+) -> "Generator[None, None, None]":
     """
     Context manager to temporarily change the level of handlers.
 
@@ -378,7 +378,7 @@ def handler_level(
 
 
 @contextmanager
-def console_level(level: LevelType) -> "Iterator[None]":
+def console_level(level: LevelType) -> "Generator[None, None, None]":
     """
     Context manager to temporarily change the level of the qcodes console
     handler.
@@ -412,9 +412,11 @@ class LogCapture:
 
     def __init__(
         self,
-        logger: logging.Logger = logging.getLogger(),
+        logger: logging.Logger | None = None,
         level: LevelType | None = None,
     ) -> None:
+        if logger is None:
+            logger = logging.getLogger()
         self.logger = logger
         self.level = level or logging.NOTSET
 

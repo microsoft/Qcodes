@@ -39,7 +39,7 @@ def test_default_attributes() -> None:
     # test snapshot_get by looking at _get_count
     # by default, snapshot_get is True, hence we expect ``get`` to be called
     assert p._get_count == 0
-    snap = p.snapshot(update=True)
+    snap = p.snapshot(update="All")
     assert p._get_count == 1
     snap_expected = {
         "name": name,
@@ -89,7 +89,7 @@ def test_explicit_attributes() -> None:
     # test snapshot_get by looking at _get_count
     assert p._get_count == 0
     # Snapshot should not perform get since snapshot_get is False
-    snap = p.snapshot(update=True)
+    snap = p.snapshot(update="All")
     assert p._get_count == 0
     snap_expected = {
         "name": name,

@@ -34,8 +34,6 @@ from .exporters.export_to_xarray import xarray_to_h5netcdf_with_complex_numbers
 from .sqlite.queries import raw_time_to_str_time
 
 if TYPE_CHECKING:
-    from typing import TypeAlias
-
     import pandas as pd
     import xarray as xr
 
@@ -51,32 +49,23 @@ if TYPE_CHECKING:
 # twice here convert to set to ensure no duplication.
 _EXPORT_CALLBACKS = set(entry_points(group="qcodes.dataset.on_export"))
 
-ScalarResTypes: TypeAlias = (
-    str | complex | np.integer | np.floating | np.complexfloating
-)
-ValuesType: TypeAlias = (
+type ScalarResTypes = str | complex | np.integer | np.floating | np.complexfloating
+type ValuesType = (
     ScalarResTypes
     | npt.NDArray
     | Sequence[ScalarResTypes]
     | Sequence[Sequence[ScalarResTypes]]
 )
-ResType: TypeAlias = "tuple[ParameterBase | str, ValuesType]"
-SetpointsType: TypeAlias = "Sequence[str | ParameterBase]"
-
-# deprecated alias left for backwards compatibility
-array_like_types = (tuple, list, npt.NDArray)
-scalar_res_types: TypeAlias = ScalarResTypes  # noqa PYI042
-values_type: TypeAlias = ValuesType  # noqa PYI042
-res_type: TypeAlias = ResType  # noqa PYI042
-setpoints_type: TypeAlias = SetpointsType  # noqa PYI042
+type ResType = "tuple[ParameterBase | str, ValuesType]"
+type SetpointsType = "Sequence[str | ParameterBase]"
 
 
-SPECS: TypeAlias = list[ParamSpec]
+type SPECS = list[ParamSpec]
 # Transition period type: SpecsOrInterDeps. We will allow both as input to
 # the DataSet constructor for a while, then deprecate SPECS and finally remove
 # the ParamSpec class
-SpecsOrInterDeps: TypeAlias = SPECS | InterDependencies_
-ParameterData: TypeAlias = dict[str, dict[str, npt.NDArray]]
+type SpecsOrInterDeps = SPECS | InterDependencies_
+type ParameterData = dict[str, dict[str, npt.NDArray]]
 
 LOG = logging.getLogger(__name__)
 
@@ -160,12 +149,12 @@ class DataSetProtocol(Protocol):
     @property
     def sample_name(self) -> str: ...
 
-    def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> str | None: ...
+    def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S%z") -> str | None: ...
 
     @property
     def run_timestamp_raw(self) -> float | None: ...
 
-    def completed_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> str | None: ...
+    def completed_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S%z") -> str | None: ...
 
     @property
     def completed_timestamp_raw(self) -> float | None: ...
@@ -229,14 +218,6 @@ class DataSetProtocol(Protocol):
     def dependent_parameters(self) -> tuple[ParamSpecBase, ...]: ...
 
     # exporters to other in memory formats
-
-    def to_xarray_dataarray_dict(
-        self,
-        *params: str | ParamSpec | ParameterBase,
-        start: int | None = None,
-        end: int | None = None,
-        use_multi_index: Literal["auto", "always", "never"] = "auto",
-    ) -> dict[str, xr.DataArray]: ...
 
     def to_xarray_dataset_dict(
         self,
@@ -524,7 +505,7 @@ class BaseDataSet(DataSetProtocol, Protocol):
             new_data = param_data.ravel()
         return new_data
 
-    def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> str | None:
+    def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S%z") -> str | None:
         """
         Returns run timestamp in a human-readable format
 
@@ -532,18 +513,30 @@ class BaseDataSet(DataSetProtocol, Protocol):
         started. If the run has not yet been started, this function returns
         None.
 
-        Consult with :func:`time.strftime` for information about the format.
+        The timestamp is rendered in the local timezone of the machine reading
+        the dataset since the raw timestamp stored in the dataset is a POSIX
+        timestamp which does not capture the timezone of the measurement. The
+        default format therefore includes the UTC offset.
+
+        Consult with :meth:`datetime.datetime.strftime` for information about
+        the format.
         """
         return raw_time_to_str_time(self.run_timestamp_raw, fmt)
 
-    def completed_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> str | None:
+    def completed_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S%z") -> str | None:
         """
         Returns timestamp when measurement run was completed
         in a human-readable format
 
         If the run (or the dataset) is not completed, then returns None.
 
-        Consult with ``time.strftime`` for information about the format.
+        The timestamp is rendered in the local timezone of the machine reading
+        the dataset since the raw timestamp stored in the dataset is a POSIX
+        timestamp which does not capture the timezone of the measurement. The
+        default format therefore includes the UTC offset.
+
+        Consult with :meth:`datetime.datetime.strftime` for information about
+        the format.
         """
         return raw_time_to_str_time(self.completed_timestamp_raw, fmt)
 

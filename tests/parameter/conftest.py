@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 
 import pytest
+from typing_extensions import Sentinel
 
 import qcodes.validators as vals
 from qcodes.instrument_drivers.mock_instruments import DummyChannelInstrument
@@ -12,36 +13,41 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Generator
 
     from qcodes.instrument import InstrumentBase
+    from qcodes.metadatable import SnapshotUpdate
 
-T = TypeVar("T")
-
-NOT_PASSED: Literal["NOT_PASSED"] = "NOT_PASSED"
+# typing_extensions 4.16 renamed Sentinel to sentinel (matching builtins.sentinel
+# in Python 3.15) and kept Sentinel as a soft-deprecated alias. We still use
+# Sentinel because pyright (as of 1.1.414) does not yet ship typeshed stubs
+# that export typing_extensions.sentinel. Switch once it does.
+NOT_PASSED = Sentinel("NOT_PASSED")
 
 
 @pytest.fixture(params=(True, False, NOT_PASSED))
-def snapshot_get(request: pytest.FixtureRequest) -> bool | Literal["NOT_PASSED"]:
+def snapshot_get(request: pytest.FixtureRequest) -> bool | NOT_PASSED:
     return request.param
 
 
 @pytest.fixture(params=(True, False, NOT_PASSED))
-def snapshot_value(request: pytest.FixtureRequest) -> bool | Literal["NOT_PASSED"]:
+def snapshot_value(request: pytest.FixtureRequest) -> bool | NOT_PASSED:
     return request.param
 
 
 @pytest.fixture(params=(None, False, NOT_PASSED))
 def get_cmd(
     request: pytest.FixtureRequest,
-) -> Literal[False, "NOT_PASSED"] | None:
+) -> Literal[False] | NOT_PASSED | None:
     return request.param
 
 
 @pytest.fixture(params=(True, False, NOT_PASSED))
-def get_if_invalid(request: pytest.FixtureRequest) -> bool | Literal["NOT_PASSED"]:
+def get_if_invalid(request: pytest.FixtureRequest) -> bool | NOT_PASSED:
     return request.param
 
 
-@pytest.fixture(params=(True, False, None, NOT_PASSED))
-def update(request: pytest.FixtureRequest) -> bool | None | Literal["NOT_PASSED"]:
+@pytest.fixture(params=("All", "Never", "Only_invalid", NOT_PASSED))
+def update(
+    request: pytest.FixtureRequest,
+) -> SnapshotUpdate | NOT_PASSED:
     return request.param
 
 
@@ -60,7 +66,7 @@ def _make_dummy_instrument() -> Generator[DummyChannelInstrument, None, None]:
 class GettableParam(Parameter):
     """Parameter that keeps track of number of get operations"""
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._get_count = 0
 
@@ -73,7 +79,7 @@ class BetterGettableParam(Parameter):
     """Parameter that keeps track of number of get operations,
     But can actually store values"""
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._get_count = 0
 
@@ -85,7 +91,7 @@ class BetterGettableParam(Parameter):
 class SettableParam(Parameter):
     """Parameter that keeps track of number of set operations"""
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         self._set_count = 0
         super().__init__(*args, **kwargs)
 
@@ -96,7 +102,7 @@ class SettableParam(Parameter):
 class OverwriteGetParam(Parameter):
     """Parameter that overwrites get."""
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._value = 42
         self.set_count = 0
@@ -110,7 +116,7 @@ class OverwriteGetParam(Parameter):
 class OverwriteSetParam(Parameter):
     """Parameter that overwrites set."""
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._value = 42
         self.set_count = 0
@@ -124,7 +130,7 @@ class OverwriteSetParam(Parameter):
 class GetSetRawParameter(Parameter):
     """Parameter that implements get and set raw"""
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
     def get_raw(self) -> ParamRawDataType:
@@ -134,14 +140,14 @@ class GetSetRawParameter(Parameter):
         pass
 
 
-class BookkeepingValidator(vals.Validator[T]):
+class BookkeepingValidator[T](vals.Validator[T]):
     """
     Validator that keeps track of what it validates
     """
 
     def __init__(
         self, min_value: float = -float("inf"), max_value: float = float("inf")
-    ):
+    ) -> None:
         self.values_validated: list[T] = []
 
     def validate(self, value: T, context: str = "") -> None:
@@ -151,7 +157,7 @@ class BookkeepingValidator(vals.Validator[T]):
 
 
 class MemoryParameter(Parameter):
-    def __init__(self, get_cmd: None | Callable[[], Any] = None, **kwargs: Any):
+    def __init__(self, get_cmd: Callable[[], Any] | None = None, **kwargs: Any) -> None:
         self.set_values: list[Any] = []
         self.get_values: list[Any] = []
         super().__init__(
@@ -162,7 +168,7 @@ class MemoryParameter(Parameter):
         self.set_values.append(value)
 
     def create_get_func(
-        self, func: None | Callable[[], ParamDataType]
+        self, func: Callable[[], ParamDataType] | None
     ) -> Callable[[], ParamDataType]:
         def get_func() -> ParamDataType:
             if func is not None:
@@ -176,7 +182,7 @@ class MemoryParameter(Parameter):
 
 
 class VirtualParameter(Parameter):
-    def __init__(self, name: str, param: Parameter, **kwargs: Any):
+    def __init__(self, name: str, param: Parameter, **kwargs: Any) -> None:
         self._param = param
         super().__init__(name=name, **kwargs)
 

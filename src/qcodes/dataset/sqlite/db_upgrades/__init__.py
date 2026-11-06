@@ -143,7 +143,7 @@ def perform_db_upgrade(conn: AtomicConnection, version: int = -1) -> None:
 
     current_version = get_user_version(conn)
 
-    show_progress_bar = not (_get_no_of_runs(conn) == 0)
+    show_progress_bar = _get_no_of_runs(conn) != 0
 
     if current_version < version:
         log.info("Commencing database upgrade")

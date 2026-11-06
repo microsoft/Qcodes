@@ -1,10 +1,19 @@
 import re
 import textwrap
-from typing import TYPE_CHECKING, Any, Generic, Literal, NotRequired, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generic,
+    Literal,
+    NotRequired,
+    Self,
+    Unpack,
+    overload,
+)
 
 import numpy as np
 import numpy.typing as npt
-from typing_extensions import TypedDict, Unpack
+from typing_extensions import TypedDict
 
 import qcodes.validators as vals
 from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel
@@ -33,6 +42,7 @@ if TYPE_CHECKING:
     from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base import (
         KeysightB1500,
     )
+    from qcodes.metadatable import SnapshotUpdate
 
 
 class SweepSteps(TypedDict):
@@ -350,7 +360,7 @@ class KeysightB1500IVSweeper(InstrumentChannel["KeysightB1517A"]):
         - Pcomp/output voltage > maximum current for the output range
         """
 
-        self.sweep_start: Parameter = self.add_parameter(
+        self.sweep_start: Parameter[float, Self] = self.add_parameter(
             name="sweep_start",
             set_cmd=self._set_sweep_start,
             get_cmd=self._get_sweep_start,
@@ -369,7 +379,7 @@ class KeysightB1500IVSweeper(InstrumentChannel["KeysightB1517A"]):
         start and stop must have the same polarity.
         """
 
-        self.sweep_end: Parameter = self.add_parameter(
+        self.sweep_end: Parameter[float, Self] = self.add_parameter(
             name="sweep_end",
             set_cmd=self._set_sweep_end,
             get_cmd=self._get_sweep_end,
@@ -388,7 +398,7 @@ class KeysightB1500IVSweeper(InstrumentChannel["KeysightB1517A"]):
         stop must have the same polarity.
         """
 
-        self.sweep_steps: Parameter = self.add_parameter(
+        self.sweep_steps: Parameter[int, Self] = self.add_parameter(
             name="sweep_steps",
             set_cmd=self._set_sweep_steps,
             get_cmd=self._get_sweep_steps,
@@ -405,12 +415,14 @@ class KeysightB1500IVSweeper(InstrumentChannel["KeysightB1517A"]):
         1001
         """
 
-        self.current_compliance: Parameter = self.add_parameter(
+        self.current_compliance: Parameter[float | None, Self] = self.add_parameter(
             name="current_compliance",
             set_cmd=self._set_current_compliance,
             get_cmd=self._get_current_compliance,
             unit="A",
-            vals=vals.Numbers(-40, 40),
+            # None omits Icomp (and Pcomp) from the WV command, in which case
+            # the instrument keeps the previous current compliance
+            vals=vals.MultiType(vals.Numbers(-40, 40), vals.Enum(None)),
             snapshot_get=False,
             docstring=textwrap.dedent(
                 """
@@ -438,12 +450,13 @@ class KeysightB1500IVSweeper(InstrumentChannel["KeysightB1517A"]):
         is allowed, regardless of the output range setting.
         """
 
-        self.power_compliance: Parameter = self.add_parameter(
+        self.power_compliance: Parameter[float | None, Self] = self.add_parameter(
             name="power_compliance",
             set_cmd=self._set_power_compliance,
             get_cmd=self._get_power_compliance,
             unit="W",
-            vals=vals.Numbers(0.001, 80),
+            # None omits Pcomp from the WV command, i.e. no power compliance
+            vals=vals.MultiType(vals.Numbers(0.001, 80), vals.Enum(None)),
             snapshot_get=False,
             docstring=textwrap.dedent(
                 """
@@ -505,6 +518,11 @@ class KeysightB1500IVSweeper(InstrumentChannel["KeysightB1517A"]):
 
     def _set_current_compliance(self, value: float | None) -> None:
         self._sweep_step_parameters["current_compliance"] = value
+        if value is None:
+            # Pcomp can only be sent together with Icomp, so without a current
+            # compliance there is no power compliance either
+            self._sweep_step_parameters["power_compliance"] = None
+            self.power_compliance.cache.set(None)
         self._set_from_sweep_step_parameters()
 
     def _get_current_compliance(self) -> float | None:
@@ -512,7 +530,12 @@ class KeysightB1500IVSweeper(InstrumentChannel["KeysightB1517A"]):
         return current_compliance
 
     def _set_power_compliance(self, value: float | None) -> None:
-        if self._sweep_step_parameters["current_compliance"] is None:
+        # Pcomp can only be sent together with Icomp, but clearing it is always
+        # allowed
+        if (
+            value is not None
+            and self._sweep_step_parameters["current_compliance"] is None
+        ):
             raise ValueError(
                 "Current compliance must be set before setting power compliance"
             )
@@ -696,14 +719,11 @@ class KeysightB1500IVSweeper(InstrumentChannel["KeysightB1517A"]):
         return out_dict
 
 
-IVSweeper = KeysightB1500IVSweeper
-"""
-Alias for backwards compatibility
-"""
-
-
 class _ParameterWithStatus(
-    Parameter[ParameterDataTypeVar, "KeysightB1517A"], Generic[ParameterDataTypeVar]
+    Parameter[ParameterDataTypeVar, "KeysightB1517A"],
+    # Generic can be replaced with PEP 695 type params once Python 3.12
+    # support is dropped (TypeVars use default= which requires PEP 696)
+    Generic[ParameterDataTypeVar],  # noqa: UP046
 ):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
@@ -716,7 +736,7 @@ class _ParameterWithStatus(
 
     def snapshot_base(
         self,
-        update: bool | None = True,
+        update: "bool | SnapshotUpdate | None" = "Only_invalid",
         params_to_skip_update: "Sequence[str] | None" = None,
     ) -> dict[Any, Any]:
         snapshot = super().snapshot_base(
@@ -730,7 +750,10 @@ class _ParameterWithStatus(
 
 
 class _SpotMeasurementVoltageParameter(
-    _ParameterWithStatus[ParameterDataTypeVar], Generic[ParameterDataTypeVar]
+    _ParameterWithStatus[ParameterDataTypeVar],
+    # Generic can be replaced with PEP 695 type params once Python 3.12
+    # support is dropped (TypeVars use default= which requires PEP 696)
+    Generic[ParameterDataTypeVar],  # noqa: UP046
 ):
     def set_raw(self, value: ParamRawDataType) -> None:
         smu = self.instrument
@@ -773,7 +796,10 @@ class _SpotMeasurementVoltageParameter(
 
 
 class _SpotMeasurementCurrentParameter(
-    _ParameterWithStatus[ParameterDataTypeVar], Generic[ParameterDataTypeVar]
+    _ParameterWithStatus[ParameterDataTypeVar],
+    # Generic can be replaced with PEP 695 type params once Python 3.12
+    # support is dropped (TypeVars use default= which requires PEP 696)
+    Generic[ParameterDataTypeVar],  # noqa: UP046
 ):
     def set_raw(self, value: ParamRawDataType) -> None:
         smu = self.instrument
@@ -841,25 +867,15 @@ class KeysightB1517A(KeysightB1500Module):
     ):
         super().__init__(parent, name, slot_nr, **kwargs)
         self.channels = (ChNr(slot_nr),)
-        self._measure_config: dict[str, Any | None] = {
-            k: None
-            for k in (
-                "v_measure_range",
-                "i_measure_range",
-            )
-        }
-        self._source_config: dict[str, Any | None] = {
-            k: None
-            for k in (
-                "output_range",
-                "compliance",
-                "compl_polarity",
-                "min_compliance_range",
-            )
-        }
-        self._timing_parameters: dict[str, Any | None] = {
-            k: None for k in ("h_bias", "interval", "number", "h_base")
-        }
+        self._measure_config: dict[str, Any | None] = dict.fromkeys(
+            ("v_measure_range", "i_measure_range")
+        )
+        self._source_config: dict[str, Any | None] = dict.fromkeys(
+            ("output_range", "compliance", "compl_polarity", "min_compliance_range")
+        )
+        self._timing_parameters: dict[str, Any | None] = dict.fromkeys(
+            ("h_bias", "interval", "number", "h_base")
+        )
 
         # We want to snapshot these configuration dictionaries
         self._meta_attrs += ["_measure_config", "_source_config", "_timing_parameters"]
@@ -1050,7 +1066,7 @@ class KeysightB1517A(KeysightB1500Module):
         output mode (voltage or current).
         """
 
-        self.enable_filter: Parameter = self.add_parameter(
+        self.enable_filter: Parameter[bool, Self] = self.add_parameter(
             name="enable_filter",
             set_cmd=self._set_enable_filter,
             get_cmd=None,
@@ -1080,7 +1096,7 @@ class KeysightB1517A(KeysightB1500Module):
             sample_number = self._timing_parameters["number"]
             return sample_number
         else:
-            raise Exception("set timing parameters first")
+            raise RuntimeError("set timing parameters first")
 
     def _get_time_axis(self) -> npt.NDArray:
         sample_rate = self._timing_parameters["interval"]
@@ -1093,7 +1109,7 @@ class KeysightB1517A(KeysightB1500Module):
             self._timing_parameters["interval"] is None
             or self._timing_parameters["number"] is None
         ):
-            raise Exception("set timing parameters first")
+            raise RuntimeError("set timing parameters first")
 
         sample_number = self._timing_parameters["number"]
         sample_rate = self._timing_parameters["interval"]
@@ -1176,20 +1192,25 @@ class KeysightB1517A(KeysightB1500Module):
                 range
 
         """
-        if min_compliance_range is not None:
-            if isinstance(min_compliance_range, type(output_range)):
-                raise TypeError(
-                    "When forcing voltage, min_compliance_range must be an "
-                    "current output range (and vice versa)."
-                )
+        if min_compliance_range is not None and isinstance(
+            min_compliance_range, type(output_range)
+        ):
+            raise TypeError(
+                "When forcing voltage, min_compliance_range must be an "
+                "current output range (and vice versa)."
+            )
 
-        if isinstance(output_range, VOutputRange):
-            if output_range not in self._valid_v_output_ranges:
-                raise RuntimeError("Invalid Source Voltage Output Range")
+        if (
+            isinstance(output_range, VOutputRange)
+            and output_range not in self._valid_v_output_ranges
+        ):
+            raise RuntimeError("Invalid Source Voltage Output Range")
 
-        if isinstance(output_range, IOutputRange):
-            if output_range not in self._valid_i_output_ranges:
-                raise RuntimeError("Invalid Source Current Output Range")
+        if (
+            isinstance(output_range, IOutputRange)
+            and output_range not in self._valid_i_output_ranges
+        ):
+            raise RuntimeError("Invalid Source Current Output Range")
 
         self._source_config = {
             "output_range": output_range,
@@ -1410,9 +1431,3 @@ class KeysightB1517A(KeysightB1500Module):
         self.parent.clear_timer_count()
 
         self.setup_fnc_already_run = True
-
-
-B1517A = KeysightB1517A
-"""
-Alias for backwards compatibility
-"""

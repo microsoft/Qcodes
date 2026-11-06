@@ -1,7 +1,7 @@
 import re
 import textwrap
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Generic, TypedDict, cast
+from typing import TYPE_CHECKING, Any, Generic, Self, TypedDict, cast
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import MultiParameter, Parameter, create_on_off_val_mapping
@@ -25,8 +25,7 @@ from .message_builder import MessageBuilder
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 class MeasurementModeDict(TypedDict):
@@ -56,7 +55,7 @@ class KeysightB1500(VisaInstrument):
 
         self._find_modules()
 
-        self.autozero_enabled: Parameter = self.add_parameter(
+        self.autozero_enabled: Parameter[bool, Self] = self.add_parameter(
             "autozero_enabled",
             unit="",
             label="Autozero enabled of the high-resolution ADC",
@@ -340,7 +339,7 @@ class KeysightB1500(VisaInstrument):
 
         """
         msg = MessageBuilder().cal_query(slot=slot)
-        with self.root_instrument.timeout.set_to(self.calibration_time_out):
+        with self.timeout.set_to(self.calibration_time_out):
             response = self.ask(msg.message)
         return constants.CALResponse(int(response))
 
@@ -377,7 +376,7 @@ class KeysightB1500(VisaInstrument):
         msg = MessageBuilder().err_query()
         self.write(msg.message)
 
-    def clear_timer_count(self, chnum: int | None = None) -> None:
+    def clear_timer_count(self, chnum: "int | Sequence[int] | None" = None) -> None:
         """
         This command clears the timer count. This command is effective for
         all measurement modes, regardless of the TSC setting. This command
@@ -391,13 +390,23 @@ class KeysightB1500(VisaInstrument):
                 source output start by the DV, DI, or DCV command for the
                 specified channel. The channel output switch of the
                 specified channel must be ON when the timer count is
-                cleared.
+                cleared. Alternatively a sequence of channels
+                can be passed to clear the timer count for multiple
+                channels at the same time.
 
         If chnum is not specified, this command clears the timer count
         immediately,
 
         """
-        msg = MessageBuilder().tsr(chnum=chnum)
+        msg = MessageBuilder()
+        if chnum is None:
+            chnum_internal: Sequence[int | None] = [None]
+        elif isinstance(chnum, int):
+            chnum_internal = [chnum]
+        else:
+            chnum_internal = chnum
+        for ch in chnum_internal:
+            msg.tsr(chnum=ch)
         self.write(msg.message)
 
     def set_measurement_mode(
@@ -490,7 +499,9 @@ class KeysightB1500(VisaInstrument):
 class IVSweepMeasurement(
     MultiParameter[ParameterDataTypeVar, KeysightB1500],
     StatusMixin,
-    Generic[ParameterDataTypeVar],
+    # Generic can be replaced with PEP 695 type params once Python 3.12
+    # support is dropped (TypeVars use default= which requires PEP 696)
+    Generic[ParameterDataTypeVar],  # noqa: UP046
 ):
     """
     IV sweep measurement outputs a list of measured current parameters
@@ -505,9 +516,9 @@ class IVSweepMeasurement(
     def __init__(self, name: str, instrument: KeysightB1500, **kwargs: Any):
         super().__init__(
             name,
-            names=tuple(["param1", "param2"]),
-            units=tuple(["A", "A"]),
-            labels=tuple(["Param1 Current", "Param2 Current"]),
+            names=("param1", "param2"),
+            units=("A", "A"),
+            labels=("Param1 Current", "Param2 Current"),
             shapes=((1,),) * 2,
             setpoint_names=(("Voltage",),) * 2,
             setpoint_labels=(("Voltage",),) * 2,
@@ -653,7 +664,7 @@ class IVSweepMeasurement(
         smu = cast("KeysightB1517A", smu)
 
         if not smu.setup_fnc_already_run:
-            raise Exception(
+            raise RuntimeError(
                 f"Sweep setup has not yet been run successfully on {smu.full_name}"
             )
 
@@ -694,7 +705,7 @@ class IVSweepMeasurement(
         for channel_index in range(n_channels):
             parsed_data_items = [
                 parsed_data[i][channel_index::n_all_data_channels]
-                for i in range(0, n_items_per_data_point)
+                for i in range(n_items_per_data_point)
             ]
             single_channel_data = _FMTResponse(*parsed_data_items)
             convert_dummy_val_to_nan(single_channel_data)
@@ -710,7 +721,7 @@ class IVSweepMeasurement(
         source_voltage_index = n_channels
         parsed_source_voltage_items = [
             parsed_data[i][source_voltage_index::n_all_data_channels]
-            for i in range(0, n_items_per_data_point)
+            for i in range(n_items_per_data_point)
         ]
         self.source_voltage = _FMTResponse(*parsed_source_voltage_items)
 

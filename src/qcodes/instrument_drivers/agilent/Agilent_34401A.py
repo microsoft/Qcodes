@@ -1,12 +1,11 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
-from qcodes.instrument import VisaInstrumentKWArgs
 from qcodes.validators import Strings
 
 from ._Agilent_344xxA import Agilent344xxA
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.instrument import VisaInstrumentKWArgs
     from qcodes.parameters import Parameter
@@ -25,7 +24,7 @@ class Agilent34401A(Agilent344xxA):
     ) -> None:
         super().__init__(name, address, **kwargs)
 
-        self.display_text: Parameter = self.add_parameter(
+        self.display_text: Parameter[str, Self] = self.add_parameter(
             "display_text",
             get_cmd="DISP:TEXT?",
             set_cmd='DISP:TEXT "{}"',

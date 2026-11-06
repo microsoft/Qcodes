@@ -17,7 +17,7 @@ class InterDependencies:  # noqa: PLW1641
     def __init__(self, *paramspecs: ParamSpec) -> None:
         for paramspec in paramspecs:
             if not isinstance(paramspec, ParamSpec):
-                raise ValueError(
+                raise ValueError(  # noqa: TRY004
                     "Got invalid input. All paramspecs must be "
                     f"ParamSpecs, but {paramspec} is of type "
                     f"{type(paramspec)}."
@@ -36,9 +36,7 @@ class InterDependencies:  # noqa: PLW1641
             return False
         ours = sorted(self.paramspecs, key=lambda ps: ps.name)
         theirs = sorted(other.paramspecs, key=lambda ps: ps.name)
-        if not ours == theirs:
-            return False
-        return True
+        return ours == theirs
 
     def _to_dict(self) -> InterDependenciesDict:
         """

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes.instrument import (
     ChannelList,
@@ -13,17 +13,19 @@ from qcodes.instrument import (
 from qcodes.validators import Ints
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.parameters import Parameter
 
 log = logging.getLogger(__name__)
 
 
-class MiniCircuitsSPDTSwitchChannelBase(InstrumentChannel):
+class MiniCircuitsSPDTSwitchChannelBase[TINSTR: "MiniCircuitsSPDTBase"](
+    InstrumentChannel[TINSTR]
+):
     def __init__(
         self,
-        parent: Instrument,
+        parent: TINSTR,
         name: str,
         channel_letter: str,
         **kwargs: Unpack[InstrumentBaseKWArgs],
@@ -45,7 +47,7 @@ class MiniCircuitsSPDTSwitchChannelBase(InstrumentChannel):
         _chanlist = ["a", "b", "c", "d", "e", "f", "g", "h"]
         self.channel_number = _chanlist.index(channel_letter)
 
-        self.switch: Parameter = self.add_parameter(
+        self.switch: Parameter[int, Self] = self.add_parameter(
             "switch",
             label=f"switch {self.channel_letter}",
             set_cmd=self._set_switch,
@@ -89,7 +91,8 @@ class MiniCircuitsSPDTBase(Instrument):
             channel = self.CHANNEL_CLASS(self, f"channel_{c}", c)
             channels.append(channel)
             self.add_submodule(c, channel)
-        self.add_submodule("channels", channels.to_channel_tuple())
+        self.channels = self.add_submodule("channels", channels.to_channel_tuple())
+        """Channel list containing all channels of the switch"""
 
     def all(self, switch_to: int) -> None:
         for c in self.channels:

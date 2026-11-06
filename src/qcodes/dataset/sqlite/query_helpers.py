@@ -407,10 +407,7 @@ def is_column_in_table(conn: AtomicConnection, table: str, column: str) -> bool:
     """
     cur = atomic_transaction(conn, f"PRAGMA table_info({table})")
     description = get_description_map(cur)
-    for row in cur.fetchall():
-        if row[description["name"]] == column:
-            return True
-    return False
+    return any(row[description["name"]] == column for row in cur.fetchall())
 
 
 def sql_placeholder_string(n: int) -> str:

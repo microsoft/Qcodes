@@ -1,7 +1,7 @@
 import logging
 import re
 from collections.abc import Generator, Sequence
-from typing import TYPE_CHECKING, assert_type
+from typing import TYPE_CHECKING, Any, assert_type
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -11,6 +11,7 @@ from numpy.testing import assert_array_equal
 from pytest import LogCaptureFixture
 
 from qcodes.instrument import ChannelList, ChannelTuple, Instrument, InstrumentChannel
+from qcodes.instrument.channel import ChannelTupleValidator
 from qcodes.instrument_drivers.mock_instruments import (
     DummyChannel,
     DummyChannelInstrument,
@@ -18,11 +19,11 @@ from qcodes.instrument_drivers.mock_instruments import (
 from qcodes.parameters import (
     MultiChannelInstrumentParameter,
 )
-from qcodes.utils import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
+    from typing import Unpack
+
     import pytest_mock
-    from typing_extensions import Unpack
 
     from qcodes.instrument.instrument_base import InstrumentBaseKWArgs
 
@@ -113,7 +114,7 @@ def test_channels_get(dci: DummyChannelInstrument) -> None:
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(value=hst.floats(0, 300), channel=hst.integers(0, 3))
 def test_channel_access_is_identical(
-    dci: DummyChannelInstrument, value, channel
+    dci: DummyChannelInstrument, value: float, channel: int
 ) -> None:
     channel_to_label = {0: "A", 1: "B", 2: "C", 3: "D"}
     label = channel_to_label[channel]
@@ -170,6 +171,13 @@ def test_invalid_multichan_type_raises(empty_instrument: Instrument) -> None:
         )
 
 
+def test_channel_tuple_validator_requires_channel_tuple(
+    dci: DummyChannelInstrument,
+) -> None:
+    with pytest.raises(ValueError, match="channel_list must be a ChannelTuple"):
+        ChannelTupleValidator(dci.A)  # type: ignore[arg-type]
+
+
 def test_wrong_chan_type_raises(empty_instrument: Instrument) -> None:
     with pytest.raises(TypeError, match="All items in this ChannelTuple must be of"):
         ChannelList(
@@ -194,9 +202,9 @@ def test_append_channel(dci_with_list: DCIWithList) -> None:
 
     dci_with_list.channels.lock()
     # after locking the channels it's not possible to add any more channels
+    name = "bar"
+    channel = DummyChannel(dci_with_list, "Chan" + name, name)
     with pytest.raises(AttributeError):
-        name = "bar"
-        channel = DummyChannel(dci_with_list, "Chan" + name, name)
         dci_with_list.channels.append(channel)
     assert len(dci_with_list.channels) == n_channels_post
 
@@ -206,7 +214,7 @@ def test_append_channel_wrong_type_raises(dci_with_list: DCIWithList) -> None:
 
     channel = EmptyChannel(dci_with_list, "foo")
     with pytest.raises(TypeError, match="All items in a channel list must"):
-        dci_with_list.channels.append(channel)  # type: ignore
+        dci_with_list.channels.append(channel)  # pyright: ignore[reportArgumentType]
 
     assert len(dci_with_list.channels) == n_channels
 
@@ -236,7 +244,7 @@ def test_extend_wrong_type_raises(dci_with_list: DCIWithList) -> None:
         TypeError,
         match=re.escape("All items in a channel list must be of the same type."),
     ):
-        dci_with_list.channels.extend(channels)  # type: ignore
+        dci_with_list.channels.extend(channels)  # pyright: ignore[reportArgumentType]
 
 
 def test_extend_locked_list_raises(dci_with_list: DCIWithList) -> None:
@@ -244,7 +252,7 @@ def test_extend_locked_list_raises(dci_with_list: DCIWithList) -> None:
     names = ("foo", "bar", "foobar")
     channels = tuple(EmptyChannel(dci_with_list, "Chan" + name) for name in names)
     with pytest.raises(AttributeError, match="Cannot extend a locked channel list"):
-        dci_with_list.channels.extend(channels)  # type: ignore
+        dci_with_list.channels.extend(channels)  # pyright: ignore[reportArgumentType]
 
 
 def test_extend_then_remove(dci_with_list: DCIWithList) -> None:
@@ -274,9 +282,9 @@ def test_insert_channel(dci_with_list: DCIWithList) -> None:
     assert dci_with_list.channels[1] is channel
     dci_with_list.channels.lock()
     # after locking the channels it's not possible to add any more channels
+    name = "bar"
+    channel = DummyChannel(dci_with_list, "Chan" + name, name)
     with pytest.raises(AttributeError):
-        name = "bar"
-        channel = DummyChannel(dci_with_list, "Chan" + name, name)
         dci_with_list.channels.insert(2, channel)
     assert len(dci_with_list.channels) == n_channels_post
     assert len(dci_with_list.channels._channel_mapping) == n_channels_post
@@ -284,7 +292,7 @@ def test_insert_channel(dci_with_list: DCIWithList) -> None:
 
 def test_insert_channel_wrong_type_raises(dci_with_list: DCIWithList) -> None:
     with pytest.raises(TypeError, match="All items in a channel list"):
-        dci_with_list.channels.insert(1, EmptyChannel(parent=dci_with_list, name="foo"))  # type: ignore
+        dci_with_list.channels.insert(1, EmptyChannel(parent=dci_with_list, name="foo"))  # pyright: ignore[reportArgumentType]
 
 
 def test_channel_type_can_be_inferred(
@@ -300,7 +308,7 @@ def test_add_none_channel_tuple_to_channel_tuple_raises(
     dci: DummyChannelInstrument,
 ) -> None:
     with pytest.raises(TypeError, match="Can't add objects of type"):
-        _ = dci.channels + [1]  # type: ignore  # noqa: RUF005
+        _ = dci.channels + [1]  # pyright: ignore[reportOperatorIssue]  # noqa: RUF005
 
 
 def test_add_channel_tuples_of_different_types_raises(
@@ -379,7 +387,7 @@ def test_channel_tuple_snapshot_enabled(empty_instrument: Instrument) -> None:
     snapshot = empty_instrument.channels.snapshot()
     assert snapshot["snapshotable"] is True
     assert len(snapshot.keys()) == 3
-    assert "channels" in snapshot.keys()
+    assert "channels" in snapshot
 
 
 def test_channel_tuple_dir(dci: DummyChannelInstrument) -> None:
@@ -515,8 +523,8 @@ def test_access_channels_by_name_empty_raises(dci: DummyChannelInstrument) -> No
 
 
 def test_access_channel_by_name_empty_raises(dci: DummyChannelInstrument) -> None:
-    with pytest.raises(TypeError, match="one or more names must be given"):
-        dci.channels.get_channel_by_name()
+    with pytest.raises(TypeError, match="missing 1 required positional argument"):
+        dci.channels.get_channel_by_name()  # pyright: ignore[reportCallIssue]
 
 
 def test_delete_from_channel_list(dci_with_list: DCIWithList) -> None:
@@ -577,23 +585,6 @@ def test_set_element_locked_raises(dci_with_list: DCIWithList) -> None:
     ):
         dci_with_list.channels[0] = dci_with_list.channels[1]
     assert dci_with_list.channels[0] is not dci_with_list.channels[1]
-
-
-@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,), deadline=1000)
-@given(myindexs=hst.lists(elements=hst.integers(0, 7), min_size=2))
-def test_access_channels_by_name_deprecated(
-    dci: DummyChannelInstrument, myindexs: list[int]
-) -> None:
-    names = ("A", "B", "C", "D", "E", "F", "G", "H")
-    channels = tuple(DummyChannel(dci, "Chan" + name, name) for name in names)
-    chlist = ChannelList(dci, "channels", DummyChannel, channels)
-
-    channel_names = (f"Chan{names[i]}" for i in myindexs)
-
-    with pytest.warns(QCoDeSDeprecationWarning, match="get_channel_by_name"):
-        mychans = chlist.get_channel_by_name(*channel_names)
-        for chan, chanindex in zip(mychans, myindexs):  # pyright: ignore[reportArgumentType]
-            assert chan.name == f"dci_Chan{names[chanindex]}"
 
 
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,), deadline=1000)
@@ -845,37 +836,37 @@ def test_multi_function_on_empty_channel_tuple_raises(
         channels.multi_function("temperature")
 
 
-def _verify_multiparam_data(data) -> None:
-    assert "multi_setpoint_param_this_setpoint_set" in data.arrays.keys()
+def _verify_multiparam_data(data: Any) -> None:
+    assert "multi_setpoint_param_this_setpoint_set" in data.arrays
     assert_array_equal(
         data.arrays["multi_setpoint_param_this_setpoint_set"].ndarray,
         np.repeat(np.arange(5.0, 10).reshape(1, 5), 11, axis=0),
     )
-    assert "dci_ChanA_multi_setpoint_param_this" in data.arrays.keys()
+    assert "dci_ChanA_multi_setpoint_param_this" in data.arrays
     assert_array_equal(
         data.arrays["dci_ChanA_multi_setpoint_param_this"].ndarray, np.zeros((11, 5))
     )
-    assert "dci_ChanA_multi_setpoint_param_this" in data.arrays.keys()
+    assert "dci_ChanA_multi_setpoint_param_this" in data.arrays
     assert_array_equal(
         data.arrays["dci_ChanA_multi_setpoint_param_that"].ndarray, np.ones((11, 5))
     )
-    assert "dci_ChanA_temperature_set" in data.arrays.keys()
+    assert "dci_ChanA_temperature_set" in data.arrays
     assert_array_equal(
         data.arrays["dci_ChanA_temperature_set"].ndarray, np.arange(0, 10.1, 1)
     )
 
 
-def _verify_array_data(data, channels=("A",)) -> None:
-    assert "array_setpoint_param_this_setpoint_set" in data.arrays.keys()
+def _verify_array_data(data: Any, channels: Sequence[str] = ("A",)) -> None:
+    assert "array_setpoint_param_this_setpoint_set" in data.arrays
     assert_array_equal(
         data.arrays["array_setpoint_param_this_setpoint_set"].ndarray,
         np.repeat(np.arange(5.0, 10).reshape(1, 5), 11, axis=0),
     )
     for channel in channels:
         aname = f"dci_Chan{channel}_dummy_array_parameter"
-        assert aname in data.arrays.keys()
+        assert aname in data.arrays
         assert_array_equal(data.arrays[aname].ndarray, np.ones((11, 5)) + 1)
-    assert "dci_ChanA_temperature_set" in data.arrays.keys()
+    assert "dci_ChanA_temperature_set" in data.arrays
     assert_array_equal(
         data.arrays["dci_ChanA_temperature_set"].ndarray, np.arange(0, 10.1, 1)
     )

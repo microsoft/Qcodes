@@ -7,14 +7,14 @@ class GroupRegistryTestParameterMixin(GroupRegistryParameterMixin):
     pass
 
 
-def test_register_and_trigger_group_callbacks():
-    calls = []
+def test_register_and_trigger_group_callbacks() -> None:
+    calls: list[str] = []
     GroupRegistryTestParameterMixin._group_registry.clear()
 
-    def cb1():
+    def cb1() -> None:
         calls.append("cb1")
 
-    def cb2():
+    def cb2() -> None:
         calls.append("cb2")
 
     GroupRegistryTestParameterMixin.register_group_callback("alpha", cb1)
@@ -24,7 +24,7 @@ def test_register_and_trigger_group_callbacks():
     assert calls == ["cb1", "cb2"]
 
 
-def test_trigger_group_warns_if_none():
+def test_trigger_group_warns_if_none() -> None:
     GroupRegistryTestParameterMixin._group_registry.clear()
     with pytest.warns(UserWarning, match="No callbacks registered for group 'missing'"):
         GroupRegistryTestParameterMixin.trigger_group("missing")
@@ -35,17 +35,17 @@ def test_warning_no_callbacks_for_group() -> None:
         GroupRegistryParameterMixin.trigger_group("empty_group")
 
 
-def test_multiple_callbacks_in_group():
+def test_multiple_callbacks_in_group() -> None:
     """
     Test that multiple callbacks registered to a group are all called in order.
     """
-    call_order = []
+    call_order: list[str] = []
     GroupRegistryTestParameterMixin._group_registry.clear()
 
-    def callback_one():
+    def callback_one() -> None:
         call_order.append("callback_one")
 
-    def callback_two():
+    def callback_two() -> None:
         call_order.append("callback_two")
 
     GroupRegistryTestParameterMixin.register_group_callback(
@@ -59,17 +59,17 @@ def test_multiple_callbacks_in_group():
     assert call_order == ["callback_one", "callback_two"]
 
 
-def test_callback_execution_order():
+def test_callback_execution_order() -> None:
     """
     Test that callbacks are executed in the order they were registered.
     """
-    execution_sequence = []
+    execution_sequence: list[str] = []
     GroupRegistryTestParameterMixin._group_registry.clear()
 
-    def first_callback():
+    def first_callback() -> None:
         execution_sequence.append("first")
 
-    def second_callback():
+    def second_callback() -> None:
         execution_sequence.append("second")
 
     GroupRegistryTestParameterMixin.register_group_callback(

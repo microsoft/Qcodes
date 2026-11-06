@@ -1,0 +1,82 @@
+from typing import TYPE_CHECKING
+
+import pytest
+
+from qcodes.instrument_drivers.rigol import RigolDS1074Z
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+
+@pytest.fixture(scope="function")
+def driver() -> "Generator[RigolDS1074Z, None, None]":
+    rigol = RigolDS1074Z(
+        "rigol",
+        address="GPIB::1::INSTR",
+        # This matches the address in the .yaml file
+        pyvisa_sim_file="Rigol_DS1074Z.yaml",
+    )
+
+    yield rigol
+    rigol.close()
+
+
+def test_initialize(driver: RigolDS1074Z) -> None:
+    """
+    Test that simple initialisation works
+    """
+    idn_dict = driver.IDN()
+    assert idn_dict["vendor"] == "QCoDeS"
+
+
+def test_gets_correct_waveform_xorigin(driver: RigolDS1074Z) -> None:
+    assert driver.waveform_xorigin() == 0
+
+
+def test_gets_correct_waveform_xincrem(driver: RigolDS1074Z) -> None:
+    assert driver.waveform_xincrem() == 0.1
+
+
+def test_sets_correct_waveform_npoints(driver: RigolDS1074Z) -> None:
+    driver.waveform_npoints(1000)
+    assert driver.waveform_npoints() == 1000
+
+
+def test_gets_correct_waveform_yorigin(driver: RigolDS1074Z) -> None:
+    assert driver.waveform_yorigin() == 0
+
+
+def test_gets_correct_waveform_yincrem(driver: RigolDS1074Z) -> None:
+    assert driver.waveform_yincrem() == 0.1
+
+
+def test_gets_correct_waveform_yref(driver: RigolDS1074Z) -> None:
+    assert driver.waveform_yref() == 0
+
+
+def test_sets_correct_trigger_mode(driver: RigolDS1074Z) -> None:
+    driver.trigger_mode("edge")
+    assert driver.trigger_mode() == "edge"
+    driver.trigger_mode("pattern")
+    assert driver.trigger_mode() == "pattern"
+    driver.trigger_mode("pulse")
+    assert driver.trigger_mode() == "pulse"
+    driver.trigger_mode("video")
+    assert driver.trigger_mode() == "video"
+
+
+def test_trigger_level_is_float(driver: RigolDS1074Z) -> None:
+    driver.trigger_mode("edge")
+    trigger_level = driver.trigger_level()
+    assert isinstance(trigger_level, float)
+    assert trigger_level == 0.16
+
+    driver.trigger_level(0.5)
+    assert driver.trigger_level() == 0.5
+
+
+def test_get_data_source(driver: RigolDS1074Z) -> None:
+    driver.data_source("ch1")
+    assert driver.data_source() == "ch1"
+    driver.data_source("ch2")
+    assert driver.data_source() == "ch2"

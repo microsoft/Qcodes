@@ -5,13 +5,15 @@ specific to the domain of QCoDeS database.
 
 from __future__ import annotations
 
+import contextlib
+import datetime
 import logging
 import sqlite3
 import time
 import unicodedata
 import warnings
 from itertools import zip_longest
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -88,6 +90,12 @@ RUNS_TABLE_COLUMNS = (
     "captured_run_id",
     "captured_counter",
 )
+
+#: Name of the ``runs``-table column used to record the location of a dataset's
+#: raw data when it is stored outside the main database (e.g. in a per-dataset
+#: SQLite file). It is an internal storage detail and is deliberately excluded
+#: from the user-facing dataset metadata.
+RAW_DATA_DB_PATH_COLUMN = "raw_data_db_path"
 
 
 def is_run_id_in_database(conn: AtomicConnection, *run_ids: int) -> dict[int, bool]:
@@ -730,7 +738,7 @@ def _get_layout_id(
     elif isinstance(parameter, str):
         name = parameter
     else:
-        raise ValueError(
+        raise ValueError(  # noqa: TRY004
             "Wrong parameter type, must be ParamSpec or str, "
             f"received {type(parameter)}."
         )
@@ -840,10 +848,9 @@ def mark_run_complete(
             is a noop.
 
     """
-    if override is False:
-        if completed(conn=conn, run_id=run_id):
-            log.warning("Trying to mark a run completed that was already completed.")
-            return
+    if override is False and completed(conn=conn, run_id=run_id):
+        log.warning("Trying to mark a run completed that was already completed.")
+        return
 
     query = """
     UPDATE
@@ -1830,7 +1837,7 @@ def get_data_by_tag_and_table_name(
         ):
             data = None
         else:
-            raise e
+            raise
     return data
 
 
@@ -1838,7 +1845,7 @@ def get_metadata_from_run_id(conn: AtomicConnection, run_id: int) -> dict[str, A
     """
     Get all metadata associated with the specified run
     """
-    non_metadata = RUNS_TABLE_COLUMNS
+    non_metadata = (*RUNS_TABLE_COLUMNS, RAW_DATA_DB_PATH_COLUMN)
 
     metadata = {}
     possible_tags = []
@@ -1865,6 +1872,24 @@ def get_metadata_from_run_id(conn: AtomicConnection, run_id: int) -> dict[str, A
     return metadata
 
 
+def _is_storable_in_column(val: Any) -> bool:
+    """
+    Return whether SQLite can store ``val`` in a column.
+
+    Rather than comparing against a fixed list of types, this asks SQLite
+    itself whether it can bind the value, so any type with a registered
+    adapter -- NumPy scalars and arrays, for instance -- is still accepted.
+    The statement is a bare ``SELECT`` against a throwaway in-memory
+    connection, so nothing is written anywhere.
+    """
+    with contextlib.closing(sqlite3.connect(":memory:")) as probe:
+        try:
+            probe.execute("SELECT ?", (val,))
+        except (sqlite3.InterfaceError, sqlite3.ProgrammingError):
+            return False
+    return True
+
+
 def validate_dynamic_column_data(data: Mapping[str, Any]) -> None:
     """
     Validate the given dicts tags and values. Note that None is not a valid
@@ -1873,6 +1898,12 @@ def validate_dynamic_column_data(data: Mapping[str, Any]) -> None:
 
     Args:
         data: the metadata mapping (tags to values)
+
+    Raises:
+        KeyError: if a tag is not a valid SQLite column name.
+        ValueError: if a value is None.
+        TypeError: if a value cannot be stored in a SQLite column, such as a
+            nested dict or a sequence.
 
     """
     for tag, val in data.items():
@@ -1884,6 +1915,13 @@ def validate_dynamic_column_data(data: Mapping[str, Any]) -> None:
         if val is None:
             raise ValueError(
                 f"Tag {tag} has value None. That is not a valid metadata value!"
+            )
+        if not _is_storable_in_column(val):
+            raise TypeError(
+                f"Tag {tag} has value of type {type(val).__name__}. That is "
+                "not a valid metadata value. Note that a column stores a single SQLite "
+                "value, so a nested dict or a sequence has to be serialized "
+                "first, for example with json.dumps."
             )
 
 
@@ -1903,7 +1941,7 @@ def insert_data_in_dynamic_columns(
 
     """
     validate_dynamic_column_data(data)
-    for key in data.keys():
+    for key in data:
         insert_column(conn, table_name, key)
     update_columns(conn, row_id, table_name, data)
 
@@ -1954,7 +1992,7 @@ def add_data_to_dynamic_columns(
         if str(e).startswith("duplicate"):
             update_columns(conn, row_id, table_name, data)
         else:
-            raise e
+            raise
 
 
 def get_experiment_name_from_experiment_id(conn: AtomicConnection, exp_id: int) -> str:
@@ -2289,21 +2327,169 @@ def get_raw_run_attributes(
 
 
 def raw_time_to_str_time(
-    raw_timestamp: float | None, fmt: str = "%Y-%m-%d %H:%M:%S"
+    raw_timestamp: float | None, fmt: str = "%Y-%m-%d %H:%M:%S%z"
 ) -> str | None:
+    """
+    Convert a raw (POSIX) timestamp into a human readable string.
+
+    The timestamp is rendered in the local timezone of the machine that reads
+    the dataset. Note that raw timestamps stored in the database are POSIX
+    timestamps and therefore do not capture the timezone in which the
+    measurement was performed. The default format therefore includes the UTC
+    offset of the local timezone to make the resulting string unambiguous.
+
+    Args:
+        raw_timestamp: POSIX timestamp to convert or None.
+        fmt: Format to render the timestamp in.
+            Consult :meth:`datetime.datetime.strftime` for the format options.
+
+    Returns:
+        The formatted timestamp or None if the raw timestamp was None.
+
+    """
     if raw_timestamp is None:
         return None
     else:
-        return time.strftime(fmt, time.localtime(raw_timestamp))
+        local_time = datetime.datetime.fromtimestamp(
+            raw_timestamp, tz=datetime.UTC
+        ).astimezone()
+        return local_time.strftime(fmt)
 
 
 def _check_if_table_found(conn: AtomicConnection, table_name: str) -> bool:
     query = "SELECT name FROM sqlite_master WHERE type='table' AND name=?"
     cursor = conn.cursor()
-    return not many_many(cursor.execute(query, (table_name,)), "name") == []
+    return many_many(cursor.execute(query, (table_name,)), "name") != []
 
 
 def _get_result_table_name_by_guid(conn: AtomicConnection, guid: str) -> str:
     sql = "SELECT result_table_name FROM runs WHERE guid=?"
     formatted_name = one(transaction(conn, sql, guid), "result_table_name")
     return formatted_name
+
+
+def get_raw_data_db_path_for_run(conn: AtomicConnection, run_id: int) -> str | None:
+    """Return the stored raw-data file path for a run.
+
+    The path is read directly from the ``raw_data_db_path`` column of the
+    ``runs`` table (which is kept out of the user-facing metadata). Returns
+    ``None`` if the column does not exist or is not set for the run.
+    """
+    if not is_column_in_table(conn, "runs", RAW_DATA_DB_PATH_COLUMN):
+        return None
+    cursor = conn.execute(
+        f'SELECT "{RAW_DATA_DB_PATH_COLUMN}" FROM runs WHERE run_id = ?', (run_id,)
+    )
+    row = cursor.fetchone()
+    if row is None:
+        return None
+    return row[0]
+
+
+def set_raw_data_db_path_for_run(
+    conn: AtomicConnection, run_id: int, raw_data_db_path: str
+) -> None:
+    """Record the raw-data file path for a run in the ``runs`` table."""
+    add_data_to_dynamic_columns(
+        conn, run_id, {RAW_DATA_DB_PATH_COLUMN: raw_data_db_path}
+    )
+
+
+class RawDataDatasetRecord(NamedTuple):
+    """A run in the main database whose raw data is stored in a separate file.
+
+    Returned by :func:`get_datasets_with_raw_data_path` for each started run
+    that records a ``raw_data_db_path``.
+    """
+
+    run_id: int
+    guid: str
+    experiment_name: str
+    sample_name: str
+    run_timestamp: float | None
+    completed_timestamp: float | None
+    result_table_name: str
+    raw_data_db_path: str
+
+
+def get_datasets_with_raw_data_path(
+    conn: AtomicConnection,
+) -> list[RawDataDatasetRecord]:
+    """Get all datasets that have a raw_data_db_path metadata column set.
+
+    Only datasets that have been started (``run_timestamp`` is set) are
+    returned, since an unstarted run records the intended raw-data path but
+    never creates the corresponding file.
+
+    Returns:
+        A list of :class:`RawDataDatasetRecord`. Returns an empty list if the
+        ``raw_data_db_path`` column does not exist.
+
+    """
+    if not is_column_in_table(conn, "runs", "raw_data_db_path"):
+        return []
+
+    sql = """
+    SELECT r.run_id, r.guid, e.name, e.sample_name,
+           r.run_timestamp, r.completed_timestamp,
+           r.result_table_name, r.raw_data_db_path
+    FROM runs r
+    JOIN experiments e ON r.exp_id = e.exp_id
+    WHERE r.raw_data_db_path IS NOT NULL
+      AND r.run_timestamp IS NOT NULL
+    """
+    cursor = atomic_transaction(conn, sql)
+    return [RawDataDatasetRecord(*row) for row in cursor.fetchall()]
+
+
+def _remove_dataset_from_db(conn: AtomicConnection, run_id: int) -> None:
+    """Remove a single dataset's records from the database.
+
+    Internal helper for the raw-data management functions
+    (:func:`~qcodes.dataset.purge_orphaned_datasets`,
+    :func:`~qcodes.dataset.cleanup_datasets`); not part of the public API.
+
+    Deletes the run row, associated layouts and dependencies, and drops
+    the results table (if it exists). The results-table name is looked up
+    from the ``runs`` table.
+
+    Args:
+        conn: Connection to the database.
+        run_id: The run_id of the dataset to remove.
+
+    """
+    result_table_name = select_one_where(
+        conn, "runs", "result_table_name", "run_id", run_id
+    )
+    assert isinstance(result_table_name, str)
+
+    with atomic(conn) as aconn:
+        # Guard against dropping an unintended table if result_table_name is
+        # malformed, reusing the same validation used when creating tables.
+        _validate_table_name(result_table_name)
+
+        # Get layout_ids for this run (needed for dependencies)
+        cursor = transaction(
+            aconn, "SELECT layout_id FROM layouts WHERE run_id = ?", run_id
+        )
+        layout_ids = [row[0] for row in cursor.fetchall()]
+
+        # Delete dependencies referencing these layouts
+        if layout_ids:
+            placeholders = ",".join("?" * len(layout_ids))
+            transaction(
+                aconn,
+                f"DELETE FROM dependencies WHERE dependent IN ({placeholders})"
+                f" OR independent IN ({placeholders})",
+                *layout_ids,
+                *layout_ids,
+            )
+
+        # Delete layouts
+        transaction(aconn, "DELETE FROM layouts WHERE run_id = ?", run_id)
+
+        # Drop the results table in the DB (if it exists)
+        transaction(aconn, f'DROP TABLE IF EXISTS "{result_table_name}"')
+
+        # Delete the run row
+        transaction(aconn, "DELETE FROM runs WHERE run_id = ?", run_id)

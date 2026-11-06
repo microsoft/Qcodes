@@ -67,7 +67,7 @@ def test_v_measure_range_config_raises_type_error(smu: KeysightB1517A) -> None:
     msg = re.escape("Expected valid voltage measurement range, got 42.")
 
     with pytest.raises(TypeError, match=msg):
-        smu.v_measure_range_config(v_measure_range=42)  # type: ignore
+        smu.v_measure_range_config(v_measure_range=42)  # pyright: ignore[reportArgumentType]
 
 
 def test_v_measure_range_config_raises_invalid_range_error(smu: KeysightB1517A) -> None:
@@ -105,7 +105,7 @@ def test_i_measure_range_config_raises_type_error(smu: KeysightB1517A) -> None:
     msg = re.escape("Expected valid current measurement range, got 99.")
 
     with pytest.raises(TypeError, match=msg):
-        smu.i_measure_range_config(i_measure_range=99)  # type: ignore
+        smu.i_measure_range_config(i_measure_range=99)  # pyright: ignore[reportArgumentType]
 
 
 def test_i_measure_range_config_raises_invalid_range_error(smu: KeysightB1517A) -> None:
@@ -361,7 +361,7 @@ def test_set_average_samples_for_high_speed_adc(smu: KeysightB1517A) -> None:
     mainframe.reset_mock()
 
     # while it does not type check, it is possible to pass the enum value as int
-    smu.set_average_samples_for_high_speed_adc(131, 2)  # type: ignore
+    smu.set_average_samples_for_high_speed_adc(131, 2)  # pyright: ignore[reportArgumentType]
     mainframe.write.assert_called_once_with("AV 131,2")
 
     mainframe.reset_mock()
@@ -468,6 +468,76 @@ def test_iv_sweep_mode_start_end_steps_compliance(smu: KeysightB1517A) -> None:
             call("WV 1,3,20,0.2,12.3,13,0.045,0.2"),
         ]
     )
+
+
+def test_iv_sweep_compliance_can_be_unset(smu: KeysightB1517A) -> None:
+    # Icomp and Pcomp are optional in the WV command. Without Pcomp no power
+    # compliance is set, without Icomp the previous current compliance is used.
+    mainframe = smu.parent
+    assert isinstance(mainframe, MagicMock)
+
+    smu.iv_sweep.current_compliance(45e-3)
+    smu.iv_sweep.power_compliance(0.2)
+    smu.iv_sweep.power_compliance(None)
+    smu.iv_sweep.current_compliance(None)
+
+    mainframe.write.assert_has_calls(
+        [
+            call("WV 1,1,0,0.0,0.0,1,0.045"),
+            call("WV 1,1,0,0.0,0.0,1,0.045,0.2"),
+            call("WV 1,1,0,0.0,0.0,1,0.045"),
+            call("WV 1,1,0,0.0,0.0,1"),
+        ]
+    )
+
+
+def test_iv_sweep_clear_current_then_power_compliance(smu: KeysightB1517A) -> None:
+    mainframe = smu.parent
+    assert isinstance(mainframe, MagicMock)
+
+    smu.iv_sweep.current_compliance(45e-3)
+    smu.iv_sweep.power_compliance(0.2)
+    smu.iv_sweep.current_compliance(None)
+    smu.iv_sweep.power_compliance(None)
+
+    mainframe.write.assert_has_calls(
+        [
+            call("WV 1,1,0,0.0,0.0,1,0.045"),
+            call("WV 1,1,0,0.0,0.0,1,0.045,0.2"),
+            call("WV 1,1,0,0.0,0.0,1"),
+            call("WV 1,1,0,0.0,0.0,1"),
+        ]
+    )
+
+
+def test_iv_sweep_clearing_current_compliance_clears_power_compliance(
+    smu: KeysightB1517A,
+) -> None:
+    # Pcomp is only sent together with Icomp, so clearing the current
+    # compliance also removes the power compliance
+    mainframe = smu.parent
+    assert isinstance(mainframe, MagicMock)
+
+    smu.iv_sweep.current_compliance(45e-3)
+    smu.iv_sweep.power_compliance(0.2)
+    smu.iv_sweep.current_compliance(None)
+
+    # the cached value is used in the snapshot (snapshot_get=False)
+    assert smu.iv_sweep.power_compliance.cache.get(get_if_invalid=False) is None
+
+    # setting a current compliance again does not bring back the old power
+    # compliance
+    smu.iv_sweep.current_compliance(45e-3)
+    assert mainframe.write.call_args == call("WV 1,1,0,0.0,0.0,1,0.045")
+
+
+def test_iv_sweep_power_compliance(smu: KeysightB1517A) -> None:
+    # clearing the power compliance is allowed without a current compliance,
+    # but setting one requires a current compliance
+    smu.iv_sweep.power_compliance(None)
+
+    with pytest.raises(ValueError, match="Current compliance must be set"):
+        smu.iv_sweep.power_compliance(0.2)
 
 
 def test_set_sweep_auto_abort(smu: KeysightB1517A) -> None:

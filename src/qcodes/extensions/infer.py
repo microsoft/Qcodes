@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, ClassVar, TypeVar, cast
+from typing import TYPE_CHECKING, ClassVar
 
 from qcodes.instrument import Instrument, InstrumentBase, InstrumentModule
 from qcodes.parameters import DelegateParameter, Parameter, ParameterBase
@@ -10,9 +10,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 DOES_NOT_EXIST = "Does not exist"
-
-C = TypeVar("C", bound=ParameterBase)
-TInstrument = TypeVar("TInstrument", bound=InstrumentBase)
 
 
 class InferError(AttributeError): ...
@@ -220,24 +217,24 @@ def _merge_user_and_class_attrs(
     if alt_source_attrs is None:
         return InferAttrs.known_attrs()
     elif isinstance(alt_source_attrs, str):
-        return set.union(set((alt_source_attrs,)), set(InferAttrs.known_attrs()))
+        return set.union({alt_source_attrs}, set(InferAttrs.known_attrs()))
     else:
         return set.union(set(alt_source_attrs), set(InferAttrs.known_attrs()))
 
 
-def get_chain_links_of_type(
+def get_chain_links_of_type[C: ParameterBase](
     link_param_type: type[C] | tuple[type[C], ...], parameter: Parameter
 ) -> tuple[C, ...]:
     """Gets all parameters in a chain of linked parameters that match a given type"""
     chain_links: list[C] = [
-        cast("C", param)
+        param
         for param in get_parameter_chain(parameter)
         if isinstance(param, link_param_type)
     ]
     return tuple(chain_links)
 
 
-def get_sole_chain_link_of_type(
+def get_sole_chain_link_of_type[C: ParameterBase](
     link_param_type: type[C] | tuple[type[C], ...], parameter: Parameter
 ) -> C:
     """Gets the one parameter in a chain of linked parameters that matches a given type"""
@@ -256,7 +253,7 @@ def get_sole_chain_link_of_type(
     return chain_links[0]
 
 
-def get_parent_instruments_from_chain_of_type(
+def get_parent_instruments_from_chain_of_type[TInstrument: InstrumentBase](
     instrument_type: type[TInstrument] | tuple[type[TInstrument], ...],
     parameter: Parameter,
 ) -> tuple[TInstrument, ...]:
@@ -265,14 +262,14 @@ def get_parent_instruments_from_chain_of_type(
     param_chain = get_parameter_chain(parameter)
     return tuple(
         [
-            cast("TInstrument", param.instrument)
+            param.instrument
             for param in param_chain
             if isinstance(param.instrument, instrument_type)
         ]
     )
 
 
-def get_sole_parent_instrument_from_chain_of_type(
+def get_sole_parent_instrument_from_chain_of_type[TInstrument: InstrumentBase](
     instrument_type: type[TInstrument] | tuple[type[TInstrument], ...],
     parameter: Parameter,
 ) -> TInstrument:

@@ -276,7 +276,7 @@ def load_experiment(exp_id: int, conn: AtomicConnection | None = None) -> Experi
     """
     conn = conn_from_dbpath_or_conn(conn=conn, path_to_db=None)
     if not isinstance(exp_id, int):
-        raise ValueError("Experiment ID must be an integer")
+        raise ValueError("Experiment ID must be an integer")  # noqa: TRY004
     experiment = Experiment(exp_id=exp_id, conn=conn)
     _set_default_experiment_id(path_to_dbfile(conn), experiment.exp_id)
     return experiment
@@ -341,18 +341,15 @@ def load_experiment_by_name(
     if len(exp_ids) == 0:
         raise ValueError("Experiment not found")
     elif len(exp_ids) > 1:
-        _repr = []
-        for exp_id in exp_ids:
-            exp = load_experiment(exp_id, conn=conn)
-            s = (
+        experiments = [load_experiment(exp_id, conn=conn) for exp_id in exp_ids]
+        if load_last_duplicate:
+            e = experiments[-1]
+        else:
+            _repr_str = "\n".join(
                 f"exp_id:{exp.exp_id} ({exp.name}-{exp.sample_name})"
                 f" started at ({exp.started_at})"
+                for exp in experiments
             )
-            _repr.append(s)
-        _repr_str = "\n".join(_repr)
-        if load_last_duplicate:
-            e = exp  # pyright: ignore
-        else:
             raise ValueError(
                 f"Many experiments matching your request found:\n{_repr_str}"
             )
@@ -400,7 +397,7 @@ def load_or_create_experiment(
         if "Experiment not found" in str(exception):
             experiment = new_experiment(experiment_name, sample_name, conn=conn)
         else:
-            raise exception
+            raise
     return experiment
 
 

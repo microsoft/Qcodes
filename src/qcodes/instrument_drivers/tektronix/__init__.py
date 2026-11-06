@@ -1,4 +1,4 @@
-from .AWG5014 import TektronixAWG5014
+from .AWG5014 import TektronixAWG5014, TektronixAWG5014Channel, TektronixAWG5014Marker
 from .AWG5208 import TektronixAWG5208
 from .AWG70000A import Tektronix70000AWGChannel, TektronixAWG70000Base
 from .AWG70002A import TektronixAWG70002A
@@ -28,6 +28,8 @@ from .TPS2012 import TektronixTPS2012, TektronixTPS2012Channel
 __all__ = [
     "Tektronix70000AWGChannel",
     "TektronixAWG5014",
+    "TektronixAWG5014Channel",
+    "TektronixAWG5014Marker",
     "TektronixAWG5208",
     "TektronixAWG70000Base",
     "TektronixAWG70001A",

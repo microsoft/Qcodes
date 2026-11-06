@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import signal
 import threading
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
@@ -93,6 +92,9 @@ class DelayedKeyboardInterrupt:
     ) -> None:
         if self.old_handler is not None:
             signal.signal(signal.SIGINT, self.old_handler)
-        if self.signal_received is not None:
-            if self.old_handler is not None and not isinstance(self.old_handler, int):
-                self.old_handler(*self.signal_received)
+        if (
+            self.signal_received is not None
+            and self.old_handler is not None
+            and not isinstance(self.old_handler, int)
+        ):
+            self.old_handler(*self.signal_received)

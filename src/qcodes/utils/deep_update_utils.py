@@ -1,13 +1,10 @@
 from collections import abc
 from collections.abc import Hashable, Mapping, MutableMapping
 from copy import deepcopy
-from typing import Any, TypeVar, cast
-
-K = TypeVar("K", bound=Hashable)
-L = TypeVar("L", bound=Hashable)
+from typing import Any, cast
 
 
-def deep_update(
+def deep_update[K: Hashable, L: Hashable](
     dest: MutableMapping[K, Any], update: Mapping[L, Any]
 ) -> MutableMapping[K | L, Any]:
     """

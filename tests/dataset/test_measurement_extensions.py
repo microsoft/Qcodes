@@ -1,4 +1,3 @@
-import gc
 import itertools
 from functools import partial
 from itertools import product
@@ -12,7 +11,6 @@ from qcodes.dataset import (
     LinSweep,
     Measurement,
     TogetherSweep,
-    connect,
     initialise_or_create_database_at,
     load_or_create_experiment,
 )
@@ -21,35 +19,53 @@ from qcodes.dataset.measurement_extensions import (
     LinSweeper,
     datasaver_builder,
     dond_into,
+    setup_measurement_instances,
 )
 from qcodes.parameters import Parameter, ParameterWithSetpoints
 from qcodes.validators import Arrays
+
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
+
+    from qcodes.dataset.experiment_container import Experiment
+if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
+
+    from qcodes.dataset.data_set_protocol import DataSetProtocol
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
 def assert_dataset_as_expected(
-    dataset, dims_dict: dict[str, int], data_vars: "Sequence[str]"
-):
+    dataset: "DataSetProtocol", dims_dict: dict[str, int], data_vars: "Sequence[str]"
+) -> "None":
     xr_ds = dataset.to_xarray_dataset()
     assert xr_ds.sizes == dims_dict
     assert set(xr_ds.data_vars) == set(data_vars)
 
 
 @pytest.fixture(name="default_params")
-def default_params_():
-    set1 = Parameter("set1", get_cmd=None, set_cmd=None, initial_value=0)
-    set2 = Parameter("set2", get_cmd=None, set_cmd=None, initial_value=0)
-    set3 = Parameter("set3", get_cmd=None, set_cmd=None, initial_value=0)
+def default_params_() -> (
+    "tuple[Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float]]"
+):
+    set1: Parameter[float] = Parameter(
+        "set1", get_cmd=None, set_cmd=None, initial_value=0
+    )
+    set2: Parameter[float] = Parameter(
+        "set2", get_cmd=None, set_cmd=None, initial_value=0
+    )
+    set3: Parameter[float] = Parameter(
+        "set3", get_cmd=None, set_cmd=None, initial_value=0
+    )
 
-    def get_set1():
+    def get_set1() -> "float":
         return set1()
 
-    def get_sum23():
+    def get_sum23() -> "float":
         return set2() + set3()
 
-    def get_diff23():
+    def get_diff23() -> "float":
         return set2() - set3()
 
     meas1 = Parameter("meas1", get_cmd=get_set1, set_cmd=False)
@@ -60,12 +76,14 @@ def default_params_():
 
 
 @pytest.fixture(name="pws_params")
-def pws_params_(default_params):
+def pws_params_(
+    default_params: "tuple[Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float]]",
+) -> "tuple[ParameterWithSetpoints[NDArray[np.float64]], Parameter[float]]":
     sweep_start = 0
     sweep_stop = 10
     sweep_points = 11
 
-    def get_pws_results():
+    def get_pws_results() -> "NDArray[np.float64]":
         setpoints_arr = np.linspace(sweep_start, sweep_stop, sweep_points)
         return setpoints_arr**2 * set1()
 
@@ -86,17 +104,19 @@ def pws_params_(default_params):
 
 
 @pytest.fixture(name="default_database_and_experiment")
-def default_database_and_experiment_(tmp_path):
+def default_database_and_experiment_(
+    tmp_path: "Path",
+) -> "Experiment":
     db_path = Path(tmp_path) / "context_tests.db"
     initialise_or_create_database_at(db_path)
     experiment = load_or_create_experiment("context_tests")
-    yield experiment
-    conn = connect(db_path)
-    conn.close()
-    gc.collect()
+    return experiment
 
 
-def test_context(default_params, default_database_and_experiment):
+def test_context(
+    default_params: "tuple[Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float]]",
+    default_database_and_experiment: "Experiment",
+) -> "None":
     _ = default_database_and_experiment
     set1, set2, set3, meas1, meas2, meas3 = default_params
     metadata_dict = {  # Nesting dictionaries does NOT work here
@@ -157,7 +177,10 @@ def test_context(default_params, default_database_and_experiment):
     assert datasets[1].metadata == {}
 
 
-def test_dond_into(default_params, default_database_and_experiment):
+def test_dond_into(
+    default_params: "tuple[Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float]]",
+    default_database_and_experiment: "Experiment",
+) -> "None":
     experiment = default_database_and_experiment
     set1, _, _, meas1, _, _ = default_params
 
@@ -182,7 +205,10 @@ def test_dond_into(default_params, default_database_and_experiment):
     )
 
 
-def test_dond_into_and_context(default_params, default_database_and_experiment):
+def test_dond_into_and_context(
+    default_params: "tuple[Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float]]",
+    default_database_and_experiment: "Experiment",
+) -> "None":
     _ = default_database_and_experiment
     set1, set2, set3, meas1, meas2, meas3 = default_params
 
@@ -215,7 +241,10 @@ def test_dond_into_and_context(default_params, default_database_and_experiment):
     )
 
 
-def test_linsweeper(default_params, default_database_and_experiment):
+def test_linsweeper(
+    default_params: "tuple[Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float]]",
+    default_database_and_experiment: "Experiment",
+) -> "None":
     _ = default_database_and_experiment
     set1, set2, _, meas1, meas2, _ = default_params
 
@@ -239,7 +268,9 @@ def test_linsweeper(default_params, default_database_and_experiment):
     )
 
 
-def test_nested_linsweeper(default_params):
+def test_nested_linsweeper(
+    default_params: "tuple[Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float]]",
+) -> "None":
     set1, set2, _, _, _, _ = default_params
     linsweeper1 = LinSweeper(set1, 0, 1, 11, 0.001)
     linsweeper2 = LinSweeper(set2, -1, 0, 6, 0.001)
@@ -263,7 +294,10 @@ def test_nested_linsweeper(default_params):
     )
 
 
-def test_context_with_pws(pws_params, default_database_and_experiment):
+def test_context_with_pws(
+    pws_params: "tuple[ParameterWithSetpoints[NDArray[np.float64]], Parameter[float]]",
+    default_database_and_experiment: "Experiment",
+) -> "None":
     _ = default_database_and_experiment
     pws1, set1 = pws_params
     dataset_definition = [DataSetDefinition("dataset_1", [set1], [pws1])]
@@ -274,6 +308,8 @@ def test_context_with_pws(pws_params, default_database_and_experiment):
         datasets = [datasaver.dataset for datasaver in datasavers]
 
     assert len(datasets) == 1
+    assert isinstance(pws1.setpoints[0].vals, Arrays)
+    assert pws1.setpoints[0].vals.shape is not None
     assert_dataset_as_expected(
         datasets[0],
         dims_dict={
@@ -285,8 +321,10 @@ def test_context_with_pws(pws_params, default_database_and_experiment):
 
 
 def test_dond_into_with_callables(
-    default_params, default_database_and_experiment, mocker
-):
+    default_params: "tuple[Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float]]",
+    default_database_and_experiment: "Experiment",
+    mocker: "MockerFixture",
+) -> "None":
     experiment = default_database_and_experiment
     set1, _, _, meas1, _, _ = default_params
 
@@ -316,51 +354,55 @@ def test_dond_into_with_callables(
 
 
 def test_dond_into_fails_with_together_sweeps(
-    default_params, default_database_and_experiment
-):
+    default_params: "tuple[Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float]]",
+    default_database_and_experiment: "Experiment",
+) -> "None":
     experiment = default_database_and_experiment
     set1, set2, _, meas1, _, _ = default_params
 
     core_test_measurement = Measurement(name="core_test_1", exp=experiment)
     core_test_measurement.register_parameter(set1)
     core_test_measurement.register_parameter(meas1, setpoints=[set1])
-    with pytest.raises(ValueError, match="dond_into does not support TogetherSweeps"):
-        with core_test_measurement.run() as datasaver:
-            sweep1 = LinSweep(set1, 0, 5, 11, 0.001)
-            sweep2 = LinSweep(set2, 10, 20, 11, 0.001)
+    sweep1 = LinSweep(set1, 0, 5, 11, 0.001)
+    sweep2 = LinSweep(set2, 10, 20, 11, 0.001)
+    with (
+        pytest.raises(ValueError, match="dond_into does not support TogetherSweeps"),
+        core_test_measurement.run() as datasaver,
+    ):
+        dond_into(
+            datasaver,
+            TogetherSweep(sweep1, sweep2),  # pyright: ignore [reportArgumentType]
+            meas1,
+        )
 
-            dond_into(
-                datasaver,
-                TogetherSweep(sweep1, sweep2),  # pyright: ignore [reportArgumentType]
-                meas1,
-            )
-            _ = datasaver.dataset
 
-
-def test_dond_into_fails_with_groups(default_params, default_database_and_experiment):
+def test_dond_into_fails_with_groups(
+    default_params: "tuple[Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float]]",
+    default_database_and_experiment: "Experiment",
+) -> "None":
     experiment = default_database_and_experiment
     set1, _, _, meas1, meas2, _ = default_params
 
     core_test_measurement = Measurement(name="core_test_1", exp=experiment)
     core_test_measurement.register_parameter(set1)
     core_test_measurement.register_parameter(meas1, setpoints=[set1])
-    with pytest.raises(
-        ValueError, match="dond_into does not support multiple datasets"
+    sweep1 = LinSweep(set1, 0, 5, 11, 0.001)
+    with (
+        pytest.raises(ValueError, match="dond_into does not support multiple datasets"),
+        core_test_measurement.run() as datasaver,
     ):
-        with core_test_measurement.run() as datasaver:
-            sweep1 = LinSweep(set1, 0, 5, 11, 0.001)
-            dond_into(
-                datasaver,
-                sweep1,
-                [meas1],  # pyright: ignore [reportArgumentType]
-                [meas2],  # pyright: ignore [reportArgumentType]
-            )
-            _ = datasaver.dataset
+        dond_into(
+            datasaver,
+            sweep1,
+            [meas1],  # pyright: ignore [reportArgumentType]
+            [meas2],  # pyright: ignore [reportArgumentType]
+        )
 
 
 def test_context_with_multiple_experiments(
-    default_params, default_database_and_experiment
-):
+    default_params: "tuple[Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float]]",
+    default_database_and_experiment: "Experiment",
+) -> "None":
     experiment = default_database_and_experiment
     experiment2 = load_or_create_experiment("other_experiment")
     set1, set2, set3, meas1, meas2, meas3 = default_params
@@ -404,7 +446,10 @@ def test_context_with_multiple_experiments(
     assert datasets[1].exp_name == experiment2.name
 
 
-def test_context_with_no_experiment(default_params, default_database_and_experiment):
+def test_context_with_no_experiment(
+    default_params: "tuple[Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float]]",
+    default_database_and_experiment: "Experiment",
+) -> "None":
     _ = default_database_and_experiment
     experiment2 = load_or_create_experiment("other_experiment")
     set1, set2, set3, meas1, meas2, meas3 = default_params
@@ -446,8 +491,9 @@ def test_context_with_no_experiment(default_params, default_database_and_experim
 
 
 def test_context_with_override_experiment(
-    default_params, default_database_and_experiment
-):
+    default_params: "tuple[Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float]]",
+    default_database_and_experiment: "Experiment",
+) -> "None":
     experiment = default_database_and_experiment
     experiment2 = load_or_create_experiment("other_experiment")
     set1, set2, set3, meas1, meas2, meas3 = default_params
@@ -490,3 +536,160 @@ def test_context_with_override_experiment(
 
     assert datasets[0].exp_name == experiment2.name
     assert datasets[1].exp_name == experiment2.name
+
+
+def test_shapes_in_dataset_definition_with_scalar_params(
+    default_params: "tuple[Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float]]",
+    default_database_and_experiment: "Experiment",
+) -> "None":
+    """Test that shapes specified in DataSetDefinition are stored on the dataset."""
+    _ = default_database_and_experiment
+    set1, set2, _, meas1, meas2, _ = default_params
+
+    expected_shapes = {
+        meas1.register_name: (11, 11),
+        meas2.register_name: (11, 11),
+    }
+    dataset_definition = [
+        DataSetDefinition(
+            name="dataset_with_shapes",
+            independent=[set1, set2],
+            dependent=[meas1, meas2],
+            shapes=expected_shapes,
+        ),
+    ]
+    with datasaver_builder(dataset_definition) as datasavers:
+        for _ in LinSweeper(set1, 0, 10, 11, 0.001):
+            sweep1 = LinSweep(set2, 0, 10, 11, 0.001)
+            dond_into(datasavers[0], sweep1, meas1, meas2, additional_setpoints=(set1,))
+        datasets = [datasaver.dataset for datasaver in datasavers]
+
+    assert datasets[0].description.shapes == expected_shapes
+
+
+def test_shapes_in_dataset_definition_with_pws(
+    pws_params: "tuple[ParameterWithSetpoints[NDArray[np.float64]], Parameter[float]]",
+    default_database_and_experiment: "Experiment",
+) -> "None":
+    """Test that shapes for ParameterWithSetpoints are stored on the dataset."""
+    _ = default_database_and_experiment
+    pws1, set1 = pws_params
+
+    expected_shapes = {
+        pws1.register_name: (11, 11),
+    }
+    dataset_definition = [
+        DataSetDefinition(
+            name="dataset_pws_shapes",
+            independent=[set1],
+            dependent=[pws1],
+            shapes=expected_shapes,
+        ),
+    ]
+    with datasaver_builder(dataset_definition) as datasavers:
+        for _ in LinSweeper(set1, 0, 10, 11, 0.001):
+            dond_into(datasavers[0], pws1, additional_setpoints=(set1,))
+        datasets = [datasaver.dataset for datasaver in datasavers]
+
+    assert datasets[0].description.shapes == expected_shapes
+
+
+def test_shapes_none_by_default(
+    default_params: "tuple[Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float]]",
+    default_database_and_experiment: "Experiment",
+) -> "None":
+    """Test that shapes is None when not specified in DataSetDefinition."""
+    _ = default_database_and_experiment
+    set1, _, _, meas1, _, _ = default_params
+
+    dataset_definition = [
+        DataSetDefinition(
+            name="dataset_no_shapes",
+            independent=[set1],
+            dependent=[meas1],
+        ),
+    ]
+    with datasaver_builder(dataset_definition) as datasavers:
+        for _ in LinSweeper(set1, 0, 5, 6, 0.001):
+            datasavers[0].add_result((set1, set1()), (meas1, meas1()))
+        datasets = [datasaver.dataset for datasaver in datasavers]
+
+    assert datasets[0].description.shapes is None
+
+
+def test_setup_measurement_instances_sets_shapes(
+    default_params: "tuple[Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float]]",
+    default_database_and_experiment: "Experiment",
+) -> "None":
+    """Test that setup_measurement_instances correctly sets shapes on Measurement."""
+    _ = default_database_and_experiment
+    set1, _, _, meas1, _, _ = default_params
+
+    expected_shapes = {meas1.register_name: (5,)}
+    dataset_definitions = [
+        DataSetDefinition(
+            name="test_shapes",
+            independent=[set1],
+            dependent=[meas1],
+            shapes=expected_shapes,
+        ),
+    ]
+    measurements = setup_measurement_instances(dataset_definitions)
+    assert len(measurements) == 1
+    assert measurements[0]._shapes == expected_shapes
+
+
+def test_setup_measurement_instances_no_shapes(
+    default_params: "tuple[Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float]]",
+    default_database_and_experiment: "Experiment",
+) -> "None":
+    """Test that setup_measurement_instances leaves shapes as None when not specified."""
+    _ = default_database_and_experiment
+    set1, _, _, meas1, _, _ = default_params
+
+    dataset_definitions = [
+        DataSetDefinition(
+            name="test_no_shapes",
+            independent=[set1],
+            dependent=[meas1],
+        ),
+    ]
+    measurements = setup_measurement_instances(dataset_definitions)
+    assert len(measurements) == 1
+    assert measurements[0]._shapes is None
+
+
+def test_shapes_with_multiple_datasets(
+    default_params: "tuple[Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float], Parameter[float]]",
+    default_database_and_experiment: "Experiment",
+) -> "None":
+    """Test shapes are correctly applied to multiple datasets independently."""
+    _ = default_database_and_experiment
+    set1, set2, set3, meas1, _, meas3 = default_params
+
+    shapes_1 = {meas1.register_name: (11, 11)}
+    shapes_2 = {meas3.register_name: (11, 11)}
+    dataset_definition = [
+        DataSetDefinition(
+            name="dataset_1",
+            independent=[set1, set2],
+            dependent=[meas1],
+            shapes=shapes_1,
+        ),
+        DataSetDefinition(
+            name="dataset_2",
+            independent=[set1, set3],
+            dependent=[meas3],
+            shapes=shapes_2,
+        ),
+    ]
+    with datasaver_builder(dataset_definition) as datasavers:
+        for _ in LinSweeper(set1, 0, 10, 11, 0.001):
+            sweep1 = LinSweep(set2, 0, 10, 11, 0.001)
+            sweep2 = LinSweep(set3, -10, 0, 11, 0.001)
+            dond_into(datasavers[0], sweep1, meas1, additional_setpoints=(set1,))
+            dond_into(datasavers[1], sweep2, meas3, additional_setpoints=(set1,))
+        datasets = [datasaver.dataset for datasaver in datasavers]
+
+    assert datasets[0].description.shapes == shapes_1
+    assert datasets[1].description.shapes == shapes_2

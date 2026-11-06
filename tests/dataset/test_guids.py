@@ -1,6 +1,7 @@
 import random
 import re
 import time
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 import hypothesis.strategies as hst
@@ -18,9 +19,14 @@ from qcodes.dataset.guids import (
     validate_guid_format,
 )
 
+if TYPE_CHECKING:
+    from qcodes.configuration import Config
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 
 @pytest.fixture(name="seed_random")
-def _make_seed_random():
+def _make_seed_random() -> "Generator[None, None, None]":
     state = random.getstate()
     random.seed(a=0)
     try:
@@ -35,7 +41,7 @@ def _make_seed_random():
     stat=hst.integers(0, 0xFFFF),
     smpl=hst.integers(0, 0xFF_FFF_FFF),
 )
-def test_generate_legacy_guid(loc, stat, smpl) -> None:
+def test_generate_legacy_guid(loc: "int", stat: "int", smpl: "int") -> None:
     """
     Generate a guid in the legacy format (with an assigned sample name)
     and verify that it is parsed
@@ -75,7 +81,7 @@ def test_generate_legacy_guid(loc, stat, smpl) -> None:
     stat=hst.integers(0, 0xFFFF),
     smpl=hst.integers(0, 0xFF_FFF_FFF),
 )
-def test_generate_guid(loc, stat, smpl) -> None:
+def test_generate_guid(loc: "int", stat: "int", smpl: "int") -> None:
     """
     Generate a guid and verify that it is parsed or raises
     if a sample name is given
@@ -116,7 +122,7 @@ def test_generate_guid(loc, stat, smpl) -> None:
     suppress_health_check=(HealthCheck.function_scoped_fixture,),
 )
 @given(loc=hst.integers(-10, 350))
-def test_set_guid_location_code(loc, monkeypatch) -> None:
+def test_set_guid_location_code(loc: "int", monkeypatch: "pytest.MonkeyPatch") -> None:
     monkeypatch.setattr("builtins.input", lambda x: str(loc))
     orig_cfg = qc.config
     original_loc = orig_cfg["GUID_components"]["location"]
@@ -136,7 +142,9 @@ def test_set_guid_location_code(loc, monkeypatch) -> None:
     suppress_health_check=(HealthCheck.function_scoped_fixture,),
 )
 @given(ws=hst.integers(-10, 17000000))
-def test_set_guid_workstation_code(ws, monkeypatch) -> None:
+def test_set_guid_workstation_code(
+    ws: "int", monkeypatch: "pytest.MonkeyPatch"
+) -> None:
     monkeypatch.setattr("builtins.input", lambda x: str(ws))
 
     orig_cfg = qc.config
@@ -158,8 +166,8 @@ def test_set_guid_workstation_code(ws, monkeypatch) -> None:
     stats=hst.lists(hst.integers(0, 0xFFFF), min_size=2, max_size=2, unique=True),
     smpls=hst.lists(hst.integers(0, 0xFF_FFF_FFF), min_size=2, max_size=2, unique=True),
 )
-def test_filter_guid(locs, stats, smpls) -> None:
-    def make_test_guid(cfg, loc: int, smpl: int, stat: int):
+def test_filter_guid(locs: "list[int]", stats: "list[int]", smpls: "list[int]") -> None:
+    def make_test_guid(cfg: "Config", loc: int, smpl: int, stat: int) -> "str":
         cfg["GUID_components"]["location"] = loc
         cfg["GUID_components"]["work_station"] = stat
         cfg["GUID_components"]["sample"] = smpl

@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import hypothesis.strategies as st
 import pytest
 from hypothesis import given
@@ -5,9 +7,12 @@ from hypothesis import given
 from qcodes.instrument_drivers.Keysight.keysight_34934a import Keysight34934A
 from qcodes.instrument_drivers.Keysight.keysight_34980a import Keysight34980A
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Generator
+
 
 @pytest.fixture(scope="function")
-def switch_driver():
+def switch_driver() -> "Generator[Keysight34980A, None, None]":
     inst = Keysight34980A(
         "keysight_34980A_sim",
         address="GPIB::1::INSTR",
@@ -20,19 +25,23 @@ def switch_driver():
         inst.close()
 
 
-def test_protection_mode(switch_driver) -> None:
+def test_protection_mode(switch_driver: Keysight34980A) -> None:
     """
     To check the protection mode (34934A module only)
     """
-    assert switch_driver.module[1].protection_mode() == "AUTO100"
+    module = switch_driver.module[1]
+    assert isinstance(module, Keysight34934A)
+    assert module.protection_mode() == "AUTO100"
 
 
-def test_connection(switch_driver) -> None:
+def test_connection(switch_driver: Keysight34980A) -> None:
     """
     To check if a channel is closed or open
     """
-    assert not switch_driver.module[1].is_closed(2, 3)
-    assert switch_driver.module[1].is_open(2, 3)
+    module = switch_driver.module[1]
+    assert isinstance(module, Keysight34934A)
+    assert not module.is_closed(2, 3)
+    assert module.is_open(2, 3)
 
 
 # The following is to test the numbering function for the module 34934A
@@ -44,95 +53,95 @@ def test_connection(switch_driver) -> None:
 @given(
     st.sampled_from(("M1H", "M1L", "M2H", "M2L")), st.integers(1, 4), st.integers(1, 32)
 )
-def test_4x32(config, row, column) -> None:
+def test_4x32(config: str, row: int, column: int) -> None:
     f = Keysight34934A.get_numbering_function(4, 32, config)
     g = numbering_function_4x32(config)
     assert f(row, column) == g(row, column)
 
 
 @given(st.sampled_from(("MH", "ML")), st.integers(1, 4), st.integers(1, 64))
-def test_4x64(config, row, column) -> None:
+def test_4x64(config: str, row: int, column: int) -> None:
     f = Keysight34934A.get_numbering_function(4, 64, config)
     g = numbering_function_4x64(config)
     assert f(row, column) == g(row, column)
 
 
 @given(st.integers(1, 4), st.integers(1, 128))
-def test_4x128(row, column) -> None:
+def test_4x128(row: int, column: int) -> None:
     f = Keysight34934A.get_numbering_function(4, 128)
     g = numbering_function_4x128()
     assert f(row, column) == g(row, column)
 
 
 @given(st.sampled_from(("MH", "ML")), st.integers(1, 8), st.integers(1, 32))
-def test_8x32(config, row, column) -> None:
+def test_8x32(config: str, row: int, column: int) -> None:
     f = Keysight34934A.get_numbering_function(8, 32, config)
     g = numbering_function_8x32(config)
     assert f(row, column) == g(row, column)
 
 
 @given(st.integers(1, 8), st.integers(1, 64))
-def test_8x64(row, column) -> None:
+def test_8x64(row: int, column: int) -> None:
     f = Keysight34934A.get_numbering_function(8, 64)
     g = numbering_function_8x64()
     assert f(row, column) == g(row, column)
 
 
 @given(st.integers(1, 16), st.integers(1, 32))
-def test_16x32(row, column) -> None:
+def test_16x32(row: int, column: int) -> None:
     f = Keysight34934A.get_numbering_function(16, 32)
     g = numbering_function_16x32()
     assert f(row, column) == g(row, column)
 
 
-def numbering_function_4x32(wiring_config):
+def numbering_function_4x32(wiring_config: str) -> "Callable[[int, int], str]":
     offsets = {"M1H": 0, "M2H": 32, "M1L": 64, "M2L": 96}
 
-    def numbering_function(row, col):
+    def numbering_function(row: int, col: int) -> str:
         n = 100 * (2 * row - 1) + col + offsets[wiring_config]
         return str(int(n))
 
     return numbering_function
 
 
-def numbering_function_4x64(wiring_config):
+def numbering_function_4x64(wiring_config: str) -> "Callable[[int, int], str]":
     offsets = {"MH": 0, "ML": 64}
 
-    def numbering_function(row, col):
+    def numbering_function(row: int, col: int) -> str:
         n = 100 * (2 * row - 1) + col + offsets[wiring_config]
         return str(int(n))
 
     return numbering_function
 
 
-def numbering_function_4x128():
-    def numbering_function(row, col):
+def numbering_function_4x128() -> "Callable[[int, int], str]":
+    def numbering_function(row: int, col: int) -> str:
         n = 100 * (2 * row - 1) + col
         return str(int(n))
 
     return numbering_function
 
 
-def numbering_function_8x32(wiring_config):
+def numbering_function_8x32(wiring_config: str) -> "Callable[[int, int], str]":
     offsets = {"MH": 0, "ML": 32}
 
-    def numbering_function(row, col):
+    def numbering_function(row: int, col: int) -> str:
         n = 100 * row + col + offsets[wiring_config]
         return str(int(n))
 
     return numbering_function
 
 
-def numbering_function_8x64():
-    def numbering_function(row, col):
+def numbering_function_8x64() -> "Callable[[int, int], str]":
+    def numbering_function(row: int, col: int) -> str:
         n = 100 * row + col
         return str(int(n))
 
     return numbering_function
 
 
-def numbering_function_16x32():
-    def numbering_function(row, col):
+def numbering_function_16x32() -> "Callable[[int, int], str]":
+    def numbering_function(row: int, col: int) -> str:
         n = 50 * (row + 1) + col
         return str(int(n))
 

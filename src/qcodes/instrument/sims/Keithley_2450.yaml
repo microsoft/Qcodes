@@ -67,6 +67,42 @@ devices:
         setter:
           q: "TRACe:CLEar"
 
+      sense_count:
+        default: 1
+        getter:
+          q: ":SENSe:COUNt?"
+          r: "{}"
+        setter:
+          q: ":SENSe:COUNt {}"
+        specs:
+          type: int
+
+      line_frequency:
+        default: "5.000000E+01"
+        getter:
+          q: ":SYSTem:LFRequency?"
+          r: "{}"
+
+      sense_current_nplc:
+        default: 1
+        getter:
+          q: ":SENSe:current:NPLCycles?"
+          r: "{}"
+        setter:
+          q: ":SENSe:current:NPLCycles {}"
+        specs:
+          type: float
+
+      source_current_delay:
+        default: 0
+        getter:
+          q: ":SOURce:current:DELay?"
+          r: "{}"
+        setter:
+          q: ":SOURce:current:DELay {}"
+        specs:
+          type: float
+
 resources:
   GPIB::1::INSTR:
     device: device wrong_mode

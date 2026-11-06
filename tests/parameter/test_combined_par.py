@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from collections import OrderedDict
 from typing import TYPE_CHECKING
 
@@ -8,7 +9,7 @@ import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
 
-from qcodes.parameters import ManualParameter, combine
+from qcodes.parameters import ManualParameter, Parameter, combine
 from qcodes.utils import full_class
 
 if TYPE_CHECKING:
@@ -26,6 +27,17 @@ def parameters() -> Generator[list[ManualParameter], None, None]:
 def test_combine(parameters: list[ManualParameter]) -> None:
     multipar = combine(*parameters, name="combined")
     assert multipar.dimensionality == len(parameters)
+
+
+def test_combine_with_deprecated_units_kwarg(
+    parameters: list[ManualParameter], caplog: pytest.LogCaptureFixture
+) -> None:
+    logger_name = "qcodes.parameters.combined_parameter"
+    with caplog.at_level(logging.WARNING, logger=logger_name):
+        multipar = combine(*parameters, name="combined", units="V")
+
+    assert "`units` is deprecated" in caplog.text
+    assert multipar.parameter.unit == "V"
 
 
 def test_sweep_bad_setpoints(parameters: list[ManualParameter]) -> None:
@@ -55,7 +67,7 @@ def test_set(parameters: list[ManualParameter], mocker: MockerFixture) -> None:
     for i in sweep_values:
         sweep_values.set(i)
 
-    mock_method.assert_has_calls([mocker.call(0), mocker.call(1)])  # pyright: ignore
+    mock_method.assert_has_calls([mocker.call(0), mocker.call(1)])  # pyright: ignore[reportArgumentType]
 
 
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
@@ -125,6 +137,29 @@ def test_meta(parameters: list[ManualParameter]) -> None:
     for param in sweep_values.parameters:
         out[param.full_name] = param.snapshot()
     assert out == snap
+
+
+def test_snapshot_forwards_update_to_underlying_parameters() -> None:
+    calls = {"n": 0}
+
+    def getter() -> int:
+        calls["n"] += 1
+        return 5
+
+    gettable = Parameter("gettable", get_cmd=getter, set_cmd=None)
+    other = ManualParameter("other", initial_value=1)
+    combined = combine(gettable, other, name="combined")
+
+    # cache of ``gettable`` is invalid; ``"Never"`` must not call ``get``
+    assert not gettable.cache.valid
+    calls["n"] = 0
+    combined.snapshot(update="Never")
+    assert calls["n"] == 0
+
+    # ``"Only_invalid"`` refreshes the invalid cache via a single ``get``
+    calls["n"] = 0
+    combined.snapshot(update="Only_invalid")
+    assert calls["n"] == 1
 
 
 def test_mutable(parameters: list[ManualParameter]) -> None:

@@ -6,11 +6,10 @@ from importlib.metadata import version
 from math import prod
 from typing import TYPE_CHECKING, Literal
 
+import numpy as np
 from packaging import version as p_version
-from typing_extensions import deprecated
 
 from qcodes.dataset.linked_datasets.links import links_to_str
-from qcodes.utils import QCoDeSDeprecationWarning
 
 from ..descriptions.versioning import serialization as serial
 from .export_to_pandas import (
@@ -28,7 +27,7 @@ if TYPE_CHECKING:
 
     from qcodes.dataset.data_set_protocol import DataSetProtocol, ParameterData
 
-_LOG = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
 def _calculate_index_shape(idx: pd.Index | pd.MultiIndex) -> dict[Hashable, int]:
@@ -63,6 +62,88 @@ def _calculate_index_shape(idx: pd.Index | pd.MultiIndex) -> dict[Hashable, int]
     return expanded_shape
 
 
+def _add_inferred_data_vars(
+    dataset: DataSetProtocol,
+    name: str,
+    sub_dict: Mapping[str, npt.NDArray],
+    xr_dataset: xr.Dataset,
+    index: pd.Index | pd.MultiIndex | None,
+) -> xr.Dataset:
+    """Add inferred parameters as data variables to an xarray dataset.
+
+    Parameters that are inferred from the top-level measurement parameter
+    and present in sub_dict but not yet in the dataset are added as data
+    variables along the existing dimensions.
+    """
+    from pandas import Series
+
+    interdeps = dataset.description.interdeps
+    meas_paramspec = interdeps.graph.nodes[name]["value"]
+    _, deps, inferred = interdeps.all_parameters_in_tree_by_group(meas_paramspec)
+
+    dep_names = {dep.name for dep in deps}
+    dims = tuple(d for d in xr_dataset.dims)
+
+    # ``Series.to_xarray()`` expands the index into one dimension per index
+    # level. That is only compatible with the target dataset if the dataset
+    # dimensions are exactly the levels of the index. It is not the case when
+    # the dataset uses a single ``multi_index`` dimension or the flat index
+    # created by ``DataFrame.reset_index()``. A non unique MultiIndex cannot be
+    # converted at all. In those cases the data is already in index order so it
+    # can be reshaped directly.
+    index_is_expandable = (
+        index is not None and index.is_unique and set(dims) == set(index.names)
+    )
+
+    for inf in inferred:
+        if inf.name in dep_names:
+            continue
+        if inf.name in xr_dataset:
+            continue
+        if inf.name not in sub_dict:
+            continue
+
+        inf_data = sub_dict[inf.name]
+        if inf_data.dtype == np.dtype("O"):
+            try:
+                flat = np.concatenate(inf_data)
+            except ValueError:
+                flat = inf_data.ravel()
+        else:
+            flat = inf_data.ravel()
+
+        # Only add if the flattened data can be reshaped to the dataset
+        # dimensions. This is more robust than checking individual parent
+        # sizes because an inferred parameter may have multiple parents
+        # with different sizes.
+        expected_shape = tuple(xr_dataset.sizes[d] for d in dims)
+        expected_size = prod(expected_shape)
+        if flat.shape[0] == expected_size:
+            if index is not None and index_is_expandable:
+                # If an index is provided, we should align the inferred data with the index.
+                # This is necessary because data may be reordered when transforming from a pandas DataFrame to an xarray Dataset.
+                # Passing an index allows the original data ordering to be preserved on reconstruction.
+                indexed_data = Series(flat, index=index, name=inf.name).to_xarray()
+                xr_dataset[inf.name] = indexed_data
+            else:
+                xr_dataset[inf.name] = (dims, flat.reshape(expected_shape))
+        else:
+            _LOGGER.warning(
+                "Cannot add inferred parameter '%s' to xarray dataset for '%s' "
+                "(run_id=%s): data size %d does not match the dataset "
+                "dimensions %s (size %d). This is likely a user error in the "
+                "measurement setup.",
+                inf.name,
+                name,
+                dataset.run_id,
+                flat.shape[0],
+                dict(zip(dims, expected_shape)),
+                expected_size,
+            )
+
+    return xr_dataset
+
+
 def _load_to_xarray_dataset_dict_no_metadata(
     dataset: DataSetProtocol,
     datadict: Mapping[str, Mapping[str, npt.NDArray]],
@@ -84,10 +165,10 @@ def _load_to_xarray_dataset_dict_no_metadata(
         )
 
         if shape_is_consistent and use_multi_index != "always":
-            _LOG.info("Exporting %s to xarray using direct method", name)
+            _LOGGER.info("Exporting %s to xarray using direct method", name)
             xr_dataset_dict[name] = _xarray_data_set_direct(dataset, name, sub_dict)
         else:
-            _LOG.info("Exporting %s to xarray via pandas index", name)
+            _LOGGER.info("Exporting %s to xarray via pandas index", name)
             index = _generate_pandas_index(
                 sub_dict, dataset.description.interdeps, top_level_param_name=name
             )
@@ -102,7 +183,9 @@ def _load_to_xarray_dataset_dict_no_metadata(
                     interdeps=dataset.description.interdeps,
                     dependent_parameter=name,
                 ).to_xarray()
-                xr_dataset_dict[name] = xr_dataset
+                xr_dataset_dict[name] = _add_inferred_data_vars(
+                    dataset, name, sub_dict, xr_dataset, index
+                )
             elif index_is_unique:
                 df = _data_to_dataframe(
                     sub_dict,
@@ -110,8 +193,11 @@ def _load_to_xarray_dataset_dict_no_metadata(
                     interdeps=dataset.description.interdeps,
                     dependent_parameter=name,
                 )
-                xr_dataset_dict[name] = _xarray_data_set_from_pandas_multi_index(
+                xr_dataset = _xarray_data_set_from_pandas_multi_index(
                     dataset, use_multi_index, name, df, index
+                )
+                xr_dataset_dict[name] = _add_inferred_data_vars(
+                    dataset, name, sub_dict, xr_dataset, index
                 )
             else:
                 df = _data_to_dataframe(
@@ -120,7 +206,10 @@ def _load_to_xarray_dataset_dict_no_metadata(
                     interdeps=dataset.description.interdeps,
                     dependent_parameter=name,
                 )
-                xr_dataset_dict[name] = df.reset_index().to_xarray()
+                xr_dataset = df.reset_index().to_xarray()
+                xr_dataset_dict[name] = _add_inferred_data_vars(
+                    dataset, name, sub_dict, xr_dataset, index
+                )
 
     return xr_dataset_dict
 
@@ -148,7 +237,7 @@ def _xarray_data_set_from_pandas_multi_index(
 
     if export_with_multi_index:
         assert isinstance(df.index, pd.MultiIndex)
-        _LOG.info(
+        _LOGGER.info(
             "Exporting %s to xarray using a MultiIndex since on_grid=%s, shape=%s, use_multi_index=%s",
             name,
             on_grid,
@@ -165,7 +254,9 @@ def _xarray_data_set_from_pandas_multi_index(
 
 
 def _xarray_data_set_direct(
-    dataset: DataSetProtocol, name: str, sub_dict: Mapping[str, npt.NDArray]
+    dataset: DataSetProtocol,
+    name: str,
+    sub_dict: Mapping[str, npt.NDArray],
 ) -> xr.Dataset:
     import xarray as xr
 
@@ -173,82 +264,132 @@ def _xarray_data_set_direct(
     _, deps, inferred = dataset.description.interdeps.all_parameters_in_tree_by_group(
         meas_paramspec
     )
-    # Build coordinate axes from direct dependencies preserving their order
+
+    shape = sub_dict[name].shape
+    expected_size = prod(shape)
+
+    if not deps:
+        dimensions = tuple(f"{name}_dim_{axis}" for axis in range(len(shape)))
+
+        def reshape_without_dependencies(data: npt.NDArray) -> npt.NDArray:
+            if data.size != expected_size:
+                raise ValueError(
+                    f"Parameter contains {data.size} values, "
+                    f"but {expected_size} were expected"
+                )
+            return data.reshape(shape)
+
+        independent_data_vars: dict[str, tuple[tuple[str, ...], npt.NDArray]] = {
+            name: (dimensions, reshape_without_dependencies(sub_dict[name]))
+        }
+        for inf in inferred:
+            if inf.name in sub_dict:
+                independent_data_vars[inf.name] = (
+                    dimensions,
+                    reshape_without_dependencies(sub_dict[inf.name]),
+                )
+
+        return xr.Dataset(independent_data_vars)
+
+    if len(deps) != len(shape):
+        raise ValueError(
+            f"Parameter {name!r} has shape {shape}, but has {len(deps)} dependencies"
+        )
+
     dep_axis: dict[str, npt.NDArray] = {}
-    for axis, dep in enumerate(deps):
-        dep_array = sub_dict[dep.name]
-        dep_axis[dep.name] = dep_array[
-            tuple(slice(None) if i == axis else 0 for i in range(dep_array.ndim))
-        ]
+    destination = np.zeros(expected_size, dtype=np.intp)
+
+    for dimension, dep in enumerate(deps):
+        dep_data = sub_dict[dep.name].ravel()
+
+        if dep_data.size != expected_size:
+            raise ValueError(
+                f"Dependency {dep.name!r} contains {dep_data.size} values, "
+                f"but {expected_size} were expected"
+            )
+
+        values, first_indices, sorted_codes = np.unique(
+            dep_data,
+            return_index=True,
+            return_inverse=True,
+            equal_nan=True,
+        )
+
+        if values.size != shape[dimension]:
+            raise ValueError(
+                f"Dependency {dep.name!r} does not define an axis of length "
+                f"{shape[dimension]}: found {values.size} unique values"
+            )
+
+        # Restore first-seen order because np.unique sorts its output.
+        first_seen_order = np.argsort(first_indices)
+        dep_axis[dep.name] = values[first_seen_order]
+
+        code_remapping = np.empty(values.size, dtype=np.intp)
+        code_remapping[first_seen_order] = np.arange(values.size)
+        codes = code_remapping[sorted_codes]
+
+        # Encode the multidimensional coordinate using C-order mixed radix.
+        destination = destination * shape[dimension] + codes
+
+    if not np.array_equal(
+        np.sort(destination),
+        np.arange(expected_size, dtype=np.intp),
+    ):
+        raise ValueError(
+            f"Dependencies for {name!r} do not form a complete Cartesian "
+            "grid without duplicate points"
+        )
+
+    permutation = np.argsort(destination)
+
+    def reorder(data: npt.NDArray) -> npt.NDArray:
+        if data.size != expected_size:
+            raise ValueError(
+                f"Parameter contains {data.size} values, "
+                f"but {expected_size} were expected"
+            )
+        return data.ravel()[permutation].reshape(shape)
+
+    reordered_data = {
+        parameter_name: reorder(parameter_data)
+        for parameter_name, parameter_data in sub_dict.items()
+    }
 
     extra_coords: dict[str, tuple[tuple[str, ...], npt.NDArray]] = {}
     extra_data_vars: dict[str, tuple[tuple[str, ...], npt.NDArray]] = {}
+
     for inf in inferred:
-        # skip parameters already used as primary coordinate axes
-        if inf.name in dep_axis:
-            continue
-        # add only if data for this parameter is available
-        if inf.name not in sub_dict:
+        if inf.name not in reordered_data:
             continue
 
         inf_related = dataset.description.interdeps.find_all_parameters_in_tree(inf)
-
         related_deps = inf_related.intersection(set(deps))
         related_top_level = inf_related.intersection({meas_paramspec})
 
-        if len(related_top_level) > 0:
-            # If inferred param is related to the top-level measurement parameter,
-            # add it as a data variable with the full dependency dimensions
-            inf_data_full = sub_dict[inf.name]
-            inf_dims_full = tuple(dep_axis.keys())
-            extra_data_vars[inf.name] = (inf_dims_full, inf_data_full)
+        if related_top_level:
+            extra_data_vars[inf.name] = (
+                tuple(dep_axis),
+                reordered_data[inf.name],
+            )
         else:
-            # Otherwise, add as a coordinate along the related dependency axes only
-            inf_data = sub_dict[inf.name][
+            inf_data = reordered_data[inf.name][
                 tuple(slice(None) if dep in related_deps else 0 for dep in deps)
             ]
-            inf_coords = [dep.name for dep in deps if dep in related_deps]
+            inf_dims = tuple(dep.name for dep in deps if dep in related_deps)
+            extra_coords[inf.name] = (inf_dims, inf_data)
 
-            extra_coords[inf.name] = (tuple(inf_coords), inf_data)
+    coords: dict[
+        str,
+        tuple[tuple[str, ...], npt.NDArray] | npt.NDArray,
+    ] = {**dep_axis, **extra_coords}
 
-    # Compose coordinates dict including dependency axes and extra inferred coords
-    coords: dict[str, tuple[tuple[str, ...], npt.NDArray] | npt.NDArray]
-    coords = {**dep_axis, **extra_coords}
-
-    # Compose data variables dict including measured var and any inferred data vars
     data_vars: dict[str, tuple[tuple[str, ...], npt.NDArray]] = {
-        name: (tuple(dep_axis.keys()), sub_dict[name])
+        name: (tuple(dep_axis), reordered_data[name]),
+        **extra_data_vars,
     }
-    data_vars.update(extra_data_vars)
 
-    ds = xr.Dataset(data_vars, coords=coords)
-    return ds
-
-
-@deprecated(
-    "load_to_xarray_dataarray_dict is deprecated, use load_to_xarray_dataarray_dict instead",
-    category=QCoDeSDeprecationWarning,
-)
-def load_to_xarray_dataarray_dict(
-    dataset: DataSetProtocol,
-    datadict: Mapping[str, Mapping[str, npt.NDArray]],
-    *,
-    use_multi_index: Literal["auto", "always", "never"] = "auto",
-) -> dict[str, xr.DataArray]:
-    xr_datasets = _load_to_xarray_dataset_dict_no_metadata(
-        dataset, datadict, use_multi_index=use_multi_index
-    )
-    data_arrays: dict[str, xr.DataArray] = {}
-
-    for dataname, xr_dataset in xr_datasets.items():
-        data_array = xr_dataset[dataname]
-        _add_param_spec_to_xarray_coords(dataset, data_array)
-        paramspec_dict = _paramspec_dict_with_extras(dataset, str(dataname))
-        data_array.attrs.update(paramspec_dict.items())
-        _add_metadata_to_xarray(dataset, data_array)
-        data_arrays[dataname] = data_array
-
-    return data_arrays
+    return xr.Dataset(data_vars, coords=coords)
 
 
 def load_to_xarray_dataset_dict(
@@ -313,6 +454,25 @@ def load_to_xarray_dataset(
     xr_dataset_dict = _load_to_xarray_dataset_dict_no_metadata(
         dataset, data, use_multi_index=use_multi_index
     )
+
+    # When shapes are inconsistent (e.g. incomplete measurements), different
+    # code paths may represent the same setpoint parameter as a coordinate in
+    # some sub-datasets and a data variable in others.  xr.merge refuses to
+    # combine them when the role is ambiguous, so we normalise first by
+    # promoting any such variable to a coordinate everywhere.
+    all_coords: set[Hashable] = set()
+    all_data_vars: set[Hashable] = set()
+    for xr_ds in xr_dataset_dict.values():
+        all_coords.update(xr_ds.coords)
+        all_data_vars.update(xr_ds.data_vars)
+    conflicting = all_coords & all_data_vars
+    if conflicting:
+        for key in xr_dataset_dict:
+            vars_to_promote = [
+                v for v in conflicting if v in xr_dataset_dict[key].data_vars
+            ]
+            if vars_to_promote:
+                xr_dataset_dict[key] = xr_dataset_dict[key].set_coords(vars_to_promote)
 
     xr_dataset = xr.merge(xr_dataset_dict.values(), compat="equals", join="outer")
 
@@ -414,7 +574,7 @@ def xarray_to_h5netcdf_with_complex_numbers(
             from tqdm.dask import TqdmCallback
 
             with TqdmCallback(desc="Combining files"):
-                _LOG.info(
+                _LOGGER.info(
                     "Writing netcdf file using Dask delayed writer.",
                     extra={"file_name": str(file_path)},
                 )

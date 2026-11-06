@@ -5,7 +5,7 @@ coordinate systems.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple
 
 import numpy as np
 import numpy.typing as npt
@@ -18,7 +18,39 @@ if TYPE_CHECKING:
 
 AllCoordsType = tuple[float, float, float, float, float, float, float]
 NormOrder = Literal["fro", "nuc"] | None | float
-T = TypeVar("T", bound="FieldVector")
+
+
+class CartesianVector(NamedTuple):
+    """
+    The components of a field vector in Cartesian coordinates.
+    """
+
+    x: float
+    y: float
+    z: float
+
+
+class SphericalVector(NamedTuple):
+    """
+    The components of a field vector in spherical coordinates, with the angles
+    in degrees. ``field`` is the magnitude of the vector, called ``r`` in
+    :class:`FieldVector`.
+    """
+
+    field: float
+    theta: float
+    phi: float
+
+
+class CylindricalVector(NamedTuple):
+    """
+    The components of a field vector in cylindrical coordinates, with the angle
+    in degrees.
+    """
+
+    rho: float
+    phi: float
+    z: float
 
 
 class FieldVector:
@@ -205,7 +237,7 @@ class FieldVector:
             >>> f.set_vector(x=9, y=0, r=3)
 
         """
-        names = sorted(list(new_values.keys()))
+        names = sorted(new_values.keys())
         groups = [["x", "y", "z"], ["phi", "r", "theta"], ["phi", "rho", "z"]]
         if names not in groups:
             raise ValueError("Can only set vector with a complete value set")

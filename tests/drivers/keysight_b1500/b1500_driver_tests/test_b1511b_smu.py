@@ -27,9 +27,9 @@ def test_force_invalid_current_output_range_when_asu_not_present(
     smu: KeysightB1511B,
 ) -> None:
     msg = re.escape("Invalid Source Current Output Range")
+    smu.asu_present = True
+    smu.asu_present = False
     with pytest.raises(RuntimeError, match=msg):
-        smu.asu_present = True
-        smu.asu_present = False
         smu.source_config(IOutputRange.MIN_1pA)
 
 
@@ -37,7 +37,7 @@ def test_i_measure_range_config_raises_invalid_range_error_when_asu_not_present(
     smu: KeysightB1511B,
 ) -> None:
     msg = re.escape("8 current measurement range")
+    smu.asu_present = True
+    smu.asu_present = False
     with pytest.raises(RuntimeError, match=msg):
-        smu.asu_present = True
-        smu.asu_present = False
         smu.i_measure_range_config(IMeasRange.MIN_1pA)

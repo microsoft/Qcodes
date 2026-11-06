@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
@@ -120,7 +120,7 @@ def _register_actions(
 
 
 @contextmanager
-def catch_interrupts() -> Iterator[Callable[[], MeasInterruptT | None]]:
+def catch_interrupts() -> Generator[Callable[[], MeasInterruptT | None], None, None]:
     interrupt_exception: MeasInterruptT | None = None
     interrupt_raised = False
 

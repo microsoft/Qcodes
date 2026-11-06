@@ -2,22 +2,19 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Generic, Literal, TypeVar
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 import numpy.typing as npt
-from typing_extensions import deprecated
 
 from qcodes.dataset.exporters.export_info import ExportInfo
 from qcodes.dataset.sqlite.queries import completed, load_new_data_for_rundescriber
-from qcodes.utils import QCoDeSDeprecationWarning
 
 from .exporters.export_to_pandas import (
     load_to_concatenated_dataframe,
     load_to_dataframe_dict,
 )
 from .exporters.export_to_xarray import (
-    load_to_xarray_dataarray_dict,  # pyright: ignore[reportDeprecated]
     load_to_xarray_dataset,
     load_to_xarray_dataset_dict,
 )
@@ -33,16 +30,14 @@ if TYPE_CHECKING:
     from qcodes.dataset.sqlite.connection import AtomicConnection
 
     # used in forward refs that cannot be detected
-    from .data_set import DataSet  # noqa F401
+    from .data_set import DataSet  # noqa: F401
     from .data_set_in_memory import DataSetInMem
     from .data_set_protocol import DataSetProtocol, ParameterData
-
-DatasetType_co = TypeVar("DatasetType_co", bound="DataSetProtocol", covariant=True)
 
 log = logging.getLogger(__name__)
 
 
-class DataSetCache(Generic[DatasetType_co]):
+class DataSetCache[DatasetType_co: "DataSetProtocol"]:
     """
     The DataSetCache contains a in memory representation of the
     data in this dataset as well a a method to progressively read data
@@ -187,30 +182,6 @@ class DataSetCache(Generic[DatasetType_co]):
         """
         data = self.data()
         return load_to_concatenated_dataframe(data, self.rundescriber.interdeps)
-
-    @deprecated(
-        "to_xarray_dataarray_dict is deprecated, use to_xarray_dataset_dict instead",
-        category=QCoDeSDeprecationWarning,
-    )
-    def to_xarray_dataarray_dict(
-        self, *, use_multi_index: Literal["auto", "always", "never"] = "auto"
-    ) -> dict[str, xr.DataArray]:
-        """
-        Returns the values stored in the :class:`.dataset.data_set.DataSet` as a dict of
-        :py:class:`xr.DataArray` s
-        Each element in the dict is indexed by the names of the dependent parameters.
-
-        Returns:
-            Dictionary from requested parameter names to :py:class:`xr.DataArray` s
-            with the requested parameter(s) as a column(s) and coordinates
-            formed by the dependencies.
-
-        """
-        data = self.data()
-        data_dict = load_to_xarray_dataarray_dict(  # pyright: ignore[reportDeprecated]
-            self._dataset, data, use_multi_index=use_multi_index
-        )
-        return data_dict
 
     def to_xarray_dataset_dict(
         self, *, use_multi_index: Literal["auto", "always", "never"] = "auto"
@@ -405,10 +376,7 @@ def _merge_data_single_param(
         )
     elif new_values is not None or shape is not None:
         (merged_data, new_write_status) = _create_new_data_dict(new_values, shape)
-    elif existing_values is not None:
-        merged_data = existing_values
-        new_write_status = single_tree_write_status
-    elif shape is None and new_values is None:
+    elif existing_values is not None or (shape is None and new_values is None):
         merged_data = existing_values
         new_write_status = single_tree_write_status
     else:
@@ -471,11 +439,13 @@ def _insert_into_data_dict(
                 data[j] = np.atleast_1d(new_values[i])
         return data, None
     else:
-        if existing_values.dtype.kind in ("U", "S"):
+        if (
+            existing_values.dtype.kind in ("U", "S")
+            and new_values.dtype.itemsize > existing_values.dtype.itemsize
+        ):
             # string type arrays may be too small for the new data
             # read so rescale if needed.
-            if new_values.dtype.itemsize > existing_values.dtype.itemsize:
-                existing_values = existing_values.astype(new_values.dtype)
+            existing_values = existing_values.astype(new_values.dtype)
         n_values = new_values.size
         new_write_status = write_status + n_values
         if new_write_status > existing_values.size:
@@ -582,12 +552,15 @@ class DataSetCacheWithDBBackend(DataSetCache["DataSet"]):
             self._loaded_from_completed_ds = True
         if self._data == {}:
             self.prepare()
+        # The connection on which the dataset's results table lives (the main
+        # database, or a separate per-dataset file).
+        data_conn = self._dataset._results_conn
         (
             self._write_status,
             self._read_status,
             self._data,
         ) = load_new_data_from_db_and_append(
-            self._dataset.conn,
+            data_conn,
             self._dataset.table_name,
             self.rundescriber,
             self._write_status,

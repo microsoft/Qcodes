@@ -57,7 +57,9 @@ class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore[misc]
         newkwargs = {kw: val for (kw, val) in kwargs.items() if kw not in ipkwargs}
 
         Instrument.__init__(self, name, **newkwargs)
-        self.visa_log = get_instrument_logger(self, VISA_LOGGER)
+        self.visa_log = get_instrument_logger(
+            self, self._logger_name(VISA_LOGGER, "com", "visa")
+        )
 
         ##################################################
         # __init__ of VisaInstrument
@@ -72,8 +74,7 @@ class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore[misc]
 
         traversable_handle = files("qcodes.instrument.sims") / pyvisa_sim_file
         with as_file(traversable_handle) as sim_visalib_path:
-            self.visalib = f"{sim_visalib_path!s}@sim"
-            self.set_address(address=address)
+            self.set_address(address=address, visalib=f"{sim_visalib_path!s}@sim")
 
         if device_clear:
             self.device_clear()
@@ -88,8 +89,10 @@ class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore[misc]
         if getattr(self, "visa_handle", None):
             self.visa_handle.close()
 
-        if getattr(self, "visabackend", None) == "sim" and getattr(
-            self, "resource_manager", None
+        if (
+            getattr(self, "visabackend", None) == "sim"
+            and getattr(self, "resource_manager", None)
+            and self.resource_manager is not None
         ):
             # The pyvisa-sim visalib has a session attribute but the resource manager is not generic in the
             # visalib type so we cannot get it in a type safe way
@@ -109,5 +112,5 @@ class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore[misc]
         if hasattr(self, "connection") and hasattr(self.connection, "close"):
             self.connection.close()
 
-        strip_attrs(self, whitelist=["_short_name"])
         self.remove_instance(self)
+        strip_attrs(self, whitelist=["_short_name"])

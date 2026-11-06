@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 import numpy.typing as npt
-from typing_extensions import deprecated
 
 from qcodes.dataset.data_set_protocol import (
     SPECS,
@@ -41,7 +40,7 @@ from qcodes.dataset.sqlite.queries import (
     update_parent_datasets,
     update_run_description,
 )
-from qcodes.utils import NumpyJSONEncoder, QCoDeSDeprecationWarning
+from qcodes.utils import NumpyJSONEncoder
 
 from .data_set_cache import DataSetCacheDeferred, DataSetCacheInMem
 from .dataset_helpers import _add_run_to_runs_table
@@ -615,11 +614,13 @@ class DataSetInMem(BaseDataSet):
 
     def _add_to_dyn_column_if_in_db(self, tag: str, data: Any) -> None:
         if self._dataset_is_in_runs_table():
-            with contextlib.closing(
-                conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
-            ) as conn:
-                with atomic(conn) as aconn:
-                    add_data_to_dynamic_columns(aconn, self.run_id, {tag: data})
+            with (
+                contextlib.closing(
+                    conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
+                ) as conn,
+                atomic(conn) as aconn,
+            ):
+                add_data_to_dynamic_columns(aconn, self.run_id, {tag: data})
 
     @property
     def metadata(self) -> dict[str, Any]:
@@ -852,20 +853,6 @@ class DataSetInMem(BaseDataSet):
             return ",".join(psnames)
         else:
             return None
-
-    @deprecated(
-        "to_xarray_dataarray_dict is deprecated, use to_xarray_dataset_dict instead",
-        category=QCoDeSDeprecationWarning,
-    )
-    def to_xarray_dataarray_dict(
-        self,
-        *params: str | ParamSpec | ParameterBase,
-        start: int | None = None,
-        end: int | None = None,
-        use_multi_index: Literal["auto", "always", "never"] = "auto",
-    ) -> dict[str, xr.DataArray]:
-        self._warn_if_set(*params, start=start, end=end)
-        return self.cache.to_xarray_dataarray_dict()  # pyright: ignore[reportDeprecated]
 
     def to_xarray_dataset_dict(
         self,

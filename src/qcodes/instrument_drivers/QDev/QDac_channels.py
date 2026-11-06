@@ -3,7 +3,7 @@
 import logging
 import time
 from functools import partial
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 import pyvisa.constants
 from pyvisa.resources.serial import SerialInstrument
@@ -11,25 +11,26 @@ from pyvisa.resources.serial import SerialInstrument
 from qcodes import validators as vals
 from qcodes.instrument import (
     ChannelList,
-    Instrument,
+    ChannelTuple,
     InstrumentBaseKWArgs,
     InstrumentChannel,
     VisaInstrument,
     VisaInstrumentKWArgs,
 )
+from qcodes.metadatable import normalize_snapshot_update
 from qcodes.parameters import MultiChannelInstrumentParameter, ParamRawDataType
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from typing import Unpack
 
-    from typing_extensions import Unpack
-
+    from qcodes.metadatable import SnapshotUpdate
     from qcodes.parameters import Parameter
 
 log = logging.getLogger(__name__)
 
 
-class QDevQDacChannel(InstrumentChannel):
+class QDevQDacChannel(InstrumentChannel["QDevQDac"]):
     """
     A single output channel of the QDac.
 
@@ -40,7 +41,7 @@ class QDevQDacChannel(InstrumentChannel):
 
     def __init__(
         self,
-        parent: Instrument,
+        parent: "QDevQDac",
         name: str,
         channum: int,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
@@ -81,7 +82,7 @@ class QDevQDacChannel(InstrumentChannel):
         )
         """Parameter vrange"""
 
-        self.i: Parameter = self.add_parameter(
+        self.i: Parameter[float, Self] = self.add_parameter(
             "i",
             label=f"Channel {channum} current",
             get_cmd=f"get {channum}",
@@ -90,7 +91,7 @@ class QDevQDacChannel(InstrumentChannel):
         )
         """Parameter i"""
 
-        self.irange: Parameter = self.add_parameter(
+        self.irange: Parameter[int, Self] = self.add_parameter(
             "irange",
             label=f"Channel {channum} irange",
             set_cmd=f"cur {channum} {{}}",
@@ -140,18 +141,30 @@ class QDevQDacChannel(InstrumentChannel):
 
     def snapshot_base(
         self,
-        update: bool | None = False,
+        update: "bool | SnapshotUpdate | None" = "Only_invalid",
         params_to_skip_update: "Sequence[str] | None" = None,
     ) -> dict[Any, Any]:
-        update_currents = self._parent._update_currents and update
-        if update and not self._parent._get_status_performed:
-            self._parent._update_cache(readcurrents=update_currents)
-        # call get_status rather than getting the status individually for
-        # each parameter. This is only done if _get_status_performed is False
-        # this is used to signal that the parent has already called it and
-        # no need to repeat.
+        update = normalize_snapshot_update(update)
         if params_to_skip_update is None:
             params_to_skip_update = ("v", "i", "irange", "vrange")
+        # The channel parameters in ``params_to_skip_update`` are not queried
+        # individually during the snapshot; instead a single bulk status read
+        # on the parent (``self.parent._update_cache``) refreshes their caches.
+        # Only trigger that (potentially expensive) read when forced ("All")
+        # or, for "Only_invalid", when one of those caches is actually invalid.
+        # ``self.parent._get_status_performed`` signals that the parent has
+        # already performed the bulk read for all channels.
+        needs_bulk_update = update == "All" or (
+            update == "Only_invalid"
+            and any(
+                not self.parameters[name].cache.valid
+                for name in params_to_skip_update
+                if name in self.parameters
+            )
+        )
+        if needs_bulk_update and not self.parent._get_status_performed:
+            readcurrents = self.parent._update_currents or update == "All"
+            self.parent._update_cache(readcurrents=readcurrents)
         snap = super().snapshot_base(
             update=update, params_to_skip_update=params_to_skip_update
         )
@@ -171,10 +184,9 @@ class QDevQDacMultiChannelParameter(MultiChannelInstrumentParameter):
         self,
         channels: "Sequence[InstrumentChannel]",
         param_name: str,
-        *args: Any,
         **kwargs: Any,
     ):
-        super().__init__(channels, param_name, *args, **kwargs)
+        super().__init__(channels=channels, param_name=param_name, **kwargs)
 
     def get_raw(self) -> tuple[ParamRawDataType, ...]:
         """
@@ -287,7 +299,10 @@ class QDevQDac(VisaInstrument):
             channels.append(channel)
             # Should raise valueerror if name is invalid (silently fails now)
             self.add_submodule(f"ch{i:02}", channel)
-        self.add_submodule("channels", channels.to_channel_tuple())
+        self.channels: ChannelTuple[QDevQDacChannel] = self.add_submodule(
+            "channels", channels.to_channel_tuple()
+        )
+        """ChannelTuple containing all QDevQDacChannel instances"""
 
         for board in range(6):
             for sensor in range(3):
@@ -300,13 +315,13 @@ class QDevQDac(VisaInstrument):
                     get_parser=self._num_verbose,
                 )
 
-        self.cal: Parameter = self.add_parameter(
+        self.cal: Parameter[int, Self] = self.add_parameter(
             name="cal", set_cmd="cal {}", vals=self.channel_validator
         )
         """Parameter cal"""
         # TO-DO: maybe it's too dangerous to have this settable.
         # And perhaps ON is a better verbose mode default?
-        self.verbose: Parameter = self.add_parameter(
+        self.verbose: Parameter[bool, Self] = self.add_parameter(
             name="verbose", set_cmd="ver {}", val_mapping={True: 1, False: 0}
         )
         """Parameter verbose"""
@@ -325,11 +340,27 @@ class QDevQDac(VisaInstrument):
 
     def snapshot_base(
         self,
-        update: bool | None = False,
+        update: "bool | SnapshotUpdate | None" = "Only_invalid",
         params_to_skip_update: "Sequence[str] | None" = None,
     ) -> dict[Any, Any]:
-        update_currents = self._update_currents and update is True
-        if update:
+        update = normalize_snapshot_update(update)
+        # As in the per-channel snapshot, only perform the bulk status read
+        # (``_update_cache``, which refreshes the ``v``/``i``/``irange``/
+        # ``vrange`` caches of every channel) when forced ("All") or, for
+        # "Only_invalid", when one of those channel caches is actually invalid.
+        if update == "All":
+            needs_bulk_update = True
+        elif update == "Only_invalid":
+            needs_bulk_update = any(
+                not chan.parameters[name].cache.valid
+                for chan in self.channels
+                for name in ("v", "i", "irange", "vrange")
+                if name in chan.parameters
+            )
+        else:  # "Never"
+            needs_bulk_update = False
+        if needs_bulk_update:
+            update_currents = self._update_currents and update == "All"
             self._update_cache(readcurrents=update_currents)
             self._get_status_performed = True
         # call get_status rather than getting the status individually for
@@ -749,7 +780,7 @@ class QDevQDac(VisaInstrument):
         """
         self.visa_handle.write("status")
 
-        log.info(f"Connected to QDac on {self._address}, {self.visa_handle.read()}")
+        log.info(f"Connected to QDac on {self.address}, {self.visa_handle.read()}")
 
         # take care of the rest of the output
         for _ in range(self._output_n_lines):
@@ -807,5 +838,3 @@ class QDac(QDevQDac):
     """
     Backwards compatibility alias for QDevQDac driver
     """
-
-    pass

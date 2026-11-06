@@ -3,6 +3,11 @@ The dataset module contains code related to storage and retrieval of data to
 and from disk
 """
 
+from ._raw_data_storage import (
+    cleanup_datasets,
+    purge_orphaned_datasets,
+    update_raw_data_paths,
+)
 from .data_set import (
     get_guids_by_run_spec,
     load_by_counter,
@@ -49,6 +54,8 @@ from .measurements import Measurement
 from .plotting import plot_by_id, plot_dataset
 from .sqlite.connection import (
     AtomicConnection,
+    close_all_connections,
+    get_open_connections,
 )
 from .sqlite.database import (
     connect,
@@ -56,6 +63,7 @@ from .sqlite.database import (
     initialise_or_create_database_at,
     initialised_database_at,
 )
+from .sqlite.db_overview import RunOverviewDict, get_db_overview
 from .sqlite.settings import SQLiteSettings
 from .threading import (
     SequentialParamsCaller,
@@ -79,11 +87,14 @@ __all__ = [
     "ParamSpec",
     "ParamSpecTree",
     "RunDescriber",
+    "RunOverviewDict",
     "SQLiteSettings",
     "SequentialParamsCaller",
     "ThreadPoolParamsCaller",
     "TogetherSweep",
     "call_params_threaded",
+    "cleanup_datasets",
+    "close_all_connections",
     "connect",
     "datasaver_builder",
     "do0d",
@@ -95,8 +106,10 @@ __all__ = [
     "export_datasets_and_create_metadata_db",
     "extract_runs_into_db",
     "get_data_export_path",
+    "get_db_overview",
     "get_default_experiment_id",
     "get_guids_by_run_spec",
+    "get_open_connections",
     "guids_from_dbs",
     "guids_from_dir",
     "guids_from_list_str",
@@ -118,6 +131,8 @@ __all__ = [
     "new_experiment",
     "plot_by_id",
     "plot_dataset",
+    "purge_orphaned_datasets",
     "reset_default_experiment_id",
     "rundescriber_from_json",
+    "update_raw_data_paths",
 ]

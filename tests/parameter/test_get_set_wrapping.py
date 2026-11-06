@@ -52,7 +52,7 @@ def test_parameter_with_overwritten_set_raises() -> None:
     ],
 )
 def test_gettable_settable_attributes_with_get_set_cmd(
-    get_cmd: Literal[False] | None | Callable, set_cmd: Literal[False] | None | Callable
+    get_cmd: Literal[False] | Callable | None, set_cmd: Literal[False] | Callable | None
 ) -> None:
     a = Parameter(name="foo", get_cmd=get_cmd, set_cmd=set_cmd)
     expected_gettable = get_cmd is not False
@@ -70,7 +70,9 @@ def test_gettable_settable_attributes_with_get_set_raw(
     listed as gettable/settable and reverse."""
 
     class GetSetParam(baseclass):  # type: ignore[valid-type,misc]
-        def __init__(self, *args: Any, initial_value: Any = None, **kwargs: Any):
+        def __init__(
+            self, *args: Any, initial_value: Any = None, **kwargs: Any
+        ) -> None:
             self._value = initial_value
             super().__init__(*args, **kwargs)
 

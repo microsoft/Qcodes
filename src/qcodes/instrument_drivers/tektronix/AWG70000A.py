@@ -16,8 +16,7 @@ from broadbean.sequence import InvalidForgedSequenceError, fs_schema
 
 from qcodes import validators as vals
 from qcodes.instrument import (
-    ChannelList,
-    Instrument,
+    ChannelTuple,
     InstrumentBaseKWArgs,
     InstrumentChannel,
     VisaInstrument,
@@ -27,8 +26,7 @@ from qcodes.parameters import create_on_off_val_mapping
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
-
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.parameters import Parameter
 
@@ -46,7 +44,7 @@ def _parse_string_response(input_str: str) -> str:
     if the input is empty
     """
     output = input_str.replace('"', "")
-    output = output if output else "N/A"
+    output = output or "N/A"
 
     return output
 
@@ -157,14 +155,14 @@ class SRValidator(vals.Validator[float]):
             validator.validate(value)
 
 
-class Tektronix70000AWGChannel(InstrumentChannel):
+class Tektronix70000AWGChannel(InstrumentChannel["TektronixAWG70000Base"]):
     """
     Class to hold a channel of the AWG.
     """
 
     def __init__(
         self,
-        parent: Instrument,
+        parent: TektronixAWG70000Base,
         name: str,
         channel: int,
         **kwargs: Unpack[InstrumentBaseKWArgs],
@@ -183,8 +181,8 @@ class Tektronix70000AWGChannel(InstrumentChannel):
 
         self.channel = channel
 
-        num_channels = self.root_instrument.num_channels
-        self.model = self.root_instrument.model
+        num_channels = self.parent.num_channels
+        self.model = self.parent.model
 
         fg = "function generator"
 
@@ -216,7 +214,7 @@ class Tektronix70000AWGChannel(InstrumentChannel):
         # FGEN PARAMETERS
 
         # TODO: Setting high and low will change this parameter's value
-        self.fgen_amplitude: Parameter = self.add_parameter(
+        self.fgen_amplitude: Parameter[float, Self] = self.add_parameter(
             "fgen_amplitude",
             label=f"Channel {channel} {fg} amplitude",
             get_cmd=f"FGEN:CHANnel{channel}:AMPLitude?",
@@ -227,7 +225,7 @@ class Tektronix70000AWGChannel(InstrumentChannel):
         )
         """Parameter fgen_amplitude"""
 
-        self.fgen_offset: Parameter = self.add_parameter(
+        self.fgen_offset: Parameter[float, Self] = self.add_parameter(
             "fgen_offset",
             label=f"Channel {channel} {fg} offset",
             get_cmd=f"FGEN:CHANnel{channel}:OFFSet?",
@@ -238,7 +236,7 @@ class Tektronix70000AWGChannel(InstrumentChannel):
         )
         """Parameter fgen_offset"""
 
-        self.fgen_frequency: Parameter = self.add_parameter(
+        self.fgen_frequency: Parameter[float, Self] = self.add_parameter(
             "fgen_frequency",
             label=f"Channel {channel} {fg} frequency",
             get_cmd=f"FGEN:CHANnel{channel}:FREQuency?",
@@ -248,7 +246,7 @@ class Tektronix70000AWGChannel(InstrumentChannel):
         )
         """Parameter fgen_frequency"""
 
-        self.fgen_dclevel: Parameter = self.add_parameter(
+        self.fgen_dclevel: Parameter[float, Self] = self.add_parameter(
             "fgen_dclevel",
             label=f"Channel {channel} {fg} DC level",
             get_cmd=f"FGEN:CHANnel{channel}:DCLevel?",
@@ -259,16 +257,16 @@ class Tektronix70000AWGChannel(InstrumentChannel):
         )
         """Parameter fgen_dclevel"""
 
-        self.fgen_signalpath: Parameter = self.add_parameter(
+        self.fgen_signalpath: Parameter[str, Self] = self.add_parameter(
             "fgen_signalpath",
             label=f"Channel {channel} {fg} signal path",
             set_cmd=f"FGEN:CHANnel{channel}:PATH {{}}",
             get_cmd=f"FGEN:CHANnel{channel}:PATH?",
-            val_mapping=_fg_path_val_map[self.root_instrument.model],
+            val_mapping=_fg_path_val_map[self.parent.model],
         )
         """Parameter fgen_signalpath"""
 
-        self.fgen_period: Parameter = self.add_parameter(
+        self.fgen_period: Parameter[float, Self] = self.add_parameter(
             "fgen_period",
             label=f"Channel {channel} {fg} period",
             get_cmd=f"FGEN:CHANnel{channel}:PERiod?",
@@ -277,7 +275,7 @@ class Tektronix70000AWGChannel(InstrumentChannel):
         )
         """Parameter fgen_period"""
 
-        self.fgen_phase: Parameter = self.add_parameter(
+        self.fgen_phase: Parameter[float, Self] = self.add_parameter(
             "fgen_phase",
             label=f"Channel {channel} {fg} phase",
             get_cmd=f"FGEN:CHANnel{channel}:PHASe?",
@@ -288,7 +286,7 @@ class Tektronix70000AWGChannel(InstrumentChannel):
         )
         """Parameter fgen_phase"""
 
-        self.fgen_symmetry: Parameter = self.add_parameter(
+        self.fgen_symmetry: Parameter[float, Self] = self.add_parameter(
             "fgen_symmetry",
             label=f"Channel {channel} {fg} symmetry",
             set_cmd=f"FGEN:CHANnel{channel}:SYMMetry {{}}",
@@ -299,7 +297,7 @@ class Tektronix70000AWGChannel(InstrumentChannel):
         )
         """Parameter fgen_symmetry"""
 
-        self.fgen_type: Parameter = self.add_parameter(
+        self.fgen_type: Parameter[str, Self] = self.add_parameter(
             "fgen_type",
             label=f"Channel {channel} {fg} type",
             set_cmd=f"FGEN:CHANnel{channel}:TYPE {{}}",
@@ -325,7 +323,7 @@ class Tektronix70000AWGChannel(InstrumentChannel):
         # the manual claims that this command only works in AC mode
         # (OUTPut[n]:PATH is AC), but I've tested that it does what
         # one would expect in DIR mode.
-        self.awg_amplitude: Parameter = self.add_parameter(
+        self.awg_amplitude: Parameter[float, Self] = self.add_parameter(
             "awg_amplitude",
             label=f"Channel {channel} AWG peak-to-peak amplitude",
             set_cmd=f"SOURCe{channel}:VOLTage {{}}",
@@ -336,7 +334,7 @@ class Tektronix70000AWGChannel(InstrumentChannel):
         )
         """Parameter awg_amplitude"""
 
-        self.offset: Parameter = self.add_parameter(
+        self.offset: Parameter[float, Self] = self.add_parameter(
             "offset",
             label=f"Channel {channel} Offset for DC Output paths",
             set_cmd=f"SOURce{channel}:VOLTage:LEVel:IMMediate:OFFSet {{}}",
@@ -347,7 +345,7 @@ class Tektronix70000AWGChannel(InstrumentChannel):
         )
         """Parameter offset"""
 
-        self.assigned_asset: Parameter = self.add_parameter(
+        self.assigned_asset: Parameter[str, Self] = self.add_parameter(
             "assigned_asset",
             label=(f"Waveform/sequence assigned to channel {self.channel}"),
             get_cmd=f"SOURCE{self.channel}:CASSet?",
@@ -396,7 +394,7 @@ class Tektronix70000AWGChannel(InstrumentChannel):
         ##################################################
         # MISC.
 
-        self.resolution: Parameter = self.add_parameter(
+        self.resolution: Parameter[int, Self] = self.add_parameter(
             "resolution",
             label=f"Channel {channel} bit resolution",
             get_cmd=f"SOURce{channel}:DAC:RESolution?",
@@ -441,7 +439,7 @@ class Tektronix70000AWGChannel(InstrumentChannel):
                 "Hz, minimum is 1 Hz"
             )
         else:
-            self.root_instrument.write(f"FGEN:CHANnel{channel}:FREQuency {frequency}")
+            self.parent.write(f"FGEN:CHANnel{channel}:FREQuency {frequency}")
 
     def setWaveform(self, name: str) -> None:
         """
@@ -451,10 +449,10 @@ class Tektronix70000AWGChannel(InstrumentChannel):
             name: The name of the waveform
 
         """
-        if name not in self.root_instrument.waveformList:
+        if name not in self.parent.waveformList:
             raise ValueError("No such waveform in the waveform list")
 
-        self.root_instrument.write(f'SOURce{self.channel}:CASSet:WAVeform "{name}"')
+        self.parent.write(f'SOURce{self.channel}:CASSet:WAVeform "{name}"')
 
     def setSequenceTrack(self, seqname: str, tracknr: int) -> None:
         """
@@ -465,8 +463,7 @@ class Tektronix70000AWGChannel(InstrumentChannel):
             tracknr: Which track to use (1 or 2)
 
         """
-
-        self.root_instrument.write(
+        self.parent.write(
             f'SOURCE{self.channel}:CASSet:SEQuence "{seqname}", {tracknr}'
         )
 
@@ -475,13 +472,7 @@ class Tektronix70000AWGChannel(InstrumentChannel):
         Clear assigned assets on this channel
         """
 
-        self.root_instrument.write(f"SOURce{self.channel}:CASSet:CLEAR")
-
-
-AWGChannel = Tektronix70000AWGChannel
-"""
-Alias for Tektronix70000AWGChannel for backwards compatibility.
-"""
+        self.parent.write(f"SOURce{self.channel}:CASSet:CLEAR")
 
 
 class TektronixAWG70000Base(VisaInstrument):
@@ -524,7 +515,7 @@ class TektronixAWG70000Base(VisaInstrument):
                 f"the right driver for your instrument?"
             )
 
-        self.current_directory: Parameter = self.add_parameter(
+        self.current_directory: Parameter[str, Self] = self.add_parameter(
             "current_directory",
             label="Current file system directory",
             set_cmd='MMEMory:CDIRectory "{}"',
@@ -533,7 +524,7 @@ class TektronixAWG70000Base(VisaInstrument):
         )
         """Parameter current_directory"""
 
-        self.mode: Parameter = self.add_parameter(
+        self.mode: Parameter[str, Self] = self.add_parameter(
             "mode",
             label="Instrument operation mode",
             set_cmd="INSTrument:MODE {}",
@@ -545,7 +536,7 @@ class TektronixAWG70000Base(VisaInstrument):
         ##################################################
         # Clock parameters
 
-        self.sample_rate: Parameter = self.add_parameter(
+        self.sample_rate: Parameter[float, Self] = self.add_parameter(
             "sample_rate",
             label="Clock sample rate",
             set_cmd="CLOCk:SRATe {}",
@@ -556,7 +547,7 @@ class TektronixAWG70000Base(VisaInstrument):
         )
         """Parameter sample_rate"""
 
-        self.clock_source: Parameter = self.add_parameter(
+        self.clock_source: Parameter[str, Self] = self.add_parameter(
             "clock_source",
             label="Clock source",
             set_cmd="CLOCk:SOURce {}",
@@ -570,7 +561,7 @@ class TektronixAWG70000Base(VisaInstrument):
         )
         """Parameter clock_source"""
 
-        self.clock_external_frequency: Parameter = self.add_parameter(
+        self.clock_external_frequency: Parameter[float, Self] = self.add_parameter(
             "clock_external_frequency",
             label="External clock frequency",
             set_cmd="CLOCk:ECLock:FREQuency {}",
@@ -581,7 +572,7 @@ class TektronixAWG70000Base(VisaInstrument):
         )
         """Parameter clock_external_frequency"""
 
-        self.run_state: Parameter = self.add_parameter(
+        self.run_state: Parameter[str, Self] = self.add_parameter(
             "run_state",
             label="Run state",
             get_cmd="AWGControl:RSTATe?",
@@ -589,7 +580,7 @@ class TektronixAWG70000Base(VisaInstrument):
         )
         """Parameter run_state"""
 
-        self.all_output_off: Parameter = self.add_parameter(
+        self.all_output_off: Parameter[bool, Self] = self.add_parameter(
             "all_output_off",
             label="All Output Off",
             get_cmd="OUTPut:OFF?",
@@ -606,28 +597,24 @@ class TektronixAWG70000Base(VisaInstrument):
         )
         """Parameter force_jump"""
 
-        add_channel_list = self.num_channels > 2
-        # We deem 2 channels too few for a channel list
-        if add_channel_list:
-            chanlist = ChannelList(
-                self, "Channels", Tektronix70000AWGChannel, snapshotable=False
-            )
-
+        channels: list[Tektronix70000AWGChannel] = []
         for ch_num in range(1, num_channels + 1):
             ch_name = f"ch{ch_num}"
             channel = Tektronix70000AWGChannel(self, ch_name, ch_num)
             self.add_submodule(ch_name, channel)
-            if add_channel_list:
-                # pyright does not seem to understand
-                # that this code can only run iff chanliss is created
-                chanlist.append(  # pyright: ignore[reportPossiblyUnboundVariable]
-                    channel
-                )
+            channels.append(channel)
 
-        if add_channel_list:
+        # We deem 2 channels too few for a channel list
+        if self.num_channels > 2:
             self.add_submodule(
                 "channels",
-                chanlist.to_channel_tuple(),  # pyright: ignore[reportPossiblyUnboundVariable]
+                ChannelTuple(
+                    self,
+                    "Channels",
+                    Tektronix70000AWGChannel,
+                    channels,
+                    snapshotable=False,
+                ),
             )
 
         # Folder on the AWG where to files are uploaded by default
@@ -952,23 +939,16 @@ class TektronixAWG70000Base(VisaInstrument):
         offsetdigits = 9
 
         if not isinstance(num_samples, int):
-            raise ValueError("num_samples must be of type int.")
+            raise ValueError("num_samples must be of type int.")  # noqa: TRY004
 
         if num_samples < 2400:
             raise ValueError("num_samples must be at least 2400.")
 
         # form the timestamp string
-        timezone = time.timezone
-        tz_m, _ = divmod(timezone, 60)  # returns (minutes, seconds)
-        tz_h, tz_m = divmod(tz_m, 60)
-        if np.sign(tz_h) == -1:
-            signstr = "-"
-            tz_h *= -1
-        else:
-            signstr = "+"
-        timestr = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        timestr += signstr
-        timestr += f"{tz_h:02.0f}:{tz_m:02.0f}"
+        now = dt.datetime.now(dt.UTC).astimezone()
+        tz_str = now.strftime("%z")  # e.g. "+0100"
+        timestr = now.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        timestr += tz_str[:3] + ":" + tz_str[3:]  # "+01:00"
 
         hdr = ET.Element(
             "DataFile", attrib={"offset": "0" * offsetdigits, "version": "0.1"}
@@ -1129,12 +1109,12 @@ class TektronixAWG70000Base(VisaInstrument):
         try:
             fs_schema.validate(seq)
         except Exception as e:
-            raise InvalidForgedSequenceError(e)
+            raise InvalidForgedSequenceError(e) from e
 
         chan_list: list[str | int] = []
-        for pos1 in seq.keys():
-            for pos2 in seq[pos1]["content"].keys():
-                for ch in seq[pos1]["content"][pos2]["data"].keys():
+        for pos1 in seq:
+            for pos2 in seq[pos1]["content"]:
+                for ch in seq[pos1]["content"][pos2]["data"]:
                     if ch not in chan_list:
                         chan_list.append(ch)
 
@@ -1165,14 +1145,14 @@ class TektronixAWG70000Base(VisaInstrument):
         wfmx_files: list[bytes] = []
         wfmx_filenames: list[str] = []
 
-        for pos1 in seq.keys():
-            for pos2 in seq[pos1]["content"].keys():
+        for pos1 in seq:
+            for pos2 in seq[pos1]["content"]:
                 for ch, data in seq[pos1]["content"][pos2]["data"].items():
                     wfm = data["wfm"]
 
                     markerdata = []
                     for mkey in ["m1", "m2", "m3", "m4"]:
-                        if mkey in data.keys():
+                        if mkey in data:
                             markerdata.append(data.get(mkey))
                     wfm_data = np.stack((wfm, *markerdata))
 
@@ -1192,7 +1172,7 @@ class TektronixAWG70000Base(VisaInstrument):
         subseqsml_files: list[str] = []
         subseqsml_filenames: list[str] = []
 
-        for pos1 in seq.keys():
+        for pos1 in seq:
             if seq[pos1]["type"] == "subsequence":
                 ss_wfm_names: list[list[str]] = []
 
@@ -1201,7 +1181,7 @@ class TektronixAWG70000Base(VisaInstrument):
                 # and we must also provide default values if nothing
                 # is specified
                 seqings: list[dict[str, int]] = []
-                for pos2 in seq[pos1]["content"].keys():
+                for pos2 in seq[pos1]["content"]:
                     pos_seqs = seq[pos1]["content"][pos2]["sequencing"]
                     pos_seqs["twait"] = pos_seqs.get("twait", 0)
                     pos_seqs["nrep"] = pos_seqs.get("nrep", 1)
@@ -1214,7 +1194,7 @@ class TektronixAWG70000Base(VisaInstrument):
                         [n for n in wfmx_filenames if f"wfm_{pos1}_{pos2}" in n]
                     )
 
-                seqing = {k: [d[k] for d in seqings] for k in seqings[0].keys()}
+                seqing = {k: [d[k] for d in seqings] for k in seqings[0]}
 
                 subseqname = f"subsequence_{pos1}"
 
@@ -1241,7 +1221,7 @@ class TektronixAWG70000Base(VisaInstrument):
         asset_names: list[list[str]] = []
         seqings = []
         subseq_positions: list[int] = []
-        for pos1 in seq.keys():
+        for pos1 in seq:
             pos_seqs = seq[pos1]["sequencing"]
 
             pos_seqs["twait"] = pos_seqs.get("twait", 0)
@@ -1257,7 +1237,7 @@ class TektronixAWG70000Base(VisaInstrument):
                 )
             else:
                 asset_names.append([wn for wn in wfmx_filenames if f"wfm_{pos1}" in wn])
-        seqing = {k: [d[k] for d in seqings] for k in seqings[0].keys()}
+        seqing = {k: [d[k] for d in seqings] for k in seqings[0]}
 
         log.debug(f"Assets for SML file: {asset_names}")
 
@@ -1520,17 +1500,10 @@ class TektronixAWG70000Base(VisaInstrument):
         N = lstlens[0]
 
         # form the timestamp string
-        timezone = time.timezone
-        tz_m, _ = divmod(timezone, 60)
-        tz_h, tz_m = divmod(tz_m, 60)
-        if np.sign(tz_h) == -1:
-            signstr = "-"
-            tz_h *= -1
-        else:
-            signstr = "+"
-        timestr = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        timestr += signstr
-        timestr += f"{tz_h:02.0f}:{tz_m:02.0f}"
+        now = dt.datetime.now(dt.UTC).astimezone()
+        tz_str = now.strftime("%z")  # e.g. "+0100"
+        timestr = now.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        timestr += tz_str[:3] + ":" + tz_str[3:]  # "+01:00"
 
         datafile = ET.Element(
             "DataFile", attrib={"offset": "0" * offsetdigits, "version": "0.1"}

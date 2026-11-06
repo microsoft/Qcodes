@@ -1,11 +1,9 @@
-from typing import Any, NamedTuple, TypeVar
-
-T = TypeVar("T")
+from typing import Any, NamedTuple
 
 # Unbound parameters or Instrument parameters
 ParameterKey = str | tuple[str, str]
 
-ParameterDict = dict[ParameterKey, T]
+type ParameterDict[T] = dict[ParameterKey, T]
 Snapshot = dict[str, Any]
 
 

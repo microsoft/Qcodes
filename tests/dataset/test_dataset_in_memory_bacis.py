@@ -1,5 +1,6 @@
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -9,8 +10,11 @@ from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.parameters import ParamSpecBase
 
+if TYPE_CHECKING:
+    from qcodes.dataset.experiment_container import Experiment
 
-def test_create_dataset_in_memory_explicit_db(empty_temp_db) -> None:
+
+def test_create_dataset_in_memory_explicit_db(empty_temp_db: "None") -> None:
     default_db_location = qc.config["core"]["db_location"]
 
     extra_db_location = str(Path(default_db_location).parent / "extra.db")
@@ -25,7 +29,7 @@ def test_create_dataset_in_memory_explicit_db(empty_temp_db) -> None:
     assert default_db_location != extra_db_location
 
 
-def test_empty_ds_parameters(experiment) -> None:
+def test_empty_ds_parameters(experiment: "Experiment") -> None:
     ds = DataSetInMem._create_new_run(name="foo")
 
     assert ds._parameters is None
@@ -38,7 +42,7 @@ def test_empty_ds_parameters(experiment) -> None:
     assert ds._parameters is None
 
 
-def test_write_metadata_to_explicit_db(empty_temp_db) -> None:
+def test_write_metadata_to_explicit_db(empty_temp_db: "None") -> None:
     default_db_location = qc.config["core"]["db_location"]
     extra_db_location = str(Path(default_db_location).parent / "extra.db")
     load_or_create_experiment(experiment_name="myexp", sample_name="mysample")
@@ -55,13 +59,13 @@ def test_write_metadata_to_explicit_db(empty_temp_db) -> None:
     ds.the_same_dataset_as(loaded_ds)
 
 
-def test_no_interdeps_raises_in_prepare(experiment) -> None:
+def test_no_interdeps_raises_in_prepare(experiment: "Experiment") -> None:
     ds = DataSetInMem._create_new_run(name="foo")
     with pytest.raises(RuntimeError, match="No parameters supplied"):
         ds.prepare(interdeps=InterDependencies_(), snapshot={})
 
 
-def test_prepare_twice_raises(experiment) -> None:
+def test_prepare_twice_raises(experiment: "Experiment") -> None:
     ds = DataSetInMem._create_new_run(name="foo")
 
     pss: list[ParamSpecBase] = []
@@ -77,7 +81,7 @@ def test_prepare_twice_raises(experiment) -> None:
         ds.prepare(interdeps=idps, snapshot={})
 
 
-def test_timestamps(experiment) -> None:
+def test_timestamps(experiment: "Experiment") -> None:
     ds = DataSetInMem._create_new_run(name="foo")
 
     assert ds.run_timestamp() is None
@@ -111,7 +115,7 @@ def test_timestamps(experiment) -> None:
     ds.mark_completed()
 
 
-def test_mark_pristine_completed_raises(experiment) -> None:
+def test_mark_pristine_completed_raises(experiment: "Experiment") -> None:
     ds = DataSetInMem._create_new_run(name="foo")
 
     with pytest.raises(
@@ -120,7 +124,7 @@ def test_mark_pristine_completed_raises(experiment) -> None:
         ds.mark_completed()
 
 
-def test_load_from_non_existing_guid(experiment) -> None:
+def test_load_from_non_existing_guid(experiment: "Experiment") -> None:
     guid = "This is not a guid"
     with pytest.raises(
         RuntimeError, match="Could not find the requested run with GUID"

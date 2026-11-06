@@ -8,7 +8,7 @@ from .conftest import blank_instruments, named_instrument
 
 
 class SimpleArrayParam(ArrayParameter):
-    def __init__(self, return_val: ParamRawDataType, *args: Any, **kwargs: Any):
+    def __init__(self, return_val: ParamRawDataType, *args: Any, **kwargs: Any) -> None:
         self._return_val = return_val
         self._get_count = 0
         super().__init__(*args, **kwargs)
@@ -27,7 +27,7 @@ class SettableArray(SimpleArrayParam):
 def test_default_attributes() -> None:
     name = "array_param"
     shape = (2, 3)
-    p = SimpleArrayParam([[1, 2, 3], [4, 5, 6]], name, shape)
+    p = SimpleArrayParam([[1, 2, 3], [4, 5, 6]], name, shape=shape)
 
     assert p.name == name
     assert p.shape == shape
@@ -41,7 +41,7 @@ def test_default_attributes() -> None:
     assert str(p) == name
 
     assert p._get_count == 0
-    snap = p.snapshot(update=True)
+    snap = p.snapshot(update="All")
     assert p._get_count == 0
     snap_expected = {"name": name, "label": name, "unit": ""}
     for k, v in snap_expected.items():
@@ -52,6 +52,31 @@ def test_default_attributes() -> None:
 
     assert p.__doc__ is not None
     assert name in p.__doc__
+
+
+def test_snapshot_value_default_false() -> None:
+    """snapshot_value defaults to False for ArrayParameter."""
+    p = SimpleArrayParam([1, 2, 3], "arr", shape=(3,))
+    assert p._snapshot_value is False
+    snap = p.snapshot(update="All")
+    assert "value" not in snap
+    assert "raw_value" not in snap
+
+
+def test_snapshot_value_explicit_true() -> None:
+    """snapshot_value=True includes value in snapshot for ArrayParameter."""
+    p = SimpleArrayParam([1, 2, 3], "arr", shape=(3,), snapshot_value=True)
+    assert p._snapshot_value is True
+    snap = p.snapshot(update="All")
+    assert snap["value"] == [1, 2, 3]
+
+
+def test_snapshot_value_explicit_false() -> None:
+    """snapshot_value=False excludes value from snapshot for ArrayParameter."""
+    p = SimpleArrayParam([1, 2, 3], "arr", shape=(3,), snapshot_value=False)
+    assert p._snapshot_value is False
+    snap = p.snapshot(update="All")
+    assert "value" not in snap
 
 
 def test_explicit_attributes() -> None:
@@ -67,7 +92,7 @@ def test_explicit_attributes() -> None:
     p = SimpleArrayParam(
         [6, 7],
         name,
-        shape,
+        shape=shape,
         label=label,
         unit=unit,
         setpoints=setpoints,
@@ -88,7 +113,7 @@ def test_explicit_attributes() -> None:
     assert p.setpoint_labels == setpoint_labels
 
     assert p._get_count == 0
-    snap = p.snapshot(update=True)
+    snap = p.snapshot(update="All")
     assert p._get_count == 1
     snap_expected = {
         "name": name,
@@ -113,9 +138,9 @@ def test_has_set_get() -> None:
     name = "array_param"
     shape = (3,)
     with pytest.raises(AttributeError):
-        ArrayParameter(name, shape)
+        ArrayParameter(name, shape=shape)
 
-    p = SimpleArrayParam([1, 2, 3], name, shape)
+    p = SimpleArrayParam([1, 2, 3], name, shape=shape)
 
     assert hasattr(p, "get")
     assert p.gettable
@@ -132,13 +157,13 @@ def test_has_set_get() -> None:
     assert p.get_latest() == [1, 2, 3]
 
     with pytest.raises(AttributeError):
-        SettableArray([1, 2, 3], name, shape)
+        SettableArray([1, 2, 3], name, shape=shape)
 
 
 def test_full_name() -> None:
     # three cases where only name gets used for full_name
     for instrument in blank_instruments:
-        p = SimpleArrayParam([6, 7], "fred", (2,), setpoint_names=("barney",))
+        p = SimpleArrayParam([6, 7], "fred", shape=(2,), setpoint_names=("barney",))
         # this is not allowed since instrument
         # here is not actually an instrument
         # but useful for testing
@@ -147,14 +172,14 @@ def test_full_name() -> None:
         assert p.setpoint_full_names == ("barney",)
 
     # and then an instrument that really has a name
-    p = SimpleArrayParam([6, 7], "wilma", (2,), setpoint_names=("betty",))
+    p = SimpleArrayParam([6, 7], "wilma", shape=(2,), setpoint_names=("betty",))
     p._instrument = named_instrument  # type: ignore[assignment]
     assert str(p) == "astro_wilma"
     assert p.setpoint_full_names == ("astro_betty",)
 
     # and with a 2d parameter to test mixed setpoint_names
     p = SimpleArrayParam(
-        [[6, 7, 8], [1, 2, 3]], "wilma", (3, 2), setpoint_names=("betty", None)
+        [[6, 7, 8], [1, 2, 3]], "wilma", shape=(3, 2), setpoint_names=("betty", None)
     )
     p._instrument = named_instrument  # type: ignore[assignment]
     assert p.setpoint_full_names == ("astro_betty", None)

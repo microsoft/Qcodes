@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Self
 
 import qcodes.validators as vals
 from qcodes.parameters import Group, GroupParameter, Parameter
@@ -6,11 +6,12 @@ from qcodes.parameters import Group, GroupParameter, Parameter
 from .lakeshore_base import (
     LakeshoreBase,
     LakeshoreBaseOutput,
+    LakeshoreBaseOutputWithHeaterSetup,
     LakeshoreBaseSensorChannel,
 )
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.instrument import InstrumentBaseKWArgs, VisaInstrumentKWArgs
 
@@ -31,12 +32,13 @@ _channel_name_to_outmode_command_map: dict[str, int] = {
 }
 
 
-class LakeshoreModel336CurrentSource(LakeshoreBaseOutput):
+class LakeshoreModel336CurrentSource(LakeshoreBaseOutputWithHeaterSetup):
     """
     InstrumentChannel for current sources on Lakeshore Model 336.
 
     Class for control outputs 1 and 2 of Lakeshore Model 336 that are variable DC current
-    sources referenced to chassis ground.
+    sources referenced to chassis ground. Unlike the Model 335, the heater setup
+    (``HTRSET``) command of the Model 336 has no output type field.
     """
 
     MODES: ClassVar[dict[str, int]] = {
@@ -71,7 +73,7 @@ class LakeshoreModel336VoltageSource(LakeshoreBaseOutput):
     InstrumentChannel for voltage sources on Lakeshore Model 336.
 
     This is used for control outputs 3 and 4 that are variable DC voltage
-    sources.
+    sources. These outputs do not support the heater setup (``HTRSET``) command.
     """
 
     MODES: ClassVar[dict[str, int]] = {
@@ -208,7 +210,7 @@ class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):
         )
 
         # Parameters related to temperature calibration curve (CRVHDR)
-        self.curve_number: Parameter = self.add_parameter(
+        self.curve_number: Parameter[int, Self] = self.add_parameter(
             "curve_number",
             get_cmd=f"INCRV? {self._channel}",
             set_cmd=False,

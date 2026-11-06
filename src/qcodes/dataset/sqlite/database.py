@@ -29,7 +29,7 @@ from qcodes.dataset.sqlite.initial_schema import init_db
 from qcodes.utils.types import complex_types, numpy_floats, numpy_ints
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Generator
     from pathlib import Path
 
 JournalMode = Literal["DELETE", "TRUNCATE", "PERSIST", "MEMORY", "WAL", "OFF"]
@@ -120,6 +120,70 @@ def _adapt_complex(value: complex | np.complexfloating) -> sqlite3.Binary:
     return sqlite3.Binary(out.read())
 
 
+def _register_numpy_sqlite_adapters_and_converters() -> None:
+    """
+    Register the numpy/sqlite type adapters and converters that QCoDeS needs
+    to round-trip array, numeric and complex data. The registrations are
+    global to the ``sqlite3`` module and idempotent, so calling this multiple
+    times is safe.
+    """
+    # register numpy->binary(TEXT) adapter
+    sqlite3.register_adapter(np.ndarray, _adapt_array)
+    # register binary(TEXT) -> numpy converter
+    sqlite3.register_converter("array", _convert_array)
+
+    # Make sure numpy ints and floats types are inserted properly
+    for numpy_int in numpy_ints:
+        sqlite3.register_adapter(numpy_int, int)
+
+    sqlite3.register_converter("numeric", _convert_numeric)
+
+    for numpy_float in (float, *numpy_floats):
+        sqlite3.register_adapter(numpy_float, _adapt_float)
+
+    for complex_type in complex_types:
+        # https://github.com/python/typeshed/issues/2429
+        sqlite3.register_adapter(complex_type, _adapt_complex)  # type: ignore[arg-type]
+    sqlite3.register_converter("complex", _convert_complex)
+
+
+def _connect_to_sqlite_file(
+    name: str | Path, read_only: bool = False
+) -> AtomicConnection:
+    """
+    Open a bare :class:`AtomicConnection` to an sqlite file with the settings
+    that QCoDeS relies on (URI mode, ``PARSE_DECLTYPES``) and the numpy type
+    adapters/converters registered.
+
+    Unlike :func:`connect`, this does **not** create or upgrade any QCoDeS
+    schema; it is the low-level building block shared by :func:`connect` and
+    the per-dataset raw-data connection helper.
+
+    Args:
+        name: name or path to the sqlite file
+        read_only: Should the database be opened in read only mode.
+
+    Returns:
+        connection object to the database (note, it is
+        :class:`AtomicConnection`, which is a subclass of :class:`sqlite3.Connection`)
+
+    """
+    _register_numpy_sqlite_adapters_and_converters()
+
+    path = f"file:{name!s}"
+
+    if read_only:
+        path = path + "?mode=ro"
+
+    return sqlite3.connect(
+        path,
+        detect_types=sqlite3.PARSE_DECLTYPES,
+        check_same_thread=True,
+        uri=True,
+        factory=AtomicConnection,
+    )
+
+
 def connect(
     name: str | Path, debug: bool = False, version: int = -1, read_only: bool = False
 ) -> AtomicConnection:
@@ -140,23 +204,7 @@ def connect(
         :class:`AtomicConnection`, which is a subclass of :class:`sqlite3.Connection`)
 
     """
-    # register numpy->binary(TEXT) adapter
-    sqlite3.register_adapter(np.ndarray, _adapt_array)
-    # register binary(TEXT) -> numpy converter
-    sqlite3.register_converter("array", _convert_array)
-
-    path = f"file:{name!s}"
-
-    if read_only:
-        path = path + "?mode=ro"
-
-    conn = sqlite3.connect(
-        path,
-        detect_types=sqlite3.PARSE_DECLTYPES,
-        check_same_thread=True,
-        uri=True,
-        factory=AtomicConnection,
-    )
+    conn = _connect_to_sqlite_file(name, read_only=read_only)
 
     latest_supported_version = _latest_available_version()
     db_version = get_user_version(conn)
@@ -167,20 +215,6 @@ def connect(
             f"version of QCoDeS supports up to "
             f"version {latest_supported_version}"
         )
-
-    # Make sure numpy ints and floats types are inserted properly
-    for numpy_int in numpy_ints:
-        sqlite3.register_adapter(numpy_int, int)
-
-    sqlite3.register_converter("numeric", _convert_numeric)
-
-    for numpy_float in (float, *numpy_floats):
-        sqlite3.register_adapter(numpy_float, _adapt_float)
-
-    for complex_type in complex_types:
-        # https://github.com/python/typeshed/issues/2429
-        sqlite3.register_adapter(complex_type, _adapt_complex)  # type: ignore[arg-type]
-    sqlite3.register_converter("complex", _convert_complex)
 
     if debug:
         conn.set_trace_callback(print)
@@ -220,7 +254,10 @@ def get_DB_debug() -> bool:
     return bool(qcodes.config["core"]["db_debug"])
 
 
-def initialise_database(journal_mode: JournalMode | None = "WAL") -> None:
+def initialise_database(
+    journal_mode: JournalMode | None = "WAL",
+    db_path: str | Path | None = None,
+) -> None:
     """
     Initialise a database in the location specified by the config object
     and set ``atomic commit and rollback mode`` of the db. The db is created
@@ -232,16 +269,65 @@ def initialise_database(journal_mode: JournalMode | None = "WAL") -> None:
         journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
             Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
             no changes are made.
+        db_path: Path to database file. If None, the path specified in the config object is used.
 
     """
     # calling connect performs all the needed actions to create and upgrade
     # the db to the latest version.
-    conn = connect(get_DB_location(), get_DB_debug())
+    if db_path is None:
+        db_path = get_DB_location()
+    conn = connect(db_path, get_DB_debug())
     reset_default_experiment_id(conn)
     if journal_mode is not None:
         set_journal_mode(conn, journal_mode)
     conn.close()
     del conn
+
+
+def initialise_or_create_database_at(
+    db_file_with_abs_path: str | Path, journal_mode: JournalMode | None = "WAL"
+) -> None:
+    r"""
+    Initialises or creates a database at the specified location and configures QCoDeS to use
+    this as the default database for the duration of the session.
+
+
+    Args:
+        db_file_with_abs_path: Database file name with absolute path, for example
+            ``C:\mydata\majorana_experiments.db``
+        journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
+            Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
+            no changes are made.
+
+    """
+    qcodes.config.core.db_location = str(db_file_with_abs_path)
+    initialise_database(journal_mode)
+
+
+@contextmanager
+def initialised_database_at(
+    db_file_with_abs_path: str | Path, *, journal_mode: JournalMode | None = "WAL"
+) -> Generator[None, None, None]:
+    r"""
+    Initialises or creates a database at the specified location, configures QCoDeS to use this as the
+    default database for the duration of the context, and restores the 'db_location' afterwards.
+
+    Args:
+        db_file_with_abs_path: Database file name with absolute path, for example
+            ``C:\mydata\majorana_experiments.db``
+        journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
+            Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
+            no changes are made.
+
+    """
+    db_location = qcodes.config["core"]["db_location"]
+    try:
+        initialise_or_create_database_at(
+            db_file_with_abs_path, journal_mode=journal_mode
+        )
+        yield
+    finally:
+        qcodes.config["core"]["db_location"] = db_location
 
 
 def set_journal_mode(conn: AtomicConnection, journal_mode: JournalMode) -> None:
@@ -263,43 +349,6 @@ def set_journal_mode(conn: AtomicConnection, journal_mode: JournalMode) -> None:
     query = f"PRAGMA journal_mode={journal_mode};"
     cursor = conn.cursor()
     cursor.execute(query)
-
-
-def initialise_or_create_database_at(
-    db_file_with_abs_path: str | Path, journal_mode: JournalMode | None = "WAL"
-) -> None:
-    """
-    This function sets up QCoDeS to refer to the given database file. If the
-    database file does not exist, it will be initiated.
-
-    Args:
-        db_file_with_abs_path: Database file name with absolute path, for example
-            ``C:\\mydata\\majorana_experiments.db``
-        journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
-            Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
-            no changes are made.
-
-    """
-    qcodes.config.core.db_location = str(db_file_with_abs_path)
-    initialise_database(journal_mode)
-
-
-@contextmanager
-def initialised_database_at(db_file_with_abs_path: str | Path) -> Iterator[None]:
-    """
-    Initializes or creates a database and restores the 'db_location' afterwards.
-
-    Args:
-        db_file_with_abs_path: Database file name with absolute path, for example
-            ``C:\\mydata\\majorana_experiments.db``
-
-    """
-    db_location = qcodes.config["core"]["db_location"]
-    try:
-        initialise_or_create_database_at(db_file_with_abs_path)
-        yield
-    finally:
-        qcodes.config["core"]["db_location"] = db_location
 
 
 def conn_from_dbpath_or_conn(

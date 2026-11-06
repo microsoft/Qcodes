@@ -3,14 +3,14 @@ import itertools
 import textwrap
 import warnings
 from time import sleep
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 import qcodes.validators as vals
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import Parameter, create_on_off_val_mapping
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 class Keithley3706AUnknownOrEmptySlot(Exception):
@@ -51,7 +51,7 @@ class Keithley3706A(VisaInstrument):
         self.use_forbidden_channels_cache: bool = use_forbidden_channels_cache
         self._forbidden_channels_cache: str = ""
 
-        self.channel_connect_rule: Parameter = self.add_parameter(
+        self.channel_connect_rule: Parameter[str, Self] = self.add_parameter(
             "channel_connect_rule",
             get_cmd=self._get_channel_connect_rule,
             set_cmd=self._set_channel_connect_rule,
@@ -89,7 +89,7 @@ class Keithley3706A(VisaInstrument):
         If it is off, channels open and close simultaneously.
         """
 
-        self.gpib_enabled: Parameter = self.add_parameter(
+        self.gpib_enabled: Parameter[bool, Self] = self.add_parameter(
             "gpib_enabled",
             get_cmd=self._get_gpib_status,
             set_cmd=self._set_gpib_status,
@@ -98,7 +98,7 @@ class Keithley3706A(VisaInstrument):
         )
         """Enables or disables GPIB connection."""
 
-        self.gpib_address: Parameter = self.add_parameter(
+        self.gpib_address: Parameter[int, Self] = self.add_parameter(
             "gpib_address",
             get_cmd=self._get_gpib_address,
             get_parser=int,
@@ -108,7 +108,7 @@ class Keithley3706A(VisaInstrument):
         )
         """Sets and gets the GPIB address."""
 
-        self.lan_enabled: Parameter = self.add_parameter(
+        self.lan_enabled: Parameter[bool, Self] = self.add_parameter(
             "lan_enabled",
             get_cmd=self._get_lan_status,
             set_cmd=self._set_lan_status,
@@ -222,9 +222,10 @@ class Keithley3706A(VisaInstrument):
     def _is_backplane_channel(self, channel_id: str) -> bool:
         if len(channel_id) != 4:
             raise Keithley3706AInvalidValue(f"{channel_id} is not a valid channel id")
-        if channel_id[1] == "9":
-            return True
-        return False
+
+        is_backplane_channel = channel_id[1] == "9"
+
+        return is_backplane_channel
 
     def exclusive_close(self, val: str) -> None:
         """

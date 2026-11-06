@@ -7,6 +7,7 @@ from __future__ import annotations
 import contextlib
 import gc
 import io
+import logging
 import re
 import weakref
 from typing import TYPE_CHECKING, Any, assert_type
@@ -22,6 +23,7 @@ from qcodes.instrument import (
     find_or_create_instrument,
 )
 from qcodes.instrument_drivers.mock_instruments import (
+    DummyBase,
     DummyChannelInstrument,
     DummyFailingInstrument,
     DummyInstrument,
@@ -32,7 +34,9 @@ from qcodes.metadatable import Metadatable
 from qcodes.parameters import Function, Parameter
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterator, Sequence
+
+    from qcodes.metadatable.metadatable_base import Snapshot, SnapshotUpdate
 
 
 @pytest.fixture(name="testdummy", scope="function")
@@ -73,12 +77,24 @@ def _empty_instrument_with_empty_submodule() -> Iterator[Instrument]:
 
 
 @pytest.fixture(name="close_before_and_after", scope="function")
-def _close_before_and_after():
+def _close_before_and_after() -> Iterator[None]:
     Instrument.close_all()
     try:
         yield
     finally:
         Instrument.close_all()
+
+
+@pytest.fixture(name="automatic_gc_disabled", scope="function")
+def _automatic_gc_disabled() -> Iterator[None]:
+    """Disable automatic garbage collection so that only the test triggers it."""
+    was_enabled = gc.isenabled()
+    gc.disable()
+    try:
+        yield
+    finally:
+        if was_enabled:
+            gc.enable()
 
 
 def test_instrument_type(request: pytest.FixtureRequest) -> None:
@@ -95,7 +111,9 @@ def test_validate_function(testdummy: DummyInstrument) -> None:
 
     testdummy.dac1.cache._value = 1000  # overrule the validator
     testdummy.dac1.cache._raw_value = 1000  # overrule the validator
-    with pytest.raises(Exception):
+    with pytest.raises(
+        ValueError, match=r"1000 is invalid: must be between -800 and 400 inclusive"
+    ):
         testdummy.validate_status()
 
 
@@ -121,11 +139,13 @@ def test_instrument_fail() -> None:
 @pytest.mark.usefixtures("close_before_and_after")
 def test_instrument_on_invalid_identifier() -> None:
     # Check if warning and error raised when invalid identifer name given
-    with pytest.warns(
-        UserWarning, match="Changed !-name to !_name for instrument identifier"
+    with (
+        pytest.warns(
+            UserWarning, match="Changed !-name to !_name for instrument identifier"
+        ),
+        pytest.raises(ValueError, match="!_name invalid instrument identifier"),
     ):
-        with pytest.raises(ValueError, match="!_name invalid instrument identifier"):
-            DummyInstrument(name="!-name")
+        DummyInstrument(name="!-name")
 
     assert Instrument.instances() == []
     assert DummyInstrument.instances() == []
@@ -260,7 +280,7 @@ def test_repr(testdummy: DummyInstrument) -> None:
     assert repr(testdummy) == "<DummyInstrument: testdummy>"
 
 
-def test_add_remove_f_p(testdummy) -> None:
+def test_add_remove_f_p(testdummy: DummyInstrument) -> None:
     with pytest.raises(KeyError, match="Duplicate parameter name dac1"):
         testdummy.add_parameter("dac1", get_cmd="foo")
 
@@ -277,7 +297,7 @@ def test_add_remove_f_p(testdummy) -> None:
         match="Use attributes directly on the instrument object instead",
     ):
         fcn = testdummy["function"]
-        assert isinstance(fcn, Function)
+    assert isinstance(fcn, Function)
     # by design, one gets the parameter if a function exists
     # and has same name
     with pytest.warns(
@@ -285,10 +305,10 @@ def test_add_remove_f_p(testdummy) -> None:
         match="Use attributes directly on the instrument object instead",
     ):
         dac1 = testdummy["dac1"]
-        assert isinstance(dac1, Parameter)
+    assert isinstance(dac1, Parameter)
 
 
-def test_instances(testdummy, parabola) -> None:
+def test_instances(testdummy: DummyInstrument, parabola: MockParabola) -> None:
     instruments = [testdummy, parabola]
     for instrument in instruments:
         for other_instrument in instruments:
@@ -306,13 +326,13 @@ def test_instances(testdummy, parabola) -> None:
         assert instrument is Instrument.find_instrument(instrument.name)
 
 
-def test_is_valid(testdummy) -> None:
+def test_is_valid(testdummy: DummyInstrument) -> None:
     assert Instrument.is_valid(testdummy)
     testdummy.close()
     assert not Instrument.is_valid(testdummy)
 
 
-def test_snapshot_value(testdummy) -> None:
+def test_snapshot_value(testdummy: DummyInstrument) -> None:
     testdummy.add_parameter(
         "has_snapshot_value",
         parameter_class=Parameter,
@@ -340,7 +360,7 @@ def test_snapshot_value(testdummy) -> None:
     assert "value" not in snapshot["parameters"]["no_snapshot_value"]
 
 
-def test_meta_instrument(parabola) -> None:
+def test_meta_instrument(parabola: MockParabola) -> None:
     mock_instrument = MockMetaParabola("mock_parabola", parabola)
 
     # Check that the mock instrument can return values
@@ -355,7 +375,7 @@ def test_meta_instrument(parabola) -> None:
     assert mock_instrument.parabola() == parabola.parabola() * 2
 
     # Check snapshots
-    snap = mock_instrument.snapshot(update=True)
+    snap = mock_instrument.snapshot(update="All")
     assert "parameters" in snap
     assert "gain" in snap["parameters"]
     assert snap["parameters"]["gain"]["value"] == 2
@@ -376,7 +396,7 @@ def test_empty_instrument(empty_instrument_with_empty_submodule: Instrument) -> 
     empty_instrument_with_empty_submodule.print_readable_snapshot()
 
 
-def test_find(testdummy) -> None:
+def test_find(testdummy: DummyInstrument) -> None:
     """Test finding an existing instrument"""
 
     instr_2 = find_or_create_instrument(
@@ -450,6 +470,203 @@ def test_recreate(request: FixtureRequest) -> None:
     assert instr not in Instrument._all_instruments.values()
 
 
+@pytest.mark.usefixtures("close_before_and_after")
+def test_close_all_closes_all_instruments() -> None:
+    """``close_all`` closes every registered instrument by default."""
+    dummy = DummyInstrument(name="dummy", gates=["dac1"])
+    parabola = MockParabola("parabola")
+
+    assert Instrument.is_valid(dummy)
+    assert Instrument.is_valid(parabola)
+
+    Instrument.close_all()
+
+    assert not Instrument.is_valid(dummy)
+    assert not Instrument.is_valid(parabola)
+    assert Instrument._all_instruments == WeakValueDictionary()
+
+
+@pytest.mark.usefixtures("close_before_and_after")
+def test_close_all_only_subclasses_from_leaf_class() -> None:
+    """``only_subclasses`` on a leaf class leaves sibling classes open."""
+    dummy = DummyInstrument(name="dummy", gates=["dac1"])
+    parabola = MockParabola("parabola")
+
+    # DummyInstrument and MockParabola are siblings (both subclass DummyBase),
+    # so closing only DummyInstrument subclasses must leave the parabola open.
+    DummyInstrument.close_all(only_subclasses=True)
+
+    assert not Instrument.is_valid(dummy)
+    assert Instrument.is_valid(parabola)
+
+    # The remaining instrument can still be closed with a plain close_all.
+    Instrument.close_all()
+    assert not Instrument.is_valid(parabola)
+    assert Instrument._all_instruments == WeakValueDictionary()
+
+
+@pytest.mark.usefixtures("close_before_and_after")
+def test_close_all_only_subclasses_from_base_class() -> None:
+    """``only_subclasses`` closes instances of the class and its subclasses."""
+    dummy = DummyInstrument(name="dummy", gates=["dac1"])
+    parabola = MockParabola("parabola")
+
+    # Both DummyInstrument and MockParabola are subclasses of DummyBase, so both
+    # are closed when calling close_all on the shared base class.
+    DummyBase.close_all(only_subclasses=True)
+
+    assert not Instrument.is_valid(dummy)
+    assert not Instrument.is_valid(parabola)
+    assert Instrument._all_instruments == WeakValueDictionary()
+
+
+@pytest.mark.usefixtures("close_before_and_after")
+def test_close_all_only_subclasses_false_closes_everything() -> None:
+    """``only_subclasses=False`` closes all instruments regardless of class."""
+    dummy = DummyInstrument(name="dummy", gates=["dac1"])
+    parabola = MockParabola("parabola")
+
+    DummyInstrument.close_all(only_subclasses=False)
+
+    assert not Instrument.is_valid(dummy)
+    assert not Instrument.is_valid(parabola)
+    assert Instrument._all_instruments == WeakValueDictionary()
+
+
+@pytest.mark.usefixtures("close_before_and_after")
+def test_close_all_log_status(caplog: pytest.LogCaptureFixture) -> None:
+    """``log_status=True`` logs the closing of each instrument."""
+    dummy = DummyInstrument(name="dummy", gates=["dac1"])
+
+    with caplog.at_level(logging.INFO, logger="qcodes.instrument.instrument"):
+        Instrument.close_all(log_status=True)
+
+    assert "Closing all registered instruments" in caplog.text
+    assert "Closing dummy" in caplog.text
+    assert not Instrument.is_valid(dummy)
+
+
+@pytest.mark.usefixtures("close_before_and_after")
+def test_close_all_no_log_by_default(caplog: pytest.LogCaptureFixture) -> None:
+    """``close_all`` does not log anything when ``log_status`` is not set."""
+    dummy = DummyInstrument(name="dummy", gates=["dac1"])
+
+    with caplog.at_level(logging.INFO, logger="qcodes.instrument.instrument"):
+        Instrument.close_all()
+
+    assert "Closing all registered instruments" not in caplog.text
+    assert "Closing dummy" not in caplog.text
+    assert not Instrument.is_valid(dummy)
+
+
+def test_close_all_only_accepts_keyword_arguments() -> None:
+    """The ``close_all`` options are keyword-only."""
+    with pytest.raises(TypeError):
+        Instrument.close_all(True)  # type: ignore[misc]
+
+
+class _RegistryCollectingGarbageWhenIterated(WeakValueDictionary[str, Instrument]):
+    """
+    Instrument registry that runs a garbage collection in the middle of the
+    first iteration over it.
+
+    A garbage collection can run whenever objects are allocated, so this makes
+    a rare but possible situation deterministic.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.collected_garbage = False
+
+    def _collect_garbage_once(self) -> None:
+        if not self.collected_garbage:
+            self.collected_garbage = True
+            gc.collect()
+
+    def __iter__(self) -> Iterator[str]:
+        for name in super().__iter__():
+            yield name
+            self._collect_garbage_once()
+
+    def items(self) -> Iterator[tuple[str, Instrument]]:  # type: ignore[override]
+        for item in super().items():
+            yield item
+            self._collect_garbage_once()
+
+
+def _leak_instrument(name: str) -> None:
+    """
+    Create an instrument and drop it without closing it.
+
+    The instrument references itself through its parameters, so it stays
+    registered until the garbage collector finalizes it.
+    """
+    Instrument(name)
+    assert Instrument.exist(name)
+
+
+@pytest.mark.usefixtures("close_before_and_after", "automatic_gc_disabled")
+def test_close_when_gc_finalizes_instrument_during_registry_iteration(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """
+    Closing an instrument unregisters it, so that its name can be reused, even
+    if a garbage collection that finalizes another instrument interrupts an
+    iteration over the registry.
+    """
+    monkeypatch.setattr(
+        Instrument, "_all_instruments", _RegistryCollectingGarbageWhenIterated()
+    )
+    dummy = DummyInstrument(name="dummy", gates=["dac1"])
+    _leak_instrument("leaked")
+
+    dummy.close()
+
+    assert not Instrument.exist("dummy")
+    DummyInstrument(name="dummy", gates=["dac1"]).close()
+
+    gc.collect()
+    assert len(Instrument._all_instruments) == 0
+
+
+@pytest.mark.usefixtures("close_before_and_after", "automatic_gc_disabled")
+def test_close_all_when_gc_finalizes_instrument_during_registry_iteration(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """
+    ``close_all`` closes all instruments even if a garbage collection that
+    finalizes another instrument runs while it iterates over the registry.
+    """
+    registry = _RegistryCollectingGarbageWhenIterated()
+    monkeypatch.setattr(Instrument, "_all_instruments", registry)
+    dummy = DummyInstrument(name="dummy", gates=["dac1"])
+    _leak_instrument("leaked")
+    parabola = MockParabola("parabola")
+
+    Instrument.close_all()
+
+    assert registry.collected_garbage
+    assert not Instrument.is_valid(dummy)
+    assert not Instrument.is_valid(parabola)
+    assert len(Instrument._all_instruments) == 0
+
+
+@pytest.mark.usefixtures("close_before_and_after")
+def test_closing_instrument_again_keeps_new_instrument_with_same_name() -> None:
+    """
+    Closing an instrument again does not unregister another instrument that
+    has been registered under the same name in the meantime.
+    """
+    old_dummy = DummyInstrument(name="dummy", gates=["dac1"])
+    old_dummy.close()
+    new_dummy = DummyInstrument(name="dummy", gates=["dac1"])
+
+    old_dummy.close()
+
+    assert Instrument.find_instrument("dummy") is new_dummy
+    new_dummy.close()
+
+
 def test_instrument_metadata(request: FixtureRequest) -> None:
     metadatadict = {1: "data", "some": "data"}
     instrument = DummyInstrument(
@@ -466,7 +683,7 @@ def test_instrumentbase_metadata() -> None:
 
 
 @pytest.mark.parametrize("cls", [(InstrumentBase), (Instrument)])
-def test_instrument_label(cls, request: FixtureRequest) -> None:
+def test_instrument_label(cls: type[InstrumentBase], request: FixtureRequest) -> None:
     """Instrument uses nicely formatted label if available."""
     instrument = cls(name="name")
     if isinstance(cls, type(Instrument)):
@@ -484,7 +701,7 @@ def test_instrument_label(cls, request: FixtureRequest) -> None:
     assert instrument.label == label
 
 
-def test_instrument_without_ref_is_gced():
+def test_instrument_without_ref_is_gced() -> None:
     # When there are no active references to an instrument and it is
     # gced there should be no live references to the instrument
 
@@ -526,14 +743,18 @@ class TestSnapshotType(Metadatable):
         super().__init__()
         self.sample_value = sample_value
 
-    def snapshot_base(self, update=True, params_to_skip_update=None):
+    def snapshot_base(
+        self,
+        update: bool | SnapshotUpdate | None = True,
+        params_to_skip_update: Sequence[str] | None = None,
+    ) -> Snapshot:
         return {"sample_key": self.sample_value}
 
 
 class TestInstrument(InstrumentBase):
     __test__ = False
 
-    def __init__(self, name, label) -> None:
+    def __init__(self, name: str, label: str) -> None:
         super().__init__(name, label=label)
         self._meta_attrs.extend(["test_attribute"])
         self._test_attribute = TestSnapshotType(12)

@@ -898,6 +898,14 @@ devices:
         setter:
           q: "SETP 0,{}"
 
+      htrset_output_0:
+        default: "+120.000,0,+0.000,2"
+        getter:
+          q: "HTRSET? 0"
+          r: "{}"
+        setter:
+          q: "HTRSET 0,{}"
+
       # ====================
       # Heater Output 1 (warmup_heater)
       # ====================
@@ -932,6 +940,14 @@ devices:
           r: "{}"
         setter:
           q: "SETP 1,{}"
+
+      htrset_output_1:
+        default: "2,1,+0.000,1"
+        getter:
+          q: "HTRSET? 1"
+          r: "{}"
+        setter:
+          q: "HTRSET 1,{}"
 
       # ====================
       # Heater Output 2 (analog_heater)

@@ -6,7 +6,7 @@ from __future__ import annotations
 import io
 import operator
 import traceback
-from datetime import datetime
+from datetime import UTC, datetime
 from functools import partial, reduce
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
@@ -80,7 +80,7 @@ def button_to_text(title: str, body: str) -> Box:
                 "Back",
                 "warning",
                 on_click=_back_button(title, body, box),
-                button_kwargs=dict(icon="undo"),
+                button_kwargs={"icon": "undo"},
             )
             box.children = (text_input, back_button)
 
@@ -250,7 +250,7 @@ def _do_in_tab(
                 f"Close {which}",
                 "danger",
                 on_click=delete_tab(out, tab),
-                button_kwargs=dict(icon="eraser"),
+                button_kwargs={"icon": "eraser"},
             )
             display(close_button)
 
@@ -263,7 +263,7 @@ def _do_in_tab(
                         display(nested_dict_browser(snapshot))
                     else:
                         print("This dataset has no snapshot")
-            except Exception:
+            except Exception:  # noqa: BLE001 the widget callback must never raise
                 traceback.print_exc()
         tab.selected_index = i
 
@@ -300,15 +300,15 @@ def editable_metadata(ds: DataSetProtocol) -> Box:
                 "",
                 "success",
                 on_click=_save_button(box, ds),
-                button_kwargs=dict(icon="save"),
-                layout_kwargs=dict(width="50%"),
+                button_kwargs={"icon": "save"},
+                layout_kwargs={"width": "50%"},
             )
             cancel_button = button(
                 "",
                 "danger",
                 on_click=_save_button(box, ds, do_save=False),
-                button_kwargs=dict(icon="close"),
-                layout_kwargs=dict(width="50%"),
+                button_kwargs={"icon": "close"},
+                layout_kwargs={"width": "50%"},
             )
             subbox = HBox(
                 [save_button, cancel_button],
@@ -333,7 +333,7 @@ def editable_metadata(ds: DataSetProtocol) -> Box:
             text,
             "success",
             on_click=_button_to_input(text, box),
-            button_kwargs=dict(icon="edit") if text == "" else {},
+            button_kwargs={"icon": "edit"} if text == "" else {},
         )
 
     text = ds.metadata.get(_META_DATA_KEY, "")
@@ -389,8 +389,8 @@ def _get_timestamp_button(ds: DataSetProtocol) -> Box:
     end_timestamp = ds.completed_timestamp_raw
     if start_timestamp is not None and end_timestamp is not None:
         total_time = str(
-            datetime.fromtimestamp(end_timestamp)
-            - datetime.fromtimestamp(start_timestamp)
+            datetime.fromtimestamp(end_timestamp, tz=UTC)
+            - datetime.fromtimestamp(start_timestamp, tz=UTC)
         )
     else:
         total_time = "?"
@@ -429,7 +429,7 @@ def _get_snapshot_button(ds: DataSetProtocol, tab: Tab) -> Button:
         "warning",
         tooltip="Click to open this DataSet's snapshot in a tab above.",
         on_click=_do_in_tab(tab, ds, "snapshot"),
-        button_kwargs=dict(icon="camera"),
+        button_kwargs={"icon": "camera"},
     )
 
 
@@ -439,7 +439,7 @@ def _get_plot_button(ds: DataSetProtocol, tab: Tab) -> Button:
         "warning",
         tooltip="Click to open this DataSet's plot in a tab above.",
         on_click=_do_in_tab(tab, ds, "plot"),
-        button_kwargs=dict(icon="line-chart"),
+        button_kwargs={"icon": "line-chart"},
     )
 
 
@@ -454,7 +454,7 @@ def _get_export_button(
             "csv",
             path=Path.cwd() / "export",
         ),
-        button_kwargs=dict(icon="file-export"),
+        button_kwargs={"icon": "file-export"},
     )
 
 

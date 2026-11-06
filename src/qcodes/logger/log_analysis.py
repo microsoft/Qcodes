@@ -13,7 +13,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator, Sequence
+    from collections.abc import Callable, Generator, Sequence
 
     import numpy as np
     import numpy.typing as npt
@@ -156,7 +156,7 @@ def time_difference(
 @contextmanager
 def capture_dataframe(
     level: LevelType = logging.DEBUG, logger: logging.Logger | None = None
-) -> Iterator[tuple[logging.StreamHandler, Callable[[], pd.DataFrame]]]:
+) -> Generator[tuple[logging.StreamHandler, Callable[[], pd.DataFrame]], None, None]:
     """
     Context manager to capture the logs in a :class:`pd.DataFrame`
 

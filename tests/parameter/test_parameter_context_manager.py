@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 class DummyTrackingInstrument(DummyInstrument):
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         super().__init__(name)
         self.add_parameter("a", set_cmd=None, get_cmd=None)
 
@@ -153,7 +153,7 @@ def test_set_to_none_for_not_captured_parameter_but_instrument_has_value() -> No
     # assertions after exiting the context
     assert set_counter == 2
     assert instr_value == "something"
-    assert p.cache._value == "foo"  # pyright: ignore
+    assert p.cache._value == "foo"  # pyright: ignore[reportAttributeAccessIssue]
     assert p.cache.raw_value == "something"
     assert p.cache.timestamp is not None
 
@@ -279,7 +279,6 @@ def test_reset_at_exit_with_allow_changes_false(
 ) -> None:
     p = instrument.a
     p.set(2)
-    with p.restore_at_exit(allow_changes=False):
-        with pytest.raises(TypeError):
-            p.set(5)
+    with p.restore_at_exit(allow_changes=False), pytest.raises(TypeError):
+        p.set(5)
     assert p() == 2

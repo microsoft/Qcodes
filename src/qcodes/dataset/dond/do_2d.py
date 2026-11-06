@@ -68,7 +68,7 @@ def do2d(
     flush_columns: bool = False,
     do_plot: bool | None = None,
     use_threads: bool | None = None,
-    additional_setpoints: Sequence[ParameterBase] = tuple(),
+    additional_setpoints: Sequence[ParameterBase] = (),
     show_progress: bool | None = None,
     log_info: str | None = None,
     break_condition: BreakConditionT | None = None,
@@ -214,9 +214,8 @@ def do2d(
                     *additional_setpoints_data,
                 )
 
-                if callable(break_condition):
-                    if break_condition():
-                        raise BreakConditionInterrupt("Break condition was met.")
+                if callable(break_condition) and break_condition():
+                    raise BreakConditionInterrupt("Break condition was met.")
 
             for action in after_inner_actions:
                 action()

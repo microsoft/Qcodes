@@ -1,17 +1,21 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from qcodes.dataset.dond.do_nd_utils import BreakConditionInterrupt, catch_interrupts
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
-def test_catch_interrupts():
+
+def test_catch_interrupts() -> None:
     # Test normal execution (no interrupt)
     with catch_interrupts() as get_interrupt:
         assert get_interrupt() is None
 
     # Test KeyboardInterrupt
-    with pytest.raises(KeyboardInterrupt):
-        with catch_interrupts() as get_interrupt:
-            raise KeyboardInterrupt()
+    with pytest.raises(KeyboardInterrupt), catch_interrupts() as get_interrupt:
+        raise KeyboardInterrupt()
 
     # Test BreakConditionInterrupt
     with catch_interrupts() as get_interrupt:
@@ -20,12 +24,11 @@ def test_catch_interrupts():
 
     # Test that cleanup code runs for KeyboardInterrupt
     cleanup_ran = False
-    with pytest.raises(KeyboardInterrupt):
-        with catch_interrupts():
-            try:
-                raise KeyboardInterrupt()
-            finally:
-                cleanup_ran = True
+    with pytest.raises(KeyboardInterrupt), catch_interrupts():  # noqa: PT012
+        try:
+            raise KeyboardInterrupt()
+        finally:
+            cleanup_ran = True
     assert cleanup_ran
 
     # Test that cleanup code runs for BreakConditionInterrupt
@@ -43,10 +46,10 @@ def test_catch_interrupts():
     assert isinstance(get_interrupt(), BreakConditionInterrupt)
 
 
-def test_catch_interrupts_in_loops():
+def test_catch_interrupts_in_loops() -> None:
     # Test interruption in a simple loop
     loop_count = 0
-    with pytest.raises(KeyboardInterrupt):
+    with pytest.raises(KeyboardInterrupt):  # noqa: PT012
         for i in range(5):
             with catch_interrupts():
                 loop_count += 1
@@ -57,7 +60,7 @@ def test_catch_interrupts_in_loops():
     # Test interruption in nested loops
     outer_count = 0
     inner_count = 0
-    with pytest.raises(KeyboardInterrupt):
+    with pytest.raises(KeyboardInterrupt):  # noqa: PT012
         for i in range(3):
             with catch_interrupts():
                 outer_count += 1
@@ -70,8 +73,8 @@ def test_catch_interrupts_in_loops():
     assert inner_count == 5
 
 
-def test_catch_interrupts_simulated_sweeps():
-    def simulated_sweep(interrupt_at=None):
+def test_catch_interrupts_simulated_sweeps() -> None:
+    def simulated_sweep(interrupt_at: int | None = None) -> "Iterator[int]":
         for i in range(5):
             with catch_interrupts():
                 if i == interrupt_at:
@@ -80,20 +83,24 @@ def test_catch_interrupts_simulated_sweeps():
 
     # Test interruption in a single sweep
     results = []
-    with pytest.raises(KeyboardInterrupt):
+    with pytest.raises(KeyboardInterrupt):  # noqa: PT012
         for value in simulated_sweep(interrupt_at=3):
-            results.append(value)
+            results.append(value)  # noqa: PERF402
+            # simulate adding numbers one by one using copy
+            # so its ok here
     assert results == [0, 1, 2]
 
     # Test interruption in nested sweeps
     outer_results = []
     inner_results = []
-    with pytest.raises(KeyboardInterrupt):
+    with pytest.raises(KeyboardInterrupt):  # noqa: PT012
         for outer_value in simulated_sweep(interrupt_at=None):
             outer_results.append(outer_value)
             for inner_value in simulated_sweep(
                 interrupt_at=2 if outer_value == 1 else None
             ):
-                inner_results.append(inner_value)
+                inner_results.append(inner_value)  # noqa: PERF402
+                # simulate adding numbers one by one using copy
+                # so its ok here
     assert outer_results == [0, 1]
     assert inner_results == [0, 1, 2, 3, 4, 0, 1]

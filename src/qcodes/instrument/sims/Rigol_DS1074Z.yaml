@@ -46,6 +46,14 @@ devices:
           r: "{}"
         setter:
           q: ":TRIGger:MODE {}"
+      trigger_edge_level:
+        # response format from the MSO1000Z/DS1000Z Programming Guide
+        default: "1.600000e-01"
+        getter:
+          q: ":TRIGger:edge:LEVel?"
+          r: "{}"
+        setter:
+          q: ":TRIGger:edge:LEVel {}"
       data_source:
         default: "CHAN1"
         getter:

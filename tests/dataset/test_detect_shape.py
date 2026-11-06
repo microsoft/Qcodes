@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
@@ -6,6 +10,7 @@ from hypothesis import HealthCheck, given, settings
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.instrument_drivers.mock_instruments import (
     ArraySetPointParam,
+    DummyChannelInstrument,
     Multi2DSetPointParam,
     Multi2DSetPointParam2Sizes,
     MultiSetPointParam,
@@ -15,9 +20,12 @@ from qcodes.validators import Arrays
 
 from .conftest import ArrayshapedParam
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sized
+
 
 @given(loop_shape=hst.lists(hst.integers(min_value=1), min_size=1, max_size=10))
-def test_get_shape_for_parameter_from_len(loop_shape) -> None:
+def test_get_shape_for_parameter_from_len(loop_shape: list[int]) -> None:
     a = Parameter(name="a", initial_cache_value=10)
     shape = detect_shape_of_measurement((a,), loop_shape)
     assert shape == {"a": tuple(loop_shape)}
@@ -29,7 +37,9 @@ def test_get_shape_for_parameter_from_len(loop_shape) -> None:
     )
 )
 @pytest.mark.parametrize("range_func", [range, np.arange])
-def test_get_shape_for_parameter_from_sequence(loop_shape, range_func) -> None:
+def test_get_shape_for_parameter_from_sequence(
+    loop_shape: list[int], range_func: Callable[[int], Sized]
+) -> None:
     a = Parameter(name="a", initial_cache_value=10)
     loop_sequence = tuple(range_func(x) for x in loop_shape)
     shape = detect_shape_of_measurement((a,), loop_sequence)
@@ -37,7 +47,7 @@ def test_get_shape_for_parameter_from_sequence(loop_shape, range_func) -> None:
 
 
 @given(loop_shape=hst.lists(hst.integers(min_value=1), min_size=1, max_size=10))
-def test_get_shape_for_array_parameter_from_len(loop_shape) -> None:
+def test_get_shape_for_array_parameter_from_len(loop_shape: list[int]) -> None:
     a = ArraySetPointParam(name="a")
     shape = detect_shape_of_measurement((a,), loop_shape)
     expected_shape = tuple(loop_shape) + tuple(a.shape)
@@ -50,7 +60,9 @@ def test_get_shape_for_array_parameter_from_len(loop_shape) -> None:
     )
 )
 @pytest.mark.parametrize("range_func", [range, np.arange])
-def test_get_shape_for_array_parameter_from_shape(loop_shape, range_func) -> None:
+def test_get_shape_for_array_parameter_from_shape(
+    loop_shape: list[int], range_func: Callable[[int], Sized]
+) -> None:
     a = ArraySetPointParam(name="a")
     loop_sequence = tuple(range_func(x) for x in loop_shape)
     shape = detect_shape_of_measurement((a,), loop_sequence)
@@ -63,7 +75,12 @@ def test_get_shape_for_array_parameter_from_shape(loop_shape, range_func) -> Non
     "multiparamtype",
     [MultiSetPointParam, Multi2DSetPointParam, Multi2DSetPointParam2Sizes],
 )
-def test_get_shape_for_multiparam_from_len(loop_shape, multiparamtype) -> None:
+def test_get_shape_for_multiparam_from_len(
+    loop_shape: list[int],
+    multiparamtype: type[
+        MultiSetPointParam | Multi2DSetPointParam | Multi2DSetPointParam2Sizes
+    ],
+) -> None:
     param = multiparamtype(name="meas_param")
     shapes = detect_shape_of_measurement((param,), loop_shape)
     expected_shapes = {}
@@ -83,7 +100,11 @@ def test_get_shape_for_multiparam_from_len(loop_shape, multiparamtype) -> None:
 )
 @pytest.mark.parametrize("range_func", [range, np.arange])
 def test_get_shape_for_multiparam_from_shape(
-    loop_shape, multiparamtype, range_func
+    loop_shape: list[int],
+    multiparamtype: type[
+        MultiSetPointParam | Multi2DSetPointParam | Multi2DSetPointParam2Sizes
+    ],
+    range_func: Callable[[int], Sized],
 ) -> None:
     param = multiparamtype(name="meas_param")
     loop_sequence = tuple(range_func(x) for x in loop_shape)
@@ -99,7 +120,9 @@ def test_get_shape_for_multiparam_from_shape(
     loop_shape=hst.lists(hst.integers(min_value=1), min_size=1, max_size=10),
     n_points=hst.integers(min_value=1, max_value=1000),
 )
-def test_get_shape_for_pws_from_len(dummyinstrument, loop_shape, n_points) -> None:
+def test_get_shape_for_pws_from_len(
+    dummyinstrument: DummyChannelInstrument, loop_shape: list[int], n_points: int
+) -> None:
     param = dummyinstrument.A.dummy_parameter_with_setpoints
     dummyinstrument.A.dummy_n_points(n_points)
     shapes = detect_shape_of_measurement((param,), loop_shape)
@@ -119,7 +142,10 @@ def test_get_shape_for_pws_from_len(dummyinstrument, loop_shape, n_points) -> No
     n_points=hst.integers(min_value=1, max_value=1000),
 )
 def test_get_shape_for_pws_from_shape(
-    dummyinstrument, loop_shape, range_func, n_points
+    dummyinstrument: DummyChannelInstrument,
+    loop_shape: list[int],
+    range_func: Callable[[int], Sized],
+    n_points: int,
 ) -> None:
     param = dummyinstrument.A.dummy_parameter_with_setpoints
     dummyinstrument.A.dummy_n_points(n_points)
@@ -140,7 +166,10 @@ def test_get_shape_for_pws_from_shape(
     n_points=hst.integers(min_value=1, max_value=1000),
 )
 def test_get_shape_for_pws_with_register_name_from_shape(
-    dummyinstrument, loop_shape, range_func, n_points
+    dummyinstrument: DummyChannelInstrument,
+    loop_shape: list[int],
+    range_func: Callable[[int], Sized],
+    n_points: int,
 ) -> None:
     param = dummyinstrument.A.dummy_parameter_with_setpoints
     param._register_name = f"register_{param.full_name}"  # register_name can ordinarily only be set at init
@@ -158,7 +187,9 @@ def test_get_shape_for_pws_with_register_name_from_shape(
         hst.integers(min_value=1, max_value=1000), min_size=1, max_size=10
     )
 )
-def test_get_shape_for_param_with_array_validator_from_shape(loop_shape) -> None:
+def test_get_shape_for_param_with_array_validator_from_shape(
+    loop_shape: list[int],
+) -> None:
     param = ArrayshapedParam(name="paramwitharrayval", vals=Arrays(shape=(10,)))
 
     shapes = detect_shape_of_measurement((param,), loop_shape)
@@ -174,7 +205,10 @@ def test_get_shape_for_param_with_array_validator_from_shape(loop_shape) -> None
     n_points_2=hst.integers(min_value=1, max_value=1000),
 )
 def test_get_shape_for_multiple_parameters(
-    dummyinstrument, loop_shape, n_points_1, n_points_2
+    dummyinstrument: DummyChannelInstrument,
+    loop_shape: list[int],
+    n_points_1: int,
+    n_points_2: int,
 ) -> None:
     param1 = dummyinstrument.A.dummy_parameter_with_setpoints
     dummyinstrument.A.dummy_n_points(n_points_1)

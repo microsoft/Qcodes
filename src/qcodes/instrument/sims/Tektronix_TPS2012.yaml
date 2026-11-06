@@ -1,0 +1,41 @@
+spec: "1.0"
+devices:
+  device 1:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "TEKTRONIX,TPS 2012,0,CF:91.1CT FV:v10.01"
+
+    properties:
+      data_encoding:
+        default: RPBinary
+        getter:
+          q: "DATa:ENCdg?"
+          r: "{}"
+        setter:
+          q: "DATa:ENCdg {}"
+
+      data_width:
+        default: 2
+        getter:
+          q: "DATa:WIDTh?"
+          r: "{}"
+        setter:
+          q: "DATa:WIDTh {}"
+
+      trigger_level:
+        # example response from the TPS2000 programmer manual
+        default: "1.4"
+        getter:
+          q: "TRIGger:MAIn:LEVel?"
+          r: "{}"
+        setter:
+          q: "TRIGger:MAIn:LEVel {}"
+
+resources:
+  GPIB::1::INSTR:
+    device: device 1

@@ -34,7 +34,7 @@ def test_load_legacy_files_2d() -> None:
     snapshot_str = data.get_metadata("snapshot")
     assert isinstance(snapshot_str, str)
     snapshot = json.loads(snapshot_str)
-    assert sorted(list(snapshot.keys())) == [
+    assert sorted(snapshot.keys()) == [
         "__class__",
         "arrays",
         "formatter",
@@ -72,7 +72,7 @@ def test_load_legacy_files_1d() -> None:
     snapshot_str = data.get_metadata("snapshot")
     assert isinstance(snapshot_str, str)
     snapshot = json.loads(snapshot_str)
-    assert sorted(list(snapshot.keys())) == [
+    assert sorted(snapshot.keys()) == [
         "__class__",
         "arrays",
         "formatter",
@@ -110,7 +110,7 @@ def test_load_legacy_files_1d_pathlib_path() -> None:
     snapshot_str = data.get_metadata("snapshot")
     assert isinstance(snapshot_str, str)
     snapshot = json.loads(snapshot_str)
-    assert sorted(list(snapshot.keys())) == [
+    assert sorted(snapshot.keys()) == [
         "__class__",
         "arrays",
         "formatter",

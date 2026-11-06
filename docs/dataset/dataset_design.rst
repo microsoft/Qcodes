@@ -75,3 +75,51 @@ We note that the dataset currently exclusively supports storing data in an
 SQLite database. This is not an intrinsic limitation of the dataset and
 measurement layer. It is possible that at a future state support for writing
 to a different backend will be added.
+
+.. _sec:design_split_storage:
+
+Split Raw Data Storage
+======================
+
+As the main SQLite database grows with many datasets, managing the database
+file can become inconvenient due to the file size. To address this,
+QCoDeS supports an optional **split raw data storage** mode (see
+:ref:`sec:intro_split_raw_data` for user-facing details).
+
+From a design perspective, this feature adds a pluggable *results backend*
+inside the ``DataSet`` class without changing any public interfaces:
+
+- A ``ResultsBackend`` strategy (in ``qcodes.dataset._results_backend``)
+  encapsulates where and how a dataset's results table is stored. The default
+  ``MainDatabaseResultsBackend`` keeps results in the main database;
+  ``SeparateSqliteFileResultsBackend`` writes them to a per-dataset SQLite file.
+  Backends are registered by their ``backend_name`` (the ``dataset.raw_data_backend``
+  config value); the backend is selected in ``DataSet.__init__`` from that config
+  for new runs, and from the run's recorded state for existing ones. Adding a
+  backend is a matter of registering a new ``ResultsBackend`` subclass and a
+  ``raw_data_backend`` / ``raw_data_backend_config`` entry.
+- A ``_results_conn`` property returns the backend's connection -- the main
+  database connection by default, or a per-dataset raw data connection when
+  results are stored separately.
+- Write paths (``add_results``, ``_BackgroundWriter``) and read paths
+  (``get_parameter_data``, ``DataSetCacheWithDBBackend``, ``number_of_results``,
+  ``__len__``) all go through the backend / ``_results_conn``.
+- The per-dataset SQLite file is a lightweight database containing only the
+  results table and numpy type adapters -- no QCoDeS metadata schema.
+- When raw data storage is enabled, **no results table is created in the main
+  database** at all -- only the run metadata is stored there. This mirrors how
+  ``DataSetInMem`` records runs. A run is identified as a split-storage dataset
+  by the ``raw_data_db_path`` column in the ``runs`` table (recorded at dataset
+  creation), which is used both to reconnect to the raw data file and to
+  distinguish such runs from ``DataSetInMem`` runs (which also have no results
+  table). This column is an internal storage detail and is kept out of the
+  user-facing metadata.
+- Subscriber triggers (used for real-time data callbacks) are created on the
+  results connection. Because the results table only exists once the dataset is
+  started, subscriptions requested before then are deferred and materialised at
+  start time.
+
+The implementation is contained in ``qcodes.dataset._raw_data_storage`` (helper
+functions) and a handful of additions to ``qcodes.dataset.data_set`` (routing
+logic). The ``Measurement`` context manager, ``DataSaver``, and all export
+functions work without modification.

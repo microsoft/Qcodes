@@ -1,0 +1,27 @@
+spec: "1.0"
+devices:
+  device 1:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "RIGOL TECHNOLOGIES,DS4024,DS4A000000001,00.02.03"
+
+    properties:
+      enable_auto_scale:
+        default: 1
+        getter:
+          q: ":SYSTem:AUToscale?"
+          r: "{}"
+        setter:
+          q: ":SYSTem:AUToscale {}"
+        specs:
+          type: int
+          valid: [0, 1]
+
+resources:
+  GPIB::1::INSTR:
+    device: device 1

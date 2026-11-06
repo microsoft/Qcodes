@@ -1,6 +1,6 @@
 import re
 import time
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -8,6 +8,7 @@ from pyvisa import constants, errors
 
 from qcodes.instrument import (
     ChannelList,
+    ChannelTuple,
     InstrumentBaseKWArgs,
     InstrumentChannel,
     VisaInstrument,
@@ -19,12 +20,11 @@ from qcodes.parameters import (
     ParameterWithSetpoints,
     create_on_off_val_mapping,
 )
-from qcodes.validators import Arrays, Bool, Enum, Ints, Numbers
+from qcodes.validators import Arrays, Bool, Enum, Ints, Numbers, PermissiveInts
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 class PNAAxisParameter(Parameter):
@@ -69,7 +69,7 @@ class PNATimeAxisParameter(PNAAxisParameter):
         return np.linspace(0, self._stopparam(), self._pointsparam())
 
 
-class FormattedSweep(ParameterWithSetpoints):
+class FormattedSweep(ParameterWithSetpoints[npt.NDArray, "KeysightPNATrace"]):
     """
     Mag will run a sweep, including averaging, before returning data.
     As such, wait time in a loop is not needed.
@@ -78,7 +78,7 @@ class FormattedSweep(ParameterWithSetpoints):
     def __init__(
         self,
         name: str,
-        instrument: "KeysightPNABase",
+        instrument: "KeysightPNATrace",
         sweep_format: str,
         label: str,
         unit: str,
@@ -96,7 +96,7 @@ class FormattedSweep(ParameterWithSetpoints):
         """
         if self.instrument is None:
             raise RuntimeError("Cannot return setpoints if not attached to instrument")
-        root_instrument: KeysightPNABase = self.root_instrument  # type: ignore[assignment]
+        root_instrument: KeysightPNABase = self.root_instrument
         sweep_type = root_instrument.sweep_type()
         if sweep_type == "LIN":
             return (root_instrument.frequency_axis,)
@@ -115,10 +115,16 @@ class FormattedSweep(ParameterWithSetpoints):
         """
         return
 
+    @property
+    def root_instrument(self) -> "KeysightPNABase":
+        root_instrument = super().root_instrument
+        assert isinstance(root_instrument, KeysightPNABase)
+        return root_instrument
+
     def get_raw(self) -> npt.NDArray:
         if self.instrument is None:
             raise RuntimeError("Cannot get data without instrument")
-        root_instr = self.instrument.root_instrument
+        root_instr = self.root_instrument
         # Check if we should run a new sweep
         auto_sweep = root_instr.auto_sweep()
 
@@ -130,12 +136,12 @@ class FormattedSweep(ParameterWithSetpoints):
         data = root_instr.visa_handle.query_binary_values(
             "CALC:DATA? FDATA", datatype="f", is_big_endian=True
         )
-        data = np.array(data)
+        data_array = np.array(data)
         # Restore previous state if it was changed
         if auto_sweep:
             root_instr.sweep_mode(prev_mode)
 
-        return data
+        return data_array
 
 
 class KeysightPNAPort(InstrumentChannel):
@@ -160,7 +166,7 @@ class KeysightPNAPort(InstrumentChannel):
             raise ValueError("Port must be between 1 and 4.")
 
         pow_cmd = f"SOUR:POW{self.port}"
-        self.source_power: Parameter = self.add_parameter(
+        self.source_power: Parameter[float, Self] = self.add_parameter(
             "source_power",
             label="power",
             unit="dBm",
@@ -182,7 +188,7 @@ PNAPort = KeysightPNAPort
 "Alis for backwards compatibility"
 
 
-class KeysightPNATrace(InstrumentChannel):
+class KeysightPNATrace(InstrumentChannel["KeysightPNABase"]):
     """
     Allow operations on individual PNA traces.
     """
@@ -200,7 +206,7 @@ class KeysightPNATrace(InstrumentChannel):
         self.trace_num = trace_num
 
         # Name of parameter (i.e. S11, S21 ...)
-        self.trace: Parameter = self.add_parameter(
+        self.trace: Parameter[str, Self] = self.add_parameter(
             "trace", label="Trace", get_cmd=self._Sparam, set_cmd=self._set_Sparam
         )
         """Parameter trace"""
@@ -208,7 +214,7 @@ class KeysightPNATrace(InstrumentChannel):
         # Note: Currently parameters that return complex values are not
         # supported as there isn't really a good way of saving them into the
         # dataset
-        self.format: Parameter = self.add_parameter(
+        self.format: Parameter[str, Self] = self.add_parameter(
             "format",
             label="Format",
             get_cmd="CALC:FORM?",
@@ -291,6 +297,12 @@ class KeysightPNATrace(InstrumentChannel):
             vals=Arrays(shape=(self.parent.points,), valid_types=(complex,)),
         )
         """Parameter polar"""
+
+    @property
+    def root_instrument(self) -> "KeysightPNABase":
+        root_instrument = super().root_instrument
+        assert isinstance(root_instrument, KeysightPNABase)
+        return root_instrument
 
     def disable(self) -> None:
         """
@@ -438,10 +450,14 @@ class KeysightPNABase(VisaInstrument):
             )
             ports.append(port)
             self.add_submodule(f"port{port_num}", port)
-        self.add_submodule("ports", ports.to_channel_tuple())
+
+        self.ports: ChannelTuple[KeysightPNAPort] = self.add_submodule(
+            "ports", ports.to_channel_tuple()
+        )
+        """Tuple of KeysightPNAPort submodules"""
 
         # RF output
-        self.output: Parameter = self.add_parameter(
+        self.output: Parameter[bool, Self] = self.add_parameter(
             "output",
             label="RF Output",
             get_cmd=":OUTPut?",
@@ -451,7 +467,7 @@ class KeysightPNABase(VisaInstrument):
         """Parameter output"""
 
         # Drive power
-        self.power: Parameter = self.add_parameter(
+        self.power: Parameter[float, Self] = self.add_parameter(
             "power",
             label="Power",
             get_cmd="SOUR:POW?",
@@ -463,7 +479,7 @@ class KeysightPNABase(VisaInstrument):
         """Parameter power"""
 
         # IF bandwidth
-        self.if_bandwidth: Parameter = self.add_parameter(
+        self.if_bandwidth: Parameter[float, Self] = self.add_parameter(
             "if_bandwidth",
             label="IF Bandwidth",
             get_cmd="SENS:BAND?",
@@ -475,7 +491,7 @@ class KeysightPNABase(VisaInstrument):
         """Parameter if_bandwidth"""
 
         # Number of averages (also resets averages)
-        self.averages_enabled: Parameter = self.add_parameter(
+        self.averages_enabled: Parameter[bool, Self] = self.add_parameter(
             "averages_enabled",
             label="Averages Enabled",
             get_cmd="SENS:AVER?",
@@ -483,19 +499,21 @@ class KeysightPNABase(VisaInstrument):
             val_mapping={True: "1", False: "0"},
         )
         """Parameter averages_enabled"""
-        self.averages: Parameter = self.add_parameter(
+        self.averages: Parameter[int, Self] = self.add_parameter(
             "averages",
             label="Averages",
             get_cmd="SENS:AVER:COUN?",
             get_parser=int,
             set_cmd="SENS:AVER:COUN {:d}",
             unit="",
-            vals=Numbers(min_value=1, max_value=65536),
+            # accept whole-number floats such as 2.0 but send them as int
+            vals=PermissiveInts(min_value=1, max_value=65536),
+            set_parser=round,
         )
         """Parameter averages"""
 
         # Setting frequency range
-        self.start: Parameter = self.add_parameter(
+        self.start: Parameter[float, Self] = self.add_parameter(
             "start",
             label="Start Frequency",
             get_cmd="SENS:FREQ:STAR?",
@@ -505,7 +523,7 @@ class KeysightPNABase(VisaInstrument):
             vals=Numbers(min_value=min_freq, max_value=max_freq),
         )
         """Parameter start"""
-        self.stop: Parameter = self.add_parameter(
+        self.stop: Parameter[float, Self] = self.add_parameter(
             "stop",
             label="Stop Frequency",
             get_cmd="SENS:FREQ:STOP?",
@@ -515,7 +533,7 @@ class KeysightPNABase(VisaInstrument):
             vals=Numbers(min_value=min_freq, max_value=max_freq),
         )
         """Parameter stop"""
-        self.center: Parameter = self.add_parameter(
+        self.center: Parameter[float, Self] = self.add_parameter(
             "center",
             label="Center Frequency",
             get_cmd="SENS:FREQ:CENT?",
@@ -525,17 +543,17 @@ class KeysightPNABase(VisaInstrument):
             vals=Numbers(min_value=min_freq, max_value=max_freq),
         )
         """Parameter center"""
-        self.span: Parameter = self.add_parameter(
+        self.span: Parameter[float, Self] = self.add_parameter(
             "span",
             label="Frequency Span",
             get_cmd="SENS:FREQ:SPAN?",
             get_parser=float,
             set_cmd="SENS:FREQ:SPAN {}",
             unit="Hz",
-            vals=Numbers(min_value=min_freq, max_value=max_freq),
+            vals=Numbers(min_value=0, max_value=max_freq),
         )
         """Parameter span"""
-        self.cw: Parameter = self.add_parameter(
+        self.cw: Parameter[float, Self] = self.add_parameter(
             "cw",
             label="CW Frequency",
             get_cmd="SENS:FREQ:CW?",
@@ -547,19 +565,21 @@ class KeysightPNABase(VisaInstrument):
         """Parameter cw"""
 
         # Number of points in a sweep
-        self.points: Parameter = self.add_parameter(
+        self.points: Parameter[int, Self] = self.add_parameter(
             "points",
             label="Points",
             get_cmd="SENS:SWE:POIN?",
             get_parser=int,
             set_cmd="SENS:SWE:POIN {}",
             unit="",
-            vals=Numbers(min_value=1, max_value=100001),
+            # accept whole-number floats such as 201.0 but send them as int
+            vals=PermissiveInts(min_value=1, max_value=100001),
+            set_parser=round,
         )
         """Parameter points"""
 
         # Electrical delay
-        self.electrical_delay: Parameter = self.add_parameter(
+        self.electrical_delay: Parameter[float, Self] = self.add_parameter(
             "electrical_delay",
             label="Electrical Delay",
             get_cmd="CALC:CORR:EDEL:TIME?",
@@ -571,7 +591,7 @@ class KeysightPNABase(VisaInstrument):
         """Parameter electrical_delay"""
 
         # Sweep Time
-        self.sweep_time: Parameter = self.add_parameter(
+        self.sweep_time: Parameter[float, Self] = self.add_parameter(
             "sweep_time",
             label="Time",
             get_cmd="SENS:SWE:TIME?",
@@ -581,7 +601,7 @@ class KeysightPNABase(VisaInstrument):
         )
         """Parameter sweep_time"""
         # Sweep Mode
-        self.sweep_mode: Parameter = self.add_parameter(
+        self.sweep_mode: Parameter[str, Self] = self.add_parameter(
             "sweep_mode",
             label="Mode",
             get_cmd="SENS:SWE:MODE?",
@@ -590,7 +610,7 @@ class KeysightPNABase(VisaInstrument):
         )
         """Parameter sweep_mode"""
         # Sweep Type
-        self.sweep_type: Parameter = self.add_parameter(
+        self.sweep_type: Parameter[str, Self] = self.add_parameter(
             "sweep_type",
             label="Type",
             get_cmd="SENS:SWE:TYPE?",
@@ -600,7 +620,7 @@ class KeysightPNABase(VisaInstrument):
         """Parameter sweep_type"""
 
         # Group trigger count
-        self.group_trigger_count: Parameter = self.add_parameter(
+        self.group_trigger_count: Parameter[int, Self] = self.add_parameter(
             "group_trigger_count",
             get_cmd="SENS:SWE:GRO:COUN?",
             get_parser=int,
@@ -609,7 +629,7 @@ class KeysightPNABase(VisaInstrument):
         )
         """Parameter group_trigger_count"""
         # Trigger Source
-        self.trigger_source: Parameter = self.add_parameter(
+        self.trigger_source: Parameter[str, Self] = self.add_parameter(
             "trigger_source",
             get_cmd="TRIG:SOUR?",
             set_cmd="TRIG:SOUR {}",
@@ -653,13 +673,15 @@ class KeysightPNABase(VisaInstrument):
         """Parameter time_axis"""
 
         # Traces
-        self.active_trace: Parameter = self.add_parameter(
+        self.active_trace: Parameter[int, Self] = self.add_parameter(
             "active_trace",
             label="Active Trace",
             get_cmd="CALC:PAR:MNUM?",
             get_parser=int,
             set_cmd="CALC:PAR:MNUM {}",
-            vals=Numbers(min_value=1, max_value=24),
+            # accept whole-number floats such as 2.0 but send them as int
+            vals=PermissiveInts(min_value=1, max_value=24),
+            set_parser=round,
         )
         """Parameter active_trace"""
         # Note: Traces will be accessed through the traces property which
@@ -670,7 +692,7 @@ class KeysightPNABase(VisaInstrument):
         trace1 = self.traces[0]
         params = trace1.parameters
         if not isinstance(params, dict):
-            raise RuntimeError(
+            raise RuntimeError(  # noqa: TRY004
                 f"Expected trace.parameters to be a dict got {type(params)}"
             )
         for param in params.values():
@@ -685,7 +707,7 @@ class KeysightPNABase(VisaInstrument):
         # Set auto_sweep parameter
         # If we want to return multiple traces per setpoint without sweeping
         # multiple times, we should set this to false
-        self.auto_sweep: Parameter = self.add_parameter(
+        self.auto_sweep: Parameter[bool, Self] = self.add_parameter(
             "auto_sweep",
             label="Auto Sweep",
             set_cmd=None,
@@ -816,7 +838,7 @@ class KeysightPNAxBase(KeysightPNABase):
         configurations. In practice, most of this will be set up manually on
         the unit, with power and frequency varied in a sweep.
         """
-        self.aux_frequency: Parameter = self.add_parameter(
+        self.aux_frequency: Parameter[float, Self] = self.add_parameter(
             "aux_frequency",
             label="Aux Frequency",
             get_cmd="SENS:FOM:RANG4:FREQ:CW?",

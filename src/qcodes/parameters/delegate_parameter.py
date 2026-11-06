@@ -4,14 +4,18 @@ from typing import TYPE_CHECKING, Any, Generic
 
 from typing_extensions import TypeVar
 
-from .parameter import Parameter
+from qcodes.metadatable import normalize_snapshot_update
+
+from .parameter import Parameter, ParameterKWArgs
 from .parameter_base import InstrumentTypeVar_co, ParameterDataTypeVar
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from datetime import datetime
+    from typing import Unpack
 
     from qcodes.instrument import InstrumentBase
+    from qcodes.metadatable import SnapshotUpdate
     from qcodes.validators.validators import Validator
 
     from .parameter_base import (
@@ -19,8 +23,9 @@ if TYPE_CHECKING:
         ParamRawDataType,
     )
 
-# Generic type variables for inner cache class
-# these need to be different variables such that both classes can be generic
+# Cannot convert to PEP 695: uses default= which requires PEP 696 (Python 3.13+).
+# Generic type variables for inner cache class —
+# these need to be different variables such that both classes can be generic.
 _local_ParameterDataTypeVar = TypeVar("_local_ParameterDataTypeVar", default=Any)
 _local_InstrumentTypeVar_co = TypeVar(
     "_local_InstrumentTypeVar_co",
@@ -28,11 +33,14 @@ _local_InstrumentTypeVar_co = TypeVar(
     default="InstrumentBase | None",
     covariant=True,
 )
+_SOURCE_UNSET: Any = object()
 
 
 class DelegateParameter(
     Parameter[ParameterDataTypeVar, InstrumentTypeVar_co],
-    Generic[ParameterDataTypeVar, InstrumentTypeVar_co],
+    # Generic can be replaced with PEP 695 type params once Python 3.12
+    # support is dropped (TypeVars use default= which requires PEP 696)
+    Generic[ParameterDataTypeVar, InstrumentTypeVar_co],  # noqa: UP046
 ):
     """
     The :class:`.DelegateParameter` wraps a given `source` :class:`Parameter`.
@@ -68,6 +76,10 @@ class DelegateParameter(
         A DelegateParameter is not registered on the instrument by default.
         You should pass ``bind_to_instrument=True`` if you want this to
         be the case.
+
+        ``set_cmd`` and ``get_cmd`` are not allowed since the source
+        parameter's commands are used. Providing ``initial_value`` or
+        ``initial_cache_value`` without a source is also an error.
 
     """
 
@@ -145,12 +157,17 @@ class DelegateParameter(
                 self._parameter._from_value_to_raw_value(value)
             )
 
-        def _set_from_raw_value(self, raw_value: ParamRawDataType) -> None:
+        def set_from_raw_value(self, raw_value: ParamRawDataType) -> None:
             if self._parameter.source is None:
                 raise TypeError(
                     "Cannot set the cache of a DelegateParameter that delegates to None"
                 )
             self._parameter.source.cache.set(raw_value)
+
+        def _set_from_raw_value(self, raw_value: ParamRawDataType) -> None:
+            # Retained for backwards compatibility with code written before
+            # set_from_raw_value() was made public.
+            self.set_from_raw_value(raw_value)
 
         def _update_with(
             self,
@@ -167,7 +184,6 @@ class DelegateParameter(
             delegate parameter mirrors the cache of the source parameter by
             design, this method is just a noop.
             """
-            pass
 
         def __call__(self) -> _local_ParameterDataTypeVar:
             return self.get(get_if_invalid=True)
@@ -175,12 +191,11 @@ class DelegateParameter(
     def __init__(
         self,
         name: str,
+        *,
         source: Parameter | None,
-        *args: Any,
-        **kwargs: Any,
+        **kwargs: Unpack[ParameterKWArgs[ParameterDataTypeVar, InstrumentTypeVar_co]],
     ):
-        if "bind_to_instrument" not in kwargs.keys():
-            kwargs["bind_to_instrument"] = False
+        kwargs.setdefault("bind_to_instrument", False)
 
         for cmd in ("set_cmd", "get_cmd"):
             if cmd in kwargs:
@@ -200,7 +215,7 @@ class DelegateParameter(
 
         initial_cache_value = kwargs.pop("initial_cache_value", None)
         self.source = source
-        super().__init__(name, *args, **kwargs)
+        super().__init__(name, **kwargs)
         self.label = kwargs.get("label", None)
         self.unit = kwargs.get("unit", None)
 
@@ -316,9 +331,10 @@ class DelegateParameter(
 
     def snapshot_base(
         self,
-        update: bool | None = True,
+        update: bool | SnapshotUpdate | None = "Only_invalid",
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
+        update = normalize_snapshot_update(update)
         snapshot = super().snapshot_base(
             update=update, params_to_skip_update=params_to_skip_update
         )

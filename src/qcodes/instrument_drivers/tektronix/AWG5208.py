@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from .AWG70000A import TektronixAWG70000Base
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.instrument import VisaInstrumentKWArgs
 
@@ -30,11 +30,3 @@ class TektronixAWG5208(TektronixAWG70000Base):
         """
 
         super().__init__(name, address, num_channels=8, **kwargs)
-
-
-class AWG5208(TektronixAWG5208):
-    """
-    Alias with non-conformant name left for backwards compatibility
-    """
-
-    pass

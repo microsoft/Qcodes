@@ -1,5 +1,5 @@
 import math
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -46,7 +46,7 @@ class DemodulationAcquisitionController(AcquisitionController[float]):
         # make a call to the parent class and by extension, create the parameter
         # structure of this class
         super().__init__(name, alazar_name, **kwargs)
-        self.acquisition: Parameter = self.add_parameter(
+        self.acquisition: Parameter[float, Self] = self.add_parameter(
             "acquisition", get_cmd=self.do_acquisition
         )
         """Parameter acquisition"""
@@ -99,7 +99,6 @@ class DemodulationAcquisitionController(AcquisitionController[float]):
         # this could be used to start an Arbitrary Waveform Generator, etc...
         # using this method ensures that the contents are executed AFTER the
         # Alazar card starts listening for a trigger pulse
-        pass
 
     def handle_buffer(
         self, buffer: npt.NDArray, buffer_number: int | None = None
@@ -144,7 +143,7 @@ class DemodulationAcquisitionController(AcquisitionController[float]):
             #        (r es1[1] - res2[1]) % 360]
             return alazar.signal_to_volt(1, res1[0] + 127.5)
         else:
-            raise Exception("Could not find CHANNEL_B during data extraction")
+            raise RuntimeError("Could not find CHANNEL_B during data extraction")
 
     def fit(self, buf: npt.NDArray) -> tuple[float, float]:
         """
@@ -164,11 +163,3 @@ class DemodulationAcquisitionController(AcquisitionController[float]):
 
         # see manual page 52!!! (using unsigned data)
         return ampl, math.atan2(ImPart, RePart) * 360 / (2 * math.pi)
-
-
-class Demodulation_AcquisitionController(DemodulationAcquisitionController):
-    """
-    Alias for backwards compatibility. Will eventually be deprecated and removed
-    """
-
-    pass

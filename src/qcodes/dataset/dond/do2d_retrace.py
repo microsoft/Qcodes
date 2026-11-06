@@ -46,7 +46,7 @@ def do2d_retrace(
     after_inner_actions: ActionsT = (),
     measurement_name: str = "",
     exp: Experiment | None = None,
-    additional_setpoints: Sequence[ParameterBase] = tuple(),
+    additional_setpoints: Sequence[ParameterBase] = (),
     show_progress: bool | None = None,
 ) -> tuple[DataSetProtocol, DataSetProtocol]:
     """

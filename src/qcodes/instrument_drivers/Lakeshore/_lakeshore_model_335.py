@@ -8,12 +8,12 @@ from qcodes.parameters import Group, GroupParameter
 
 from .lakeshore_base import (
     LakeshoreBase,
-    LakeshoreBaseOutput,
+    LakeshoreBaseOutputWithHeaterSetupAndOutputType,
     LakeshoreBaseSensorChannel,
 )
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.instrument import InstrumentBaseKWArgs, VisaInstrumentKWArgs
 
@@ -147,7 +147,7 @@ class LakeshoreModel335Channel(LakeshoreBaseSensorChannel):
         )
 
 
-class LakeshoreModel335CurrentSource(LakeshoreBaseOutput):
+class LakeshoreModel335CurrentSource(LakeshoreBaseOutputWithHeaterSetupAndOutputType):
     """
     InstrumentChannel for current sources on Lakeshore Model 335.
 

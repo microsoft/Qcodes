@@ -46,11 +46,19 @@ def _get_data_from_ds(ds: DataSetProtocol) -> list[list[DSPlotData]]:
         dependencies = ds.description.interdeps.dependencies[dependent]
 
         for param_spec_base in (*dependencies, dependent):
+            if param_spec_base.name in data_dict:
+                data = data_dict[param_spec_base.name]
+            elif param_spec_base.name in all_data:
+                data = all_data[param_spec_base.name][param_spec_base.name]
+            else:
+                raise KeyError(
+                    f"Data for parameter {param_spec_base.name} not found in dataset cache"
+                )
             my_data_dict: DSPlotData = {
                 "name": param_spec_base.name,
                 "unit": param_spec_base.unit,
                 "label": param_spec_base.label,
-                "data": data_dict[param_spec_base.name],
+                "data": data,
                 "shape": None,
             }
             data_dicts_list.append(my_data_dict)

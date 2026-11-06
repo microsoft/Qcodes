@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any, Generic, Literal, Protocol, overload
 
 from typing_extensions import TypeVar
 
-# due to circular imports we cannot import the TypeVar from parameter_base
+# Cannot convert to PEP 695: uses default= which requires PEP 696 (Python 3.13+).
+# Due to circular imports we cannot import the TypeVar from parameter_base.
 ParameterDataTypeVar = TypeVar("ParameterDataTypeVar", default=Any)
 
 if TYPE_CHECKING:
@@ -38,6 +39,8 @@ class _CacheProtocol(Protocol, Generic[ParameterDataTypeVar]):  # noqa: PYI046
     def invalidate(self) -> None: ...
 
     def set(self, value: ParameterDataTypeVar) -> None: ...
+
+    def set_from_raw_value(self, raw_value: ParamRawDataType) -> None: ...
 
     def _set_from_raw_value(self, raw_value: ParamRawDataType) -> None: ...
 
@@ -159,11 +162,36 @@ class _Cache(Generic[ParameterDataTypeVar]):
         raw_value = self._parameter._from_value_to_raw_value(value)
         self._update_with(value=value, raw_value=raw_value)
 
-    def _set_from_raw_value(self, raw_value: ParamRawDataType) -> None:
+    def set_from_raw_value(self, raw_value: ParamRawDataType) -> None:
+        """
+        Set the cached value of the parameter from a raw value as returned by
+        the instrument, without invoking the ``get_cmd`` of the parameter.
+
+        This is the counterpart of :meth:`set`: where :meth:`set` takes a value
+        on the user/scaled side of the parameter, this method takes a value on
+        the instrument/raw side. It applies the same conversions that a regular
+        ``get`` would (``get_parser``, ``scale``, ``offset`` and
+        ``val_mapping``) to derive the user-facing value, and stores both the
+        raw value and the converted value in the cache.
+
+        This is useful for drivers that read the state of several parameters in
+        a single instrument query and want to populate the individual parameter
+        caches from that bulk reply without issuing a ``get`` per parameter.
+
+        Args:
+            raw_value: new raw value for the parameter (as returned by the
+                instrument)
+
+        """
         value = self._parameter._from_raw_value_to_value(raw_value)
         if self._parameter._validate_on_get:
             self._parameter.validate(value)
         self._update_with(value=value, raw_value=raw_value)
+
+    def _set_from_raw_value(self, raw_value: ParamRawDataType) -> None:
+        # Retained for backwards compatibility with code written before
+        # set_from_raw_value() was made public.
+        self.set_from_raw_value(raw_value)
 
     def _update_with(
         self,
@@ -186,7 +214,7 @@ class _Cache(Generic[ParameterDataTypeVar]):
         self._value = value
         self._raw_value = raw_value
         if timestamp is None:
-            self._timestamp = datetime.now()
+            self._timestamp = datetime.now(UTC).astimezone()
         else:
             self._timestamp = timestamp
         self._marked_valid = True
@@ -198,16 +226,11 @@ class _Cache(Generic[ParameterDataTypeVar]):
         if self._max_val_age is None:
             # parameter cannot expire
             return False
-        oldest_accepted_timestamp = datetime.now() - timedelta(
+        oldest_accepted_timestamp = datetime.now(UTC).astimezone() - timedelta(
             seconds=self._max_val_age
         )
-        if self._timestamp < oldest_accepted_timestamp:
-            # Time of last get exceeds max_val_age seconds, need to
-            # perform new .get()
-            return True
-        else:
-            # parameter is still valid
-            return False
+        too_old = self._timestamp < oldest_accepted_timestamp
+        return too_old
 
     @overload
     def get(self, get_if_invalid: Literal[True]) -> ParameterDataTypeVar: ...

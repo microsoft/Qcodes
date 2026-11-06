@@ -24,6 +24,12 @@ from qcodes.parameters import Parameter
 from qcodes.plotting.axis_labels import _ENGINEERING_PREFIXES, _UNITS_FOR_RESCALING
 
 if TYPE_CHECKING:
+    from hypothesis.strategies import DataObject
+    from numpy.typing import NDArray
+if TYPE_CHECKING:
+    from qcodes.dataset.experiment_container import Experiment
+
+if TYPE_CHECKING:
     from qcodes.dataset.data_export import DSPlotData
 
 
@@ -31,14 +37,15 @@ class TerminateLoopException(Exception):
     pass
 
 
+_RNG = np.random.default_rng()
+
+
 @given(
     param_name=text(min_size=1, max_size=10),
     param_label=text(min_size=0, max_size=15),
-    scale=sampled_from(sorted(list(_ENGINEERING_PREFIXES.keys()))),
+    scale=sampled_from(sorted(_ENGINEERING_PREFIXES.keys())),
     unit=sampled_from(
-        sorted(
-            list(_UNITS_FOR_RESCALING.union(["", "unit", "kg", "%", "permille", "nW"]))
-        )
+        sorted(_UNITS_FOR_RESCALING.union(["", "unit", "kg", "%", "permille", "nW"]))
     ),
     data_strategy=data(),
 )
@@ -47,7 +54,7 @@ class TerminateLoopException(Exception):
     param_label="Larger than the highest scale",
     scale=max(list(_ENGINEERING_PREFIXES.keys())),
     unit="V",
-    data_strategy=np.random.random((5,))
+    data_strategy=_RNG.random((5,))
     * 10 ** (3 + max(list(_ENGINEERING_PREFIXES.keys()))),
 )
 @example(
@@ -55,12 +62,16 @@ class TerminateLoopException(Exception):
     param_label="Lower than the lowest scale",
     scale=min(list(_ENGINEERING_PREFIXES.keys())),
     unit="V",
-    data_strategy=np.random.random((5,))
+    data_strategy=_RNG.random((5,))
     * 10 ** (-3 + min(list(_ENGINEERING_PREFIXES.keys()))),
 )
 @settings(suppress_health_check=[HealthCheck.too_slow])
 def test_rescaled_ticks_and_units(
-    scale, unit, param_name, param_label, data_strategy
+    scale: "int",
+    unit: "str",
+    param_name: "str",
+    param_label: "str",
+    data_strategy: "DataObject | NDArray[np.float64]",
 ) -> None:
     if isinstance(data_strategy, np.ndarray):
         # No need to generate data, because it is being passed
@@ -125,15 +136,19 @@ def test_rescaled_ticks_and_units(
         assert "2.12346" == ticks_formatter(2.123456789 / (10 ** (-scale)))
 
 
-def test_plot_by_id_line_and_heatmap(experiment, request: FixtureRequest) -> None:
+def test_plot_by_id_line_and_heatmap(
+    experiment: "Experiment", request: FixtureRequest
+) -> None:
     """
     Test that line plots and heatmaps can be plotted together
     """
     inst = DummyInstrument("dummy", gates=["s1", "m1", "s2", "m2"])
     request.addfinalizer(inst.close)
 
-    inst.m1.get = np.random.randn
-    inst.m2.get = lambda: np.random.randint(0, 5)
+    rng = np.random.default_rng()
+
+    inst.m1.get = rng.standard_normal
+    inst.m2.get = lambda: rng.integers(0, 5)
 
     meas = Measurement()
     meas.register_parameter(inst.s1)
@@ -157,7 +172,10 @@ def test_plot_by_id_line_and_heatmap(experiment, request: FixtureRequest) -> Non
 @pytest.mark.parametrize("nan_setpoints", [True, False])
 @pytest.mark.parametrize("shifted", [True, False])
 def test_plot_dataset_2d_shaped(
-    experiment, request: FixtureRequest, nan_setpoints, shifted
+    experiment: "Experiment",
+    request: FixtureRequest,
+    nan_setpoints: "bool",
+    shifted: "bool",
 ) -> None:
     """
     Test plotting of preshaped data on a grid that may or may not be shifted
@@ -255,7 +273,9 @@ def test_appropriate_kwargs() -> None:
 
     assert kwargs == check
 
-    with _appropriate_kwargs("2D_point", False, **{}) as ap_kwargs:
+    my_args = {}
+
+    with _appropriate_kwargs("2D_point", False, **my_args) as ap_kwargs:
         assert len(ap_kwargs) == 1
         assert ap_kwargs["cmap"] == qc.config.plotting.default_color_map
 
@@ -373,7 +393,9 @@ def test__complex_to_real_preparser_complex_setpoint() -> None:
 
 
 @pytest.mark.parametrize("params", [None, "y", "y2", ["y", "y2"]])
-def test_plot_dataset_parameters(experiment, request: FixtureRequest, params) -> None:
+def test_plot_dataset_parameters(
+    experiment: "Experiment", request: FixtureRequest, params: "str | list[str] | None"
+) -> None:
     """
     Test plotting of specified parameters with plot_dataset
     function.
@@ -416,7 +438,7 @@ def test_plot_dataset_parameters(experiment, request: FixtureRequest, params) ->
             assert_allclose(np.array(plotted), data, rtol=1e-10)
 
     # check only 'requested' parameter has been plotted
-    elif params == "y" or "y2":
+    elif params in {"y", "y2"}:
         assert isinstance(params, str)
         assert len(axes) == 1
         dsdata = dataset.get_parameter_data()

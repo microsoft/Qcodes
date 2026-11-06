@@ -22,13 +22,12 @@ from .instrument_base import InstrumentBase, InstrumentBaseKWArgs
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
-    from typing import NotRequired
+    from typing import NotRequired, Unpack
 
-    from typing_extensions import Unpack
-
+    from qcodes.metadatable import SnapshotUpdate
     from qcodes.parameters.parameter import Parameter
 
-VISA_LOGGER = ".".join((InstrumentBase.__module__, "com", "visa"))
+VISA_LOGGER = f"{InstrumentBase.__module__}.com.visa"
 
 log = logging.getLogger(__name__)
 
@@ -84,6 +83,14 @@ class VisaInstrumentKWArgs(TypedDict):
     """
     Name of a pyvisa-sim yaml file used to simulate the instrument.
     """
+    resource: NotRequired[pyvisa.resources.MessageBasedResource | None]
+    """
+    An already-opened :class:`pyvisa.resources.MessageBasedResource`.
+    When provided, the instrument wraps this resource instead of opening
+    a new connection. The instrument takes ownership and will close the
+    resource when the instrument is closed or garbage collected.
+    Mutually exclusive with ``address``, ``visalib`` and ``pyvisa_sim_file``.
+    """
 
 
 class VisaInstrument(Instrument):
@@ -93,6 +100,12 @@ class VisaInstrument(Instrument):
     Args:
         name: What this instrument is called locally.
         address: The visa resource name to use to connect.
+            Mutually exclusive with ``resource``.
+        resource: An already-opened :class:`pyvisa.resources.MessageBasedResource`.
+            When provided, the instrument wraps this resource instead of opening
+            a new connection. The instrument takes ownership and will close the
+            resource when the instrument is closed or garbage collected.
+            Mutually exclusive with ``address``, ``visalib`` and ``pyvisa_sim_file``.
         timeout: seconds to allow for responses.  If "unset" will read the value from
            `self.default_timeout`. None means wait forever. Default 5.
         terminator: Read and write termination character(s).
@@ -107,7 +120,7 @@ class VisaInstrument(Instrument):
             By default the IVI backend is used if found, but '@py' will use the
             ``pyvisa-py`` backend. Note that QCoDeS does not install (or even require)
             ANY backends, it is up to the user to do that. see eg:
-            http://pyvisa.readthedocs.org/en/stable/names.html
+            https://pyvisa.readthedocs.io/en/stable/introduction/names.html
         metadata: additional static metadata to add to this
             instrument's JSON snapshot.
         pyvisa_sim_file: Name of a pyvisa-sim yaml file used to simulate the instrument.
@@ -138,13 +151,14 @@ class VisaInstrument(Instrument):
     def __init__(
         self,
         name: str,
-        address: str,
-        timeout: float | None | Literal["Unset"] = "Unset",
+        address: str | None = None,
+        timeout: float | Literal["Unset"] | None = "Unset",
         terminator: str | Literal["Unset"] | None = "Unset",  # noqa: PYI051
         # while unset is redundant here we add it to communicate to the user that unset has special meaning
         device_clear: bool = True,
         visalib: str | None = None,
         pyvisa_sim_file: str | None = None,
+        resource: pyvisa.resources.MessageBasedResource | None = None,
         **kwargs: Unpack[InstrumentBaseKWArgs],
     ):
         if terminator == "Unset":
@@ -153,7 +167,9 @@ class VisaInstrument(Instrument):
             timeout = self.default_timeout
 
         super().__init__(name, **kwargs)
-        self.visa_log = get_instrument_logger(self, VISA_LOGGER)
+        self.visa_log = get_instrument_logger(
+            self, self._logger_name(VISA_LOGGER, "com", "visa")
+        )
 
         self.timeout: Parameter[float | None, Self] = self.add_parameter(
             "timeout",
@@ -163,12 +179,24 @@ class VisaInstrument(Instrument):
             vals=vals.MultiType(vals.Numbers(min_value=0), vals.Enum(None)),
         )
 
-        if visalib is not None and pyvisa_sim_file is not None:
+        if resource is not None:
+            if address is not None:
+                raise TypeError("'address' and 'resource' are mutually exclusive")
+            if visalib is not None or pyvisa_sim_file is not None:
+                raise TypeError(
+                    "Cannot supply visalib or pyvisa_sim_file when using "
+                    "an existing resource"
+                )
+            visa_handle = resource
+            address = resource.resource_name
+        elif address is None:
+            raise TypeError("Either 'address' or 'resource' must be provided")
+        elif visalib is not None and pyvisa_sim_file is not None:
             raise RuntimeError(
                 "It's an error to supply both visalib and pyvisa_sim_file as "
                 "arguments to a VISA instrument"
             )
-        if pyvisa_sim_file is not None:
+        elif pyvisa_sim_file is not None:
             if ":" in pyvisa_sim_file:
                 module, pyvisa_sim_file = pyvisa_sim_file.split(":")
             else:
@@ -182,28 +210,12 @@ class VisaInstrument(Instrument):
                         f"file {pyvisa_sim_file} from module: {module}"
                     )
                 visalib = f"{sim_visalib_path!s}@sim"
-                (
-                    visa_handle,
-                    visabackend,
-                    resource_manager,
-                ) = self._connect_and_handle_error(address, visalib)
+                visa_handle = self._connect_and_handle_error(address, visalib)
         else:
-            visa_handle, visabackend, resource_manager = self._connect_and_handle_error(
-                address, visalib
-            )
+            visa_handle = self._connect_and_handle_error(address, visalib)
         finalize(self, _close_visa_handle, visa_handle, str(self.name))
 
-        self.visabackend: str = visabackend
-        self.visa_handle: pyvisa.resources.MessageBasedResource = visa_handle
-        """
-        The VISA resource used by this instrument.
-        """
-        self.resource_manager = resource_manager
-        """
-        The VISA resource manager used by this instrument.
-        """
-        self.visalib: str | None = visalib
-        self._address = address
+        self._visa_handle: pyvisa.resources.MessageBasedResource = visa_handle
 
         if device_clear:
             self.device_clear()
@@ -211,22 +223,62 @@ class VisaInstrument(Instrument):
         self.set_terminator(terminator)
         self.timeout.set(timeout)
 
+    @property
+    def address(self) -> str | None:
+        """
+        The VISA resource name used to connect to this instrument.
+        Note that pyvisa normalizes the resource name when connecting,
+        so this may not be exactly the same as the address that was passed
+        in when creating the instrument.
+        """
+        return self.visa_handle.resource_name
+
+    @property
+    def resource_manager(self) -> pyvisa.ResourceManager | None:
+        """
+        The VISA resource manager used by this instrument.
+        """
+        return self.visa_handle.visalib.resource_manager
+
+    @property
+    def visa_handle(self) -> pyvisa.resources.MessageBasedResource:
+        """
+        The VISA resource used by this instrument.
+        """
+        return self._visa_handle
+
+    @property
+    def visabackend(self) -> str:
+        """
+        The VISA backend used by this instrument.
+        """
+        class_name = self.visa_handle.visalib.__class__.__name__
+        if class_name == "SimVisaLibrary":
+            return "sim"
+        elif class_name == "IVIVisaLibrary":
+            return "ivi"
+        elif class_name == "PyVisaLibrary":
+            return "py"
+        else:
+            self.visa_log.info(
+                f"Could not determine VISA backend from visa library class name: {class_name} falling back to IVI default."
+            )
+            return "ivi"
+
     def _connect_and_handle_error(
         self, address: str, visalib: str | None
-    ) -> tuple[pyvisa.resources.MessageBasedResource, str, pyvisa.ResourceManager]:
+    ) -> pyvisa.resources.MessageBasedResource:
         try:
-            visa_handle, visabackend, resource_manager = self._open_resource(
-                address, visalib
-            )
-        except Exception as e:
+            visa_handle = self._open_resource(address, visalib)
+        except Exception:
             self.visa_log.exception(f"Could not connect at {address}")
             self.close()
-            raise e
-        return visa_handle, visabackend, resource_manager
+            raise
+        return visa_handle
 
     def _open_resource(
         self, address: str, visalib: str | None
-    ) -> tuple[pyvisa.resources.MessageBasedResource, str, pyvisa.ResourceManager]:
+    ) -> pyvisa.resources.MessageBasedResource:
         # in case we're changing the address - close the old handle first
         if getattr(self, "visa_handle", None):
             self.visa_handle.close()
@@ -236,11 +288,9 @@ class VisaInstrument(Instrument):
                 f"Opening PyVISA Resource Manager with visalib: {visalib}"
             )
             resource_manager = pyvisa.ResourceManager(visalib)
-            visabackend = visalib.split("@")[1]
         else:
             self.visa_log.info("Opening PyVISA Resource Manager with default backend.")
             resource_manager = pyvisa.ResourceManager()
-            visabackend = "ivi"
 
         self.visa_log.info(f"Opening PyVISA resource at address: {address}")
         resource = resource_manager.open_resource(address)
@@ -248,26 +298,27 @@ class VisaInstrument(Instrument):
             resource.close()
             raise TypeError("QCoDeS only support MessageBasedResource Visa resources")
 
-        return resource, visabackend, resource_manager
+        return resource
 
-    def set_address(self, address: str) -> None:
+    def set_address(
+        self,
+        address: str,
+        visalib: str | None,
+    ) -> None:
         """
-        Set the address for this instrument.
+        Set the address for this instrument. Note in most cases
+        this method is not recommended and it is better to close the instrument and
+        create a new instance of the instrument with the new address.
 
         Args:
             address: The visa resource name to use to connect. The address
                 should be the actual address and just that. If you wish to
-                change the backend for VISA, use the self.visalib attribute
-                (and then call this function).
+                change the backend for VISA, use the visalib argument
+            visalib: Visa backend to use when connecting to this instrument.
+                If not supplied use the default backend.
 
         """
-        resource, visabackend, resource_manager = self._open_resource(
-            address, self.visalib
-        )
-        self.visa_handle = resource
-        self._address = address
-        self.visabackend = visabackend
-        self.resource_manager = resource_manager
+        self._visa_handle = self._open_resource(address, visalib)
 
     def device_clear(self) -> None:
         """Clear the buffers of the device"""
@@ -328,12 +379,17 @@ class VisaInstrument(Instrument):
         if getattr(self, "visa_handle", None):
             self.visa_handle.close()
 
-        if getattr(self, "visabackend", None) == "sim" and getattr(
-            self, "resource_manager", None
+        if (
+            getattr(self, "visabackend", None) == "sim"
+            and getattr(self, "resource_manager", None)
+            and self.resource_manager is not None
         ):
             # The pyvisa-sim visalib has a session attribute but the resource manager is not generic in the
             # visalib type so we cannot get it in a type safe way
-            known_sessions = getattr(self.resource_manager.visalib, "sessions", ())
+
+            known_sessions: tuple[int, ...] = getattr(
+                self.resource_manager.visalib, "sessions", ()
+            )
 
             try:
                 this_session = self.resource_manager.session
@@ -397,7 +453,7 @@ class VisaInstrument(Instrument):
 
     def snapshot_base(
         self,
-        update: bool | None = True,
+        update: bool | SnapshotUpdate | None = "Only_invalid",
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         """
@@ -406,13 +462,13 @@ class VisaInstrument(Instrument):
         supports).
 
         Args:
-            update: If True, update the state by querying the
-                instrument. If None only update if the state is known to be
-                invalid. If False, just use the latest values in memory and
-                never update.
+            update: If ``"All"``, update the state by querying the instrument.
+                If ``"Only_invalid"`` (the default) only update values whose
+                cache is invalid. If ``"Never"``, just use the latest values in
+                memory and never update.
             params_to_skip_update: List of parameter names that will be skipped
-                in update even if update is True. This is useful if you have
-                parameters that are slow to update but can be updated in a
+                in update even if update is ``"All"``. This is useful if you
+                have parameters that are slow to update but can be updated in a
                 different way (as in the qdac). If you want to skip the
                 update of certain parameters in all snapshots, use the
                 ``snapshot_get``  attribute of those parameters instead.
@@ -425,7 +481,7 @@ class VisaInstrument(Instrument):
             update=update, params_to_skip_update=params_to_skip_update
         )
 
-        snap["address"] = self._address
+        snap["address"] = self.address
         snap["terminator"] = self.visa_handle.read_termination
         snap["read_terminator"] = self.visa_handle.read_termination
         snap["write_terminator"] = self.visa_handle.write_termination

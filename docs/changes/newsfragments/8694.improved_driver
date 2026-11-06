@@ -1,0 +1,4 @@
+The parameters of the Basel SP983, SP983a and SP983c, Ithaco 1211, Keithley 2450, DMM7510, S46
+and 2600 drivers that were not yet typed are now annotated with the type of their value, e.g.
+``Parameter[float, Self]``, so static type checkers can infer the type returned by ``get`` and
+accepted by ``set``.

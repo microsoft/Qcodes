@@ -74,6 +74,17 @@ devices:
             specs:
               type: float
 
+          four_wire_measurement:
+            default: 0
+            getter:
+              q: "print({ch_id}.sense)"
+              r: "{:e}"
+            setter:
+              q: "{ch_id}.sense={}"
+            specs:
+              type: int
+              valid: [0, 1]
+
           sourcerange_v:
             default: 0.0
             getter:

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import datetime
 import time
 from math import floor
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
@@ -24,6 +26,11 @@ from qcodes.dataset.sqlite.queries import (
     get_raw_run_attributes,
     raw_time_to_str_time,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+if TYPE_CHECKING:
+    from qcodes.dataset.descriptions.dependencies import InterDependencies_
 
 
 @pytest.mark.usefixtures("experiment")
@@ -175,7 +182,9 @@ def test_run_timestamp_with_default_format() -> None:
     run_ts = ds.run_timestamp()
     assert run_ts is not None
     # Note that here we also test the default format of `run_timestamp`
-    actual_run_timestamp_raw = time.mktime(time.strptime(run_ts, "%Y-%m-%d %H:%M:%S"))
+    actual_run_timestamp_raw = datetime.datetime.strptime(
+        run_ts, "%Y-%m-%d %H:%M:%S%z"
+    ).timestamp()
 
     # Note that because the default format precision is 1 second, we add this
     # second to the right side of the comparison
@@ -231,9 +240,9 @@ def test_completed_timestamp_with_default_format() -> None:
     assert completed_ts is not None
 
     # Note that here we also test the default format of `completed_timestamp`
-    actual_completed_timestamp_raw = time.mktime(
-        time.strptime(completed_ts, "%Y-%m-%d %H:%M:%S")
-    )
+    actual_completed_timestamp_raw = datetime.datetime.strptime(
+        completed_ts, "%Y-%m-%d %H:%M:%S%z"
+    ).timestamp()
 
     # Note that because the default format precision is 1 second, we add this
     # second to the right side of the comparison
@@ -247,7 +256,7 @@ def test_completed_timestamp_with_default_format() -> None:
 
 
 @pytest.mark.usefixtures("experiment")
-def test_load_by_guid(some_interdeps) -> None:
+def test_load_by_guid(some_interdeps: list[InterDependencies_]) -> None:
     ds = DataSet()
     ds.set_interdependencies(some_interdeps[1])
     ds.mark_started()
@@ -258,8 +267,10 @@ def test_load_by_guid(some_interdeps) -> None:
     assert loaded_ds.the_same_dataset_as(ds)
 
 
-def test_load_by_run_spec(empty_temp_db, some_interdeps) -> None:
-    def create_ds_with_exp_id(exp_id):
+def test_load_by_run_spec(
+    empty_temp_db: None, some_interdeps: list[InterDependencies_]
+) -> None:
+    def create_ds_with_exp_id(exp_id: int) -> DataSet:
         ds = DataSet(exp_id=exp_id)
         ds.set_interdependencies(some_interdeps[1])
         ds.mark_started()
@@ -354,7 +365,7 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps) -> None:
 def test_callback(scalar_datasets_parameterized: DataSet) -> None:
     called_progress: list[float] = []
 
-    def callback_closure(called_progress: list[float]):
+    def callback_closure(called_progress: list[float]) -> Callable[[float], None]:
         def callback(progress: float) -> None:
             called_progress.append(progress)
 

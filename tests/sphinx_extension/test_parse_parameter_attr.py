@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 from sphinx.util.inspect import safe_getattr
 from typing_extensions import deprecated
@@ -15,7 +17,7 @@ class DummyTestClass(InstrumentBase):
     A class attribute
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         self.other_attr = "InstanceAttribute"
@@ -41,7 +43,7 @@ class DummyDecoratedInitTestClass(InstrumentBase):
     """
 
     @deprecated("Deprecate to test that decorated init is handled correctly")
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         self.other_attr = "InstanceAttribute"
@@ -57,7 +59,7 @@ class DummyDecoratedClassTestClass(InstrumentBase):
     A class attribute
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         self.other_attr = "InstanceAttribute"

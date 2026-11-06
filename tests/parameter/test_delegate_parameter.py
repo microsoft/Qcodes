@@ -5,6 +5,7 @@ Test suite for DelegateParameter
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal, cast
+from unittest.mock import patch
 
 import hypothesis.strategies as hst
 import pytest
@@ -12,6 +13,7 @@ from hypothesis import given
 
 import qcodes.validators as vals
 from qcodes.parameters import DelegateParameter, Parameter, ParamRawDataType
+from qcodes.parameters.cache import _Cache
 
 from .conftest import BetterGettableParam
 
@@ -39,7 +41,7 @@ def _make_simple_param(numeric_val: int) -> Generator[Parameter, None, None]:
 
 
 class ObservableParam(Parameter):
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.instr_val = None
         super().__init__(*args, **kwargs)
 
@@ -104,7 +106,7 @@ def test_observable_parameter_initial_value(
 
 
 def test_same_value(simple_param: Parameter) -> None:
-    d = DelegateParameter("test_delegate_parameter", simple_param)
+    d = DelegateParameter("test_delegate_parameter", source=simple_param)
     assert d() == simple_param()
 
 
@@ -113,24 +115,24 @@ def test_same_label_and_unit_on_init(simple_param: Parameter) -> None:
     Test that the label and unit get used from source parameter if not
     specified otherwise.
     """
-    d = DelegateParameter("test_delegate_parameter", simple_param)
+    d = DelegateParameter("test_delegate_parameter", source=simple_param)
     assert d.label == simple_param.label
     assert d.unit == simple_param.unit
 
 
 def test_overwritten_unit_on_init(simple_param: Parameter) -> None:
-    d = DelegateParameter("test_delegate_parameter", simple_param, unit="Ohm")
+    d = DelegateParameter("test_delegate_parameter", source=simple_param, unit="Ohm")
     assert d.label == simple_param.label
-    assert not d.unit == simple_param.unit
+    assert d.unit != simple_param.unit
     assert d.unit == "Ohm"
 
 
 def test_overwritten_label_on_init(simple_param: Parameter) -> None:
     d = DelegateParameter(
-        "test_delegate_parameter", simple_param, label="Physical parameter"
+        "test_delegate_parameter", source=simple_param, label="Physical parameter"
     )
     assert d.unit == simple_param.unit
-    assert not d.label == simple_param.label
+    assert d.label != simple_param.label
     assert d.label == "Physical parameter"
 
 
@@ -140,7 +142,7 @@ def test_get_set_raises(simple_param: Parameter) -> None:
     """
     for kwargs in ({"set_cmd": None}, {"get_cmd": None}):
         with pytest.raises(KeyError) as e:
-            DelegateParameter("test_delegate_parameter", simple_param, **kwargs)
+            DelegateParameter("test_delegate_parameter", source=simple_param, **kwargs)  # type: ignore[arg-type]
         assert str(e.value).startswith("'It is not allowed to set")
 
 
@@ -148,7 +150,7 @@ def test_scaling(simple_param: Parameter, numeric_val: int) -> None:
     scale = 5
     offset = 3
     d = DelegateParameter(
-        "test_delegate_parameter", simple_param, offset=offset, scale=scale
+        "test_delegate_parameter", source=simple_param, offset=offset, scale=scale
     )
 
     simple_param(numeric_val)
@@ -165,7 +167,7 @@ def test_scaling_delegate_initial_value(
     offset = 3
     DelegateParameter(
         "test_delegate_parameter",
-        simple_param,
+        source=simple_param,
         offset=offset,
         scale=scale,
         initial_value=numeric_val,
@@ -178,7 +180,7 @@ def test_scaling_initial_value(simple_param: Parameter) -> None:
     scale = 5
     offset = 3
     d = DelegateParameter(
-        "test_delegate_parameter", simple_param, offset=offset, scale=scale
+        "test_delegate_parameter", source=simple_param, offset=offset, scale=scale
     )
     assert d() == (simple_param() - offset) / scale
 
@@ -188,7 +190,7 @@ def test_snapshot() -> None:
         "testparam", set_cmd=None, get_cmd=None, offset=1, scale=2, initial_value=1
     )
     d = DelegateParameter(
-        "test_delegate_parameter", p, offset=3, scale=5, initial_value=2
+        "test_delegate_parameter", source=p, offset=3, scale=5, initial_value=2
     )
 
     delegate_snapshot = d.snapshot()
@@ -205,7 +207,7 @@ def test_set_source_cache_changes_delegate_cache(simple_param: Parameter) -> Non
     """
     offset = 4
     scale = 5
-    d = DelegateParameter("d", simple_param, offset=offset, scale=scale)
+    d = DelegateParameter("d", source=simple_param, offset=offset, scale=scale)
     new_source_value = 3
     simple_param.cache.set(new_source_value)
 
@@ -219,7 +221,7 @@ def test_set_source_cache_changes_delegate_get(simple_param: Parameter) -> None:
     """
     offset = 4
     scale = 5
-    d = DelegateParameter("d", simple_param, offset=offset, scale=scale)
+    d = DelegateParameter("d", source=simple_param, offset=offset, scale=scale)
     new_source_value = 3
 
     simple_param.cache.set(new_source_value)
@@ -230,7 +232,7 @@ def test_set_source_cache_changes_delegate_get(simple_param: Parameter) -> None:
 def test_set_delegate_cache_changes_source_cache(simple_param: Parameter) -> None:
     offset = 4
     scale = 5
-    d = DelegateParameter("d", simple_param, offset=offset, scale=scale)
+    d = DelegateParameter("d", source=simple_param, offset=offset, scale=scale)
 
     new_delegate_value = 2
     d.cache.set(new_delegate_value)
@@ -241,7 +243,7 @@ def test_set_delegate_cache_changes_source_cache(simple_param: Parameter) -> Non
 def test_set_delegate_cache_with_raw_value(simple_param: Parameter) -> None:
     offset = 4
     scale = 5
-    d = DelegateParameter("d", simple_param, offset=offset, scale=scale)
+    d = DelegateParameter("d", source=simple_param, offset=offset, scale=scale)
 
     new_delegate_value = 2
     d.cache._set_from_raw_value(new_delegate_value * scale + offset)
@@ -266,7 +268,7 @@ def test_instrument_val_invariant_under_delegate_cache_set(
 
 def test_delegate_cache_pristine_if_not_set() -> None:
     p = Parameter("test")
-    d = DelegateParameter("delegate", p)
+    d = DelegateParameter("delegate", source=p)
     gotten_delegate_cache = d.cache.get(get_if_invalid=False)
     assert gotten_delegate_cache is None
 
@@ -293,7 +295,7 @@ def test_delegate_get_updates_cache(
 ) -> None:
     initial_value = numeric_val
     t = make_observable_parameter("observable_parameter", initial_value=initial_value)
-    d = DelegateParameter("delegate", t)
+    d = DelegateParameter("delegate", source=t)
 
     assert d() == initial_value
     assert d.cache.get() == initial_value
@@ -333,7 +335,7 @@ def test_raw_value_scaling() -> None:
     """
 
     p = Parameter("testparam", set_cmd=None, get_cmd=None, offset=1, scale=2)
-    d = DelegateParameter("test_delegate_parameter", p, offset=3, scale=5)
+    d = DelegateParameter("test_delegate_parameter", source=p, offset=3, scale=5)
 
     val = 1
     p(val)
@@ -347,7 +349,7 @@ def test_raw_value_scaling() -> None:
 def test_setting_initial_value_delegate_parameter() -> None:
     value = 10
     p = Parameter("testparam", set_cmd=None, get_cmd=None)
-    d = DelegateParameter("test_delegate_parameter", p, initial_value=value)
+    d = DelegateParameter("test_delegate_parameter", source=p, initial_value=value)
     assert p.cache.get(get_if_invalid=False) == value
     assert d.cache.get(get_if_invalid=False) == value
 
@@ -355,9 +357,44 @@ def test_setting_initial_value_delegate_parameter() -> None:
 def test_setting_initial_cache_delegate_parameter() -> None:
     value = 10
     p = Parameter("testparam", set_cmd=None, get_cmd=None)
-    d = DelegateParameter("test_delegate_parameter", p, initial_cache_value=value)
+    d = DelegateParameter(
+        "test_delegate_parameter", source=p, initial_cache_value=value
+    )
     assert p.cache.get(get_if_invalid=False) == value
     assert d.cache.get(get_if_invalid=False) == value
+
+
+def test_initial_cache_value_not_applied_to_temporary_base_cache() -> None:
+    """
+    Regression test: initial_cache_value must be popped from kwargs before
+    calling super().__init__ so that Parameter.__init__ does not apply it
+    to the temporary _Cache that gets replaced by _DelegateCache.
+
+    If initial_cache_value leaks into Parameter.__init__, _Cache.set is
+    called an extra time on a cache object that is immediately discarded,
+    causing redundant validation and a potentially side-effecting cache
+    update.
+    """
+    source = Parameter("source", set_cmd=None, get_cmd=None)
+
+    cache_set_call_count = 0
+    original_cache_set = _Cache.set
+
+    def counting_set(self: _Cache, value: object) -> None:  # type: ignore[type-arg]
+        nonlocal cache_set_call_count
+        cache_set_call_count += 1
+        original_cache_set(self, value)
+
+    with patch.object(_Cache, "set", counting_set):
+        d = DelegateParameter("delegate", source=source, initial_cache_value=42)
+
+    # _Cache.set should be called exactly once: on the source parameter's
+    # cache, forwarded from _DelegateCache.set.  Without the fix, an extra
+    # call would occur on the delegate's temporary _Cache inside
+    # Parameter.__init__ before it is replaced by _DelegateCache.
+    assert cache_set_call_count == 1
+    assert d.cache.get(get_if_invalid=False) == 42
+    assert source.cache.get(get_if_invalid=False) == 42
 
 
 def test_delegate_parameter_with_none_source_works_as_expected() -> None:
@@ -405,9 +442,9 @@ def _assert_none_source_is_correct(delegate_param: DelegateParameter) -> None:
         delegate_param.set(1)
     snapshot = delegate_param.snapshot()
     assert snapshot["source_parameter"] is None
-    assert "value" not in snapshot.keys()
+    assert "value" not in snapshot
     snapshot.pop("ts")
-    updated_snapshot = delegate_param.snapshot(update=True)
+    updated_snapshot = delegate_param.snapshot(update="All")
     updated_snapshot.pop("ts")
     assert snapshot == updated_snapshot
 
@@ -418,7 +455,7 @@ def _assert_delegate_cache_none_source(delegate_param: DelegateParameter) -> Non
     with pytest.raises(TypeError):
         delegate_param.cache.get()
     with pytest.raises(TypeError):
-        delegate_param.cache.raw_value
+        _ = delegate_param.cache.raw_value
     assert delegate_param.cache.max_val_age is None
     assert delegate_param.cache.timestamp is None
 
@@ -524,7 +561,9 @@ def test_delegate_parameter_fixed_label_unit_unchanged() -> None:
 def test_cache_invalidation() -> None:
     value = 10
     p = BetterGettableParam("testparam", set_cmd=None, get_cmd=None)
-    d = DelegateParameter("test_delegate_parameter", p, initial_cache_value=value)
+    d = DelegateParameter(
+        "test_delegate_parameter", source=p, initial_cache_value=value
+    )
     assert p._get_count == 0
     assert d.cache.get() == value
     assert p._get_count == 0
@@ -562,7 +601,7 @@ def test_cache_no_source() -> None:
 
 def test_underlying_instrument_property_for_delegate_parameter() -> None:
     p = BetterGettableParam("testparam", set_cmd=None, get_cmd=None)
-    d = DelegateParameter("delegate_parameter_with_source", p)
+    d = DelegateParameter("delegate_parameter_with_source", source=p)
 
     assert d.underlying_instrument is p.root_instrument
 
@@ -753,7 +792,7 @@ def test_value_validation_with_offset_and_scale() -> None:
         delegate_param.set(1)
 
 
-def test_delegate_of_delegate_updates_settable_gettable():
+def test_delegate_of_delegate_updates_settable_gettable() -> None:
     gettable_settable_source_param = Parameter(
         "source", set_cmd=None, get_cmd=None, vals=vals.Numbers(-5, 5)
     )

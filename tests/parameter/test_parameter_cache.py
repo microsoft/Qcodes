@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import time
-from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, Literal
+from datetime import UTC, datetime, timedelta
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -53,11 +53,11 @@ def test_get_cache() -> None:
 
     # Create a gettable parameter
     local_parameter = Parameter("test_param", set_cmd=None, get_cmd=None)
-    before_set = datetime.now()
+    before_set = datetime.now(UTC)
     time.sleep(sleep_delta)
     local_parameter.set(1)
     time.sleep(sleep_delta)
-    after_set = datetime.now()
+    after_set = datetime.now(UTC)
 
     # Check we return last set value, with the correct timestamp
     assert local_parameter.cache.get() == 1
@@ -103,7 +103,7 @@ def test_get_cache_unknown() -> None:
     local_parameter.cache._value = value  # type: ignore[attr-defined]
     local_parameter.cache._raw_value = value  # type: ignore[attr-defined]
     assert local_parameter.cache.timestamp is None
-    before_get = datetime.now()
+    before_get = datetime.now(UTC)
     assert local_parameter._get_count == 0
     assert local_parameter.cache.get() == value
     assert local_parameter._get_count == 1
@@ -124,7 +124,7 @@ def test_get_cache_known() -> None:
     value = 1
     local_parameter = BetterGettableParam("test_param", set_cmd=None, get_cmd=None)
     # fake a parameter that has a value acquired 10 sec ago
-    start = datetime.now()
+    start = datetime.now(UTC)
     set_time = start - timedelta(seconds=10)
     local_parameter.cache._update_with(value=value, raw_value=value, timestamp=set_time)
     assert local_parameter._get_count == 0
@@ -165,9 +165,9 @@ def test_set_raw_value_on_cache() -> None:
     value = 1
     scale = 10
     local_parameter = BetterGettableParam("test_param", set_cmd=None, scale=scale)
-    before = datetime.now()
-    local_parameter.cache._set_from_raw_value(value * scale)
-    after = datetime.now()
+    before = datetime.now(UTC)
+    local_parameter.cache.set_from_raw_value(value * scale)
+    after = datetime.now(UTC)
     assert local_parameter.cache.get(get_if_invalid=False) == value
     assert local_parameter.cache.raw_value == value * scale
     timestamp = local_parameter.cache.timestamp
@@ -176,9 +176,39 @@ def test_set_raw_value_on_cache() -> None:
     assert timestamp <= after
 
 
+def test_set_from_raw_value_deprecated_alias() -> None:
+    """The private ``_set_from_raw_value`` is kept as a backwards compatible
+    alias of the public ``set_from_raw_value`` and behaves identically."""
+    scale = 10
+    value = 2
+    public_param = BetterGettableParam("public", set_cmd=None, scale=scale)
+    alias_param = BetterGettableParam("alias", set_cmd=None, scale=scale)
+
+    public_param.cache.set_from_raw_value(value * scale)
+    alias_param.cache._set_from_raw_value(value * scale)
+
+    assert (
+        alias_param.cache.get(get_if_invalid=False)
+        == public_param.cache.get(get_if_invalid=False)
+        == value
+    )
+    assert alias_param.cache.raw_value == public_param.cache.raw_value == value * scale
+
+
+def test_set_from_raw_value_applies_val_mapping() -> None:
+    """``set_from_raw_value`` accepts the value as reported by the instrument
+    and applies the parameter's ``val_mapping`` to it, mirroring a ``get``."""
+    param = Parameter(
+        "relay", set_cmd=None, get_cmd=None, val_mapping={"open": 0, "close": 1}
+    )
+    param.cache.set_from_raw_value(1)
+    assert param.cache.get(get_if_invalid=False) == "close"
+    assert param.cache.raw_value == 1
+
+
 def test_max_val_age() -> None:
     value = 1
-    start = datetime.now()
+    start = datetime.now(UTC)
     local_parameter = BetterGettableParam(
         "test_param", set_cmd=None, max_val_age=1, initial_value=value
     )
@@ -215,7 +245,7 @@ def test_no_get_max_val_age() -> None:
 
 
 def test_no_get_max_val_age_runtime_error(
-    get_if_invalid: bool | Literal["NOT_PASSED"],
+    get_if_invalid: bool | NOT_PASSED,
 ) -> None:
     """
     ParameterBase does not have a check on creation time that
@@ -226,20 +256,20 @@ def test_no_get_max_val_age_runtime_error(
     value = 1
 
     class LocalParameter(ParameterBase):
-        def __init__(self, *args: Any, **kwargs: Any):
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
             super().__init__(*args, **kwargs)
             self.set_raw = lambda x: x  # type: ignore[method-assign]
             self.set = self._wrap_set(self.set_raw)
 
-    local_parameter = LocalParameter("test_param", None, max_val_age=1)
-    start = datetime.now()
+    local_parameter = LocalParameter("test_param", instrument=None, max_val_age=1)
+    start = datetime.now(UTC)
     set_time = start - timedelta(seconds=10)
     local_parameter.cache._update_with(value=value, raw_value=value, timestamp=set_time)
 
     if get_if_invalid is True:
         with pytest.raises(RuntimeError, match="max_val_age` is not supported"):
             local_parameter.cache.get(get_if_invalid=get_if_invalid)
-    elif get_if_invalid == NOT_PASSED:
+    elif get_if_invalid is NOT_PASSED:
         with pytest.raises(RuntimeError, match="max_val_age` is not supported"):
             local_parameter.cache.get()
     else:
@@ -247,7 +277,7 @@ def test_no_get_max_val_age_runtime_error(
 
 
 def test_no_get_timestamp_none_runtime_error(
-    get_if_invalid: bool | Literal["NOT_PASSED"],
+    get_if_invalid: bool | NOT_PASSED,
 ) -> None:
     """
     Test that a parameter that has never been
@@ -259,7 +289,7 @@ def test_no_get_timestamp_none_runtime_error(
     if get_if_invalid is True:
         with pytest.raises(RuntimeError, match="Value of parameter test_param"):
             local_parameter.cache.get(get_if_invalid=get_if_invalid)
-    elif get_if_invalid == NOT_PASSED:
+    elif get_if_invalid is NOT_PASSED:
         with pytest.raises(RuntimeError, match="Value of parameter test_param"):
             local_parameter.cache.get()
     else:
@@ -385,7 +415,7 @@ def test_marking_invalid_via_instrument(
         for instrument_module in dummy_instrument.instrument_modules.values():
             for param in instrument_module.parameters.values():
                 # parameters not snapshotted will not have a cache
-                # updated when calling snapshot(update=None) os
+                # updated when calling snapshot(update="Only_invalid") so
                 # exclude them
                 if (
                     param._snapshot_get is True
@@ -394,7 +424,7 @@ def test_marking_invalid_via_instrument(
                 ):
                     assert param.cache.valid is valid, param.full_name
 
-    dummy_instrument.snapshot(update=None)
+    dummy_instrument.snapshot(update="Only_invalid")
 
     _assert_cache_status(True)
 
@@ -402,7 +432,7 @@ def test_marking_invalid_via_instrument(
 
     _assert_cache_status(False)
 
-    dummy_instrument.snapshot(update=None)
+    dummy_instrument.snapshot(update="Only_invalid")
 
     _assert_cache_status(True)
 

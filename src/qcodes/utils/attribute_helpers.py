@@ -1,8 +1,9 @@
+import inspect
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, ClassVar
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Generator, Sequence
 
 
 class DelegateAttributes:
@@ -68,6 +69,22 @@ class DelegateAttributes:
             except AttributeError:
                 pass
 
+        # ``inspect.getattr_static`` is comparatively expensive. Keep it as a
+        # fallback only when delegation did not resolve ``key``.
+        descriptor = inspect.getattr_static(type(self), key, None)
+        if (
+            descriptor is not None
+            and hasattr(descriptor, "__get__")
+            and (hasattr(descriptor, "__set__") or hasattr(descriptor, "__delete__"))
+        ):
+            try:
+                return descriptor.__get__(self, type(self))
+            except TypeError:
+                # Descriptor may not be applicable to this type, e.g.
+                # type.__name__ found via the MRO but invoked on a
+                # non-type instance.
+                pass
+
         raise AttributeError(
             f"'{self.__class__.__name__}' object and its delegates have no attribute '{key}'"
         )
@@ -77,7 +94,7 @@ class DelegateAttributes:
         for name in self.delegate_attr_dicts:
             d = getattr(self, name, None)
             if d is not None:
-                names += [k for k in d.keys() if k not in self.omit_delegate_attrs]
+                names += [k for k in d if k not in self.omit_delegate_attrs]
 
         for name in self.delegate_attr_objects:
             obj = getattr(self, name, None)
@@ -97,14 +114,16 @@ def strip_attrs(obj: object, whitelist: "Sequence[str]" = ()) -> None:
         whitelist: List of names that are not stripped from the object.
 
     """
+    # this is called during teardown/deletion so it must never raise and
+    # must not log: the logging machinery may already be torn down.
     try:
-        lst = set(list(obj.__dict__.keys())) - set(whitelist)
+        lst = set(obj.__dict__.keys()) - set(whitelist)
         for key in lst:
             try:
                 del obj.__dict__[key]
-            except Exception:
+            except Exception:  # noqa: BLE001, S110
                 pass
-    except Exception:
+    except Exception:  # noqa: BLE001, S110
         pass
 
 
@@ -165,7 +184,7 @@ def checked_getattr_indexed(
 @contextmanager
 def attribute_set_to(
     object_: object, attribute_name: str, new_value: Any
-) -> "Iterator[None]":
+) -> "Generator[None, None, None]":
     """
     This context manager allows to change a given attribute of a given object
     to a new value, and the original value is reverted upon exit of the context

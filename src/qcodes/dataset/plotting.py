@@ -17,7 +17,7 @@ import numpy as np
 import numpy.typing as npt
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
 
     import matplotlib.axes
     import matplotlib.ticker
@@ -95,7 +95,10 @@ def _appropriate_kwargs(plottype: str, colorbar_present: bool, **kwargs: Any) ->
 def plot_dataset(
     dataset: DataSetProtocol,
     axes: Axes | Sequence[Axes] | None = None,
-    colorbars: Colorbar | Sequence[Colorbar] | Sequence[None] | None = None,
+    # ``Sequence[Colorbar | None]`` so that the list of colorbars returned by
+    # this function can be passed straight back in, which is how you plot into
+    # the same axes again. A ``Sequence[Colorbar]`` is also one of these.
+    colorbars: Colorbar | Sequence[Colorbar | None] | None = None,
     rescale_axes: bool = True,
     auto_color_scale: bool | None = None,
     cutoff_percentile: tuple[float, float] | float | None = None,
@@ -269,12 +272,13 @@ def plot_dataset(
 
         indices_to_remove = []
         for i, data in enumerate(alldata):
-            if len(data) == 2:  # 1D PLOTTING
-                if data[1]["name"] not in parameters:
-                    indices_to_remove.append(i)
-            elif len(data) == 3:  # 2D PLOTTING
-                if data[2]["name"] not in parameters:
-                    indices_to_remove.append(i)
+            # the last element of the data list is the dependent parameter,
+            # so we check if it is in the list of parameters to plot
+            deselected_in_1D_plot = len(data) == 2 and data[1]["name"] not in parameters
+            deselected_in_2D_plot = len(data) == 3 and data[2]["name"] not in parameters
+
+            if deselected_in_1D_plot or deselected_in_2D_plot:
+                indices_to_remove.append(i)
         alldata = [d for (i, d) in enumerate(alldata) if i not in indices_to_remove]
 
     for data, ax, colorbar in zip(alldata, axeslist, colorbars):
@@ -416,7 +420,7 @@ def plot_and_save_image(
 def plot_by_id(
     run_id: int,
     axes: Axes | Sequence[Axes] | None = None,
-    colorbars: Colorbar | Sequence[Colorbar] | None = None,
+    colorbars: Colorbar | Sequence[Colorbar | None] | None = None,
     rescale_axes: bool = True,
     auto_color_scale: bool | None = None,
     cutoff_percentile: tuple[float, float] | float | None = None,
@@ -529,29 +533,29 @@ def _convert_complex_to_real(
 
     phase_unit = "deg" if degrees else "rad"
 
-    converters = {
-        "data": {
-            "real_and_imag": lambda x: (np.real(x), np.imag(x)),
-            "mag_and_phase": lambda x: (np.abs(x), np.angle(x, deg=degrees)),
-        },
-        "labels": {
-            "real_and_imag": lambda label: (label + " [real]", label + " [imag]"),
-            "mag_and_phase": lambda label: (label + " [mag]", label + " [phase]"),
-        },
-        "units": {
-            "real_and_imag": lambda u: (u, u),
-            "mag_and_phase": lambda u: (u, phase_unit),
-        },
-        "names": {
-            "real_and_imag": lambda n: (n + "_real", n + "_imag"),
-            "mag_and_phase": lambda n: (n + "_mag", n + "_phase"),
-        },
+    data_converters: dict[
+        str, Callable[[npt.NDArray], tuple[npt.NDArray, npt.NDArray]]
+    ] = {
+        "real_and_imag": lambda x: (np.real(x), np.imag(x)),
+        "mag_and_phase": lambda x: (np.abs(x), np.angle(x, deg=degrees)),
+    }
+    label_converters: dict[str, Callable[[str], tuple[str, str]]] = {
+        "real_and_imag": lambda label: (label + " [real]", label + " [imag]"),
+        "mag_and_phase": lambda label: (label + " [mag]", label + " [phase]"),
+    }
+    unit_converters: dict[str, Callable[[str], tuple[str, str]]] = {
+        "real_and_imag": lambda u: (u, u),
+        "mag_and_phase": lambda u: (u, phase_unit),
+    }
+    name_converters: dict[str, Callable[[str], tuple[str, str]]] = {
+        "real_and_imag": lambda n: (n + "_real", n + "_imag"),
+        "mag_and_phase": lambda n: (n + "_mag", n + "_phase"),
     }
 
-    new_data = converters["data"][conversion](parameter["data"])
-    new_labels = converters["labels"][conversion](parameter["label"])
-    new_units = converters["units"][conversion](parameter["unit"])
-    new_names = converters["names"][conversion](parameter["name"])
+    new_data = data_converters[conversion](parameter["data"])
+    new_labels = label_converters[conversion](parameter["label"])
+    new_units = unit_converters[conversion](parameter["unit"])
+    new_names = name_converters[conversion](parameter["name"])
 
     parameter1: DSPlotData = {
         "name": new_names[0],
@@ -565,8 +569,7 @@ def _convert_complex_to_real(
         "name": new_names[1],
         "label": new_labels[1],
         "unit": new_units[1],
-        "data": new_data[1],  # pyright: ignore[reportAssignmentType]
-        # the type of the converter cannot be infered due to the nested dict converters
+        "data": new_data[1],
         "shape": parameter["shape"],
     }
 
@@ -630,7 +633,7 @@ def plot_2d_scatterplot(
     """
     import matplotlib
 
-    if "rasterized" in kwargs.keys():
+    if "rasterized" in kwargs:
         rasterized = kwargs.pop("rasterized")
     else:
         rasterized = len(z) > qc.config.plotting.rasterize_threshold
@@ -739,7 +742,7 @@ def plot_on_a_plain_grid(
         x_to_plot, y_to_plot, z_to_plot = reshape_2D_data(x, y, z)
         num_points = x_to_plot.size * y_to_plot.size
 
-    if "rasterized" in kwargs.keys():
+    if "rasterized" in kwargs:
         rasterized = kwargs.pop("rasterized")
     else:
         rasterized = num_points > qc.config.plotting.rasterize_threshold
@@ -904,12 +907,15 @@ def _rescale_ticks_and_units(
         ax.set_ylabel(new_y_label)
 
     # for z aka colorbar axis
-    if cax is not None and len(data) > 2:
-        if not _is_string_valued_array(data[2]["data"]):
-            z_ticks_formatter, new_z_label = _make_rescaled_ticks_and_units(data[2])
-            cax.set_label(new_z_label)
-            cax.formatter = z_ticks_formatter
-            cax.update_ticks()
+    if (
+        cax is not None
+        and len(data) > 2
+        and not _is_string_valued_array(data[2]["data"])
+    ):
+        z_ticks_formatter, new_z_label = _make_rescaled_ticks_and_units(data[2])
+        cax.set_label(new_z_label)
+        cax.formatter = z_ticks_formatter
+        cax.update_ticks()
 
 
 def _is_string_valued_array(values: npt.NDArray) -> bool:

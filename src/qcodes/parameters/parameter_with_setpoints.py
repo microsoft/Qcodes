@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Generic
+from typing import TYPE_CHECKING, Generic
 
 import numpy as np
 
 from qcodes.parameters.parameter import (
     Parameter,
+    ParameterKWArgs,
 )
 from qcodes.parameters.parameter_base import (
     InstrumentTypeVar_co,
@@ -14,20 +15,23 @@ from qcodes.parameters.parameter_base import (
     ParameterDataTypeVar,
     ParameterSet,
 )
-from qcodes.validators import Arrays, Validator
+from qcodes.validators import Arrays
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+    from typing import Unpack
 
     from qcodes.dataset.data_set_protocol import ValuesType
-    from qcodes.parameters.parameter_base import ParamDataType, ParameterBase
+    from qcodes.parameters.parameter_base import ParamDataType
 
 LOG = logging.getLogger(__name__)
 
 
 class ParameterWithSetpoints(
     Parameter[ParameterDataTypeVar, InstrumentTypeVar_co],
-    Generic[ParameterDataTypeVar, InstrumentTypeVar_co],
+    # Generic can be replaced with PEP 695 type params once Python 3.12
+    # support is dropped (TypeVars use default= which requires PEP 696)
+    Generic[ParameterDataTypeVar, InstrumentTypeVar_co],  # noqa: UP046
 ):
     """
     A parameter that has associated setpoints. The setpoints is nothing
@@ -41,20 +45,25 @@ class ParameterWithSetpoints(
 
     In all other ways this is identical to  :class:`Parameter`. See the
     documentation of :class:`Parameter` for more details.
+
+    Note:
+        ``snapshot_get`` and ``snapshot_value`` default to ``False``
+        (unlike :class:`Parameter` where they default to ``True``).
+
     """
 
     def __init__(
         self,
         name: str,
         *,
-        vals: Validator[Any] | None = None,
         setpoints: Sequence[ParameterBase] | None = None,
-        snapshot_get: bool = False,
-        snapshot_value: bool = False,
-        **kwargs: Any,
+        **kwargs: Unpack[ParameterKWArgs[ParameterDataTypeVar, InstrumentTypeVar_co]],
     ) -> None:
+        kwargs.setdefault("snapshot_get", False)
+        kwargs.setdefault("snapshot_value", False)
+        vals = kwargs.get("vals")
         if not isinstance(vals, Arrays):
-            raise ValueError(
+            raise ValueError(  # noqa: TRY004
                 f"A ParameterWithSetpoints must have an Arrays "
                 f"validator got {type(vals)}"
             )
@@ -65,9 +74,6 @@ class ParameterWithSetpoints(
 
         super().__init__(
             name=name,
-            vals=vals,
-            snapshot_get=snapshot_get,
-            snapshot_value=snapshot_value,
             **kwargs,
         )
         if setpoints is None:
@@ -108,7 +114,7 @@ class ParameterWithSetpoints(
         """
 
         if not isinstance(self.vals, Arrays):
-            raise ValueError(
+            raise ValueError(  # noqa: TRY004
                 f"Can only validate shapes for parameters "
                 f"with Arrays validator. {self.name} does "
                 f"not have an Arrays validator."
@@ -117,7 +123,7 @@ class ParameterWithSetpoints(
         setpoints_shape_list: list[int | Callable[[], int] | None] = []
         for sp in self.setpoints:
             if not isinstance(sp.vals, Arrays):
-                raise ValueError(
+                raise ValueError(  # noqa: TRY004
                     f"Can only validate shapes for parameters "
                     f"with Arrays validator. {sp.name} is "
                     f"a setpoint vector but does not have an "

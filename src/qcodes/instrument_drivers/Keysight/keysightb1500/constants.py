@@ -11,7 +11,7 @@ class ChannelName(StrEnum):
     F = "CH6"
     G = "CH7"
     H = "CH8"
-    I = "CH9"  # noqa E741
+    I = "CH9"  # noqa: E741
     J = "CH10"
     Z = "XDATA"
 

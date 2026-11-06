@@ -10,7 +10,7 @@ from qcodes.validators import Arrays
 
 
 @pytest.mark.usefixtures("experiment")
-def test_register_name_with_manual_parameters():
+def test_register_name_with_manual_parameters() -> None:
     indep_param = ManualParameter(
         "indep_param", initial_value=1, register_name="renamed_indep_param"
     )
@@ -26,7 +26,7 @@ def test_register_name_with_manual_parameters():
 
 
 @pytest.mark.usefixtures("experiment")
-def test_register_name_with_pws():
+def test_register_name_with_pws() -> None:
     setpoints_param = Parameter(
         name="setpoints_param",
         get_cmd=partial(np.linspace, 0, 1, 101),
@@ -51,7 +51,7 @@ def test_register_name_with_pws():
     assert paramspecs[1].name in ("renamed_setpoints", "renamed_meas_param")
 
 
-def test_register_name_utils():
+def test_register_name_utils() -> None:
     indep_param = ManualParameter(
         "indep_param", initial_value=1, register_name="renamed_indep_param"
     )

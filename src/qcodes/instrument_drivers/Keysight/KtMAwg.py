@@ -1,6 +1,6 @@
 import ctypes
 from functools import partial
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs, InstrumentChannel
 from qcodes.parameters import Parameter, create_on_off_val_mapping
@@ -9,10 +9,12 @@ from qcodes.validators import Numbers
 from . import KtMAwgDefs
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
+
+_ch_type = bytes | ctypes.Array[ctypes.c_char]
 
 
-class KeysightM9336AAWGChannel(InstrumentChannel):
+class KeysightM9336AAWGChannel(InstrumentChannel["KeysightM9336A"]):
     """
     Represent the three channels of the Keysight KTM Awg driver.
     The channels can be independently controlled and programmed with
@@ -40,7 +42,7 @@ class KeysightM9336AAWGChannel(InstrumentChannel):
 
         self._catch_error = self.root_instrument._catch_error
 
-        self.output_term_config: Parameter = self.add_parameter(
+        self.output_term_config: Parameter[str, Self] = self.add_parameter(
             "output_term_config",
             label="Output Terminal Configuration",
             get_cmd=partial(
@@ -60,7 +62,7 @@ class KeysightM9336AAWGChannel(InstrumentChannel):
         )
         """Parameter output_term_config"""
 
-        self.operation: Parameter = self.add_parameter(
+        self.operation: Parameter[str, Self] = self.add_parameter(
             "operation",
             label="Operating Mode",
             get_cmd=partial(
@@ -80,7 +82,7 @@ class KeysightM9336AAWGChannel(InstrumentChannel):
         )
         """Parameter operation"""
 
-        self.output: Parameter = self.add_parameter(
+        self.output: Parameter[bool, Self] = self.add_parameter(
             "output",
             label="Output Enable",
             get_cmd=partial(
@@ -97,7 +99,7 @@ class KeysightM9336AAWGChannel(InstrumentChannel):
         )
         """Parameter output"""
 
-        self.gain_config: Parameter = self.add_parameter(
+        self.gain_config: Parameter[str, Self] = self.add_parameter(
             "gain_config",
             label="AWG Gain Control Mode",
             set_cmd=self._set_gain_control,
@@ -108,7 +110,7 @@ class KeysightM9336AAWGChannel(InstrumentChannel):
             },
         )
         """Parameter gain_config"""
-        self.gain: Parameter = self.add_parameter(
+        self.gain: Parameter[float, Self] = self.add_parameter(
             "gain",
             label="Composite Output Gain",
             set_cmd=self._set_gain,
@@ -117,7 +119,7 @@ class KeysightM9336AAWGChannel(InstrumentChannel):
         )
         """Parameter gain"""
 
-        self.analog_gain: Parameter = self.add_parameter(
+        self.analog_gain: Parameter[float, Self] = self.add_parameter(
             "analog_gain",
             label="Analog Output Gain",
             vals=Numbers(0, 1.32),
@@ -126,7 +128,7 @@ class KeysightM9336AAWGChannel(InstrumentChannel):
         )
         """Parameter analog_gain"""
 
-        self.digital_gain: Parameter = self.add_parameter(
+        self.digital_gain: Parameter[float, Self] = self.add_parameter(
             "digital_gain",
             label="Digital Output Gain",
             vals=Numbers(0, 1.0),
@@ -134,6 +136,12 @@ class KeysightM9336AAWGChannel(InstrumentChannel):
             get_cmd=self._get_digital_gain,
         )
         """Parameter digital_gain"""
+
+    @property
+    def root_instrument(self) -> "KeysightM9336A":
+        root_instrument = super().root_instrument
+        assert isinstance(root_instrument, KeysightM9336A)
+        return root_instrument
 
     def load_waveform(self, filename: str) -> None:
         path = ctypes.create_string_buffer(filename.encode("ascii"))
@@ -330,7 +338,7 @@ class KeysightM9336A(Instrument):
     def get_errors(self) -> dict[int, str]:
         error_code = ctypes.c_int(-1)
         error_message = ctypes.create_string_buffer(256)
-        error_dict = dict()
+        error_dict = {}
         while error_code.value != 0:
             status = self._dll.KtMAwg_error_query(
                 self._session, ctypes.byref(error_code), error_message
@@ -341,7 +349,7 @@ class KeysightM9336A(Instrument):
         return error_dict
 
     # Generic functions for reading/writing different attributes
-    def _get_vi_string(self, attr: int, ch: bytes = b"") -> str:
+    def _get_vi_string(self, attr: int, ch: _ch_type = b"") -> str:
         s = ctypes.create_string_buffer(self._default_buf_size)
         status = self._dll.KtMAwg_GetAttributeViString(
             self._session, ch, attr, self._default_buf_size, s
@@ -350,7 +358,7 @@ class KeysightM9336A(Instrument):
             raise ValueError(f"Driver error: {status}")
         return s.value.decode("utf-8")
 
-    def _get_vi_bool(self, attr: int, ch: bytes = b"") -> bool:
+    def _get_vi_bool(self, attr: int, ch: _ch_type = b"") -> bool:
         s = ctypes.c_uint16(0)
         status = self._dll.KtMAwg_GetAttributeViBoolean(
             self._session, ch, attr, ctypes.byref(s)
@@ -359,13 +367,13 @@ class KeysightM9336A(Instrument):
             raise ValueError(f"Driver error: {status}")
         return bool(s)
 
-    def _set_vi_bool(self, attr: int, value: bool, ch: bytes = b"") -> None:
+    def _set_vi_bool(self, attr: int, value: bool, ch: _ch_type = b"") -> None:
         v = ctypes.c_uint16(1) if value else ctypes.c_uint16(0)
         status = self._dll.KtMAwg_SetAttributeViBoolean(self._session, ch, attr, v)
         if status:
             raise ValueError(f"Driver error: {status}")
 
-    def _get_vi_real64(self, attr: int, ch: bytes = b"") -> float:
+    def _get_vi_real64(self, attr: int, ch: _ch_type = b"") -> float:
         s = ctypes.c_double(0)
         status = self._dll.KtMAwg_GetAttributeViReal64(
             self._session, ch, attr, ctypes.byref(s)
@@ -375,19 +383,19 @@ class KeysightM9336A(Instrument):
             raise ValueError(f"Driver error: {status}")
         return float(s.value)
 
-    def _set_vi_real64(self, attr: int, value: float, ch: bytes = b"") -> None:
+    def _set_vi_real64(self, attr: int, value: float, ch: _ch_type = b"") -> None:
         v = ctypes.c_double(value)
         status = self._dll.KtMAwg_SetAttributeViReal64(self._session, ch, attr, v)
         if status:
             raise ValueError(f"Driver error: {status}")
 
-    def _set_vi_int(self, attr: int, value: int, ch: bytes = b"") -> None:
+    def _set_vi_int(self, attr: int, value: int, ch: _ch_type = b"") -> None:
         v = ctypes.c_int32(value)
         status = self._dll.KtMAwg_SetAttributeViInt32(self._session, ch, attr, v)
         if status:
             raise ValueError(f"Driver error: {status}")
 
-    def _get_vi_int(self, attr: int, ch: bytes = b"") -> int:
+    def _get_vi_int(self, attr: int, ch: _ch_type = b"") -> int:
         v = ctypes.c_int32(0)
         status = self._dll.KtMAwg_GetAttributeViInt32(
             self._session, ch, attr, ctypes.byref(v)
@@ -399,10 +407,3 @@ class KeysightM9336A(Instrument):
     def close(self) -> None:
         self._dll.KtMAwg_close(self._session)
         super().close()
-
-
-KtMAWGChannel = KeysightM9336AAWGChannel
-"Alias for backwards compatibility"
-
-KtMAwg = KeysightM9336A
-"Alias for backwards compatibility"

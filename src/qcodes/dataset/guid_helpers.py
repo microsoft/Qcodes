@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import ast
-import gc
 from pathlib import Path
 from sqlite3 import DatabaseError
 from typing import TYPE_CHECKING, cast
@@ -39,10 +38,9 @@ def guids_from_dbs(
         finally:
             if conn is not None:
                 conn.close()
-            gc.collect()
     guiddict = {}
     for dbpath, guids in dbdict.items():
-        guiddict.update({guid: dbpath for guid in guids})
+        guiddict.update(dict.fromkeys(guids, dbpath))
     return dbdict, guiddict
 
 
@@ -89,7 +87,7 @@ def guids_from_list_str(s: str) -> tuple[str, ...] | None:
 
     """
     if s == "":
-        return tuple()
+        return ()
 
     try:
         validate_guid_format(s)
@@ -111,7 +109,7 @@ def guids_from_list_str(s: str) -> tuple[str, ...] | None:
         if isinstance(parsed.value, str) and len(parsed.value) > 0:
             return (parsed.value,)
         else:
-            return tuple()
+            return ()
 
     if not isinstance(parsed, (ast.List, ast.Tuple, ast.Set)):
         return None

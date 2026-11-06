@@ -9,7 +9,7 @@ import itertools
 import logging
 from collections import defaultdict
 from functools import partial
-from typing import TYPE_CHECKING, Protocol, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Protocol
 
 from qcodes.utils import RespondingThread
 
@@ -21,12 +21,10 @@ if TYPE_CHECKING:
     from qcodes.dataset.data_set_protocol import ValuesType
     from qcodes.parameters import ParamDataType, ParameterBase
 
-ParamMeasT: TypeAlias = "ParameterBase | Callable[[], None]"
-OutType: TypeAlias = "list[tuple[ParameterBase, ValuesType]]"
+type ParamMeasT = "ParameterBase | Callable[[], None]"
+type OutType = "list[tuple[ParameterBase, ValuesType]]"
 
-T = TypeVar("T")
-
-_LOG = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
 class _ParamCaller:

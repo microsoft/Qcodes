@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import numpy.typing as npt
@@ -12,10 +12,8 @@ if TYPE_CHECKING:
     from qcodes.dataset.dond.do_nd_utils import ActionsT
     from qcodes.parameters import ParameterBase
 
-T = TypeVar("T", bound=np.generic)
 
-
-class AbstractSweep(ABC, Generic[T]):
+class AbstractSweep[T: np.generic](ABC):
     """
     Abstract sweep class that defines an interface for concrete sweep classes.
     """
@@ -25,7 +23,6 @@ class AbstractSweep(ABC, Generic[T]):
         """
         Returns an array of setpoint values for this sweep.
         """
-        pass
 
     @property
     @abstractmethod
@@ -33,7 +30,6 @@ class AbstractSweep(ABC, Generic[T]):
         """
         Returns the Qcodes sweep parameter.
         """
-        pass
 
     @property
     @abstractmethod
@@ -41,7 +37,6 @@ class AbstractSweep(ABC, Generic[T]):
         """
         Delay between two consecutive sweep points.
         """
-        pass
 
     @property
     @abstractmethod
@@ -49,7 +44,6 @@ class AbstractSweep(ABC, Generic[T]):
         """
         Number of sweep points.
         """
-        pass
 
     @property
     @abstractmethod
@@ -57,7 +51,6 @@ class AbstractSweep(ABC, Generic[T]):
         """
         Actions to be performed after setting param to its setpoint.
         """
-        pass
 
     @property
     def get_after_set(self) -> bool:
@@ -195,7 +188,7 @@ class LogSweep(AbstractSweep[np.floating]):
         return self._get_after_set
 
 
-class ArraySweep(AbstractSweep, Generic[T]):
+class ArraySweep[T: np.generic](AbstractSweep):
     """
     Sweep the values of a given array.
 

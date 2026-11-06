@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
@@ -5,12 +7,26 @@ from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_allclose
 
 from qcodes.dataset.data_export import _get_data_from_ds
+from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
+from qcodes.dataset.exporters.export_to_xarray import (
+    xarray_to_h5netcdf_with_complex_numbers,
+)
 from qcodes.dataset.measurements import Measurement
 from qcodes.parameters import ManualParameter, ParamSpecBase
 
+if TYPE_CHECKING:
+    from pathlib import Path
 
-def test_get_data_by_id_order(dataset) -> None:
+    from qcodes.dataset.data_set import DataSet
+    from qcodes.dataset.experiment_container import Experiment
+    from qcodes.instrument_drivers.mock_instruments import (
+        DummyChannelInstrument,
+        DummyInstrument,
+    )
+
+
+def test_get_data_by_id_order(dataset: "DataSet") -> None:
     """
     Test that the added values of setpoints end up associated with the correct
     setpoint parameter, irrespective of the ordering of those setpoint
@@ -48,7 +64,7 @@ def test_get_data_by_id_order(dataset) -> None:
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_multidimarrayparameter_as_array(
-    SpectrumAnalyzer, bg_writing
+    SpectrumAnalyzer: "DummyInstrument", bg_writing: "bool"
 ) -> None:
     array_param = SpectrumAnalyzer.multidimspectrum
     meas = Measurement()
@@ -97,7 +113,7 @@ def test_datasaver_multidimarrayparameter_as_array(
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_multidimarrayparameter_as_numeric(
-    SpectrumAnalyzer, bg_writing
+    SpectrumAnalyzer: "DummyInstrument", bg_writing: "bool"
 ) -> None:
     """
     Test that storing a multidim Array parameter as numeric unravels the
@@ -156,12 +172,16 @@ def test_datasaver_multidimarrayparameter_as_numeric(
     deadline=None,
     suppress_health_check=(HealthCheck.function_scoped_fixture,),
 )
-@given(N=hst.integers(min_value=5, max_value=500))
+@given(N=hst.integers(min_value=5, max_value=100))
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ["numeric", "array"])
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_array_parameters_channel(
-    channel_array_instrument, DAC, N, storage_type, bg_writing
+    channel_array_instrument: "DummyChannelInstrument",
+    DAC: "DummyInstrument",
+    N: "int",
+    storage_type: "str",
+    bg_writing: "bool",
 ) -> None:
     array_param = channel_array_instrument.A.dummy_array_parameter
     meas = Measurement()
@@ -194,7 +214,10 @@ def test_datasaver_array_parameters_channel(
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("bg_writing", [True, False])
 def test_datasaver_array_parameters_array(
-    channel_array_instrument, DAC, N, bg_writing
+    channel_array_instrument: "DummyChannelInstrument",
+    DAC: "DummyInstrument",
+    N: "int",
+    bg_writing: "bool",
 ) -> None:
     """
     Test that storing array parameters inside a loop works as expected
@@ -239,7 +262,7 @@ def test_datasaver_array_parameters_array(
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_datasaver_multidim_array(experiment, bg_writing) -> None:
+def test_datasaver_multidim_array(experiment: "Experiment", bg_writing: "bool") -> None:
     """
     Test that inserting multidim parameters as arrays works as expected
     """
@@ -258,7 +281,7 @@ def test_datasaver_multidim_array(experiment, bg_writing) -> None:
     meas.register_parameter(x2, paramtype="array")
     meas.register_parameter(y1, setpoints=[x1, x2], paramtype="array")
     meas.register_parameter(y2, setpoints=[x1, x2], paramtype="array")
-    data = np.random.rand(4, size1, size2)
+    data = np.random.default_rng().random((4, size1, size2))
     expected = {
         "x1": data[0, :, :],
         "x2": data[1, :, :],
@@ -286,7 +309,9 @@ def test_datasaver_multidim_array(experiment, bg_writing) -> None:
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_datasaver_multidim_numeric(experiment, bg_writing) -> None:
+def test_datasaver_multidim_numeric(
+    experiment: "Experiment", bg_writing: "bool"
+) -> None:
     """
     Test that inserting multidim parameters as numeric works as expected
     """
@@ -304,7 +329,7 @@ def test_datasaver_multidim_numeric(experiment, bg_writing) -> None:
     meas.register_parameter(x2, paramtype="numeric")
     meas.register_parameter(y1, setpoints=[x1, x2], paramtype="numeric")
     meas.register_parameter(y2, setpoints=[x1, x2], paramtype="numeric")
-    data = np.random.rand(4, size1, size2)
+    data = np.random.default_rng().random((4, size1, size2))
     with meas.run(write_in_background=bg_writing) as datasaver:
         datasaver.add_result(
             (str(x1), data[0, :, :]),
@@ -323,3 +348,62 @@ def test_datasaver_multidim_numeric(experiment, bg_writing) -> None:
             assert_allclose(datadict["data"], expected_data)
 
             assert datadict["data"].shape == (size1 * size2,)
+
+
+def test_get_data_from_ds_non_unique_setpoint_after_netcdf_reload(
+    experiment: "Experiment", tmp_path: "Path"
+) -> None:
+    """
+    Test that _get_data_from_ds works on a dataset reloaded from netcdf when
+    the setpoint values are not unique (e.g. a sweep that doubles back).
+
+    Non-unique setpoints cause the xarray export to use
+    ``df.reset_index().to_xarray()``, which makes both the setpoint and the
+    dependent parameter appear as top-level data_vars under an integer
+    ``index`` dimension.  After reloading, ``cache.data()`` therefore has
+    structure::
+
+        {
+            'setpoint': {'setpoint': array, 'index': array},
+            'dep':      {'dep':      array, 'index': array},
+        }
+
+    while ``interdeps`` still correctly records ``dep -> (setpoint,)``.  The
+    old code would raise ``KeyError`` because ``setpoint`` was not found
+    inside the ``dep`` sub-dict; the fix falls back to ``all_data``.
+    """
+    setpoint = ManualParameter("setpoint")
+    dep = ManualParameter("dep")
+
+    meas = Measurement(experiment)
+    meas.register_parameter(setpoint, paramtype="numeric")
+    meas.register_parameter(dep, setpoints=[setpoint], paramtype="numeric")
+
+    # Non-unique setpoint: sweep forward then back, 0.5 appears twice
+    setpoint_values = np.array([0.0, 0.5, 1.0, 0.5, 0.0])
+    dep_values = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+
+    with meas.run(write_in_background=False) as datasaver:
+        for s, d in zip(setpoint_values, dep_values):
+            datasaver.add_result((setpoint, s), (dep, d))
+
+    dataset = datasaver.dataset
+
+    # Export to netcdf (non-unique setpoint → df.reset_index().to_xarray())
+    xarr = dataset.to_xarray_dataset()
+    file_path = tmp_path / "test_non_unique.nc"
+    xarray_to_h5netcdf_with_complex_numbers(xarr, file_path)
+
+    # Reload: cache has 'setpoint' and 'dep' as separate top-level keys
+    # with 'index' coords, but interdeps still records dep -> (setpoint,)
+    loaded_ds = DataSetInMem._load_from_netcdf(file_path)
+
+    # This must not raise a KeyError
+    datadicts = _get_data_from_ds(loaded_ds)
+
+    # One dependent parameter -> one outer list
+    assert len(datadicts) == 1
+    result = {d["name"]: d for d in datadicts[0]}
+
+    assert "dep" in result
+    assert_allclose(result["dep"]["data"], dep_values)

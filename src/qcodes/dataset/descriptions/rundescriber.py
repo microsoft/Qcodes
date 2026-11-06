@@ -36,7 +36,7 @@ class RunDescriber:  # noqa: PLW1641
         self, interdeps: InterDependencies_, shapes: Shapes | None = None
     ) -> None:
         if not isinstance(interdeps, InterDependencies_):
-            raise ValueError(
+            raise ValueError(  # noqa: TRY004
                 "The interdeps arg must be of type: "
                 "InterDependencies_. "
                 f"Got {type(interdeps)}."
@@ -108,9 +108,7 @@ class RunDescriber:  # noqa: PLW1641
             return False
         if self.interdeps != other.interdeps:
             return False
-        if self.shapes != other.shapes:
-            return False
-        return True
+        return self.shapes == other.shapes
 
     def __repr__(self) -> str:
         return f"RunDescriber({self.interdeps}, Shapes: {self._shapes})"

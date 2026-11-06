@@ -51,14 +51,14 @@ def test_function_partial() -> None:
 
 
 def test_function_varargs() -> None:
-    def f(*args) -> None:
+    def f(*args: object) -> None:
         return None
 
     assert is_function(f, 0)
     assert is_function(f, 1)
     assert is_function(f, 100)
 
-    def g(a, b=1, *args) -> None:
+    def g(a: object, b: object = 1, *args: object) -> None:
         return None
 
     assert not is_function(g, 0)

@@ -16,12 +16,12 @@ from typing import TYPE_CHECKING, Any
 from .logger import LevelType, get_console_handler, handler_level
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Mapping, MutableMapping, Sequence
+    from collections.abc import Generator, Mapping, MutableMapping, Sequence
 
     from qcodes.instrument import InstrumentBase
 
 
-class InstrumentLoggerAdapter(logging.LoggerAdapter):
+class InstrumentLoggerAdapter(logging.LoggerAdapter[logging.Logger]):
     """
     In the Python logging module adapters are used to add context information
     to logging. The :class:`logging.LoggerAdapter` has the same methods as the
@@ -157,7 +157,7 @@ def filter_instrument(
     instrument: InstrumentBase | Sequence[InstrumentBase],
     handler: logging.Handler | Sequence[logging.Handler] | None = None,
     level: LevelType | None = None,
-) -> Iterator[None]:
+) -> Generator[None, None, None]:
     """
     Context manager that adds a filter that only enables the log messages of
     the supplied instruments to pass.

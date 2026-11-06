@@ -301,20 +301,20 @@ devices:
           r: "{}"
 
       htrset_output_1:
-        default: "1, 5"
+        default: "2,2,+1.7320E+00,1"
         getter:
           q: "HTRSET? 1"
           r: "{}"
         setter:
-          q: "HTRSET 1, {}"
+          q: "HTRSET 1,{}"
 
       htrset_output_2:
-        default: "1, 5"
+        default: "2,2,+1.7320E+00,1"
         getter:
           q: "HTRSET? 2"
           r: "{}"
         setter:
-          q: "HTRSET 2, {}"
+          q: "HTRSET 2,{}"
 
       ramp_output_1:
         default: "0,0"

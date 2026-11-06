@@ -1,9 +1,9 @@
 import re
-from typing import TYPE_CHECKING, Any, NamedTuple, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, Unpack, cast
 
 import numpy as np
 import numpy.typing as npt
-from typing_extensions import TypedDict, Unpack
+from typing_extensions import TypedDict
 
 from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel
 
@@ -196,17 +196,19 @@ def fixed_negative_float(response: str) -> float:
 
     decimal = decimal.replace("-", "")
 
-    output = ".".join([number, decimal])
+    output = f"{number}.{decimal}"
     return float(output)
 
 
 _dcorr_labels_units_map = {
-    constants.DCORR.Mode.Cp_G: dict(
-        primary=dict(label="Cp", unit="F"), secondary=dict(label="G", unit="S")
-    ),
-    constants.DCORR.Mode.Ls_Rs: dict(
-        primary=dict(label="Ls", unit="H"), secondary=dict(label="Rs", unit="Ω")
-    ),
+    constants.DCORR.Mode.Cp_G: {
+        "primary": {"label": "Cp", "unit": "F"},
+        "secondary": {"label": "G", "unit": "S"},
+    },
+    constants.DCORR.Mode.Ls_Rs: {
+        "primary": {"label": "Ls", "unit": "H"},
+        "secondary": {"label": "Rs", "unit": "Ω"},
+    },
 }
 
 
@@ -373,12 +375,12 @@ class KeysightB1500Module(InstrumentChannel["KeysightB1500"]):
         is not effective for the 4 byte binary data output format
         (FMT3 and FMT4).
         """
-        self.root_instrument.clear_timer_count(chnum=self.channels)
+        self.parent.clear_timer_count(chnum=self.channels)
 
 
 class StatusMixin:
     def __init__(self) -> None:
-        self.names = tuple(["param1", "param2"])
+        self.names: tuple[str, ...] = ("param1", "param2")
 
     def status_summary(self) -> dict[str, str]:
         return_dict: dict[str, str] = {}

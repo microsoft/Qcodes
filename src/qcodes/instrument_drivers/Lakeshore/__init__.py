@@ -6,6 +6,8 @@ from ._lakeshore_model_335 import (
 from .lakeshore_base import (
     LakeshoreBase,
     LakeshoreBaseOutput,
+    LakeshoreBaseOutputWithHeaterSetup,
+    LakeshoreBaseOutputWithHeaterSetupAndOutputType,
     LakeshoreBaseSensorChannel,
 )
 from .Lakeshore_model_325 import (
@@ -25,11 +27,15 @@ from .Lakeshore_model_372 import (
     LakeshoreModel372,
     LakeshoreModel372Channel,
     LakeshoreModel372Output,
+    LakeshoreModel372SampleHeater,
+    LakeshoreModel372WarmupHeater,
 )
 
 __all__ = [
     "LakeshoreBase",
     "LakeshoreBaseOutput",
+    "LakeshoreBaseOutputWithHeaterSetup",
+    "LakeshoreBaseOutputWithHeaterSetupAndOutputType",
     "LakeshoreBaseSensorChannel",
     "LakeshoreModel325",
     "LakeshoreModel325Curve",
@@ -46,4 +52,6 @@ __all__ = [
     "LakeshoreModel372",
     "LakeshoreModel372Channel",
     "LakeshoreModel372Output",
+    "LakeshoreModel372SampleHeater",
+    "LakeshoreModel372WarmupHeater",
 ]

@@ -9,7 +9,7 @@ from .do_nd import DondKWargs, dond
 from .sweeps import LinSweep
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.dataset.dond.do_nd_utils import (
         AxesTupleListWithDataSet,

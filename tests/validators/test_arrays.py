@@ -102,7 +102,7 @@ def test_real_subtypes() -> None:
     only support other concrete types raises as expected
     """
     types = list(set(numpy_concrete_ints + numpy_floats))
-    randint = np.random.randint(0, len(types))
+    randint = np.random.default_rng().integers(0, len(types))
     mytype = types.pop(randint)
 
     a = Arrays(valid_types=(mytype,))

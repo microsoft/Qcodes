@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes.instrument import (
     Instrument,
@@ -7,9 +7,10 @@ from qcodes.instrument import (
     VisaInstrument,
     VisaInstrumentKWArgs,
 )
+from qcodes.parameters import create_on_off_val_mapping
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.parameters import Parameter
 
@@ -41,7 +42,7 @@ class KeysightB2962AChannel(InstrumentChannel):
 
         super().__init__(parent, name, **kwargs)
 
-        self.source_voltage: Parameter = self.add_parameter(
+        self.source_voltage: Parameter[float, Self] = self.add_parameter(
             "source_voltage",
             label=f"Channel {chan} Voltage",
             get_cmd=f"SOURCE{chan:d}:VOLT?",
@@ -51,7 +52,7 @@ class KeysightB2962AChannel(InstrumentChannel):
         )
         """Parameter source_voltage"""
 
-        self.source_current: Parameter = self.add_parameter(
+        self.source_current: Parameter[float, Self] = self.add_parameter(
             "source_current",
             label=f"Channel {chan} Current",
             get_cmd=f"SOURCE{chan:d}:CURR?",
@@ -61,7 +62,7 @@ class KeysightB2962AChannel(InstrumentChannel):
         )
         """Parameter source_current"""
 
-        self.voltage: Parameter = self.add_parameter(
+        self.voltage: Parameter[float, Self] = self.add_parameter(
             "voltage",
             get_cmd=f"MEAS:VOLT? (@{chan:d})",
             get_parser=float,
@@ -70,7 +71,7 @@ class KeysightB2962AChannel(InstrumentChannel):
         )
         """Parameter voltage"""
 
-        self.current: Parameter = self.add_parameter(
+        self.current: Parameter[float, Self] = self.add_parameter(
             "current",
             get_cmd=f"MEAS:CURR? (@{chan:d})",
             get_parser=float,
@@ -79,7 +80,7 @@ class KeysightB2962AChannel(InstrumentChannel):
         )
         """Parameter current"""
 
-        self.resistance: Parameter = self.add_parameter(
+        self.resistance: Parameter[float, Self] = self.add_parameter(
             "resistance",
             get_cmd=f"MEAS:RES? (@{chan:d})",
             get_parser=float,
@@ -88,7 +89,7 @@ class KeysightB2962AChannel(InstrumentChannel):
         )
         """Parameter resistance"""
 
-        self.voltage_limit: Parameter = self.add_parameter(
+        self.voltage_limit: Parameter[float, Self] = self.add_parameter(
             "voltage_limit",
             get_cmd=f"SENS{chan:d}:VOLT:PROT?",
             get_parser=float,
@@ -98,7 +99,7 @@ class KeysightB2962AChannel(InstrumentChannel):
         )
         """Parameter voltage_limit"""
 
-        self.current_limit: Parameter = self.add_parameter(
+        self.current_limit: Parameter[float, Self] = self.add_parameter(
             "current_limit",
             get_cmd=f"SENS{chan:d}:CURR:PROT?",
             get_parser=float,
@@ -108,21 +109,29 @@ class KeysightB2962AChannel(InstrumentChannel):
         )
         """Parameter current_limit"""
 
-        self.enable: Parameter = self.add_parameter(
+        self.enable: Parameter[bool, Self] = self.add_parameter(
             "enable",
             get_cmd=f"OUTP{chan:d}?",
             set_cmd=f"OUTP{chan:d} {{:d}}",
-            val_mapping={"on": 1, "off": 0},
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
         )
         """Parameter enable"""
 
-        self.source_mode: Parameter = self.add_parameter(
+        self.source_mode: Parameter[str, Self] = self.add_parameter(
             "source_mode",
             get_cmd=f":SOUR{chan:d}:FUNC:MODE?",
             set_cmd=f":SOUR{chan:d}:FUNC:MODE {{:s}}",
             val_mapping={"current": "CURR", "voltage": "VOLT"},
         )
         """Parameter source_mode"""
+
+        self.remote_sensing: Parameter[bool, Self] = self.add_parameter(
+            "remote_sensing",
+            get_cmd=f":SENS{chan:d}:REM?",
+            set_cmd=f":SENS{chan:d}:REM {{:d}}",
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
+        )
+        """Parameter remote_sensing"""
 
         self.channel = chan
 
@@ -169,9 +178,3 @@ class KeysightB2962A(VisaInstrument):
             "firmware": firmware,
         }
         return IDN
-
-
-class B2962A(KeysightB2962A):
-    """
-    Alias for backwards compatibility
-    """

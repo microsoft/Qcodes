@@ -27,7 +27,6 @@ _UNITS_FOR_RESCALING: set[str] = {
     "ohm",
     "Ohm",
     "Ω",
-    "\N{GREEK CAPITAL LETTER OMEGA}",
     "S",
     "Wb",
     "T",
@@ -60,7 +59,7 @@ _ENGINEERING_PREFIXES: dict[int, str] = OrderedDict(
 )
 
 _THRESHOLDS: dict[float, int] = OrderedDict(
-    {10 ** (scale + 3): scale for scale in _ENGINEERING_PREFIXES.keys()}
+    {10 ** (scale + 3): scale for scale in _ENGINEERING_PREFIXES}
 )
 
 

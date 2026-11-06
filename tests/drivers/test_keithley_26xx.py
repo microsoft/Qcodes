@@ -1,16 +1,25 @@
+import logging
 from collections import Counter
+from typing import TYPE_CHECKING, cast
+from unittest.mock import patch
 
 import numpy as np
 import pytest
 
+from qcodes.dataset import LinSweep
 from qcodes.instrument_drivers.Keithley import (
     Keithley2600MeasurementStatus,
     Keithley2614B,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from qcodes.instrument_drivers.Keithley import Keithley2600Channel
+
 
 @pytest.fixture(scope="function", name="driver")
-def _make_driver():
+def _make_driver() -> "Generator[Keithley2614B, None, None]":
     driver = Keithley2614B(
         "Keithley_2600", address="GPIB::1::INSTR", pyvisa_sim_file="Keithley_2600.yaml"
     )
@@ -20,14 +29,16 @@ def _make_driver():
 
 
 @pytest.fixture(scope="function", name="smus")
-def _make_smus(driver):
+def _make_smus(
+    driver: Keithley2614B,
+) -> "Generator[tuple[Keithley2600Channel, ...], None, None]":
     smu_names = {"smua", "smub"}
-    assert smu_names == set(list(driver.submodules.keys()))
+    assert smu_names == set(driver.submodules.keys())
 
     yield tuple(getattr(driver, smu_name) for smu_name in smu_names)
 
 
-def test_idn(driver) -> None:
+def test_idn(driver: Keithley2614B) -> None:
     assert {
         "firmware": "3.0.0",
         "model": "2601B",
@@ -36,8 +47,8 @@ def test_idn(driver) -> None:
     } == driver.IDN()
 
 
-def test_smu_channels_and_their_parameters(driver) -> None:
-    assert {"smua", "smub"} == set(list(driver.submodules.keys()))
+def test_smu_channels_and_their_parameters(driver: Keithley2614B) -> None:
+    assert {"smua", "smub"} == set(driver.submodules.keys())
 
     for smu_name in ("smua", "smub"):
         smu = getattr(driver, smu_name)
@@ -67,6 +78,10 @@ def test_smu_channels_and_their_parameters(driver) -> None:
         assert 0.0 == smu.nplc()
         smu.nplc(2.3)
         assert smu.nplc() == 2.3
+
+        assert smu.four_wire_measurement() is False
+        smu.four_wire_measurement(True)
+        assert smu.four_wire_measurement() is True
 
         assert 0.0 == smu.sourcerange_v()
         some_valid_sourcerange_v = driver._vranges[smu.model][2]
@@ -142,7 +157,23 @@ def test_smu_channels_and_their_parameters(driver) -> None:
         assert smu.time_axis == smu.timetrace.setpoints[0]
 
 
-def test_setting_source_voltage_range_disables_autorange(smus) -> None:
+def test_snapshot_updates_every_parameter(
+    driver: Keithley2614B, caplog: pytest.LogCaptureFixture
+) -> None:
+    # a query missing from the sim file waits for the VISA timeout and is only logged
+    with caplog.at_level(logging.WARNING):
+        driver.snapshot(update="All")
+
+    assert not [
+        record.getMessage()
+        for record in caplog.records
+        if "Could not update parameter" in record.getMessage()
+    ]
+
+
+def test_setting_source_voltage_range_disables_autorange(
+    smus: "tuple[Keithley2600Channel, ...]",
+) -> None:
     for smu in smus:
         smu.source_autorange_v_enabled(True)
         assert smu.source_autorange_v_enabled() is True
@@ -151,7 +182,9 @@ def test_setting_source_voltage_range_disables_autorange(smus) -> None:
         assert smu.source_autorange_v_enabled() is False
 
 
-def test_setting_measure_voltage_range_disables_autorange(smus) -> None:
+def test_setting_measure_voltage_range_disables_autorange(
+    smus: "tuple[Keithley2600Channel, ...]",
+) -> None:
     for smu in smus:
         smu.measure_autorange_v_enabled(True)
         assert smu.measure_autorange_v_enabled() is True
@@ -160,7 +193,9 @@ def test_setting_measure_voltage_range_disables_autorange(smus) -> None:
         assert smu.measure_autorange_v_enabled() is False
 
 
-def test_setting_source_current_range_disables_autorange(smus) -> None:
+def test_setting_source_current_range_disables_autorange(
+    smus: "tuple[Keithley2600Channel, ...]",
+) -> None:
     for smu in smus:
         smu.source_autorange_i_enabled(True)
         assert smu.source_autorange_i_enabled() is True
@@ -169,10 +204,184 @@ def test_setting_source_current_range_disables_autorange(smus) -> None:
         assert smu.source_autorange_i_enabled() is False
 
 
-def test_setting_measure_current_range_disables_autorange(smus) -> None:
+def test_setting_measure_current_range_disables_autorange(
+    smus: "tuple[Keithley2600Channel, ...]",
+) -> None:
     for smu in smus:
         smu.measure_autorange_i_enabled(True)
         assert smu.measure_autorange_i_enabled() is True
         some_valid_measurerange_i = smu.root_instrument._iranges[smu.model][2]
         smu.measurerange_i(some_valid_measurerange_i)
         assert smu.measure_autorange_i_enabled() is False
+
+
+def test_fast_sweep_parameters(smus: "tuple[Keithley2600Channel, ...]") -> None:
+    for smu in smus:
+        smu = cast("Keithley2600Channel", smu)
+
+        start_val = 0.0001
+        stop_val = 0.001
+        npts = 50
+
+        # Test IV mode
+        sweep = LinSweep(smu.volt, start_val, stop_val, npts)
+        smu.setup_fastsweep(sweep, mode="IV")
+        assert smu.fastsweep.unit == "A"
+        assert smu.fastsweep.label == "Current"
+
+        # Test VI mode
+        sweep = LinSweep(smu.curr, start_val, stop_val, npts)
+        smu.setup_fastsweep(sweep, mode="VI")
+        assert smu.fastsweep.unit == "V"
+        assert smu.fastsweep.label == "Voltage"
+
+        # Test VIfourprobe mode
+        smu.setup_fastsweep(sweep, mode="VIfourprobe")
+        assert smu.fastsweep.unit == "V"
+        assert smu.fastsweep.label == "Voltage"
+
+        # Test the inner setpoints
+        assert smu.fastsweep_inner_setpoints is not None
+        setpoints = smu.fastsweep_inner_setpoints()
+        expected_setpoints = np.linspace(start_val, stop_val, npts)
+        np.testing.assert_array_almost_equal(setpoints, expected_setpoints)
+
+
+def test_fastsweep(driver: Keithley2614B) -> None:
+    smu = driver.smua
+
+    # Configure the fastsweep using LinSweep
+    sweep = LinSweep(smu.volt, 0.0, 1.0, 10)
+    smu.setup_fastsweep(sweep, mode="IV")
+
+    # Mock _execute_lua to return fake measurement data
+    fake_data = np.linspace(0, 0.001, 10)  # Fake current readings
+
+    with patch.object(smu, "_execute_lua", return_value=fake_data):
+        result = smu.fastsweep()
+
+    assert len(result) == 10
+    np.testing.assert_array_equal(result, fake_data)
+
+
+def test_fastsweep_2d_parameters(driver: Keithley2614B) -> None:
+    """Test 2D fastsweep configuration with inner and outer sweeps."""
+    smua = driver.smua
+    smub = driver.smub
+
+    inner_start, inner_stop, inner_npts = 0.0, 1.0, 50
+    outer_start, outer_stop, outer_npts = -0.5, 0.5, 20
+
+    inner_sweep = LinSweep(smua.volt, inner_start, inner_stop, inner_npts)
+    outer_sweep = LinSweep(smub.volt, outer_start, outer_stop, outer_npts)
+
+    # Setup 2D fastsweep - config is stored on inner channel (smua)
+    smua.setup_fastsweep(inner_sweep, outer_sweep, mode="IV")
+
+    # Check inner setpoints
+    inner_setpoints = smua.fastsweep_inner_setpoints()
+    expected_inner = np.linspace(inner_start, inner_stop, inner_npts)
+    np.testing.assert_array_almost_equal(inner_setpoints, expected_inner)
+
+    # Check outer setpoints
+    outer_setpoints = smua.fastsweep_outer_setpoints()
+    expected_outer = np.linspace(outer_start, outer_stop, outer_npts)
+    np.testing.assert_array_almost_equal(outer_setpoints, expected_outer)
+
+    # Check measurement parameter metadata
+    assert smua.fastsweep.unit == "A"
+    assert smua.fastsweep.label == "Current"
+
+    # Check setpoints are properly configured for 2D
+    assert len(smua.fastsweep.setpoints) == 2
+    assert smua.fastsweep.setpoints[0] is smua.fastsweep_outer_setpoints
+    assert smua.fastsweep.setpoints[1] is smua.fastsweep_inner_setpoints
+
+
+def test_fastsweep_2d_execution(driver: Keithley2614B) -> None:
+    """Test 2D fastsweep returns correctly shaped data."""
+    smua = driver.smua
+    smub = driver.smub
+
+    inner_npts = 10
+    outer_npts = 5
+
+    inner_sweep = LinSweep(smua.volt, 0.0, 1.0, inner_npts)
+    outer_sweep = LinSweep(smub.volt, -0.5, 0.5, outer_npts)
+
+    smua.setup_fastsweep(inner_sweep, outer_sweep, mode="IV")
+
+    # Mock _execute_lua to return fake 2D measurement data (flattened)
+    total_points = inner_npts * outer_npts
+    fake_data = np.linspace(0, 0.001, total_points)
+
+    with patch.object(smua, "_execute_lua", return_value=fake_data):
+        result = smua.fastsweep()
+
+    # Check result is reshaped to 2D
+    assert result.shape == (outer_npts, inner_npts)
+    np.testing.assert_array_equal(result.flatten(), fake_data)
+
+
+def test_fastsweep_channel_detection(driver: Keithley2614B) -> None:
+    """Test that channels are correctly detected from LinSweep parameters."""
+    smua = driver.smua
+    smub = driver.smub
+
+    # Setup with inner=smub, outer=smua (reversed)
+    inner_sweep = LinSweep(smub.volt, 0.0, 1.0, 10)
+    outer_sweep = LinSweep(smua.volt, -0.5, 0.5, 5)
+
+    # Can call setup_fastsweep from any channel
+    smua.setup_fastsweep(inner_sweep, outer_sweep, mode="IV")
+
+    # Config should be stored on inner channel (smub)
+    assert smub._fastsweep_config is not None
+    assert smub._fastsweep_config.inner_channel == "smub"
+    assert smub._fastsweep_config.outer_channel == "smua"
+
+    # Call fastsweep on inner channel (smub)
+    fake_data = np.linspace(0, 0.001, 50)
+    with patch.object(smub, "_execute_lua", return_value=fake_data):
+        result = smub.fastsweep()
+
+    assert result.shape == (5, 10)
+
+
+def test_fastsweep_reconfigure_creates_fresh_setpoints(driver: Keithley2614B) -> None:
+    """Test that calling setup_fastsweep twice creates fresh setpoint parameters.
+
+    Regression test: previously, setpoint parameters were reused and their
+    cached _param_spec could become stale, causing KeyError in add_result
+    because the interdependencies were built with an old register_name.
+
+    With fresh parameters, each call gets a new param_spec that is always
+    consistent with the current sweep configuration.
+    """
+    smua = driver.smua
+    smub = driver.smub
+
+    # First configuration on smua
+    sweep1 = LinSweep(smua.volt, 0.0, 1.0, 50)
+    smua.setup_fastsweep(sweep1, mode="IV")
+
+    first_inner = smua.fastsweep_inner_setpoints
+    assert first_inner is not None
+    spec1_name = first_inner.param_spec.name
+    assert spec1_name == first_inner.register_name
+    assert spec1_name == smua.volt.full_name
+
+    # Second configuration on smub with a different parameter
+    sweep2 = LinSweep(smub.volt, -0.5, 0.5, 20)
+    smub.setup_fastsweep(sweep2, mode="IV")
+
+    second_inner = smub.fastsweep_inner_setpoints
+    assert second_inner is not None
+    spec2_name = second_inner.param_spec.name
+    assert spec2_name == second_inner.register_name
+    assert spec2_name == smub.volt.full_name
+
+    # The two setpoint parameters must be distinct objects
+    assert first_inner is not second_inner
+    assert spec1_name != spec2_name
+    assert spec2_name != spec1_name

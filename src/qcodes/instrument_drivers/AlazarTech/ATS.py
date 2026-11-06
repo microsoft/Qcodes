@@ -6,7 +6,7 @@ import sys
 import time
 import warnings
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -19,13 +19,10 @@ from .helpers import CapabilityHelper
 from .utils import TraceParameter
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
-
-    from typing_extensions import Unpack
+    from collections.abc import Generator, Sequence
+    from typing import Unpack
 
 logger = logging.getLogger(__name__)
-
-OutputType = TypeVar("OutputType")
 
 CtypesTypes = (
     type[ctypes.c_uint8]
@@ -148,7 +145,7 @@ class AlazarTechATS(Instrument):
         self._handle = self.api.get_board_by_system_id(system_id, board_id)
 
         if not self._handle:
-            raise Exception(
+            raise RuntimeError(
                 f"AlazarTech_ATS not found at system {system_id}, board {board_id}"
             )
 
@@ -208,7 +205,7 @@ class AlazarTechATS(Instrument):
         }
 
     @contextmanager
-    def syncing(self) -> Iterator[None]:
+    def syncing(self) -> Generator[None, None, None]:
         """
         Context manager for syncing settings to Alazar card. It will
         automatically call sync_settings_to_card at the end of the
@@ -309,7 +306,7 @@ class AlazarTechATS(Instrument):
         )
         return buffer
 
-    def acquire(  # noqa: D417 (missing args documentation)
+    def acquire[OutputType](  # noqa: D417 (missing args documentation)
         self,
         mode: str | None = None,
         samples_per_record: int | None = None,
@@ -325,7 +322,7 @@ class AlazarTechATS(Instrument):
         get_processed_data: str | None = None,
         allocated_buffers: int | None = None,
         buffer_timeout: int | None = None,
-        acquisition_controller: AcquisitionController[OutputType] | None = None,
+        acquisition_controller: AcquisitionInterface[OutputType] | None = None,
     ) -> OutputType:
         """
         Perform a single acquisition with the Alazar board, and set certain
@@ -383,7 +380,7 @@ class AlazarTechATS(Instrument):
         # endregion
         mode = self.mode.get()
         if mode not in ("TS", "NPT"):
-            raise Exception(
+            raise NotImplementedError(
                 "Only the 'TS' and 'NPT' modes are implemented at this point"
             )
 
@@ -569,14 +566,13 @@ class AlazarTechATS(Instrument):
         time_done_free_mem = time.perf_counter()
         # check if all parameters are up to date
         # Getting IDN is very slow so skip that
-        for _, p in self.parameters.items():
-            if isinstance(p, TraceParameter):
-                if p.synced_to_card is False:
-                    raise RuntimeError(
-                        f"TraceParameter {p} not synced to "
-                        f"Alazar card detected. Aborting. Data "
-                        f"may be corrupt"
-                    )
+        for p in self.parameters.values():
+            if isinstance(p, TraceParameter) and p.synced_to_card is False:
+                raise RuntimeError(
+                    f"TraceParameter {p} not synced to "
+                    f"Alazar card detected. Aborting. Data "
+                    f"may be corrupt"
+                )
 
         # Compute the total transfer time, and display performance information.
         end_time = time.perf_counter()
@@ -685,7 +681,7 @@ class AlazarTechATS(Instrument):
             # is set as an integer and not value mapped so we use a different
             # parameter to represent it
         elif self.sample_rate.get() == "EXTERNAL_CLOCK":
-            raise Exception(
+            raise RuntimeError(
                 "External clock is used, alazar driver "
                 "could not determine sample speed."
             )
@@ -828,7 +824,7 @@ class Buffer:
             )
 
 
-class AcquisitionInterface(Generic[OutputType]):
+class AcquisitionInterface[OutputType]:
     """
     This class represents all choices that the end-user has to make regarding
     the data-acquisition. this class should be subclassed to program these
@@ -854,13 +850,11 @@ class AcquisitionInterface(Generic[OutputType]):
         The Alazar instrument will call this method right before
         'AlazarStartCapture' is called
         """
-        pass
 
     def pre_acquire(self) -> None:
         """
         This method is called immediately after 'AlazarStartCapture' is called
         """
-        pass
 
     def handle_buffer(
         self, buffer: npt.NDArray, buffer_number: int | None = None
@@ -901,10 +895,9 @@ class AcquisitionInterface(Generic[OutputType]):
                 to local memory at the time of this callback.
 
         """
-        pass
 
 
-class AcquisitionController(Instrument, AcquisitionInterface[Any], Generic[OutputType]):
+class AcquisitionController[OutputType](Instrument, AcquisitionInterface[OutputType]):
     """
     Compatibility class. The methods of :class:`AcquisitionController`
     have been extracted. This class is the base class fro AcquisitionInterfaces

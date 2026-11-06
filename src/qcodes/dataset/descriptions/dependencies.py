@@ -10,13 +10,11 @@ import logging
 from collections import defaultdict
 from copy import deepcopy
 from itertools import chain, product
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal
 
 import networkx as nx
-from typing_extensions import deprecated
 
 from qcodes.parameters import ParamSpecBase
-from qcodes.utils import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -55,7 +53,9 @@ class InterDependencies_:  # noqa: PLW1641
         inferences: ParamSpecTree | None = None,
         standalones: tuple[ParamSpecBase, ...] = (),
     ):
-        self._graph: nx.DiGraph[str] = nx.DiGraph()
+        self._graph: nx.DiGraph[str, dict[str, ParamSpecBase], dict[str, str]] = (
+            nx.DiGraph()
+        )
         self.add_dependencies(dependencies)
         self.add_inferences(inferences)
         self.add_standalones(standalones)
@@ -107,7 +107,7 @@ class InterDependencies_:  # noqa: PLW1641
     def add_standalones(self, standalones: tuple[ParamSpecBase, ...]) -> None:
         for ps in standalones:
             if not isinstance(ps, ParamSpecBase):
-                raise ValueError("Invalid standalones") from TypeError(
+                raise ValueError("Invalid standalones") from TypeError(  # noqa: TRY004
                     "Standalones must be a sequence of ParamSpecs"
                 )
         self.add_paramspecs(list(standalones))
@@ -150,9 +150,7 @@ class InterDependencies_:  # noqa: PLW1641
             for edge in self.graph.edges
             if self.graph.edges[edge]["interdep_type"] == "depends_on"
         ]
-        # the type annotations does not currently encode that edge_subgraph of a DiGraph
-        # is a DiGraph
-        return cast("nx.DiGraph[str]", self.graph.edge_subgraph(depends_on_edges))
+        return self.graph.edge_subgraph(depends_on_edges)
 
     @property
     def _inference_subgraph(self) -> nx.DiGraph[str]:
@@ -161,9 +159,7 @@ class InterDependencies_:  # noqa: PLW1641
             for edge in self.graph.edges
             if self.graph.edges[edge]["interdep_type"] == "inferred_from"
         ]
-        # the type annotations does not currently encode that edge_subgraph of a DiGraph
-        # is a DiGraph
-        return cast("nx.DiGraph[str]", self.graph.edge_subgraph(inferred_from_edges))
+        return self.graph.edge_subgraph(inferred_from_edges)
 
     def extend(
         self,
@@ -266,24 +262,9 @@ class InterDependencies_:  # noqa: PLW1641
         """
         Return the ParamSpecBase objects of this instance
         """
-        return tuple(paramspec for _, paramspec in self.graph.nodes(data="value"))
-
-    @property
-    @deprecated(
-        "non_dependencies returns incorrect results and is deprecated. Use top_level_parameters as an alternative.",
-        category=QCoDeSDeprecationWarning,
-    )
-    def non_dependencies(self) -> tuple[ParamSpecBase, ...]:
-        """
-        Return all parameters that are not dependencies of other parameters,
-        i.e. return the top level parameters. Returned tuple is sorted by
-        parameter names.
-        """
-        non_dependencies = tuple(self.standalones) + tuple(self.dependencies.keys())
-        non_dependencies_sorted_by_name = tuple(
-            sorted(non_dependencies, key=lambda ps: ps.name)
+        return tuple(
+            paramspec_dict["value"] for _, paramspec_dict in self.graph.nodes(data=True)
         )
-        return non_dependencies_sorted_by_name
 
     @property
     def top_level_parameters(self) -> tuple[ParamSpecBase, ...]:
@@ -310,6 +291,16 @@ class InterDependencies_:  # noqa: PLW1641
             for node_id, in_degree in self._dependency_subgraph.in_degree
             if in_degree == 0
         }
+        # Parameters that are inferred from other parameters (have outgoing
+        # edges in the inference subgraph) should not be independent top-level
+        # parameters, since their data is part of the tree of the parameter
+        # they are inferred from.
+        parameters_inferred_from_others = {
+            self._node_to_paramspec(node_id)
+            for node_id, out_degree in self._inference_subgraph.out_degree
+            if out_degree > 0
+        }
+        dependency_top_level = dependency_top_level - parameters_inferred_from_others
         standalone_top_level = {
             self._node_to_paramspec(node_id)
             for node_id, degree in self._graph.degree
@@ -368,7 +359,7 @@ class InterDependencies_:  # noqa: PLW1641
         return self._node_to_paramspec(name)
 
     @property
-    def graph(self) -> nx.DiGraph[str]:
+    def graph(self) -> nx.DiGraph[str, dict[str, ParamSpecBase], dict[str, str]]:
         return self._graph
 
     def to_ipycytoscape_json(self) -> dict[str, list[dict[str, Any]]]:

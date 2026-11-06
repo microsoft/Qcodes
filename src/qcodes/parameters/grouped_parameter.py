@@ -6,14 +6,18 @@ from typing import TYPE_CHECKING, Any
 
 from .delegate_parameter import DelegateParameter
 from .group_parameter import Group, GroupParameter
-from .parameter_base import ParamDataType, ParameterBase, ParamRawDataType
+from .parameter_base import (
+    ParamDataType,
+    ParameterBase,
+    ParameterBaseKWArgs,
+    ParamRawDataType,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, Sequence
+    from typing import Unpack
 
-    from qcodes.instrument import InstrumentBase
-
-    from .parameter import Parameter
+    from .parameter import Parameter, ParameterKWArgs
 
 
 _log = logging.getLogger(__name__)
@@ -24,15 +28,11 @@ class DelegateGroupParameter(DelegateParameter, GroupParameter):
         self,
         name: str,
         source: Parameter | None,
-        instrument: InstrumentBase | None = None,
-        initial_value: float | str | None = None,
-        **kwargs: Any,
+        **kwargs: Unpack[ParameterKWArgs],
     ) -> None:
         super().__init__(
             name=name,
             source=source,
-            instrument=instrument,
-            initial_value=initial_value,
             **kwargs,
         )
 
@@ -116,7 +116,7 @@ class DelegateGroup(Group):
             self._set_fn(value)
         else:
             if not isinstance(value, dict):
-                value = {name: value for name in self._parameter_names}
+                value = dict.fromkeys(self._parameter_names, value)
             self.set_parameters(value)
 
     def get(self) -> Any:
@@ -161,17 +161,19 @@ class GroupedParameter(ParameterBase):
         group: Group that contains the target parameter(s).
         unit: The unit of measure. Use ``''`` for unitless.
         label: Optional label, defaults to parameter name.
-        default set method(s).
+        **kwargs: Forwarded to the ``ParameterBase`` base class.
+            See :class:`ParameterBaseKWArgs` for details.
 
     """
 
     def __init__(
         self,
         name: str,
+        *,
         group: DelegateGroup,
         unit: str | None = None,
         label: str | None = None,
-        **kwargs: Any,
+        **kwargs: Unpack[ParameterBaseKWArgs],
     ):
         super().__init__(name, **kwargs)
         self.label = name if label is None else label

@@ -86,6 +86,545 @@ devices:
         setter:
           q: "EVENt:LEVel {}"
 
+      # Channel 1 parameters
+      ch1 state:
+        default: 0
+        getter:
+          q: "OUTPUT1:STATE?"
+          r: "{}"
+        setter:
+          q: "OUTPUT1:STATE {}"
+
+      ch1 amp:
+        default: 0.5
+        getter:
+          q: "SOURce1:VOLTage:LEVel:IMMediate:AMPLitude?"
+          r: "{}"
+        setter:
+          q: "SOURce1:VOLTage:LEVel:IMMediate:AMPLitude {}"
+
+      ch1 offset:
+        default: 0.0
+        getter:
+          q: "SOURce1:VOLTage:LEVel:IMMediate:OFFS?"
+          r: "{}"
+        setter:
+          q: "SOURce1:VOLTage:LEVel:IMMediate:OFFS {}"
+
+      ch1 waveform:
+        default: '""'
+        getter:
+          q: "SOURce1:WAVeform?"
+          r: "{}"
+        setter:
+          q: "SOURce1:WAVeform {}"
+
+      ch1 direct output:
+        default: 0
+        getter:
+          q: "AWGControl:DOUTput1:STATE?"
+          r: "{}"
+        setter:
+          q: "AWGControl:DOUTput1:STATE {}"
+
+      ch1 filter:
+        default: 9.9e37
+        getter:
+          q: "OUTPut1:FILTer:FREQuency?"
+          r: "{}"
+        setter:
+          q: "OUTPut1:FILTer:FREQuency {}"
+
+      ch1 add input:
+        default: '""'
+        getter:
+          q: "SOURce1:COMBine:FEED?"
+          r: "{}"
+        setter:
+          q: "SOURce1:COMBine:FEED {}"
+
+      ch1 dc out:
+        default: 0.0
+        getter:
+          q: "AWGControl:DC1:VOLTage:OFFSet?"
+          r: "{}"
+        setter:
+          q: "AWGControl:DC1:VOLTage:OFFSet {}"
+
+      # Channel 1 Marker 1 parameters
+      ch1 m1 delay:
+        default: 0.0
+        getter:
+          q: "SOURce1:MARKer1:DELay?"
+          r: "{}"
+        setter:
+          q: "SOURce1:MARKer1:DELay {}"
+
+      ch1 m1 high:
+        default: 1.0
+        getter:
+          q: "SOURce1:MARKer1:VOLTage:LEVel:IMMediate:HIGH?"
+          r: "{}"
+        setter:
+          q: "SOURce1:MARKer1:VOLTage:LEVel:IMMediate:HIGH {}"
+
+      ch1 m1 low:
+        default: 0.0
+        getter:
+          q: "SOURce1:MARKer1:VOLTage:LEVel:IMMediate:LOW?"
+          r: "{}"
+        setter:
+          q: "SOURce1:MARKer1:VOLTage:LEVel:IMMediate:LOW {}"
+
+      # Channel 1 Marker 2 parameters
+      ch1 m2 delay:
+        default: 0.0
+        getter:
+          q: "SOURce1:MARKer2:DELay?"
+          r: "{}"
+        setter:
+          q: "SOURce1:MARKer2:DELay {}"
+
+      ch1 m2 high:
+        default: 1.0
+        getter:
+          q: "SOURce1:MARKer2:VOLTage:LEVel:IMMediate:HIGH?"
+          r: "{}"
+        setter:
+          q: "SOURce1:MARKer2:VOLTage:LEVel:IMMediate:HIGH {}"
+
+      ch1 m2 low:
+        default: 0.0
+        getter:
+          q: "SOURce1:MARKer2:VOLTage:LEVel:IMMediate:LOW?"
+          r: "{}"
+        setter:
+          q: "SOURce1:MARKer2:VOLTage:LEVel:IMMediate:LOW {}"
+
+      # Channel 2 parameters
+      ch2 state:
+        default: 0
+        getter:
+          q: "OUTPUT2:STATE?"
+          r: "{}"
+        setter:
+          q: "OUTPUT2:STATE {}"
+
+      ch2 amp:
+        default: 0.5
+        getter:
+          q: "SOURce2:VOLTage:LEVel:IMMediate:AMPLitude?"
+          r: "{}"
+        setter:
+          q: "SOURce2:VOLTage:LEVel:IMMediate:AMPLitude {}"
+
+      ch2 offset:
+        default: 0.0
+        getter:
+          q: "SOURce2:VOLTage:LEVel:IMMediate:OFFS?"
+          r: "{}"
+        setter:
+          q: "SOURce2:VOLTage:LEVel:IMMediate:OFFS {}"
+
+      ch2 waveform:
+        default: '""'
+        getter:
+          q: "SOURce2:WAVeform?"
+          r: "{}"
+        setter:
+          q: "SOURce2:WAVeform {}"
+
+      ch2 direct output:
+        default: 0
+        getter:
+          q: "AWGControl:DOUTput2:STATE?"
+          r: "{}"
+        setter:
+          q: "AWGControl:DOUTput2:STATE {}"
+
+      ch2 filter:
+        default: 9.9e37
+        getter:
+          q: "OUTPut2:FILTer:FREQuency?"
+          r: "{}"
+        setter:
+          q: "OUTPut2:FILTer:FREQuency {}"
+
+      ch2 add input:
+        default: '""'
+        getter:
+          q: "SOURce2:COMBine:FEED?"
+          r: "{}"
+        setter:
+          q: "SOURce2:COMBine:FEED {}"
+
+      ch2 dc out:
+        default: 0.0
+        getter:
+          q: "AWGControl:DC2:VOLTage:OFFSet?"
+          r: "{}"
+        setter:
+          q: "AWGControl:DC2:VOLTage:OFFSet {}"
+
+      # Channel 2 Marker 1 parameters
+      ch2 m1 delay:
+        default: 0.0
+        getter:
+          q: "SOURce2:MARKer1:DELay?"
+          r: "{}"
+        setter:
+          q: "SOURce2:MARKer1:DELay {}"
+
+      ch2 m1 high:
+        default: 1.0
+        getter:
+          q: "SOURce2:MARKer1:VOLTage:LEVel:IMMediate:HIGH?"
+          r: "{}"
+        setter:
+          q: "SOURce2:MARKer1:VOLTage:LEVel:IMMediate:HIGH {}"
+
+      ch2 m1 low:
+        default: 0.0
+        getter:
+          q: "SOURce2:MARKer1:VOLTage:LEVel:IMMediate:LOW?"
+          r: "{}"
+        setter:
+          q: "SOURce2:MARKer1:VOLTage:LEVel:IMMediate:LOW {}"
+
+      # Channel 2 Marker 2 parameters
+      ch2 m2 delay:
+        default: 0.0
+        getter:
+          q: "SOURce2:MARKer2:DELay?"
+          r: "{}"
+        setter:
+          q: "SOURce2:MARKer2:DELay {}"
+
+      ch2 m2 high:
+        default: 1.0
+        getter:
+          q: "SOURce2:MARKer2:VOLTage:LEVel:IMMediate:HIGH?"
+          r: "{}"
+        setter:
+          q: "SOURce2:MARKer2:VOLTage:LEVel:IMMediate:HIGH {}"
+
+      ch2 m2 low:
+        default: 0.0
+        getter:
+          q: "SOURce2:MARKer2:VOLTage:LEVel:IMMediate:LOW?"
+          r: "{}"
+        setter:
+          q: "SOURce2:MARKer2:VOLTage:LEVel:IMMediate:LOW {}"
+
+      # Channel 3 parameters
+      ch3 state:
+        default: 0
+        getter:
+          q: "OUTPUT3:STATE?"
+          r: "{}"
+        setter:
+          q: "OUTPUT3:STATE {}"
+
+      ch3 amp:
+        default: 0.5
+        getter:
+          q: "SOURce3:VOLTage:LEVel:IMMediate:AMPLitude?"
+          r: "{}"
+        setter:
+          q: "SOURce3:VOLTage:LEVel:IMMediate:AMPLitude {}"
+
+      ch3 offset:
+        default: 0.0
+        getter:
+          q: "SOURce3:VOLTage:LEVel:IMMediate:OFFS?"
+          r: "{}"
+        setter:
+          q: "SOURce3:VOLTage:LEVel:IMMediate:OFFS {}"
+
+      ch3 waveform:
+        default: '""'
+        getter:
+          q: "SOURce3:WAVeform?"
+          r: "{}"
+        setter:
+          q: "SOURce3:WAVeform {}"
+
+      ch3 direct output:
+        default: 0
+        getter:
+          q: "AWGControl:DOUTput3:STATE?"
+          r: "{}"
+        setter:
+          q: "AWGControl:DOUTput3:STATE {}"
+
+      ch3 filter:
+        default: 9.9e37
+        getter:
+          q: "OUTPut3:FILTer:FREQuency?"
+          r: "{}"
+        setter:
+          q: "OUTPut3:FILTer:FREQuency {}"
+
+      ch3 add input:
+        default: '""'
+        getter:
+          q: "SOURce3:COMBine:FEED?"
+          r: "{}"
+        setter:
+          q: "SOURce3:COMBine:FEED {}"
+
+      ch3 dc out:
+        default: 0.0
+        getter:
+          q: "AWGControl:DC3:VOLTage:OFFSet?"
+          r: "{}"
+        setter:
+          q: "AWGControl:DC3:VOLTage:OFFSet {}"
+
+      # Channel 3 Marker 1 parameters
+      ch3 m1 delay:
+        default: 0.0
+        getter:
+          q: "SOURce3:MARKer1:DELay?"
+          r: "{}"
+        setter:
+          q: "SOURce3:MARKer1:DELay {}"
+
+      ch3 m1 high:
+        default: 1.0
+        getter:
+          q: "SOURce3:MARKer1:VOLTage:LEVel:IMMediate:HIGH?"
+          r: "{}"
+        setter:
+          q: "SOURce3:MARKer1:VOLTage:LEVel:IMMediate:HIGH {}"
+
+      ch3 m1 low:
+        default: 0.0
+        getter:
+          q: "SOURce3:MARKer1:VOLTage:LEVel:IMMediate:LOW?"
+          r: "{}"
+        setter:
+          q: "SOURce3:MARKer1:VOLTage:LEVel:IMMediate:LOW {}"
+
+      # Channel 3 Marker 2 parameters
+      ch3 m2 delay:
+        default: 0.0
+        getter:
+          q: "SOURce3:MARKer2:DELay?"
+          r: "{}"
+        setter:
+          q: "SOURce3:MARKer2:DELay {}"
+
+      ch3 m2 high:
+        default: 1.0
+        getter:
+          q: "SOURce3:MARKer2:VOLTage:LEVel:IMMediate:HIGH?"
+          r: "{}"
+        setter:
+          q: "SOURce3:MARKer2:VOLTage:LEVel:IMMediate:HIGH {}"
+
+      ch3 m2 low:
+        default: 0.0
+        getter:
+          q: "SOURce3:MARKer2:VOLTage:LEVel:IMMediate:LOW?"
+          r: "{}"
+        setter:
+          q: "SOURce3:MARKer2:VOLTage:LEVel:IMMediate:LOW {}"
+
+      # Channel 4 parameters
+      ch4 state:
+        default: 0
+        getter:
+          q: "OUTPUT4:STATE?"
+          r: "{}"
+        setter:
+          q: "OUTPUT4:STATE {}"
+
+      ch4 amp:
+        default: 0.5
+        getter:
+          q: "SOURce4:VOLTage:LEVel:IMMediate:AMPLitude?"
+          r: "{}"
+        setter:
+          q: "SOURce4:VOLTage:LEVel:IMMediate:AMPLitude {}"
+
+      ch4 offset:
+        default: 0.0
+        getter:
+          q: "SOURce4:VOLTage:LEVel:IMMediate:OFFS?"
+          r: "{}"
+        setter:
+          q: "SOURce4:VOLTage:LEVel:IMMediate:OFFS {}"
+
+      ch4 waveform:
+        default: '""'
+        getter:
+          q: "SOURce4:WAVeform?"
+          r: "{}"
+        setter:
+          q: "SOURce4:WAVeform {}"
+
+      ch4 direct output:
+        default: 0
+        getter:
+          q: "AWGControl:DOUTput4:STATE?"
+          r: "{}"
+        setter:
+          q: "AWGControl:DOUTput4:STATE {}"
+
+      ch4 filter:
+        default: 9.9e37
+        getter:
+          q: "OUTPut4:FILTer:FREQuency?"
+          r: "{}"
+        setter:
+          q: "OUTPut4:FILTer:FREQuency {}"
+
+      ch4 add input:
+        default: '""'
+        getter:
+          q: "SOURce4:COMBine:FEED?"
+          r: "{}"
+        setter:
+          q: "SOURce4:COMBine:FEED {}"
+
+      ch4 dc out:
+        default: 0.0
+        getter:
+          q: "AWGControl:DC4:VOLTage:OFFSet?"
+          r: "{}"
+        setter:
+          q: "AWGControl:DC4:VOLTage:OFFSet {}"
+
+      # Channel 4 Marker 1 parameters
+      ch4 m1 delay:
+        default: 0.0
+        getter:
+          q: "SOURce4:MARKer1:DELay?"
+          r: "{}"
+        setter:
+          q: "SOURce4:MARKer1:DELay {}"
+
+      ch4 m1 high:
+        default: 1.0
+        getter:
+          q: "SOURce4:MARKer1:VOLTage:LEVel:IMMediate:HIGH?"
+          r: "{}"
+        setter:
+          q: "SOURce4:MARKer1:VOLTage:LEVel:IMMediate:HIGH {}"
+
+      ch4 m1 low:
+        default: 0.0
+        getter:
+          q: "SOURce4:MARKer1:VOLTage:LEVel:IMMediate:LOW?"
+          r: "{}"
+        setter:
+          q: "SOURce4:MARKer1:VOLTage:LEVel:IMMediate:LOW {}"
+
+      # Channel 4 Marker 2 parameters
+      ch4 m2 delay:
+        default: 0.0
+        getter:
+          q: "SOURce4:MARKer2:DELay?"
+          r: "{}"
+        setter:
+          q: "SOURce4:MARKer2:DELay {}"
+
+      ch4 m2 high:
+        default: 1.0
+        getter:
+          q: "SOURce4:MARKer2:VOLTage:LEVel:IMMediate:HIGH?"
+          r: "{}"
+        setter:
+          q: "SOURce4:MARKer2:VOLTage:LEVel:IMMediate:HIGH {}"
+
+      ch4 m2 low:
+        default: 0.0
+        getter:
+          q: "SOURce4:MARKer2:VOLTage:LEVel:IMMediate:LOW?"
+          r: "{}"
+        setter:
+          q: "SOURce4:MARKer2:VOLTage:LEVel:IMMediate:LOW {}"
+
+      # Additional instrument-level properties
+      run mode:
+        default: "CONT"
+        getter:
+          q: "AWGControl:RMODe?"
+          r: "{}"
+        setter:
+          q: "AWGControl:RMODe {}"
+
+      run state:
+        default: 0
+        getter:
+          q: "AWGControl:RSTATe?"
+          r: "{}"
+        setter:
+          q: "AWGControl:RSTATe {}"
+
+      trigger slope:
+        default: "POS"
+        getter:
+          q: "TRIGger:SLOPe?"
+          r: "{}"
+        setter:
+          q: "TRIGger:SLOPe {}"
+
+      trigger polarity:
+        default: "POS"
+        getter:
+          q: "TRIGger:POLarity?"
+          r: "{}"
+        setter:
+          q: "TRIGger:POLarity {}"
+
+      event polarity:
+        default: "POS"
+        getter:
+          q: "EVENt:POL?"
+          r: "{}"
+        setter:
+          q: "EVENt:POL {}"
+
+      event jump timing:
+        default: "SYNC"
+        getter:
+          q: "EVENt:JTIMing?"
+          r: "{}"
+        setter:
+          q: "EVENt:JTIMing {}"
+
+      dc output state:
+        default: 0
+        getter:
+          q: "AWGControl:DC:STATe?"
+          r: "{}"
+        setter:
+          q: "AWGControl:DC:STATe {}"
+
+      sequence length:
+        default: 0
+        getter:
+          q: "SEQuence:LENGth?"
+          r: "{}"
+        setter:
+          q: "SEQuence:LENGth {}"
+
+      sequence position:
+        default: 1
+        getter:
+          q: "AWGControl:SEQuencer:POSition?"
+          r: "{}"
+        setter:
+          q: "SEQuence:JUMP:IMMediate {}"
+
+      setup filename:
+        default: '"setup.awg","C:\\Users\\OEM\\Documents"'
+        getter:
+          q: "AWGControl:SNAMe?"
+          r: "{}"
+
 resources:
   GPIB::1::INSTR:
     device: device 1

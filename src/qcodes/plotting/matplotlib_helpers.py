@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 import logging
 from typing import TYPE_CHECKING, Any, Literal, cast
 
@@ -17,7 +16,7 @@ from .auto_range import DEFAULT_PERCENTILE, auto_range_iqr
 DEFAULT_COLOR_OVER = "Magenta"
 DEFAULT_COLOR_UNDER = "Cyan"
 
-_LOG = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 _EXTEND_TYPE = Literal["neither", "both", "min", "max"]
 
@@ -94,7 +93,7 @@ def apply_color_scale_limits(
     # browse the input data and make sure that `data_lim` and `new_lim` are
     # available
     if not isinstance(colorbar.mappable, matplotlib.collections.QuadMesh):
-        raise RuntimeError(
+        raise RuntimeError(  # noqa: TRY004
             "Can only scale mesh data, but received "
             f'"{type(colorbar.mappable)}" instead'
         )
@@ -126,9 +125,9 @@ def apply_color_scale_limits(
     else:
         extend = "neither"
     _set_colorbar_extend(colorbar, extend)
-    cmap = copy.copy(colorbar.mappable.get_cmap())
-    cmap.set_over(color_over)
-    cmap.set_under(color_under)
+    cmap = colorbar.mappable.get_cmap().with_extremes(
+        over=color_over, under=color_under
+    )
     colorbar.mappable.set_cmap(cmap)
     colorbar.mappable.set_clim(*vlim)
 
@@ -216,7 +215,7 @@ def auto_color_scale_from_config(
     """
 
     if colorbar is None:
-        _LOG.warning(
+        _LOGGER.warning(
             '"auto_color_scale_from_config" did not receive a colorbar '
             "for scaling. Are you trying to scale a plot without "
             "colorbar?"

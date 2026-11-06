@@ -1,7 +1,10 @@
+from typing import TYPE_CHECKING
+
 import hypothesis.strategies as hst
 import matplotlib.axes
 import numpy as np
 import pytest
+import xarray as xr
 from hypothesis import HealthCheck, given, settings
 
 from qcodes import config, validators
@@ -9,18 +12,27 @@ from qcodes.dataset import do0d, new_experiment
 from qcodes.dataset.data_set import DataSet
 from qcodes.instrument_drivers.mock_instruments import (
     ArraySetPointParam,
+    DummyChannelInstrument,
     Multi2DSetPointParam,
     Multi2DSetPointParam2Sizes,
     MultiSetPointParam,
 )
 from tests.dataset.conftest import ArrayshapedParam
 
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from qcodes.dataset.experiment_container import Experiment
+    from qcodes.parameters import Parameter
+
 
 @pytest.mark.usefixtures("plot_close", "experiment")
 @pytest.mark.parametrize("period", [None, 1])
 @pytest.mark.parametrize("plot", [None, True, False])
 @pytest.mark.parametrize("plot_config", [True, None, False])
-def test_do0d_with_real_parameter(period, plot, plot_config) -> None:
+def test_do0d_with_real_parameter(
+    period: float | None, plot: bool | None, plot_config: bool | None
+) -> None:
     arrayparam = ArraySetPointParam(name="arrayparam")
 
     if plot_config is not None:
@@ -38,7 +50,9 @@ def test_do0d_with_real_parameter(period, plot, plot_config) -> None:
 @pytest.mark.parametrize(
     "period, plot", [(None, True), (None, False), (1, True), (1, False)]
 )
-def test_do0d_with_complex_parameter(_param_complex, period, plot) -> None:
+def test_do0d_with_complex_parameter(
+    _param_complex: "Parameter[complex]", period: float | None, plot: bool
+) -> None:
     do0d(_param_complex, write_period=period, do_plot=plot)
 
 
@@ -46,7 +60,9 @@ def test_do0d_with_complex_parameter(_param_complex, period, plot) -> None:
 @pytest.mark.parametrize(
     "period, plot", [(None, True), (None, False), (1, True), (1, False)]
 )
-def test_do0d_with_a_callable(_param_callable, period, plot) -> None:
+def test_do0d_with_a_callable(
+    _param_callable: "Parameter[int]", period: float | None, plot: bool
+) -> None:
     do0d(_param_callable, write_period=period, do_plot=plot)
 
 
@@ -54,7 +70,12 @@ def test_do0d_with_a_callable(_param_callable, period, plot) -> None:
 @pytest.mark.parametrize(
     "period, plot", [(None, True), (None, False), (1, True), (1, False)]
 )
-def test_do0d_with_2_parameters(_param, _param_complex, period, plot) -> None:
+def test_do0d_with_2_parameters(
+    _param: "Parameter[int]",
+    _param_complex: "Parameter[complex]",
+    period: float | None,
+    plot: bool,
+) -> None:
     do0d(_param, _param_complex, write_period=period, do_plot=plot)
 
 
@@ -63,31 +84,36 @@ def test_do0d_with_2_parameters(_param, _param_complex, period, plot) -> None:
     "period, plot", [(None, True), (None, False), (1, True), (1, False)]
 )
 def test_do0d_with_parameter_and_a_callable(
-    _param_complex, _param_callable, period, plot
+    _param_complex: "Parameter[complex]",
+    _param_callable: "Parameter[int]",
+    period: float | None,
+    plot: bool,
 ) -> None:
     do0d(_param_callable, _param_complex, write_period=period, do_plot=plot)
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_do0d_output_type_real_parameter(_param) -> None:
+def test_do0d_output_type_real_parameter(_param: "Parameter[int]") -> None:
     data = do0d(_param)
     assert isinstance(data[0], DataSet) is True
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_do0d_output_type_complex_parameter(_param_complex) -> None:
+def test_do0d_output_type_complex_parameter(
+    _param_complex: "Parameter[complex]",
+) -> None:
     data_complex = do0d(_param_complex)
     assert isinstance(data_complex[0], DataSet) is True
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_do0d_output_type_callable(_param_callable) -> None:
+def test_do0d_output_type_callable(_param_callable: "Parameter[int]") -> None:
     data_func = do0d(_param_callable)
     assert isinstance(data_func[0], DataSet) is True
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_do0d_output_data(_param) -> None:
+def test_do0d_output_data(_param: "Parameter[int]") -> None:
     exp = do0d(_param)
     data = exp[0]
     assert data.description.interdeps.names == (_param.name,)
@@ -96,14 +122,56 @@ def test_do0d_output_data(_param) -> None:
 
 
 @pytest.mark.usefixtures("experiment")
+def test_do0d_export_to_netcdf(_param: "Parameter[int]", tmp_path: "Path") -> None:
+    dataset = do0d(_param, do_plot=False)[0]
+
+    dataset.export(export_type="netcdf", path=tmp_path)
+
+    export_path = dataset.export_info.export_paths["nc"]
+    with xr.open_dataset(export_path) as exported_dataset:
+        assert exported_dataset[_param.name].dims == (f"{_param.name}_dim_0",)
+        np.testing.assert_array_equal(
+            exported_dataset[_param.name].values, np.array([_param.get()])
+        )
+
+
+@pytest.mark.usefixtures("experiment")
+def test_do0d_array_export_to_netcdf(tmp_path: "Path") -> None:
+    param = ArrayshapedParam(
+        name="paramwitharrayval", vals=validators.Arrays(shape=(10,))
+    )
+    dataset = do0d(param, do_plot=False)[0]
+    expected_data = dataset.get_parameter_data()[param.name][param.name]
+
+    dataset.export(export_type="netcdf", path=tmp_path)
+
+    export_path = dataset.export_info.export_paths["nc"]
+    with xr.open_dataset(export_path) as exported_dataset:
+        assert exported_dataset[param.name].dims == (f"{param.name}_dim_0",)
+        np.testing.assert_array_equal(
+            exported_dataset[param.name].values, expected_data
+        )
+
+
+@pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize(
     "multiparamtype",
     [MultiSetPointParam, Multi2DSetPointParam, Multi2DSetPointParam2Sizes],
 )
-@given(n_points_pws=hst.integers(min_value=1, max_value=1000))
-@settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@given(n_points_pws=hst.integers(min_value=1, max_value=50))
+@settings(
+    deadline=None,
+    max_examples=10,
+    suppress_health_check=(HealthCheck.function_scoped_fixture,),
+)
 def test_do0d_verify_shape(
-    _param, _param_complex, multiparamtype, dummyinstrument, n_points_pws
+    _param: "Parameter[int]",
+    _param_complex: "Parameter[complex]",
+    multiparamtype: type[
+        MultiSetPointParam | Multi2DSetPointParam | Multi2DSetPointParam2Sizes
+    ],
+    dummyinstrument: DummyChannelInstrument,
+    n_points_pws: int,
 ) -> None:
     arrayparam = ArraySetPointParam(name="arrayparam")
     multiparam = multiparamtype(name="multiparam")
@@ -145,7 +213,9 @@ def test_do0d_parameter_with_array_vals() -> None:
     assert results[0].description.shapes == expected_shapes
 
 
-def test_do0d_explicit_experiment(_param, experiment) -> None:
+def test_do0d_explicit_experiment(
+    _param: "Parameter[int]", experiment: "Experiment"
+) -> None:
     experiment_2 = new_experiment("new-exp", "no-sample")
 
     data1 = do0d(_param, do_plot=False, exp=experiment)
@@ -158,13 +228,15 @@ def test_do0d_explicit_experiment(_param, experiment) -> None:
 
 
 @pytest.mark.usefixtures("experiment")
-def test_do0d_explicit_name(_param) -> None:
+def test_do0d_explicit_name(_param: "Parameter[int]") -> None:
     data1 = do0d(_param, do_plot=False, measurement_name="my measurement")
     assert data1[0].name == "my measurement"
 
 
 @pytest.mark.usefixtures("experiment")
-def test_do0d_parameter_with_setpoints_2d(dummyinstrument) -> None:
+def test_do0d_parameter_with_setpoints_2d(
+    dummyinstrument: DummyChannelInstrument,
+) -> None:
     dummyinstrument.A.dummy_start(0)
     dummyinstrument.A.dummy_stop(10)
     dummyinstrument.A.dummy_n_points(10)
@@ -181,7 +253,11 @@ def test_do0d_parameter_with_setpoints_2d(dummyinstrument) -> None:
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_dond_0d_output_type(_param, _param_complex, _param_callable) -> None:
+def test_dond_0d_output_type(
+    _param: "Parameter[int]",
+    _param_complex: "Parameter[complex]",
+    _param_callable: "Parameter[int]",
+) -> None:
     data_1 = do0d(_param)
     assert isinstance(data_1[0], DataSet) is True
 

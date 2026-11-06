@@ -1,4 +1,5 @@
 import os
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
@@ -6,8 +7,15 @@ import pytest
 from qcodes.dataset import Measurement
 from qcodes.instrument_drivers.mock_instruments import DummyChannel, MockCustomChannel
 
+if TYPE_CHECKING:
+    from qcodes.instrument.delegate import InstrumentGroup
+    from qcodes.instrument_drivers.mock_instruments import MockDAC, MockLockin
+    from qcodes.station import Station
 
-def test_device(station, chip_config, dac, lockin) -> None:
+
+def test_device(
+    station: "Station", chip_config: str, dac: "MockDAC", lockin: "MockLockin"
+) -> None:
     assert os.path.exists(chip_config)
     station.load_config_file(chip_config)
     chip = station.load_MockChip_123(station=station)
@@ -23,7 +31,7 @@ def test_device(station, chip_config, dac, lockin) -> None:
 
 
 @pytest.mark.usefixtures("experiment")
-def test_device_meas(station, chip) -> None:
+def test_device_meas(station: "Station", chip: "InstrumentGroup") -> None:
     meas = Measurement(station=station)
     device = chip.device1
     meas.register_parameter(device.gate)
@@ -39,7 +47,7 @@ def test_device_meas(station, chip) -> None:
         assert len(datasaver.dataset.to_pandas_dataframe_dict()["device1_drain"]) == 10
 
 
-def test_device_with_channels(chip, station) -> None:
+def test_device_with_channels(chip: "InstrumentGroup", station: "Station") -> None:
     device = chip.channel_device
 
     assert device.gate_1 == station.dac.ch01
@@ -59,7 +67,9 @@ def test_device_with_channels(chip, station) -> None:
     assert device.readout() == 30
 
 
-def test_device_with_custom_channels(chip, station) -> None:
+def test_device_with_custom_channels(
+    chip: "InstrumentGroup", station: "Station"
+) -> None:
     device = chip.channel_device_custom
 
     assert device.gate_1._dac_channel == station.dac.ch01
@@ -71,7 +81,7 @@ def test_device_with_custom_channels(chip, station) -> None:
     assert isinstance(device.fast_gate, DummyChannel)
 
 
-def test_chip_definition(chip_config_typo, station) -> None:
+def test_chip_definition(chip_config_typo: str, station: "Station") -> None:
     station.load_config_file(chip_config_typo)
     with pytest.raises(KeyError):
         _ = station.load_MockChip_123(station=station)

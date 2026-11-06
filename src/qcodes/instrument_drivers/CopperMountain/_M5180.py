@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from ._M5xxx import CopperMountainM5xxx
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.instrument import VisaInstrumentKWArgs
 

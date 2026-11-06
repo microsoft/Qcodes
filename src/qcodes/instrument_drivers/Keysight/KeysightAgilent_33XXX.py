@@ -1,10 +1,9 @@
 import logging
 from functools import partial
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes import validators as vals
 from qcodes.instrument import (
-    Instrument,
     InstrumentBaseKWArgs,
     InstrumentChannel,
     VisaInstrument,
@@ -14,7 +13,7 @@ from qcodes.instrument import (
 from .private.error_handling import KeysightErrorQueueMixin
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.parameters import Parameter
 
@@ -26,14 +25,14 @@ log = logging.getLogger(__name__)
 # 33200, 33500, and 33600
 
 
-class Keysight33xxxOutputChannel(InstrumentChannel):
+class Keysight33xxxOutputChannel(InstrumentChannel["Keysight33xxx"]):
     """
     Class to hold the output channel of a Keysight 33xxxx waveform generator.
     """
 
     def __init__(
         self,
-        parent: Instrument,
+        parent: "Keysight33xxx",
         name: str,
         channum: int,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
@@ -75,7 +74,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
 
         self.model = self._parent.model
 
-        self.function_type: Parameter = self.add_parameter(
+        self.function_type: Parameter[str, Self] = self.add_parameter(
             "function_type",
             label=f"Channel {channum} function type",
             set_cmd=f"SOURce{channum}:FUNCtion {{}}",
@@ -87,7 +86,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
         )
         """Parameter function_type"""
 
-        self.frequency_mode: Parameter = self.add_parameter(
+        self.frequency_mode: Parameter[str, Self] = self.add_parameter(
             "frequency_mode",
             label=f"Channel {channum} frequency mode",
             set_cmd=f"SOURce{channum}:FREQuency:MODE {{}}",
@@ -98,7 +97,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
         """Parameter frequency_mode"""
 
         max_freq = self._parent._max_freqs[self.model]
-        self.frequency: Parameter = self.add_parameter(
+        self.frequency: Parameter[float, Self] = self.add_parameter(
             "frequency",
             label=f"Channel {channum} frequency",
             set_cmd=f"SOURce{channum}:FREQuency {{}}",
@@ -110,7 +109,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
         )
         """Parameter frequency"""
 
-        self.phase: Parameter = self.add_parameter(
+        self.phase: Parameter[float, Self] = self.add_parameter(
             "phase",
             label=f"Channel {channum} phase",
             set_cmd=f"SOURce{channum}:PHASe {{}}",
@@ -120,7 +119,8 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
             vals=vals.Numbers(0, 360),
         )
         """Parameter phase"""
-        self.amplitude_unit: Parameter = self.add_parameter(
+
+        self.amplitude_unit: Parameter[str, Self] = self.add_parameter(
             "amplitude_unit",
             label=f"Channel {channum} amplitude unit",
             set_cmd=f"SOURce{channum}:VOLTage:UNIT {{}}",
@@ -130,7 +130,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
         )
         """Parameter amplitude_unit"""
 
-        self.amplitude: Parameter = self.add_parameter(
+        self.amplitude: Parameter[float, Self] = self.add_parameter(
             "amplitude",
             label=f"Channel {channum} amplitude",
             set_cmd=f"SOURce{channum}:VOLTage {{}}",
@@ -140,7 +140,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
         )
         """Parameter amplitude"""
 
-        self.offset: Parameter = self.add_parameter(
+        self.offset: Parameter[float, Self] = self.add_parameter(
             "offset",
             label=f"Channel {channum} voltage offset",
             set_cmd=f"SOURce{channum}:VOLTage:OFFSet {{}}",
@@ -149,7 +149,8 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
             get_parser=float,
         )
         """Parameter offset"""
-        self.output: Parameter = self.add_parameter(
+
+        self.output: Parameter[str, Self] = self.add_parameter(
             "output",
             label=f"Channel {channum} output state",
             set_cmd=f"OUTPut{channum} {{}}",
@@ -158,7 +159,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
         )
         """Parameter output"""
 
-        self.ramp_symmetry: Parameter = self.add_parameter(
+        self.ramp_symmetry: Parameter[float, Self] = self.add_parameter(
             "ramp_symmetry",
             label=f"Channel {channum} ramp symmetry",
             set_cmd=f"SOURce{channum}:FUNCtion:RAMP:SYMMetry {{}}",
@@ -169,18 +170,29 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
         )
         """Parameter ramp_symmetry"""
 
-        self.pulse_width: Parameter = self.add_parameter(
+        self.pulse_width: Parameter[float, Self] = self.add_parameter(
             "pulse_width",
             label=f"Channel {channum} pulse width",
             set_cmd=f"SOURce{channum}:FUNCtion:PULSE:WIDTh {{}}",
             get_cmd=f"SOURce{channum}:FUNCtion:PULSE:WIDTh?",
             get_parser=float,
-            unit="S",
+            unit="s",
         )
         """Parameter pulse_width"""
 
+        self.edges: Parameter = self.add_parameter(
+            "edges",
+            label=f"Channel {channum} edges width",
+            set_cmd=f"SOURce{channum}:FUNCtion:PULSe:TRANsition {{}}",
+            get_cmd=f"SOURce{channum}:FUNCtion:PULSe:TRANsition?",
+            get_parser=float,
+            unit="s",
+            vals=vals.MultiType(vals.Numbers(), vals.Enum("MIN", "MAX")),
+        )
+        """Sets the transition times for the leading and trailing edges of the pulse."""
+
         # TRIGGER MENU
-        self.trigger_source: Parameter = self.add_parameter(
+        self.trigger_source: Parameter[str, Self] = self.add_parameter(
             "trigger_source",
             label=f"Channel {channum} trigger source",
             set_cmd=f"TRIGger{channum}:SOURce {{}}",
@@ -190,7 +202,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
         )
         """Parameter trigger_source"""
 
-        self.trigger_slope: Parameter = self.add_parameter(
+        self.trigger_slope: Parameter[str, Self] = self.add_parameter(
             "trigger_slope",
             label=f"Channel {channum} trigger slope",
             set_cmd=f"TRIGger{channum}:SLOPe {{}}",
@@ -212,7 +224,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
             )
             """Parameter trigger_count"""
 
-            self.trigger_delay: Parameter = self.add_parameter(
+            self.trigger_delay: Parameter[float, Self] = self.add_parameter(
                 "trigger_delay",
                 label=f"Channel {channum} trigger delay",
                 set_cmd=f"TRIGger{channum}:DELay {{}}",
@@ -223,7 +235,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
             )
             """Parameter trigger_delay"""
 
-            self.trigger_timer: Parameter = self.add_parameter(
+            self.trigger_timer: Parameter[float, Self] = self.add_parameter(
                 "trigger_timer",
                 label=f"Channel {channum} trigger timer",
                 set_cmd=f"TRIGger{channum}:TIMer {{}}",
@@ -236,7 +248,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
         # TODO: trigger level doesn't work remotely. Why?
 
         # output menu
-        self.output_polarity: Parameter = self.add_parameter(
+        self.output_polarity: Parameter[str, Self] = self.add_parameter(
             "output_polarity",
             label=f"Channel {channum} output polarity",
             set_cmd=f"OUTPut{channum}:POLarity {{}}",
@@ -246,7 +258,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
         )
         """Parameter output_polarity"""
         # BURST MENU
-        self.burst_state: Parameter = self.add_parameter(
+        self.burst_state: Parameter[str, Self] = self.add_parameter(
             "burst_state",
             label=f"Channel {channum} burst state",
             set_cmd=f"SOURce{channum}:BURSt:STATe {{}}",
@@ -256,7 +268,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
         )
         """Parameter burst_state"""
 
-        self.burst_mode: Parameter = self.add_parameter(
+        self.burst_mode: Parameter[str, Self] = self.add_parameter(
             "burst_mode",
             label=f"Channel {channum} burst mode",
             set_cmd=f"SOURce{channum}:BURSt:MODE {{}}",
@@ -277,7 +289,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
         )
         """Parameter burst_ncycles"""
 
-        self.burst_phase: Parameter = self.add_parameter(
+        self.burst_phase: Parameter[float, Self] = self.add_parameter(
             "burst_phase",
             label=f"Channel {channum} burst start phase",
             set_cmd=f"SOURce{channum}:BURSt:PHASe {{}}",
@@ -288,7 +300,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
         )
         """Parameter burst_phase"""
 
-        self.burst_polarity: Parameter = self.add_parameter(
+        self.burst_polarity: Parameter[str, Self] = self.add_parameter(
             "burst_polarity",
             label=f"Channel {channum} burst gated polarity",
             set_cmd=f"SOURce{channum}:BURSt:GATE:POLarity {{}}",
@@ -297,9 +309,9 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
         )
         """Parameter burst_polarity"""
 
-        self.burst_int_period: Parameter = self.add_parameter(
+        self.burst_int_period: Parameter[float, Self] = self.add_parameter(
             "burst_int_period",
-            label=(f"Channel {channum} burst internal period"),
+            label=f"Channel {channum} burst internal period",
             set_cmd=f"SOURce{channum}:BURSt:INTernal:PERiod {{}}",
             get_cmd=f"SOURce{channum}:BURSt:INTernal:PERiod?",
             unit="s",
@@ -313,11 +325,73 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
         )
         """The burst period is the time between the starts of consecutive bursts when trigger is immediate."""
 
+        self.output_load: Parameter = self.add_parameter(
+            "output_load",
+            label=f"Channel {channum} output load",
+            set_cmd=f"OUTPut{channum}:LOAD {{}}",
+            get_cmd=f"OUTPut{channum}:LOAD?",
+            get_parser=partial(val_parser, float),
+            unit="ohms",
+            vals=vals.MultiType(vals.Numbers(1, 10000), vals.Enum("INF", "MIN", "MAX")),
+        )
+        """Sets expected output termination. Should equal the load impedance attached to the output."""
+
+        self.auto_range: Parameter[str, Self] = self.add_parameter(
+            "auto_range",
+            label=f"Channel {channum} range mode",
+            set_cmd=f"SOURce{channum}:VOLTage:RANGe:AUTO {{}}",
+            get_cmd=f"SOURce{channum}:VOLTage:RANGe:AUTO?",
+            val_mapping={"ON": 1, "OFF": 0},
+            vals=vals.Enum("ON", "OFF"),
+        )
+        """Disables or enables voltage autoranging for all functions."""
+
+        # Arbitrary waveforms
+        if self._parent.model[2] in [
+            "5",
+            "6",
+        ]:  # Older models do not support all arbitrary options
+            max_srate = self._parent._max_srate[self.model]
+            self.srate: Parameter = self.add_parameter(
+                "srate",
+                label=f"Channel {channum} sample rate",
+                set_cmd=f"SOURce{channum}:FUNCtion:ARBitrary:SRATe {{}}",
+                get_cmd=f"SOURce{channum}:FUNCtion:ARBitrary:SRATe?",
+                get_parser=float,
+                unit="Sa/s",
+                vals=vals.MultiType(
+                    vals.Numbers(1e-6, max_srate), vals.Enum("MIN", "MAX", "DEF")
+                ),
+            )
+            """Sets the sample rate for the arbitrary waveform."""
+
+            self.add_function(
+                "load_arb",
+                call_cmd=f"SOURce{channum}:DATA:ARBitrary {{}}, {{}}",
+                args=[vals.Strings(), vals.Arrays()],
+                arg_parser=lambda sig_name, arr: (sig_name, ",".join(map(str, arr))),
+            )
+            """Downloads integer values representing floating point values into waveform volatile memory."""
+            # TODO: add DAC (Digital-to-Analog Converter) support.
+
+            self.add_function(
+                "set_arb",
+                call_cmd=f"SOURce{channum}:FUNCtion:ARBitrary {{}}",
+                args=[vals.Strings()],
+            )
+            """Selects an arbitrary waveform that has previously been loaded into volatile memory."""
+
+            self.add_function(
+                "clear_arb",
+                call_cmd=f"SOURce{channum}:DATA:VOLatile:CLEar",
+            )
+            """Clears waveform memory and reloads the default waveform."""
+
 
 OutputChannel = Keysight33xxxOutputChannel
 
 
-class Keysight33xxxSyncChannel(InstrumentChannel):
+class Keysight33xxxSyncChannel(InstrumentChannel["Keysight33xxx"]):
     """
     Class to hold the sync output of a Keysight 33xxxx waveform generator.
     Has very few parameters for single channel instruments.
@@ -325,13 +399,13 @@ class Keysight33xxxSyncChannel(InstrumentChannel):
 
     def __init__(
         self,
-        parent: Instrument,
+        parent: "Keysight33xxx",
         name: str,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
         super().__init__(parent, name, **kwargs)
 
-        self.output: Parameter = self.add_parameter(
+        self.output: Parameter[str, Self] = self.add_parameter(
             "output",
             label="Sync output state",
             set_cmd="OUTPut:SYNC {}",
@@ -342,7 +416,7 @@ class Keysight33xxxSyncChannel(InstrumentChannel):
         """Parameter output"""
 
         if parent.num_channels == 2:
-            self.source: Parameter = self.add_parameter(
+            self.source: Parameter[int, Self] = self.add_parameter(
                 "source",
                 label="Source of sync function",
                 set_cmd="OUTPut:SYNC:SOURce {}",
@@ -403,23 +477,44 @@ class Keysight33xxx(KeysightErrorQueueMixin, VisaInstrument):
         no_of_channels = {
             "33210A": 1,
             "33250A": 1,
+            "33510B": 2,
             "33511B": 1,
             "33512B": 2,
+            "33521B": 1,
             "33522B": 2,
             "33611A": 1,
+            "33612A": 2,
+            "33621A": 1,
             "33622A": 2,
-            "33510B": 2,
         }
 
         self._max_freqs = {
             "33210A": 10e6,
+            "33250A": 80e6,
+            "33510B": 20e6,
             "33511B": 20e6,
             "33512B": 20e6,
-            "33250A": 80e6,
+            "33521B": 30e6,
             "33522B": 30e6,
             "33611A": 80e6,
+            "33612A": 80e6,
+            "33621A": 120e6,
             "33622A": 120e6,
-            "33510B": 20e6,
+        }
+
+        # Refer to instruments User's guides
+        self._max_srate = {
+            "33210A": 50e6,
+            "33250A": 200e6,
+            "33510B": 160e6,
+            "33511B": 160e6,
+            "33512B": 160e6,
+            "33521B": 250e6,
+            "33522B": 250e6,
+            "33611A": 660e6,
+            "33612A": 660e6,
+            "33621A": 1e9,
+            "33622A": 1e9,
         }
 
         self.num_channels = no_of_channels[self.model]

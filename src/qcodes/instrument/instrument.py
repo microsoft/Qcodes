@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import time
 import weakref
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, overload
 
 from qcodes.utils import strip_attrs
 from qcodes.validators import Anything
@@ -14,9 +14,7 @@ from .instrument_base import InstrumentBase, InstrumentBaseKWArgs
 from .instrument_meta import InstrumentMeta
 
 if TYPE_CHECKING:
-    from typing import Self
-
-    from typing_extensions import Unpack
+    from typing import Self, Unpack
 
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 
@@ -32,8 +30,6 @@ class InstrumentProtocol(Protocol):
 
     def write(self, cmd: str) -> None: ...
 
-
-T = TypeVar("T", bound="Instrument")
 
 # a metaclass that overrides __call__ means that we lose
 # both the args and return type hints.
@@ -61,11 +57,11 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
 
     """
 
-    _all_instruments: weakref.WeakValueDictionary[str, Instrument] = (
+    _all_instruments: ClassVar[weakref.WeakValueDictionary[str, Instrument]] = (
         weakref.WeakValueDictionary()
     )
     _type: type[Instrument] | None = None
-    _instances: weakref.WeakSet[Instrument] = weakref.WeakSet()
+    _instances: ClassVar[weakref.WeakSet[Instrument]] = weakref.WeakSet()
 
     def __init__(self, name: str, **kwargs: Unpack[InstrumentBaseKWArgs]) -> None:
         self._t0 = time.time()
@@ -156,7 +152,11 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         """Close the instrument and remove its instance record."""
         try:
             self.close()
-        except BaseException:
+        except BaseException:  # noqa: BLE001, S110
+            # we want to avoid __del__ raising any exceptions
+            # it might be possible to avoid this see
+            # https://docs.python.org/3/reference/datamodel.html#object.__del
+            # however that would require careful testing.
             pass
 
     def close(self) -> None:
@@ -168,6 +168,10 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         """
         if hasattr(self, "connection") and hasattr(self.connection, "close"):
             self.connection.close()
+
+        # Unregister the instrument before stripping it, so that a stripped
+        # and therefore unusable instrument is never left registered.
+        self.remove_instance(self)
 
         # check for the existense first since this may already
         # have been striped e.g. if the instrument has been closed once before
@@ -181,10 +185,14 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
                     strip_attrs(channel, whitelist=["_short_name", "_parent"])
 
         strip_attrs(self, whitelist=["_short_name"])
-        self.remove_instance(self)
 
     @classmethod
-    def close_all(cls) -> None:
+    def close_all(
+        cls,
+        *,
+        log_status: bool = False,
+        only_subclasses: bool = False,
+    ) -> None:
         """
         Try to close all instruments registered in
         ``_all_instruments`` This is handy for use with atexit to
@@ -194,15 +202,31 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         Examples:
             >>> atexit.register(qc.Instrument.close_all())
 
+        Args:
+            log_status: If True, log the status of closing each instrument. Set this to False
+              if you want to avoid logging during interpreter shutdown, which can cause errors.
+            only_subclasses: If True, only close instruments that are subclasses of the class
+              on which this method is called. If False, close all instruments regardless of class.
+
         """
-        log.info("Closing all registered instruments")
+        if log_status:
+            log.info("Closing all registered instruments")
         for inststr in list(cls._all_instruments):
             try:
                 inst: Instrument = cls.find_instrument(inststr)
-                log.info("Closing %s", inststr)
-                inst.close()
+                if (
+                    only_subclasses and issubclass(type(inst), cls)
+                ) or not only_subclasses:
+                    should_be_closed = True
+                else:
+                    should_be_closed = False
+                if should_be_closed:
+                    if log_status:
+                        log.info("Closing %s", inststr)
+                    inst.close()
             except Exception:
-                log.exception("Failed to close %s, ignored", inststr)
+                if log_status:
+                    log.exception("Failed to close %s, ignored", inststr)
 
     @classmethod
     def record_instance(cls, instance: Instrument) -> None:
@@ -264,15 +288,34 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
             instance: The instance to remove
 
         """
+        if weakref.getweakrefcount(instance) == 0:
+            # Instances are only recorded through weak references, so there is
+            # nothing to remove. This is the case when the garbage collector
+            # finalizes the instance, since it clears all weak references to
+            # the instance before that. Leave the records alone then: before
+            # Python 3.14, weak containers postpone removing dead entries while
+            # being iterated over, but most of their methods apply postponed
+            # removals right away. That would make an iteration that the
+            # garbage collection interrupted fail with
+            # "RuntimeError: dictionary changed size during iteration".
+            return
+
         if instance in getattr(cls, "_instances", weakref.WeakSet()):
             cls._instances.remove(instance)
 
-        # remove from all_instruments too, but don't depend on the
-        # name to do it, in case name has changed or been deleted
+        # Look the instance up by name instead of iterating over all
+        # instruments, which a garbage collection could interrupt as described
+        # above. The identity check ensures that we never remove another
+        # instrument registered under the same name, e.g. when an instrument is
+        # closed again after its name has been reused.
+        try:
+            name = instance.name
+        except AttributeError:
+            # The instance was not initialized far enough to be registered.
+            return
         all_ins = cls._all_instruments
-        for name, ref in list(all_ins.items()):
-            if ref is instance:
-                del all_ins[name]
+        if all_ins.get(name) is instance:
+            del all_ins[name]
 
     @overload
     @classmethod
@@ -282,10 +325,12 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
 
     @overload
     @classmethod
-    def find_instrument(cls, name: str, instrument_class: type[T]) -> T: ...
+    def find_instrument[T: "Instrument"](
+        cls, name: str, instrument_class: type[T]
+    ) -> T: ...
 
     @classmethod
-    def find_instrument(
+    def find_instrument[T: "Instrument"](
         cls, name: str, instrument_class: type[T] | None = None
     ) -> T | Instrument:
         """
@@ -346,7 +391,7 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
             if instrument_is_not_found:
                 instrument_exists = False
             else:
-                raise exception
+                raise
 
         return instrument_exists
 
@@ -360,16 +405,15 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
             instr_instance: Instance of an Instrument class or its subclass.
 
         """
-        if (
+        is_valid = (
             isinstance(instr_instance, Instrument)
             and instr_instance in instr_instance.instances()
-        ):
-            # note that it is important to call `instances` on the instance
-            # object instead of `Instrument` class, because instances of
-            # Instrument subclasses are recorded inside their subclasses; see
-            # `instances` for more information
-            return True
-        return False
+        )
+        # note that it is important to call `instances` on the instance
+        # object instead of `Instrument` class, because instances of
+        # Instrument subclasses are recorded inside their subclasses; see
+        # `instances` for more information
+        return is_valid
 
     # `write_raw` and `ask_raw` are the interface to hardware                #
     # `write` and `ask` are standard wrappers to help with error reporting   #
@@ -398,7 +442,7 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
                 *e.args,
                 f"writing {cmd!r} to {self!r}",
             )
-            raise e
+            raise
 
     def write_raw(self, cmd: str) -> None:
         """
@@ -442,7 +486,7 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
 
         except Exception as e:
             e.args = (*e.args, f"asking {cmd!r} to {self!r}")
-            raise e
+            raise
 
     def ask_raw(self, cmd: str) -> str:
         """
@@ -461,7 +505,7 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         )
 
 
-def find_or_create_instrument(
+def find_or_create_instrument[T: "Instrument"](
     instrument_class: type[T],
     name: str,
     *args: Any,

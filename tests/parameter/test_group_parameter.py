@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 import pytest
@@ -8,11 +8,11 @@ from qcodes.instrument import Instrument
 from qcodes.parameters import Group, GroupParameter
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Generator
 
 
 @pytest.fixture(autouse=True)
-def close_all_instruments():
+def close_all_instruments() -> "Generator[None, None, None]":
     """Makes sure that after startup and teardown all instruments are closed"""
     Instrument.close_all()
     yield
@@ -213,14 +213,15 @@ def test_update_group_parameter_reflected_in_cache_of_all_params() -> None:
     assert dummy.a.cache.get(get_if_invalid=False) is None
     assert dummy.b.cache.get(get_if_invalid=False) is None
 
-    before = datetime.now()
+    before = datetime.now(UTC)
     group.update()
-    after = datetime.now()
+    after = datetime.now(UTC)
 
     assert dummy.a.cache.timestamp is not None
     assert before <= dummy.a.cache.timestamp
     assert after >= dummy.a.cache.timestamp
 
+    assert dummy.b.cache.timestamp is not None
     assert before <= dummy.b.cache.timestamp
     assert after >= dummy.b.cache.timestamp
 
@@ -236,14 +237,15 @@ def test_get_group_param_updates_cache_of_other_param() -> None:
     assert dummy.a.cache.get(get_if_invalid=False) is None
     assert dummy.b.cache.get(get_if_invalid=False) is None
 
-    before = datetime.now()
+    before = datetime.now(UTC)
     assert dummy.a.get() == 0
-    after = datetime.now()
+    after = datetime.now(UTC)
 
     assert dummy.a.cache.timestamp is not None
     assert before <= dummy.a.cache.timestamp
     assert after >= dummy.a.cache.timestamp
 
+    assert dummy.b.cache.timestamp is not None
     assert before <= dummy.b.cache.timestamp
     assert after >= dummy.b.cache.timestamp
 
@@ -259,14 +261,15 @@ def test_set_group_param_updates_cache_of_other_param() -> None:
     assert dummy.a.cache.get(get_if_invalid=False) is None
     assert dummy.b.cache.get(get_if_invalid=False) is None
 
-    before = datetime.now()
+    before = datetime.now(UTC)
     dummy.a.set(10)
-    after = datetime.now()
+    after = datetime.now(UTC)
 
     assert dummy.a.cache.timestamp is not None
     assert before <= dummy.a.cache.timestamp
     assert after >= dummy.a.cache.timestamp
 
+    assert dummy.b.cache.timestamp is not None
     assert before <= dummy.b.cache.timestamp
     assert after >= dummy.b.cache.timestamp
 

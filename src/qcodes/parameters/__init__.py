@@ -77,10 +77,17 @@ from .group_parameter import Group, GroupParameter
 from .grouped_parameter import DelegateGroup, DelegateGroupParameter, GroupedParameter
 from .multi_channel_instrument_parameter import MultiChannelInstrumentParameter
 from .multi_parameter import MultiParameter
-from .parameter import ManualParameter, Parameter
+from .parameter import ManualParameter, Parameter, ParameterKWArgs
+from .parameter_access import (
+    ParameterAccess,
+    ParameterAccessKind,
+    log_parameter_accesses,
+    record_parameter_accesses,
+)
 from .parameter_base import (
     ParamDataType,
     ParameterBase,
+    ParameterBaseKWArgs,
     ParameterSet,
     ParamRawDataType,
     invert_val_mapping,
@@ -111,7 +118,11 @@ __all__ = [
     "ParamSpecBase",
     "ParamSpecBaseDict",
     "Parameter",
+    "ParameterAccess",
+    "ParameterAccessKind",
     "ParameterBase",
+    "ParameterBaseKWArgs",
+    "ParameterKWArgs",
     "ParameterSet",
     "ParameterWithSetpoints",
     "ScaledParameter",
@@ -121,4 +132,6 @@ __all__ = [
     "create_on_off_val_mapping",
     "expand_setpoints_helper",
     "invert_val_mapping",
+    "log_parameter_accesses",
+    "record_parameter_accesses",
 ]

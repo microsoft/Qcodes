@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 import numpy as np
 
@@ -7,7 +7,7 @@ from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import DelegateParameter, Parameter
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 class BaselSP983a(VisaInstrument):
@@ -40,7 +40,7 @@ class BaselSP983a(VisaInstrument):
 
         self.connect_message()
 
-        self.gain: Parameter = self.add_parameter(
+        self.gain: Parameter[float, Self] = self.add_parameter(
             "gain",
             label="Gain",
             unit="V/A",
@@ -49,7 +49,7 @@ class BaselSP983a(VisaInstrument):
             vals=vals.Enum(1e5, 1e6, 1e7, 1e8, 1e9),
         )
         """Parameter gain"""
-        self.fcut: Parameter = self.add_parameter(
+        self.fcut: Parameter[float, Self] = self.add_parameter(
             "fcut",
             unit="Hz",
             label="Filter Cut-Off Frequency",
@@ -69,7 +69,7 @@ class BaselSP983a(VisaInstrument):
             },
         )
         """Parameter fcut"""
-        self.overload_status: Parameter = self.add_parameter(
+        self.overload_status: Parameter[str, Self] = self.add_parameter(
             "overload_status", label="Overload Status", set_cmd=False, get_cmd="GET O"
         )
         """Parameter overload_status"""

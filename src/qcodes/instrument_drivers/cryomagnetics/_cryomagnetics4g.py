@@ -3,7 +3,8 @@ from __future__ import annotations
 import re
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from time import time as _time
+from typing import TYPE_CHECKING, Self
 
 from pyvisa import VisaIOError
 
@@ -11,7 +12,7 @@ from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.validators import Enum, Numbers
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.parameters import Parameter
 
@@ -84,8 +85,10 @@ class CryomagneticsModel4G(VisaInstrument):
         # Initialize rate manager based on hypothetical hardware specific limits
         self._initialize_max_current_limits()
 
+        self._stability_check_interval = 20
+
         # Adding parameters
-        self.units: Parameter = self.add_parameter(
+        self.units: Parameter[str, Self] = self.add_parameter(
             name="units",
             set_cmd="UNITS {}",
             get_cmd="UNITS?",
@@ -95,7 +98,7 @@ class CryomagneticsModel4G(VisaInstrument):
         )
         """Field Units"""
 
-        self.ramping_state_check_interval: Parameter = self.add_parameter(
+        self.ramping_state_check_interval: Parameter[float, Self] = self.add_parameter(
             "ramping_state_check_interval",
             initial_value=0.05,
             unit="s",
@@ -104,7 +107,7 @@ class CryomagneticsModel4G(VisaInstrument):
         )
         """Parameter ramping_state_check_interval"""
 
-        self.field: Parameter = self.add_parameter(
+        self.field: Parameter[float, Self] = self.add_parameter(
             name="field",
             unit="T",
             set_cmd=self.set_field,
@@ -115,7 +118,7 @@ class CryomagneticsModel4G(VisaInstrument):
         )
         """Magnetic Field in Tesla"""
 
-        self.rate: Parameter = self.add_parameter(
+        self.rate: Parameter[float, Self] = self.add_parameter(
             name="rate",
             unit="T/min",
             get_cmd=self._get_rate,
@@ -124,7 +127,7 @@ class CryomagneticsModel4G(VisaInstrument):
         )
         """Rate for magnetic field T/min"""
 
-        self.Vmag: Parameter = self.add_parameter(
+        self.Vmag: Parameter[float, Self] = self.add_parameter(
             name="Vmag",
             unit="V",
             get_cmd="VMAG?",
@@ -134,7 +137,7 @@ class CryomagneticsModel4G(VisaInstrument):
         )
         """Magnet sense voltage"""
 
-        self.Vout: Parameter = self.add_parameter(
+        self.Vout: Parameter[float, Self] = self.add_parameter(
             name="Vout",
             unit="V",
             get_cmd="VOUT?",
@@ -144,7 +147,7 @@ class CryomagneticsModel4G(VisaInstrument):
         )
         """Magnet output voltage"""
 
-        self.Iout: Parameter = self.add_parameter(
+        self.Iout: Parameter[float, Self] = self.add_parameter(
             name="Iout",
             unit="A",
             get_cmd="IOUT?",
@@ -319,8 +322,7 @@ class CryomagneticsModel4G(VisaInstrument):
         if getattr(self, "visabackend", False) == "sim":
             # write setpoint directly in sim mode
             self.write(f"IMAG {value / self.KG_TO_TESLA}")
-        last_check_time = time.time()
-        stability_check_interval = 20
+        last_check_time = _time()
         last_stable_field = self._get_field()
 
         while True:
@@ -329,8 +331,9 @@ class CryomagneticsModel4G(VisaInstrument):
             if setpoint_reached:
                 break
 
-            elapsed_time = time.time() - last_check_time
-            time_for_stability_check = elapsed_time > stability_check_interval
+            current_time = _time()
+            elapsed_time = current_time - last_check_time
+            time_for_stability_check = elapsed_time > self._stability_check_interval
             field_is_stable = abs(last_stable_field - current_field) < threshold
 
             if time_for_stability_check and field_is_stable:
@@ -340,7 +343,7 @@ class CryomagneticsModel4G(VisaInstrument):
                 )
             elif time_for_stability_check and not field_is_stable:
                 last_stable_field = current_field
-                last_check_time = time.time()
+                last_check_time = current_time
 
             self._sleep(self.ramping_state_check_interval())
         self.write("SWEEP PAUSE")
@@ -442,7 +445,7 @@ class CryomagneticsModel4G(VisaInstrument):
     def write_raw(self, cmd: str) -> None:
         try:
             super().write_raw(cmd)
-        except VisaIOError as err:
+        except VisaIOError:
             # The ami communication has found to be unstable
             # so we retry the communication here
             msg = f"Got VisaIOError while writing {cmd} to instrument."
@@ -454,12 +457,12 @@ class CryomagneticsModel4G(VisaInstrument):
                 self.device_clear()
                 super().write_raw(cmd)
             else:
-                raise err
+                raise
 
     def ask_raw(self, cmd: str) -> str:
         try:
             result = super().ask_raw(cmd)
-        except VisaIOError as err:
+        except VisaIOError:
             # The communication has found to be unstable
             # so we retry the communication here
             msg = f"Got VisaIOError while asking the instrument: {cmd}"
@@ -471,5 +474,5 @@ class CryomagneticsModel4G(VisaInstrument):
                 self.device_clear()
                 result = super().ask_raw(cmd)
             else:
-                raise err
+                raise
         return result

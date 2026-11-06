@@ -7,7 +7,7 @@ from qcodes.parameters import create_on_off_val_mapping, invert_val_mapping
 
 def test_values_of_mapping_are_only_the_given_two() -> None:
     val_mapping = create_on_off_val_mapping(on_val="666", off_val="000")
-    values_set = set(list(val_mapping.values()))
+    values_set = set(val_mapping.values())
     assert values_set == {"000", "666"}
 
 

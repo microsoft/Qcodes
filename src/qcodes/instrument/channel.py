@@ -3,33 +3,32 @@
 from __future__ import annotations
 
 import sys
-import warnings
 from collections.abc import Callable, Iterable, Iterator, MutableSequence, Sequence
 from typing import TYPE_CHECKING, Any, Generic, Self, cast, overload
 
 from typing_extensions import TypeVar
 
-from qcodes.metadatable import MetadatableWithName
+from qcodes.metadatable import MetadatableWithName, normalize_snapshot_update
 from qcodes.parameters import (
     ArrayParameter,
     MultiChannelInstrumentParameter,
     MultiParameter,
     Parameter,
 )
-from qcodes.parameters.multi_channel_instrument_parameter import InstrumentModuleType
-from qcodes.utils import QCoDeSDeprecationWarning, full_class
+from qcodes.utils import full_class
 from qcodes.validators import Validator
 
 from .instrument_base import InstrumentBase
 
 if TYPE_CHECKING:
-    from typing import Self
+    from typing import Unpack
 
-    from typing_extensions import Unpack
+    from qcodes.metadatable import SnapshotUpdate
 
     from .instrument_base import InstrumentBaseKWArgs
 
 
+# Cannot convert to PEP 695: uses default= and covariant= which require PEP 696 (Python 3.13+).
 _TIB_co = TypeVar(
     "_TIB_co", bound="InstrumentBase", default=InstrumentBase, covariant=True
 )
@@ -96,15 +95,30 @@ class InstrumentModule(InstrumentBase, Generic[_TIB_co]):
         name_parts.append(self.short_name)
         return name_parts
 
+    @property
+    def _logger_name_parts(self) -> list[str]:
+        # The key is looked up on the parent each time, since it is only
+        # registered after this module was created. A module that is not added
+        # as an individual submodule, such as a channel that only exists in a
+        # channel list, has no key and falls back to its own name.
+        key = next(
+            (
+                key
+                for key, submodule in self._parent.submodules.items()
+                if submodule is self
+            ),
+            self.short_name,
+        )
+        return [*self._parent._logger_name_parts, key]
+
 
 class InstrumentChannel(InstrumentModule[_TIB_co], Generic[_TIB_co]):
     pass
 
 
-T = TypeVar("T", bound="ChannelTuple")
-
-
-class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
+class ChannelTuple[InstrumentModuleType: "InstrumentModule"](
+    MetadatableWithName, Sequence[InstrumentModuleType]
+):
     """
     Container for channelized parameters that allows for sweeps over
     all channels, as well as addressing of individual channels.
@@ -164,13 +178,13 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
         if not isinstance(chan_type, type) or not issubclass(
             chan_type, InstrumentModule
         ):
-            raise ValueError(
+            raise ValueError(  # noqa: TRY004
                 "ChannelTuple can only hold instances of type InstrumentModule"
             )
         if not isinstance(multichan_paramclass, type) or not issubclass(
             multichan_paramclass, MultiChannelInstrumentParameter
         ):
-            raise ValueError(
+            raise ValueError(  # noqa: TRY004
                 "multichan_paramclass must be a (subclass of) "
                 "MultiChannelInstrumentParameter"
             )
@@ -315,9 +329,7 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
         name_parts.append(self.short_name)
         return name_parts
 
-    # the parameter obj should be called value but that would
-    # be an incompatible change
-    def index(  #  pyright: ignore[reportIncompatibleMethodOverride]
+    def index(
         self,
         obj: InstrumentModuleType,
         start: int = 0,
@@ -334,9 +346,7 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
         """
         return self._channels.index(obj, start, stop)
 
-    def count(  #  pyright: ignore[reportIncompatibleMethodOverride]
-        self, obj: InstrumentModuleType
-    ) -> int:
+    def count(self, obj: InstrumentModuleType) -> int:
         """Returns number of instances of the given object in the list
 
         Args:
@@ -365,33 +375,15 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
             self._paramclass,
         )
 
-    def get_channel_by_name(self: Self, *names: str) -> InstrumentModuleType | Self:
+    def get_channel_by_name(self: Self, name: str) -> InstrumentModuleType:
         """
-        Get a channel by name, or a ChannelTuple if multiple names are given.
+        Get a channel by name.
 
         Args:
-            *names: channel names
+            name: channel name
 
         """
-        if len(names) == 0:
-            raise TypeError("one or more names must be given")
-        if len(names) == 1:
-            return self._channel_mapping[names[0]]
-
-        warnings.warn(
-            "Supplying more than one name to get_channel_by_name is deprecated, use get_channels_by_name instead",
-            category=QCoDeSDeprecationWarning,
-        )
-
-        selected_channels = tuple(self._channel_mapping[name] for name in names)
-        return type(self)(
-            self._parent,
-            self._name,
-            self._chan_type,
-            selected_channels,
-            self._snapshotable,
-            self._paramclass,
-        )
+        return self._channel_mapping[name]
 
     def get_validator(self) -> ChannelTupleValidator:
         """
@@ -402,7 +394,7 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
 
     def snapshot_base(
         self,
-        update: bool | None = True,
+        update: bool | SnapshotUpdate | None = "Only_invalid",
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         """
@@ -411,13 +403,13 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
         :class:`.NumpyJSONEncoder` supports).
 
         Args:
-            update: If True, update the state by querying the
-                instrument. If None only update if the state is known to be
-                invalid. If False, just use the latest values in memory
-                and never update.
+            update: If ``"All"``, update the state by querying the instrument.
+                If ``"Only_invalid"`` (the default) only update values whose
+                cache is invalid. If ``"Never"``, just use the latest values in
+                memory and never update.
             params_to_skip_update: List of parameter names that will be skipped
-                in update even if update is True. This is useful if you have
-                parameters that are slow to update but can be updated in a
+                in update even if update is ``"All"``. This is useful if you
+                have parameters that are slow to update but can be updated in a
                 different way (as in the qdac). If you want to skip the
                 update of certain parameters in all snapshots, use the
                 ``snapshot_get``  attribute of those parameters instead.
@@ -426,6 +418,7 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
             dict: base snapshot
 
         """
+        update = normalize_snapshot_update(update)
         if self._snapshotable:
             snap = {
                 "channels": {
@@ -462,11 +455,10 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
             AttributeError: If no parameter with the given name exists.
 
         """
-        if len(self) > 0:
-            # Check if this is a valid parameter
-            if name in self._channels[0].parameters:
-                param = self._construct_multiparam(name)
-                return param
+        # Check if this is a valid parameter
+        if len(self) > 0 and name in self._channels[0].parameters:
+            param = self._construct_multiparam(name)
+            return param
         raise AttributeError(
             f"'{self.__class__.__name__}' object has no parameter '{name}'"
         )
@@ -608,7 +600,7 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
         else:
             shapes = tuple(() for _ in self._channels)
         param = self._paramclass(
-            self._channels,
+            channels=self._channels,
             param_name=name,
             name=f"Multi_{name}",
             names=names,
@@ -633,7 +625,9 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
         return sorted(set(names))
 
     def print_readable_snapshot(
-        self, update: bool = False, max_chars: int = 80
+        self,
+        update: bool | SnapshotUpdate | None = "Only_invalid",
+        max_chars: int = 80,
     ) -> None:
         if self._snapshotable:
             for channel in self._channels:
@@ -647,9 +641,7 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
             chan.invalidate_cache()
 
 
-# in index method the parameter obj should be called value but that would
-# be an incompatible change
-class ChannelList(  #  pyright: ignore[reportIncompatibleMethodOverride]
+class ChannelList[InstrumentModuleType: "InstrumentModule"](
     ChannelTuple[InstrumentModuleType], MutableSequence[InstrumentModuleType]
 ):
     """
@@ -759,9 +751,7 @@ class ChannelList(  #  pyright: ignore[reportIncompatibleMethodOverride]
             channel.short_name: channel for channel in self._channels
         }
 
-    def append(  #  pyright: ignore[reportIncompatibleMethodOverride]
-        self, obj: InstrumentModuleType
-    ) -> None:
+    def append(self, obj: InstrumentModuleType) -> None:
         """
         Append a Channel to this list. Requires that the ChannelList is not
         locked and that the channel is of the same type as the ones in the list.
@@ -791,9 +781,7 @@ class ChannelList(  #  pyright: ignore[reportIncompatibleMethodOverride]
         self._channels.clear()
         self._channel_mapping.clear()
 
-    def remove(  #  pyright: ignore[reportIncompatibleMethodOverride]
-        self, obj: InstrumentModuleType
-    ) -> None:
+    def remove(self, obj: InstrumentModuleType) -> None:
         """
         Removes obj from ChannelList if not locked.
 
@@ -807,9 +795,7 @@ class ChannelList(  #  pyright: ignore[reportIncompatibleMethodOverride]
             self._channels.remove(obj)
             self._channel_mapping.pop(obj.short_name)
 
-    def extend(  #  pyright: ignore[reportIncompatibleMethodOverride]
-        self, objects: Iterable[InstrumentModuleType]
-    ) -> None:
+    def extend(self, objects: Iterable[InstrumentModuleType]) -> None:
         """
         Insert an iterable of objects into the list of channels.
 
@@ -828,9 +814,7 @@ class ChannelList(  #  pyright: ignore[reportIncompatibleMethodOverride]
         self._channels.extend(objects_tuple)
         self._channel_mapping.update({obj.short_name: obj for obj in objects_tuple})
 
-    def insert(  #  pyright: ignore[reportIncompatibleMethodOverride]
-        self, index: int, obj: InstrumentModuleType
-    ) -> None:
+    def insert(self, index: int, obj: InstrumentModuleType) -> None:
         """
         Insert an object into the ChannelList at a specific index.
 
@@ -914,7 +898,7 @@ class ChannelTupleValidator(Validator[InstrumentChannel]):
     def __init__(self, channel_list: ChannelTuple) -> None:
         # Save the base parameter list
         if not isinstance(channel_list, ChannelTuple):
-            raise ValueError(
+            raise ValueError(  # noqa: TRY004
                 "channel_list must be a ChannelTuple "
                 "object containing the "
                 "channels that should be validated"
@@ -946,8 +930,6 @@ class ChannelTupleValidator(Validator[InstrumentChannel]):
 
 class ChannelListValidator(ChannelTupleValidator):
     """Alias for backwards compatibility. Do not use"""
-
-    pass
 
 
 class AutoLoadableInstrumentChannel(InstrumentChannel):
@@ -1182,10 +1164,9 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
         return self._exists_on_instrument
 
 
-TAUTORELOADCHANNEL = TypeVar("TAUTORELOADCHANNEL", bound=AutoLoadableInstrumentChannel)
-
-
-class AutoLoadableChannelList(ChannelList[TAUTORELOADCHANNEL]):
+class AutoLoadableChannelList[TAUTORELOADCHANNEL: AutoLoadableInstrumentChannel](
+    ChannelList[TAUTORELOADCHANNEL]
+):
     """
     Extends the QCoDeS :class:`ChannelList` class to add the following features:
     - Automatically create channel objects on initialization

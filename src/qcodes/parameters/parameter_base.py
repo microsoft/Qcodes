@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import collections.abc
 import logging
+import operator
 import time
 import warnings
 from collections.abc import Iterator, MutableSet
@@ -11,11 +12,20 @@ from functools import cached_property, wraps
 from typing import TYPE_CHECKING, Any, ClassVar, Generic, overload
 
 import numpy as np
-from typing_extensions import TypeVar
+from typing_extensions import TypedDict, TypeVar
 
-from qcodes.metadatable import Metadatable, MetadatableWithName
+from qcodes.metadatable import (
+    Metadatable,
+    MetadatableWithName,
+    SnapshotUpdate,
+    normalize_snapshot_update,
+)
 from qcodes.parameters import ParamSpecBase
-from qcodes.utils import DelegateAttributes, full_class, qcodes_abstractmethod
+from qcodes.utils import (
+    DelegateAttributes,
+    full_class,
+    qcodes_abstractmethod,
+)
 from qcodes.validators import (
     Arrays,
     ComplexNumbers,
@@ -27,6 +37,7 @@ from qcodes.validators import (
 )
 
 from ..utils.types import NumberType
+from . import parameter_access as _parameter_access
 from .cache import _Cache, _CacheProtocol
 from .named_repr import named_repr
 from .permissive_range import permissive_range
@@ -40,11 +51,14 @@ ParamRawDataType = Any
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Iterable, Mapping, Sequence, Sized
     from types import TracebackType
+    from typing import NotRequired
 
     from qcodes.dataset.data_set_protocol import ValuesType
     from qcodes.instrument import InstrumentBase
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
+# Cannot convert to PEP 695: uses default= which requires PEP 696 (Python 3.13+).
 ParameterDataTypeVar = TypeVar("ParameterDataTypeVar", default=Any)
+# Cannot convert to PEP 695: uses default= and covariant= which require PEP 696 (Python 3.13+).
 # InstrumentTypeVar_co is a covariant type variable representing the instrument
 # type associated with the parameter. It needs to be covariant to allow passing
 # a Parameter bound to None or a specific instrument where the default is used in the type hint.
@@ -122,6 +136,240 @@ class _SetParamContext:
 def invert_val_mapping(val_mapping: Mapping[Any, Any]) -> dict[Any, Any]:
     """Inverts the value mapping dictionary for allowed parameter values"""
     return {v: k for k, v in val_mapping.items()}
+
+
+class ParameterBaseKWArgs(
+    TypedDict, Generic[ParameterDataTypeVar, InstrumentTypeVar_co]
+):
+    """
+    This TypedDict defines the type of the kwargs that can be passed to
+    the ``ParameterBase`` class.
+
+    A subclass of ``ParameterBase`` should take
+    ``**kwargs: Unpack[ParameterBaseKWArgs]`` as input and forward this to
+    the super class to ensure that it can accept all the arguments
+    defined here.
+    """
+
+    instrument: NotRequired[InstrumentTypeVar_co]
+    """
+    The instrument this parameter belongs to, if any.
+    """
+    snapshot_get: NotRequired[bool]
+    """
+    False prevents any update to the parameter during a snapshot,
+    even if the snapshot was called with ``update=True``.
+    Default True.
+    """
+    metadata: NotRequired[Mapping[Any, Any] | None]
+    """
+    Additional static metadata to add to this
+    parameter's JSON snapshot.
+    """
+    step: NotRequired[float | None]
+    """
+    Max increment of parameter value.
+    Larger changes are broken into multiple steps this size.
+    When combined with delays, this acts as a ramp.
+    """
+    scale: NotRequired[float | Iterable[float] | None]
+    """
+    Scale to multiply value with before performing set.
+    The internally multiplied value is stored in
+    ``cache.raw_value``. Can account for a voltage divider.
+    """
+    offset: NotRequired[float | Iterable[float] | None]
+    """
+    Compensate for a parameter specific offset.
+    get value = raw value - offset.
+    set value = argument + offset.
+    """
+    inter_delay: NotRequired[float]
+    """
+    Minimum time (in seconds) between successive sets.
+    If the previous set was less than this, it will wait until the
+    condition is met. Can be set to 0 to go maximum speed with
+    no errors.
+    """
+    post_delay: NotRequired[float]
+    """
+    Time (in seconds) to wait after the *start* of each set,
+    whether part of a sweep or not. Can be set to 0 to go maximum
+    speed with no errors.
+    """
+    val_mapping: NotRequired[Mapping[Any, Any] | None]
+    """
+    A bidirectional map of data/readable values to instrument codes,
+    expressed as a dict: ``{data_val: instrument_code}``.
+    """
+    get_parser: NotRequired[Callable[..., Any] | None]
+    """
+    Function to transform the response from get to the final
+    output value. See also ``val_mapping``.
+    """
+    set_parser: NotRequired[Callable[..., Any] | None]
+    """
+    Function to transform the input set value to an encoded
+    value sent to the instrument. See also ``val_mapping``.
+    """
+    snapshot_value: NotRequired[bool]
+    """
+    False prevents parameter value to be stored in the snapshot.
+    Useful if the value is large. Default True.
+    """
+    snapshot_exclude: NotRequired[bool]
+    """
+    True prevents parameter to be included in the snapshot.
+    Useful if there are many of the same parameter which are
+    clogging up the snapshot. Default False.
+    """
+    max_val_age: NotRequired[float | None]
+    """
+    The max time (in seconds) to trust a saved value obtained
+    from ``cache.get`` (or ``get_latest``). If this parameter has not
+    been set or measured more recently than this, perform an
+    additional measurement.
+    """
+    vals: NotRequired[Validator[Any] | None]
+    """
+    A Validator object for this parameter.
+    """
+    abstract: NotRequired[bool | None]
+    """
+    Specifies if this parameter is abstract or not. Default is False.
+    If the parameter is 'abstract', it *must* be overridden by a
+    non-abstract parameter before the instrument containing this
+    parameter can be instantiated.
+    """
+    bind_to_instrument: NotRequired[bool]
+    """
+    Should the parameter be registered as a delegate attribute
+    on the instrument passed via the instrument argument.
+    """
+    register_name: NotRequired[str | None]
+    """
+    Specifies if the parameter should be registered in datasets
+    using a different name than the parameter's ``full_name``.
+    """
+    on_set_callback: NotRequired[
+        Callable[[ParameterBase, ParameterDataTypeVar], None] | None
+    ]
+    """
+    Callback called when the parameter value is set.
+    """
+
+
+# The four helpers below convert between a parameter value and its raw
+# counterpart. They are deliberately duck typed: they assume that the caller
+# does not set ``scale``/``offset`` unless the data type is numeric, and either
+# check for an iterable up front or fall back on catching ``TypeError``.
+# Taking and returning ``Any`` keeps that boundary explicit, and keeps the
+# generic ``ParameterDataTypeVar`` out of the arithmetic.
+
+
+_CONVERSION_KIND: dict[Callable[[Any, Any], Any], str] = {
+    operator.mul: "scale",
+    operator.truediv: "scale",
+    operator.add: "offset",
+    operator.sub: "offset",
+}
+
+
+def _apply_elementwise(
+    value: Any,
+    conversion: Iterable[float],
+    operation: Callable[[Any, Any], Any],
+) -> tuple[Any, ...]:
+    """Combine ``value`` and ``conversion`` element by element.
+
+    Args:
+        value: The (iterable) value to convert.
+        conversion: The scale or offset to apply, one element per value.
+        operation: The arithmetic operation to apply to each pair of elements.
+            The operation also determines the name of the conversion used in
+            the error message.
+
+    Returns:
+        The converted values.
+
+    Raises:
+        ValueError: If ``value`` and ``conversion`` are of different length.
+
+    """
+    try:
+        return tuple(
+            operation(val, sub_value)
+            for val, sub_value in zip(value, conversion, strict=True)
+        )
+    except ValueError as err:
+        kind = _CONVERSION_KIND[operation]
+        raise ValueError(
+            f"Cannot apply {kind} of length {_length_for_error(conversion)} "
+            f"to a value of length {_length_for_error(value)}."
+        ) from err
+
+
+def _length_for_error(obj: Any) -> str:
+    """The length of ``obj`` for use in an error message."""
+    if isinstance(obj, collections.abc.Sized):
+        return str(len(obj))
+    return "unknown"
+
+
+def _scale_raw_value(raw_value: Any, scale: float | Iterable[float]) -> Any:
+    """Multiply a value by ``scale`` on the way to the instrument."""
+    if isinstance(scale, collections.abc.Iterable):
+        # Scale contains multiple elements, one for each value
+        return _apply_elementwise(raw_value, scale, operator.mul)
+    if isinstance(raw_value, collections.abc.Sequence):
+        # Multiplying a sequence by a number repeats it rather than
+        # scaling its elements, so these must be handled element wise.
+        return tuple(val * scale for val in raw_value)
+    # Use single scale for all values
+    return raw_value * scale
+
+
+def _offset_raw_value(raw_value: Any, offset: float | Iterable[float]) -> Any:
+    """Add ``offset`` to a value on the way to the instrument."""
+    if isinstance(offset, collections.abc.Iterable):
+        # offset contains multiple elements, one for each value
+        return _apply_elementwise(raw_value, offset, operator.add)
+    if isinstance(raw_value, collections.abc.Sequence):
+        # Adding a number to a sequence is an error, so these must be
+        # handled element wise.
+        return tuple(val + offset for val in raw_value)
+    # Use single offset for all values
+    return raw_value + offset
+
+
+def _unoffset_value(value: Any, offset: float | Iterable[float]) -> Any:
+    """Subtract ``offset`` from a value coming back from the instrument."""
+    try:
+        return value - offset
+    except TypeError:
+        if isinstance(offset, collections.abc.Iterable):
+            # offset contains multiple elements, one for each value
+            return _apply_elementwise(value, offset, operator.sub)
+        elif isinstance(value, collections.abc.Iterable):
+            # Use single offset for all values
+            return tuple(val - offset for val in value)
+        else:
+            raise
+
+
+def _unscale_value(value: Any, scale: float | Iterable[float]) -> Any:
+    """Divide a value coming back from the instrument by ``scale``."""
+    try:
+        return value / scale
+    except TypeError:
+        if isinstance(scale, collections.abc.Iterable):
+            # Scale contains multiple elements, one for each value
+            return _apply_elementwise(value, scale, operator.truediv)
+        elif isinstance(value, collections.abc.Iterable):
+            # Use single scale for all values
+            return tuple(val / scale for val in value)
+        else:
+            raise
 
 
 class ParameterBase(
@@ -229,7 +477,11 @@ class ParameterBase(
     def __init__(
         self,
         name: str,
-        instrument: InstrumentTypeVar_co,
+        *,
+        # The bound and default for InstrumentTypeVar_co contain None, but
+        # neither mypy (as of v1.19.0) nor ty accept None as the default for a
+        # parameter annotated with the type variable itself.
+        instrument: InstrumentTypeVar_co = None,  # type: ignore[assignment]  # ty: ignore[invalid-parameter-default]
         snapshot_get: bool = True,
         metadata: Mapping[Any, Any] | None = None,
         step: float | None = None,
@@ -568,7 +820,7 @@ class ParameterBase(
 
     def snapshot_base(
         self,
-        update: bool | None = True,
+        update: bool | SnapshotUpdate | None = "Only_invalid",
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         """
@@ -581,17 +833,25 @@ class ParameterBase(
         parameter.
 
         Args:
-            update: If True, update the state by calling ``parameter.get()``
-                unless ``snapshot_get`` of the parameter is ``False``.
-                If ``update`` is ``None``, use the current value from the
-                ``cache`` unless the cache is invalid. If ``False``, never call
-                ``parameter.get()``.
+            update: What to do about the value stored in the snapshot.
+
+                * ``"All"``: update the state by calling ``parameter.get()``
+                  unless ``snapshot_get`` of the parameter is ``False``.
+                * ``"Only_invalid"`` (the default): call ``parameter.get()``
+                  only if the parameter's cache is invalid, i.e. use
+                  ``cache.get(get_if_invalid=True)``, otherwise use the cached
+                  value. This never calls ``get()`` if ``snapshot_get`` is
+                  ``False`` or the parameter is not gettable.
+                * ``"Never"``: never call ``parameter.get()``, always use the
+                  latest cached value.
             params_to_skip_update: No effect but may be passed from superclass
 
         Returns:
             base snapshot
 
         """
+        update = normalize_snapshot_update(update)
+
         if self.snapshot_exclude:
             warnings.warn(
                 f"Parameter ({self.full_name}) is used in the snapshot while it "
@@ -604,15 +864,18 @@ class ParameterBase(
         if self.snapshot_value:
             has_get = self.gettable
             allowed_to_call_get_when_snapshotting = (
-                self._snapshot_get and update is not False
+                self._snapshot_get and update != "Never"
             )
             can_call_get_when_snapshotting = (
                 allowed_to_call_get_when_snapshotting and has_get
             )
 
-            if can_call_get_when_snapshotting and update:
+            if can_call_get_when_snapshotting and update == "All":
                 state["value"] = self.get()
             else:
+                # ``get_if_invalid`` is True only for ``"Only_invalid"`` (when
+                # the parameter is gettable and ``snapshot_get`` is True), so
+                # that only parameters with an invalid cache are refreshed.
                 state["value"] = self.cache.get(
                     get_if_invalid=can_call_get_when_snapshotting
                 )
@@ -623,7 +886,7 @@ class ParameterBase(
 
         if isinstance(state["ts"], datetime):
             dttime: datetime = state["ts"]
-            state["ts"] = dttime.strftime("%Y-%m-%d %H:%M:%S")
+            state["ts"] = dttime.isoformat(sep=" ", timespec="seconds")
 
         for attr in set(self._meta_attrs):
             if attr == "instrument" and self._instrument is not None:
@@ -667,25 +930,11 @@ class ParameterBase(
         # transverse transformation in reverse order as compared to
         # getter: apply scale first
         if self.scale is not None:
-            if isinstance(self.scale, collections.abc.Iterable):
-                # Scale contains multiple elements, one for each value
-                raw_value = tuple(
-                    val * scale for val, scale in zip(raw_value, self.scale)
-                )
-            else:
-                # Use single scale for all values
-                raw_value = raw_value * self.scale
+            raw_value = _scale_raw_value(raw_value, self.scale)
 
         # apply offset next
         if self.offset is not None:
-            if isinstance(self.offset, collections.abc.Iterable):
-                # offset contains multiple elements, one for each value
-                raw_value = tuple(
-                    val + offset for val, offset in zip(raw_value, self.offset)
-                )
-            else:
-                # Use single offset for all values
-                raw_value = raw_value + self.offset
+            raw_value = _offset_raw_value(raw_value, self.offset)
 
         # parser last
         if self.set_parser is not None:
@@ -696,6 +945,9 @@ class ParameterBase(
     def _from_raw_value_to_value(
         self, raw_value: ParamRawDataType
     ) -> ParameterDataTypeVar:
+        # ``value`` keeps the parameter's data type as its declared type; the
+        # offset and scale transformations below rely on duck typing and are
+        # therefore delegated to the helpers at the top of this module.
         value: ParameterDataTypeVar
 
         if self.get_parser is not None:
@@ -703,42 +955,13 @@ class ParameterBase(
         else:
             value = raw_value
 
-        # the code below is not very type safe but relies on duck typing / try except
-        # and assumes the user does not set scale/offset unless the datatype is numeric
-        # this should probably be rewritten but for now we ignore type errors
         # apply offset first (native scale)
-
         if self.offset is not None and value is not None:
-            # offset values
-            try:
-                value = value - self.offset  # type: ignore[operator,assignment]
-            except TypeError:
-                if isinstance(self.offset, collections.abc.Iterable):
-                    # offset contains multiple elements, one for each value
-                    value = tuple(  # type: ignore[assignment]
-                        val - offset
-                        for val, offset in zip(value, self.offset)  # type: ignore[call-overload]
-                    )
-                elif isinstance(value, collections.abc.Iterable):
-                    # Use single offset for all values
-                    value = tuple(val - self.offset for val in value)  # type: ignore[assignment]
-                else:
-                    raise
+            value = _unoffset_value(value, self.offset)
 
         # scale second
         if self.scale is not None and value is not None:
-            # Scale values
-            try:
-                value = value / self.scale  # type: ignore[assignment,operator]
-            except TypeError:
-                if isinstance(self.scale, collections.abc.Iterable):
-                    # Scale contains multiple elements, one for each value
-                    value = tuple(val / scale for val, scale in zip(value, self.scale))  # type: ignore[call-overload,assignment]
-                elif isinstance(value, collections.abc.Iterable):
-                    # Use single scale for all values
-                    value = tuple(val / self.scale for val in value)  # type: ignore[assignment]
-                else:
-                    raise
+            value = _unscale_value(value, self.scale)
 
         if self.inverse_val_mapping is not None:
             if value in self.inverse_val_mapping:
@@ -749,7 +972,7 @@ class ParameterBase(
                 except (ValueError, KeyError):
                     raise KeyError(f"'{value}' not in val_mapping")
 
-        return value  # pyright: ignore[reportReturnType]
+        return value
 
     def _wrap_get(
         self, get_function: Callable[..., ParamRawDataType]
@@ -762,6 +985,12 @@ class ParameterBase(
                 raise NotImplementedError(
                     f"Trying to get an abstract parameter: {self.full_name}"
                 )
+            sinks = _parameter_access._active_sinks.get()
+            timestamp = t0 = 0.0
+            if sinks:
+                timestamp = time.time()
+                t0 = time.perf_counter()
+            raw_value = None
             try:
                 # There might be cases where a .get also has args/kwargs
                 raw_value = get_function(*args, **kwargs)
@@ -773,11 +1002,32 @@ class ParameterBase(
 
                 self.cache._update_with(value=value, raw_value=raw_value)
 
-                return value
-
             except Exception as e:
+                if sinks:
+                    _parameter_access._record(
+                        sinks,
+                        self,
+                        "get",
+                        value=None,
+                        raw_value=raw_value,
+                        timestamp=timestamp,
+                        duration=time.perf_counter() - t0,
+                        exception=e,
+                    )
                 e.args = (*e.args, f"getting {self}")
-                raise e
+                raise
+
+            if sinks:
+                _parameter_access._record(
+                    sinks,
+                    self,
+                    "get",
+                    value=value,
+                    raw_value=raw_value,
+                    timestamp=timestamp,
+                    duration=time.perf_counter() - t0,
+                )
+            return value
 
         return get_wrapper
 
@@ -799,14 +1049,22 @@ class ParameterBase(
                 # In some cases intermediate sweep values must be used.
                 # Unless `self.step` is defined, get_sweep_values will return
                 # a list containing only `value`.
-                steps = self.get_ramp_values(value, step=self.step)  # type: ignore[arg-type]
+                # The steps are deliberately untyped: ``get_ramp_values`` works
+                # in terms of numbers rather than the parameter's data type.
+                steps: Sequence[Any] = self.get_ramp_values(value, step=self.step)  # type: ignore[arg-type]
 
                 for val_step in steps:
                     # even if the final value is valid we may be generating
                     # steps that are not so validate them too
-                    self.validate(val_step)  # type: ignore[arg-type]
+                    self.validate(val_step)
 
-                    raw_val_step = self._from_value_to_raw_value(val_step)  # type: ignore[arg-type]
+                    sinks = _parameter_access._active_sinks.get()
+                    conversion_start = time.perf_counter() if sinks else 0.0
+                    raw_val_step = self._from_value_to_raw_value(val_step)
+                    # Part of the access's duration, which excludes the delays.
+                    conversion_time = (
+                        time.perf_counter() - conversion_start if sinks else 0.0
+                    )
 
                     # Check if delay between set operations is required
                     t_elapsed = time.perf_counter() - self._t_last_set
@@ -817,8 +1075,23 @@ class ParameterBase(
 
                     # Start timer to measure execution time of set_function
                     t0 = time.perf_counter()
+                    timestamp = time.time() if sinks else 0.0
 
-                    set_function(raw_val_step, **kwargs)
+                    try:
+                        set_function(raw_val_step, **kwargs)
+                    except Exception as e:
+                        if sinks:
+                            _parameter_access._record(
+                                sinks,
+                                self,
+                                "set",
+                                value=val_step,
+                                raw_value=raw_val_step,
+                                timestamp=timestamp,
+                                duration=conversion_time + time.perf_counter() - t0,
+                                exception=e,
+                            )
+                        raise
 
                     # Update last set time (used for calculating delays)
                     self._t_last_set = time.perf_counter()
@@ -829,13 +1102,24 @@ class ParameterBase(
                         # Sleep until total time is larger than self.post_delay
                         time.sleep(self.post_delay - t_elapsed)
 
-                    self.cache._update_with(value=val_step, raw_value=raw_val_step)  # type: ignore[arg-type]
+                    self.cache._update_with(value=val_step, raw_value=raw_val_step)
 
-                    self._call_on_set_callback(val_step)  # type: ignore[arg-type]
+                    self._call_on_set_callback(val_step)
+
+                    if sinks:
+                        _parameter_access._record(
+                            sinks,
+                            self,
+                            "set",
+                            value=val_step,
+                            raw_value=raw_val_step,
+                            timestamp=timestamp,
+                            duration=conversion_time + t_elapsed,
+                        )
 
             except Exception as e:
                 e.args = (*e.args, f"setting {self} to {value}")
-                raise e
+                raise
 
         return set_wrapper
 
@@ -1241,7 +1525,7 @@ class ParameterBase(
         if self.vals is None:
             self.vals = new_vals
         elif type(self.vals) is not type(new_vals):
-            logging.warning(
+            LOG.warning(
                 f"Tried to set a new paramtype {paramtype}, but this parameter already has paramtype {self.paramtype} which does not match"
             )
         self.param_spec.type = paramtype
@@ -1343,11 +1627,8 @@ class GetLatest(DelegateAttributes, Generic[ParameterDataTypeVar]):
         return self.cache()
 
 
-P = TypeVar("P", bound=ParameterBase)
-
-
 # Does not implement __hash__, not clear it needs to
-class ParameterSet(MutableSet[P], Generic[P]):  # noqa: PLW1641
+class ParameterSet[P: ParameterBase](MutableSet[P]):  # noqa: PLW1641
     """A set-like container that preserves the insertion order of its parameters.
 
     This class implements the common set interface methods while maintaining

@@ -2,7 +2,7 @@ from qcodes.utils import partial_with_docstring
 
 
 def test_partial_with_docstring() -> None:
-    def f():
+    def f() -> None:
         pass
 
     docstring = "some docstring"
@@ -18,7 +18,7 @@ def test_partial_with_docstring_pass_args() -> None:
     functools.partial
     """
 
-    def f(a: int, b: int):
+    def f(a: int, b: int) -> int:
         return a + b
 
     docstring = "some docstring"
@@ -29,7 +29,7 @@ def test_partial_with_docstring_pass_args() -> None:
 
 
 def test_partial_with_docstring_returns_value() -> None:
-    def f(a: int, b: int):
+    def f(a: int, b: int) -> int:
         return a + b
 
     docstring = "some docstring"

@@ -13,7 +13,7 @@ import ctypes
 import logging
 from functools import partial
 from threading import Lock
-from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, NewType, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, NewType
 from weakref import WeakValueDictionary
 
 from qcodes.parameters import ParameterBase
@@ -31,9 +31,6 @@ RETURN_CODE = NewType("RETURN_CODE", ctypes.c_uint)
 
 
 # FUNCTIONS #
-T = TypeVar("T")
-
-
 def _api_call_task(
     lock: Lock, c_func: Callable[..., int], callback: Callable[[], None], *args: Any
 ) -> int:
@@ -43,7 +40,7 @@ def _api_call_task(
     return retval
 
 
-def _normalize_params(*args: T) -> list[T]:
+def _normalize_params[T](*args: T) -> list[T]:
     args_out: list[T] = []
     for arg in args:
         if isinstance(arg, ParameterBase):
@@ -101,7 +98,7 @@ class DllWrapperMeta(type):
     """DLL-path-based 'singleton' metaclass for DLL wrapper classes"""
 
     # Only allow a single instance per DLL path.
-    _instances: WeakValueDictionary[str, Any] = WeakValueDictionary()
+    _instances: ClassVar[WeakValueDictionary[str, Any]] = WeakValueDictionary()
 
     def __call__(cls, dll_path: str, *args: Any, **kwargs: Any) -> Any:
         api = cls._instances.get(dll_path, None)
@@ -179,10 +176,10 @@ class WrappedDll(metaclass=DllWrapperMeta):
             if ret_type is RETURN_CODE:
                 # since RETURN_CODE is a NewType checking that
                 # ret_type is RETURN_CODE only narrows the type
-                # of it to type. The type checker therefor does not know
+                # of it to type. The type checker therefore does not know
                 # that this type has a __supertype__ attribute
                 ret_type = (
-                    ret_type.__supertype__  # pyright: ignore[reportFunctionMemberAccess]
+                    ret_type.__supertype__  # type: ignore[attr-defined]
                 )
                 c_func.errcheck = _check_error_code
             elif ret_type in (

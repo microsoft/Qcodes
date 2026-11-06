@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from .private.DP8xx import RigolDP8xxBase
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.instrument import VisaInstrumentKWArgs
 

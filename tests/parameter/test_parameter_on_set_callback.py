@@ -1,5 +1,3 @@
-import gc
-import sqlite3
 import threading
 import time
 from collections import Counter
@@ -55,25 +53,6 @@ def basic_callback(
 def captured_params() -> list[tuple[ParameterBase, Any]]:
     """Fixture for capturing callback parameters"""
     return []
-
-
-@pytest.fixture(autouse=True, scope="function")  # type: ignore[misc]
-def cleanup_db_connections():
-    """Clean up any open SQLite connections after each test"""
-    yield
-    gc.collect()
-
-    open_connections = [
-        obj for obj in gc.get_objects() if isinstance(obj, sqlite3.Connection)
-    ]
-
-    for conn in open_connections:
-        try:
-            conn.close()
-        except Exception:
-            pass
-
-    gc.collect()
 
 
 class TestBasicCallbackBehavior:
@@ -290,12 +269,12 @@ class TestAdvancedFeatures:
 def test_set_callback_for_instance(
     basic_callback: "Callable[[ParameterBase, Any], None]",
     captured_params: list[tuple[ParameterBase, Any]],
-):
+) -> None:
     param_a = Parameter("test_param_a", set_cmd=None, get_cmd=None)
     param_b = Parameter("test_param_b", set_cmd=None, get_cmd=None)
     captured_instance_params = []
 
-    def callback(param: ParameterBase, val):
+    def callback(param: ParameterBase, val: Any) -> None:
         if ParameterBase.global_on_set_callback:
             ParameterBase.global_on_set_callback(param, val)
         captured_instance_params.append(val)

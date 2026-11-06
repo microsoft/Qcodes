@@ -36,3 +36,16 @@ def test_get_instr(
 
     assert instrument_a.test.get() == instrument_d.name
     assert instrument_a.test.get_instr() == instrument_d
+
+
+def test_instrument_ref_parameter_forbidden_set_cmd(
+    instrument_a: DummyInstrument,
+) -> None:
+    with pytest.raises(
+        RuntimeError, match="InstrumentRefParameter does not support set_cmd"
+    ):
+        instrument_a.add_parameter(
+            "test",
+            parameter_class=InstrumentRefParameter,
+            set_cmd="CMD {}",
+        )

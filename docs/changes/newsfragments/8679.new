@@ -1,0 +1,3 @@
+Added the named tuples ``CartesianVector`` (``x``, ``y``, ``z``), ``SphericalVector``
+(``field``, ``theta``, ``phi``) and ``CylindricalVector`` (``rho``, ``phi``, ``z``) to
+``qcodes.math_utils``, for the components of a field vector in a given coordinate system.

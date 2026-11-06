@@ -1,17 +1,27 @@
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
+import pytest
 from numpy.testing import assert_almost_equal
 
+from qcodes.instrument import Instrument
+from qcodes.instrument.delegate import DelegateInstrument
 from qcodes.instrument_drivers.mock_instruments import MockField
 
+if TYPE_CHECKING:
+    from qcodes.instrument_drivers.mock_instruments import MockDAC
+    from qcodes.station import Station
 
-def test_mock_dac(dac) -> None:
+
+def test_mock_dac(dac: "MockDAC") -> None:
     assert dac.ch01.voltage() == 0.0
     dac.ch01.voltage(1.0)
     assert dac.ch01.voltage() == 1.0
 
 
-def test_mock_field_delegate(station, field_x, chip_config) -> None:
+def test_mock_field_delegate(
+    station: "Station", field_x: MockField, chip_config: str
+) -> None:
     with patch.object(
         MockField, "set_field", wraps=field_x.set_field
     ) as mock_set_field:
@@ -28,14 +38,14 @@ def test_mock_field_delegate(station, field_x, chip_config) -> None:
         assert_almost_equal(ramp.field, 0.001)
         assert ramp.ramp_rate == 0.02
 
-        field.ramp_X(dict(field=0.0, ramp_rate=10.0))
+        field.ramp_X({"field": 0.0, "ramp_rate": 10.0})
         assert field.ramp_rate() == 10.0
         assert_almost_equal(field.X(), 0.0)
         assert field.ramp_X_ramp_rate() == 10.0
         assert_almost_equal(field.ramp_X_field(), 0.0)
 
 
-def test_delegate_channel_instrument(station, chip_config) -> None:
+def test_delegate_channel_instrument(station: "Station", chip_config: str) -> None:
     station.load_config_file(chip_config)
     switch = station.load_switch(station=station)
 
@@ -45,9 +55,33 @@ def test_delegate_channel_instrument(station, chip_config) -> None:
     assert state.bus == "off"
     assert state.gnd == "off"
 
-    switch.state01(dict(dac_output="on", smc="off", bus="off", gnd="off"))
+    switch.state01({"dac_output": "on", "smc": "off", "bus": "off", "gnd": "off"})
     state = switch.state01()
     assert state.dac_output == "on"
     assert state.smc == "off"
     assert state.bus == "off"
     assert state.gnd == "off"
+
+
+def test_invalid_parameter_paths_raise(
+    station: "Station", request: pytest.FixtureRequest
+) -> None:
+    """A parameter must map to either a single path or a sequence of paths."""
+    name = "delegate_with_invalid_paths"
+
+    def close_partially_constructed_instrument() -> None:
+        # the instrument is registered by ``Instrument.__init__`` before the
+        # parameter paths are validated, so it outlives the failed construction
+        if Instrument.exist(name):
+            Instrument.find_instrument(name).close()
+
+    request.addfinalizer(close_partially_constructed_instrument)
+
+    with pytest.raises(
+        ValueError, match="Parameter paths should be either a string or Sequence"
+    ):
+        DelegateInstrument(
+            name=name,
+            station=station,
+            parameters={"X": 42},  # type: ignore[dict-item]
+        )

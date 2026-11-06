@@ -8,7 +8,7 @@ import sys
 
 from qcodes.station import SCHEMA_PATH, STATION_YAML_EXT, update_config_schema
 
-_LOG = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
 def register_station_schema_with_vscode() -> None:
@@ -53,7 +53,7 @@ def register_station_schema_with_vscode() -> None:
         try:
             data = json.load(f)
         except json.JSONDecodeError:
-            _LOG.warning(
+            _LOGGER.warning(
                 "Could not parse VSCode settings file. Check that the file is valid JSON e.g. does not contain comments."
             )
             return

@@ -4,12 +4,12 @@ import logging
 import time
 import warnings
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, Literal
 
+import numpy as np
 import pytest
-from typing_extensions import ParamSpec
 
-from qcodes.instrument import InstrumentBase
+from qcodes.instrument import Instrument, InstrumentBase
 from qcodes.instrument_drivers.Lakeshore import LakeshoreModel372
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (
     LakeshoreBaseSensorChannel,
@@ -18,14 +18,13 @@ from qcodes.logger import get_instrument_logger
 from qcodes.utils import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Generator
+
+    from pytest_mock import MockerFixture
 
 log = logging.getLogger(__name__)
 
-VISA_LOGGER = ".".join((InstrumentBase.__module__, "com", "visa"))
-
-P = ParamSpec("P")
-T = TypeVar("T")
+VISA_LOGGER = f"{InstrumentBase.__module__}.com.visa"
 
 
 class MockVisaInstrument:
@@ -34,7 +33,7 @@ class MockVisaInstrument:
     instrument.
     """
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.visa_log = get_instrument_logger(self, VISA_LOGGER)  # type: ignore[arg-type]
 
@@ -55,18 +54,18 @@ class MockVisaInstrument:
         # cycle through all methods
         for func_name in func_names:
             with warnings.catch_warnings():
-                if func_name == "_name":
+                if func_name in {"_name", "_address", "visalib"}:
                     # silence warning when getting deprecated attribute
                     warnings.simplefilter("ignore", category=QCoDeSDeprecationWarning)
 
                 f = getattr(self, func_name)
                 # only add for methods that have such an attribute
                 with suppress(AttributeError):
-                    self.queries[getattr(f, "query_name")] = f
+                    self.queries[f.query_name] = f
                 with suppress(AttributeError):
-                    self.cmds[getattr(f, "command_name")] = f
+                    self.cmds[f.command_name] = f
 
-    def write_raw(self, cmd) -> None:
+    def write_raw(self, cmd: str) -> None:
         cmd_parts = cmd.split(" ")
         cmd_str = cmd_parts[0].upper()
         if cmd_str in self.cmds:
@@ -76,7 +75,7 @@ class MockVisaInstrument:
         else:
             super().write_raw(cmd)  # type: ignore[misc]
 
-    def ask_raw(self, cmd) -> Any:
+    def ask_raw(self, cmd: str) -> Any:
         query_parts = cmd.split(" ")
         query_str = query_parts[0].upper()
         if query_str in self.queries:
@@ -91,7 +90,7 @@ class MockVisaInstrument:
             return super().ask_raw(cmd)  # type: ignore[misc]
 
 
-def query(name: str) -> Callable[[Callable[P, T]], Callable[P, T]]:
+def query[**P, T](name: str) -> Callable[[Callable[P, T]], Callable[P, T]]:
     def wrapper(func: Callable[P, T]) -> Callable[P, T]:
         func.query_name = name.upper()  # type: ignore[attr-defined]
         return func
@@ -99,7 +98,7 @@ def query(name: str) -> Callable[[Callable[P, T]], Callable[P, T]]:
     return wrapper
 
 
-def command(name: str) -> Callable[[Callable[P, T]], Callable[P, T]]:
+def command[**P, T](name: str) -> Callable[[Callable[P, T]], Callable[P, T]]:
     def wrapper(func: Callable[P, T]) -> Callable[P, T]:
         func.command_name = name.upper()  # type: ignore[attr-defined]
         return func
@@ -108,14 +107,14 @@ def command(name: str) -> Callable[[Callable[P, T]], Callable[P, T]]:
 
 
 class DictClass:
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         # https://stackoverflow.com/questions/16237659/python-how-to-implement-getattr
         super().__setattr__("_attrs", kwargs)
 
         for kwarg, value in kwargs.items():
             self._attrs[kwarg] = value
 
-    def __getattr__(self, attr):
+    def __getattr__(self, attr: str) -> Any:
         try:
             return self._attrs[attr]
         except KeyError as e:
@@ -126,7 +125,7 @@ class DictClass:
 
 
 class LakeshoreModel372Mock(MockVisaInstrument, LakeshoreModel372):
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         # initial values
@@ -194,11 +193,11 @@ class LakeshoreModel372Mock(MockVisaInstrument, LakeshoreModel372):
         self.simulate_heating = False
         self.start_heating_time = time.perf_counter()
 
-    def start_heating(self):
+    def start_heating(self) -> None:
         self.start_heating_time = time.perf_counter()
         self.simulate_heating = True
 
-    def get_t_when_heating(self):
+    def get_t_when_heating(self) -> float:
         """
         Simply define a fixed setpoint of 4 k for now
         """
@@ -208,7 +207,7 @@ class LakeshoreModel372Mock(MockVisaInstrument, LakeshoreModel372):
         return max(4, 7 - delta)
 
     @query("KRDG?")
-    def temperature(self, output):
+    def temperature(self, output: str) -> float | str:
         chan = self.channel_mock[output]
         if self.simulate_heating:
             return self.get_t_when_heating()
@@ -217,11 +216,11 @@ class LakeshoreModel372Mock(MockVisaInstrument, LakeshoreModel372):
 
 def instrument_fixture(
     scope: Literal["session", "package", "module", "class", "function"] = "function",
-    name=None,
-):
-    def wrapper(func):
+    name: str | None = None,
+) -> Callable[[Callable[[], Instrument]], Callable[..., object]]:
+    def wrapper(func: Callable[[], Instrument]) -> Callable[..., object]:
         @pytest.fixture(scope=scope, name=name)
-        def wrapped_fixture():
+        def wrapped_fixture() -> Generator[Instrument, None, None]:
             inst = func()
             try:
                 yield inst
@@ -234,7 +233,7 @@ def instrument_fixture(
 
 
 @instrument_fixture(scope="function")
-def lakeshore_372():
+def lakeshore_372() -> LakeshoreModel372Mock:
     return LakeshoreModel372Mock(
         "lakeshore_372_fixture",
         "GPIB::3::INSTR",
@@ -243,9 +242,9 @@ def lakeshore_372():
     )
 
 
-def test_pid_set(lakeshore_372) -> None:
+def test_pid_set(lakeshore_372: LakeshoreModel372Mock) -> None:
     ls = lakeshore_372
-    P, I, D = 1, 2, 3  # noqa  E741
+    P, I, D = 1, 2, 3  # noqa:  E741
     for h in (ls.warmup_heater, ls.analog_heater, ls.sample_heater):
         h.P(P)
         h.I(I)
@@ -253,7 +252,7 @@ def test_pid_set(lakeshore_372) -> None:
         assert (h.P(), h.I(), h.D()) == (P, I, D)
 
 
-def test_output_mode(lakeshore_372) -> None:
+def test_output_mode(lakeshore_372: LakeshoreModel372Mock) -> None:
     ls = lakeshore_372
     mode = "off"
     input_channel = 1
@@ -276,7 +275,7 @@ def test_output_mode(lakeshore_372) -> None:
         assert h.delay() == delay
 
 
-def test_range(lakeshore_372) -> None:
+def test_range(lakeshore_372: LakeshoreModel372Mock) -> None:
     ls = lakeshore_372
     output_range = "10mA"
     for h in (ls.warmup_heater, ls.analog_heater, ls.sample_heater):
@@ -284,7 +283,7 @@ def test_range(lakeshore_372) -> None:
         assert h.output_range() == output_range
 
 
-def test_tlimit(lakeshore_372) -> None:
+def test_tlimit(lakeshore_372: LakeshoreModel372Mock) -> None:
     ls = lakeshore_372
     tlimit = 5.1
     for ch in ls.channels:
@@ -292,7 +291,7 @@ def test_tlimit(lakeshore_372) -> None:
         assert ch.t_limit() == tlimit
 
 
-def test_setpoint(lakeshore_372) -> None:
+def test_setpoint(lakeshore_372: LakeshoreModel372Mock) -> None:
     ls = lakeshore_372
     setpoint = 5.1
     for h in (ls.warmup_heater, ls.analog_heater, ls.sample_heater):
@@ -300,7 +299,48 @@ def test_setpoint(lakeshore_372) -> None:
         assert h.setpoint() == setpoint
 
 
-def test_select_range_limits(lakeshore_372) -> None:
+# the simulated channel 1 starts with INSET 1,100,3,0,1 and INTYPE 0,1,0,5,0,1
+@pytest.mark.parametrize(
+    ("name", "command"),
+    [
+        ("dwell", "INSET 1, 1, 10, 3, 0, 1"),
+        ("pause", "INSET 1, 1, 100, 10, 0, 1"),
+        ("curve_number", "INSET 1, 1, 100, 3, 10, 1"),
+        ("excitation_range_number", "INTYPE 1, 0, 10, 0, 5, 0, 1"),
+    ],
+)
+@pytest.mark.parametrize("value", [10.0, np.float64(10)], ids=["float", "numpy_float"])
+def test_channel_integer_settings_accept_whole_floats(
+    lakeshore_372: LakeshoreModel372Mock,
+    mocker: MockerFixture,
+    name: str,
+    command: str,
+    value: float,
+) -> None:
+    # whole-number floats, e.g. from numpy, are accepted and sent as int
+    param = lakeshore_372.channels[0].parameters[name]
+    write_raw = mocker.patch.object(lakeshore_372, "write_raw")
+
+    param(value)
+
+    write_raw.assert_called_once_with(command)
+
+
+@pytest.mark.parametrize(
+    "name", ["dwell", "pause", "curve_number", "excitation_range_number"]
+)
+def test_channel_integer_settings_reject_non_integer(
+    lakeshore_372: LakeshoreModel372Mock, mocker: MockerFixture, name: str
+) -> None:
+    param = lakeshore_372.channels[0].parameters[name]
+    write_raw = mocker.patch.object(lakeshore_372, "write_raw")
+
+    with pytest.raises(TypeError):
+        param(10.5)
+    write_raw.assert_not_called()
+
+
+def test_select_range_limits(lakeshore_372: LakeshoreModel372Mock) -> None:
     h = lakeshore_372.sample_heater
     ranges = list(range(1, 9))
     h.range_limits(ranges)
@@ -313,14 +353,16 @@ def test_select_range_limits(lakeshore_372) -> None:
     assert h.output_range() == h.INVERSE_RANGES[len(ranges)]
 
 
-def test_set_and_wait_unit_setpoint_reached(lakeshore_372) -> None:
+def test_set_and_wait_unit_setpoint_reached(
+    lakeshore_372: LakeshoreModel372Mock,
+) -> None:
     ls = lakeshore_372
     ls.sample_heater.setpoint(4)
     ls.start_heating()
     ls.sample_heater.wait_until_set_point_reached()
 
 
-def test_blocking_t(lakeshore_372) -> None:
+def test_blocking_t(lakeshore_372: LakeshoreModel372Mock) -> None:
     ls = lakeshore_372
     h = lakeshore_372.sample_heater
     ranges = list(range(1, 9))

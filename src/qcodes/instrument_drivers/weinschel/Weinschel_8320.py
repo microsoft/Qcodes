@@ -7,7 +7,7 @@ from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import Parameter
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 class Weinschel8320(VisaInstrument):
@@ -35,9 +35,3 @@ class Weinschel8320(VisaInstrument):
         """Control the attenuation"""
 
         self.connect_message()
-
-
-class Weinschel_8320(Weinschel8320):
-    """
-    Alias for Weinschel8320 will eventually be deprecated and removed.
-    """

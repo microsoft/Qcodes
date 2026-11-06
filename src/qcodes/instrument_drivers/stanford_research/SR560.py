@@ -1,11 +1,11 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs
 from qcodes.parameters import MultiParameter, Parameter, ParamRawDataType
 from qcodes.validators import Bool, Enum
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 class VoltageParameter(MultiParameter):
@@ -148,7 +148,7 @@ class SR560(Instrument):
         )
         """Parameter cutoff_hi"""
 
-        self.invert: Parameter = self.add_parameter(
+        self.invert: Parameter[bool, Self] = self.add_parameter(
             "invert",
             get_cmd=None,
             set_cmd=None,

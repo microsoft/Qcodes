@@ -3,20 +3,47 @@ from __future__ import annotations
 import collections
 import logging
 from copy import copy
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import numpy.typing as npt
 
-from qcodes.metadatable import Metadatable
+from qcodes.metadatable import Metadatable, normalize_snapshot_update
 from qcodes.utils import full_class
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Sequence
 
+    from qcodes.metadatable import SnapshotUpdate
+
     from .parameter import Parameter
 
-_LOG = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
+
+
+@dataclass
+class _CombinedParameterInfo:
+    """
+    The subset of the ``Parameter`` api that :class:`CombinedParameter` fakes.
+
+    This exists because :class:`CombinedParameter` does not inherit from
+    :class:`.Parameter` or :class:`.ParameterBase`, yet is expected to carry the
+    identifying metadata of one so that it can be snapshotted like one.
+    """
+
+    name: str
+    full_name: str
+    label: str | None
+    unit: str | None
+
+    def __call__(self) -> None:
+        """
+        Do nothing.
+
+        This used to be a lambda, so external code may be calling it. Calling it
+        has always returned ``None``.
+        """
 
 
 def combine(
@@ -75,10 +102,6 @@ class CombinedParameter(Metadatable):
         aggregator: Callable[..., Any] | None = None,
     ) -> None:
         super().__init__()
-        # TODO(giulioungaretti)temporary hack
-        # starthack
-        # this is a dummy parameter
-        # that mimicks the api that a normal parameter has
         if not name.isidentifier():
             raise ValueError(
                 f"Parameter name must be a valid identifier "
@@ -87,30 +110,33 @@ class CombinedParameter(Metadatable):
                 f"must not contain spaces or special characters"
             )
 
-        self.parameter = lambda: None
-        # mypy will complain that a callable does not have these attributes
-        # but you can still create them here.
-        self.parameter.full_name = name  # type: ignore[attr-defined]
-        self.parameter.name = name  # type: ignore[attr-defined]
-        self.parameter.label = label  # type: ignore[attr-defined]
-
         if units is not None:
-            _LOG.warning(
+            _LOGGER.warning(
                 f"`units` is deprecated for the "
                 f"`CombinedParameter` class, use `unit` instead. {self!r}"
             )
             if unit is None:
                 unit = units
-        self.parameter.unit = unit  # type: ignore[attr-defined]
-        self.setpoints: list[Any] = []
+
+        # TODO(giulioungaretti)temporary hack
+        # starthack
+        # this is a dummy parameter
+        # that mimicks the api that a normal parameter has.
+        # CombinedParameter does not inherit from Parameter or ParameterBase,
+        # so it has to fake the parts of their api that it is expected to
+        # provide.
+        self.parameter = _CombinedParameterInfo(
+            name=name, full_name=name, label=label, unit=unit
+        )
         # endhack
+        self.setpoints: list[Any] = []
         self.parameters = parameters
         self.sets = [parameter.set for parameter in self.parameters]
         self.dimensionality = len(self.sets)
 
         if aggregator:
             self.f = aggregator
-            setattr(self, "aggregate", self._aggregate)
+            self.aggregate = self._aggregate
 
     def set(self, index: int) -> list[Any]:
         """
@@ -194,7 +220,7 @@ class CombinedParameter(Metadatable):
 
     def snapshot_base(
         self,
-        update: bool | None = False,
+        update: bool | SnapshotUpdate | None = "Only_invalid",
         params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         """
@@ -203,7 +229,7 @@ class CombinedParameter(Metadatable):
         :class:`.NumpyJSONEncoder` supports).
 
         Args:
-            update: ``True`` or ``False``.
+            update: One of ``"All"``, ``"Only_invalid"`` or ``"Never"``.
             params_to_skip_update: Unused in this subclass.
 
         Returns:
@@ -213,11 +239,12 @@ class CombinedParameter(Metadatable):
         meta_data: dict[str, Any] = collections.OrderedDict()
         meta_data["__class__"] = full_class(self)
         param = self.parameter
-        meta_data["unit"] = param.unit  # type: ignore[attr-defined]
-        meta_data["label"] = param.label  # type: ignore[attr-defined]
-        meta_data["full_name"] = param.full_name  # type: ignore[attr-defined]
+        meta_data["unit"] = param.unit
+        meta_data["label"] = param.label
+        meta_data["full_name"] = param.full_name
         meta_data["aggregator"] = repr(getattr(self, "f", None))
+        update = normalize_snapshot_update(update)
         for parameter in self.parameters:
-            meta_data[str(parameter)] = parameter.snapshot()
+            meta_data[str(parameter)] = parameter.snapshot(update=update)
 
         return meta_data

@@ -19,7 +19,7 @@ from qcodes.instrument_drivers.mock_instruments import SnapShotTestInstrument
     ],
 )
 def test_snapshot_skip_params_update(
-    request: FixtureRequest, params, params_to_skip
+    request: FixtureRequest, params: list[str], params_to_skip: list[str]
 ) -> None:
     """
     Test that params_to_skip_update works as expected, in particular that only
@@ -38,11 +38,11 @@ def test_snapshot_skip_params_update(
 
     assert list(inst._get_calls.values()) == [0, 0, 0, 0]
 
-    inst.snapshot(update=False)
+    inst.snapshot(update="Never")
 
     assert list(inst._get_calls.values()) == [0, 0, 0, 0]
 
-    inst.snapshot(update=True)
+    inst.snapshot(update="All")
 
     expected_list = [1, 1, 1, 1]
     if params_to_skip:
@@ -58,13 +58,12 @@ def test_snapshot_skip_params_update(
         (["v1", "v2", "v3", "v4"], ["v2"]),
         (["v1", "v2", "v3", "v4"], ["v3"]),
         (["v1", "v2", "v3", "v4"], ["v4"]),
-        (["v1", "v2", "v3", "v4"], ["v4"]),
         (["v1", "v2", "v3", "v4"], ["v1", "v2"]),
         (["v1", "v2", "v3", "v4"], []),
     ],
 )
 def test_snapshot_exclude_params(
-    request: FixtureRequest, params, params_to_exclude
+    request: FixtureRequest, params: list[str], params_to_exclude: list[str]
 ) -> None:
     """
     Test that params_to_exclude works as expected, in particular that only

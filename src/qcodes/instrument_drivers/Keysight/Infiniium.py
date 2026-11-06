@@ -1,9 +1,9 @@
 import re
-from datetime import datetime
+from datetime import UTC, datetime
 from io import BytesIO
 from os.path import splitext
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -13,6 +13,7 @@ from pyvisa.constants import StatusCode
 import qcodes.validators as vals
 from qcodes.instrument import (
     ChannelList,
+    ChannelTuple,
     InstrumentBase,
     InstrumentBaseKWArgs,
     InstrumentChannel,
@@ -29,8 +30,7 @@ from qcodes.parameters import (
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
-    from typing_extensions import Unpack
+    from typing import Unpack
 
 
 class DSOTimeAxisParam(Parameter):
@@ -89,7 +89,11 @@ class DSOFrequencyAxisParam(Parameter):
         )
 
 
-class DSOTraceParam(ParameterWithSetpoints):
+class DSOTraceParam(
+    ParameterWithSetpoints[
+        npt.NDArray, "KeysightInfiniiumChannel | KeysightInfiniiumFunction"
+    ]
+):
     """
     Trace parameter for the Infiniium series DSO
     """
@@ -124,15 +128,22 @@ class DSOTraceParam(ParameterWithSetpoints):
         self._unit = 0
 
     @property
+    def root_instrument(self) -> "KeysightInfiniium":
+        root_instrument = super().root_instrument
+        if not isinstance(root_instrument, KeysightInfiniium):
+            raise RuntimeError(  # noqa: TRY004
+                f"Trace parameter is not bound to a KeysightInfiniium instrument but {type(root_instrument)}"
+            )
+        return root_instrument
+
+    @property
     def setpoints(self) -> "Sequence[ParameterBase]":
         """
         Overwrite setpoint parameter to update setpoints if auto_digitize is true
         """
         instrument = self.instrument
         if isinstance(instrument, KeysightInfiniiumChannel):
-            root_instrument: KeysightInfiniium
-            root_instrument = self.root_instrument  # type: ignore[assignment]
-            cache_setpoints = root_instrument.cache_setpoints()
+            cache_setpoints = self.root_instrument.cache_setpoints()
             if not cache_setpoints:
                 self.update_setpoints()
             return (instrument.time_axis,)
@@ -180,7 +191,7 @@ class DSOTraceParam(ParameterWithSetpoints):
         acquisition if instr.cache_setpoints is False
         """
         instrument: KeysightInfiniiumChannel | KeysightInfiniiumFunction
-        instrument = self.instrument  # type: ignore[assignment]
+        instrument = self.instrument
         if preamble is None:
             instrument.write(f":WAV:SOUR {self._channel}")
             preamble = instrument.ask(":WAV:PRE?").strip().split(",")
@@ -197,7 +208,12 @@ class DSOTraceParam(ParameterWithSetpoints):
         """
         Update waveform parameters for an FFT.
         """
-        instrument: KeysightInfiniiumFunction = self.instrument  # type: ignore[assignment]
+        # only reached for a function parameter, see the caller in ``setpoints``
+        instrument = self.instrument
+        if not isinstance(instrument, KeysightInfiniiumFunction):
+            raise RuntimeError(  # noqa: TRY004
+                "FFT setpoints can only be updated for a function parameter."
+            )
         instrument.write(f":WAV:SOUR {self._channel}")
         preamble = instrument.ask(":WAV:PRE?").strip().split(",")
         self.update_setpoints(preamble)
@@ -211,7 +227,7 @@ class DSOTraceParam(ParameterWithSetpoints):
         """
         if self.instrument is None:
             raise RuntimeError("Cannot get data without instrument")
-        root_instr: KeysightInfiniium = self.root_instrument  # type: ignore[assignment]
+        root_instr = self.root_instrument
         # Check if we can use cached trace parameters
         if not root_instr.cache_setpoints():
             self.update_setpoints()
@@ -230,13 +246,16 @@ class DSOTraceParam(ParameterWithSetpoints):
         root_instr.write(":WAV:DATA?")
         # Ignore first two bytes, which should be "#0"
         _ = root_instr.visa_handle.read_bytes(2)
-        data: npt.NDArray
-        data = root_instr.visa_handle.read_binary_values(  # type: ignore[assignment]
-            "h",
-            container=npt.NDArray,
-            header_fmt="empty",
-            expect_termination=True,
-            data_points=self._points,
+        # pyvisa types the return as a Sequence[float] regardless of ``container``
+        data = cast(
+            "npt.NDArray",
+            root_instr.visa_handle.read_binary_values(
+                "h",
+                container=np.ndarray,
+                header_fmt="empty",
+                expect_termination=True,
+                data_points=self._points,
+            ),
         )
         data = data.astype(np.float64)
         data = (data * self._yincrement) + self._yoffset
@@ -257,6 +276,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
         self,
         parent: InstrumentBase,
         name: str,
+        channel: str,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
         """
@@ -264,6 +284,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
         directly, rather initialize BoundMeasurementSubsystem
         or UnboundMeasurementSubsystem.
         """
+        self._channel = channel
         super().__init__(parent, name, **kwargs)
 
         ###################################
@@ -477,17 +498,8 @@ class KeysightInfiniiumBoundMeasurement(AbstractMeasurementSubsystem):
         """
         Initialize measurement subsystem bound to a specific channel
         """
-        # Bind the channel
-        self._channel = parent.channel_name
-
         # Initialize measurement parameters
-        super().__init__(parent, name, **kwargs)
-
-
-BoundMeasurement = KeysightInfiniiumBoundMeasurement
-"""
-Alias for backwards compatibility
-"""
+        super().__init__(parent, name, channel=parent.channel_name, **kwargs)
 
 
 class KeysightInfiniiumUnboundMeasurement(AbstractMeasurementSubsystem):
@@ -500,11 +512,8 @@ class KeysightInfiniiumUnboundMeasurement(AbstractMeasurementSubsystem):
         """
         Initialize measurement subsystem where target is set by the parameter `source`.
         """
-        # Blank channel
-        self._channel = ""
-
         # Initialize measurement parameters
-        super().__init__(parent, name, **kwargs)
+        super().__init__(parent, name, channel="", **kwargs)
 
         self.source = Parameter(
             name="source",
@@ -514,6 +523,12 @@ class KeysightInfiniiumUnboundMeasurement(AbstractMeasurementSubsystem):
             get_cmd=self._get_source,
             snapshot_value=False,
         )
+
+    @property
+    def root_instrument(self) -> "KeysightInfiniium":
+        root_instrument = super().root_instrument
+        assert isinstance(root_instrument, KeysightInfiniium)
+        return root_instrument
 
     def _validate_source(self, source: str) -> str:
         """Validate and set the source."""
@@ -562,12 +577,6 @@ class KeysightInfiniiumUnboundMeasurement(AbstractMeasurementSubsystem):
             source = self.ask(":MEAS:SOUR?")
             self._channel = source.strip().split(",")[0]
         return self._channel
-
-
-UnboundMeasurement = KeysightInfiniiumUnboundMeasurement
-"""
-Alias for backwards compatibility
-"""
 
 
 class KeysightInfiniiumFunction(InstrumentChannel):
@@ -686,13 +695,7 @@ class KeysightInfiniiumFunction(InstrumentChannel):
             self.write(":SYST:HEAD OFF")
 
 
-InfiniiumFunction = KeysightInfiniiumFunction
-"""
-Alias for backwards compatibility
-"""
-
-
-class KeysightInfiniiumChannel(InstrumentChannel):
+class KeysightInfiniiumChannel(InstrumentChannel["KeysightInfiniium"]):
     def __init__(
         self,
         parent: "KeysightInfiniium",
@@ -811,12 +814,6 @@ class KeysightInfiniiumChannel(InstrumentChannel):
         self.trace.update_setpoints()
 
 
-InfiniiumChannel = KeysightInfiniiumChannel
-"""
-Alias for backwards compatibility
-"""
-
-
 class KeysightInfiniium(VisaInstrument):
     """
     This is the QCoDeS driver for the Keysight Infiniium oscilloscopes
@@ -850,10 +847,7 @@ class KeysightInfiniium(VisaInstrument):
 
         # Check if we are using pyvisa-py as our visa lib and warn users that
         # this may cause long digitize operations to fail
-        if (
-            self.visa_handle.visalib.library_path == "py"
-            and not silence_pyvisapy_warning
-        ):
+        if self.visabackend == "py" and not silence_pyvisapy_warning:
             self.log.warning(
                 "Timeout not handled correctly in pyvisa_py. This may cause"
                 " long acquisitions to fail. Either use ni/keysight visalib"
@@ -1081,7 +1075,10 @@ class KeysightInfiniium(VisaInstrument):
             channel = KeysightInfiniiumChannel(self, f"chan{i}", i)
             _channels.append(channel)
             self.add_submodule(f"ch{i}", channel)
-        self.add_submodule("channels", _channels.to_channel_tuple())
+        self.channels: ChannelTuple[KeysightInfiniiumChannel] = self.add_submodule(
+            "channels", _channels.to_channel_tuple()
+        )
+        """Tuple of oscilloscope channels."""
 
         # Functions
         _functions = ChannelList(
@@ -1093,11 +1090,17 @@ class KeysightInfiniium(VisaInstrument):
             self.add_submodule(f"func{i}", function)
         # Have to call channel list "funcs" here as functions is a
         # reserved name in Instrument.
-        self.add_submodule("funcs", _functions.to_channel_tuple())
+        self.funcs: ChannelTuple[KeysightInfiniiumFunction] = self.add_submodule(
+            "funcs", _functions.to_channel_tuple()
+        )
+        """Tuple of oscilloscope functions."""
 
         # Submodules
         meassubsys = KeysightInfiniiumUnboundMeasurement(self, "measure")
-        self.add_submodule("measure", meassubsys)
+        self.measure: KeysightInfiniiumUnboundMeasurement = self.add_submodule(
+            "measure", meassubsys
+        )
+        """Unbound measurement subsystem."""
 
     def _query_capabilities(self) -> None:
         """
@@ -1278,28 +1281,29 @@ class KeysightInfiniium(VisaInstrument):
         if isinstance(path, Path):
             path = str(path)
 
-        time_str = datetime.now().strftime(time_fmt) if with_time else ""
+        time_str = (
+            datetime.now(UTC).astimezone().strftime(time_fmt) if with_time else ""
+        )
         img_name, img_type = splitext(path)
         img_path = (
             f"{img_name}{divider if with_time else ''}{time_str}{img_type.lower()}"
         )
         try:
             with open(img_path, "wb") as f:
-                screen_bytes = self.visa_handle.query_binary_values(
-                    f":DISPlay:DATA? {img_type.upper()[1:]}",  # without .
-                    # https://docs.python.org/3/library/struct.html#format-characters
-                    datatype="B",  # Capitcal B for unsigned byte
-                    container=bytes,
+                # pyvisa types the return as a Sequence[float] regardless of
+                # ``container``
+                screen_bytes = cast(
+                    "bytes",
+                    self.visa_handle.query_binary_values(
+                        f":DISPlay:DATA? {img_type.upper()[1:]}",  # without .
+                        # https://docs.python.org/3/library/struct.html#format-characters
+                        datatype="B",  # Capitcal B for unsigned byte
+                        container=bytes,
+                    ),
                 )
-                f.write(screen_bytes)  # type: ignore[arg-type]
+                f.write(screen_bytes)
             print(f"Screen image written to {img_path}")
-            return np.asarray(pil_open(BytesIO(screen_bytes)))  # type: ignore[arg-type]
-        except Exception as e:
-            self.log.error(f"Failed to save screenshot, Error occurred: \n{e}")
+            return np.asarray(pil_open(BytesIO(screen_bytes)))
+        except (OSError, VisaIOError):
+            self.log.exception("Failed to save screenshot")
             return None
-
-
-Infiniium = KeysightInfiniium
-"""
-Alias for backwards compatibility
-"""

@@ -1,0 +1,4 @@
+Fixed a rare error on Python 3.12 and 3.13 where closing an instrument could fail with
+``RuntimeError: dictionary changed size during iteration`` if the garbage collector cleaned up
+another instrument at the same time. The instrument then stayed registered, so its name could
+not be reused.

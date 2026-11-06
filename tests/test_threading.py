@@ -5,13 +5,17 @@ Test suite for utils.threading.*
 import threading
 import time
 from collections import defaultdict
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
 from qcodes.dataset.threading import ThreadPoolParamsCaller, call_params_threaded
 from qcodes.instrument_drivers.mock_instruments import DummyInstrument
 from qcodes.parameters import Parameter, ParamRawDataType
+from qcodes.utils.threading_utils import RespondingThread, thread_map
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 
 class ParameterWithThreadKnowledge(Parameter):
@@ -24,7 +28,7 @@ class ParameterWithThreadKnowledge(Parameter):
 
 
 @pytest.fixture(name="dummy_1", scope="function")
-def _dummy_dac1():
+def _dummy_dac1() -> "Generator[DummyInstrument, None, None]":
     instrument = DummyInstrument(name="dummy_1", gates=["ch1"])
 
     instrument.add_parameter(
@@ -42,7 +46,7 @@ def _dummy_dac1():
 
 
 @pytest.fixture(name="dummy_2", scope="function")
-def _dummy_dac2():
+def _dummy_dac2() -> "Generator[DummyInstrument, None, None]":
     instrument = DummyInstrument(name="dummy_2", gates=["ch1"])
 
     instrument.add_parameter(
@@ -59,7 +63,9 @@ def _dummy_dac2():
         instrument.close()
 
 
-def test_call_params_threaded(dummy_1, dummy_2) -> None:
+def test_call_params_threaded(
+    dummy_1: DummyInstrument, dummy_2: DummyInstrument
+) -> None:
     params_output = call_params_threaded(
         (dummy_1.voltage_1, dummy_1.voltage_2, dummy_2.voltage_1, dummy_2.voltage_2)
     )
@@ -78,7 +84,9 @@ def test_call_params_threaded(dummy_1, dummy_2) -> None:
     } == expected_params_per_thread
 
 
-def test_thread_pool_params_caller(dummy_1, dummy_2) -> None:
+def test_thread_pool_params_caller(
+    dummy_1: DummyInstrument, dummy_2: DummyInstrument
+) -> None:
     params = (
         dummy_1.voltage_1,
         dummy_1.voltage_2,
@@ -104,3 +112,27 @@ def test_thread_pool_params_caller(dummy_1, dummy_2) -> None:
         assert {
             frozenset(value) for value in params_per_thread_id.values()
         } == expected_params_per_thread
+
+
+def test_responding_thread_reraises_exception_in_calling_thread() -> None:
+    """Exceptions in the target are captured and re-raised by ``output``."""
+
+    def raise_error() -> None:
+        raise RuntimeError("error in worker thread")
+
+    thread: RespondingThread[None] = RespondingThread(target=raise_error)
+    thread.start()
+
+    with pytest.raises(RuntimeError, match="error in worker thread"):
+        thread.output()
+
+    # the exception is cleared once it has been raised
+    assert thread.output() is None
+
+
+def test_thread_map_reraises_exception_in_calling_thread() -> None:
+    def raise_error() -> None:
+        raise ValueError("error in mapped thread")
+
+    with pytest.raises(ValueError, match="error in mapped thread"):
+        thread_map((raise_error,))

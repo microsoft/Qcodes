@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import time
 from functools import partial
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Self, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -19,8 +19,7 @@ from qcodes.math_utils import FieldVector
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-
-    from typing_extensions import Unpack
+    from typing import Unpack
 
     from qcodes.parameters import Parameter
 
@@ -57,7 +56,7 @@ def _signal_parser(our_scaling: float, response: str) -> float:
     scale_and_unit = response[len(digits) :]
     if scale_and_unit == "":
         their_scaling: float = 1
-    elif scale_and_unit[0] in scale_to_factor.keys():
+    elif scale_and_unit[0] in scale_to_factor:
         their_scaling = scale_to_factor[scale_and_unit[0]]
     else:
         their_scaling = 1
@@ -76,14 +75,14 @@ def _temp_parser(response: str) -> float:
     return float(response.rsplit(":", maxsplit=1)[-1][:-1])
 
 
-class OxfordMercuryWorkerPS(InstrumentChannel):
+class OxfordMercuryWorkerPS(InstrumentChannel["OxfordMercuryiPS"]):
     """
     Class to hold a worker power supply for the Oxford MercuryiPS
     """
 
     def __init__(
         self,
-        parent: VisaInstrument,
+        parent: OxfordMercuryiPS,
         name: str,
         UID: str,
         **kwargs: Unpack[InstrumentBaseKWArgs],
@@ -108,12 +107,12 @@ class OxfordMercuryWorkerPS(InstrumentChannel):
 
         # The firmware update from 2.5 -> 2.6 changed the command
         # syntax slightly
-        if version.parse(self.root_instrument.firmware) >= version.parse("2.6"):
+        if version.parse(self.parent.firmware) >= version.parse("2.6"):
             self.psu_string = "SPSU"
         else:
             self.psu_string = "PSU"
 
-        self.heater_switch: Parameter = self.add_parameter(
+        self.heater_switch: Parameter[str, Self] = self.add_parameter(
             "heater_switch",
             label="Heater switch status/set",
             get_cmd=partial(self._param_getter, "SIG:SWHT"),
@@ -122,7 +121,7 @@ class OxfordMercuryWorkerPS(InstrumentChannel):
         )
         """Parameter heater switch"""
 
-        self.voltage: Parameter = self.add_parameter(
+        self.voltage: Parameter[float, Self] = self.add_parameter(
             "voltage",
             label="Output voltage",
             get_cmd=partial(self._param_getter, "SIG:VOLT"),
@@ -131,7 +130,7 @@ class OxfordMercuryWorkerPS(InstrumentChannel):
         )
         """Parameter voltage"""
 
-        self.current: Parameter = self.add_parameter(
+        self.current: Parameter[float, Self] = self.add_parameter(
             "current",
             label="Output current",
             get_cmd=partial(self._param_getter, "SIG:CURR"),
@@ -140,7 +139,7 @@ class OxfordMercuryWorkerPS(InstrumentChannel):
         )
         """Parameter current"""
 
-        self.current_persistent: Parameter = self.add_parameter(
+        self.current_persistent: Parameter[float, Self] = self.add_parameter(
             "current_persistent",
             label="Output persistent current",
             get_cmd=partial(self._param_getter, "SIG:PCUR"),
@@ -149,16 +148,17 @@ class OxfordMercuryWorkerPS(InstrumentChannel):
         )
         """Parameter current_persistent"""
 
-        self.current_target: Parameter = self.add_parameter(
+        self.current_target: Parameter[float, Self] = self.add_parameter(
             "current_target",
             label="Target current",
             get_cmd=partial(self._param_getter, "SIG:CSET"),
+            set_cmd=partial(self._param_setter, "SIG:CSET"),
             unit="A",
             get_parser=partial(_signal_parser, 1),
         )
         """Parameter current_target"""
 
-        self.field_target: Parameter = self.add_parameter(
+        self.field_target: Parameter[float, Self] = self.add_parameter(
             "field_target",
             label="Target field",
             get_cmd=partial(self._param_getter, "SIG:FSET"),
@@ -170,12 +170,14 @@ class OxfordMercuryWorkerPS(InstrumentChannel):
 
         # NB: The current ramp rate follows the field ramp rate
         # (converted via the ATOB param)
-        self.current_ramp_rate: Parameter = self.add_parameter(
+        self.current_ramp_rate: Parameter[float, Self] = self.add_parameter(
             "current_ramp_rate",
             label="Ramp rate (current)",
             unit="A/s",
             get_cmd=partial(self._param_getter, "SIG:RCST"),
+            set_cmd=partial(self._param_setter, "SIG:RCST"),
             get_parser=partial(_signal_parser, 1 / 60),
+            set_parser=lambda x: x * 60,
         )
         """Parameter current_ramp_rate"""
 
@@ -190,7 +192,7 @@ class OxfordMercuryWorkerPS(InstrumentChannel):
         )
         """Parameter field_ramp_rate"""
 
-        self.field: Parameter = self.add_parameter(
+        self.field: Parameter[float, Self] = self.add_parameter(
             "field",
             label="Field strength",
             unit="T",
@@ -199,7 +201,7 @@ class OxfordMercuryWorkerPS(InstrumentChannel):
         )
         """Parameter field"""
 
-        self.field_persistent: Parameter = self.add_parameter(
+        self.field_persistent: Parameter[float, Self] = self.add_parameter(
             "field_persistent",
             label="Persistent field strength",
             unit="T",
@@ -208,7 +210,7 @@ class OxfordMercuryWorkerPS(InstrumentChannel):
         )
         """Parameter field_persistent"""
 
-        self.ATOB: Parameter = self.add_parameter(
+        self.ATOB: Parameter[float, Self] = self.add_parameter(
             "ATOB",
             label="Current to field ratio",
             unit="A/T",
@@ -218,7 +220,7 @@ class OxfordMercuryWorkerPS(InstrumentChannel):
         )
         """Parameter ATOB"""
 
-        self.ramp_status: Parameter = self.add_parameter(
+        self.ramp_status: Parameter[str, Self] = self.add_parameter(
             "ramp_status",
             label="Ramp status",
             get_cmd=partial(self._param_getter, "ACTN"),
@@ -262,7 +264,7 @@ class OxfordMercuryWorkerPS(InstrumentChannel):
             get_cmd: raw string for the command, e.g. 'SIG:VOLT'
 
         Returns:
-            The response. Cf. MercuryiPS.ask for how much is returned
+            The response. Cf. OxfordMercuryiPS.ask for how much is returned
 
         """
         dressed_cmd = f"READ:DEV:{self.uid}:{self.psu_string}:{get_cmd}"
@@ -288,12 +290,6 @@ class OxfordMercuryWorkerPS(InstrumentChannel):
 
         # TODO: we could use the opportunity to check that we did set/achieve
         #  the intended value
-
-
-MercuryWorkerPS = OxfordMercuryWorkerPS
-"""
-Alias for backwards compatibility
-"""
 
 
 class OxfordMercuryiPS(VisaInstrument):
@@ -348,12 +344,16 @@ class OxfordMercuryiPS(VisaInstrument):
         self.firmware = self.IDN()["firmware"]
 
         # TODO: Query instrument to ensure which PSUs are actually present
-        for grp in ["GRPX", "GRPY", "GRPZ"]:
-            psu_name = grp
-            psu = OxfordMercuryWorkerPS(self, psu_name, grp)
-            self.add_submodule(psu_name, psu)
+        GRPX = OxfordMercuryWorkerPS(self, "GRPX", "GRPX")
+        self.GRPX: OxfordMercuryWorkerPS = self.add_submodule("GRPX", GRPX)
 
-        self._field_limits = field_limits if field_limits else lambda x, y, z: True
+        GRPY = OxfordMercuryWorkerPS(self, "GRPY", "GRPY")
+        self.GRPY: OxfordMercuryWorkerPS = self.add_submodule("GRPY", GRPY)
+
+        GRPZ = OxfordMercuryWorkerPS(self, "GRPZ", "GRPZ")
+        self.GRPZ: OxfordMercuryWorkerPS = self.add_submodule("GRPZ", GRPZ)
+
+        self._field_limits = field_limits or (lambda x, y, z: True)
 
         self._target_vector = FieldVector(
             x=self.GRPX.field(), y=self.GRPY.field(), z=self.GRPZ.field()
@@ -363,7 +363,7 @@ class OxfordMercuryiPS(VisaInstrument):
         self._pt1_temp_addr = "DEV:DB8.T1:TEMP"
         self._pt2_temp_addr = "DEV:DB7.T1:TEMP"
 
-        self.magnet_temp: Parameter = self.add_parameter(
+        self.magnet_temp: Parameter[float, Self] = self.add_parameter(
             name="magnet_temp",
             label="Magnet Temperature",
             unit="K",
@@ -373,7 +373,7 @@ class OxfordMercuryiPS(VisaInstrument):
         )
         """Parameter magnet temperature"""
 
-        self.pt1_temp: Parameter = self.add_parameter(
+        self.pt1_temp: Parameter[float, Self] = self.add_parameter(
             name="pt1_temp",
             label="pt1 Temperature",
             unit="K",
@@ -383,7 +383,7 @@ class OxfordMercuryiPS(VisaInstrument):
         )
         """Parameter pt1 temperature"""
 
-        self.pt2_temp: Parameter = self.add_parameter(
+        self.pt2_temp: Parameter[float, Self] = self.add_parameter(
             name="pt2_temp",
             label="pt2 Temperature",
             unit="K",
@@ -521,7 +521,9 @@ class OxfordMercuryiPS(VisaInstrument):
         cartesian_targ = self._target_vector.get_components("x", "y", "z")
         for targ, worker in zip(cartesian_targ, self.submodules.values()):
             if not isinstance(worker, OxfordMercuryWorkerPS):
-                raise RuntimeError(f"Expected a MercuryWorkerPS but got {type(worker)}")
+                raise RuntimeError(  # noqa: TRY004
+                    f"Expected an OxfordMercuryWorkerPS but got {type(worker)}"
+                )
             worker.field_target(targ)
 
     def _set_target_field(self, field: FieldVector) -> None:
@@ -556,7 +558,9 @@ class OxfordMercuryiPS(VisaInstrument):
         """
         for worker in self.submodules.values():
             if not isinstance(worker, OxfordMercuryWorkerPS):
-                raise RuntimeError(f"Expected a MercuryWorkerPS but got {type(worker)}")
+                raise RuntimeError(  # noqa: TRY004
+                    f"Expected an OxfordMercuryWorkerPS but got {type(worker)}"
+                )
             worker.ramp_to_target()
 
     def _ramp_simultaneously_blocking(self) -> None:
@@ -569,7 +573,9 @@ class OxfordMercuryiPS(VisaInstrument):
 
         for worker in self.submodules.values():
             if not isinstance(worker, OxfordMercuryWorkerPS):
-                raise RuntimeError(f"Expected a MercuryWorkerPS but got {type(worker)}")
+                raise RuntimeError(  # noqa: TRY004
+                    f"Expected an OxfordMercuryWorkerPS but got {type(worker)}"
+                )
             # wait for the ramp to finish, we don't care about the order
             while worker.ramp_status() == "TO SET":
                 time.sleep(0.1)
@@ -669,10 +675,11 @@ class OxfordMercuryiPS(VisaInstrument):
 
         for cur, worker in zip(meas_vals, self.submodules.values()):
             if not isinstance(worker, OxfordMercuryWorkerPS):
-                raise RuntimeError(f"Expected a MercuryWorkerPS but got {type(worker)}")
-            if worker.field_target() != cur:
-                if worker.field_ramp_rate() == 0:
-                    raise ValueError(f"Can not ramp {worker}; ramp rate set to zero!")
+                raise RuntimeError(  # noqa: TRY004
+                    f"Expected an OxfordMercuryWorkerPS but got {type(worker)}"
+                )
+            if worker.field_target() != cur and worker.field_ramp_rate() == 0:
+                raise ValueError(f"Can not ramp {worker}; ramp rate set to zero!")
 
         # then the actual ramp
         {
@@ -717,7 +724,3 @@ class OxfordMercuryiPS(VisaInstrument):
             base_resp = resp.replace(f"STAT:{base_cmd}", "")
 
         return base_resp
-
-
-MercuryiPS = OxfordMercuryiPS
-"""Alias for backwards compatibility"""

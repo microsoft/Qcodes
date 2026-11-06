@@ -50,8 +50,8 @@ class Adding5Params:
     timer = time.perf_counter
 
     def __init__(self):
-        self.parameters = list()
-        self.values = list()
+        self.parameters = []
+        self.values = []
         self.experiment = None
         self.runner = None
         self.datasaver = None
@@ -95,8 +95,9 @@ class Adding5Params:
         self.datasaver = self.runner.__enter__()
 
         # Create values for parameters
+        rng = np.random.default_rng()
         for _ in range(len(self.parameters)):
-            self.values.append(np.random.rand(bench_param["n_values"]))
+            self.values.append(rng.random(bench_param["n_values"]))
 
     def teardown(self, bench_param):
         # Exit runner context manager
@@ -115,8 +116,8 @@ class Adding5Params:
             shutil.rmtree(self.tmpdir)
             self.tmpdir = None
 
-        self.parameters = list()
-        self.values = list()
+        self.parameters = []
+        self.values = []
 
     def time_test(self, bench_param):
         """Adding data for 5 parameters"""

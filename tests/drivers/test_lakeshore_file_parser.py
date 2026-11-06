@@ -1,4 +1,5 @@
 import io
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -6,6 +7,9 @@ from qcodes.instrument_drivers.Lakeshore.Lakeshore_model_325 import (
     _get_sanitize_data,
     _read_curve_file,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 curve_file_content = """ \
 Sensor Model:   CX-1050-SD-HT-1.4L
@@ -27,11 +31,11 @@ No.   Units      Temperature (K)
 
 
 @pytest.fixture(scope="function")
-def curve_file():
+def curve_file() -> "Generator[io.StringIO, None, None]":
     yield io.StringIO(curve_file_content)
 
 
-def test_file_parser(curve_file) -> None:
+def test_file_parser(curve_file: io.StringIO) -> None:
     file_data = _read_curve_file(curve_file)
 
     assert list(file_data.keys()) == ["metadata", "data"]
@@ -52,7 +56,7 @@ def test_file_parser(curve_file) -> None:
     }
 
 
-def test_sanitise_data(curve_file) -> None:
+def test_sanitise_data(curve_file: io.StringIO) -> None:
     file_data = _read_curve_file(curve_file)
     data_dict = _get_sanitize_data(file_data)
 

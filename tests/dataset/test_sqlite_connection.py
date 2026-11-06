@@ -1,25 +1,42 @@
+import gc
+import os
 import re
 import sqlite3
+import subprocess
+import sys
+import textwrap
+import threading
+import weakref
+from contextlib import closing, contextmanager
+from inspect import unwrap
+from typing import TYPE_CHECKING
 
 import pytest
 
 from qcodes.dataset.sqlite.connection import (
     AtomicConnection,
+    _open_connections_lock,
     atomic,
     atomic_transaction,
+    close_all_connections,
+    get_open_connections,
 )
 from qcodes.dataset.sqlite.database import connect
 from tests.common import error_caused_by
+from tests.conftest import close_db_connections
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
-def sqlite_conn_in_transaction(conn: sqlite3.Connection):
+def sqlite_conn_in_transaction(conn: sqlite3.Connection) -> "bool":
     assert isinstance(conn, sqlite3.Connection)
     assert True is conn.in_transaction
     assert None is conn.isolation_level
     return True
 
 
-def conn_plus_in_transaction(conn: AtomicConnection):
+def conn_plus_in_transaction(conn: AtomicConnection) -> "bool":
     assert isinstance(conn, AtomicConnection)
     assert True is conn.atomic_in_progress
     assert None is conn.isolation_level
@@ -27,14 +44,16 @@ def conn_plus_in_transaction(conn: AtomicConnection):
     return True
 
 
-def sqlite_conn_is_idle(conn: sqlite3.Connection, isolation=None):
+def sqlite_conn_is_idle(
+    conn: sqlite3.Connection, isolation: "str | None" = None
+) -> "bool":
     assert isinstance(conn, sqlite3.Connection)
     assert False is conn.in_transaction
     assert isolation == conn.isolation_level
     return True
 
 
-def conn_plus_is_idle(conn: AtomicConnection, isolation=None):
+def conn_plus_is_idle(conn: AtomicConnection, isolation: "str | None" = None) -> "bool":
     assert isinstance(conn, AtomicConnection)
     assert False is conn.atomic_in_progress
     assert isolation == conn.isolation_level
@@ -52,15 +71,16 @@ def test_atomic_connection() -> None:
 
 
 def test_atomic_raises_for_non_atomic_conn() -> None:
-    sqlite_conn = sqlite3.connect(":memory:")
-
     match_str = re.escape(
         "atomic context manager only accepts AtomicConnection "
         "database connection objects."
     )
-    with pytest.raises(ValueError, match=match_str):
-        with atomic(sqlite_conn):  # type: ignore[arg-type]
-            pass
+    with (
+        closing(sqlite3.connect(":memory:")) as sqlite_conn,
+        pytest.raises(ValueError, match=match_str),
+        atomic(sqlite_conn),  # type: ignore[arg-type]
+    ):
+        pass
 
 
 def test_atomic() -> None:
@@ -93,15 +113,62 @@ def test_atomic_with_exception() -> None:
 
     assert 25 == sqlite_conn.execute("PRAGMA user_version").fetchall()[0][0]
 
-    with pytest.raises(
-        RuntimeError, match="Rolling back due to unhandled exception"
-    ) as e:
-        with atomic(sqlite_conn) as atomic_conn:
-            atomic_conn.execute("PRAGMA user_version(42)")
-            raise Exception("intended exception")
+    with (  # noqa: PT012
+        pytest.raises(
+            RuntimeError, match="Rolling back due to unhandled exception"
+        ) as e,
+        atomic(sqlite_conn) as atomic_conn,
+    ):
+        atomic_conn.execute("PRAGMA user_version(42)")
+        raise RuntimeError("intended exception")
     assert error_caused_by(e, "intended exception")
 
     assert 25 == sqlite_conn.execute("PRAGMA user_version").fetchall()[0][0]
+
+
+def test_atomic_with_keyboardinterrupt(tmp_path: "Path") -> None:
+    dbfile = str(tmp_path / "temp.db")
+    conn = AtomicConnection(dbfile)
+    isolation_level = conn.isolation_level
+
+    conn.execute("CREATE TABLE t (x INTEGER)")
+    conn.commit()
+
+    with (  # noqa: PT012
+        pytest.raises(KeyboardInterrupt),
+        atomic(conn),
+    ):
+        conn.execute("INSERT INTO t (x) VALUES (1)")
+        raise KeyboardInterrupt
+
+    assert [] == conn.execute("SELECT x FROM t").fetchall()
+    assert conn_plus_is_idle(conn, isolation_level)
+
+    with atomic(conn):
+        conn.execute("INSERT INTO t (x) VALUES (2)")
+
+    with closing(sqlite3.connect(dbfile, timeout=1)) as reader:
+        assert [(2,)] == reader.execute("SELECT x FROM t").fetchall()
+
+
+def test_nested_atomic_with_keyboardinterrupt(tmp_path: "Path") -> None:
+    dbfile = str(tmp_path / "temp.db")
+    conn = AtomicConnection(dbfile)
+    isolation_level = conn.isolation_level
+
+    conn.execute("CREATE TABLE t (x INTEGER)")
+    conn.commit()
+
+    with (  # noqa: PT012
+        pytest.raises(KeyboardInterrupt),
+        atomic(conn),
+    ):
+        conn.execute("INSERT INTO t (x) VALUES (1)")
+        with atomic(conn):
+            raise KeyboardInterrupt
+
+    assert [] == conn.execute("SELECT x FROM t").fetchall()
+    assert conn_plus_is_idle(conn, isolation_level)
 
 
 def test_atomic_on_outmost_connection_that_is_in_transaction() -> None:
@@ -115,13 +182,12 @@ def test_atomic_on_outmost_connection_that_is_in_transaction() -> None:
         "Please commit those before starting an atomic "
         "transaction."
     )
-    with pytest.raises(RuntimeError, match=match_str):
-        with atomic(conn):
-            pass
+    with pytest.raises(RuntimeError, match=match_str), atomic(conn):
+        pass
 
 
 @pytest.mark.parametrize("in_transaction", (True, False))
-def test_atomic_on_connection_plus_that_is_in_progress(in_transaction) -> None:
+def test_atomic_on_connection_plus_that_is_in_progress(in_transaction: "bool") -> None:
     sqlite_conn = AtomicConnection(":memory:")
 
     # explicitly set to True for testing purposes
@@ -184,7 +250,7 @@ def test_two_nested_atomics() -> None:
 
 
 def test_that_use_of_atomic_commits_only_at_outermost_context(
-    tmp_path,
+    tmp_path: "Path",
 ) -> None:
     """
     This test tests the behavior of `AtomicConnection` that is created from
@@ -268,7 +334,7 @@ def test_that_use_of_atomic_commits_only_at_outermost_context(
     assert 3 == len(control_conn.execute(get_all_runs).fetchall())
 
 
-def test_atomic_transaction(tmp_path) -> None:
+def test_atomic_transaction(tmp_path: "Path") -> None:
     """Test that atomic_transaction works for AtomicConnection"""
     dbfile = str(tmp_path / "temp.db")
 
@@ -278,23 +344,24 @@ def test_atomic_transaction(tmp_path) -> None:
 
     atomic_transaction(conn, sql_create_table)
 
-    ctrl_conn = sqlite3.connect(dbfile)
-    sql_table_exists = 'SELECT sql FROM sqlite_master WHERE TYPE = "table"'
-    assert sql_create_table in ctrl_conn.execute(sql_table_exists).fetchall()[0]
+    with closing(sqlite3.connect(dbfile)) as ctrl_conn:
+        sql_table_exists = 'SELECT sql FROM sqlite_master WHERE TYPE = "table"'
+        assert sql_create_table in ctrl_conn.execute(sql_table_exists).fetchall()[0]
 
 
-def test_atomic_transaction_on_sqlite3_connection_raises(tmp_path) -> None:
+def test_atomic_transaction_on_sqlite3_connection_raises(tmp_path: "Path") -> None:
     """Test that atomic_transaction does not work for sqlite3.Connection"""
     dbfile = str(tmp_path / "temp.db")
-
-    conn = sqlite3.connect(dbfile)
 
     match_str = re.escape(
         "atomic context manager only accepts AtomicConnection "
         "database connection objects."
     )
 
-    with pytest.raises(ValueError, match=match_str):
+    with (
+        closing(sqlite3.connect(dbfile)) as conn,
+        pytest.raises(ValueError, match=match_str),
+    ):
         atomic_transaction(conn, "whatever sql query")  # type: ignore[arg-type]
 
 
@@ -305,3 +372,151 @@ def test_connect() -> None:
     assert isinstance(conn, AtomicConnection)
     assert False is conn.atomic_in_progress
     assert None is conn.row_factory
+
+
+def test_open_connections_are_tracked_until_closed(tmp_path: "Path") -> None:
+    conn = connect(tmp_path / "temp.db")
+    assert conn in get_open_connections()
+
+    conn.close()
+    assert conn not in get_open_connections()
+
+    # closing an already closed connection is a no-op
+    conn.close()
+    assert conn not in get_open_connections()
+
+
+def test_garbage_collected_connections_are_not_tracked() -> None:
+    conn = AtomicConnection(":memory:")
+    assert conn in get_open_connections()
+
+    conn_ref = weakref.ref(conn)
+    del conn
+    gc.collect()
+    # the registry must not keep connections alive
+    assert conn_ref() is None
+
+
+def test_open_connections_lock_is_reentrant() -> None:
+    """Allow registry access from finalizers running while the lock is held."""
+    with _open_connections_lock:
+        acquired = _open_connections_lock.acquire(blocking=False)
+        try:
+            assert acquired
+        finally:
+            if acquired:
+                _open_connections_lock.release()
+
+
+def test_connection_cleanup_preserves_existing_connections() -> None:
+    """Close only connections opened within the cleanup fixture's scope."""
+    with closing(AtomicConnection(":memory:")) as existing_conn:
+        with contextmanager(unwrap(close_db_connections))():
+            new_conn = AtomicConnection(":memory:")
+
+        assert existing_conn.execute("SELECT 1").fetchone() == (1,)
+        assert existing_conn in get_open_connections()
+        assert new_conn not in get_open_connections()
+        with pytest.raises(sqlite3.ProgrammingError):
+            new_conn.execute("SELECT 1")
+
+
+def test_connection_cleanup_does_not_keep_existing_connections_alive() -> None:
+    """Avoid extending connection lifetimes when recording existing connections."""
+    conn = AtomicConnection(":memory:")
+    conn_ref = weakref.ref(conn)
+    with contextmanager(unwrap(close_db_connections))():
+        del conn
+        gc.collect()
+        assert conn_ref() is None
+
+
+def test_close_all_connections(tmp_path: "Path") -> None:
+    conns = [connect(tmp_path / "temp.db") for _ in range(3)]
+    conns.append(AtomicConnection(":memory:"))
+
+    close_all_connections()
+
+    for conn in conns:
+        assert conn not in get_open_connections()
+        with pytest.raises(sqlite3.ProgrammingError):
+            conn.execute("SELECT 1")
+
+
+def test_close_all_connections_only_closes_connections_owned_by_thread(
+    tmp_path: "Path",
+) -> None:
+    dbfile = tmp_path / "temp.db"
+    conns: list[AtomicConnection] = []
+    opened = threading.Event()
+    close = threading.Event()
+
+    def open_and_close_in_thread() -> None:
+        conns.append(connect(dbfile))
+        opened.set()
+        close.wait(timeout=10)
+        close_all_connections()
+
+    thread = threading.Thread(target=open_and_close_in_thread)
+    thread.start()
+    assert opened.wait(timeout=10)
+    (other_thread_conn,) = conns
+    own_conn = connect(dbfile)
+
+    assert other_thread_conn.owner_thread_id == thread.ident
+    assert own_conn.owner_thread_id == threading.get_ident()
+
+    close_all_connections()
+    assert own_conn not in get_open_connections()
+    assert other_thread_conn in get_open_connections()
+
+    close.set()
+    thread.join(timeout=10)
+    assert not thread.is_alive()
+    assert other_thread_conn not in get_open_connections()
+
+
+def test_open_connections_are_closed_at_exit(tmp_path: "Path") -> None:
+    # atexit handlers run in reverse order of registration, so a handler
+    # registered before qcodes is imported runs after qcodes' own handler
+    # and can observe whether the connection was closed.
+    script = textwrap.dedent(
+        f"""
+        import atexit
+        import sqlite3
+
+        def report():
+            try:
+                conn.execute("SELECT 1")
+            except sqlite3.ProgrammingError:
+                print("closed")
+            else:
+                print("open")
+
+        atexit.register(report)
+
+        import qcodes
+        from qcodes.dataset.sqlite.connection import AtomicConnection
+
+        assert qcodes.config.current_config == qcodes.config.defaults
+        assert qcodes.config.current_config_path == qcodes.config.default_file_name
+
+        conn = AtomicConnection({str(tmp_path / "temp.db")!r})
+        """
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=True,
+        cwd=tmp_path,
+        env={
+            **os.environ,
+            "HOME": str(tmp_path),
+            "USERPROFILE": str(tmp_path),
+            "QCODES_CONFIG": str(tmp_path / "qcodesrc.json"),
+        },
+    )
+
+    assert result.stdout.strip() == "closed"

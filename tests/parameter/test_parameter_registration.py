@@ -20,7 +20,7 @@ class BrokenParameter(Parameter):
 
     def __init__(
         self, name: str, instrument: "InstrumentBase", *args: Any, **kwargs: Any
-    ):
+    ) -> None:
         super().__init__(name, *args, **kwargs)
         self._instrument = instrument
 
@@ -30,7 +30,7 @@ class BrokenParameter2(Parameter):
 
     def __init__(
         self, name: str, instrument: "InstrumentBase", set_cmd: Any, get_cmd: Any
-    ):
+    ) -> None:
         super().__init__(name=name, instrument=instrument)
 
 
@@ -68,7 +68,7 @@ def test_parameter_registration_with_non_instr_passing_parameter(
         )
     # test that even if the parameter does not pass instrument to the baseclass
     # it will still be registered on the instr
-    assert "brokenparameter" in dummy_attr_instr.parameters.keys()
+    assert "brokenparameter" in dummy_attr_instr.parameters
 
 
 def test_parameter_registration_with_non_kwargs_passing_parameter(
@@ -87,7 +87,7 @@ def test_parameter_registration_with_non_kwargs_passing_parameter(
     # test that even if the parameter does not pass kwargs
     # (bind_to_instrument specifically)
     # to the baseclass it will still be registered on the instr
-    assert "brokenparameter2" in dummy_attr_instr.parameters.keys()
+    assert "brokenparameter2" in dummy_attr_instr.parameters
 
 
 def test_parameter_registration_bind_to_instrument_false(
@@ -100,4 +100,4 @@ def test_parameter_registration_bind_to_instrument_false(
             get_cmd=None,
             bind_to_instrument=False,
         )
-    assert "non_binding_parameter" not in dummy_attr_instr.parameters.keys()
+    assert "non_binding_parameter" not in dummy_attr_instr.parameters

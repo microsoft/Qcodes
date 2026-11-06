@@ -135,6 +135,31 @@ def test_ranging_mode(cmu: KeysightB1520A) -> None:
     mainframe.write.assert_called_once_with("RC 3,0")
 
 
+def test_ac_dc_volt_monitor(cmu: KeysightB1520A) -> None:
+    mainframe = cmu.parent
+    assert isinstance(mainframe, MagicMock)
+
+    assert cmu.ac_dc_volt_monitor() is False
+
+    cmu.ac_dc_volt_monitor(True)
+    assert cmu.ac_dc_volt_monitor() is True
+    cmu.ac_dc_volt_monitor(False)
+    assert cmu.ac_dc_volt_monitor() is False
+
+    mainframe.write.assert_has_calls([call("LMN 1"), call("LMN 0")])
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"), [(1, True), (0, False), ("on", True), ("off", False)]
+)
+def test_ac_dc_volt_monitor_accepts_on_off_ints_and_strings(
+    cmu: KeysightB1520A, value: int | str, expected: bool
+) -> None:
+    # while it does not type check, on/off ints and strings are accepted
+    cmu.ac_dc_volt_monitor(value)  # pyright: ignore[reportArgumentType]
+    assert cmu.ac_dc_volt_monitor() is expected
+
+
 def test_set_sweep_auto_abort(cmu: KeysightB1520A) -> None:
     mainframe = cmu.parent
     assert isinstance(mainframe, MagicMock)
@@ -215,7 +240,7 @@ def test_cv_sweep_voltages(cmu: KeysightB1520A) -> None:
     cmu.cv_sweep.sweep_steps(steps)
     voltages = cmu.cv_sweep_voltages()
 
-    assert all([a == b for a, b in zip(np.linspace(start, end, steps), voltages)])
+    assert all(a == b for a, b in zip(np.linspace(start, end, steps), voltages))
 
 
 def test_sweep_modes(cmu: KeysightB1520A) -> None:
@@ -234,7 +259,7 @@ def test_sweep_modes(cmu: KeysightB1520A) -> None:
     cmu.cv_sweep.sweep_mode(mode)
     voltages = cmu.cv_sweep_voltages()
 
-    assert all([a == b for a, b in zip((-1.0, 0.0, 1.0, 0.0, -1.0), voltages)])
+    assert all(a == b for a, b in zip((-1.0, 0.0, 1.0, 0.0, -1.0), voltages))
 
 
 def test_run_sweep(cmu: KeysightB1520A) -> None:

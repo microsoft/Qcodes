@@ -108,8 +108,8 @@ class DelegateInstrument(InstrumentBase):
         self,
         name: str,
         station: Station,
-        parameters: None | (Mapping[str, Sequence[str]] | Mapping[str, str]) = None,
-        channels: None | (Mapping[str, Mapping[str, Any]] | Mapping[str, str]) = None,
+        parameters: (Mapping[str, Sequence[str]] | Mapping[str, str]) | None = None,
+        channels: (Mapping[str, Mapping[str, Any]] | Mapping[str, str]) | None = None,
         initial_values: Mapping[str, Any] | None = None,
         set_initial_values_on_load: bool = False,
         setters: Mapping[str, MutableMapping[str, Any]] | None = None,
@@ -204,7 +204,7 @@ class DelegateInstrument(InstrumentBase):
             elif isinstance(paths, abc.Sequence):
                 path_list = paths
             else:
-                raise ValueError(
+                raise ValueError(  # noqa: TRY004
                     "Parameter paths should be either a string or Sequence of \
                         strings."
                 )

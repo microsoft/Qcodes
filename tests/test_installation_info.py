@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+import logging
+from importlib.metadata import PackageNotFoundError
+from typing import TYPE_CHECKING
+
 from packaging import version
 
 from qcodes.utils import (
@@ -5,6 +11,10 @@ from qcodes.utils import (
     get_all_installed_package_versions,
     is_qcodes_installed_editably,
 )
+
+if TYPE_CHECKING:
+    import pytest
+    from pytest_mock import MockerFixture
 
 # The get_* functions from installation_info are hard to meaningfully test,
 # but we can at least test that they execute without errors
@@ -14,6 +24,57 @@ def test_is_qcodes_installed_editably() -> None:
     answer = is_qcodes_installed_editably()
 
     assert isinstance(answer, bool)
+
+
+def test_is_qcodes_installed_editably_reads_direct_url(
+    mocker: MockerFixture,
+) -> None:
+    """The answer is read from the PEP 610 ``direct_url.json`` metadata."""
+    read_text = mocker.patch(
+        "qcodes.utils.installation_info.distribution"
+    ).return_value.read_text
+
+    read_text.return_value = (
+        '{"url": "file:///home/user/qcodes", "dir_info": {"editable": true}}'
+    )
+    assert is_qcodes_installed_editably() is True
+
+    read_text.return_value = (
+        '{"url": "file:///home/user/qcodes", "dir_info": {"editable": false}}'
+    )
+    assert is_qcodes_installed_editably() is False
+
+    # installed from a local directory but not editable, so dir_info is empty
+    read_text.return_value = '{"url": "file:///home/user/qcodes", "dir_info": {}}'
+    assert is_qcodes_installed_editably() is False
+
+    # installed from git, so there is vcs_info but no dir_info
+    read_text.return_value = (
+        '{"url": "https://github.com/microsoft/Qcodes.git", "vcs_info": '
+        '{"vcs": "git", "commit_id": "0123456789abcdef0123456789abcdef01234567"}}'
+    )
+    assert is_qcodes_installed_editably() is False
+
+    # installed from an index, so no direct_url.json is written
+    read_text.return_value = None
+    assert is_qcodes_installed_editably() is False
+
+
+def test_is_qcodes_installed_editably_when_metadata_is_missing(
+    caplog: pytest.LogCaptureFixture, mocker: MockerFixture
+) -> None:
+    """If the metadata cannot be read we return None and log the traceback."""
+    mocker.patch(
+        "qcodes.utils.installation_info.distribution",
+        side_effect=PackageNotFoundError("qcodes"),
+    )
+
+    with caplog.at_level(logging.ERROR, logger="qcodes.utils.installation_info"):
+        answer = is_qcodes_installed_editably()
+
+    assert answer is None
+    assert "Could not determine if QCoDeS is installed editably" in caplog.text
+    assert "PackageNotFoundError" in caplog.text
 
 
 def test_get_all_installed_package_versions() -> None:
