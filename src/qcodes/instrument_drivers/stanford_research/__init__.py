@@ -2,7 +2,7 @@ from qcodes.utils.deprecate import _keep_attributes_shadowing_submodules
 
 from ._sg384 import SG384
 from ._sr86x import SR86x, SR86xBuffer, SR86xDataChannel
-from ._sr560 import SR560
+from ._sr560 import SR560, SR560VoltageParameter
 from ._sr830 import SR830
 from ._sr860 import SR860
 from ._sr865 import SR865
@@ -23,4 +23,5 @@ __all__ = [
     "SR86x",
     "SR86xBuffer",
     "SR86xDataChannel",
+    "SR560VoltageParameter",
 ]

@@ -147,6 +147,16 @@ def test_deprecated_module_aliases(
     assert getattr(parent_module, attribute_name) is expected
 
 
+def test_deprecated_sr560_voltage_parameter_alias() -> None:
+    stanford_research = importlib.import_module(_SRS)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", QCoDeSDeprecationWarning)
+        deprecated_module = importlib.import_module(f"{_SRS}.SR560")
+
+    assert deprecated_module.VoltageParameter is stanford_research.SR560VoltageParameter
+
+
 def test_top_level_parameter_shorthand_deprecated() -> None:
     with pytest.warns(
         QCoDeSDeprecationWarning, match=r"top level.*'qcodes\.parameters'"

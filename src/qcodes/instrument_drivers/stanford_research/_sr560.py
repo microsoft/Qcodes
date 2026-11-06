@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from typing import Unpack
 
 
-class VoltageParameter(MultiParameter):
+class SR560VoltageParameter(MultiParameter):
     """
     Amplified voltage measurement via an SR560 preamp and a measured voltage.
 
@@ -16,7 +16,7 @@ class VoltageParameter(MultiParameter):
     output voltage to a lockin or other voltage amplifier, and you have
     the voltage reading from that amplifier as a qcodes parameter.
 
-    ``VoltageParameter.get()`` returns ``(voltage_raw, voltage)``
+    ``SR560VoltageParameter.get()`` returns ``(voltage_raw, voltage)``
 
     Args:
         measured_param: a gettable parameter returning the

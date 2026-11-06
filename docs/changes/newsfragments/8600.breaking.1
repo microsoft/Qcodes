@@ -1,0 +1,7 @@
+``VoltageParameter`` from the SR560 driver has been renamed to ``SR560VoltageParameter`` and is now
+exported from ``qcodes.instrument_drivers.stanford_research``. The parameter classes
+``ChannelBuffer``, ``ChannelTrace`` and ``GeneratedSetPoints`` of the SR830 driver and
+``SR86xBufferReadout`` of the SR86x drivers are only created by the drivers themselves and are now
+private. They remain available from the deprecated ``SR830`` and ``SR86x`` module aliases until
+those are removed. ``VoltageParameter`` likewise remains available from the deprecated ``SR560``
+module alias.
