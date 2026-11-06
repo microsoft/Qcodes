@@ -30,7 +30,7 @@ def test_active_trace(pna: KeysightN5222B) -> None:
     # while it does not type check, make sure a non-integer trace number is
     # rejected at runtime
     with pytest.raises(TypeError):
-        pna.active_trace(1.5)  # pyright: ignore[reportArgumentType]
+        pna.active_trace(1.5)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
 
 @pytest.mark.parametrize("name", ["averages", "points"])

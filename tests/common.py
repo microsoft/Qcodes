@@ -87,7 +87,9 @@ def profile[**P, T](func: Callable[P, T]) -> Callable[P, T]:
     """
 
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
-        profile_filename = func.__name__ + ".prof"
+        # a Callable is not necessarily a function object, so ty rejects
+        # reading its name here. mypy and pyright both allow it.
+        profile_filename = func.__name__ + ".prof"  # ty: ignore[unresolved-attribute]
         profiler = cProfile.Profile()
         result = profiler.runcall(func, *args, **kwargs)
         profiler.dump_stats(profile_filename)

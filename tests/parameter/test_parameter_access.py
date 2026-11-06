@@ -79,7 +79,7 @@ def test_records_names_not_objects() -> None:
     for field_value in (access.parameter_name, access.instrument_name):
         assert isinstance(field_value, str)
     with pytest.raises(AttributeError):
-        access.parameter  # type: ignore[attr-defined]  # noqa: B018
+        access.parameter  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]  # noqa: B018
 
 
 def test_unit_is_not_read() -> None:
@@ -135,7 +135,7 @@ def test_records_are_immutable() -> None:
         param(1)
 
     with pytest.raises(AttributeError):
-        accesses[0].value = 2  # type: ignore[misc]
+        accesses[0].value = 2  # type: ignore[misc]  # ty: ignore[invalid-assignment]
 
 
 def test_records_raw_values() -> None:
@@ -445,9 +445,9 @@ def test_logs_accesses(caplog: pytest.LogCaptureFixture) -> None:
         "set logged_p = 1",
         "get logged_p = 1",
     ]
-    access = records[0].parameter_access  # type: ignore[attr-defined]
+    access = records[0].parameter_access  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     assert isinstance(access, ParameterAccess)
-    assert records[0].parameter_name == "logged_p"  # type: ignore[attr-defined]
+    assert records[0].parameter_name == "logged_p"  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
 
 
 def test_logs_failed_accesses(caplog: pytest.LogCaptureFixture) -> None:
@@ -601,7 +601,7 @@ def test_failing_log_does_not_affect_the_access(
         "Recording the set of p failed",
         "Recording the get of p failed",
     ]
-    assert errors[0].exc_info is not None
+    assert errors[0].exc_info
     assert isinstance(errors[0].exc_info[1], ValueError)
 
 

@@ -1,0 +1,5 @@
+``snapshot_raw`` is now part of :class:`.DataSetProtocol` and is available on
+:class:`.DataSetInMem` as well as on :class:`.DataSet`. It is documented as the
+way to get the snapshot of a run as a JSON string, and is used as such in the
+example notebooks, but it was only declared on one of the two dataset classes,
+so reading it from a dataset returned by a measurement did not type check.

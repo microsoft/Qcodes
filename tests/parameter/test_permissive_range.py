@@ -25,7 +25,7 @@ good_args = [
 @pytest.mark.parametrize("args", bad_args)
 def test_bad_calls(args: list[float | str | None]) -> None:
     with pytest.raises(TypeError):
-        permissive_range(*args)  # pyright: ignore[reportArgumentType]
+        permissive_range(*args)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
 
 @pytest.mark.parametrize("args,result", good_args)

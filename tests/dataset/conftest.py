@@ -700,7 +700,7 @@ def SpectrumAnalyzer() -> Generator[DummyInstrument, None, None]:
             self.stop = 2e6
             self._rng = np.random.default_rng()
 
-        def get_data(self) -> NDArray[np.float64]:
+        def get_data(self) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
             # This is how it should be: the setpoints are generated at the
             # time we get. But that will of course not work with the old Loop
             self.setpoints = (tuple(np.linspace(self.start, self.stop, self.npts)),)

@@ -23,7 +23,7 @@ class NoDelDict(dict[Any, Any]):
 def test_normal() -> None:
     a = A()
     a.x = 15
-    a.z = 25  # type: ignore[attr-defined]
+    a.z = 25  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
 
     strip_attrs(a)
 
@@ -38,13 +38,13 @@ def test_pathological() -> None:
     a = A()
     a.__dict__ = BadKeysDict()
 
-    a.fruit = "mango"  # type: ignore[attr-defined]
+    a.fruit = "mango"  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     with pytest.raises(RuntimeError):
         a.__dict__.keys()
 
     strip_attrs(a)
     # no error, but the attribute is still there
-    assert a.fruit == "mango"  # type: ignore[attr-defined]
+    assert a.fruit == "mango"  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
 
     a = A()
     a.__dict__ = NoDelDict()

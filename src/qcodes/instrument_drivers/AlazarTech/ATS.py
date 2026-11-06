@@ -153,7 +153,7 @@ class AlazarTechATS(Instrument):
 
         self.buffer_list: list[Buffer] = []
 
-    def get_idn(self) -> dict[str, str | int | None]:  # type: ignore[override]
+    def get_idn(self) -> dict[str, str | int | None]:  # type: ignore[override]  # ty: ignore[invalid-method-override]
         # TODO return type is inconsistent with the super class. We should consider
         # if ints and floats are allowed as values in the dict
         """

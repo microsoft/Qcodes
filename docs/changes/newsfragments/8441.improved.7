@@ -1,0 +1,6 @@
+``connect_paths``, ``disconnect_paths`` and ``to_channel_list`` on the Keysight
+B220X switch matrix drivers now accept any iterable of paths rather than only a
+``Sequence``. They iterate the paths once and do not index them, so passing a
+set, as the example notebook does, is fine. Note that the order in which the
+paths appear in the channel list then follows the iteration order of the
+argument.

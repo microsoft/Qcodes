@@ -44,7 +44,7 @@ def test_trigger_count_accepts_whole_floats(
 ) -> None:
     write_raw = mocker.spy(dmm6500, "write_raw")
 
-    dmm6500.trigger_count(value)  # pyright: ignore[reportArgumentType]
+    dmm6500.trigger_count(value)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
     write_raw.assert_called_once_with("ROUT:SCAN:COUN:SCAN 10")
     assert dmm6500.trigger_count() == 10
@@ -61,5 +61,5 @@ def test_trigger_count_rejects_invalid(
     write_raw = mocker.spy(dmm6500, "write_raw")
 
     with pytest.raises((ValueError, TypeError)):
-        dmm6500.trigger_count(value)  # pyright: ignore[reportArgumentType]
+        dmm6500.trigger_count(value)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
     write_raw.assert_not_called()

@@ -157,7 +157,7 @@ def test_invalid_channel_type_raises(empty_instrument: Instrument) -> None:
         ChannelList(
             parent=empty_instrument,
             name="empty",
-            chan_type=int,  # type: ignore[type-var]
+            chan_type=int,  # type: ignore[type-var]  # ty: ignore[invalid-argument-type]
         )
 
 
@@ -167,7 +167,7 @@ def test_invalid_multichan_type_raises(empty_instrument: Instrument) -> None:
             parent=empty_instrument,
             name="empty",
             chan_type=DummyChannel,
-            multichan_paramclass=int,  # type: ignore[arg-type]
+            multichan_paramclass=int,  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
         )
 
 
@@ -214,7 +214,7 @@ def test_append_channel_wrong_type_raises(dci_with_list: DCIWithList) -> None:
 
     channel = EmptyChannel(dci_with_list, "foo")
     with pytest.raises(TypeError, match="All items in a channel list must"):
-        dci_with_list.channels.append(channel)  # pyright: ignore[reportArgumentType]
+        dci_with_list.channels.append(channel)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
     assert len(dci_with_list.channels) == n_channels
 
@@ -244,7 +244,7 @@ def test_extend_wrong_type_raises(dci_with_list: DCIWithList) -> None:
         TypeError,
         match=re.escape("All items in a channel list must be of the same type."),
     ):
-        dci_with_list.channels.extend(channels)  # pyright: ignore[reportArgumentType]
+        dci_with_list.channels.extend(channels)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
 
 def test_extend_locked_list_raises(dci_with_list: DCIWithList) -> None:
@@ -252,7 +252,7 @@ def test_extend_locked_list_raises(dci_with_list: DCIWithList) -> None:
     names = ("foo", "bar", "foobar")
     channels = tuple(EmptyChannel(dci_with_list, "Chan" + name) for name in names)
     with pytest.raises(AttributeError, match="Cannot extend a locked channel list"):
-        dci_with_list.channels.extend(channels)  # pyright: ignore[reportArgumentType]
+        dci_with_list.channels.extend(channels)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
 
 def test_extend_then_remove(dci_with_list: DCIWithList) -> None:
@@ -292,7 +292,7 @@ def test_insert_channel(dci_with_list: DCIWithList) -> None:
 
 def test_insert_channel_wrong_type_raises(dci_with_list: DCIWithList) -> None:
     with pytest.raises(TypeError, match="All items in a channel list"):
-        dci_with_list.channels.insert(1, EmptyChannel(parent=dci_with_list, name="foo"))  # pyright: ignore[reportArgumentType]
+        dci_with_list.channels.insert(1, EmptyChannel(parent=dci_with_list, name="foo"))  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
 
 def test_channel_type_can_be_inferred(
@@ -308,7 +308,7 @@ def test_add_none_channel_tuple_to_channel_tuple_raises(
     dci: DummyChannelInstrument,
 ) -> None:
     with pytest.raises(TypeError, match="Can't add objects of type"):
-        _ = dci.channels + [1]  # pyright: ignore[reportOperatorIssue]  # noqa: RUF005
+        _ = dci.channels + [1]  # pyright: ignore[reportOperatorIssue]  # ty: ignore[unsupported-operator]  # noqa: RUF005
 
 
 def test_add_channel_tuples_of_different_types_raises(
@@ -524,7 +524,7 @@ def test_access_channels_by_name_empty_raises(dci: DummyChannelInstrument) -> No
 
 def test_access_channel_by_name_empty_raises(dci: DummyChannelInstrument) -> None:
     with pytest.raises(TypeError, match="missing 1 required positional argument"):
-        dci.channels.get_channel_by_name()  # pyright: ignore[reportCallIssue]
+        dci.channels.get_channel_by_name()  # pyright: ignore[reportCallIssue]  # ty: ignore[missing-argument]
 
 
 def test_delete_from_channel_list(dci_with_list: DCIWithList) -> None:
@@ -736,7 +736,7 @@ def test_channel_tuple_call_method_called_as_expected(
     assert result is None
     for channel in dci.channels:
         # type inference ignores that this has been mocked
-        channel.turn_on.assert_called_with("bar")  # type: ignore[union-attr]
+        channel.turn_on.assert_called_with("bar")  # type: ignore[union-attr]  # ty: ignore[unresolved-attribute]
 
 
 def test_channel_tuple_names(dci: DummyChannelInstrument) -> None:
@@ -810,7 +810,7 @@ def test_multi_function_with_callable_method(
     result = multi_func("bar")
     assert result is None
     for channel in dci.channels:
-        channel.turn_on.assert_called_with("bar")  # type: ignore[union-attr]
+        channel.turn_on.assert_called_with("bar")  # type: ignore[union-attr]  # ty: ignore[unresolved-attribute]
 
 
 def test_multi_function_invalid_name_raises(dci: DummyChannelInstrument) -> None:

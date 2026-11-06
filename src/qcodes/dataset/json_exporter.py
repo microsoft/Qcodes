@@ -8,13 +8,17 @@ import numpy as np
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-json_template_linear = {
+# These are templates for a JSON document, so the values are deliberately
+# heterogeneous and consumers index arbitrarily deep into them. Annotating the
+# value type as ``Any`` matches how ``export_data_as_json_*`` below already
+# types the state they are copied into.
+json_template_linear: dict[str, Any] = {
     "type": "linear",
     "x": {"data": [], "name": "", "full_name": "", "is_setpoint": True, "unit": ""},
     "y": {"data": [], "name": "", "full_name": "", "is_setpoint": False, "unit": ""},
 }
 
-json_template_heatmap = {
+json_template_heatmap: dict[str, Any] = {
     "type": "heatmap",
     "x": {"data": [], "name": "", "full_name": "", "is_setpoint": True, "unit": ""},
     "y": {"data": [], "name": "", "full_name": "", "is_setpoint": True, "unit": ""},

@@ -13,7 +13,7 @@ def test_dict() -> None:
     d.validate(my_dict)
     my_int = 5
     with pytest.raises(TypeError):
-        d.validate(my_int)  # type: ignore[arg-type]
+        d.validate(my_int)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 def test_valid_values() -> None:
