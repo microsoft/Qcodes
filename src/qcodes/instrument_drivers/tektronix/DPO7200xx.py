@@ -169,7 +169,7 @@ class TektronixDPO7000xx(VisaInstrument):
                 break
             time.sleep(0.1)
 
-    def download_waveforms(self) -> tuple[np.ndarray, ..,]:
+    def download_waveforms(self) -> tuple[np.ndarray, ...,]:
         """
         Wait for acquisition of a triggered waveform to complete and then
         download acquired waveforms from the enabled channels the Tektronix scope.
