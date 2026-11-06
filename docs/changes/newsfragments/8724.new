@@ -1,0 +1,6 @@
+Snapshots are stored losslessly using versioned, checksummed Zstandard level 1
+compression by default. JSON snapshot APIs and NetCDF exports retain complete
+contents, and legacy uncompressed snapshots remain readable. Set
+``dataset.snapshot_compression`` to ``"none"`` for uncompressed writes.
+Database schema version 10 prevents older QCoDeS versions from opening upgraded
+databases; direct SQL consumers must account for the new BLOB representation.

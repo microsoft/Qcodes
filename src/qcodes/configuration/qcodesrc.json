@@ -65,6 +65,7 @@
         "sample": 0
     },
     "dataset": {
+        "snapshot_compression": "zstd",
         "write_in_background": false,
         "write_period": 5.0,
         "use_threads": false,

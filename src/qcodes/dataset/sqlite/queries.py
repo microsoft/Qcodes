@@ -34,6 +34,7 @@ from qcodes.dataset.sqlite.connection import (
     atomic_transaction,
     transaction,
 )
+from qcodes.dataset.sqlite.db_upgrades.version import get_user_version
 from qcodes.dataset.sqlite.query_helpers import (
     VALUE,
     VALUES,
@@ -49,6 +50,7 @@ from qcodes.dataset.sqlite.query_helpers import (
     sql_placeholder_string,
     update_where,
 )
+from qcodes.dataset.sqlite.snapshot_storage import decode_snapshot, encode_snapshot
 from qcodes.parameters import ParamSpecBase
 from qcodes.utils import list_of_data_to_maybe_ragged_nd_array
 
@@ -1761,7 +1763,7 @@ def create_run(
         )
         if metadata:
             add_data_to_dynamic_columns(conn, run_id, metadata)
-        if snapshot_raw:
+        if snapshot_raw is not None:
             add_data_to_dynamic_columns(conn, run_id, {"snapshot": snapshot_raw})
         _update_experiment_run_counter(conn, exp_id, run_counter)
         if create_run_table:
@@ -1838,6 +1840,9 @@ def get_data_by_tag_and_table_name(
             data = None
         else:
             raise
+    if tag == "snapshot":
+        assert isinstance(data, (str, bytes, type(None)))
+        return decode_snapshot(data)
     return data
 
 
@@ -1960,6 +1965,16 @@ def update_columns(
 
     """
     validate_dynamic_column_data(data)
+    if table_name == "runs" and "snapshot" in data:
+        snapshot = data["snapshot"]
+        if not isinstance(snapshot, str):
+            raise TypeError("Snapshot must be a raw JSON string")
+        compression = config.dataset.snapshot_compression
+        if compression == "zstd" and get_user_version(conn) < 10:
+            raise RuntimeError(
+                "Compressed snapshots require database schema version 10"
+            )
+        data = {**data, "snapshot": encode_snapshot(snapshot, compression)}
     update_where(conn, table_name, "rowid", row_id, **data)
 
 
@@ -2307,7 +2322,7 @@ def get_raw_run_attributes(
     assert isinstance(name, str)
 
     rawsnapshot = select_one_where(conn, "runs", "snapshot", "guid", guid)
-    assert isinstance(rawsnapshot, (str, type(None)))
+    assert isinstance(rawsnapshot, (str, bytes, type(None)))
     output: RawRunAttributesDict = {
         "run_id": run_id,
         "experiment": experiment,
@@ -2320,7 +2335,7 @@ def get_raw_run_attributes(
         "metadata": get_metadata_from_run_id(conn, run_id),
         "parent_dataset_links": get_parent_dataset_links(conn, run_id),
         "run_description": get_run_description(conn, run_id),
-        "snapshot": rawsnapshot,
+        "snapshot": decode_snapshot(rawsnapshot),
     }
 
     return output

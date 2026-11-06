@@ -303,6 +303,12 @@
         "dataset": {
             "type": "object",
             "properties": {
+                "snapshot_compression": {
+                    "type": "string",
+                    "enum": ["none", "zstd"],
+                    "default": "zstd",
+                    "description": "Snapshot write policy: lossless Zstandard level 1 BLOBs or legacy uncompressed JSON TEXT. Reads support both independently of this setting."
+                },
                 "write_in_background": {
                     "type": "boolean",
                     "default": false,
