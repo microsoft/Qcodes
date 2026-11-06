@@ -195,7 +195,7 @@ class TektronixDPO7000xx(VisaInstrument):
                 )  # This will trigger the actual download of the waveform
         return wfms
 
-    def get_timebase(self) -> tuple:
+    def get_timebase(self) -> tuple[str,np.ndarray]:
         """
         Get the timebase of the scope in seconds per division
 
