@@ -1,0 +1,7 @@
+Basic examples
+--------------
+
+.. toctree::
+    :glob:
+
+    *
