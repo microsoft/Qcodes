@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Generator
 
     import numpy.typing as npt
+    from pytest_mock import MockerFixture
 
 
 def strip_outer_tags(sml: str) -> str:
@@ -119,6 +120,38 @@ def test_init_awg2(awg2: TektronixAWG70002A) -> None:
     idn_dict = awg2.IDN()
 
     assert idn_dict["vendor"] == "QCoDeS"
+
+
+@pytest.mark.parametrize("sequence_name", ["seq", "custom_sequence"])
+def test_upload_seqx(
+    awg2: TektronixAWG70002A,
+    mocker: MockerFixture,
+    sequence_name: str,
+) -> None:
+    waveforms = [[np.zeros(2400)], [np.zeros(2400)]]
+    make_seqx = mocker.spy(awg2, "makeSEQXFile")
+    operations = mocker.Mock()
+    for method in ("sendSEQXFile", "loadSEQXFile", "write_raw", "play"):
+        operations.attach_mock(mocker.patch.object(awg2, method), method)
+
+    seqx_input = ([0], [1], [0], [0], [0], waveforms, [0.5, 0.5], sequence_name)
+    if sequence_name == "seq":
+        awg2.upload_seqx(seqx_input)
+    else:
+        awg2.upload_seqx(seqx_input, sequence_name=sequence_name)
+
+    make_seqx.assert_called_once_with(*seqx_input)
+    assert zipfile.is_zipfile(BytesIO(make_seqx.spy_return))
+    assert operations.mock_calls == [
+        mocker.call.sendSEQXFile(make_seqx.spy_return, sequence_name + ".seqx"),
+        mocker.call.loadSEQXFile(sequence_name + ".seqx"),
+        mocker.call.write_raw(f'SOURCE1:CASSet:SEQuence "{sequence_name}", 1'),
+        mocker.call.write_raw(f'SOURCE2:CASSet:SEQuence "{sequence_name}", 2'),
+        mocker.call.write_raw("OUTPut1:STATe 1"),
+        mocker.call.write_raw("OUTPut2:STATe 1"),
+        mocker.call.write_raw("OUTPut:OFF 0"),
+        mocker.call.play(),
+    ]
 
 
 @settings(deadline=2500, max_examples=7)
