@@ -7,3 +7,10 @@ remain available as deprecated aliases that emit a ``QCoDeSDeprecationWarning`` 
 removed in a future release. Import the objects from the parent package instead, e.g.
 ``from qcodes.instrument_drivers.stanford_research import SR830`` or
 ``from qcodes.dataset import dond``.
+
+Any other names that were importable from these modules but are not exported from the parent
+package are now considered private. This includes the type aliases such as ``ParamMeasT`` and
+``ActionsT``, as well as ``DondKWargs``, ``ParameterGroup``, ``ParameterSetEvent`` and
+``catch_interrupts`` from ``qcodes.dataset.dond``. They remain importable from the deprecated
+module aliases until those are removed. If you rely on one of these names, please open an issue
+at https://github.com/microsoft/Qcodes/issues so that we can consider making it public.
