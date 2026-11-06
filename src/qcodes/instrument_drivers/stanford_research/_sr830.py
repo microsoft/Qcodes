@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from typing import Unpack
 
 
-class ChannelTrace(ParameterWithSetpoints):
+class SR830ChannelTrace(ParameterWithSetpoints):
     """
     Parameter class for the two channel buffers
     """
@@ -45,7 +45,7 @@ class ChannelTrace(ParameterWithSetpoints):
 
         if not isinstance(self.root_instrument, SR830):
             raise ValueError(  # noqa: TRY004
-                "Invalid parent instrument. ChannelBuffer can only live on an SR830."
+                "Invalid parent instrument. SR830ChannelTrace can only live on an SR830."
             )
 
         self.channel = channel
@@ -86,7 +86,7 @@ class ChannelTrace(ParameterWithSetpoints):
         return numbers
 
 
-class ChannelBuffer(ArrayParameter):
+class SR830ChannelBuffer(ArrayParameter):
     """
     Parameter class for the two channel buffers
 
@@ -113,7 +113,7 @@ class ChannelBuffer(ArrayParameter):
 
         if not isinstance(instrument, SR830):
             raise ValueError(  # noqa: TRY004
-                "Invalid parent instrument. ChannelBuffer can only live on an SR830."
+                "Invalid parent instrument. SR830ChannelBuffer can only live on an SR830."
             )
 
         super().__init__(
@@ -630,9 +630,9 @@ class SR830(VisaInstrument):
         )
         """Parameter buffer_npts"""
 
-        self.sweep_setpoints: GeneratedSetPoints = self.add_parameter(
+        self.sweep_setpoints: SR830GeneratedSetPoints = self.add_parameter(
             "sweep_setpoints",
-            parameter_class=GeneratedSetPoints,
+            parameter_class=SR830GeneratedSetPoints,
             vals=Arrays(shape=(self.buffer_npts.get,)),
         )
         """Parameter sweep_setpoints"""
@@ -655,14 +655,14 @@ class SR830(VisaInstrument):
                 vals=Strings(),
             )
             self.add_parameter(
-                f"ch{ch}_databuffer", channel=ch, parameter_class=ChannelBuffer
+                f"ch{ch}_databuffer", channel=ch, parameter_class=SR830ChannelBuffer
             )
             self.add_parameter(
                 f"ch{ch}_datatrace",
                 channel=ch,
                 vals=Arrays(shape=(self.buffer_npts.get,)),
                 setpoints=(self.sweep_setpoints,),
-                parameter_class=ChannelTrace,
+                parameter_class=SR830ChannelTrace,
             )
 
         # Auto functions
@@ -901,7 +901,7 @@ class SR830(VisaInstrument):
         # according to the choice of channel
         params = self.parameters
         dataparam = params[f"ch{channel}_datatrace"]
-        assert isinstance(dataparam, ChannelTrace)
+        assert isinstance(dataparam, SR830ChannelTrace)
         dataparam.update_unit()
 
     def _set_units(self, unit: str) -> None:
@@ -991,7 +991,7 @@ class SR830(VisaInstrument):
             self.sweep_setpoints.label = sweep_param.label
 
 
-class GeneratedSetPoints(Parameter):
+class SR830GeneratedSetPoints(Parameter):
     """
     A parameter that generates a setpoint array from start, stop and num points
     parameters.

@@ -147,14 +147,25 @@ def test_deprecated_module_aliases(
     assert getattr(parent_module, attribute_name) is expected
 
 
-def test_deprecated_sr560_voltage_parameter_alias() -> None:
-    stanford_research = importlib.import_module(_SRS)
+@pytest.mark.parametrize(
+    ("module_name", "old_name", "new_module_name", "new_name"),
+    [
+        ("SR560", "VoltageParameter", "_sr560", "SR560VoltageParameter"),
+        ("SR830", "ChannelBuffer", "_sr830", "SR830ChannelBuffer"),
+        ("SR830", "ChannelTrace", "_sr830", "SR830ChannelTrace"),
+        ("SR830", "GeneratedSetPoints", "_sr830", "SR830GeneratedSetPoints"),
+    ],
+)
+def test_deprecated_module_alias_renamed_classes(
+    module_name: str, old_name: str, new_module_name: str, new_name: str
+) -> None:
+    new_module = importlib.import_module(f"{_SRS}.{new_module_name}")
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", QCoDeSDeprecationWarning)
-        deprecated_module = importlib.import_module(f"{_SRS}.SR560")
+        deprecated_module = importlib.import_module(f"{_SRS}.{module_name}")
 
-    assert deprecated_module.VoltageParameter is stanford_research.SR560VoltageParameter
+    assert getattr(deprecated_module, old_name) is getattr(new_module, new_name)
 
 
 def test_top_level_parameter_shorthand_deprecated() -> None:
