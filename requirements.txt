@@ -258,7 +258,7 @@ pandas==3.1.0
     #   qcodes
     #   qcodes-loop
     #   xarray
-pandas-stubs==3.0.5.260914
+pandas-stubs==3.1.0.261029
     # via qcodes (pyproject.toml)
 pandocfilters==1.5.1
     # via nbconvert
