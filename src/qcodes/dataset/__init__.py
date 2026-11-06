@@ -3,6 +3,15 @@ The dataset module contains code related to storage and retrieval of data to
 and from disk
 """
 
+from qcodes.utils.deprecate import _keep_attributes_shadowing_submodules
+
+from ._dond.do2d_retrace import do2d_retrace
+from ._dond.do_0d import do0d
+from ._dond.do_1d import do1d
+from ._dond.do_2d import do2d
+from ._dond.do_nd import dond
+from ._dond.do_nd_utils import BreakConditionInterrupt
+from ._dond.sweeps import AbstractSweep, ArraySweep, LinSweep, LogSweep, TogetherSweep
 from ._raw_data_storage import (
     cleanup_datasets,
     purge_orphaned_datasets,
@@ -26,12 +35,6 @@ from .descriptions.dependencies import InterDependencies_, ParamSpecTree
 from .descriptions.param_spec import ParamSpec
 from .descriptions.rundescriber import RunDescriber
 from .descriptions.versioning.serialization import rundescriber_from_json
-from .dond.do_0d import do0d
-from .dond.do_1d import do1d
-from .dond.do_2d import do2d
-from .dond.do_nd import dond
-from .dond.do_nd_utils import BreakConditionInterrupt
-from .dond.sweeps import AbstractSweep, ArraySweep, LinSweep, LogSweep, TogetherSweep
 from .experiment_container import (
     experiments,
     load_experiment,
@@ -71,6 +74,11 @@ from .threading import (
     call_params_threaded,
 )
 
+# Keep the public objects when the deprecated module aliases that share
+# their names are imported.
+_keep_attributes_shadowing_submodules(__name__)
+
+
 __all__ = [
     "AbstractSweep",
     "ArraySweep",
@@ -100,6 +108,7 @@ __all__ = [
     "do0d",
     "do1d",
     "do2d",
+    "do2d_retrace",
     "dond",
     "dond_into",
     "experiments",

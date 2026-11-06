@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from qcodes.dataset.dond.do_nd_utils import BreakConditionInterrupt, catch_interrupts
+from qcodes.dataset._dond.do_nd_utils import BreakConditionInterrupt, catch_interrupts
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
