@@ -404,3 +404,15 @@ def perform_db_upgrade_8_to_9(
                 transaction(connection, _IX_runs_captured_run_id)
     else:
         raise RuntimeError(f"found {n_run_tables} runs tables expected 1")
+
+
+@upgrader
+def perform_db_upgrade_9_to_10(
+    conn: AtomicConnection, show_progress_bar: bool = True
+) -> None:
+    """Allow versioned compressed BLOBs alongside TEXT in ``runs.snapshot``.
+
+    SQLite already supports both storage classes in this column. Existing
+    snapshots are deliberately not rewritten. The version gate prevents older
+    QCoDeS from treating compressed snapshots as JSON.
+    """

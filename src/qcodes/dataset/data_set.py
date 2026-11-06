@@ -475,8 +475,8 @@ class DataSet(BaseDataSet):
     @property
     def _snapshot_raw(self) -> str | None:
         """Snapshot of the run as a JSON-formatted string (or None)"""
-        snapshot_raw = select_one_where(
-            self.conn, "runs", "snapshot", "run_id", self.run_id
+        snapshot_raw = get_data_by_tag_and_table_name(
+            self.conn, "snapshot", self.table_name
         )
         assert isinstance(snapshot_raw, (str, type(None)))
         return snapshot_raw
