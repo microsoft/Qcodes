@@ -1,10 +1,17 @@
-from .SG384 import SG384
-from .SR86x import SR86x, SR86xBuffer, SR86xDataChannel
-from .SR560 import SR560
-from .SR830 import SR830
-from .SR860 import SR860
-from .SR865 import SR865
-from .SR865A import SR865A
+from qcodes.utils.deprecate import _keep_attributes_shadowing_submodules
+
+from ._sg384 import SG384
+from ._sr86x import SR86x, SR86xBuffer, SR86xDataChannel
+from ._sr560 import SR560
+from ._sr830 import SR830
+from ._sr860 import SR860
+from ._sr865 import SR865
+from ._sr865a import SR865A
+
+# Keep the public objects when the deprecated module aliases that share
+# their names are imported.
+_keep_attributes_shadowing_submodules(__name__)
+
 
 __all__ = [
     "SG384",

@@ -14,7 +14,14 @@ the supported, statically typed alternative.
 
 from __future__ import annotations
 
+import importlib
+import os
+import subprocess
+import sys
+import textwrap
 import warnings
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -26,6 +33,117 @@ import qcodes.parameters
 import qcodes.station
 import qcodes.validators
 from qcodes.utils import QCoDeSDeprecationWarning
+
+if TYPE_CHECKING:
+    from pytest import MonkeyPatch
+
+
+@pytest.mark.skipif(
+    not hasattr(sys, "set_lazy_imports"), reason="requires Python 3.15 lazy imports"
+)
+def test_public_reexports_with_lazy_qcodes_imports() -> None:
+    lazy_imports_path = Path(__file__).parents[1] / ".github" / "lazy-imports"
+    code = textwrap.dedent(
+        """
+        import sys
+        import warnings
+
+        warnings.simplefilter("ignore")
+
+        import qcodes.dataset as dataset
+        import qcodes.utils as utils
+        from qcodes.dataset._dond.do_nd import dond
+        from qcodes.dataset.dond.do_nd import dond as deprecated_dond
+        from qcodes.instrument_drivers import basel, stanford_research
+        from qcodes.instrument_drivers.basel.BaselSP983 import BaselSP983
+        from qcodes.instrument_drivers.stanford_research.SR830 import SR830
+        from qcodes.utils._full_class import full_class
+        from qcodes.utils.full_class import full_class as deprecated_full_class
+
+        assert sys.get_lazy_imports_filter() is not None
+        assert "qcodes.instrument_drivers.stanford_research.SR830" not in sys.modules
+
+        # reify the lazy imports of the deprecated module aliases
+        assert deprecated_dond is dond
+        assert deprecated_full_class is full_class
+        assert isinstance(SR830, type)
+        assert isinstance(BaselSP983, type)
+
+        assert dataset.dond is dond
+        assert utils.full_class is full_class
+        assert stanford_research.SR830 is SR830
+        assert basel.BaselSP983 is BaselSP983
+        """
+    )
+
+    subprocess.run(
+        [sys.executable, "-c", code],
+        check=True,
+        env={
+            **os.environ,
+            "PYTHON_LAZY_IMPORTS": "all",
+            "PYTHONPATH": os.pathsep.join(
+                (str(lazy_imports_path), os.environ.get("PYTHONPATH", ""))
+            ),
+        },
+    )
+
+
+_DATASET = "qcodes.dataset"
+_BASEL = "qcodes.instrument_drivers.basel"
+_SRS = "qcodes.instrument_drivers.stanford_research"
+
+
+@pytest.mark.parametrize(
+    ("module_name", "parent_module_name", "attribute_name"),
+    [
+        ("qcodes.dataset.dond", _DATASET, "dond"),
+        ("qcodes.dataset.dond.do_0d", _DATASET, "do0d"),
+        ("qcodes.dataset.dond.do_1d", _DATASET, "do1d"),
+        ("qcodes.dataset.dond.do_2d", _DATASET, "do2d"),
+        ("qcodes.dataset.dond.do_nd", _DATASET, "dond"),
+        ("qcodes.dataset.dond.do_nd_utils", _DATASET, "BreakConditionInterrupt"),
+        ("qcodes.dataset.dond.sweeps", _DATASET, "LinSweep"),
+        (f"{_BASEL}.BaselSP983", _BASEL, "BaselSP983"),
+        (f"{_BASEL}.BaselSP983a", _BASEL, "BaselSP983a"),
+        (f"{_BASEL}.BaselSP983c", _BASEL, "BaselSP983c"),
+        (f"{_SRS}.SG384", _SRS, "SG384"),
+        (f"{_SRS}.SR560", _SRS, "SR560"),
+        (f"{_SRS}.SR830", _SRS, "SR830"),
+        (f"{_SRS}.SR860", _SRS, "SR860"),
+        (f"{_SRS}.SR865", _SRS, "SR865"),
+        (f"{_SRS}.SR865A", _SRS, "SR865A"),
+        (f"{_SRS}.SR86x", _SRS, "SR86x"),
+        ("qcodes.utils.full_class", "qcodes.utils", "full_class"),
+    ],
+)
+def test_deprecated_module_aliases(
+    module_name: str,
+    parent_module_name: str,
+    attribute_name: str,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    parent_module = importlib.import_module(parent_module_name)
+    expected = getattr(parent_module, attribute_name)
+    # Import the alias (and for the dond subpackage, the package that warns)
+    # afresh so that the deprecation warning is emitted in this test.
+    for name in list(sys.modules):
+        if name == module_name or name.startswith("qcodes.dataset.dond"):
+            monkeypatch.delitem(sys.modules, name)
+
+    with pytest.warns(
+        QCoDeSDeprecationWarning, match=r"The module .* is deprecated"
+    ) as warning_records:
+        deprecated_module = importlib.import_module(module_name)
+
+    assert len(warning_records) == 1
+    if module_name != "qcodes.dataset.dond":
+        assert getattr(deprecated_module, attribute_name) is expected
+        for name in deprecated_module.__all__:
+            assert getattr(deprecated_module, name) is not None
+    # importing a module sets it as an attribute on its parent package.
+    # Make sure that this does not replace the public object of the same name.
+    assert getattr(parent_module, attribute_name) is expected
 
 
 def test_top_level_parameter_shorthand_deprecated() -> None:

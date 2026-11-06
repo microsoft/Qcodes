@@ -1,5 +1,7 @@
 """Limit globally enabled lazy imports to imports involving QCoDeS."""
 
+# ruff: noqa: INP001
+
 import sys
 
 
