@@ -1,0 +1,4 @@
+``do2d_retrace`` is now exported from ``qcodes.dataset``. It has also been fixed: previously it
+failed because the setpoints of the outer sweep were not added to the datasets. Parameters
+given as ``additional_setpoints`` are now registered in the datasets, and ``exit_actions`` are
+called once at the end of the measurement rather than after every step of the outer sweep.

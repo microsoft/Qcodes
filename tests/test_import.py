@@ -98,6 +98,7 @@ _SRS = "qcodes.instrument_drivers.stanford_research"
     ("module_name", "parent_module_name", "attribute_name"),
     [
         ("qcodes.dataset.dond", _DATASET, "dond"),
+        ("qcodes.dataset.dond.do2d_retrace", _DATASET, "do2d_retrace"),
         ("qcodes.dataset.dond.do_0d", _DATASET, "do0d"),
         ("qcodes.dataset.dond.do_1d", _DATASET, "do1d"),
         ("qcodes.dataset.dond.do_2d", _DATASET, "do2d"),

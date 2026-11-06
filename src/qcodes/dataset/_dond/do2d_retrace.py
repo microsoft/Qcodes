@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING
 from opentelemetry import trace
 
 from qcodes import config
-from qcodes.dataset import (
+from qcodes.dataset._dond.sweeps import LinSweep
+from qcodes.dataset.measurement_extensions import (
     DataSetDefinition,
-    LinSweep,
     LinSweeper,
     datasaver_builder,
     dond_into,
@@ -92,16 +92,21 @@ def do2d_retrace(
     if show_progress is None:
         show_progress = config.dataset.dond_show_progress
 
+    independent = [param_set1, param_set2, *additional_setpoints]
+    # the outer parameter is set by the LinSweeper below rather than swept by
+    # dond_into so it is recorded as an additional setpoint of the inner sweeps
+    inner_additional_setpoints = (param_set1, *additional_setpoints)
+
     dataset_definition = [
         DataSetDefinition(
             name=measurement_name,
-            independent=[param_set1, param_set2],
+            independent=independent,
             dependent=param_meas,
             experiment=exp,
         ),
         DataSetDefinition(
             name=f"retrace {measurement_name}",
-            independent=[param_set1, param_set2],
+            independent=independent,
             dependent=param_meas,
             experiment=exp,
         ),
@@ -133,7 +138,7 @@ def do2d_retrace(
                 datasavers[0],
                 sweep_up,
                 *param_meas,
-                additional_setpoints=additional_setpoints,
+                additional_setpoints=inner_additional_setpoints,
             )
             for action in before_inner_actions:
                 action()
@@ -141,9 +146,9 @@ def do2d_retrace(
                 datasavers[1],
                 sweep_down,
                 *param_meas,
-                additional_setpoints=additional_setpoints,
+                additional_setpoints=inner_additional_setpoints,
             )
-            for action in exit_actions:
-                action()
+        for action in exit_actions:
+            action()
     datasets = (datasavers[0].dataset, datasavers[1].dataset)
     return datasets

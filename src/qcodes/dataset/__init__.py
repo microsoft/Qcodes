@@ -5,6 +5,7 @@ and from disk
 
 from qcodes.utils.deprecate import _keep_attributes_shadowing_submodules
 
+from ._dond.do2d_retrace import do2d_retrace
 from ._dond.do_0d import do0d
 from ._dond.do_1d import do1d
 from ._dond.do_2d import do2d
@@ -107,6 +108,7 @@ __all__ = [
     "do0d",
     "do1d",
     "do2d",
+    "do2d_retrace",
     "dond",
     "dond_into",
     "experiments",
