@@ -161,7 +161,7 @@ def test_basic_subscription(
         expected_state[x + 1] = [(x, y)]
 
         @retry_until_does_not_throw(
-            exception_class_to_expect=AssertionError, delay=0.5, tries=10
+            exception_class_to_expect=AssertionError, delay=0.05, tries=100
         )
         def assert_expected_state() -> "None":
             assert dataset.subscribers[sub_id].state == expected_state
