@@ -1,0 +1,10 @@
+The ``InterDependencies_`` of a ``DataSet`` or ``DataSetInMem`` are now frozen once the
+dataset has been started, also after the measurement has completed and when loading a
+started dataset, since the parameters of a dataset can not change at that point.
+``dataset.description.interdeps`` is therefore a ``FrozenInterDependencies_`` for such
+datasets and modifying it in place raises a ``TypeError``. Methods that return a new
+object such as ``extend`` and ``remove`` continue to work, and ``FrozenInterDependencies_``
+now compares equal to an ``InterDependencies_`` with the same parameters.
+The ``override`` argument of ``DataSet.set_interdependencies`` is deprecated, since the
+interdependencies of a started dataset are fixed and ``override`` never updated the run
+description stored in the database.

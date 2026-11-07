@@ -1,0 +1,3 @@
+Repeated calls to ``get_parameter_data`` on a started ``DataSet``, e.g. when the cache is
+updated during a measurement, are now faster as the run description held by the dataset is
+used rather than reading and parsing it from the database on every call.

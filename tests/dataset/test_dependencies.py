@@ -520,10 +520,14 @@ def test_frozen_interdependencies(
         frozen.add_standalones((ps4,))
 
     with pytest.raises(TypeError, match="FrozenInterDependencies_ is immutable"):
-        frozen.remove(ps1)
-
-    with pytest.raises(TypeError, match="FrozenInterDependencies_ is immutable"):
         frozen.add_paramspecs((ps1,))
+
+    # Test remove returns a new InterDependencies_ (mutable)
+    removed = frozen.remove(ps1)
+    assert isinstance(removed, InterDependencies_)
+    assert not isinstance(removed, FrozenInterDependencies_)
+    assert ps1 not in removed.paramspecs
+    assert ps1 in frozen.paramspecs
 
     # Test extend returns InterDependencies_ (mutable)
     ps5 = ParamSpecBase("psb5", "numeric", "number", "")
@@ -555,3 +559,19 @@ def test_frozen_from_dict(
     frozen = FrozenInterDependencies_._from_dict(ser)
     assert isinstance(frozen, FrozenInterDependencies_)
     assert frozen == FrozenInterDependencies_(idps)
+
+
+def test_frozen_equality_is_symmetric(
+    some_paramspecbases: "tuple[ParamSpecBase, ParamSpecBase, ParamSpecBase, ParamSpecBase]",
+) -> None:
+    ps1, ps2, ps3, ps4 = some_paramspecbases
+    idps = InterDependencies_(dependencies={ps1: (ps2, ps3)})
+    frozen = FrozenInterDependencies_(idps)
+
+    assert frozen == idps
+    assert idps == frozen
+
+    other = InterDependencies_(dependencies={ps1: (ps2, ps4)})
+    assert frozen != other
+    assert other != frozen
+    assert frozen != "not interdependencies"
