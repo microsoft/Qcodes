@@ -695,6 +695,45 @@ class TektronixAWG70000Base(VisaInstrument):
         """
         self.write("AWGControl:STOP")
 
+    def upload_seqx(
+        self,
+        seqx_input: tuple[
+            list[int],
+            list[int],
+            list[int],
+            list[int],
+            list[int],
+            list[list[np.ndarray]],
+            list[float],
+            str,
+        ],
+        sequence_name: str = "seq",
+    ) -> None:
+        """
+        A convenience function to upload a sequence to the instrument's memory and add it to the
+        sequence list. Enable outputs and put awg in play mode.
+
+        Args:
+            seqx_input: The input needed to make a seqx file, preferably the
+                output of Broadbeans outputForSEQXFile function.
+            sequence_name: The name of the sequence (as it appears in the sequence list on the AWG, not the file name).
+                If a sequence with the same name already exists, it will be overwritten.
+
+        """
+
+        seqx = self.makeSEQXFile(*seqx_input)
+        self.sendSEQXFile(seqx, sequence_name + ".seqx")
+        # Load the sequence file from local AWG storage to playback memory
+        self.loadSEQXFile(sequence_name + ".seqx")
+        self.ch1.setSequenceTrack(sequence_name, 1)
+        self.ch2.setSequenceTrack(sequence_name, 2)
+        # Turn on outputs and play
+        self.ch1.state(1)  # Enable channel 1 output
+        self.ch2.state(1)  # Enable channel 2 output
+        # Make sure all output is on (in case it was turned off globally)
+        self.all_output_off(False)
+        self.play()
+
     @property
     def sequenceList(self) -> list[str]:
         """
@@ -1319,7 +1358,7 @@ class TektronixAWG70000Base(VisaInstrument):
         # input sanitising to avoid spaces in filenames
         seqname = seqname.replace(" ", "_")
 
-        (chans, elms) = (len(wfms), len(wfms[0]))
+        chans, elms = (len(wfms), len(wfms[0]))
         wfm_names = [
             [f"wfmch{ch}pos{el}" for ch in range(1, chans + 1)]
             for el in range(1, elms + 1)
