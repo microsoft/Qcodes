@@ -1,0 +1,4 @@
+Dataset preparation now writes startup metadata and the snapshot in one
+transaction, inserting the snapshot after the other run metadata updates to
+avoid repeatedly rewriting large snapshots. The complete snapshot is committed
+before background writers and pending subscribers are started.

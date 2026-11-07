@@ -391,7 +391,13 @@ class DataSet(BaseDataSet):
         parent_datasets: Sequence[Mapping[Any, Any]] = (),
         write_in_background: bool = False,
     ) -> None:
-        self.add_snapshot(json.dumps(snapshot, cls=NumpyJSONEncoder))
+        """Prepare a run, committing its snapshot before starting observers.
+
+        Startup metadata and the snapshot are written atomically. The snapshot
+        is inserted after the other runs-row updates to avoid repeatedly
+        rewriting a potentially large payload.
+        """
+        snapshot_raw = json.dumps(snapshot, cls=NumpyJSONEncoder)
 
         if interdeps == InterDependencies_():
             raise RuntimeError("No parameters supplied")
@@ -399,7 +405,9 @@ class DataSet(BaseDataSet):
         self.set_interdependencies(interdeps, shapes)
         links = [Link(head=self.guid, **pdict) for pdict in parent_datasets]
         self.parent_dataset_links = links
-        self.mark_started(start_bg_writer=write_in_background)
+        self._perform_start_actions(
+            start_bg_writer=write_in_background, snapshot=snapshot_raw
+        )
 
     @property
     def cache(self) -> DataSetCacheWithDBBackend:
@@ -742,16 +750,27 @@ class DataSet(BaseDataSet):
         """
         if not self._started:
             self._perform_start_actions(start_bg_writer=start_bg_writer)
-            self._started = True
 
-    def _perform_start_actions(self, start_bg_writer: bool) -> None:
+    def _perform_start_actions(
+        self, start_bg_writer: bool, snapshot: str | None = None
+    ) -> None:
         """
         Perform the actions that must take place once the run has been started
         """
         paramspecs = new_to_old(self._rundescriber.interdeps).paramspecs
 
-        # Register all parameters in a single transaction (each add_parameter
-        # would otherwise commit on its own) to avoid one fsync per parameter.
+        writer_status = self._writer_status
+        write_in_background_status = writer_status.write_in_background
+        if (
+            write_in_background_status is not None
+            and write_in_background_status != start_bg_writer
+        ):
+            raise RuntimeError(
+                "All datasets written to the same database must "
+                "be written either in the background or in the "
+                "main thread. You cannot mix."
+            )
+
         with atomic(self.conn) as conn:
             for spec in paramspecs:
                 add_parameter(
@@ -764,32 +783,20 @@ class DataSet(BaseDataSet):
                     insert_into_results_table=False,
                 )
 
-        # Let the backend set up its storage (add columns to the main-database
-        # results table, create a per-dataset SQLite file, ...) now that all
-        # parameters are known.
-        self._results_backend.setup_on_start()
+            desc_str = serial.to_json_for_storage(self.description)
+            update_run_description(conn, self.run_id, desc_str)
 
-        desc_str = serial.to_json_for_storage(self.description)
+            set_run_timestamp(conn, self.run_id)
 
-        update_run_description(self.conn, self.run_id, desc_str)
+            pdl_str = links_to_str(self._parent_dataset_links)
+            update_parent_datasets(conn, self.run_id, pdl_str)
 
-        set_run_timestamp(self.conn, self.run_id)
+            if snapshot is not None:
+                self.add_snapshot(snapshot)
 
-        pdl_str = links_to_str(self._parent_dataset_links)
-        update_parent_datasets(self.conn, self.run_id, pdl_str)
+            # Backend setup changes the results storage, not the runs row.
+            self._results_backend.setup_on_start()
 
-        writer_status = self._writer_status
-
-        write_in_background_status = writer_status.write_in_background
-        if (
-            write_in_background_status is not None
-            and write_in_background_status != start_bg_writer
-        ):
-            raise RuntimeError(
-                "All datasets written to the same database must "
-                "be written either in the background or in the "
-                "main thread. You cannot mix."
-            )
         if start_bg_writer:
             writer_status.write_in_background = True
             if writer_status.bg_writer is None:
@@ -808,6 +815,7 @@ class DataSet(BaseDataSet):
         # results table exists in the per-dataset file), create any subscribers
         # that were requested while the dataset was still pristine.
         self._start_pending_subscribers()
+        self._started = True
 
     def mark_completed(self) -> None:
         """
