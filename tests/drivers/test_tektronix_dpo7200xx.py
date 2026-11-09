@@ -87,6 +87,142 @@ def test_record_length(tektronix_dpo: TektronixDPO7000xx) -> None:
     assert tektronix_dpo.horizontal.record_length() == 1000
 
 
+def test_single_waits_until_acquiring_and_ready(
+    tektronix_dpo: TektronixDPO7000xx, mocker: "MockerFixture"
+) -> None:
+    write = mocker.patch.object(tektronix_dpo, "write")
+    ask = mocker.patch.object(
+        tektronix_dpo,
+        "ask",
+        side_effect=["0\n", "1\n", "1\n", "0\n", "1\n", "1\n"],
+    )
+    clock = mocker.patch("qcodes.instrument_drivers.tektronix.DPO7200xx.time")
+    clock.time.return_value = 0.0
+
+    tektronix_dpo.single()
+
+    assert write.call_args_list == [
+        mocker.call("ACQuire:STOPAfter SEQUENCE"),
+        mocker.call("ACQuire:STATE RUN"),
+    ]
+    assert (
+        ask.call_args_list
+        == [
+            mocker.call("ACQuire:STATE?"),
+            mocker.call("TRIGger:A:READY?"),
+        ]
+        * 3
+    )
+    assert clock.sleep.call_args_list == [mocker.call(0.1)] * 2
+
+
+@pytest.mark.parametrize("timeout", [0.5, None])
+def test_single_timeout(
+    tektronix_dpo: TektronixDPO7000xx,
+    mocker: "MockerFixture",
+    timeout: float | None,
+) -> None:
+    mocker.patch.object(tektronix_dpo, "timeout", return_value=timeout)
+    mocker.patch.object(tektronix_dpo, "write")
+    ask = mocker.patch.object(tektronix_dpo, "ask", return_value="0\n")
+    clock = mocker.patch("qcodes.instrument_drivers.tektronix.DPO7200xx.time")
+    timeout_seconds = timeout if timeout is not None else 10.0
+    clock.time.side_effect = [0.0, 0.0, timeout_seconds + 1.0]
+
+    tektronix_dpo.single()
+
+    assert ask.call_count == 4
+    clock.sleep.assert_called_once_with(0.1)
+
+
+@pytest.mark.parametrize("enabled_channels", [(), (0, 2), (0, 1, 2, 3)])
+def test_download_waveforms(
+    tektronix_dpo: TektronixDPO7000xx,
+    mocker: "MockerFixture",
+    enabled_channels: tuple[int, ...],
+) -> None:
+    ask = mocker.patch.object(
+        tektronix_dpo,
+        "ask",
+        side_effect=[
+            "1\n",
+            "0\n",
+            *("1\n" if i in enabled_channels else "0\n" for i in range(4)),
+        ],
+    )
+    record_length = mocker.patch.object(
+        tektronix_dpo.horizontal, "record_length", return_value=3
+    )
+    traces = [np.arange(3, dtype=float) + i for i in range(4)]
+    set_lengths = [
+        mocker.patch.object(channel, "set_trace_length")
+        for channel in tektronix_dpo.channel
+    ]
+    get_traces = [
+        mocker.patch.object(channel.waveform, "trace", return_value=trace)
+        for channel, trace in zip(tektronix_dpo.channel, traces)
+    ]
+    clock = mocker.patch("qcodes.instrument_drivers.tektronix.DPO7200xx.time")
+    clock.time.return_value = 0.0
+
+    waveforms = tektronix_dpo.download_waveforms()
+
+    assert isinstance(waveforms, tuple)
+    assert len(waveforms) == len(enabled_channels)
+    for waveform, index in zip(waveforms, enabled_channels):
+        np.testing.assert_array_equal(waveform, traces[index])
+    for i, (set_length, get_trace) in enumerate(zip(set_lengths, get_traces)):
+        if i in enabled_channels:
+            set_length.assert_called_once_with(3)
+            get_trace.assert_called_once_with()
+        else:
+            set_length.assert_not_called()
+            get_trace.assert_not_called()
+    assert record_length.call_count == len(enabled_channels)
+    assert ask.call_args_list == [
+        mocker.call("ACQuire:STATE?"),
+        mocker.call("ACQuire:STATE?"),
+        *(mocker.call(f"SELect:CH{i}?") for i in range(1, 5)),
+    ]
+    clock.sleep.assert_called_once_with(0.1)
+
+
+@pytest.mark.parametrize("timeout", [0.5, None])
+def test_download_waveforms_timeout(
+    tektronix_dpo: TektronixDPO7000xx,
+    mocker: "MockerFixture",
+    timeout: float | None,
+) -> None:
+    mocker.patch.object(tektronix_dpo, "timeout", return_value=timeout)
+    ask = mocker.patch.object(
+        tektronix_dpo, "ask", side_effect=["1\n", "1\n", "0", "0", "0", "0"]
+    )
+    clock = mocker.patch("qcodes.instrument_drivers.tektronix.DPO7200xx.time")
+    timeout_seconds = timeout if timeout is not None else 60.0
+    clock.time.side_effect = [0.0, 0.0, timeout_seconds + 1.0]
+
+    assert tektronix_dpo.download_waveforms() == ()
+
+    assert ask.call_count == 6
+    clock.sleep.assert_called_once_with(0.1)
+
+
+def test_get_timebase(
+    tektronix_dpo: TektronixDPO7000xx, mocker: "MockerFixture"
+) -> None:
+    expected_axis = np.array([0.0, 1e-9, 2e-9])
+    trace_axis = mocker.patch.object(
+        tektronix_dpo.channel[0].waveform, "trace_axis", return_value=expected_axis
+    )
+    trace_axis.unit = "s"
+
+    unit, axis = tektronix_dpo.get_timebase()
+
+    assert unit == "s"
+    np.testing.assert_array_equal(axis, expected_axis)
+    trace_axis.assert_called_once_with()
+
+
 @pytest.mark.parametrize(
     ("value", "expected"),
     [("ON", True), ("off", False), (1, True), (0, False)],
