@@ -43,7 +43,6 @@ cloudpickle==3.1.2
     # via dask
 colorama==0.4.6
     # via
-    #   click
     #   ipython
     #   pytest
     #   sphinx
@@ -66,8 +65,6 @@ dask==2026.8.0
     #   qcodes
 debugpy==1.8.22
     # via ipykernel
-decorator==5.3.1
-    # via ipython
 defusedxml==0.7.1
     # via nbconvert
 docutils==0.21.2
@@ -206,7 +203,7 @@ nbformat==5.11.1
     #   nbsphinx
 nbsphinx==0.9.8
     # via qcodes (pyproject.toml)
-nest-asyncio==1.6.0
+nest-asyncio2==1.7.4
     # via ipykernel
 networkx==3.7
     # via
@@ -226,7 +223,6 @@ numpy==2.5.4
     #   qcodes
     #   qcodes-loop
     #   scipy
-    #   types-networkx
     #   xarray
     #   zhinst-core
     #   zhinst-qcodes
@@ -263,7 +259,9 @@ pandas-stubs==3.1.0.261029
 pandocfilters==1.5.1
     # via nbconvert
 parso==0.8.7
-    # via jedi
+    # via
+    #   qcodes (pyproject.toml)
+    #   jedi
 partd==1.4.2
     # via dask
 pathspec==1.1.1
@@ -282,9 +280,7 @@ pluggy==1.7.0
 prompt-toolkit==3.0.53
     # via ipython
 psutil==7.2.2
-    # via
-    #   ipykernel
-    #   ipython
+    # via ipython
 pure-eval==0.2.4
     # via stack-data
 pyarrow==26.0.0
@@ -373,8 +369,6 @@ schema==0.7.8
     # via broadbean
 scipy==1.18.1
     # via qcodes (pyproject.toml)
-six==1.17.0
-    # via python-dateutil
 snowballstemmer==3.1.1
     # via sphinx
 sortedcontainers==2.4.0
@@ -458,9 +452,7 @@ types-networkx==3.6.1.20261031
 types-pywin32==312.0.0.20261031
     # via qcodes (pyproject.toml)
 types-requests==2.33.0.20261030
-    # via
-    #   qcodes (pyproject.toml)
-    #   types-tqdm
+    # via qcodes (pyproject.toml)
 types-tabulate==0.10.0.20261006
     # via qcodes (pyproject.toml)
 types-tqdm==4.70.0.20260906
@@ -469,6 +461,7 @@ typing-extensions==4.16.0
     # via
     #   qcodes (pyproject.toml)
     #   beautifulsoup4
+    #   jupyter-client
     #   mypy
     #   opentelemetry-api
     #   pyvisa
@@ -479,7 +472,9 @@ typing-extensions==4.16.0
     #   zhinst-qcodes
     #   zhinst-toolkit
 tzdata==2026.6
-    # via pandas
+    # via
+    #   pandas
+    #   python-dateutil
 uncertainties==3.2.3
     # via
     #   qcodes (pyproject.toml)
