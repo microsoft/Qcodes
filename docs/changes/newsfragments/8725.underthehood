@@ -1,0 +1,3 @@
+The test suite now runs faster. Tests using the simulated Keysight B220x and B1500
+instruments no longer first try to connect to a real instrument, and a number of
+unneeded sleeps and waits have been removed or shortened.
