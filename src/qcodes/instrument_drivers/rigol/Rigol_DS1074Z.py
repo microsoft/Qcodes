@@ -231,7 +231,7 @@ class RigolDS1074Z(VisaInstrument):
         xorigin = self.waveform_xorigin()
         xincrem = self.waveform_xincrem()
         npts = self.waveform_npoints()
-        xdata = np.linspace(xorigin, npts * xincrem + xorigin, npts)
+        xdata = xorigin + xincrem * np.arange(npts)
         return xdata
 
     def _get_trigger_level(self) -> float:
