@@ -15,13 +15,8 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
-import re
-import sys
 from abc import ABCMeta
-from functools import cached_property
 from importlib import reload
-from inspect import unwrap
-from pathlib import Path
 
 # Import matplotlib and set the backend
 # before qcodes imports pyplot and automatically
@@ -29,7 +24,6 @@ from pathlib import Path
 import matplotlib
 from intersphinx_registry import get_intersphinx_mapping
 from packaging.version import parse
-from sphinx.pycode import ModuleAnalyzer
 
 # setting the metaclass will cause sphinx
 # to document the signature of `__call__`
@@ -49,6 +43,9 @@ reload(qcodes.instrument.visa)
 reload(qcodes.instrument)
 
 import qcodes  # noqa: E402
+from qcodes.sphinx_extensions.github_source_links import (  # noqa: E402
+    make_linkcode_resolve,
+)
 
 # sphinx 6.2 -> 7.1 produces a warning
 # Debugger warning: It seems that frozen modules are being used, which may
@@ -498,71 +495,7 @@ towncrier_draft_working_directory = ".."
 
 issues_github_path = "microsoft/Qcodes"
 
-
-# -- Links to source code on GitHub ---------------------------------------
 # We link to the source on GitHub rather than using sphinx.ext.viewcode,
 # since rendering a page of highlighted source for every module adds
 # significantly to the build time.
-
-
-def _github_ref(version_str: str) -> str:
-    """
-    Return the git ref on GitHub matching the qcodes version being documented:
-    the tag for a release, otherwise the commit embedded in the version by
-    versioningit (e.g. ``0.63.0.dev12+main.g76c540bef``).
-    """
-    version = parse(version_str)
-    if version.local is None and not version.is_devrelease:
-        return f"v{version.public}"
-    for segment in reversed((version.local or "").split(".")):
-        if re.fullmatch(r"g[0-9a-f]{7,40}", segment):
-            return segment[1:]
-    return "main"
-
-
-_github_source_ref = _github_ref(qcodes.__version__)
-_github_source_root = (
-    f"https://github.com/{issues_github_path}/blob/{_github_source_ref}/src"
-)
-_qcodes_package_parent = Path(qcodes.__file__).parent.parent
-
-
-def linkcode_resolve(domain: str, info: dict[str, str]) -> str | None:
-    """
-    Return the GitHub URL of the source of the object documented by ``info``.
-
-    The lines are looked up in the module that defines the object (so that
-    inherited members link to the base class) using the same parser as
-    sphinx.ext.viewcode.
-    """
-    if domain != "py":
-        return None
-    obj: object = sys.modules.get(info["module"])
-    try:
-        for part in info["fullname"].split("."):
-            obj = getattr(obj, part)
-        if isinstance(obj, property):
-            obj = obj.fget
-        elif isinstance(obj, cached_property):
-            obj = obj.func
-        if callable(obj):
-            obj = unwrap(obj)
-    except Exception:
-        return None
-
-    modname = getattr(obj, "__module__", None)
-    qualname = getattr(obj, "__qualname__", None)
-    if not isinstance(modname, str) or not isinstance(qualname, str):
-        return None
-    if modname != "qcodes" and not modname.startswith("qcodes."):
-        return None
-    try:
-        analyzer = ModuleAnalyzer.for_module(modname)
-        tags = analyzer.find_tags()
-        path = Path(analyzer.srcname).relative_to(_qcodes_package_parent)
-    except Exception:
-        return None
-    if qualname not in tags:
-        return None
-    _, start, end = tags[qualname]
-    return f"{_github_source_root}/{path.as_posix()}#L{start}-L{end}"
+linkcode_resolve = make_linkcode_resolve(issues_github_path, qcodes.__version__)
