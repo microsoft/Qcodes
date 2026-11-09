@@ -72,9 +72,8 @@ def find_source(modname: str, fullname: str) -> tuple[str, int, int] | None:
     try:
         for part in fullname.split("."):
             obj = getattr(obj, part)
-    except Exception:
-        # looking up an attribute may raise anything, and instance
-        # attributes cannot be looked up on the class at all
+    except AttributeError:
+        # e.g. instance attributes cannot be looked up on the class
         return None
     if isinstance(obj, property):
         obj = obj.fget
