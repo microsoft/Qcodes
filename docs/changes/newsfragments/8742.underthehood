@@ -1,0 +1,3 @@
+The documentation builds faster: the ``InstrumentGroup`` example notebook ramps its gate in fewer
+steps, and the ``qcodes.sphinx_extensions.parse_parameter_attr`` Sphinx extension now parses the
+source of each class only once instead of once for every attribute documented on it.
