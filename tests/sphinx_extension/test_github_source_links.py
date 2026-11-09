@@ -94,7 +94,10 @@ def test_linkcode_resolve() -> None:
 
     url = linkcode_resolve(
         "py",
-        {"module": "qcodes.instrument", "fullname": "VisaInstrument.print_readable_snapshot"},
+        {
+            "module": "qcodes.instrument",
+            "fullname": "VisaInstrument.print_readable_snapshot",
+        },
     )
 
     assert url == (
