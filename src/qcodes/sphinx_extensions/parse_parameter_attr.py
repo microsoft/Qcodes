@@ -103,7 +103,6 @@ def extract_statements_from_node(
     return tuple(nodes)
 
 
-@functools.lru_cache(maxsize=None, typed=True)
 def eval_params_from_code(code: str, classname: str) -> dict[str, ParameterProxy]:
     init_func_tree = parse_init_function_from_str(code, classname)
     if init_func_tree is None:
@@ -150,6 +149,22 @@ def extract_code_as_repr(
         return None
 
 
+@functools.cache
+def _params_from_class_source(classobj: type) -> dict[str, ParameterProxy]:
+    """
+    Extract the attributes assigned in ``classobj.__init__`` by parsing its source.
+
+    This is cached per class since a class is visited for every attribute
+    documented on it and on each of its subclasses, and retrieving the source
+    of a class is slow.
+    """
+    try:
+        return eval_params_from_code(inspect.getsource(classobj), classobj.__name__)
+    except (TypeError, OSError) as e:
+        LOGGER.debug(f"Could not parse attributes of {classobj}: {e}")
+        return {}
+
+
 def qcodes_parameter_attr_getter(
     object_to_document_attr_on: type[object], name: str, *default: Any
 ) -> Any:
@@ -185,25 +200,15 @@ def qcodes_parameter_attr_getter(
             mro = inspect.getmro(object_to_document_attr_on)
             attr = None
             for classobj in mro:
-                try:
-                    LOGGER.debug(
-                        "Trying to parse %s on %s for %s",
-                        name,
-                        classobj,
-                        object_to_document_attr_on,
-                    )
-                    param_dict = eval_params_from_code(
-                        inspect.getsource(classobj), classobj.__name__
-                    )
-                    if param_dict.get(name) is not None:
-                        attr = param_dict[name]
-                        break
-                except (TypeError, OSError) as e:
-                    LOGGER.debug(
-                        f"Could not parse {name} on {classobj} for "
-                        f"{object_to_document_attr_on}: {e}"
-                    )
-                    continue
+                LOGGER.debug(
+                    "Trying to parse %s on %s for %s",
+                    name,
+                    classobj,
+                    object_to_document_attr_on,
+                )
+                attr = _params_from_class_source(classobj).get(name)
+                if attr is not None:
+                    break
             if attr is None:
                 LOGGER.debug(
                     f"Falling back to default Sphinx attribute loader for {name}"
