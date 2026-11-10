@@ -277,7 +277,7 @@ def test_initialised_database_at_with_journal_mode_none(tmp_path: Path) -> None:
         assert os.path.exists(db_location)
 
 
-def test_perform_actual_upgrade_0_to_1() -> None:
+def test_perform_actual_upgrade_0_to_1(tmp_path: Path) -> None:
     # we cannot use the empty_temp_db, since that has already called connect
     # and is therefore latest version already
 
@@ -287,7 +287,7 @@ def test_perform_actual_upgrade_0_to_1() -> None:
 
     skip_if_no_fixtures(dbname_old)
 
-    with temporarily_copied_DB(dbname_old, debug=False, version=0) as conn:
+    with temporarily_copied_DB(dbname_old, tmp_path, debug=False, version=0) as conn:
         assert get_user_version(conn) == 0
 
         guid_table_query = "SELECT guid FROM runs"
@@ -304,14 +304,14 @@ def test_perform_actual_upgrade_0_to_1() -> None:
         assert len(c.fetchall()) == 0
 
 
-def test_perform_actual_upgrade_1_to_2() -> None:
+def test_perform_actual_upgrade_1_to_2(tmp_path: Path) -> None:
     v1fixpath = os.path.join(fixturepath, "db_files", "version1")
 
     dbname_old = os.path.join(v1fixpath, "empty.db")
 
     skip_if_no_fixtures(dbname_old)
 
-    with temporarily_copied_DB(dbname_old, debug=False, version=1) as conn:
+    with temporarily_copied_DB(dbname_old, tmp_path, debug=False, version=1) as conn:
         assert get_user_version(conn) == 1
 
         guid_table_query = "SELECT guid FROM runs"
@@ -330,14 +330,14 @@ def test_perform_actual_upgrade_1_to_2() -> None:
         assert len(c.fetchall()) == 2
 
 
-def test_perform_actual_upgrade_2_to_3_empty() -> None:
+def test_perform_actual_upgrade_2_to_3_empty(tmp_path: Path) -> None:
     v2fixpath = os.path.join(fixturepath, "db_files", "version2")
 
     dbname_old = os.path.join(v2fixpath, "empty.db")
 
     skip_if_no_fixtures(dbname_old)
 
-    with temporarily_copied_DB(dbname_old, debug=False, version=2) as conn:
+    with temporarily_copied_DB(dbname_old, tmp_path, debug=False, version=2) as conn:
         assert get_user_version(conn) == 2
 
         desc_query = "SELECT run_description FROM runs"
@@ -355,25 +355,25 @@ def test_perform_actual_upgrade_2_to_3_empty() -> None:
         assert len(c.fetchall()) == 0
 
 
-def test_perform_actual_upgrade_2_to_3_empty_runs() -> None:
+def test_perform_actual_upgrade_2_to_3_empty_runs(tmp_path: Path) -> None:
     v2fixpath = os.path.join(fixturepath, "db_files", "version2")
 
     dbname_old = os.path.join(v2fixpath, "empty_runs.db")
 
     skip_if_no_fixtures(dbname_old)
 
-    with temporarily_copied_DB(dbname_old, debug=False, version=2) as conn:
+    with temporarily_copied_DB(dbname_old, tmp_path, debug=False, version=2) as conn:
         perform_db_upgrade_2_to_3(conn)
 
 
-def test_perform_actual_upgrade_2_to_3_some_runs() -> None:
+def test_perform_actual_upgrade_2_to_3_some_runs(tmp_path: Path) -> None:
     v2fixpath = os.path.join(fixturepath, "db_files", "version2")
 
     dbname_old = os.path.join(v2fixpath, "some_runs.db")
 
     skip_if_no_fixtures(dbname_old)
 
-    with temporarily_copied_DB(dbname_old, debug=False, version=2) as conn:
+    with temporarily_copied_DB(dbname_old, tmp_path, debug=False, version=2) as conn:
         assert get_user_version(conn) == 2
 
         perform_db_upgrade_2_to_3(conn)
@@ -450,7 +450,7 @@ def test_perform_actual_upgrade_2_to_3_some_runs() -> None:
         assert p5.unit == "unit 5"
 
 
-def test_perform_upgrade_v2_v3_to_v4_fixes() -> None:
+def test_perform_upgrade_v2_v3_to_v4_fixes(tmp_path: Path) -> None:
     """
     Test that a db that was upgraded from v2 to v3 with a buggy
     version will be corrected when upgraded to v4.
@@ -462,7 +462,7 @@ def test_perform_upgrade_v2_v3_to_v4_fixes() -> None:
 
     skip_if_no_fixtures(dbname_old)
 
-    with temporarily_copied_DB(dbname_old, debug=False, version=3) as conn:
+    with temporarily_copied_DB(dbname_old, tmp_path, debug=False, version=3) as conn:
         assert get_user_version(conn) == 3
 
         sql = """
@@ -591,7 +591,7 @@ def test_perform_upgrade_v2_v3_to_v4_fixes() -> None:
         assert p5.unit == "unit 5"
 
 
-def test_perform_upgrade_v3_to_v4() -> None:
+def test_perform_upgrade_v3_to_v4(tmp_path: Path) -> None:
     """
     Test that a db upgrade from v2 to v4 works correctly.
     """
@@ -602,7 +602,7 @@ def test_perform_upgrade_v3_to_v4() -> None:
 
     skip_if_no_fixtures(dbname_old)
 
-    with temporarily_copied_DB(dbname_old, debug=False, version=3) as conn:
+    with temporarily_copied_DB(dbname_old, tmp_path, debug=False, version=3) as conn:
         assert get_user_version(conn) == 3
 
         sql = """
@@ -763,7 +763,7 @@ def _assert_loc_station(
 @pytest.mark.parametrize(
     "db_file", ["empty", "with_runs_but_no_snapshots", "with_runs_and_snapshots"]
 )
-def test_perform_actual_upgrade_4_to_5(db_file: str) -> None:
+def test_perform_actual_upgrade_4_to_5(db_file: str, tmp_path: Path) -> None:
     v4fixpath = os.path.join(fixturepath, "db_files", "version4")
 
     db_file += ".db"
@@ -771,7 +771,7 @@ def test_perform_actual_upgrade_4_to_5(db_file: str) -> None:
 
     skip_if_no_fixtures(dbname_old)
 
-    with temporarily_copied_DB(dbname_old, debug=False, version=4) as conn:
+    with temporarily_copied_DB(dbname_old, tmp_path, debug=False, version=4) as conn:
         # firstly, assert the situation with 'snapshot' column of 'runs' table
         if "with_runs_and_snapshots" in db_file:
             assert is_column_in_table(conn, "runs", "snapshot")
@@ -785,7 +785,7 @@ def test_perform_actual_upgrade_4_to_5(db_file: str) -> None:
         assert is_column_in_table(conn, "runs", "snapshot")
 
 
-def test_perform_actual_upgrade_5_to_6() -> None:
+def test_perform_actual_upgrade_5_to_6(tmp_path: Path) -> None:
     fixpath = os.path.join(fixturepath, "db_files", "version5")
 
     db_file = "empty.db"
@@ -793,14 +793,14 @@ def test_perform_actual_upgrade_5_to_6() -> None:
 
     skip_if_no_fixtures(dbname_old)
 
-    with temporarily_copied_DB(dbname_old, debug=False, version=5) as conn:
+    with temporarily_copied_DB(dbname_old, tmp_path, debug=False, version=5) as conn:
         perform_db_upgrade_5_to_6(conn)
         assert get_user_version(conn) == 6
 
     db_file = "some_runs.db"
     dbname_old = os.path.join(fixpath, db_file)
 
-    with temporarily_copied_DB(dbname_old, debug=False, version=5) as conn:
+    with temporarily_copied_DB(dbname_old, tmp_path, debug=False, version=5) as conn:
         perform_db_upgrade_5_to_6(conn)
         assert get_user_version(conn) == 6
 
@@ -818,7 +818,7 @@ def test_perform_actual_upgrade_5_to_6() -> None:
             assert desc._version == 3
 
 
-def test_perform_upgrade_6_7() -> None:
+def test_perform_upgrade_6_7(tmp_path: Path) -> None:
     fixpath = os.path.join(fixturepath, "db_files", "version6")
 
     db_file = "empty.db"
@@ -826,12 +826,12 @@ def test_perform_upgrade_6_7() -> None:
 
     skip_if_no_fixtures(dbname_old)
 
-    with temporarily_copied_DB(dbname_old, debug=False, version=6) as conn:
+    with temporarily_copied_DB(dbname_old, tmp_path, debug=False, version=6) as conn:
         perform_db_upgrade_6_to_7(conn)
         assert get_user_version(conn) == 7
 
 
-def test_perform_actual_upgrade_6_to_7() -> None:
+def test_perform_actual_upgrade_6_to_7(tmp_path: Path) -> None:
     fixpath = os.path.join(fixturepath, "db_files", "version6")
 
     db_file = "some_runs.db"
@@ -839,7 +839,7 @@ def test_perform_actual_upgrade_6_to_7() -> None:
 
     skip_if_no_fixtures(dbname_old)
 
-    with temporarily_copied_DB(dbname_old, debug=False, version=6) as conn:
+    with temporarily_copied_DB(dbname_old, tmp_path, debug=False, version=6) as conn:
         assert isinstance(conn, AtomicConnection)
         perform_db_upgrade_6_to_7(conn)
         assert get_user_version(conn) == 7
@@ -881,7 +881,7 @@ def test_perform_actual_upgrade_6_to_7() -> None:
             assert ds2.counter == ds2.captured_counter
 
 
-def test_perform_actual_upgrade_6_to_newest_add_new_data() -> None:
+def test_perform_actual_upgrade_6_to_newest_add_new_data(tmp_path: Path) -> None:
     """
     Insert new runs on top of existing runs upgraded and verify that they
     get the correct captured_run_id and captured_counter
@@ -894,7 +894,7 @@ def test_perform_actual_upgrade_6_to_newest_add_new_data() -> None:
 
     skip_if_no_fixtures(dbname_old)
 
-    with temporarily_copied_DB(dbname_old, debug=False, version=6) as conn:
+    with temporarily_copied_DB(dbname_old, tmp_path, debug=False, version=6) as conn:
         assert isinstance(conn, AtomicConnection)
         perform_db_upgrade(conn)
         assert get_user_version(conn) >= 7
@@ -980,7 +980,7 @@ def test_perform_actual_upgrade_6_to_newest_add_new_data() -> None:
 
 
 @pytest.mark.parametrize("db_file", ["empty", "some_runs"])
-def test_perform_actual_upgrade_7_to_8(db_file: str) -> None:
+def test_perform_actual_upgrade_7_to_8(db_file: str, tmp_path: Path) -> None:
     v7fixpath = os.path.join(fixturepath, "db_files", "version7")
 
     db_file += ".db"
@@ -988,7 +988,7 @@ def test_perform_actual_upgrade_7_to_8(db_file: str) -> None:
 
     skip_if_no_fixtures(dbname_old)
 
-    with temporarily_copied_DB(dbname_old, debug=False, version=7) as conn:
+    with temporarily_copied_DB(dbname_old, tmp_path, debug=False, version=7) as conn:
         perform_db_upgrade_7_to_8(conn)
 
         assert is_column_in_table(conn, "runs", "parent_datasets")
@@ -1027,7 +1027,7 @@ def test_getting_db_version(version: int) -> None:
 
 
 @pytest.mark.parametrize("db_file", ["empty", "some_runs"])
-def test_perform_actual_upgrade_8_to_9(db_file: str) -> None:
+def test_perform_actual_upgrade_8_to_9(db_file: str, tmp_path: Path) -> None:
     v8fixpath = os.path.join(fixturepath, "db_files", "version8")
 
     db_file += ".db"
@@ -1035,7 +1035,7 @@ def test_perform_actual_upgrade_8_to_9(db_file: str) -> None:
 
     skip_if_no_fixtures(dbname_old)
 
-    with temporarily_copied_DB(dbname_old, debug=False, version=8) as conn:
+    with temporarily_copied_DB(dbname_old, tmp_path, debug=False, version=8) as conn:
         index_query = "PRAGMA index_list(runs)"
 
         c = atomic_transaction(conn, index_query)

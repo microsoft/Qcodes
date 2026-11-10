@@ -94,7 +94,7 @@ def two_empty_temp_db_connections(
 
 @contextmanager
 def temporarily_copied_DB(
-    filepath: str, **kwargs: Any
+    filepath: str, tmp_path: Path, **kwargs: Any
 ) -> Generator[AtomicConnection, None, None]:
     """
     Make a temporary copy of a db-file and delete it after use. Meant to be
@@ -103,10 +103,12 @@ def temporarily_copied_DB(
 
     Args:
         filepath: path to the db-file
+        tmp_path: the test's ``tmp_path``, so that the copy is placed under
+            pytest's temporary directory root
         **kwargs: to be passed to connect
 
     """
-    with tempfile.TemporaryDirectory() as tmpdir:
+    with tempfile.TemporaryDirectory(dir=tmp_path) as tmpdir:
         dbname_new = os.path.join(tmpdir, "temp.db")
         shutil.copy2(filepath, dbname_new)
 
