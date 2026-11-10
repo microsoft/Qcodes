@@ -1,0 +1,2 @@
+All temporary files created by the test suite are now placed under pytest's temporary directory
+root, so setting ``PYTEST_DEBUG_TEMPROOT`` (or ``--basetemp``) relocates all of them.
