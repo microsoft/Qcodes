@@ -1,0 +1,11 @@
+The Lakeshore drivers are now typed more precisely. ``LakeshoreBase`` is generic in
+its sensor channel class, so ``instrument.channels`` is typed as a
+``ChannelTuple`` of the driver's own channel class, and the output and sensor
+channel base classes are generic in their parent instrument, so ``channel.parent``
+is typed as the concrete driver rather than ``Any``.
+
+A new non-generic ``LakeshoreBaseInstrument`` class has been added as the base of
+``LakeshoreBase``. The output and sensor channels are parameterized on it, which
+avoids having to name the generic ``LakeshoreBase`` as their parent type (that
+would resolve to ``LakeshoreBase[Any]`` and lose the channel type). Drivers should
+keep subclassing ``LakeshoreBase``.

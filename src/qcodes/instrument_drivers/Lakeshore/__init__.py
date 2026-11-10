@@ -5,6 +5,7 @@ from ._lakeshore_model_335 import (
 )
 from .lakeshore_base import (
     LakeshoreBase,
+    LakeshoreBaseInstrument,
     LakeshoreBaseOutput,
     LakeshoreBaseOutputWithHeaterSetup,
     LakeshoreBaseOutputWithHeaterSetupAndOutputType,
@@ -33,6 +34,7 @@ from .Lakeshore_model_372 import (
 
 __all__ = [
     "LakeshoreBase",
+    "LakeshoreBaseInstrument",
     "LakeshoreBaseOutput",
     "LakeshoreBaseOutputWithHeaterSetup",
     "LakeshoreBaseOutputWithHeaterSetupAndOutputType",
