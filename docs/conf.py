@@ -43,6 +43,9 @@ reload(qcodes.instrument.visa)
 reload(qcodes.instrument)
 
 import qcodes  # noqa: E402
+from qcodes.sphinx_extensions.github_source_links import (  # noqa: E402
+    make_linkcode_resolve,
+)
 
 # sphinx 6.2 -> 7.1 produces a warning
 # Debugger warning: It seems that frozen modules are being used, which may
@@ -73,7 +76,7 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx.ext.coverage",
     "sphinx.ext.mathjax",
-    "sphinx.ext.viewcode",
+    "sphinx.ext.linkcode",
     "sphinx.ext.githubpages",
     "sphinx.ext.todo",
     "qcodes.sphinx_extensions.parse_parameter_attr",
@@ -491,3 +494,8 @@ towncrier_draft_include_empty = True
 towncrier_draft_working_directory = ".."
 
 issues_github_path = "microsoft/Qcodes"
+
+# We link to the source on GitHub rather than using sphinx.ext.viewcode,
+# since rendering a page of highlighted source for every module adds
+# significantly to the build time.
+linkcode_resolve = make_linkcode_resolve(issues_github_path, qcodes.__version__)
