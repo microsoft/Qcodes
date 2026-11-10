@@ -1,9 +1,7 @@
 import json
 import os
 import re
-import tempfile
 import warnings
-from contextlib import contextmanager
 from io import StringIO
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -255,33 +253,16 @@ def test_update_config_schema() -> None:
     assert len(schema["definitions"]["instruments"]["enum"]) > 1
 
 
-@contextmanager
-def config_file_context(
-    file_content: str, tmp_path: Path
-) -> "Generator[str, None, None]":
-    with tempfile.TemporaryDirectory(dir=tmp_path) as tmpdirname:
-        filename = Path(tmpdirname, "station_config.yaml")
-        with filename.open("w") as f:
-            f.write(file_content)
-        yield str(filename)
-
-
-@contextmanager
-def config_files_context(
-    file_content1: str, file_content2: str, tmp_path: Path
-) -> "Generator[list[str], None, None]":
-    with tempfile.TemporaryDirectory(dir=tmp_path) as tmpdirname:
-        filename1 = Path(tmpdirname, "station_config1.yaml")
-        with filename1.open("w") as f:
-            f.write(file_content1)
-        filename2 = Path(tmpdirname, "station_config2.yaml")
-        with filename2.open("w") as f:
-            f.write(file_content2)
-        yield [str(filename1), str(filename2)]
+def write_config_file(
+    tmp_path: Path, file_content: str, file_name: str = "station_config.yaml"
+) -> str:
+    filename = tmp_path / file_name
+    filename.write_text(file_content)
+    return str(filename)
 
 
 @pytest.fixture(name="example_station_config")
-def _make_example_station_config(tmp_path: Path) -> "Generator[str, None, None]":
+def _make_example_station_config(tmp_path: Path) -> str:
     """
     Returns path to temp yaml file with station config.
     """
@@ -305,8 +286,7 @@ instruments:
   mock_dac2:
     type: qcodes.instrument_drivers.mock_instruments.DummyInstrument
     """
-    with config_file_context(test_config, tmp_path) as filename:
-        yield filename
+    return write_config_file(tmp_path, test_config)
 
 
 def test_dynamic_reload_of_file(example_station_config: str) -> None:
@@ -1065,11 +1045,8 @@ instruments:
 invalid_keyword:
   more_errors: 42
     """
-    with (
-        pytest.raises(ValidationWarning),
-        config_file_context(test_config, tmp_path) as filename,
-    ):
-        Station(config_file=filename)
+    with pytest.raises(ValidationWarning):
+        Station(config_file=write_config_file(tmp_path, test_config))
 
 
 def test_config_validation_comprehensive_config() -> None:
@@ -1173,8 +1150,11 @@ def test_station_config_created_with_multiple_config_files(tmp_path: Path) -> No
           mock_dac2:
             type: qcodes.instrument_drivers.mock_instruments.DummyInstrument
     """
-    with config_files_context(test_config1, test_config2, tmp_path) as file_list:
-        assert station_config_has_been_loaded(Station(config_file=file_list))
+    file_list = [
+        write_config_file(tmp_path, test_config1, "station_config1.yaml"),
+        write_config_file(tmp_path, test_config2, "station_config2.yaml"),
+    ]
+    assert station_config_has_been_loaded(Station(config_file=file_list))
 
 
 def test_get_component_by_name() -> None:
