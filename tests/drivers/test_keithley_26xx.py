@@ -1,6 +1,6 @@
 import logging
 from collections import Counter
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import numpy as np
@@ -217,8 +217,6 @@ def test_setting_measure_current_range_disables_autorange(
 
 def test_fast_sweep_parameters(smus: "tuple[Keithley2600Channel, ...]") -> None:
     for smu in smus:
-        smu = cast("Keithley2600Channel", smu)
-
         start_val = 0.0001
         stop_val = 0.001
         npts = 50

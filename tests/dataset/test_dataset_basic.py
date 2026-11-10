@@ -284,7 +284,7 @@ def test_create_dataset_from_non_existing_run_id(
         ValueError,
         match=f"Run with run_id {non_existing_run_id} does not exist in the database",
     ):
-        _ = DataSet(run_id=non_existing_run_id)  # pyright: ignore[reportArgumentType]
+        _ = DataSet(run_id=non_existing_run_id)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
 
 def test_create_dataset_pass_both_connection_and_path_to_db(
@@ -321,7 +321,7 @@ def test_load_by_id_for_none() -> None:
     with pytest.raises(
         ValueError, match=re.escape("run_id has to be a positive integer, not None.")
     ):
-        _ = load_by_id(None)  # type: ignore[arg-type]
+        _ = load_by_id(None)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 @settings(deadline=None, max_examples=6)
@@ -573,7 +573,7 @@ def test_load_by_counter_for_nonexisting_counter(
 ) -> None:
     exp_id = 1
     with pytest.raises(RuntimeError, match="Expected one row"):
-        _ = load_by_counter(exp_id, nonexisting_counter)  # pyright: ignore[reportArgumentType]
+        _ = load_by_counter(exp_id, nonexisting_counter)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
 
 @pytest.mark.usefixtures("empty_temp_db")
@@ -582,7 +582,7 @@ def test_load_by_counter_for_nonexisting_experiment(
     nonexisting_exp_id: int | None,
 ) -> None:
     with pytest.raises(RuntimeError, match="Expected one row"):
-        _ = load_by_counter(nonexisting_exp_id, 1)  # pyright: ignore[reportArgumentType]
+        _ = load_by_counter(nonexisting_exp_id, 1)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
 
 @pytest.mark.usefixtures("empty_temp_db")
@@ -640,9 +640,7 @@ def test_numpy_complex(dataset: DataSet) -> None:
     dataset.mark_started()
 
     results = [{"x": tp(2.0 + 3.0j)} for tp in numpy_complex]
-    # TODO: VALUE in qcodes.dataset.sqlite.query_helpers does not include
-    # numpy scalar types although add_results supports them
-    dataset.add_results(results)  # pyright: ignore[reportArgumentType]
+    dataset.add_results(results)
     expected_result = np.array([tp(2.0 + 3.0j) for tp in numpy_complex])
     result = dataset.get_parameter_data()
     np.testing.assert_array_equal(result["x"]["x"], expected_result)
@@ -847,7 +845,7 @@ def test_parent_dataset_links_invalid_input() -> None:
 
     match = re.escape("Invalid input. Did not receive a list of Links")
     with pytest.raises(ValueError, match=match):
-        ds.parent_dataset_links = [ds.guid]  # type: ignore[list-item]
+        ds.parent_dataset_links = [ds.guid]  # type: ignore[list-item]  # ty: ignore[invalid-assignment]
 
     match = re.escape(
         "Invalid input. All links must point to this dataset. "
@@ -1019,7 +1017,7 @@ def test_get_array_parameter_data_no_nulls(
     expected_names = {}
     expected_names["val1"] = ["val1", "sp1", "sp2"]
     expected_names["val2"] = ["val2", "sp1"]
-    expected_shapes = {}
+    expected_shapes: dict[str, list[tuple[int, ...]]] = {}
     expected_values = {}
 
     if "array" in types:
@@ -1058,7 +1056,7 @@ def test_get_array_parameter_data(array_dataset: DataSet) -> None:
     expected_shapes: dict[str, list[tuple[int, ...]]] = {}
     expected_len = 5
     expected_shapes[par_name] = [(expected_len,), (expected_len,)]
-    expected_values = {}
+    expected_values: dict[str, list[np.ndarray]] = {}
     expected_values[par_name] = [
         np.ones(expected_len) + 1,
         np.linspace(5, 9, expected_len),

@@ -86,10 +86,7 @@ class _Sweeper:
         self,
     ) -> tuple[tuple[tuple[SweepVarType, ...] | SweepVarType, ...], ...]:
         sweeps = tuple(sweep.get_setpoints() for sweep in self._sweeps)
-        return cast(
-            "tuple[tuple[tuple[SweepVarType, ...] | SweepVarType, ...], ...]",
-            tuple(itertools.product(*sweeps)),
-        )
+        return tuple(itertools.product(*sweeps))
 
     def _make_single_point_setpoints_dict(self, index: int) -> dict[str, SweepVarType]:
         setpoint_dict = {}

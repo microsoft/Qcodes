@@ -595,6 +595,11 @@ class DataSetInMem(BaseDataSet):
         """Snapshot of the run as a JSON-formatted string (or None)."""
         return self._snapshot_raw_data
 
+    @property
+    def snapshot_raw(self) -> str | None:
+        """Snapshot of the run as a JSON-formatted string (or None)."""
+        return self._snapshot_raw
+
     def add_metadata(self, tag: str, metadata: Any) -> None:
         """
         Adds metadata to the :class:`.DataSet`.
@@ -894,7 +899,7 @@ class DataSetInMem(BaseDataSet):
 
     def get_parameter_data(
         self,
-        *params: str | ParamSpec | ParameterBase,
+        *params: str | ParamSpecBase | ParameterBase,
         start: int | None = None,
         end: int | None = None,
         callback: Callable[[float], None] | None = None,
@@ -904,7 +909,7 @@ class DataSetInMem(BaseDataSet):
 
     @staticmethod
     def _warn_if_set(
-        *params: str | ParamSpec | ParameterBase,
+        *params: str | ParamSpecBase | ParameterBase,
         start: int | None = None,
         end: int | None,
     ) -> None:
