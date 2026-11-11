@@ -6,8 +6,8 @@ import random
 import re
 import traceback
 from functools import reduce
-from time import sleep
 from typing import TYPE_CHECKING, Any, Literal
+from unittest.mock import patch
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -674,8 +674,6 @@ def test_subscribers_called_at_exiting_context_if_queue_is_not_empty(
     assert collected_x_vals == given_x_vals
 
 
-@pytest.mark.serial
-@pytest.mark.flaky(reruns=5)
 def test_subscribers_called_for_all_data_points(
     experiment: Experiment, DAC: DummyInstrument, DMM: DummyInstrument
 ) -> None:
@@ -717,9 +715,6 @@ def test_subscribers_called_for_all_data_points(
     assert yvals == list(given_yvals)
 
 
-# There is no way around it: this test is slow. We test that write_period
-# works and hence we must wait for some time to elapse. Sorry.
-@pytest.mark.serial
 @settings(
     max_examples=5,
     deadline=None,
@@ -752,21 +747,25 @@ def test_datasaver_scalars(
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DMM.v1, setpoints=(DAC.ch1,))
 
-    with meas.run() as datasaver:
+    # Drive the clock that the DataSaver uses for write_period by hand, so
+    # that the outcome does not depend on how fast the machine runs the test.
+    now = 0.0
+
+    def fake_perf_counter() -> float:
+        return now
+
+    with (
+        patch("qcodes.dataset.measurements.perf_counter", fake_perf_counter),
+        meas.run() as datasaver,
+    ):
         for set_v, get_v in zip(set_values[:breakpoint], get_values[:breakpoint]):
             datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
 
         assert datasaver._dataset.number_of_results == 0
-        sleep(write_period * 1.1)
+        now += write_period * 1.1
         datasaver.add_result(
             (DAC.ch1, set_values[breakpoint]), (DMM.v1, get_values[breakpoint])
         )
-        # test that work with time intervals are often flaky
-        # so we add a bit more wait time here if the expected number
-        # of points have not been written
-        for _ in range(10):
-            if datasaver.points_written != breakpoint + 1:
-                sleep(write_period * 1.1)
         assert datasaver.points_written == breakpoint + 1
 
     assert datasaver.run_id == no_of_runs + 1

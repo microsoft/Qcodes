@@ -4,7 +4,7 @@ import functools
 import logging
 import time
 from queue import Empty, Queue
-from threading import Thread
+from threading import Lock, Thread
 from typing import TYPE_CHECKING, Any
 
 from qcodes.dataset.sqlite.connection import atomic_transaction
@@ -50,7 +50,12 @@ class _Subscriber(Thread):
         self.state = state
 
         self.data_queue: Queue[Any] = Queue()
-        self._queue_length: int = 0
+        # The callback is called both from this thread and, on completion,
+        # from the thread that completes the dataset. Holding this lock while
+        # draining the queue and calling the callback keeps those calls from
+        # overlapping, so results are delivered in insertion order and
+        # done_callback only returns once every queued result is delivered.
+        self._callback_lock = Lock()
         self._stop_signal: bool = False
         # convert milliseconds to seconds
         self._loop_sleep_time = loop_sleep_time / 1000
@@ -83,7 +88,6 @@ class _Subscriber(Thread):
     def _cache_data_to_queue(self, *args: Any) -> None:
         self.data_queue.put(args)
         self._data_set_len += 1
-        self._queue_length += 1
 
     def run(self) -> None:
         self.log.debug("Starting subscriber")
@@ -100,8 +104,9 @@ class _Subscriber(Thread):
         return result_list
 
     def _call_callback_on_queue_data(self) -> None:
-        result_list = self._exhaust_queue(self.data_queue)
-        self.callback(result_list, self._data_set_len, self.state)
+        with self._callback_lock:
+            result_list = self._exhaust_queue(self.data_queue)
+            self.callback(result_list, self._data_set_len, self.state)
 
     def _loop(self) -> None:
         while True:
@@ -109,9 +114,11 @@ class _Subscriber(Thread):
                 self._clean_up()
                 break
 
-            if self._queue_length >= self.min_queue_length:
+            # Use the queue's own size rather than a separate counter: a
+            # counter reset after the callback would hold back results
+            # inserted while the callback was running until the next insert.
+            if self.data_queue.qsize() >= self.min_queue_length:
                 self._call_callback_on_queue_data()
-                self._queue_length = 0
 
             time.sleep(self._loop_sleep_time)
 

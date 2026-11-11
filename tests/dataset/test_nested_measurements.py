@@ -189,8 +189,6 @@ def basic_subscriber() -> "Callable[[list[tuple[VALUE]], int, dict | None], None
     return subscriber
 
 
-@pytest.mark.flaky(reruns=5)
-@pytest.mark.serial
 def test_subscription_on_dual_datasets(
     experiment: "Experiment",
     basic_subscriber: "Callable[[list[tuple[VALUE]], int, dict | None], None]",

@@ -134,8 +134,6 @@ def _make_broken_subscriber_config(tmp_path: "Path") -> "Generator[None, None, N
     yield
 
 
-@pytest.mark.flaky(reruns=5)
-@pytest.mark.serial
 def test_basic_subscription(
     dataset: "DataSet",
     basic_subscriber: "Callable[[list[tuple[VALUE]], int, dict | None], None]",
