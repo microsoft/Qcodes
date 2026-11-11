@@ -8,6 +8,7 @@ import pytest
 
 from qcodes.dataset import LinSweep
 from qcodes.instrument_drivers.Keithley import (
+    Keithley2600,
     Keithley2600MeasurementStatus,
     Keithley2614B,
 )
@@ -45,6 +46,29 @@ def test_idn(driver: Keithley2614B) -> None:
         "serial": "1398687",
         "vendor": "Keithley Instruments Inc.",
     } == driver.IDN()
+
+
+def test_four_sim_addresses_have_independent_state() -> None:
+    voltages = {1: 1.5, 2: -0.5, 3: 0.25, 4: 2.0}
+    drivers: list[Keithley2600] = []
+    try:
+        for gpib_address in voltages:
+            drivers.append(
+                Keithley2600(
+                    f"Keithley_2600_{gpib_address}",
+                    address=f"GPIB::{gpib_address}::INSTR",
+                    pyvisa_sim_file="Keithley_2600.yaml",
+                )
+            )
+
+        for driver, voltage in zip(drivers, voltages.values(), strict=True):
+            driver.smua.volt(voltage)
+
+        for driver, voltage in zip(drivers, voltages.values(), strict=True):
+            assert driver.smua.volt() == voltage
+    finally:
+        for driver in drivers:
+            driver.close()
 
 
 def test_smu_channels_and_their_parameters(driver: Keithley2614B) -> None:

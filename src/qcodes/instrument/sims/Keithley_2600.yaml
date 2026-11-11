@@ -203,3 +203,9 @@ resources:
 
   GPIB::2::INSTR:
     device: Keithley
+
+  GPIB::3::INSTR:
+    device: Keithley
+
+  GPIB::4::INSTR:
+    device: Keithley
