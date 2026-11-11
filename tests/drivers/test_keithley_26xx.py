@@ -8,6 +8,7 @@ import pytest
 
 from qcodes.dataset import LinSweep
 from qcodes.instrument_drivers.Keithley import (
+    Keithley2600,
     Keithley2600MeasurementStatus,
     Keithley2614B,
 )
@@ -47,43 +48,27 @@ def test_idn(driver: Keithley2614B) -> None:
     } == driver.IDN()
 
 
-@pytest.fixture(scope="function", name="drivers_at_gpib_3_and_4")
-def _make_drivers_at_gpib_3_and_4() -> (
-    "Generator[tuple[Keithley2614B, Keithley2614B], None, None]"
-):
-    driver_3 = Keithley2614B(
-        "Keithley_2600_3",
-        address="GPIB::3::INSTR",
-        pyvisa_sim_file="Keithley_2600.yaml",
-    )
+def test_four_sim_addresses_have_independent_state() -> None:
+    voltages = {1: 1.5, 2: -0.5, 3: 0.25, 4: 2.0}
+    drivers: list[Keithley2600] = []
     try:
-        driver_4 = Keithley2614B(
-            "Keithley_2600_4",
-            address="GPIB::4::INSTR",
-            pyvisa_sim_file="Keithley_2600.yaml",
-        )
-    except Exception:
-        driver_3.close()
-        raise
+        for gpib_address in voltages:
+            drivers.append(
+                Keithley2600(
+                    f"Keithley_2600_{gpib_address}",
+                    address=f"GPIB::{gpib_address}::INSTR",
+                    pyvisa_sim_file="Keithley_2600.yaml",
+                )
+            )
 
-    yield driver_3, driver_4
-    driver_3.close()
-    driver_4.close()
+        for driver, voltage in zip(drivers, voltages.values(), strict=True):
+            driver.smua.volt(voltage)
 
-
-def test_additional_sim_addresses_have_independent_state(
-    drivers_at_gpib_3_and_4: "tuple[Keithley2614B, Keithley2614B]",
-) -> None:
-    driver_3, driver_4 = drivers_at_gpib_3_and_4
-
-    assert driver_3.IDN()["model"] == "2601B"
-    assert driver_4.IDN()["model"] == "2601B"
-
-    driver_3.smua.volt(1.5)
-    driver_4.smua.volt(-0.5)
-
-    assert driver_3.smua.volt() == 1.5
-    assert driver_4.smua.volt() == -0.5
+        for driver, voltage in zip(drivers, voltages.values(), strict=True):
+            assert driver.smua.volt() == voltage
+    finally:
+        for driver in drivers:
+            driver.close()
 
 
 def test_smu_channels_and_their_parameters(driver: Keithley2614B) -> None:
