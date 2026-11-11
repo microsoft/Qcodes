@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import shutil
-import tempfile
 from contextlib import contextmanager
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any
@@ -94,29 +93,30 @@ def two_empty_temp_db_connections(
 
 @contextmanager
 def temporarily_copied_DB(
-    filepath: str, **kwargs: Any
+    filepath: str, tmp_path: Path, **kwargs: Any
 ) -> Generator[AtomicConnection, None, None]:
     """
-    Make a temporary copy of a db-file and delete it after use. Meant to be
-    used together with the old version database fixtures, lest we change the
-    fixtures on disk. Yields the connection object
+    Copy a db-file into ``tmp_path`` and yield a connection to the copy,
+    closing it after use. Meant to be used together with the old version
+    database fixtures, lest we change the fixtures on disk. The copy keeps the
+    file name of the original, so each file can only be copied once per test.
 
     Args:
         filepath: path to the db-file
+        tmp_path: the test's ``tmp_path`` fixture, the directory to copy into
         **kwargs: to be passed to connect
 
     """
-    with tempfile.TemporaryDirectory() as tmpdir:
-        dbname_new = os.path.join(tmpdir, "temp.db")
-        shutil.copy2(filepath, dbname_new)
+    dbname_new = tmp_path / os.path.basename(filepath)
+    shutil.copy2(filepath, dbname_new)
 
-        conn = connect(dbname_new, **kwargs)
+    conn = connect(dbname_new, **kwargs)
 
-        try:
-            yield conn
+    try:
+        yield conn
 
-        finally:
-            conn.close()
+    finally:
+        conn.close()
 
 
 @pytest.fixture(name="scalar_dataset")

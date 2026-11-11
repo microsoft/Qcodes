@@ -1,5 +1,6 @@
 import json
 import os
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -18,18 +19,21 @@ from qcodes.dataset.sqlite.queries import get_run_description
 from tests.common import skip_if_no_fixtures
 from tests.dataset.conftest import temporarily_copied_DB
 
+if TYPE_CHECKING:
+    from pathlib import Path
+
 fixturepath = os.sep.join(tests.dataset.__file__.split(os.sep)[:-1])
 fixturepath = os.path.join(fixturepath, "fixtures")
 
 
-def test_version_4a_bugfix() -> None:
+def test_version_4a_bugfix(tmp_path: "Path") -> None:
     v4fixpath = os.path.join(fixturepath, "db_files", "version4a")
 
     dbname_old = os.path.join(v4fixpath, "some_runs.db")
 
     skip_if_no_fixtures(dbname_old)
 
-    with temporarily_copied_DB(dbname_old, debug=False, version=4) as conn:
+    with temporarily_copied_DB(dbname_old, tmp_path, debug=False, version=4) as conn:
         dd = fix_version_4a_run_description_bug(conn)
 
         assert dd["runs_inspected"] == 10
@@ -49,20 +53,20 @@ def test_version_4a_bugfix() -> None:
         assert dd["runs_fixed"] == 0
 
 
-def test_version_4a_bugfix_raises() -> None:
+def test_version_4a_bugfix_raises(tmp_path: "Path") -> None:
     v3fixpath = os.path.join(fixturepath, "db_files", "version3")
     dbname_old = os.path.join(v3fixpath, "some_runs_without_run_description.db")
 
     skip_if_no_fixtures(dbname_old)
 
     with (
-        temporarily_copied_DB(dbname_old, debug=False, version=3) as conn,
+        temporarily_copied_DB(dbname_old, tmp_path, debug=False, version=3) as conn,
         pytest.raises(RuntimeError),
     ):
         fix_version_4a_run_description_bug(conn)
 
 
-def test_fix_wrong_run_descriptions() -> None:
+def test_fix_wrong_run_descriptions(tmp_path: "Path") -> None:
     v3fixpath = os.path.join(fixturepath, "db_files", "version3")
 
     dbname_old = os.path.join(v3fixpath, "some_runs_without_run_description.db")
@@ -81,7 +85,7 @@ def test_fix_wrong_run_descriptions() -> None:
     paramspecs[4]._depends_on = ["p2", "p3"]
     paramspecs[5]._inferred_from = ["p0"]
 
-    with temporarily_copied_DB(dbname_old, debug=False, version=3) as conn:
+    with temporarily_copied_DB(dbname_old, tmp_path, debug=False, version=3) as conn:
         assert get_user_version(conn) == 3
 
         expected_description = RunDescriber(
@@ -102,7 +106,7 @@ def test_fix_wrong_run_descriptions() -> None:
         assert desc == empty_description
 
 
-def test_fix_wrong_run_descriptions_raises() -> None:
+def test_fix_wrong_run_descriptions_raises(tmp_path: "Path") -> None:
     v4fixpath = os.path.join(fixturepath, "db_files", "version4a")
 
     dbname_old = os.path.join(v4fixpath, "some_runs.db")
@@ -110,7 +114,7 @@ def test_fix_wrong_run_descriptions_raises() -> None:
     skip_if_no_fixtures(dbname_old)
 
     with (
-        temporarily_copied_DB(dbname_old, debug=False, version=4) as conn,
+        temporarily_copied_DB(dbname_old, tmp_path, debug=False, version=4) as conn,
         pytest.raises(RuntimeError),
     ):
         fix_wrong_run_descriptions(conn, [1])
