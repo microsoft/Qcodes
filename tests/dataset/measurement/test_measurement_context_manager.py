@@ -7,7 +7,6 @@ import re
 import traceback
 from functools import reduce
 from typing import TYPE_CHECKING, Any, Literal
-from unittest.mock import patch
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -748,6 +747,7 @@ def test_datasaver_scalars(
     experiment: Experiment,
     DAC: DummyInstrument,
     DMM: DummyInstrument,
+    mocker: MockerFixture,
     set_values: list[float],
     get_values: list[float],
     breakpoint: int,
@@ -772,10 +772,9 @@ def test_datasaver_scalars(
     def fake_perf_counter() -> float:
         return now
 
-    with (
-        patch("qcodes.dataset.measurements.perf_counter", fake_perf_counter),
-        meas.run() as datasaver,
-    ):
+    mocker.patch("qcodes.dataset.measurements.perf_counter", fake_perf_counter)
+
+    with meas.run() as datasaver:
         for set_v, get_v in zip(set_values[:breakpoint], get_values[:breakpoint]):
             datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
 
