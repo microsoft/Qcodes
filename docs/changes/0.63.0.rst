@@ -1,0 +1,174 @@
+QCoDeS 0.63.0 (2026-11-11)
+==========================
+
+Breaking Changes:
+-----------------
+
+- Several instrument driver parameters now return numbers or booleans instead of the raw string
+  from the instrument, or an integer for an on/off state. Code that compares the returned value to
+  a string, or to ``0``/``1`` by identity, needs updating:
+
+  - ``Keithley2450.line_frequency`` and ``Keithley2450Sense.count`` now return ``int``, and
+    ``Keithley2450Sense.nplc`` and ``Keithley2450Source.delay`` return ``float``.
+  - ``Keithley7510Sense.user_delay`` now returns ``float``, and
+    ``Keithley7510Sense.average_count``, ``Keithley7510DigitizeSense.acq_rate`` and
+    ``Keithley7510DigitizeSense.count`` return ``int``.
+  - ``SR86xBuffer.count_capture_kilobytes`` now returns ``int``.
+  - ``RigolDG1062Burst.ncycles`` now returns ``int``, and ``RigolDG1062Burst.phase``,
+    ``RigolDG1062Burst.time_delay`` and ``RigolDG1062Channel.duty_cycle`` return ``float``.
+  - ``RigolDS1074Z.trigger_level`` and ``TektronixTPS2012.trigger_level`` now return ``float``.
+  - ``TektronixDPOHorizontal.record_length`` now returns ``int`` instead of ``float``, as the
+    record length is a number of samples.
+  - ``AgilentE8267C.pulse_width`` now returns ``float`` and its unit is ``s`` instead of ``ns``,
+    matching the value sent to and returned by the instrument.
+  - ``RohdeSchwarzRTO1000ScopeChannel.impedance`` and ``KeysightE4980A.range`` now return
+    ``float``.
+  - ``RohdeSchwarzZNBChannel.bandwidth`` now returns ``float``, e.g. ``10000.0`` instead of
+    ``10000``.
+  - The channel ``state`` and ``direct_output`` and the instrument ``DC_output`` of
+    ``TektronixAWG5014`` now return ``bool``. They accept ``True``/``False``, ``1``/``0`` and
+    ``"on"``/``"off"``. ``TektronixAWG5014.sequence_pos`` now returns ``int``.
+  - ``KeysightB1520A.ac_dc_volt_monitor`` now returns ``bool`` and also accepts ``1``/``0``
+    and ``"on"``/``"off"``. (:pr:`8658`)
+- The field units of an ``AMIModel430`` can no longer be changed while it is part of an
+  ``AMIModel4303D``, and doing so now raises a ``RuntimeError``. The set point and field limit of
+  the 3D driver are in the field units of the magnets, so changing them silently changed their
+  meaning by a factor of 10. Set the field units before creating the 3D driver, or close the 3D
+  driver first.
+
+  The coordinate vectors of ``AMIModel4303D`` (``cartesian``, ``spherical``, ``cylindrical`` and
+  their ``*_measured`` versions) now return a named tuple (``CartesianVector``,
+  ``SphericalVector`` or ``CylindricalVector`` from ``qcodes.math_utils``) instead of a list, so
+  the components can also be accessed by name, e.g. ``cartesian_measured().z``. Code that compares
+  the result to a list, or modifies it, needs updating. Setting these parameters still accepts
+  lists, tuples and numpy arrays. (:pr:`8679`)
+- The ``auto_zero_once`` parameter of ``Keithley7510Sense`` and the ``trigger_in_ext_clear``
+  parameter of ``Keithley7510`` have been replaced by methods of the same name. Both were
+  command-only parameters, so calling them without an argument, e.g.
+  ``dmm.sense.auto_zero_once()``, only returned the cached value and did not send anything to the
+  instrument. Calling them like this now sends the command. Code that passed a value to them, e.g.
+  ``dmm.trigger_in_ext_clear(None)``, must drop the argument, and they are no longer part of the
+  instrument's parameters or snapshot. (:pr:`8694`)
+- The ``trigger_count`` parameter of ``Keithley6500``, which sets the number of times a scan is
+  repeated (``ROUT:SCAN:COUN:SCAN``), now accepts the full range documented in the DMM6500
+  Reference Manual: 0 to 100,000,000, where 0 repeats the scan until it is aborted. It previously
+  only accepted 1 to 9999 or the strings ``"inf"``, ``"default"``, ``"minimum"`` and ``"maximum"``,
+  which were copied from the Keithley 2000 and are not documented for this command. These strings
+  are now rejected; use 0 instead of ``"inf"``. Whole-number floats are accepted and sent as
+  integers, and the parameter is annotated as ``Parameter[int, Self]``. (:pr:`8694`)
+
+
+Improved:
+---------
+
+- Fixed a rare error on Python 3.12 and 3.13 where closing an instrument could fail with
+  ``RuntimeError: dictionary changed size during iteration`` if the garbage collector cleaned up
+  another instrument at the same time. The instrument then stayed registered, so its name could
+  not be reused. (:pr:`8680`)
+- The "Creating Instrument Drivers" example notebook now explains how to annotate a parameter with
+  the type of its value, e.g. ``Parameter[float, Self]``, and all of its example drivers are
+  annotated this way. This also fixed bugs in the example code: the Ithaco example passed ``units``
+  instead of ``unit``, the Keithley 2600 example lacked its ``model`` attribute and
+  ``_display_settext`` method, and the Alazar example used outdated ``TraceParameter`` arguments. (:pr:`8694`)
+- Dataset preparation now writes startup metadata and the snapshot in one
+  transaction, inserting the snapshot after the other run metadata updates to
+  avoid repeatedly rewriting large snapshots. The complete snapshot is committed
+  before background writers and pending subscribers are started.
+
+
+Improved Drivers:
+-----------------
+
+- Add convenience methods to Tektronix DPO7200xx (``single``, ``download_waveforms``, ``get_timebase``) and AWG70000A (``upload_seqx``) drivers for streamlined waveform acquisition and sequence upload workflows. (:pr:`7865`)
+- The current ranges of the Keithley 2634B, 2635B and 2636B include 10 mA; their lists contained 10 µA twice in its place, so a 10 mA range was rejected. (:pr:`8618`)
+- Most instrument driver parameters are now annotated with the type of their value, e.g.
+  ``Parameter[float, Self]``, so static type checkers can infer the type returned by ``get``
+  and accepted by ``set``. As part of this, the mock instruments no longer pass the default
+  ``parameter_class=Parameter`` explicitly, and ``Keysight34980A.module`` is typed as a mapping
+  from slot number to switch matrix submodule.
+
+  Fixed the following driver bugs found along the way:
+
+  - ``RigolDS4000.enable_auto_scale`` always read back as ``True``, since ``bool("0")`` is
+    ``True``, and was set with ``True``/``False`` instead of ``1``/``0``.
+  - ``RohdeSchwarzRTO1000.trigger_mode`` queried the trigger source instead of the trigger mode.
+  - ``Keithley6500.digits`` sent a set command with a stray ``?``.
+  - ``MessageBuilder.pch_query`` of the Keysight B1500 sent ``PCH`` instead of ``PCH?``.
+  - ``LakeshoreModel325Heater.output_range`` accepted the high (25 W) range on loop 2, which is
+    only supported on loop 1.
+  - ``LakeshoreModel325Sensor.curve_index`` now accepts ``0`` (no curve), which the instrument
+    also reports when the selected curve does not match the input, and rejects non-integer values.
+    Whole-number floats such as ``23.0`` are still accepted and sent as integers.
+  - The ``LakeshoreModel325`` curve list now includes user curve 35, so ``upload_curve(35, ...)``
+    no longer raises an ``IndexError``.
+  - ``LakeshoreModel325Curve.get_data`` now reads all 200 points of a curve instead of 199.
+  - ``LakeshoreModel325Curve.set_data`` now writes curve points with 6 significant digits, the
+    resolution of the instrument, instead of rounding them to 3 decimals.
+  - ``LakeshoreModel325Sensor.curve`` now raises a ``RuntimeError`` when no curve is selected for
+    the sensor, instead of returning a curve 0, which the instrument does not have.
+  - ``RohdeSchwarzZNBChannel.bandwidth`` failed to read a non-integer bandwidth such as 1.5 Hz,
+    which the instrument supports.
+  - The ``current_compliance`` and ``power_compliance`` of the ``KeysightB1517A`` sweep could not
+    be set back to ``None``, which leaves the compliance out of the ``WV`` command. Since a power
+    compliance can only be sent together with a current compliance, clearing the current
+    compliance also clears the power compliance.
+  - ``Keysight34980A.scan_slots`` can now be called again; it skips slots that already have a
+    module instead of failing to register a duplicate submodule.
+  - ``Keithley7510DigitizeSense.aperture`` was labelled in ``us`` although the instrument uses
+    seconds; its unit is now ``s``.
+  - ``averages``, ``points`` and ``active_trace`` of the Keysight PNA (``KeysightPNABase``) drivers
+    now reject non-integer values. Previously ``averages`` failed to format a float such as
+    ``2.5`` and the others sent it to the instrument. Whole-number floats such as ``2.0`` are
+    still accepted and sent as integers. (:pr:`8658`)
+- ``CopperMountainM5xxx.averages``, ``AimTTiChannel.curr_range``, ``RigolDG1062Burst.ncycles``,
+  ``Keithley7510Sense.average_count`` and the ``dwell``, ``pause``, ``curve_number`` and
+  ``excitation_range_number`` of ``LakeshoreModel372Channel`` now reject non-integer values.
+  Previously these were sent to the instrument, or for ``CopperMountainM5xxx.averages`` silently
+  truncated. Whole-number floats such as ``2.0`` are still accepted and sent as integers.
+  Also removed the incorrect unit of ``AimTTiChannel.curr_range``, which is a range number, fixed
+  the label of ``LakeshoreModel372Channel.temperature_coefficient``, and removed incorrect units
+  from ``RigolDS1074Z.trigger_mode``, ``waveform_npoints``, ``waveform_yorigin`` and
+  ``waveform_yref``. (:pr:`8678`)
+- The field parameters of ``AMIModel4303D``, such as ``cartesian``, ``x`` and ``field_measured``,
+  now use the field units of the individual magnets, tesla or kilogauss, instead of always
+  reporting tesla. A warning is logged if the magnets use different field units. Also removed the
+  placeholder unit ``tuple?`` of ``AMIModel4303D.spherical`` and ``cylindrical``, whose components
+  have different units, which are now described in their docstrings. Closing an
+  ``AMIModel4303D`` now detaches its magnets, so ``set_field``, ``zero`` and changing the units of
+  a magnet that is still open no longer fail. (:pr:`8679`)
+- The parameters of the Basel SP983, SP983a and SP983c, Ithaco 1211, Keithley 2450, DMM7510, S46
+  and 2600 drivers that were not yet typed are now annotated with the type of their value, e.g.
+  ``Parameter[float, Self]``, so static type checkers can infer the type returned by ``get`` and
+  accepted by ``set``. (:pr:`8694`)
+
+
+New:
+----
+
+- Added the named tuples ``CartesianVector`` (``x``, ``y``, ``z``), ``SphericalVector``
+  (``field``, ``theta``, ``phi``) and ``CylindricalVector`` (``rho``, ``phi``, ``z``) to
+  ``qcodes.math_utils``, for the components of a field vector in a given coordinate system. (:pr:`8679`)
+- Added recording of parameter access: inside a ``with qcodes.parameters.record_parameter_accesses() as accesses:`` block,
+  every ``get`` and ``set`` of a parameter made by the current thread (or asyncio task) is appended to ``accesses`` as a
+  ``qcodes.parameters.ParameterAccess``: the names of the parameter and its instrument, the value and raw value, when the
+  access started, how long it took and the error it raised, if any. A set that ramps in steps is recorded once per step.
+  Accesses are appended to a new list, or to a mutable sequence that is passed in, whose ``append`` must only store them.
+  ``qcodes.parameters.log_parameter_accesses`` logs the accesses to the ``qcodes.parameters.parameter_access`` logger
+  instead. Recording only stores data: it is not a way to react to an access, and a record holds names rather than the
+  parameter or instrument. This makes it possible to see all instrument communication made by a piece of code without
+  changing it. (:pr:`8684`)
+
+
+Under the hood:
+---------------
+
+- The test suite now runs faster. Tests using the simulated Keysight B220x and B1500
+  instruments no longer first try to connect to a real instrument, and a number of
+  unneeded sleeps and waits have been removed or shortened. (:pr:`8725`)
+- The documentation builds faster: the ``InstrumentGroup`` example notebook ramps its gate in fewer
+  steps, and the ``qcodes.sphinx_extensions.parse_parameter_attr`` Sphinx extension now parses the
+  source of each class only once instead of once for every attribute documented on it. (:pr:`8742`)
+- All temporary files created by the test suite are now placed under pytest's temporary directory
+  root, so setting ``PYTEST_DEBUG_TEMPROOT`` (or ``--basetemp``) relocates all of them. (:pr:`8749`)
+- The test suite runs faster, especially on Windows: test databases are now opened with SQLite's
+  ``PRAGMA synchronous=OFF`` so that commits are not flushed to disk.
