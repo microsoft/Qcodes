@@ -177,6 +177,20 @@ def test_basic_subscription(
     assert len(triggers) == 0
 
 
+def test_subscribe_with_background_writing_not_supported(dataset: "DataSet") -> None:
+    xparam = ParamSpecBase(name="x", paramtype="numeric")
+    yparam = ParamSpecBase(name="y", paramtype="numeric")
+    dataset.set_interdependencies(InterDependencies_(dependencies={yparam: (xparam,)}))
+    dataset.mark_started(start_bg_writer=True)
+    try:
+        with pytest.raises(NotImplementedError, match="written in the background"):
+            dataset.subscribe(lambda results, length, state: None)
+        assert dataset.subscribers == {}
+    finally:
+        # completing the dataset shuts down the background writer
+        dataset.mark_completed()
+
+
 @pytest.mark.usefixtures("working_subscriber_config")
 def test_subscription_from_config(
     dataset: "DataSet",

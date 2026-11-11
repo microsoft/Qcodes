@@ -26,7 +26,11 @@ from opentelemetry import trace
 
 import qcodes as qc
 import qcodes.validators as vals
-from qcodes.dataset.data_set import DataSet, load_by_guid
+from qcodes.dataset.data_set import (
+    _SUBSCRIBERS_WITH_BACKGROUND_WRITING_ERROR,
+    DataSet,
+    load_by_guid,
+)
 from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.data_set_protocol import (
     DataSetProtocol,
@@ -602,6 +606,22 @@ class Runner:
         return float(write_period)
 
     def __enter__(self) -> DataSaver:
+        # Fail before creating the run: subscribing to a DataSet that is
+        # written in the background is not supported, and raising only once
+        # the run is started would leave it incomplete. The DataSaver also
+        # adds the default callback and the default subscribers from the config.
+        if (
+            self._write_in_background
+            and self._dataset_class is DataSetType.DataSet
+            and (
+                self.subscribers
+                or qc.config.subscription.default_subscribers
+                or "run_tables_subscription_callback"
+                in (DataSaver.default_callback or {})
+            )
+        ):
+            raise NotImplementedError(_SUBSCRIBERS_WITH_BACKGROUND_WRITING_ERROR)
+
         # multiple runners can be active at the same time.
         # If we just activate them in order the first one
         # would be the parent of the next one but that is wrong
@@ -1480,6 +1500,9 @@ class Measurement:
         """
         Add a subscriber to the dataset of the measurement.
 
+        Subscribers are not supported when the dataset is written in the
+        background, see the ``write_in_background`` argument of :meth:`run`.
+
         Args:
             func: A function taking three positional arguments: a list of
                 tuples of parameter values, an integer, a mutable variable
@@ -1519,7 +1542,10 @@ class Measurement:
                 will be stored in background, without blocking the
                 main thread that is executing the context manager.
                 By default the setting for write in background will be
-                read from the ``qcodesrc.json`` config file.
+                read from the ``qcodesrc.json`` config file. Subscribers
+                are not supported when writing in the background for the
+                default ``DataSet`` class, so entering the context manager
+                raises a ``NotImplementedError`` if any are set up.
             in_memory_cache: Should measured data be keep in memory
                 and available as part of the `dataset.cache` object.
             dataset_class: Enum representing the Class used to store data

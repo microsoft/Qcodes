@@ -715,6 +715,24 @@ def test_subscribers_called_for_all_data_points(
     assert yvals == list(given_yvals)
 
 
+def test_subscribers_with_background_writing_not_supported(
+    experiment: Experiment, DAC: DummyInstrument
+) -> None:
+    meas = Measurement(exp=experiment)
+    meas.register_parameter(DAC.ch1)
+    meas.add_subscriber(lambda results, length, state: None, state=[])
+    no_of_runs = len(experiment)
+
+    with (
+        pytest.raises(NotImplementedError, match="written in the background"),
+        meas.run(write_in_background=True),
+    ):
+        pass
+
+    # the error is raised before the run is created
+    assert len(experiment) == no_of_runs
+
+
 @settings(
     max_examples=5,
     deadline=None,

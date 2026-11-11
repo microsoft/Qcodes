@@ -42,8 +42,7 @@ def reset_callback_globals() -> "None":
 
 
 @pytest.mark.usefixtures("experiment")
-@pytest.mark.parametrize("bg_writing", [True, False])
-def test_default_callback(bg_writing: "bool") -> None:
+def test_default_callback() -> None:
     """
     The Web UI needs to know the results of an experiment with the metadata.
     So a default_callback class variable is set by the Web UI with a callback
@@ -67,7 +66,7 @@ def test_default_callback(bg_writing: "bool") -> None:
             interdeps=InterDependencies_(),
             registered_parameters=[],
         )
-        test_set.mark_started(start_bg_writer=bg_writing)
+        test_set.mark_started()
         test_set.mark_completed()
         assert CALLBACK_SNAPSHOT == "reasonable_snapshot"
         assert CALLBACK_RUN_ID is not None
@@ -76,6 +75,39 @@ def test_default_callback(bg_writing: "bool") -> None:
     finally:
         DataSaver.default_callback = None
         if test_set is not None:
+            test_set.conn.close()
+
+
+@pytest.mark.usefixtures("experiment")
+def test_default_callback_with_background_writing_not_supported() -> None:
+    """
+    Subscribers, such as the default callback, are not supported for a
+    dataset that is written in the background, so starting it raises.
+    """
+    test_set = None
+    try:
+        DataSaver.default_callback = {
+            "run_tables_subscription_callback": callback,
+            "run_tables_subscription_min_wait": 1,
+            "run_tables_subscription_min_count": 2,
+        }
+
+        test_set = new_data_set("test-dataset")
+        test_set.add_metadata("snapshot", "reasonable_snapshot")
+        DataSaver(
+            dataset=test_set,
+            write_period=0,
+            interdeps=InterDependencies_(),
+            registered_parameters=[],
+        )
+        with pytest.raises(NotImplementedError, match="written in the background"):
+            test_set.mark_started(start_bg_writer=True)
+        assert test_set.pristine
+    finally:
+        DataSaver.default_callback = None
+        if test_set is not None:
+            # The dataset is never completed, so stop the subscriber explicitly.
+            test_set.unsubscribe_all()
             test_set.conn.close()
 
 
