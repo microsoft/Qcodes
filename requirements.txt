@@ -53,7 +53,7 @@ comm==0.2.3
     #   ipywidgets
 contourpy==1.4.0
     # via matplotlib
-coverage==7.17.0
+coverage==7.17.1
     # via
     #   qcodes (pyproject.toml)
     #   pytest-cov
