@@ -1,0 +1,2 @@
+The `Keithley_2600.yaml` pyvisa-sim file now also defines the resources `GPIB::3::INSTR` and `GPIB::4::INSTR`,
+so that up to four simulated Keithley 2600 instruments with independent state can be used at the same time.

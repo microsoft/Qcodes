@@ -47,6 +47,45 @@ def test_idn(driver: Keithley2614B) -> None:
     } == driver.IDN()
 
 
+@pytest.fixture(scope="function", name="drivers_at_gpib_3_and_4")
+def _make_drivers_at_gpib_3_and_4() -> (
+    "Generator[tuple[Keithley2614B, Keithley2614B], None, None]"
+):
+    driver_3 = Keithley2614B(
+        "Keithley_2600_3",
+        address="GPIB::3::INSTR",
+        pyvisa_sim_file="Keithley_2600.yaml",
+    )
+    try:
+        driver_4 = Keithley2614B(
+            "Keithley_2600_4",
+            address="GPIB::4::INSTR",
+            pyvisa_sim_file="Keithley_2600.yaml",
+        )
+    except Exception:
+        driver_3.close()
+        raise
+
+    yield driver_3, driver_4
+    driver_3.close()
+    driver_4.close()
+
+
+def test_additional_sim_addresses_have_independent_state(
+    drivers_at_gpib_3_and_4: "tuple[Keithley2614B, Keithley2614B]",
+) -> None:
+    driver_3, driver_4 = drivers_at_gpib_3_and_4
+
+    assert driver_3.IDN()["model"] == "2601B"
+    assert driver_4.IDN()["model"] == "2601B"
+
+    driver_3.smua.volt(1.5)
+    driver_4.smua.volt(-0.5)
+
+    assert driver_3.smua.volt() == 1.5
+    assert driver_4.smua.volt() == -0.5
+
+
 def test_smu_channels_and_their_parameters(driver: Keithley2614B) -> None:
     assert {"smua", "smub"} == set(driver.submodules.keys())
 
