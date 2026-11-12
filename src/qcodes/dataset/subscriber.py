@@ -45,6 +45,9 @@ class _Subscriber(Thread):
 
         self.dataSet = dataSet
         self.table_name = dataSet.table_name
+        # Number of results in the dataset up to and including the ones last
+        # passed to the callback. Only updated while draining the queue, so it
+        # always matches the results that the callback has been given.
         self._data_set_len = len(dataSet)
 
         self.state = state
@@ -87,7 +90,6 @@ class _Subscriber(Thread):
 
     def _cache_data_to_queue(self, *args: Any) -> None:
         self.data_queue.put(args)
-        self._data_set_len += 1
 
     def run(self) -> None:
         self.log.debug("Starting subscriber")
@@ -106,6 +108,7 @@ class _Subscriber(Thread):
     def _call_callback_on_queue_data(self) -> None:
         with self._callback_lock:
             result_list = self._exhaust_queue(self.data_queue)
+            self._data_set_len += len(result_list)
             self.callback(result_list, self._data_set_len, self.state)
 
     def _loop(self) -> None:

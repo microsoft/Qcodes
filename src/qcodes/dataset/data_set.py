@@ -1259,7 +1259,14 @@ class DataSet(BaseDataSet):
         state: Any | None = None,
         callback_kwargs: Mapping[str, Any] | None = None,
     ) -> str:
-        if self._writer_status.write_in_background:
+        writer_status = self._writer_status
+        # Background writing is tracked per database, so also check that it is
+        # this run that is being written. A dataset that has not been started
+        # can be subscribed to; starting it in the background then raises.
+        if (
+            writer_status.write_in_background
+            and self.run_id in writer_status.active_datasets
+        ):
             raise NotImplementedError(_SUBSCRIBERS_WITH_BACKGROUND_WRITING_ERROR)
         subscriber_id = uuid.uuid4().hex
         if not self._results_table_exists:
