@@ -1,0 +1,3 @@
+Stepping (``step``) a parameter between numpy fixed width integer values, such as ``numpy.uint16`` or ``numpy.int8``,
+no longer jumps directly to the target value when the difference between start and target overflows the integer type
+(for example when stepping down with unsigned integers). ``permissive_range`` now does integer arithmetic with Python ints.
