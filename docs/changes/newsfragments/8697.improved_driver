@@ -1,0 +1,14 @@
+The remaining parameters of the ``YokogawaGS200`` driver are now annotated with the type of
+their value, e.g. ``Parameter[float, Self]``. ``YokogawaGS200Program.count`` is annotated as
+``int | Literal["MIN", "MAX"]``: it can be set to ``"MIN"`` or ``"MAX"``, and getting it
+always returns an integer, but until it is read again the cached value is the keyword that was
+set. The status register parameters return the ``StatusByte``, ``StandardEventRegister``,
+``ExtendedEventRegister`` and ``ConditionRegister`` flags as before, and are now annotated as
+such.
+
+Fixed the following driver bugs found along the way:
+
+- ``YokogawaGS200.ramp_voltage`` and ``ramp_current`` raised a ``TypeError`` when called with
+  ``ramp_mode="SOFTWARE"``.
+- ``YokogawaGS200Monitor.delay`` is in ms, but was sent to and read from the instrument as if
+  the instrument used ms, while it uses seconds. Setting a delay of 500 ms set 500 s.
