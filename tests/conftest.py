@@ -5,7 +5,7 @@ import os
 import sys
 import threading
 import weakref
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import matplotlib
 import pytest
@@ -16,6 +16,7 @@ from qcodes.configuration import Config
 from qcodes.dataset import get_open_connections, initialise_database, new_data_set
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.experiment_container import Experiment, new_experiment
+from qcodes.dataset.sqlite.connection import AtomicConnection
 from qcodes.instrument import Instrument
 from qcodes.monitor.monitor import Monitor
 from qcodes.parameters import ParamSpecBase
@@ -52,6 +53,31 @@ def matplotlib_set_backend() -> None:
     """
 
     matplotlib.use("agg")
+
+
+@pytest.fixture(scope="session", autouse=True)
+def disable_sqlite_disk_sync() -> Generator[None, None, None]:
+    """
+    Open every QCoDeS database connection with ``PRAGMA synchronous=OFF``.
+
+    By default SQLite flushes the database to disk on every commit, which
+    protects against data loss on OS crashes or power failures. Test databases
+    are thrown away after the test, so these flushes only cost time. This is
+    especially slow on Windows, and less so where the temporary directory
+    is a RAM disk (e.g. ``/tmp`` on many Linux systems). Turning this off
+    does not change what other connections or processes can read.
+    """
+    original_init = AtomicConnection.__init__
+
+    def init_without_disk_sync(
+        self: AtomicConnection, *args: Any, **kwargs: Any
+    ) -> None:
+        original_init(self, *args, **kwargs)
+        self.execute("PRAGMA synchronous=OFF")
+
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(AtomicConnection, "__init__", init_without_disk_sync)
+        yield
 
 
 @pytest.fixture(scope="session", autouse=True)

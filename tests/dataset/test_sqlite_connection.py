@@ -374,6 +374,13 @@ def test_connect() -> None:
     assert None is conn.row_factory
 
 
+def test_test_suite_disables_sqlite_disk_sync(tmp_path: "Path") -> None:
+    # The disable_sqlite_disk_sync fixture in tests/conftest.py speeds up the
+    # test suite by skipping disk flushes; check that it applies to files.
+    with closing(connect(tmp_path / "temp.db")) as conn:
+        assert conn.execute("PRAGMA synchronous").fetchone()[0] == 0
+
+
 def test_open_connections_are_tracked_until_closed(tmp_path: "Path") -> None:
     conn = connect(tmp_path / "temp.db")
     assert conn in get_open_connections()
