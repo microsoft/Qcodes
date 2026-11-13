@@ -1,0 +1,23 @@
+QCoDeS 0.39.0 (2023-06-20)
+==========================
+
+Note that this will be the last version to support Python 3.8. Please upgrade to at least
+python 3.9.
+
+Improved:
+---------
+
+- The in memory cache of a dataset can now be configured both from the `qcodesrc.json` config file and when using `dond` to perform measurements.
+  The Exception raised when a `dond`, `do1d` etc. measurement is interrupted (`BreakConditionInterrupt`) has been made public as part of the
+  `qcodes.dataset` module so it can be intercepted and handled by the user. (:pr:`5200`)
+- When writing a `DataSetInMem` back to a database the exp_id, counter and run_id are correctly updated
+  to reflect the sate of the new database. `write_metadata_to_db` has also been fixed to use
+  the database passed to init of the `DataSetInMem` class if no path is provided. (:pr:`5209`)
+
+
+Improved Drivers:
+-----------------
+
+- Fix Keithley 3706A driver to use the updated interlock status strings
+  (following up on :pr:`5007`) (:pr:`5147`)
+- Increase default timeout on R&S ZNB and allow the instrument to overwrite default timeout (:pr:`5201`)

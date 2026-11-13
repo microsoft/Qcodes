@@ -1,0 +1,65 @@
+QCoDeS 0.38.0 (2023-04-25)
+==========================
+
+Breaking Changes:
+-----------------
+
+- The modules ``qcodes_loop.data``, ``qcodes_loop.plots``, ``qcodes_loop.actions``, ``qcodes_loop.loops``,
+  ``qcodes_loop.measure``, ``qcodes_loop.extensions.slack`` and ``qcodes_loop.utils.magic``,
+  ``qcodes_loop.utils.qt_helpers`` have been split out into a separate package ``qcodes_loop``.
+  The respective modules in QCoDeS do still exist as deprecated aliases to the new modules in ``qcodes_loop``
+  but will be removed in a future release. To use the aliases QCoDeS must be installed with the ``loop`` extra e.g.
+  you should install ``pip install qcodes[loop]``. If you make use of these modules we recommend updating imports
+  to use ``qcodes_loop`` as soon as possible. See the `readme <https://github.com/qcodes/qcodes_loop>`_ of
+  ``qcodes_loop`` for more information.
+
+  The functions ``qcodes.utils.helpers.tprint`` ``qcodes.utils.helpers.wait_secs`` and
+  ``qcodes.utils.helpers.foreground_qt_window`` have been removed.
+  These helper functions are only used in ``qcodes_loop`` and were moved there. (:pr:`4971`)
+- The default configuration of QCoDeS dataset ``GUID_components.GUID_type`` has changed from ``explicit_sample`` to ``random_sample``.
+  This means that QCoDeS GUIDs will no longer start with ``aaaaaaaa`` but with a random string. This significantly reduces the risk
+  of duplicate GUIDs.
+  This also means that that the ability to set a sample_id as part of the dataset GUID is disabled by default. With
+  the default config its therefor an error to set ``GUID_components.sample`` to anything but the default value. The original
+  behavior can be restored by setting ``GUID_components.GUID_type`` to ``explicit_sample`` in the config file but is not recommended.
+  Users should make use of the ``sample_name`` attached to an experiment as an alternative. Note that if you have already created
+  a local config you will need to update this for the changes to take effect. (:pr:`5031`)
+
+
+Improved:
+---------
+
+- The helper functions ``guids_from_dbs``, ``guids_from_dir``, and ``guids_from_list_str`` have been added
+  to the documented dataset api at ``qcodes.dataset``. (:pr:`4989`)
+
+
+Improved Drivers:
+-----------------
+
+- Fixed a bug in version parsing for Keysight 344XXA and Keysight E4980A which
+  would result in incompatibility with packaging>21 under certain circumstances. (:pr:`5007`)
+- Fixed a bug in interlock status querying for Keithley 3706A. Originally, not all
+  potential responses from the system were accounted for when querying for interlock
+  status. A dictionary is used to map the response from the system to a string describing
+  the interlock status. When the system returns a response that was not accounted for, this
+  resulted in a KeyError being raised. Now, this dictionary accounts for all potential responses
+  from the system. (:pr:`5013`)
+- Added support for AimTTi QL355TP power supply.
+  Moved _numOutputChannels lookup table to the class body. (:pr:`5021`)
+- Increased range on setpoint property of Lakeshore Model 335,336,372 to support degree Celsius (:pr:`5043`)
+- Fix auto_sweep in Keysight PNA N52xx driver
+  Fix units of polar sweeps in Keysight PNA N52xx driver (:pr:`5090`)
+
+
+New:
+----
+
+- The QCoDeS ``Station`` ``Instrument`` and ``InstrumentModule`` classes gained a method ``get_component``
+  which allows the user to get a component by name. Allowing the user to go from
+  the full name of a component to the component itself. (:pr:`5028`)
+
+
+New Drivers:
+------------
+
+- Add driver for Lakeshore Model 335 (:pr:`5043`)

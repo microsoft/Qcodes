@@ -1,0 +1,8 @@
+QCoDeS 0.54.4 (2025-12-12)
+==========================
+
+Improved:
+---------
+
+- The `InterDependencies_` class is now frozen during the performance of a measurement so it cannot be modified.
+  This enables caching of attributes on the class significantly reducing the overhead of measurements. (:pr:`7712`)
