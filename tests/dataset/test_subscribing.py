@@ -7,6 +7,7 @@ import pytest
 from numpy import ndarray
 
 import qcodes
+from qcodes.dataset import new_data_set
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.sqlite.connection import atomic_transaction
 from qcodes.parameters import ParamSpecBase
@@ -134,8 +135,6 @@ def _make_broken_subscriber_config(tmp_path: "Path") -> "Generator[None, None, N
     yield
 
 
-@pytest.mark.flaky(reruns=5)
-@pytest.mark.serial
 def test_basic_subscription(
     dataset: "DataSet",
     basic_subscriber: "Callable[[list[tuple[VALUE]], int, dict | None], None]",
@@ -177,6 +176,85 @@ def test_basic_subscription(
     get_triggers_sql = "SELECT * FROM sqlite_master WHERE TYPE = 'trigger';"
     triggers = atomic_transaction(dataset.conn, get_triggers_sql).fetchall()
     assert len(triggers) == 0
+
+
+def test_subscribe_with_background_writing_not_supported(dataset: "DataSet") -> None:
+    xparam = ParamSpecBase(name="x", paramtype="numeric")
+    yparam = ParamSpecBase(name="y", paramtype="numeric")
+    dataset.set_interdependencies(InterDependencies_(dependencies={yparam: (xparam,)}))
+    dataset.mark_started(start_bg_writer=True)
+    try:
+        with pytest.raises(NotImplementedError, match="written in the background"):
+            dataset.subscribe(lambda results, length, state: None)
+        assert dataset.subscribers == {}
+    finally:
+        # completing the dataset shuts down the background writer
+        dataset.mark_completed()
+
+
+def test_subscribe_while_another_run_writes_in_background(
+    dataset: "DataSet",
+) -> None:
+    """
+    Only the run that is written in the background can not be subscribed to.
+    Another dataset in the same database can, and can then be written in the
+    main thread once the background run has completed.
+    """
+    xparam = ParamSpecBase(name="x", paramtype="numeric")
+    yparam = ParamSpecBase(name="y", paramtype="numeric")
+    idps = InterDependencies_(dependencies={yparam: (xparam,)})
+
+    background_run = new_data_set("background-run")
+    background_run.set_interdependencies(idps)
+    background_run.mark_started(start_bg_writer=True)
+
+    dataset.set_interdependencies(idps)
+    received: list[tuple[VALUE, ...]] = []
+    try:
+        dataset.subscribe(
+            lambda results, length, state: received.extend(results),
+            min_wait=0,
+            min_count=1,
+        )
+    finally:
+        background_run.mark_completed()
+        background_run.conn.close()
+
+    dataset.mark_started()
+    dataset.add_results([{"x": 1, "y": 2}])
+    dataset.mark_completed()
+    assert received == [(1, 2)]
+
+
+def test_subscriber_length_matches_delivered_results(dataset: "DataSet") -> None:
+    """
+    The length passed to the callback is the number of results in the dataset
+    up to and including the ones passed along with it, however the inserts
+    and the callbacks interleave.
+    """
+    xparam = ParamSpecBase(name="x", paramtype="numeric")
+    yparam = ParamSpecBase(name="y", paramtype="numeric")
+    dataset.set_interdependencies(InterDependencies_(dependencies={yparam: (xparam,)}))
+    dataset.mark_started()
+
+    calls: list[tuple[int, int]] = []
+
+    def subscriber(
+        results: "list[tuple[VALUE, ...]]", length: int, state: None
+    ) -> None:
+        calls.append((length, len(results)))
+
+    dataset.subscribe(subscriber, min_wait=0, min_count=1)
+    n_results = 1000
+    for x in range(n_results):
+        dataset.add_results([{"x": x, "y": x}])
+    dataset.mark_completed()
+
+    delivered = 0
+    for length, n_delivered in calls:
+        delivered += n_delivered
+        assert length == delivered
+    assert delivered == n_results
 
 
 @pytest.mark.usefixtures("working_subscriber_config")

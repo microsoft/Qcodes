@@ -1,0 +1,5 @@
+Fixed two race conditions in ``DataSet`` subscribers. A result inserted while a subscriber's
+callback was running could be held back until the next insert, and when a dataset was
+completed, its final callback could run concurrently with one already in progress on the
+subscriber thread, delivering results out of order. Subscriber callbacks now never overlap
+and always receive results in the order they were inserted.

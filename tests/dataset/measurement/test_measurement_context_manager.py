@@ -6,7 +6,6 @@ import random
 import re
 import traceback
 from functools import reduce
-from time import sleep
 from typing import TYPE_CHECKING, Any, Literal
 
 import hypothesis.strategies as hst
@@ -674,8 +673,6 @@ def test_subscribers_called_at_exiting_context_if_queue_is_not_empty(
     assert collected_x_vals == given_x_vals
 
 
-@pytest.mark.serial
-@pytest.mark.flaky(reruns=5)
 def test_subscribers_called_for_all_data_points(
     experiment: Experiment, DAC: DummyInstrument, DMM: DummyInstrument
 ) -> None:
@@ -717,9 +714,24 @@ def test_subscribers_called_for_all_data_points(
     assert yvals == list(given_yvals)
 
 
-# There is no way around it: this test is slow. We test that write_period
-# works and hence we must wait for some time to elapse. Sorry.
-@pytest.mark.serial
+def test_subscribers_with_background_writing_not_supported(
+    experiment: Experiment, DAC: DummyInstrument
+) -> None:
+    meas = Measurement(exp=experiment)
+    meas.register_parameter(DAC.ch1)
+    meas.add_subscriber(lambda results, length, state: None, state=[])
+    no_of_runs = len(experiment)
+
+    with (
+        pytest.raises(NotImplementedError, match="written in the background"),
+        meas.run(write_in_background=True),
+    ):
+        pass
+
+    # the error is raised before the run is created
+    assert len(experiment) == no_of_runs
+
+
 @settings(
     max_examples=5,
     deadline=None,
@@ -735,6 +747,7 @@ def test_datasaver_scalars(
     experiment: Experiment,
     DAC: DummyInstrument,
     DMM: DummyInstrument,
+    mocker: MockerFixture,
     set_values: list[float],
     get_values: list[float],
     breakpoint: int,
@@ -752,21 +765,24 @@ def test_datasaver_scalars(
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DMM.v1, setpoints=(DAC.ch1,))
 
+    # Drive the clock that the DataSaver uses for write_period by hand, so
+    # that the outcome does not depend on how fast the machine runs the test.
+    now = 0.0
+
+    def fake_perf_counter() -> float:
+        return now
+
+    mocker.patch("qcodes.dataset.measurements.perf_counter", fake_perf_counter)
+
     with meas.run() as datasaver:
         for set_v, get_v in zip(set_values[:breakpoint], get_values[:breakpoint]):
             datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
 
         assert datasaver._dataset.number_of_results == 0
-        sleep(write_period * 1.1)
+        now += write_period * 1.1
         datasaver.add_result(
             (DAC.ch1, set_values[breakpoint]), (DMM.v1, get_values[breakpoint])
         )
-        # test that work with time intervals are often flaky
-        # so we add a bit more wait time here if the expected number
-        # of points have not been written
-        for _ in range(10):
-            if datasaver.points_written != breakpoint + 1:
-                sleep(write_period * 1.1)
         assert datasaver.points_written == breakpoint + 1
 
     assert datasaver.run_id == no_of_runs + 1
