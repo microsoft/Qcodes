@@ -1,3 +1,4 @@
+from ._full_class import full_class
 from .abstractmethod import qcodes_abstractmethod
 from .attribute_helpers import (
     DelegateAttributes,
@@ -9,8 +10,7 @@ from .attribute_helpers import (
 )
 from .deep_update_utils import deep_update
 from .delaykeyboardinterrupt import DelayedKeyboardInterrupt
-from .deprecate import QCoDeSDeprecationWarning
-from .full_class import full_class
+from .deprecate import QCoDeSDeprecationWarning, _keep_attributes_shadowing_submodules
 from .function_helpers import is_function
 from .installation_info import (
     convert_legacy_version_to_supported_version,
@@ -23,6 +23,11 @@ from .partial_utils import partial_with_docstring
 from .path_helpers import get_qcodes_path, get_qcodes_user_path
 from .snapshot_helpers import ParameterDiff, diff_param_values, extract_param_values
 from .threading_utils import RespondingThread, thread_map
+
+# Keep the public objects when the deprecated module aliases that share
+# their names are imported.
+_keep_attributes_shadowing_submodules(__name__)
+
 
 __all__ = [
     "DelayedKeyboardInterrupt",

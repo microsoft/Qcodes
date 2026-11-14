@@ -11,9 +11,9 @@ from typing import TYPE_CHECKING
 import pytest
 
 from qcodes.instrument_drivers.mock_instruments import DummyInstrument
-from qcodes.instrument_drivers.stanford_research.SR830 import (
-    ChannelBuffer,
-    ChannelTrace,
+from qcodes.instrument_drivers.stanford_research._sr830 import (
+    SR830ChannelBuffer,
+    SR830ChannelTrace,
 )
 from qcodes.validators import Arrays
 
@@ -34,10 +34,10 @@ def test_channel_trace_requires_sr830(not_an_sr830: DummyInstrument) -> None:
     with pytest.raises(
         ValueError,
         match=re.escape(
-            "Invalid parent instrument. ChannelBuffer can only live on an SR830."
+            "Invalid parent instrument. SR830ChannelTrace can only live on an SR830."
         ),
     ):
-        ChannelTrace(
+        SR830ChannelTrace(
             "ch1_datatrace",
             channel=1,
             instrument=not_an_sr830,
@@ -49,10 +49,10 @@ def test_channel_buffer_requires_sr830(not_an_sr830: DummyInstrument) -> None:
     with pytest.raises(
         ValueError,
         match=re.escape(
-            "Invalid parent instrument. ChannelBuffer can only live on an SR830."
+            "Invalid parent instrument. SR830ChannelBuffer can only live on an SR830."
         ),
     ):
-        ChannelBuffer(
+        SR830ChannelBuffer(
             "ch1_databuffer",
             instrument=not_an_sr830,  # type: ignore[arg-type]
             channel=1,
@@ -65,14 +65,14 @@ def test_buffer_parameters_reject_invalid_channel(
 ) -> None:
     match = re.escape("Invalid channel specifier. SR830 only has channels 1 and 2.")
     with pytest.raises(ValueError, match=match):
-        ChannelTrace(
+        SR830ChannelTrace(
             f"ch{channel}_datatrace",
             channel=channel,
             instrument=not_an_sr830,
             vals=Arrays(shape=(1,)),
         )
     with pytest.raises(ValueError, match=match):
-        ChannelBuffer(
+        SR830ChannelBuffer(
             f"ch{channel}_databuffer",
             instrument=not_an_sr830,  # type: ignore[arg-type]
             channel=channel,
