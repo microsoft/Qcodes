@@ -20,6 +20,7 @@ from pytest import FixtureRequest
 from qcodes.instrument import (
     Instrument,
     InstrumentBase,
+    InstrumentChannel,
     InstrumentModule,
     find_or_create_instrument,
 )
@@ -839,6 +840,63 @@ def test_garbage_collecting_closed_instrument_does_not_close_it_again() -> None:
     assert [w for w in caught if issubclass(w.category, ResourceWarning)] == []
     assert Instrument.find_instrument("instr") is new_instrument
     new_instrument.close()
+
+
+class _InstrumentLoggingWhenClosed(Instrument):
+    """An instrument that logs through itself and its channel when closed."""
+
+    def __init__(self, name: str) -> None:
+        super().__init__(name)
+        self.channel = self.add_submodule("channel", InstrumentChannel(self, "channel"))
+
+    def close(self) -> None:
+        self.log.info("closing instrument")
+        self.channel.log.info("closing channel")
+        super().close()
+
+
+def _close_messages(caplog: pytest.LogCaptureFixture) -> list[str]:
+    return [
+        record.getMessage()
+        for record in caplog.records
+        if "closing" in record.getMessage()
+    ]
+
+
+@pytest.mark.usefixtures("close_before_and_after")
+def test_instrument_logs_when_closed_explicitly(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    instrument = _InstrumentLoggingWhenClosed("logging")
+
+    with caplog.at_level(logging.INFO):
+        instrument.close()
+
+    assert _close_messages(caplog) == [
+        "[logging(_InstrumentLoggingWhenClosed)] closing instrument",
+        "[logging_channel(InstrumentChannel)] closing channel",
+    ]
+
+
+@pytest.mark.usefixtures("close_before_and_after")
+def test_instrument_does_not_log_when_closed_by_garbage_collector(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """
+    The garbage collector runs at an arbitrary point in time and on any
+    thread, possibly in the middle of other logging, so the loggers of an
+    instrument and of its channels do not log while it closes the instrument.
+    """
+    _InstrumentLoggingWhenClosed("logging")
+
+    with (
+        caplog.at_level(logging.INFO),
+        pytest.warns(ResourceWarning, match="unclosed instrument"),
+    ):
+        gc.collect()
+
+    assert not Instrument.exist("logging")
+    assert _close_messages(caplog) == []
 
 
 def test_snapshot_and_meta_attrs() -> None:

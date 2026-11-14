@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 import socket
 from typing import TYPE_CHECKING, Any
 
@@ -16,8 +15,6 @@ if TYPE_CHECKING:
     from qcodes.metadatable import SnapshotUpdate
 
     from .instrument_base import InstrumentBaseKWArgs
-
-log = logging.getLogger(__name__)
 
 
 class IPInstrument(Instrument):
@@ -117,13 +114,13 @@ class IPInstrument(Instrument):
             self._disconnect()
 
         try:
-            log.info("Opening socket")
+            self.log.info("Opening socket")
             self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            log.info(f"Connecting socket to {self._address}:{self._port}")
+            self.log.info(f"Connecting socket to {self._address}:{self._port}")
             self._socket.connect((self._address, self._port))
             self.set_timeout(self._timeout)
         except ConnectionRefusedError:
-            log.warning("Socket connection failed")
+            self.log.warning("Socket connection failed")
             if self._socket is not None:
                 self._socket.close()
             self._socket = None
@@ -132,11 +129,11 @@ class IPInstrument(Instrument):
     def _disconnect(self) -> None:
         if self._socket is None:
             return
-        log.info("Socket shutdown")
+        self.log.info("Socket shutdown")
         self._socket.shutdown(socket.SHUT_RDWR)
-        log.info("Socket closing")
+        self.log.info("Socket closing")
         self._socket.close()
-        log.info("Socket closed")
+        self.log.info("Socket closed")
         self._socket = None
 
     def set_timeout(self, timeout: float) -> None:
@@ -167,16 +164,16 @@ class IPInstrument(Instrument):
         if self._socket is None:
             raise RuntimeError(f"IPInstrument {self.name} is not connected")
         data = cmd + self._terminator
-        log.debug(f"Writing {data} to instrument {self.name}")
+        self.log.debug(f"Writing {data}")
         self._socket.sendall(data.encode())
 
     def _recv(self) -> str:
         if self._socket is None:
             raise RuntimeError(f"IPInstrument {self.name} is not connected")
         result = self._socket.recv(self._buffer_size)
-        log.debug(f"Got {result!r} from instrument {self.name}")
+        self.log.debug(f"Got {result!r}")
         if result == b"":
-            log.warning("Got empty response from Socket recv() Connection broken.")
+            self.log.warning("Got empty response from Socket recv() Connection broken.")
         return result.decode()
 
     def close(self) -> None:

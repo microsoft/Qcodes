@@ -48,6 +48,12 @@ class _InstrumentState(Enum):
     The instrument has been closed and its attributes stripped, or its
     initialization failed and closing it has been attempted.
     """
+    FINALIZING = auto()
+    """
+    The instrument is being closed by the garbage collector, which runs at an
+    arbitrary point in time and on any thread, possibly in the middle of other
+    logging, so the instrument must not log.
+    """
 
 
 # a metaclass that overrides __call__ means that we lose
@@ -207,6 +213,9 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
                     source=self,
                 )
         finally:
+            # This disables the instrument loggers while closing the
+            # instrument, see _being_closed_by_garbage_collector.
+            self.__state = _InstrumentState.FINALIZING
             try:
                 self.close()
             except BaseException:  # noqa: BLE001, S110
@@ -215,6 +224,10 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
                 # https://docs.python.org/3/reference/datamodel.html#object.__del
                 # however that would require careful testing.
                 pass
+
+    @property
+    def _being_closed_by_garbage_collector(self) -> bool:
+        return self.__state is _InstrumentState.FINALIZING
 
     def close(self) -> None:
         """

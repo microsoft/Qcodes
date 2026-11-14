@@ -714,6 +714,21 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         return self
 
     @property
+    def _being_closed_by_garbage_collector(self) -> bool:
+        """
+        Whether the root instrument is being closed by the garbage collector.
+
+        The garbage collector runs at an arbitrary point in time and on any
+        thread, possibly in the middle of other logging, so the instrument
+        loggers do not log in the meantime.
+        """
+        root_instrument = self.root_instrument
+        return (
+            root_instrument is not self
+            and root_instrument._being_closed_by_garbage_collector
+        )
+
+    @property
     def name_parts(self) -> list[str]:
         """
         A list of all the parts of the instrument name from :meth:`root_instrument`
