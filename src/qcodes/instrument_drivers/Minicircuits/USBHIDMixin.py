@@ -165,7 +165,9 @@ class MiniCircuitsHIDMixin(Instrument):
         return self._unpack_string(response)
 
     def close(self) -> None:
+        """Disconnect and irreversibly tear down the instrument."""
         self._device.close()
+        super().close()
 
     @classmethod
     def enumerate_devices(cls) -> list[str]:

@@ -176,9 +176,11 @@ class GalilMotionController(Instrument):
 
     def close(self) -> None:
         """
-        Close connection to the instrument
+        Close connection to the instrument and irreversibly tear down the
+        instrument.
         """
         self.g.GClose()
+        super().close()
 
     def motion_complete(self, axes: str) -> None:
         """
