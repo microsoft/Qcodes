@@ -225,9 +225,9 @@ class DelegateParameter(
         # i.e. _SetParamContext overrides it
         self._settable = True
 
-        self.cache = self._DelegateCache[ParameterDataTypeVar, InstrumentTypeVar_co](
-            self
-        )
+        self.cache = DelegateParameter._DelegateCache[
+            ParameterDataTypeVar, InstrumentTypeVar_co
+        ](self)
         if initial_cache_value is not None:
             self.cache.set(initial_cache_value)
 
