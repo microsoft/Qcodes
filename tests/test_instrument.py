@@ -9,6 +9,7 @@ import gc
 import io
 import logging
 import re
+import warnings
 import weakref
 from typing import TYPE_CHECKING, Any, assert_type
 from weakref import WeakValueDictionary
@@ -625,7 +626,10 @@ def test_close_when_gc_finalizes_instrument_during_registry_iteration(
     assert not Instrument.exist("dummy")
     DummyInstrument(name="dummy", gates=["dac1"]).close()
 
-    gc.collect()
+    with pytest.warns(
+        ResourceWarning, match="unclosed instrument <Instrument: leaked>"
+    ):
+        gc.collect()
     assert len(Instrument._all_instruments) == 0
 
 
@@ -643,7 +647,10 @@ def test_close_all_when_gc_finalizes_instrument_during_registry_iteration(
     _leak_instrument("leaked")
     parabola = MockParabola("parabola")
 
-    Instrument.close_all()
+    with pytest.warns(
+        ResourceWarning, match="unclosed instrument <Instrument: leaked>"
+    ):
+        Instrument.close_all()
 
     assert registry.collected_garbage
     assert not Instrument.is_valid(dummy)
@@ -711,18 +718,27 @@ def test_instrument_without_ref_is_gced() -> None:
 
     assert len(Instrument._all_instruments) == 0
     use_some_instrument()
-    gc.collect()
+    with pytest.warns(ResourceWarning, match="unclosed instrument"):
+        gc.collect()
     assert len(Instrument._all_instruments) == 0
 
 
-def _instrument_class_recording_close(closed: list[str]) -> type[Instrument]:
+def _instrument_class_recording_close(
+    closed: list[str], *, fail_to_initialize: bool = False
+) -> type[Instrument]:
     """
     Create an instrument class that records the name of each instrument that
     is closed in ``closed``, also when the instrument has been stripped by an
-    earlier close.
+    earlier close. If ``fail_to_initialize`` is True, initializing an
+    instrument of the class raises a ``RuntimeError``.
     """
 
     class InstrumentRecordingClose(Instrument):
+        def __init__(self, name: str) -> None:
+            super().__init__(name)
+            if fail_to_initialize:
+                raise RuntimeError("Failed to initialize")
+
         def close(self) -> None:
             closed.append(self.name)
             super().close()
@@ -731,21 +747,50 @@ def _instrument_class_recording_close(closed: list[str]) -> type[Instrument]:
 
 
 @pytest.mark.usefixtures("close_before_and_after")
-def test_garbage_collecting_unclosed_instrument_closes_it() -> None:
+def test_garbage_collecting_unclosed_instrument_closes_it_and_warns() -> None:
     closed: list[str] = []
     _instrument_class_recording_close(closed)("unclosed")
 
-    gc.collect()
+    with pytest.warns(
+        ResourceWarning,
+        match=r"unclosed instrument <InstrumentRecordingClose: unclosed>\. "
+        r"Close instruments explicitly",
+    ):
+        gc.collect()
 
     assert closed == ["unclosed"]
     assert not Instrument.exist("unclosed")
 
 
 @pytest.mark.usefixtures("close_before_and_after")
+def test_garbage_collecting_instrument_that_failed_to_initialize_does_not_warn() -> (
+    None
+):
+    """
+    An instrument whose initialization failed is still closed when garbage
+    collected, but without a warning, as it was never handed to the user who
+    could therefore not have closed it.
+    """
+    closed: list[str] = []
+    failing_class = _instrument_class_recording_close(closed, fail_to_initialize=True)
+
+    with pytest.raises(RuntimeError, match="Failed to initialize"):
+        failing_class("failing")
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        gc.collect()
+
+    assert closed == ["failing"]
+    assert [w for w in caught if issubclass(w.category, ResourceWarning)] == []
+
+
+@pytest.mark.usefixtures("close_before_and_after")
 def test_garbage_collecting_closed_instrument_does_not_close_it_again() -> None:
     """
-    An instrument that has been closed explicitly is not closed again when
-    garbage collected, which may happen after its name has been reused.
+    An instrument that has been closed explicitly is neither closed again nor
+    warned about when garbage collected, which may happen after its name has
+    been reused.
     """
     closed: list[str] = []
     instrument_class = _instrument_class_recording_close(closed)
@@ -753,10 +798,13 @@ def test_garbage_collecting_closed_instrument_does_not_close_it_again() -> None:
     old_instrument.close()
     new_instrument = instrument_class("instr")
 
-    del old_instrument
-    gc.collect()
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        del old_instrument
+        gc.collect()
 
     assert closed == ["instr"]
+    assert [w for w in caught if issubclass(w.category, ResourceWarning)] == []
     assert Instrument.find_instrument("instr") is new_instrument
     new_instrument.close()
 

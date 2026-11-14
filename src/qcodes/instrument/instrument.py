@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import logging
 import time
+import warnings
 import weakref
+from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, overload
 
 from qcodes.utils import strip_attrs
@@ -29,6 +31,23 @@ class InstrumentProtocol(Protocol):
     def ask(self, cmd: str) -> str: ...
 
     def write(self, cmd: str) -> None: ...
+
+
+class _InstrumentState(Enum):
+    """The stages of the lifecycle of an :class:`Instrument`."""
+
+    INITIALIZING = auto()
+    """
+    The instrument is being initialized and has not been handed to the user.
+    It stays in this state if its initialization fails.
+    """
+    OPEN = auto()
+    """
+    The instrument has been initialized, registered and handed to the user,
+    who is responsible for closing it.
+    """
+    CLOSED = auto()
+    """The instrument has been closed and its attributes stripped."""
 
 
 # a metaclass that overrides __call__ means that we lose
@@ -63,7 +82,7 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
     _type: type[Instrument] | None = None
     _instances: ClassVar[weakref.WeakSet[Instrument]] = weakref.WeakSet()
     # Name mangled so that it cannot clash with attributes of subclasses.
-    __closed: bool = False
+    __state: _InstrumentState = _InstrumentState.INITIALIZING
 
     def __init__(self, name: str, **kwargs: Unpack[InstrumentBaseKWArgs]) -> None:
         self._t0 = time.time()
@@ -153,7 +172,8 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
     def __del__(self) -> None:
         """
         Close the instrument if it is garbage collected without having been
-        closed, so that its resources are freed.
+        closed, so that its resources are freed, and emit a
+        :class:`ResourceWarning` about it.
 
         Do not rely on this: always close instruments explicitly with
         :meth:`close` (or :meth:`close_all`). As instruments reference
@@ -164,19 +184,37 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         been closed, so :meth:`close` can no longer communicate with the
         instrument.
         """
-        if self.__closed:
+        if self.__state is _InstrumentState.CLOSED:
             # Closing it again would rerun the close methods of subclasses at
             # an arbitrary point in time, possibly after the name or the
             # resources of the instrument have been reused.
             return
         try:
-            self.close()
-        except BaseException:  # noqa: BLE001, S110
-            # we want to avoid __del__ raising any exceptions
-            # it might be possible to avoid this see
-            # https://docs.python.org/3/reference/datamodel.html#object.__del
-            # however that would require careful testing.
-            pass
+            # Instruments that failed to initialize have never been handed to
+            # the user, who could therefore not have closed them.
+            if self.__state is _InstrumentState.OPEN:
+                # Like for unclosed files, the instrument is still closed if
+                # the warning is turned into an error, which is then reported
+                # as an exception ignored in __del__.
+                warnings.warn(
+                    f"unclosed instrument {self!r}. Close instruments "
+                    "explicitly with close() or Instrument.close_all() "
+                    "instead of relying on the garbage collector.",
+                    ResourceWarning,
+                    # Point at this method rather than at whatever code
+                    # happened to trigger the garbage collection.
+                    stacklevel=1,
+                    source=self,
+                )
+        finally:
+            try:
+                self.close()
+            except BaseException:  # noqa: BLE001, S110
+                # we want to avoid __del__ raising any exceptions
+                # it might be possible to avoid this see
+                # https://docs.python.org/3/reference/datamodel.html#object.__del
+                # however that would require careful testing.
+                pass
 
     def close(self) -> None:
         """
@@ -204,7 +242,8 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
                     strip_attrs(channel, whitelist=["_short_name", "_parent"])
 
         strip_attrs(self, whitelist=["_short_name"])
-        self.__closed = True
+        # after stripping the attributes, which would remove the state again
+        self.__state = _InstrumentState.CLOSED
 
     @classmethod
     def close_all(
@@ -280,6 +319,7 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
             cls._type = cls
             cls._instances = weakref.WeakSet()
         cls._instances.add(instance)
+        instance.__state = _InstrumentState.OPEN
 
     @classmethod
     def instances(cls: type[Self]) -> list[Self]:

@@ -161,7 +161,10 @@ def test_visa_gc_closes_connection(caplog: pytest.LogCaptureFixture) -> None:
     caplog.clear()
     with caplog.at_level(logging.INFO, logger="qcodes.instrument.visa"):
         rm = use_magnet()
-        gc.collect()
+        with pytest.warns(
+            ResourceWarning, match="unclosed instrument <AMIModel430: x>"
+        ):
+            gc.collect()
     # at this stage the instrument created in use_magnet has gone out of scope
     # and we have triggered an explicit gc so the weakref.finalize function
     # has been triggered. We test this
