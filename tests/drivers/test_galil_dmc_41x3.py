@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+import qcodes.instrument_drivers
 from qcodes.instrument import Instrument
 
 if TYPE_CHECKING:
@@ -43,12 +44,16 @@ def _driver_module_with_fake_gclib(
     monkeypatch.setitem(sys.modules, "gclib", fake_gclib)
     for name in ("qcodes.instrument_drivers.Galil", _DRIVER_MODULE):
         monkeypatch.delitem(sys.modules, name, raising=False)
+    # importing the package sets it as an attribute of its parent package
+    monkeypatch.delattr(qcodes.instrument_drivers, "Galil", raising=False)
     try:
         yield importlib.import_module(_DRIVER_MODULE)
     finally:
         # Do not leave the driver bound to the fake module behind.
         for name in ("qcodes.instrument_drivers.Galil", _DRIVER_MODULE):
             sys.modules.pop(name, None)
+        if hasattr(qcodes.instrument_drivers, "Galil"):
+            delattr(qcodes.instrument_drivers, "Galil")
 
 
 def test_close_closes_connection_and_unregisters_instrument(

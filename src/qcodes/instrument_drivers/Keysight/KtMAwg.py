@@ -258,7 +258,6 @@ class KeysightM9336A(Instrument):
 
         self._address = bytes(address, "ascii")
         self._options = bytes(options, "ascii")
-        self._session = ctypes.c_int(0)
         self._dll_loc = dll_path
         self._dll = ctypes.cdll.LoadLibrary(self._dll_loc)
         self._channel = ctypes.create_string_buffer(b"Channel1")
@@ -299,11 +298,15 @@ class KeysightM9336A(Instrument):
         self.connect_message()
 
     def _connect(self) -> None:
+        session = ctypes.c_int(0)
         status = self._dll.KtMAwg_InitWithOptions(
-            self._address, 1, 1, self._options, ctypes.byref(self._session)
+            self._address, 1, 1, self._options, ctypes.byref(session)
         )
         if status:
             raise SystemError(f"connection to device failed! error: {status}")
+        # Only assign the session once it has been opened successfully, so that
+        # close does not try to close a session that is not open.
+        self._session = session
 
     def get_idn(self) -> dict[str, str | None]:
         """Generates the ``*IDN`` dictionary for qcodes"""
@@ -406,7 +409,7 @@ class KeysightM9336A(Instrument):
 
     def close(self) -> None:
         # The instrument may already have been closed, or its initialization may
-        # have failed before loading the DLL.
-        if getattr(self, "_dll", None) is not None:
+        # have failed before opening the session.
+        if getattr(self, "_session", None) is not None:
             self._dll.KtMAwg_close(self._session)
         super().close()

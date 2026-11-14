@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, ClassVar, Literal, Self, cast
 
 import numpy as np
 from pyvisa import VisaIOError
+from pyvisa.errors import InvalidSession
 
 import qcodes.validators as vals
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
@@ -472,4 +473,12 @@ class DynaCool(VisaInstrument):
                     f"Got the following error from PyVISA: "
                     f"{e.abbreviation}: {e.description}"
                 )
+            except InvalidSession:
+                # e.g. closed by its finalizer if the garbage collector is
+                # closing the instrument
+                self.log.debug("The VISA session has already been closed.")
+            except Exception:
+                # Closing the server connection is only a courtesy, so the
+                # instrument is closed below in any case.
+                self.log.warning("Could not close connection to server", exc_info=True)
         super().close()

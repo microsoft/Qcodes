@@ -1,2 +1,4 @@
-Closing an instrument that has already been closed now does nothing. Previously, closing an
-``IPInstrument`` a second time raised an ``AttributeError``.
+``Instrument.close`` now does nothing if the instrument has already been closed; close methods of
+subclasses still run before they call it. Closing an ``IPInstrument`` a second time no longer raises
+an ``AttributeError``, and closing it now also closes its socket if the socket cannot be shut down,
+e.g. because it is not connected.

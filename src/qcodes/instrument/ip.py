@@ -130,7 +130,12 @@ class IPInstrument(Instrument):
         if self._socket is None:
             return
         self.log.info("Socket shutdown")
-        self._socket.shutdown(socket.SHUT_RDWR)
+        try:
+            self._socket.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            # e.g. the socket is not connected, because connecting it failed.
+            # It must be closed in any case.
+            self.log.debug("Could not shut down socket", exc_info=True)
         self.log.info("Socket closing")
         self._socket.close()
         self.log.info("Socket closed")

@@ -9,6 +9,7 @@ import gc
 import io
 import logging
 import re
+import socket
 import warnings
 import weakref
 from typing import TYPE_CHECKING, Any, assert_type
@@ -25,6 +26,7 @@ from qcodes.instrument import (
     IPInstrument,
     find_or_create_instrument,
 )
+from qcodes.instrument import instrument as instrument_module
 from qcodes.instrument_drivers.mock_instruments import (
     DummyBase,
     DummyChannelInstrument,
@@ -35,6 +37,7 @@ from qcodes.instrument_drivers.mock_instruments import (
 )
 from qcodes.metadatable import Metadatable
 from qcodes.parameters import Function, Parameter
+from qcodes.utils import strip_attrs
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
@@ -710,6 +713,7 @@ def test_instrument_label(cls: type[InstrumentBase], request: FixtureRequest) ->
     assert instrument.label == label
 
 
+@pytest.mark.usefixtures("automatic_gc_disabled")
 def test_instrument_without_ref_is_gced() -> None:
     # When there are no active references to an instrument and it is
     # gced there should be no live references to the instrument
@@ -726,18 +730,24 @@ def test_instrument_without_ref_is_gced() -> None:
 
 
 def _instrument_class_recording_close(
-    closed: list[str], *, fail_to_initialize: bool = False
+    closed: list[str],
+    *,
+    fail_to_initialize: bool = False,
+    created: list[weakref.ref[Instrument]] | None = None,
 ) -> type[Instrument]:
     """
     Create an instrument class that records the name of each instrument that
     is closed in ``closed``, also when the instrument has been stripped by an
     earlier close. If ``fail_to_initialize`` is True, initializing an
-    instrument of the class raises a ``RuntimeError``.
+    instrument of the class raises a ``RuntimeError``. If ``created`` is given,
+    weak references to the created instruments are appended to it.
     """
 
     class InstrumentRecordingClose(Instrument):
         def __init__(self, name: str) -> None:
             super().__init__(name)
+            if created is not None:
+                created.append(weakref.ref(self))
             if fail_to_initialize:
                 raise RuntimeError("Failed to initialize")
 
@@ -748,7 +758,7 @@ def _instrument_class_recording_close(
     return InstrumentRecordingClose
 
 
-@pytest.mark.usefixtures("close_before_and_after")
+@pytest.mark.usefixtures("close_before_and_after", "automatic_gc_disabled")
 def test_garbage_collecting_unclosed_instrument_closes_it_and_warns() -> None:
     closed: list[str] = []
     _instrument_class_recording_close(closed)("unclosed")
@@ -773,7 +783,10 @@ def test_instrument_that_fails_to_initialize_is_closed_right_away() -> None:
     never handed to the user who could therefore not have closed it.
     """
     closed: list[str] = []
-    failing_class = _instrument_class_recording_close(closed, fail_to_initialize=True)
+    created: list[weakref.ref[Instrument]] = []
+    failing_class = _instrument_class_recording_close(
+        closed, fail_to_initialize=True, created=created
+    )
 
     with pytest.raises(RuntimeError, match="Failed to initialize"):
         failing_class("failing")
@@ -784,6 +797,8 @@ def test_instrument_that_fails_to_initialize_is_closed_right_away() -> None:
         warnings.simplefilter("always")
         gc.collect()
 
+    (instrument,) = created
+    assert instrument() is None
     assert closed == ["failing"]
     assert [w for w in caught if issubclass(w.category, ResourceWarning)] == []
 
@@ -796,10 +811,12 @@ def test_failure_to_close_instrument_after_failed_initialization_is_noted() -> N
     close it, and closing is not retried when it is garbage collected.
     """
     close_attempts: list[str] = []
+    created: list[weakref.ref[Instrument]] = []
 
     class FailingInstrument(Instrument):
         def __init__(self, name: str) -> None:
             super().__init__(name)
+            created.append(weakref.ref(self))
             raise RuntimeError("Failed to initialize")
 
         def close(self) -> None:
@@ -815,8 +832,109 @@ def test_failure_to_close_instrument_after_failed_initialization_is_noted() -> N
             "initialization also failed: OSError('Failed to close')"
         )
     ]
+    # the traceback of the error refers to the instrument
+    del exc_info
     gc.collect()
+
+    (instrument,) = created
+    assert instrument() is None
     assert close_attempts == ["failing"]
+
+
+@pytest.mark.usefixtures("close_before_and_after")
+def test_instrument_whose_init_returns_a_value_raises_and_is_closed() -> None:
+    closed: list[str] = []
+
+    class ReturningInstrument(Instrument):
+        def __init__(self, name: str) -> None:
+            super().__init__(name)
+            # deliberately returns a value, which __init__ must not
+            return 1  # type: ignore[return-value]  # noqa: PLE0101
+
+        def close(self) -> None:
+            closed.append(self.name)
+            super().close()
+
+    with pytest.raises(TypeError, match=r"__init__\(\) should return None, not 'int'"):
+        ReturningInstrument("returning")
+
+    assert closed == ["returning"]
+    assert not Instrument.exist("returning")
+
+
+def test_instrument_whose_new_returns_another_object_returns_it() -> None:
+    other = object()
+
+    class OtherInstrument(Instrument):
+        def __new__(cls, *args: Any, **kwargs: Any) -> Any:
+            return other
+
+    assert OtherInstrument("other") is other
+
+
+@pytest.mark.usefixtures("close_before_and_after")
+def test_instrument_with_name_in_use_is_closed_right_away() -> None:
+    """
+    An instrument that cannot be registered because its name is in use is
+    closed right away, so that its resources are freed, without unregistering
+    the instrument that uses the name.
+    """
+    closed: list[str] = []
+    instrument_class = _instrument_class_recording_close(closed)
+    existing_instrument = instrument_class("instr")
+
+    with pytest.raises(KeyError, match="Another instrument has the name: instr"):
+        instrument_class("instr")
+
+    assert closed == ["instr"]
+    assert Instrument.find_instrument("instr") is existing_instrument
+    existing_instrument.close()
+
+
+@pytest.mark.usefixtures("close_before_and_after")
+def test_failure_to_close_instrument_with_abstract_parameter_is_noted() -> None:
+    class AbstractInstrument(Instrument):
+        def __init__(self, name: str) -> None:
+            super().__init__(name)
+            self.add_parameter("voltage", abstract=True)
+
+        def close(self) -> None:
+            raise OSError("Failed to close")
+
+    with pytest.raises(NotImplementedError, match="Abstract Parameter") as exc_info:
+        AbstractInstrument("abstract")
+
+    assert exc_info.value.__notes__ == [
+        (
+            "Closing the AbstractInstrument instrument after its failed "
+            "initialization also failed: OSError('Failed to close')"
+        )
+    ]
+
+
+@pytest.mark.usefixtures("close_before_and_after", "automatic_gc_disabled")
+def test_instrument_stays_closed_by_garbage_collector_while_being_stripped(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """
+    Stripping the attributes of an instrument that the garbage collector is
+    closing keeps its state, so that its loggers stay disabled, e.g. if
+    deleting an attribute runs code that logs.
+    """
+    observed: list[bool] = []
+
+    def strip_attrs_and_observe(obj: object, whitelist: Sequence[str] = ()) -> None:
+        strip_attrs(obj, whitelist=whitelist)
+        if isinstance(obj, Instrument):
+            observed.append(obj._being_closed_by_garbage_collector)
+
+    monkeypatch.setattr(instrument_module, "strip_attrs", strip_attrs_and_observe)
+    Instrument("unclosed")
+
+    with pytest.warns(ResourceWarning, match="unclosed instrument"):
+        gc.collect()
+
+    assert observed == [True]
 
 
 @pytest.mark.usefixtures("close_before_and_after")
@@ -829,6 +947,25 @@ def test_closing_ip_instrument_again_does_not_raise() -> None:
     instrument.close()
     instrument.close()
 
+    assert not Instrument.exist("ip_instrument")
+
+
+@pytest.mark.usefixtures("close_before_and_after")
+def test_closing_ip_instrument_closes_socket_that_is_not_connected() -> None:
+    """
+    Closing an IPInstrument closes its socket also if the socket is not
+    connected, e.g. because connecting it failed, so that it cannot be shut
+    down.
+    """
+    instrument = IPInstrument(
+        "ip_instrument", address="127.0.0.1", port=1, persistent=False
+    )
+    unconnected_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    instrument._socket = unconnected_socket
+
+    instrument.close()
+
+    assert unconnected_socket.fileno() == -1
     assert not Instrument.exist("ip_instrument")
 
 
@@ -892,7 +1029,7 @@ def test_instrument_logs_when_closed_explicitly(
     ]
 
 
-@pytest.mark.usefixtures("close_before_and_after")
+@pytest.mark.usefixtures("close_before_and_after", "automatic_gc_disabled")
 def test_instrument_does_not_log_when_closed_by_garbage_collector(
     caplog: pytest.LogCaptureFixture,
 ) -> None:

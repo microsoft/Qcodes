@@ -2,4 +2,7 @@ Instruments whose initialization fails are now closed right away, so that the re
 acquired before the failure, such as an open VISA connection, are freed immediately rather than
 when the instrument is garbage collected. Previously, retrying to create an instrument for a
 resource that can only be opened once could fail until the garbage collector had run.
+This also applies to instruments that cannot be registered, e.g. because their name is already in
+use, or that have abstract parameters, and to instruments whose ``__init__`` returns a value, which
+now raises a ``TypeError`` like for other classes.
 If closing the instrument fails too, this is added as a note to the error of the initialization.

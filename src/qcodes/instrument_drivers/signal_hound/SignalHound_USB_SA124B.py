@@ -625,10 +625,12 @@ class SignalHoundUSBSA124B(Instrument):
         Opens connection to the instrument
         """
         self.log.info("Opening Device")
-        self.deviceHandle = ct.c_int(0)
-        deviceHandlePnt = ct.pointer(self.deviceHandle)
-        err = self.dll.saOpenDevice(deviceHandlePnt)
+        device_handle = ct.c_int(0)
+        err = self.dll.saOpenDevice(ct.pointer(device_handle))
         self._check_for_error(err, "saOpenDevice")
+        # Only assign the handle once the device has been opened successfully,
+        # so that close does not try to close a device that is not open.
+        self.deviceHandle = device_handle
         self.device_type()
 
     def close(self) -> None:

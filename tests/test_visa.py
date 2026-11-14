@@ -157,9 +157,18 @@ def test_visa_gc_closes_connection() -> None:
 
     # ensure that any unused instruments that have not been gced are gced before running
     gc.collect()
-    rm = use_magnet()
-    with pytest.warns(ResourceWarning, match="unclosed instrument <AMIModel430: x>"):
-        gc.collect()
+    gc_was_enabled = gc.isenabled()
+    # so that only the explicit collection below collects the instrument
+    gc.disable()
+    try:
+        rm = use_magnet()
+        with pytest.warns(
+            ResourceWarning, match="unclosed instrument <AMIModel430: x>"
+        ):
+            gc.collect()
+    finally:
+        if gc_was_enabled:
+            gc.enable()
     # at this stage the instrument created in use_magnet has gone out of scope
     # and we have triggered an explicit gc, so the VISA handle should be closed
     # and the instrument should no longer be in the instrument registry

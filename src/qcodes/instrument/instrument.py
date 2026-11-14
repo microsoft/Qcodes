@@ -183,12 +183,12 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
 
         Do not rely on this: always close instruments explicitly with
         :meth:`close` (or :meth:`close_all`). As instruments reference
-        themselves through their parameters, they are only garbage collected
-        when the cyclic garbage collector runs, which may be much later and on
-        any thread. At that point, connections that are closed by a finalizer,
-        such as the VISA handle of a :class:`.VisaInstrument`, have already
-        been closed, so :meth:`close` can no longer communicate with the
-        instrument.
+        themselves through their parameters, they are normally only garbage
+        collected when the cyclic garbage collector runs, which may be much
+        later and on any thread. At that point, connections that are closed by
+        a finalizer, such as the VISA handle of a :class:`.VisaInstrument`, may
+        already have been closed, so :meth:`close` may no longer be able to
+        communicate with the instrument.
         """
         if self.__state is _InstrumentState.CLOSED:
             # Closing it again would rerun the close methods of subclasses at
@@ -261,15 +261,18 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
                 for channel in channellist:
                     strip_attrs(channel, whitelist=["_short_name", "_parent"])
 
-        strip_attrs(self, whitelist=["_short_name"])
-        # after stripping the attributes, which would remove the state again
+        # Keep the state while stripping the attributes, so that the instrument
+        # loggers stay disabled if the garbage collector is closing the
+        # instrument, e.g. when deleting an attribute runs code that logs.
+        strip_attrs(self, whitelist=["_short_name", "_Instrument__state"])
         self.__state = _InstrumentState.CLOSED
 
     def _close_after_failed_initialization(self, error: BaseException) -> None:
         """
         Close the instrument after its initialization raised ``error``.
 
-        This is called by the metaclass, so that the resources that the
+        This is called by the metaclass, also if registering the instrument
+        failed, so that the resources that the
         instrument acquired before the failure are freed right away. As the
         instrument may only be partly initialized, closing it may fail too.
         That is noted on ``error`` rather than raised, so that the caller still
@@ -284,7 +287,10 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
             self.close()
         except Exception as close_error:  # noqa: BLE001
             # Any failure is added to the error of the initialization, which
-            # is what the caller needs to see.
+            # is what the caller needs to see. A KeyboardInterrupt or other
+            # BaseException raised while closing, e.g. by pressing Ctrl+C
+            # again, propagates instead, with the error of the initialization
+            # as its context.
             error.add_note(
                 f"Closing the {type(self).__name__} instrument after its failed "
                 f"initialization also failed: {close_error!r}"

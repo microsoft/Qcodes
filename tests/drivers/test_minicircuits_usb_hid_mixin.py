@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
+import qcodes.instrument_drivers
 from qcodes.instrument import Instrument
 
 if TYPE_CHECKING:
@@ -62,6 +63,8 @@ def _fake_hid(monkeypatch: pytest.MonkeyPatch) -> "Generator[_FakeHid, None, Non
     monkeypatch.setitem(sys.modules, "clr", types.ModuleType("clr"))
     for name in _driver_modules():
         monkeypatch.delitem(sys.modules, name)
+    # importing the package sets it as an attribute of its parent package
+    monkeypatch.delattr(qcodes.instrument_drivers, "Minicircuits", raising=False)
     try:
         mixin_module = importlib.import_module(_MIXIN_MODULE)
         fake_hid = _FakeHid()
@@ -77,6 +80,8 @@ def _fake_hid(monkeypatch: pytest.MonkeyPatch) -> "Generator[_FakeHid, None, Non
         # Do not leave the drivers bound to the fake modules behind.
         for name in _driver_modules():
             sys.modules.pop(name)
+        if hasattr(qcodes.instrument_drivers, "Minicircuits"):
+            delattr(qcodes.instrument_drivers, "Minicircuits")
 
 
 def test_close_closes_device_and_unregisters_instrument(fake_hid: _FakeHid) -> None:
