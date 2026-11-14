@@ -715,6 +715,52 @@ def test_instrument_without_ref_is_gced() -> None:
     assert len(Instrument._all_instruments) == 0
 
 
+def _instrument_class_recording_close(closed: list[str]) -> type[Instrument]:
+    """
+    Create an instrument class that records the name of each instrument that
+    is closed in ``closed``, also when the instrument has been stripped by an
+    earlier close.
+    """
+
+    class InstrumentRecordingClose(Instrument):
+        def close(self) -> None:
+            closed.append(self.name)
+            super().close()
+
+    return InstrumentRecordingClose
+
+
+@pytest.mark.usefixtures("close_before_and_after")
+def test_garbage_collecting_unclosed_instrument_closes_it() -> None:
+    closed: list[str] = []
+    _instrument_class_recording_close(closed)("unclosed")
+
+    gc.collect()
+
+    assert closed == ["unclosed"]
+    assert not Instrument.exist("unclosed")
+
+
+@pytest.mark.usefixtures("close_before_and_after")
+def test_garbage_collecting_closed_instrument_does_not_close_it_again() -> None:
+    """
+    An instrument that has been closed explicitly is not closed again when
+    garbage collected, which may happen after its name has been reused.
+    """
+    closed: list[str] = []
+    instrument_class = _instrument_class_recording_close(closed)
+    old_instrument = instrument_class("instr")
+    old_instrument.close()
+    new_instrument = instrument_class("instr")
+
+    del old_instrument
+    gc.collect()
+
+    assert closed == ["instr"]
+    assert Instrument.find_instrument("instr") is new_instrument
+    new_instrument.close()
+
+
 def test_snapshot_and_meta_attrs() -> None:
     """Test snapshot of InstrumentBase contains _meta_attrs attributes"""
     instr = InstrumentBase("instr", label="Label")

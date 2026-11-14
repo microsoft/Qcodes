@@ -1,0 +1,5 @@
+Instruments that have been closed are no longer closed a second time when they are garbage collected.
+Previously, the ``close`` method of a driver could run again at an arbitrary later point in time,
+possibly after the name or the resources of the instrument had been reused by a new instrument.
+Instruments that are garbage collected without having been closed are still closed, but
+instruments should always be closed explicitly, e.g. with ``close`` or ``Instrument.close_all``.

@@ -62,6 +62,8 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
     )
     _type: type[Instrument] | None = None
     _instances: ClassVar[weakref.WeakSet[Instrument]] = weakref.WeakSet()
+    # Name mangled so that it cannot clash with attributes of subclasses.
+    __closed: bool = False
 
     def __init__(self, name: str, **kwargs: Unpack[InstrumentBaseKWArgs]) -> None:
         self._t0 = time.time()
@@ -149,7 +151,24 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         return f"<{type(self).__name__}: {self.name}>"
 
     def __del__(self) -> None:
-        """Close the instrument and remove its instance record."""
+        """
+        Close the instrument if it is garbage collected without having been
+        closed, so that its resources are freed.
+
+        Do not rely on this: always close instruments explicitly with
+        :meth:`close` (or :meth:`close_all`). As instruments reference
+        themselves through their parameters, they are only garbage collected
+        when the cyclic garbage collector runs, which may be much later and on
+        any thread. At that point, connections that are closed by a finalizer,
+        such as the VISA handle of a :class:`.VisaInstrument`, have already
+        been closed, so :meth:`close` can no longer communicate with the
+        instrument.
+        """
+        if self.__closed:
+            # Closing it again would rerun the close methods of subclasses at
+            # an arbitrary point in time, possibly after the name or the
+            # resources of the instrument have been reused.
+            return
         try:
             self.close()
         except BaseException:  # noqa: BLE001, S110
@@ -185,6 +204,7 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
                     strip_attrs(channel, whitelist=["_short_name", "_parent"])
 
         strip_attrs(self, whitelist=["_short_name"])
+        self.__closed = True
 
     @classmethod
     def close_all(
@@ -290,14 +310,19 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         """
         if weakref.getweakrefcount(instance) == 0:
             # Instances are only recorded through weak references, so there is
-            # nothing to remove. This is the case when the garbage collector
-            # finalizes the instance, since it clears all weak references to
-            # the instance before that. Leave the records alone then: before
-            # Python 3.14, weak containers postpone removing dead entries while
-            # being iterated over, but most of their methods apply postponed
-            # removals right away. That would make an iteration that the
-            # garbage collection interrupted fail with
+            # nothing to remove. Leave the records alone then, since this is
+            # also the case when the garbage collector finalizes (and thereby
+            # closes) the instance in the middle of another operation, which
+            # may be an iteration over the records. Before Python 3.14, weak
+            # containers postpone removing dead entries while being iterated
+            # over, but most of their methods apply postponed removals right
+            # away, which would make the interrupted iteration fail with
             # "RuntimeError: dictionary changed size during iteration".
+            # Those Python versions clear all weak references to an object
+            # before finalizing it. Python 3.15 keeps weak references without
+            # callbacks until after finalizing (python/cpython#135552), but
+            # from Python 3.14 weak containers iterate over a copy
+            # (python/cpython#89967), so updating the records is safe there.
             return
 
         if instance in getattr(cls, "_instances", weakref.WeakSet()):
