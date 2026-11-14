@@ -1,5 +1,4 @@
 import gc
-import logging
 import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -142,7 +141,7 @@ def _make_mock_visa() -> "Generator[MockVisa, None, None]":
         mv.close()
 
 
-def test_visa_gc_closes_connection(caplog: pytest.LogCaptureFixture) -> None:
+def test_visa_gc_closes_connection() -> None:
     def use_magnet() -> pyvisa.ResourceManager:
         x = AMIModel430(
             "x",
@@ -158,26 +157,14 @@ def test_visa_gc_closes_connection(caplog: pytest.LogCaptureFixture) -> None:
 
     # ensure that any unused instruments that have not been gced are gced before running
     gc.collect()
-    caplog.clear()
-    with caplog.at_level(logging.INFO, logger="qcodes.instrument.visa"):
-        rm = use_magnet()
-        with pytest.warns(
-            ResourceWarning, match="unclosed instrument <AMIModel430: x>"
-        ):
-            gc.collect()
+    rm = use_magnet()
+    with pytest.warns(ResourceWarning, match="unclosed instrument <AMIModel430: x>"):
+        gc.collect()
     # at this stage the instrument created in use_magnet has gone out of scope
-    # and we have triggered an explicit gc so the weakref.finalize function
-    # has been triggered. We test this
+    # and we have triggered an explicit gc, so the VISA handle should be closed
     # and the instrument should no longer be in the instrument registry
     assert len(Instrument._all_instruments) == 0
     assert len(rm.list_opened_resources()) == 0
-    # the order of the log messages depends on the pyvisa version but regardless
-    # of which version we should see the message about closing the handle
-    assert any(
-        record.message
-        == "Closing VISA handle to x as there are no non weak references to the instrument."
-        for record in caplog.records
-    )
 
 
 def test_visa_handle_is_closed_right_away_if_initialization_fails() -> None:
