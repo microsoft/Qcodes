@@ -166,7 +166,10 @@ class MiniCircuitsHIDMixin(Instrument):
 
     def close(self) -> None:
         """Disconnect and irreversibly tear down the instrument."""
-        self._device.close()
+        # The instrument may already have been closed, or its initialization may
+        # have failed before opening the device.
+        if getattr(self, "_device", None) is not None:
+            self._device.close()
         super().close()
 
     @classmethod

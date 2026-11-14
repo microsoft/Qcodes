@@ -1,0 +1,2 @@
+Closing an instrument that has already been closed now does nothing. Previously, closing an
+``IPInstrument`` a second time raised an ``AttributeError``.

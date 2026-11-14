@@ -458,15 +458,18 @@ class DynaCool(VisaInstrument):
         """
         Make sure to nicely close the server connection
         """
-        try:
-            self.log.debug("Closing server connection.")
-            self.write("CLOSE")
-        except VisaIOError as e:
-            self.log.info(
-                "Could not close connection to server, perhaps the server is down?"
-            )
-            self.log.info(
-                f"Got the following error from PyVISA: "
-                f"{e.abbreviation}: {e.description}"
-            )
+        # The instrument may already have been closed, or its initialization may
+        # have failed before connecting.
+        if getattr(self, "visa_handle", None) is not None:
+            try:
+                self.log.debug("Closing server connection.")
+                self.write("CLOSE")
+            except VisaIOError as e:
+                self.log.info(
+                    "Could not close connection to server, perhaps the server is down?"
+                )
+                self.log.info(
+                    f"Got the following error from PyVISA: "
+                    f"{e.abbreviation}: {e.description}"
+                )
         super().close()

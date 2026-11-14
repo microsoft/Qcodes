@@ -1,0 +1,4 @@
+Closing a ``DynaCool``, ``GalilMotionController``, ``KeysightM960x``, ``KeysightM9336A``,
+``SignalHoundUSBSA124B`` or MiniCircuits USB HID instrument that has already been closed no longer
+raises an ``AttributeError``. Closing them after their initialization failed before connecting no
+longer fails either.

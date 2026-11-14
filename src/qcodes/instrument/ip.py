@@ -178,7 +178,10 @@ class IPInstrument(Instrument):
 
     def close(self) -> None:
         """Disconnect and irreversibly tear down the instrument."""
-        self._disconnect()
+        # The instrument may already have been closed, in which case its
+        # attributes have been stripped.
+        if getattr(self, "_socket", None) is not None:
+            self._disconnect()
         super().close()
 
     def write_raw(self, cmd: str) -> None:

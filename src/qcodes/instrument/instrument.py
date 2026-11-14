@@ -233,9 +233,16 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         """
         Irreversibly stop this instrument and free its resources.
 
+        Closing an instrument that has already been closed does nothing.
+
         Subclasses should override this if they have other specific
-        resources to close.
+        resources to close, and call this method at the end. Their close
+        methods must also work if the instrument has already been closed,
+        i.e. its attributes have been stripped, or if its initialization
+        failed before all its attributes were set.
         """
+        if self.__state is _InstrumentState.CLOSED:
+            return
         if hasattr(self, "connection") and hasattr(self.connection, "close"):
             self.connection.close()
 

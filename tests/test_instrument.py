@@ -22,6 +22,7 @@ from qcodes.instrument import (
     InstrumentBase,
     InstrumentChannel,
     InstrumentModule,
+    IPInstrument,
     find_or_create_instrument,
 )
 from qcodes.instrument_drivers.mock_instruments import (
@@ -816,6 +817,19 @@ def test_failure_to_close_instrument_after_failed_initialization_is_noted() -> N
     ]
     gc.collect()
     assert close_attempts == ["failing"]
+
+
+@pytest.mark.usefixtures("close_before_and_after")
+def test_closing_ip_instrument_again_does_not_raise() -> None:
+    # not persistent, so that it does not connect
+    instrument = IPInstrument(
+        "ip_instrument", address="127.0.0.1", port=1, persistent=False
+    )
+
+    instrument.close()
+    instrument.close()
+
+    assert not Instrument.exist("ip_instrument")
 
 
 @pytest.mark.usefixtures("close_before_and_after")

@@ -405,5 +405,8 @@ class KeysightM9336A(Instrument):
         return int(v.value)
 
     def close(self) -> None:
-        self._dll.KtMAwg_close(self._session)
+        # The instrument may already have been closed, or its initialization may
+        # have failed before loading the DLL.
+        if getattr(self, "_dll", None) is not None:
+            self._dll.KtMAwg_close(self._session)
         super().close()

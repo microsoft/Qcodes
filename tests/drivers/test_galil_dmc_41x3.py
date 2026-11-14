@@ -62,5 +62,7 @@ def test_close_closes_connection_and_unregisters_instrument(
 
     assert not connection.is_open
     assert not Instrument.exist("galil")
+    # closing it again does nothing
+    controller.close()
     # the name can be reused once the instrument has been closed
     driver_module.GalilMotionController("galil", address="192.168.1.2").close()

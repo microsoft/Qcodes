@@ -635,20 +635,23 @@ class SignalHoundUSBSA124B(Instrument):
         """
         Close connection to the instrument.
         """
-        self.log.info(f"Closing Device with handle num: {self.deviceHandle.value}")
+        # The instrument may already have been closed, or its initialization may
+        # have failed before opening the device.
+        if getattr(self, "deviceHandle", None) is not None:
+            self.log.info(f"Closing Device with handle num: {self.deviceHandle.value}")
 
-        try:
-            self.abort()
-            self.log.info("Running acquisition aborted.")
-        except Exception:
-            # `check_for_error` raises OSError if the dll reports a failure and
-            # `saStatus` raises ValueError for an unknown status code. As we are
-            # tearing down the instrument we might as well try to continue also on unknown errors.
-            self.log.exception("Could not abort acquisition")
+            try:
+                self.abort()
+                self.log.info("Running acquisition aborted.")
+            except Exception:
+                # `check_for_error` raises OSError if the dll reports a failure and
+                # `saStatus` raises ValueError for an unknown status code. As we are
+                # tearing down the instrument we might as well try to continue also on unknown errors.
+                self.log.exception("Could not abort acquisition")
 
-        err = self.dll.saCloseDevice(self.deviceHandle)
-        self._check_for_error(err, "saCloseDevice")
-        self.log.info(f"Closed Device with handle num: {self.deviceHandle.value}")
+            err = self.dll.saCloseDevice(self.deviceHandle)
+            self._check_for_error(err, "saCloseDevice")
+            self.log.info(f"Closed Device with handle num: {self.deviceHandle.value}")
         super().close()
 
     def abort(self) -> None:

@@ -88,5 +88,7 @@ def test_close_closes_device_and_unregisters_instrument(fake_hid: _FakeHid) -> N
 
     assert not fake_hid.device.is_open
     assert not Instrument.exist("minicircuits")
+    # closing it again does nothing
+    instrument.close()
     # the name can be reused once the instrument has been closed
     mixin_class("minicircuits").close()
