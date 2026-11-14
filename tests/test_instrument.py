@@ -10,6 +10,7 @@ import io
 import logging
 import re
 import socket
+import sys
 import warnings
 import weakref
 from typing import TYPE_CHECKING, Any, assert_type
@@ -967,6 +968,30 @@ def test_closing_ip_instrument_closes_socket_that_is_not_connected() -> None:
 
     assert unconnected_socket.fileno() == -1
     assert not Instrument.exist("ip_instrument")
+
+
+@pytest.mark.usefixtures("close_before_and_after")
+def test_freeing_closed_instrument_after_module_globals_are_cleared() -> None:
+    """
+    Late in the interpreter shutdown, the globals of modules may have been
+    cleared when a closed instrument is freed, which must not make its
+    finalizer fail.
+    """
+    instrument = Instrument("instr")
+    instrument.close()
+    instrument_ref = weakref.ref(instrument)
+    unraisable: list[Any] = []
+
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        # simulate the interpreter shutdown clearing the globals of the module
+        monkeypatch.setattr(instrument_module, "_InstrumentState", None)
+        monkeypatch.setattr(instrument_module, "warnings", None)
+        monkeypatch.setattr(sys, "unraisablehook", unraisable.append)
+        del instrument
+        gc.collect()
+        assert instrument_ref() is None
+
+    assert unraisable == []
 
 
 @pytest.mark.usefixtures("close_before_and_after")

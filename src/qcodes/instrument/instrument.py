@@ -16,6 +16,7 @@ from .instrument_base import InstrumentBase, InstrumentBaseKWArgs
 from .instrument_meta import InstrumentMeta
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from typing import Self, Unpack
 
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
@@ -175,7 +176,16 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         """Simplified repr giving just the class and name."""
         return f"<{type(self).__name__}: {self.name}>"
 
-    def __del__(self) -> None:
+    def __del__(
+        self,
+        # Bound as default arguments, like e.g. subprocess.Popen.__del__ does,
+        # so that this also works late in the interpreter shutdown, when the
+        # globals of modules may already have been cleared.
+        _closed: _InstrumentState = _InstrumentState.CLOSED,
+        _open: _InstrumentState = _InstrumentState.OPEN,
+        _finalizing: _InstrumentState = _InstrumentState.FINALIZING,
+        _warn: Callable[..., None] = warnings.warn,
+    ) -> None:
         """
         Close the instrument if it is garbage collected without having been
         closed, so that its resources are freed, and emit a
@@ -190,7 +200,7 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         already have been closed, so :meth:`close` may no longer be able to
         communicate with the instrument.
         """
-        if self.__state is _InstrumentState.CLOSED:
+        if self.__state is _closed:
             # Closing it again would rerun the close methods of subclasses at
             # an arbitrary point in time, possibly after the name or the
             # resources of the instrument have been reused.
@@ -198,11 +208,11 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         try:
             # Instruments that have not been handed to the user could not have
             # been closed by them.
-            if self.__state is _InstrumentState.OPEN:
+            if self.__state is _open:
                 # Like for unclosed files, the instrument is still closed if
                 # the warning is turned into an error, which is then reported
                 # as an exception ignored in __del__.
-                warnings.warn(
+                _warn(
                     f"unclosed instrument {self!r}. Close instruments "
                     "explicitly with close() or Instrument.close_all() "
                     "instead of relying on the garbage collector.",
@@ -215,7 +225,7 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         finally:
             # This disables the instrument loggers while closing the
             # instrument, see _being_closed_by_garbage_collector.
-            self.__state = _InstrumentState.FINALIZING
+            self.__state = _finalizing
             try:
                 self.close()
             except BaseException:  # noqa: BLE001, S110
