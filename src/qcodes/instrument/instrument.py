@@ -37,17 +37,17 @@ class _InstrumentState(Enum):
     """The stages of the lifecycle of an :class:`Instrument`."""
 
     INITIALIZING = auto()
-    """
-    The instrument is being initialized and has not been handed to the user.
-    It stays in this state if its initialization fails.
-    """
+    """The instrument is being initialized and has not been handed to the user."""
     OPEN = auto()
     """
     The instrument has been initialized, registered and handed to the user,
     who is responsible for closing it.
     """
     CLOSED = auto()
-    """The instrument has been closed and its attributes stripped."""
+    """
+    The instrument has been closed and its attributes stripped, or its
+    initialization failed and closing it has been attempted.
+    """
 
 
 # a metaclass that overrides __call__ means that we lose
@@ -190,8 +190,8 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
             # resources of the instrument have been reused.
             return
         try:
-            # Instruments that failed to initialize have never been handed to
-            # the user, who could therefore not have closed them.
+            # Instruments that have not been handed to the user could not have
+            # been closed by them.
             if self.__state is _InstrumentState.OPEN:
                 # Like for unclosed files, the instrument is still closed if
                 # the warning is turned into an error, which is then reported
@@ -244,6 +244,33 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         strip_attrs(self, whitelist=["_short_name"])
         # after stripping the attributes, which would remove the state again
         self.__state = _InstrumentState.CLOSED
+
+    def _close_after_failed_initialization(self, error: BaseException) -> None:
+        """
+        Close the instrument after its initialization raised ``error``.
+
+        This is called by the metaclass, so that the resources that the
+        instrument acquired before the failure are freed right away. As the
+        instrument may only be partly initialized, closing it may fail too.
+        That is noted on ``error`` rather than raised, so that the caller still
+        sees why the initialization failed. Closing is not retried when the
+        instrument is garbage collected, since it would most likely fail in the
+        same way.
+        """
+        if self.__state is _InstrumentState.CLOSED:
+            # e.g. closed by the subclass itself before raising
+            return
+        try:
+            self.close()
+        except Exception as close_error:  # noqa: BLE001
+            # Any failure is added to the error of the initialization, which
+            # is what the caller needs to see.
+            error.add_note(
+                f"Closing the {type(self).__name__} instrument after its failed "
+                f"initialization also failed: {close_error!r}"
+            )
+        finally:
+            self.__state = _InstrumentState.CLOSED
 
     @classmethod
     def close_all(

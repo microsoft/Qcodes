@@ -271,8 +271,8 @@ class VisaInstrument(Instrument):
         try:
             visa_handle = self._open_resource(address, visalib)
         except Exception:
+            # the instrument is closed when its initialization fails
             self.visa_log.exception(f"Could not connect at {address}")
-            self.close()
             raise
         return visa_handle
 

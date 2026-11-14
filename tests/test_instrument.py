@@ -762,14 +762,13 @@ def test_garbage_collecting_unclosed_instrument_closes_it_and_warns() -> None:
     assert not Instrument.exist("unclosed")
 
 
-@pytest.mark.usefixtures("close_before_and_after")
-def test_garbage_collecting_instrument_that_failed_to_initialize_does_not_warn() -> (
-    None
-):
+@pytest.mark.usefixtures("close_before_and_after", "automatic_gc_disabled")
+def test_instrument_that_fails_to_initialize_is_closed_right_away() -> None:
     """
-    An instrument whose initialization failed is still closed when garbage
-    collected, but without a warning, as it was never handed to the user who
-    could therefore not have closed it.
+    An instrument whose initialization failed is closed right away, so that
+    its resources are freed, rather than when it is garbage collected. It is
+    neither closed again nor warned about when garbage collected, as it was
+    never handed to the user who could therefore not have closed it.
     """
     closed: list[str] = []
     failing_class = _instrument_class_recording_close(closed, fail_to_initialize=True)
@@ -777,12 +776,45 @@ def test_garbage_collecting_instrument_that_failed_to_initialize_does_not_warn()
     with pytest.raises(RuntimeError, match="Failed to initialize"):
         failing_class("failing")
 
+    assert closed == ["failing"]
+
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
         gc.collect()
 
     assert closed == ["failing"]
     assert [w for w in caught if issubclass(w.category, ResourceWarning)] == []
+
+
+@pytest.mark.usefixtures("close_before_and_after", "automatic_gc_disabled")
+def test_failure_to_close_instrument_after_failed_initialization_is_noted() -> None:
+    """
+    If closing an instrument after its initialization failed fails too, the
+    error of the initialization is raised with a note about the failure to
+    close it, and closing is not retried when it is garbage collected.
+    """
+    close_attempts: list[str] = []
+
+    class FailingInstrument(Instrument):
+        def __init__(self, name: str) -> None:
+            super().__init__(name)
+            raise RuntimeError("Failed to initialize")
+
+        def close(self) -> None:
+            close_attempts.append(self.name)
+            raise OSError("Failed to close")
+
+    with pytest.raises(RuntimeError, match="Failed to initialize") as exc_info:
+        FailingInstrument("failing")
+
+    assert exc_info.value.__notes__ == [
+        (
+            "Closing the FailingInstrument instrument after its failed "
+            "initialization also failed: OSError('Failed to close')"
+        )
+    ]
+    gc.collect()
+    assert close_attempts == ["failing"]
 
 
 @pytest.mark.usefixtures("close_before_and_after")

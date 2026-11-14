@@ -1,0 +1,5 @@
+Instruments whose initialization fails are now closed right away, so that the resources they
+acquired before the failure, such as an open VISA connection, are freed immediately rather than
+when the instrument is garbage collected. Previously, retrying to create an instrument for a
+resource that can only be opened once could fail until the garbage collector had run.
+If closing the instrument fails too, this is added as a note to the error of the initialization.

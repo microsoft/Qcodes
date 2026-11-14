@@ -180,6 +180,36 @@ def test_visa_gc_closes_connection(caplog: pytest.LogCaptureFixture) -> None:
     )
 
 
+def test_visa_handle_is_closed_right_away_if_initialization_fails() -> None:
+    """
+    If the initialization of a VISA instrument fails after it has connected,
+    the VISA handle is closed right away rather than when the instrument is
+    garbage collected, so that the resource can be opened again.
+    """
+    handles: list[pyvisa.resources.MessageBasedResource] = []
+
+    class FailsAfterConnecting(VisaInstrument):
+        def __init__(self, name: str, address: str, **kwargs: Any) -> None:
+            super().__init__(name, address, **kwargs)
+            handles.append(self.visa_handle)
+            raise RuntimeError("Unexpected reply")
+
+    gc_was_enabled = gc.isenabled()
+    gc.disable()
+    try:
+        with pytest.raises(RuntimeError, match="Unexpected reply"):
+            FailsAfterConnecting(
+                "x", address="GPIB::1::INSTR", pyvisa_sim_file="AMI430.yaml"
+            )
+        (handle,) = handles
+        resource_manager = handle.visalib.resource_manager
+        assert resource_manager is not None
+        assert resource_manager.list_opened_resources() == []
+    finally:
+        if gc_was_enabled:
+            gc.enable()
+
+
 def test_ask_write_local(mock_visa: MockVisa) -> None:
     # test normal ask and write behavior
     mock_visa.state.set(2)
