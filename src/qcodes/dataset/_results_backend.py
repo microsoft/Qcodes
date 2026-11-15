@@ -36,6 +36,7 @@ from qcodes.dataset.sqlite.connection import atomic, atomic_transaction
 from qcodes.dataset.sqlite.queries import (
     _check_if_table_found,
     _create_run_table,
+    get_parameter_data,
     get_raw_data_db_path_for_run,
     get_shaped_parameter_data_for_one_paramtree,
     set_raw_data_db_path_for_run,
@@ -168,7 +169,19 @@ class ResultsBackend:
     ) -> ParameterData:
         """Read parameter data for the given parameters from the backend."""
         if self._dataset.pristine:
-            return self._empty_parameter_data(valid_param_names)
+            if self._dataset.run_timestamp_raw is None:
+                return self._empty_parameter_data(valid_param_names)
+            # This handle was loaded before the run was started through another
+            # handle, so its run description may be out of date. Read with the
+            # run description stored in the database instead.
+            return get_parameter_data(
+                self.results_conn,
+                self._dataset.table_name,
+                valid_param_names,
+                start,
+                end,
+                callback,
+            )
         return self._read_parameter_data_with_own_rundescriber(
             valid_param_names, start, end, callback
         )

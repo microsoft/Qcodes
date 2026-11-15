@@ -324,6 +324,29 @@ def test_get_parameter_data_of_pristine_dataset_is_empty() -> None:
 
 
 @pytest.mark.usefixtures("experiment")
+def test_get_parameter_data_of_dataset_started_through_other_handle() -> None:
+    x = ParamSpecBase("x", "numeric")
+    y = ParamSpecBase("y", "numeric")
+    writer = DataSet()
+    writer.set_interdependencies(InterDependencies_(dependencies={y: (x,)}))
+    reader = load_by_id(writer.run_id)
+
+    assert reader.get_parameter_data() == {}
+
+    writer.mark_started()
+    writer.add_results([{"x": 1.0, "y": 2.0}])
+    writer.mark_completed()
+
+    # The reader still considers itself pristine, but must read the data that
+    # was stored through the writer.
+    assert reader.pristine
+    for data in (reader.get_parameter_data(), reader.get_parameter_data("y")):
+        assert list(data) == ["y"]
+        np.testing.assert_array_equal(data["y"]["y"], [2.0])
+        np.testing.assert_array_equal(data["y"]["x"], [1.0])
+
+
+@pytest.mark.usefixtures("experiment")
 def test_timestamps_are_none() -> None:
     ds = DataSet()
 
