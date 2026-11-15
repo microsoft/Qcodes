@@ -287,6 +287,43 @@ def test_interdependencies_of_pristine_loaded_dataset_not_frozen() -> None:
 
 
 @pytest.mark.usefixtures("experiment")
+def test_get_parameter_data_of_pristine_dataset_without_parameters() -> None:
+    ds = DataSet()
+
+    assert ds.get_parameter_data() == {}
+
+
+@pytest.mark.usefixtures("experiment")
+def test_get_parameter_data_of_pristine_dataset_is_empty() -> None:
+    x = ParamSpecBase("x", "numeric")
+    y = ParamSpecBase("y", "numeric")
+    z = ParamSpecBase("z", "text")
+    w = ParamSpecBase("w", "array")
+    idps = InterDependencies_(dependencies={y: (x,), w: (x,)}, inferences={z: (y,)})
+    ds = DataSet()
+    ds.set_interdependencies(idps, shapes={"y": (3,), "w": (3,)})
+
+    pristine_data = ds.get_parameter_data()
+    pristine_y_data = ds.get_parameter_data("y")
+
+    # A pristine dataset holds no data, so reading from it gives the same
+    # result as reading from a started dataset that no data has been added to.
+    ds.mark_started()
+    started_data = ds.get_parameter_data()
+
+    assert list(pristine_data) == list(started_data)
+    assert set(pristine_data) == {"y", "w"}
+    assert list(pristine_y_data) == ["y"]
+    assert list(pristine_y_data["y"]) == ["y", "x", "z"]
+    for param, tree in started_data.items():
+        assert list(pristine_data[param]) == list(tree)
+        for name, values in tree.items():
+            pristine_values = pristine_data[param][name]
+            assert pristine_values.shape == values.shape == (0,)
+            assert pristine_values.dtype == values.dtype
+
+
+@pytest.mark.usefixtures("experiment")
 def test_timestamps_are_none() -> None:
     ds = DataSet()
 

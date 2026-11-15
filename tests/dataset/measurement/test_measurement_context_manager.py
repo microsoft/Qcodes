@@ -21,6 +21,7 @@ from pytest import LogCaptureFixture
 import qcodes as qc
 import qcodes.validators as vals
 from qcodes.dataset.data_set import DataSet, load_by_id
+from qcodes.dataset.data_set_protocol import DataSetType
 from qcodes.dataset.descriptions.dependencies import FrozenInterDependencies_
 from qcodes.dataset.experiment_container import Experiment, new_experiment
 from qcodes.dataset.export_config import DataExportType
@@ -451,6 +452,21 @@ def test_setting_write_in_background_from_config(write_in_background: bool) -> N
         ds = datasaver.dataset
         assert isinstance(ds, DataSet)
         assert ds._writer_status.write_in_background is write_in_background
+
+
+@pytest.mark.usefixtures("experiment")
+@pytest.mark.parametrize(
+    "dataset_class", [DataSetType.DataSet, DataSetType.DataSetInMem]
+)
+def test_run_without_registered_parameters_raises(
+    dataset_class: DataSetType,
+) -> None:
+    meas = Measurement()
+    with (
+        pytest.raises(RuntimeError, match="No parameters supplied"),
+        meas.run(dataset_class=dataset_class),
+    ):
+        pass
 
 
 @pytest.mark.usefixtures("experiment")

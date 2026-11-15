@@ -22,6 +22,8 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import numpy as np
+
 from qcodes.dataset._raw_data_storage import (
     MAIN_DB_BACKEND,
     PER_DATASET_DB_BACKEND,
@@ -34,7 +36,6 @@ from qcodes.dataset.sqlite.connection import atomic, atomic_transaction
 from qcodes.dataset.sqlite.queries import (
     _check_if_table_found,
     _create_run_table,
-    get_parameter_data,
     get_raw_data_db_path_for_run,
     get_shaped_parameter_data_for_one_paramtree,
     set_raw_data_db_path_for_run,
@@ -167,20 +168,25 @@ class ResultsBackend:
     ) -> ParameterData:
         """Read parameter data for the given parameters from the backend."""
         if self._dataset.pristine:
-            # The parameters of a pristine dataset may still change and their
-            # columns do not exist yet, so read with the description stored
-            # in the database, which finds no data.
-            return get_parameter_data(
-                self.results_conn,
-                self._dataset.table_name,
-                valid_param_names,
-                start,
-                end,
-                callback,
-            )
+            return self._empty_parameter_data(valid_param_names)
         return self._read_parameter_data_with_own_rundescriber(
             valid_param_names, start, end, callback
         )
+
+    def _empty_parameter_data(self, valid_param_names: list[str]) -> ParameterData:
+        # A dataset that has not been started can not hold any data, and the
+        # columns of its parameters have not been created yet, so return empty
+        # arrays with the same structure as the data of a started dataset.
+        interdeps = self._dataset._rundescriber.interdeps
+        output: ParameterData = {}
+        for param_name in valid_param_names:
+            toplevel_param, deps, infs = interdeps.all_parameters_in_tree_by_group(
+                interdeps[param_name]
+            )
+            output[param_name] = {
+                param.name: np.array([]) for param in (toplevel_param, *deps, *infs)
+            }
+        return output
 
     def _read_parameter_data_with_own_rundescriber(
         self,
@@ -302,7 +308,7 @@ class SeparateSqliteFileResultsBackend(ResultsBackend):
     ) -> ParameterData:
         if self._conn is None:
             # Not started yet / no separate file: defer to the default reader,
-            # which will find no results table and return empty data.
+            # which returns empty data for a dataset that has not been started.
             return super().read_parameter_data(valid_param_names, start, end, callback)
         return self._read_parameter_data_with_own_rundescriber(
             valid_param_names, start, end, callback

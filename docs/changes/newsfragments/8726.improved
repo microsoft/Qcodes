@@ -1,3 +1,5 @@
-Repeated calls to ``get_parameter_data`` on a started ``DataSet``, e.g. when the cache is
-updated during a measurement, are now faster as the run description held by the dataset is
-used rather than reading and parsing it from the database on every call.
+Repeated calls to ``get_parameter_data`` on a started ``DataSet``, and to methods built on it
+such as ``to_pandas_dataframe`` and ``to_xarray_dataset``, are now faster as the run description
+held by the dataset is used rather than reading and parsing it from the database on every call.
+Calling ``get_parameter_data`` on a ``DataSet`` that has not been started now returns empty
+arrays for its parameters rather than raising a ``KeyError``.
