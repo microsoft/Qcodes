@@ -158,20 +158,21 @@ class KeysightM960x(Instrument):
             self._get_vi_string, KtM960xDefs.KTM960X_ATTR_INSTRUMENT_MANUFACTURER
         )
 
-        self._connect()
+        # Only assign the session once it has been opened successfully, so that
+        # close does not try to close a session that is not open.
+        self._session = self._connect()
 
         self.connect_message()
 
-    def _connect(self) -> None:
+    def _connect(self) -> ctypes.c_int:
+        """Open a session with the instrument and return it."""
         session = ctypes.c_int(0)
         status = self._dll.KtM960x_InitWithOptions(
             self._address, 1, 1, self._options, ctypes.byref(session)
         )
         if status:
             raise SystemError(f"connection to device failed! error: {status}")
-        # Only assign the session once it has been opened successfully, so that
-        # close does not try to close a session that is not open.
-        self._session = session
+        return session
 
     def get_idn(self) -> dict[str, str | None]:
         """Generates the ``*IDN`` dictionary for qcodes"""
