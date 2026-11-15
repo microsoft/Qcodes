@@ -970,6 +970,33 @@ def test_closing_ip_instrument_closes_socket_that_is_not_connected() -> None:
     assert not Instrument.exist("ip_instrument")
 
 
+@pytest.mark.usefixtures("close_before_and_after", "automatic_gc_disabled")
+def test_failure_to_close_unclosed_instrument_when_garbage_collected_is_ignored(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """
+    If closing an instrument that the garbage collector collects fails, the
+    error does not escape the finalizer, which would report it as an exception
+    ignored in __del__.
+    """
+    close_attempts: list[str] = []
+
+    class FailingToCloseInstrument(Instrument):
+        def close(self) -> None:
+            close_attempts.append(self.name)
+            raise OSError("Failed to close")
+
+    unraisable: list[Any] = []
+    monkeypatch.setattr(sys, "unraisablehook", unraisable.append)
+    FailingToCloseInstrument("failing")
+
+    with pytest.warns(ResourceWarning, match="unclosed instrument"):
+        gc.collect()
+
+    assert close_attempts == ["failing"]
+    assert unraisable == []
+
+
 @pytest.mark.usefixtures("close_before_and_after")
 def test_freeing_closed_instrument_after_module_globals_are_cleared() -> None:
     """
