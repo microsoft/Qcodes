@@ -284,7 +284,11 @@ def test_range_and_output_level_are_floats(
     assert level.get() == gs200.output_level.get()
 
 
-def test_status_registers_return_flags(gs200: YokogawaGS200) -> None:
+@pytest.mark.parametrize("fixture", ("gs200", "gs200_mon"))
+def test_status_registers_return_flags(
+    request: pytest.FixtureRequest, fixture: str
+) -> None:
+    gs200: YokogawaGS200 = request.getfixturevalue(fixture)
     status_byte = gs200.status_byte()
     assert isinstance(status_byte, StatusByte)
     assert status_byte == StatusByte.RQS | StatusByte.EAV

@@ -13,19 +13,24 @@ devices:
         r: "NO OPTIONS"
       # Status registers, see GS200 User's Manual IM GS210-01EN, 13.3.
       # *STB?: RQS (bit 6) and EAV (bit 2)
-      - q: "*STB?"
+      - &stb
+        q: "*STB?"
         r: "68"
       # *ESR?: CME (bit 5)
-      - q: "*ESR?"
+      - &esr
+        q: "*ESR?"
         r: "32"
       # :STAT:EVEN?: EOP (bit 7) and SCG (bit 5)
-      - q: ":STAT:EVEN?"
+      - &stat_even
+        q: ":STAT:EVEN?"
         r: "160"
       # :STAT:COND?: RFP (bit 8)
-      - q: ":STAT:COND?"
+      - &stat_cond
+        q: ":STAT:COND?"
         r: "256"
       # Only queried when *STB? reports EAV, so always return an error.
-      - q: ":SYSTem:ERRor?"
+      - &syst_err
+        q: ":SYSTem:ERRor?"
         r: '-222,"Data out of range"'
 
     properties: &gs200_properties
@@ -125,6 +130,12 @@ devices:
         r: "QCoDeS Yokogawa Mock,GS200,xxxxxxxx,MOCKFW"
       - q: "*OPT?"
         r: "/MON"
+      # Same status register and error responses as device 1
+      - *stb
+      - *esr
+      - *stat_even
+      - *stat_cond
+      - *syst_err
       - q: ":MEAS?"
         r: "+1.23450E-03"
 
