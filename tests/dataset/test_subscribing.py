@@ -29,7 +29,7 @@ VALUE = str | Number | list[Any] | ndarray | bool
 class MockSubscriber:
     """
     A basic subscriber factory that creates a subscriber, that
-    just puts results and length into state.
+    collects the results under the ``"results"`` key of the state.
     *Important*
     This class is extremely dangerous! Within the callback,
     you cannot read or write to the database/dataset because it
@@ -45,7 +45,7 @@ class MockSubscriber:
         self, results: list[tuple[VALUE]], length: int, state: dict[Any, Any]
     ) -> None:
         log.debug(f"got log {self.lg} and dataset {self.ds.completed}.")
-        state[length] = results
+        state.setdefault("results", []).extend(results)
 
 
 def config_subscriber_factory(
@@ -258,13 +258,10 @@ def test_subscriber_length_matches_delivered_results(dataset: "DataSet") -> None
 
 
 @pytest.mark.usefixtures("working_subscriber_config")
-def test_subscription_from_config(
-    dataset: "DataSet",
-    basic_subscriber: "Callable[[list[tuple[VALUE]], int, dict | None], None]",
-) -> None:
+def test_subscription_from_config(dataset: "DataSet") -> None:
     """
-    This test is similar to `test_basic_subscription`, with the only
-    difference that another subscriber from a config file is added.
+    A subscriber defined in the config file receives the results just like a
+    subscriber that is added directly.
     """
     assert "test_subscriber" in qcodes.config.subscription.subscribers
 
@@ -277,25 +274,26 @@ def test_subscription_from_config(
 
     dataset.mark_started()
 
-    sub_id = dataset.subscribe(basic_subscriber, min_wait=0, min_count=1, state={})
+    received: list[tuple[VALUE, ...]] = []
+    sub_id = dataset.subscribe(
+        lambda results, length, state: received.extend(results),
+        min_wait=0,
+        min_count=1,
+    )
     sub_id_c = dataset.subscribe_from_config("test_subscriber")
     assert len(dataset.subscribers) == 2
     assert list(dataset.subscribers.keys()) == [sub_id, sub_id_c]
 
-    expected_state = {}
-
-    # Here we are only testing 2 to reduce the CI time
-    for x in range(2):
-        y = -(x**2)
+    expected = [(x, -(x**2)) for x in range(10)]
+    for x, y in expected:
         dataset.add_results([{"x": x, "y": y}])
-        expected_state[x + 1] = [(x, y)]
+    # Completing the dataset hands all remaining results to the subscribers
+    dataset.mark_completed()
 
-        @retry_until_does_not_throw(exception_class_to_expect=AssertionError, tries=10)
-        def assert_expected_state() -> "None":
-            assert dataset.subscribers[sub_id].state == expected_state
-            assert dataset.subscribers[sub_id_c].state == expected_state
-
-        assert_expected_state()
+    assert received == expected
+    config_subscriber_state = dataset.subscribers[sub_id_c].state
+    assert config_subscriber_state is not None
+    assert config_subscriber_state["results"] == expected
 
 
 @pytest.mark.usefixtures("broken_subscriber_config")
