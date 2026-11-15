@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from functools import partial
 from typing import TYPE_CHECKING, Literal
 
 import pytest
@@ -198,6 +199,31 @@ def test_software_ramp_within_generated_range(
     assert gs200.output_level.step is None
     assert gs200.output_level.inter_delay == 0
     assert gs200.ramp_mode() == "SOFTWARE"
+
+
+@pytest.mark.parametrize("use_ramp_voltage", (False, True))
+def test_software_ramp_rejects_target_before_stepping(
+    gs200: YokogawaGS200, mocker: MockerFixture, use_ramp_voltage: bool
+) -> None:
+    gs200.voltage_range(10)
+    gs200.voltage(1)
+    gs200.ramp_step(1)
+    gs200.ramp_rate(1000)
+    gs200.ramp_mode("SOFTWARE")
+    write = mocker.spy(gs200, "write")
+    set_target = (
+        partial(gs200.ramp_voltage, ramp_mode="SOFTWARE")
+        if use_ramp_voltage
+        else gs200.voltage
+    )
+
+    with pytest.raises(ValueError, match="Desired output level not in range"):
+        set_target(13)
+
+    write.assert_not_called()
+    assert gs200.voltage() == 1
+    assert gs200.output_level.step is None
+    assert gs200.output_level.inter_delay == 0
 
 
 @pytest.mark.parametrize("target", (12.0, -12.0, 12.1, -12.1))

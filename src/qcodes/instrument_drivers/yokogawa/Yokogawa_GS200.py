@@ -945,6 +945,9 @@ class YokogawaGS200(VisaInstrument):
                     # Sleep between 2 and 100 ms before checking again.
                     time.sleep(max(min(slope_time / 10, 100e-3), 2e-3))
             case "SOFTWARE":
+                # Check the target before changing the output, so that an
+                # out-of-range target does not leave the output partway.
+                self._validate_output_level(ramp_to)
                 saved_step = self.output_level.step
                 saved_inter_delay = self.output_level.inter_delay
 
@@ -995,6 +998,26 @@ class YokogawaGS200(VisaInstrument):
                 on the current mode.
 
         """
+        self._validate_output_level(output_level)
+
+        if self.auto_range():
+            auto_str = ":AUTO"
+        else:
+            auto_str = ""
+        cmd_str = f":SOUR:LEV{auto_str} {output_level:.5e}"
+        self.write(cmd_str)
+
+    def _validate_output_level(self, output_level: float) -> None:
+        """
+        Raise a ValueError if the output level is outside of the generated
+        output range of the present source range, or of the largest range if
+        auto range is enabled.
+
+        Args:
+            output_level: output level in Volt or Ampere, depending
+                on the current mode.
+
+        """
         auto_enabled = self.auto_range()
 
         if not auto_enabled:
@@ -1036,13 +1059,6 @@ class YokogawaGS200(VisaInstrument):
                     "Desired output level not in range"
                     f" [-{self_range:.3}, {self_range:.3}]"
                 )
-
-        if auto_enabled:
-            auto_str = ":AUTO"
-        else:
-            auto_str = ""
-        cmd_str = f":SOUR:LEV{auto_str} {output_level:.5e}"
-        self.write(cmd_str)
 
     def _get_output_limit(self, source_range: float) -> float:
         """Return the generated output limit for a nominal source range.
