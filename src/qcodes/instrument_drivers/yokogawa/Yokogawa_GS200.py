@@ -763,6 +763,12 @@ class YokogawaGS200(VisaInstrument):
         )
         """The ramp step when :attr:`ramp_mode` is set to ``"SOFTWARE"``.
 
+        As for :attr:`Parameter.step`, a step of 0 (the default) means that
+        no steps are taken: setting the output in ``"SOFTWARE"`` mode then
+        jumps to the new value. :meth:`ramp_voltage` and :meth:`ramp_current`
+        with ``ramp_mode="SOFTWARE"`` require a positive step and raise a
+        ``ValueError`` otherwise.
+
         When :attr:`ramp_mode` is ``"HARDWARE"``, defines the output delta
         above which a ramp is used. If the delta is below this value,
         the output is "jumped".
@@ -811,6 +817,18 @@ class YokogawaGS200(VisaInstrument):
         else:
             return self.ramp_step()
 
+    @staticmethod
+    def _check_software_ramp_step(
+        step: float, ramp_mode: Literal["HARDWARE", "SOFTWARE"]
+    ) -> None:
+        # A step of 0 disables stepping, which would turn an explicitly
+        # requested software ramp into a jump.
+        if ramp_mode == "SOFTWARE" and step <= 0:
+            raise ValueError(
+                "A software ramp requires a positive ramp step. Set ramp_step "
+                "to a positive value."
+            )
+
     def ramp_voltage(
         self,
         ramp_to: float,
@@ -827,12 +845,14 @@ class YokogawaGS200(VisaInstrument):
             delay: The time between finishing one step and
                 starting another in seconds. Deprecated.
             ramp_mode: Use hardware or software ramps. See :attr:`ramp_mode`.
+                A software ramp requires a positive :attr:`ramp_step`.
 
         """
         step = self._parse_step(step)
         rate = self._parse_delay(delay, step)
 
         self._assert_mode("VOLT")
+        self._check_software_ramp_step(step, ramp_mode)
         with (
             self.ramp_step.set_to(step),
             self.ramp_rate.set_to(rate),
@@ -854,16 +874,18 @@ class YokogawaGS200(VisaInstrument):
 
         Args:
             ramp_to: The ramp target in Ampere
-            step: The ramp steps in Volt. Deprecated.
+            step: The ramp steps in Ampere. Deprecated.
             delay: The time between finishing one step and
                 starting another in seconds. Deprecated.
             ramp_mode: Use hardware or software ramps. See :attr:`ramp_mode`.
+                A software ramp requires a positive :attr:`ramp_step`.
 
         """
         step = self._parse_step(step)
         rate = self._parse_delay(delay, step)
 
         self._assert_mode("CURR")
+        self._check_software_ramp_step(step, ramp_mode)
         with (
             self.ramp_step.set_to(step),
             self.ramp_rate.set_to(rate),

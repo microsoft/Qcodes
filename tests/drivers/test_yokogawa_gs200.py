@@ -445,6 +445,35 @@ def test_ramp_current(gs200: YokogawaGS200, mocker: MockerFixture) -> None:
     assert gs200.current() == pytest.approx(2e-3)
 
 
+@pytest.mark.parametrize("mode", ("VOLT", "CURR"))
+def test_software_ramp_requires_positive_step(
+    gs200: YokogawaGS200, mocker: MockerFixture, mode: Literal["VOLT", "CURR"]
+) -> None:
+    gs200.source_mode(mode)
+    assert gs200.ramp_step() == 0
+    ramp = gs200.ramp_voltage if mode == "VOLT" else gs200.ramp_current
+    write = mocker.spy(gs200, "write")
+
+    with pytest.raises(ValueError, match="requires a positive ramp step"):
+        ramp(1e-3, ramp_mode="SOFTWARE")
+
+    write.assert_not_called()
+    assert gs200.ramp_mode() == "JUMP"
+
+
+def test_software_ramp_mode_with_zero_step_jumps(
+    gs200: YokogawaGS200, mocker: MockerFixture
+) -> None:
+    # As for Parameter.step, a ramp_step of 0 means no steps.
+    gs200.voltage_range(10)
+    gs200.ramp_mode("SOFTWARE")
+    write = mocker.spy(gs200, "write")
+
+    gs200.voltage(5)
+
+    write.assert_called_once_with(f":SOUR:LEV {5:.5e}")
+
+
 def test_ramp_requires_matching_source_mode(gs200: YokogawaGS200) -> None:
     with pytest.raises(ValueError, match="Cannot get/set CURR settings"):
         gs200.ramp_current(1e-3)
