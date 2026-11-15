@@ -9,7 +9,8 @@ such.
 Fixed the following driver bugs found along the way:
 
 - ``YokogawaGS200.ramp_voltage`` and ``ramp_current`` raised a ``TypeError`` when called with
-  ``ramp_mode="SOFTWARE"``.
+  ``ramp_mode="SOFTWARE"``. They now perform the software ramp, and raise a ``ValueError`` if
+  ``ramp_step`` is 0, which would otherwise jump directly to the target.
 - A software ramp of the ``YokogawaGS200`` to a target outside the output range of the present
   source range now raises before changing the output. Previously it stepped up to the limit of
   the range before raising.
