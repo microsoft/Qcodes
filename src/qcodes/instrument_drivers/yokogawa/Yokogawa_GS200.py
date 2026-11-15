@@ -219,17 +219,20 @@ class YokogawaGS200Monitor(InstrumentChannel["YokogawaGS200"]):
                 get_parser=_float_round,
             )
             """Parameter NPLC"""
-            self.delay: Parameter[int, Self] = self.add_parameter(
+            # The instrument takes and returns the delay in seconds with a
+            # resolution of 1 ms, from 0 to 999999 ms (GS200 User's Manual
+            # IM GS210-01EN, p. 13-15).
+            self.delay: Parameter[float, Self] = self.add_parameter(
                 "delay",
                 label="Measurement Delay",
-                unit="ms",
-                vals=Ints(0, 999999),
+                unit="s",
+                vals=MultiTypeAnd(Numbers(0, 999.999), PermissiveMultiples(1e-3)),
                 set_cmd=":SENS:DEL {}",
-                set_parser=int,
+                set_parser=float,
                 get_cmd=":SENS:DEL?",
-                get_parser=_float_round,
+                get_parser=float,
             )
-            """Parameter delay"""
+            """Measurement delay in s, with a resolution of 1 ms"""
             self.trigger: Parameter[str, Self] = self.add_parameter(
                 "trigger",
                 label="Trigger Source",
