@@ -47,7 +47,10 @@ class RunDescriber:  # noqa: PLW1641
 
         self._interdeps = interdeps
 
-        self._shapes = shapes
+        # Copy the shapes so that later changes to the mapping supplied by the
+        # caller, e.g. when reusing it for another measurement, do not change
+        # the description of this run.
+        self._shapes = dict(shapes) if shapes is not None else None
         self._version = 3
 
     @property

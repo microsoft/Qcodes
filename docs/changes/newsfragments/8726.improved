@@ -3,3 +3,6 @@ such as ``to_pandas_dataframe`` and ``to_xarray_dataset``, are now faster as the
 held by the dataset is used rather than reading and parsing it from the database on every call.
 Calling ``get_parameter_data`` on a ``DataSet`` that has not been started now returns empty
 arrays for its parameters rather than raising a ``KeyError``.
+A ``RunDescriber`` now holds a copy of the shapes it is created with, so changing the shapes
+mapping passed to ``Measurement.set_shapes``, e.g. to reuse it for another measurement, no
+longer changes the ``description.shapes`` of datasets that have already been recorded.

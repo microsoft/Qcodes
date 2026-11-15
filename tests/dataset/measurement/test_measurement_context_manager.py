@@ -42,6 +42,7 @@ if TYPE_CHECKING:
     from pytest import TempPathFactory
     from pytest_mock import MockerFixture
 
+    from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
     from qcodes.instrument_drivers.mock_instruments import (
         DummyChannelInstrument,
         DummyInstrument,
@@ -467,6 +468,35 @@ def test_run_without_registered_parameters_raises(
         meas.run(dataset_class=dataset_class),
     ):
         pass
+
+
+@pytest.mark.usefixtures("experiment")
+@pytest.mark.parametrize(
+    "dataset_class", [DataSetType.DataSet, DataSetType.DataSetInMem]
+)
+def test_changing_shapes_after_run_does_not_change_dataset(
+    dataset_class: DataSetType,
+) -> None:
+    x = ManualParameter("x")
+    y = ManualParameter("y")
+    meas = Measurement()
+    meas.register_parameter(x)
+    meas.register_parameter(y, setpoints=(x,))
+    shapes: Shapes = {"y": (2, 2)}
+    meas.set_shapes(shapes)
+
+    with meas.run(dataset_class=dataset_class) as datasaver:
+        for i in range(4):
+            datasaver.add_result((x, i), (y, i))
+
+    # Reusing the shapes mapping, e.g. for a subsequent measurement, must not
+    # change the description or the data of the dataset that has been recorded.
+    shapes["y"] = (4,)
+
+    ds = datasaver.dataset
+    assert ds.description.shapes == {"y": (2, 2)}
+    assert ds.get_parameter_data()["y"]["y"].shape == (2, 2)
+    assert ds.cache.data()["y"]["y"].shape == (2, 2)
 
 
 @pytest.mark.usefixtures("experiment")
