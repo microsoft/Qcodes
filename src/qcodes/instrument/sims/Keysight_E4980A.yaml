@@ -9,6 +9,8 @@ devices:
     dialogues:
       - q: "*RST"
       - q: "*CLS"
+      - q: ":CORRection:OPEN"
+      - q: ":CORRection:SHORt"
       - q: "*OPT?"
         r: "001"
       - q: "*IDN?"
@@ -48,15 +50,6 @@ devices:
           r: "{}"
         setter:
           q: ":FUNCtion:IMPedance:RANGe:AUTO {}"
-
-      # command-only, no reply
-      correction_open:
-        setter:
-          q: ":CORRection:OPEN"
-
-      correction_short:
-        setter:
-          q: ":CORRection:SHORt"
 
 resources:
   GPIB::1::INSTR:
