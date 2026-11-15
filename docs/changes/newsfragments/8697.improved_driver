@@ -5,3 +5,8 @@ always returns an integer, but until it is read again the cached value is the ke
 set. The status register parameters return the ``StatusByte``, ``StandardEventRegister``,
 ``ExtendedEventRegister`` and ``ConditionRegister`` flags as before, and are now annotated as
 such.
+
+Fixed the following driver bug found along the way:
+
+- ``YokogawaGS200.ramp_voltage`` and ``ramp_current`` raised a ``TypeError`` when called with
+  ``ramp_mode="SOFTWARE"``.
