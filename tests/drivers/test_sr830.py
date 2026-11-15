@@ -139,6 +139,31 @@ def test_sweep_setpoints_keep_label_assigned_at_constant_rate(sr830: SR830) -> N
     assert (setpoints.unit, setpoints.label) == ("V", "Gate")
 
 
+def test_set_sweep_unit_and_label_overrides_direct_assignment(sr830: SR830) -> None:
+    # At a constant sample rate, setting the sweep unit and label replaces an
+    # earlier direct assignment, so the explicit values are used with Trigger.
+    setpoints = sr830.sweep_setpoints
+    setpoints.unit = "V"
+    setpoints.label = "Gate voltage"
+
+    setpoints.set_sweep_unit_and_label("A", "Current")
+    assert (setpoints.unit, setpoints.label) == ("s", "Time")
+
+    sr830.buffer_SR("Trigger")
+    assert (setpoints.unit, setpoints.label) == ("A", "Current")
+
+
+def test_set_sweep_parameters_overrides_direct_assignment(sr830: SR830) -> None:
+    current = Parameter("current", label="Current", unit="A", set_cmd=None)
+    setpoints = sr830.sweep_setpoints
+    setpoints.unit = "V"
+    setpoints.label = "Gate voltage"
+
+    sr830.set_sweep_parameters(current, 0, 1, n_points=5)
+    sr830.buffer_SR("Trigger")
+    assert (setpoints.unit, setpoints.label) == ("A", "Current")
+
+
 def test_set_sweep_parameters_with_trigger(sr830: SR830) -> None:
     gate = Parameter("gate", label="Gate voltage", unit="V", set_cmd=None)
     setpoints = sr830.sweep_setpoints

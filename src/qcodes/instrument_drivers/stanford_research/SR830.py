@@ -1026,13 +1026,17 @@ class GeneratedSetPoints(Parameter):
         """
         Set the unit and label of the sweep, used with the "Trigger" sample
         rate. With a constant sample rate they are saved until the sample
-        rate is set to "Trigger".
+        rate is set to "Trigger", and the unit and label show the sample
+        times ("s" and "Time").
         """
         if self._saved_sweep_unit_and_label is None:
             self.unit = unit
             self.label = label
         else:
             self._saved_sweep_unit_and_label = (unit, label)
+            # undo any direct assignment, so that these are restored
+            self.unit = "s"
+            self.label = "Time"
 
     def update_units_if_constant_sample_rate(self) -> None:
         """
