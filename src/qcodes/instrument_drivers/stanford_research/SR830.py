@@ -1048,7 +1048,13 @@ class GeneratedSetPoints(Parameter):
             self.unit = "s"
             self.label = "Time"
         elif self._saved_sweep_unit_and_label is not None:
-            self.unit, self.label = self._saved_sweep_unit_and_label
+            saved_unit, saved_label = self._saved_sweep_unit_and_label
+            # keep a unit or label that was assigned directly while the
+            # sample times were shown
+            if self.unit == "s":
+                self.unit = saved_unit
+            if self.label == "Time":
+                self.label = saved_label
             self._saved_sweep_unit_and_label = None
 
     def set_raw(self, value: Iterable[float | int]) -> None:

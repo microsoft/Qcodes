@@ -115,6 +115,30 @@ def test_sweep_setpoints_unit_follows_sample_rate(sr830: SR830) -> None:
     assert (setpoints.unit, setpoints.label) == ("V", "Gate voltage")
 
 
+def test_sweep_setpoints_keep_unit_assigned_at_constant_rate(sr830: SR830) -> None:
+    # The sim starts at a constant sample rate. A unit and label assigned
+    # directly before switching to Trigger are kept, as they were before the
+    # sweep unit and label were saved and restored.
+    setpoints = sr830.sweep_setpoints
+    assert (setpoints.unit, setpoints.label) == ("s", "Time")
+    setpoints.unit = "V"
+    setpoints.label = "Gate voltage"
+
+    sr830.buffer_SR("Trigger")
+    assert (setpoints.unit, setpoints.label) == ("V", "Gate voltage")
+
+
+def test_sweep_setpoints_keep_label_assigned_at_constant_rate(sr830: SR830) -> None:
+    # Only the field that still shows the sample times is restored.
+    gate = Parameter("gate", label="Gate voltage", unit="V", set_cmd=None)
+    setpoints = sr830.sweep_setpoints
+    sr830.set_sweep_parameters(gate, 0, 1, n_points=5)
+    setpoints.label = "Gate"
+
+    sr830.buffer_SR("Trigger")
+    assert (setpoints.unit, setpoints.label) == ("V", "Gate")
+
+
 def test_set_sweep_parameters_with_trigger(sr830: SR830) -> None:
     gate = Parameter("gate", label="Gate voltage", unit="V", set_cmd=None)
     setpoints = sr830.sweep_setpoints
@@ -130,7 +154,8 @@ def test_set_sweep_parameters_with_trigger(sr830: SR830) -> None:
 
 
 def test_sweep_setpoints_keep_directly_assigned_unit(sr830: SR830) -> None:
-    # As in the SR830 example notebook: assign the unit and label directly
+    # Assigning the unit and label directly, as the SR830 example notebook
+    # used to do, still works with the Trigger sample rate
     setpoints = sr830.sweep_setpoints
     sr830.buffer_SR("Trigger")
     setpoints.unit = "V"
