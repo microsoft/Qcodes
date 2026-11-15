@@ -306,6 +306,10 @@ class KeysightM9336A(Instrument):
             self._address, 1, 1, self._options, ctypes.byref(session)
         )
         if status:
+            # The session may have been opened anyway, e.g. if the status is a
+            # (positive) warning. As the instrument is not created, close it.
+            if session.value:
+                self._dll.KtMAwg_close(session)
             raise SystemError(f"connection to device failed! error: {status}")
         return session
 

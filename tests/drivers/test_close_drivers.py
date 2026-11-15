@@ -10,6 +10,7 @@ with fake vendor libraries that fail to open the device.
 """
 
 import ctypes
+from typing import Any
 from unittest import mock
 
 import pytest
@@ -55,7 +56,7 @@ def test_dynacool_closes_visa_handle_if_session_is_already_closed() -> None:
     visa_handle.close.assert_called_once()
 
 
-@pytest.mark.parametrize(
+_KEYSIGHT_DRIVERS = pytest.mark.parametrize(
     ("instrument_class", "function_prefix"),
     [
         pytest.param(
@@ -70,11 +71,15 @@ def test_dynacool_closes_visa_handle_if_session_is_already_closed() -> None:
         (KeysightM9336A, "KtMAwg"),
     ],
 )
+
+
+@_KEYSIGHT_DRIVERS
 def test_keysight_does_not_close_session_that_failed_to_open(
     instrument_class: type[KeysightM960x | KeysightM9336A], function_prefix: str
 ) -> None:
     dll = mock.MagicMock()
-    getattr(dll, f"{function_prefix}_InitWithOptions").return_value = 1
+    # a negative status is an error, with which no session is opened
+    getattr(dll, f"{function_prefix}_InitWithOptions").return_value = -1
 
     with (
         mock.patch.object(ctypes.cdll, "LoadLibrary", return_value=dll),
@@ -84,6 +89,39 @@ def test_keysight_does_not_close_session_that_failed_to_open(
 
     getattr(dll, f"{function_prefix}_close").assert_not_called()
     assert not hasattr(exc_info.value, "__notes__")
+    assert not Instrument.exist("keysight")
+
+
+@_KEYSIGHT_DRIVERS
+def test_keysight_closes_session_opened_with_warning(
+    instrument_class: type[KeysightM960x | KeysightM9336A], function_prefix: str
+) -> None:
+    """
+    A positive status is a warning, with which the session is opened anyway.
+    The driver still treats it as a failure, so it must close the session.
+    """
+
+    def open_session_with_warning(
+        address: bytes, id_query: int, reset: int, options: bytes, session: Any
+    ) -> int:
+        session._obj.value = 42
+        return 1
+
+    dll = mock.MagicMock()
+    getattr(
+        dll, f"{function_prefix}_InitWithOptions"
+    ).side_effect = open_session_with_warning
+
+    with (
+        mock.patch.object(ctypes.cdll, "LoadLibrary", return_value=dll),
+        pytest.raises(SystemError, match="connection to device failed"),
+    ):
+        instrument_class("keysight", address="PXI0::1::INSTR")
+
+    close = getattr(dll, f"{function_prefix}_close")
+    close.assert_called_once()
+    (session,) = close.call_args.args
+    assert session.value == 42
     assert not Instrument.exist("keysight")
 
 
