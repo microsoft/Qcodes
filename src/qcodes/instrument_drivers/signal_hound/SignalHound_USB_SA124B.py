@@ -1,5 +1,4 @@
 import ctypes as ct
-import logging
 from enum import IntEnum
 from time import sleep
 from typing import TYPE_CHECKING, Any, Self
@@ -13,8 +12,6 @@ from qcodes.parameters import ArrayParameter, Parameter, ParameterWithSetpoints
 
 if TYPE_CHECKING:
     from typing import Unpack
-
-log = logging.getLogger(__name__)
 
 
 class TraceParameter(Parameter):
@@ -540,7 +537,7 @@ class SignalHoundUSBSA124B(Instrument):
         self.log.info("Setting device CenterSpan configuration.")
 
         err = self.dll.saConfigCenterSpan(self.deviceHandle, center, span)
-        self._check_for_error(err, "saConfigCenterSpan")
+        self.check_for_error(err, "saConfigCenterSpan")
 
         # 2. Acquisition configuration
         detectorVals = {
@@ -557,19 +554,19 @@ class SignalHoundUSBSA124B(Instrument):
         scale = scaleVals[self.scale()]
 
         err = self.dll.saConfigAcquisition(self.deviceHandle, detector, scale)
-        self._check_for_error(err, "saConfigAcquisition")
+        self.check_for_error(err, "saConfigAcquisition")
 
         # 3. Reference Level configuration
         self.log.info("Setting device reference level configuration.")
         err = self.dll.saConfigLevel(self.deviceHandle, ct.c_double(self.ref_lvl()))
-        self._check_for_error(err, "saConfigLevel")
+        self.check_for_error(err, "saConfigLevel")
 
         # 4. External Reference configuration
         if self.external_reference():
             external = self.hf.sa_REF_EXTERNAL_IN
             self.log.info("Setting reference frequency from external source.")
             err = self.dll.saSetTimebase(self.deviceHandle, external)
-            self._check_for_error(err, "saSetTimebase")
+            self.check_for_error(err, "saSetTimebase")
 
         reject_var = ct.c_bool(self.reject_image())
         self.log.info("Setting device Sweeping configuration.")
@@ -579,7 +576,7 @@ class SignalHoundUSBSA124B(Instrument):
             ct.c_double(self.vbw()),
             reject_var,
         )
-        self._check_for_error(err, "saConfigSweepCoupling")
+        self.check_for_error(err, "saConfigSweepCoupling")
 
         modeOpts = {
             "sweeping": self.hf.sa_SWEEPING,
@@ -608,7 +605,7 @@ class SignalHoundUSBSA124B(Instrument):
              """
         elif err == saStatus.saBandwidthErr:
             extrainfo = "RBW is larger than your span. (Sweep Mode)!"
-        self._check_for_error(err, "saInitiate", extrainfo)
+        self.check_for_error(err, "saInitiate", extrainfo)
 
         self._parameters_synced = True
 
@@ -627,7 +624,7 @@ class SignalHoundUSBSA124B(Instrument):
         self.log.info("Opening Device")
         device_handle = ct.c_int(0)
         err = self.dll.saOpenDevice(ct.pointer(device_handle))
-        self._check_for_error(err, "saOpenDevice")
+        self.check_for_error(err, "saOpenDevice")
         # Only assign the handle once the device has been opened successfully,
         # so that close does not try to close a device that is not open.
         self.deviceHandle = device_handle
@@ -652,7 +649,7 @@ class SignalHoundUSBSA124B(Instrument):
                 self.log.exception("Could not abort acquisition")
 
             err = self.dll.saCloseDevice(self.deviceHandle)
-            self._check_for_error(err, "saCloseDevice")
+            self.check_for_error(err, "saCloseDevice")
             self.log.info(f"Closed Device with handle num: {self.deviceHandle.value}")
         super().close()
 
@@ -670,7 +667,7 @@ class SignalHoundUSBSA124B(Instrument):
                 "without ever calling initiate()"
             )
 
-        self._check_for_error(err, "saAbort", extrainfo)
+        self.check_for_error(err, "saAbort", extrainfo)
 
     def preset(self) -> None:
         """
@@ -680,7 +677,7 @@ class SignalHoundUSBSA124B(Instrument):
         self.log.warning("Performing hardware-reset of device!")
 
         err = self.dll.saPreset(self.deviceHandle)
-        self._check_for_error(err, "saPreset")
+        self.check_for_error(err, "saPreset")
         super().close()
 
     def _get_device_type(self) -> str:
@@ -693,7 +690,7 @@ class SignalHoundUSBSA124B(Instrument):
         devTypePnt = ct.pointer(devType)
 
         err = self.dll.saGetDeviceType(self.deviceHandle, devTypePnt)
-        self._check_for_error(err, "saGetDeviceType")
+        self.check_for_error(err, "saGetDeviceType")
 
         if devType.value == self.hf.saDeviceTypeNone:
             dev = "No device"
@@ -730,7 +727,7 @@ class SignalHoundUSBSA124B(Instrument):
             ct.pointer(start_freq),
             ct.pointer(stepsize),
         )
-        self._check_for_error(err, "saQuerySweepInfo")
+        self.check_for_error(err, "saQuerySweepInfo")
         return sweep_len.value, start_freq.value, stepsize.value
 
     def _get_sweep_data(self) -> npt.NDArray:
@@ -757,7 +754,7 @@ class SignalHoundUSBSA124B(Instrument):
 
             sleep(self.sleep_time.get())  # Added extra sleep for updating issue
             err = self.dll.saGetSweep_32f(self.deviceHandle, minarr, maxarr)
-            self._check_for_error(err, "saGetSweep_32f")
+            self.check_for_error(err, "saGetSweep_32f")
             data += datamin
 
         return data / Navg
@@ -789,12 +786,8 @@ class SignalHoundUSBSA124B(Instrument):
         sleep(2 * self.sleep_time.get())
         return max_power
 
-    @staticmethod
     def check_for_error(
-        err: int,
-        source: str,
-        extrainfo: str | None = None,
-        logger: logging.Logger | logging.LoggerAdapter[logging.Logger] = log,
+        self, err: int, source: str, extrainfo: str | None = None
     ) -> None:
         if err != saStatus.saNoError:
             err_str = saStatus(err).name
@@ -805,7 +798,7 @@ class SignalHoundUSBSA124B(Instrument):
                 )
                 if extrainfo is not None:
                     msg = msg + f"\n Extra info: {extrainfo}"
-                logger.warning(msg)
+                self.log.warning(msg)
             else:
                 msg = (
                     f"During call of {source} the following Error: {err_str} was raised"
@@ -817,14 +810,7 @@ class SignalHoundUSBSA124B(Instrument):
             msg = f"Call to {source} was successful"
             if extrainfo is not None:
                 msg = msg + f"\n Extra info: {extrainfo}"
-            logger.info(msg)
-
-    def _check_for_error(
-        self, err: int, source: str, extrainfo: str | None = None
-    ) -> None:
-        # log to the instrument logger, which does not log while the instrument
-        # is closed by the garbage collector
-        self.check_for_error(err, source, extrainfo, logger=self.log)
+            self.log.info(msg)
 
     def get_idn(self) -> dict[str, str | None]:
         output: dict[str, str | None] = {}
@@ -832,14 +818,14 @@ class SignalHoundUSBSA124B(Instrument):
         output["model"] = self._get_device_type()
         serialnumber = ct.c_int32()
         err = self.dll.saGetSerialNumber(self.deviceHandle, ct.pointer(serialnumber))
-        self._check_for_error(err, "saGetSerialNumber")
+        self.check_for_error(err, "saGetSerialNumber")
         output["serial"] = str(serialnumber.value)
         fw_version = (ct.c_char * 17)()
         # the manual says that this must be at least 16 char
         # but not clear if that includes a termination zero so
         # make it 17 just in case
         err = self.dll.saGetFirmwareString(self.deviceHandle, fw_version)
-        self._check_for_error(err, "saGetFirmwareString")
+        self.check_for_error(err, "saGetFirmwareString")
         output["firmware"] = fw_version.value.decode("ascii")
         return output
 
