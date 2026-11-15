@@ -35,8 +35,11 @@ class InstrumentMeta(ABCMeta):
         completes successfully, and to close the instance if `__init__` or that
         code raises.
         """
-        # Create and initialize the instance like type.__call__ does.
-        new_inst: Any = cls.__new__(cls, *args, **kwargs)
+        # Create and initialize the instance like type.__call__ does. Looking
+        # up __new__ on the class finds the __new__ of the class, but type
+        # checkers would resolve it to the __new__ of this metaclass.
+        instrument_class: Any = cls
+        new_inst = instrument_class.__new__(cls, *args, **kwargs)
         if not issubclass(type(new_inst), cls):
             return new_inst
         try:
