@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import time
-import warnings
 import weakref
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, overload
@@ -16,7 +15,6 @@ from .instrument_base import InstrumentBase, InstrumentBaseKWArgs
 from .instrument_meta import InstrumentMeta
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
     from typing import Self, Unpack
 
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
@@ -37,13 +35,8 @@ class InstrumentProtocol(Protocol):
 class _InstrumentState(Enum):
     """The stages of the lifecycle of an :class:`Instrument`."""
 
-    INITIALIZING = auto()
-    """The instrument is being initialized and has not been handed to the user."""
     OPEN = auto()
-    """
-    The instrument has been initialized, registered and handed to the user,
-    who is responsible for closing it.
-    """
+    """The instrument is being initialized or has been initialized."""
     CLOSED = auto()
     """
     The instrument has been closed and its attributes stripped, or its
@@ -89,7 +82,7 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
     _type: type[Instrument] | None = None
     _instances: ClassVar[weakref.WeakSet[Instrument]] = weakref.WeakSet()
     # Name mangled so that it cannot clash with attributes of subclasses.
-    __state: _InstrumentState = _InstrumentState.INITIALIZING
+    __state: _InstrumentState = _InstrumentState.OPEN
 
     def __init__(self, name: str, **kwargs: Unpack[InstrumentBaseKWArgs]) -> None:
         self._t0 = time.time()
@@ -182,14 +175,11 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         # so that this also works late in the interpreter shutdown, when the
         # globals of modules may already have been cleared.
         _closed: _InstrumentState = _InstrumentState.CLOSED,
-        _open: _InstrumentState = _InstrumentState.OPEN,
         _finalizing: _InstrumentState = _InstrumentState.FINALIZING,
-        _warn: Callable[..., None] = warnings.warn,
     ) -> None:
         """
         Close the instrument if it is garbage collected without having been
-        closed, so that its resources are freed, and emit a
-        :class:`ResourceWarning` about it.
+        closed, so that its resources are freed.
 
         Do not rely on this: always close instruments explicitly with
         :meth:`close` (or :meth:`close_all`). As instruments reference
@@ -205,35 +195,17 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
             # an arbitrary point in time, possibly after the name or the
             # resources of the instrument have been reused.
             return
+        # This disables the instrument loggers while closing the instrument, see
+        # _being_closed_by_garbage_collector.
+        self.__state = _finalizing
         try:
-            # Instruments that have not been handed to the user could not have
-            # been closed by them.
-            if self.__state is _open:
-                # Like for unclosed files, the instrument is still closed if
-                # the warning is turned into an error, which is then reported
-                # as an exception ignored in __del__.
-                _warn(
-                    f"unclosed instrument {self!r}. Close instruments "
-                    "explicitly with close() or Instrument.close_all() "
-                    "instead of relying on the garbage collector.",
-                    ResourceWarning,
-                    # Point at this method rather than at whatever code
-                    # happened to trigger the garbage collection.
-                    stacklevel=1,
-                    source=self,
-                )
-        finally:
-            # This disables the instrument loggers while closing the
-            # instrument, see _being_closed_by_garbage_collector.
-            self.__state = _finalizing
-            try:
-                self.close()
-            except BaseException:  # noqa: BLE001, S110
-                # we want to avoid __del__ raising any exceptions
-                # it might be possible to avoid this see
-                # https://docs.python.org/3/reference/datamodel.html#object.__del
-                # however that would require careful testing.
-                pass
+            self.close()
+        except BaseException:  # noqa: BLE001, S110
+            # we want to avoid __del__ raising any exceptions
+            # it might be possible to avoid this see
+            # https://docs.python.org/3/reference/datamodel.html#object.__del
+            # however that would require careful testing.
+            pass
 
     @property
     def _being_closed_by_garbage_collector(self) -> bool:
@@ -382,7 +354,6 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
             cls._type = cls
             cls._instances = weakref.WeakSet()
         cls._instances.add(instance)
-        instance.__state = _InstrumentState.OPEN
 
     @classmethod
     def instances(cls: type[Self]) -> list[Self]:

@@ -1,4 +1,3 @@
 ``VisaInstrument`` no longer logs when the VISA handle of an instrument that was not closed is closed
 as the instrument is garbage collected, since logging from within the garbage collector or during
-interpreter shutdown is not safe with all log handlers. The ``ResourceWarning`` about the unclosed
-instrument still reports it.
+interpreter shutdown is not safe with all log handlers.

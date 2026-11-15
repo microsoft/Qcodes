@@ -162,10 +162,7 @@ def test_visa_gc_closes_connection() -> None:
     gc.disable()
     try:
         rm = use_magnet()
-        with pytest.warns(
-            ResourceWarning, match="unclosed instrument <AMIModel430: x>"
-        ):
-            gc.collect()
+        gc.collect()
     finally:
         if gc_was_enabled:
             gc.enable()

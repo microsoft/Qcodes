@@ -1,7 +1,4 @@
-The instrument loggers (``self.log`` and ``self.visa_log`` of instruments, channels and other
-instrument modules) no longer log while the garbage collector closes an instrument that was not
-closed, since the garbage collector runs at an arbitrary point in time and on any thread, possibly
-in the middle of other logging, where logging is not safe with all log handlers.
-``IPInstrument`` now logs through its instrument logger, so that this also applies to it. Its log
-records are therefore emitted by the ``qcodes.instrument.instrument_base`` logger with the name of
-the instrument, rather than by the ``qcodes.instrument.ip`` logger.
+``Instrument.close`` now does nothing if the instrument has already been closed; close methods of
+subclasses still run before they call it. Closing an ``IPInstrument`` a second time no longer raises
+an ``AttributeError``, and closing it now also closes its socket if the socket cannot be shut down,
+e.g. because it is not connected.

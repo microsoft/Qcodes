@@ -11,7 +11,6 @@ import logging
 import re
 import socket
 import sys
-import warnings
 import weakref
 from typing import TYPE_CHECKING, Any, assert_type
 from weakref import WeakValueDictionary
@@ -632,10 +631,7 @@ def test_close_when_gc_finalizes_instrument_during_registry_iteration(
     assert not Instrument.exist("dummy")
     DummyInstrument(name="dummy", gates=["dac1"]).close()
 
-    with pytest.warns(
-        ResourceWarning, match="unclosed instrument <Instrument: leaked>"
-    ):
-        gc.collect()
+    gc.collect()
     assert len(Instrument._all_instruments) == 0
 
 
@@ -653,10 +649,7 @@ def test_close_all_when_gc_finalizes_instrument_during_registry_iteration(
     _leak_instrument("leaked")
     parabola = MockParabola("parabola")
 
-    with pytest.warns(
-        ResourceWarning, match="unclosed instrument <Instrument: leaked>"
-    ):
-        Instrument.close_all()
+    Instrument.close_all()
 
     assert registry.collected_garbage
     assert not Instrument.is_valid(dummy)
@@ -725,8 +718,7 @@ def test_instrument_without_ref_is_gced() -> None:
 
     assert len(Instrument._all_instruments) == 0
     use_some_instrument()
-    with pytest.warns(ResourceWarning, match="unclosed instrument"):
-        gc.collect()
+    gc.collect()
     assert len(Instrument._all_instruments) == 0
 
 
@@ -760,16 +752,11 @@ def _instrument_class_recording_close(
 
 
 @pytest.mark.usefixtures("close_before_and_after", "automatic_gc_disabled")
-def test_garbage_collecting_unclosed_instrument_closes_it_and_warns() -> None:
+def test_garbage_collecting_unclosed_instrument_closes_it() -> None:
     closed: list[str] = []
     _instrument_class_recording_close(closed)("unclosed")
 
-    with pytest.warns(
-        ResourceWarning,
-        match=r"unclosed instrument <InstrumentRecordingClose: unclosed>\. "
-        r"Close instruments explicitly",
-    ):
-        gc.collect()
+    gc.collect()
 
     assert closed == ["unclosed"]
     assert not Instrument.exist("unclosed")
@@ -780,8 +767,7 @@ def test_instrument_that_fails_to_initialize_is_closed_right_away() -> None:
     """
     An instrument whose initialization failed is closed right away, so that
     its resources are freed, rather than when it is garbage collected. It is
-    neither closed again nor warned about when garbage collected, as it was
-    never handed to the user who could therefore not have closed it.
+    not closed again when garbage collected.
     """
     closed: list[str] = []
     created: list[weakref.ref[Instrument]] = []
@@ -794,14 +780,11 @@ def test_instrument_that_fails_to_initialize_is_closed_right_away() -> None:
 
     assert closed == ["failing"]
 
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        gc.collect()
+    gc.collect()
 
     (instrument,) = created
     assert instrument() is None
     assert closed == ["failing"]
-    assert [w for w in caught if issubclass(w.category, ResourceWarning)] == []
 
 
 @pytest.mark.usefixtures("close_before_and_after", "automatic_gc_disabled")
@@ -932,8 +915,7 @@ def test_instrument_stays_closed_by_garbage_collector_while_being_stripped(
     monkeypatch.setattr(instrument_module, "strip_attrs", strip_attrs_and_observe)
     Instrument("unclosed")
 
-    with pytest.warns(ResourceWarning, match="unclosed instrument"):
-        gc.collect()
+    gc.collect()
 
     assert observed == [True]
 
@@ -990,8 +972,7 @@ def test_failure_to_close_unclosed_instrument_when_garbage_collected_is_ignored(
     monkeypatch.setattr(sys, "unraisablehook", unraisable.append)
     FailingToCloseInstrument("failing")
 
-    with pytest.warns(ResourceWarning, match="unclosed instrument"):
-        gc.collect()
+    gc.collect()
 
     assert close_attempts == ["failing"]
     assert unraisable == []
@@ -1012,7 +993,6 @@ def test_freeing_closed_instrument_after_module_globals_are_cleared() -> None:
     with pytest.MonkeyPatch.context() as monkeypatch:
         # simulate the interpreter shutdown clearing the globals of the module
         monkeypatch.setattr(instrument_module, "_InstrumentState", None)
-        monkeypatch.setattr(instrument_module, "warnings", None)
         monkeypatch.setattr(sys, "unraisablehook", unraisable.append)
         del instrument
         gc.collect()
@@ -1024,9 +1004,8 @@ def test_freeing_closed_instrument_after_module_globals_are_cleared() -> None:
 @pytest.mark.usefixtures("close_before_and_after")
 def test_garbage_collecting_closed_instrument_does_not_close_it_again() -> None:
     """
-    An instrument that has been closed explicitly is neither closed again nor
-    warned about when garbage collected, which may happen after its name has
-    been reused.
+    An instrument that has been closed explicitly is not closed again when
+    garbage collected, which may happen after its name has been reused.
     """
     closed: list[str] = []
     instrument_class = _instrument_class_recording_close(closed)
@@ -1034,13 +1013,10 @@ def test_garbage_collecting_closed_instrument_does_not_close_it_again() -> None:
     old_instrument.close()
     new_instrument = instrument_class("instr")
 
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        del old_instrument
-        gc.collect()
+    del old_instrument
+    gc.collect()
 
     assert closed == ["instr"]
-    assert [w for w in caught if issubclass(w.category, ResourceWarning)] == []
     assert Instrument.find_instrument("instr") is new_instrument
     new_instrument.close()
 
@@ -1092,10 +1068,7 @@ def test_instrument_does_not_log_when_closed_by_garbage_collector(
     """
     _InstrumentLoggingWhenClosed("logging")
 
-    with (
-        caplog.at_level(logging.INFO),
-        pytest.warns(ResourceWarning, match="unclosed instrument"),
-    ):
+    with caplog.at_level(logging.INFO):
         gc.collect()
 
     assert not Instrument.exist("logging")
