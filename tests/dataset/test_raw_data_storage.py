@@ -405,6 +405,12 @@ class TestDataSetWithSplitRawData:
         # Counting must not raise even though the table does not exist.
         assert ds.number_of_results == 0
         assert len(ds) == 0
+
+        # Neither must reading data, which is empty.
+        data = ds.get_parameter_data()
+        assert list(data) == ["y"]
+        assert list(data["y"]) == ["y", "x"]
+        assert all(values.shape == (0,) for values in data["y"].values())
         self._close_ds(ds)
 
     def test_subscribe_before_start_defers_and_fires(self) -> None:

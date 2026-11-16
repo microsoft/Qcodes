@@ -21,10 +21,8 @@ from pytest import LogCaptureFixture
 import qcodes as qc
 import qcodes.validators as vals
 from qcodes.dataset.data_set import DataSet, load_by_id
-from qcodes.dataset.descriptions.dependencies import (
-    FrozenInterDependencies_,
-    InterDependencies_,
-)
+from qcodes.dataset.data_set_protocol import DataSetType
+from qcodes.dataset.descriptions.dependencies import FrozenInterDependencies_
 from qcodes.dataset.experiment_container import Experiment, new_experiment
 from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.measurements import Measurement
@@ -44,6 +42,7 @@ if TYPE_CHECKING:
     from pytest import TempPathFactory
     from pytest_mock import MockerFixture
 
+    from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
     from qcodes.instrument_drivers.mock_instruments import (
         DummyChannelInstrument,
         DummyInstrument,
@@ -457,6 +456,50 @@ def test_setting_write_in_background_from_config(write_in_background: bool) -> N
 
 
 @pytest.mark.usefixtures("experiment")
+@pytest.mark.parametrize(
+    "dataset_class", [DataSetType.DataSet, DataSetType.DataSetInMem]
+)
+def test_run_without_registered_parameters_raises(
+    dataset_class: DataSetType,
+) -> None:
+    meas = Measurement()
+    with (
+        pytest.raises(RuntimeError, match="No parameters supplied"),
+        meas.run(dataset_class=dataset_class),
+    ):
+        pass
+
+
+@pytest.mark.usefixtures("experiment")
+@pytest.mark.parametrize(
+    "dataset_class", [DataSetType.DataSet, DataSetType.DataSetInMem]
+)
+def test_changing_shapes_after_run_does_not_change_dataset(
+    dataset_class: DataSetType,
+) -> None:
+    x = ManualParameter("x")
+    y = ManualParameter("y")
+    meas = Measurement()
+    meas.register_parameter(x)
+    meas.register_parameter(y, setpoints=(x,))
+    shapes: Shapes = {"y": (2, 2)}
+    meas.set_shapes(shapes)
+
+    with meas.run(dataset_class=dataset_class) as datasaver:
+        for i in range(4):
+            datasaver.add_result((x, i), (y, i))
+
+    # Reusing the shapes mapping, e.g. for a subsequent measurement, must not
+    # change the description or the data of the dataset that has been recorded.
+    shapes["y"] = (4,)
+
+    ds = datasaver.dataset
+    assert ds.description.shapes == {"y": (2, 2)}
+    assert ds.get_parameter_data()["y"]["y"].shape == (2, 2)
+    assert ds.cache.data()["y"]["y"].shape == (2, 2)
+
+
+@pytest.mark.usefixtures("experiment")
 def test_method_chaining(DAC: DummyInstrument) -> None:
     (
         Measurement()
@@ -779,13 +822,12 @@ def test_datasaver_scalars(
 
     ds = datasaver.dataset
     assert isinstance(ds, DataSet)
-    assert isinstance(ds.description.interdeps, InterDependencies_)
-    assert not isinstance(ds.description.interdeps, FrozenInterDependencies_)
+    assert isinstance(ds.description.interdeps, FrozenInterDependencies_)
 
     loaded_ds = load_by_id(ds.run_id)
 
-    assert isinstance(loaded_ds.description.interdeps, InterDependencies_)
-    assert not isinstance(loaded_ds.description.interdeps, FrozenInterDependencies_)
+    assert isinstance(loaded_ds.description.interdeps, FrozenInterDependencies_)
+    assert loaded_ds.description == ds.description
 
     # More assertions of setpoints, labels and units in the DB!
 
