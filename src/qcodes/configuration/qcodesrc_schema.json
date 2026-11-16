@@ -306,8 +306,8 @@
                 "snapshot_compression": {
                     "type": "string",
                     "enum": ["none", "zstd"],
-                    "default": "zstd",
-                    "description": "Snapshot write policy: lossless Zstandard level 1 BLOBs or legacy uncompressed JSON TEXT. Reads support both independently of this setting."
+                    "default": "none",
+                    "description": "Snapshot write policy: uncompressed JSON TEXT or lossless Zstandard level 1 BLOBs. Reads support both independently of this setting. QCoDeS versions without compressed snapshot support cannot read runs written with 'zstd'."
                 },
                 "write_in_background": {
                     "type": "boolean",

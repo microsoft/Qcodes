@@ -19,7 +19,7 @@ from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.connection import atomic
 from qcodes.dataset.sqlite.database import connect
-from qcodes.dataset.sqlite.db_upgrades.version import get_user_version, set_user_version
+from qcodes.dataset.sqlite.db_upgrades.version import get_user_version
 from qcodes.dataset.sqlite.queries import (
     add_data_to_dynamic_columns,
     create_run,
@@ -98,6 +98,7 @@ def test_write_read_and_reopen(dataset: DataSet, compression: str) -> None:
 def test_overwrite_null_and_history(
     dataset: DataSet, caplog: pytest.LogCaptureFixture
 ) -> None:
+    qc.config.dataset.snapshot_compression = "zstd"
     dataset.add_snapshot("null")
     assert dataset.snapshot is None
     assert dataset.snapshot_raw == "null"
@@ -200,36 +201,29 @@ def test_create_run(experiment: Experiment, raw: str | None) -> None:
     assert dataset.snapshot_raw == raw
 
 
-def test_legacy_upgrade_and_mixed_storage(dataset: DataSet) -> None:
+def test_default_writes_uncompressed_text(dataset: DataSet) -> None:
+    raw = '{"default": true}'
+    dataset.add_snapshot(raw)
+    assert stored_snapshot(dataset) == raw
+
+
+def test_mixed_storage_without_schema_change(dataset: DataSet) -> None:
     assert dataset.path_to_db is not None
     raw = '{"legacy": true}'
-    qc.config.dataset.snapshot_compression = "none"
     dataset.add_snapshot(raw)
-    set_user_version(dataset.conn, 9)
+    qc.config.dataset.snapshot_compression = "zstd"
+    compressed = new_data_set("compressed", conn=dataset.conn)
+    compressed.add_snapshot('{"compressed": true}')
+    assert isinstance(stored_snapshot(compressed), bytes)
+    assert stored_snapshot(dataset) == raw
+    assert get_user_version(dataset.conn) == 9
+    qc.config.dataset.snapshot_compression = "none"
     with closing(connect(dataset.path_to_db)) as conn:
-        assert get_user_version(conn) == 10
-        legacy = DataSet(run_id=dataset.run_id, conn=conn)
-        assert stored_snapshot(legacy) == raw
-        assert legacy.snapshot == {"legacy": True}
-        qc.config.dataset.snapshot_compression = "zstd"
-        compressed = new_data_set("compressed", conn=conn)
-        compressed.add_snapshot('{"compressed": true}')
-        assert isinstance(stored_snapshot(compressed), bytes)
-        assert stored_snapshot(legacy) == raw
-        assert compressed.snapshot == {"compressed": True}
-    with closing(connect(dataset.path_to_db)) as conn:
+        assert get_user_version(conn) == 9
         assert DataSet(run_id=dataset.run_id, conn=conn).snapshot_raw == raw
         assert DataSet(run_id=compressed.run_id, conn=conn).snapshot == {
             "compressed": True
         }
-
-
-def test_compressed_writes_require_version_10(dataset: DataSet) -> None:
-    set_user_version(dataset.conn, 9)
-    with pytest.raises(RuntimeError, match="Rolling back") as exc:
-        dataset.add_snapshot("{}")
-    assert "schema version 10" in str(exc.value.__cause__)
-    assert stored_snapshot(dataset) is None
 
 
 class CustomEncoded:
@@ -238,6 +232,7 @@ class CustomEncoded:
 
 
 def test_prepare_preserves_encoder_types(dataset: DataSet) -> None:
+    qc.config.dataset.snapshot_compression = "zstd"
     snapshot = {
         "array": np.array([1.0, 2.0]),
         "int": np.int64(2),
@@ -296,6 +291,7 @@ def test_netcdf_export_import_and_metadata_db(
     scalar_dataset: DataSet, tmp_path: Path
 ) -> None:
     raw = ' {"full": {"values": [1, 2, 3]}}\n'
+    qc.config.dataset.snapshot_compression = "zstd"
     scalar_dataset.add_snapshot(raw)
     assert scalar_dataset.to_xarray_dataset().attrs["snapshot"] == raw
     scalar_dataset.export("netcdf", path=tmp_path)
@@ -323,6 +319,7 @@ def test_netcdf_export_import_and_metadata_db(
 
 def test_metadata_snapshot_write(dataset: DataSet) -> None:
     raw = '{"legacy_import": true}'
+    qc.config.dataset.snapshot_compression = "zstd"
     with atomic(dataset.conn):
         add_data_to_dynamic_columns(dataset.conn, dataset.run_id, {"snapshot": raw})
     assert isinstance(stored_snapshot(dataset), bytes)
@@ -332,6 +329,7 @@ def test_metadata_snapshot_write(dataset: DataSet) -> None:
 def test_in_memory_snapshot_overwrites(
     experiment: Experiment, caplog: pytest.LogCaptureFixture
 ) -> None:
+    qc.config.dataset.snapshot_compression = "zstd"
     dataset = DataSetInMem._create_new_run(name="in-memory")
     assert dataset.snapshot is None
     assert dataset._snapshot_raw is None
@@ -365,6 +363,7 @@ def test_measurement_writers_and_backends(
     experiment: Experiment, background: bool, backend: str
 ) -> None:
     qc.config.dataset.raw_data_backend = backend
+    qc.config.dataset.snapshot_compression = "zstd"
     measurement = Measurement(exp=experiment)
     measurement.register_custom_parameter("p")
     with measurement.run(write_in_background=background) as saver:

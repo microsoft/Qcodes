@@ -34,7 +34,6 @@ from qcodes.dataset.sqlite.connection import (
     atomic_transaction,
     transaction,
 )
-from qcodes.dataset.sqlite.db_upgrades.version import get_user_version
 from qcodes.dataset.sqlite.query_helpers import (
     VALUE,
     VALUES,
@@ -1969,12 +1968,10 @@ def update_columns(
         snapshot = data["snapshot"]
         if not isinstance(snapshot, str):
             raise TypeError("Snapshot must be a raw JSON string")
-        compression = config.dataset.snapshot_compression
-        if compression == "zstd" and get_user_version(conn) < 10:
-            raise RuntimeError(
-                "Compressed snapshots require database schema version 10"
-            )
-        data = {**data, "snapshot": encode_snapshot(snapshot, compression)}
+        data = {
+            **data,
+            "snapshot": encode_snapshot(snapshot, config.dataset.snapshot_compression),
+        }
     update_where(conn, table_name, "rowid", row_id, **data)
 
 
