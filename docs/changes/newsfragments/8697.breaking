@@ -1,0 +1,11 @@
+The ``current``, ``current_range`` and ``current_limit`` parameters of the ``YokogawaGS200``,
+and its ``measure`` parameter in voltage source mode, now use the unit ``A`` instead of ``I``.
+The ``ramp_rate`` and ``ramp_step`` parameters now start with the units ``A/s`` and ``A``
+instead of ``V/s`` and ``V`` if the instrument is in current source mode when connecting, as
+they already did after changing the source mode.
+
+``YokogawaGS200Monitor.delay`` (``measure.delay``) is now in seconds, the unit the instrument
+uses, instead of ms. The value was already sent to the instrument unconverted, so
+``delay(500)`` set a delay of 500 s despite the ``ms`` unit. The parameter now accepts values
+from 0 to 999.999 s in steps of 1 ms, e.g. ``delay(0.5)`` for 500 ms, and returns the delay
+as a ``float`` in seconds instead of an ``int`` rounded to whole seconds.

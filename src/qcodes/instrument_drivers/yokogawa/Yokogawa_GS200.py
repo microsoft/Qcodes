@@ -219,17 +219,20 @@ class YokogawaGS200Monitor(InstrumentChannel["YokogawaGS200"]):
                 get_parser=_float_round,
             )
             """Parameter NPLC"""
-            self.delay: Parameter[int, Self] = self.add_parameter(
+            # The instrument takes and returns the delay in seconds with a
+            # resolution of 1 ms, from 0 to 999999 ms (GS200 User's Manual
+            # IM GS210-01EN, p. 13-15).
+            self.delay: Parameter[float, Self] = self.add_parameter(
                 "delay",
                 label="Measurement Delay",
-                unit="ms",
-                vals=Ints(0, 999999),
+                unit="s",
+                vals=MultiTypeAnd(Numbers(0, 999.999), PermissiveMultiples(1e-3)),
                 set_cmd=":SENS:DEL {}",
-                set_parser=int,
+                set_parser=float,
                 get_cmd=":SENS:DEL?",
-                get_parser=_float_round,
+                get_parser=float,
             )
-            """Parameter delay"""
+            """Measurement delay in s, with a resolution of 1 ms"""
             self.trigger: Parameter[str, Self] = self.add_parameter(
                 "trigger",
                 label="Trigger Source",
@@ -309,7 +312,7 @@ class YokogawaGS200Monitor(InstrumentChannel["YokogawaGS200"]):
         self._unit = unit
         if self._unit == "VOLT":
             self.measure.label = "Source Current"
-            self.measure.unit = "I"
+            self.measure.unit = "A"
         else:
             self.measure.label = "Source Voltage"
             self.measure.unit = "V"
@@ -371,7 +374,7 @@ class YokogawaGS200Program(InstrumentChannel["YokogawaGS200"]):
             )
             """Parameter trigger"""
 
-        self.save: Parameter = self.add_parameter(
+        self.save: Parameter[str, Self] = self.add_parameter(
             "save",
             set_cmd=":PROG:SAVE '{}'",
             docstring="save the program to the system memory (.csv file)",
@@ -394,15 +397,29 @@ class YokogawaGS200Program(InstrumentChannel["YokogawaGS200"]):
             val_mapping={"OFF": 0, "ON": 1},
         )
         """Parameter repeat"""
-        self.count: Parameter = self.add_parameter(
+        self.count: Parameter[int | Literal["MIN", "MAX"], Self] = self.add_parameter(
             "count",
             label="step of the current program",
             get_cmd=":PROG:COUN?",
             set_cmd=":PROG:COUN {}",
             get_parser=int,
             vals=MultiTypeOr(Ints(1, 10000), Enum("MIN", "MAX")),
+            docstring=(
+                "The step at which the program begins execution. Besides an "
+                "integer, this can be set to 'MIN' (step 1) or 'MAX' "
+                "(step 10000). Getting the parameter always returns an integer, "
+                "but until it is read again, the cached value is the string that "
+                "was set. The value is therefore annotated as "
+                "``int | Literal['MIN', 'MAX']``."
+            ),
         )
-        """Parameter count"""
+        """
+        The step at which the program begins execution. Besides an integer, this
+        can be set to "MIN" (step 1) or "MAX" (step 10000). Getting the parameter
+        always returns an integer, but until it is read again, the cached value
+        is the string that was set. The value is therefore annotated as
+        ``int | Literal["MIN", "MAX"]``.
+        """
 
         self.add_function(
             "start", call_cmd=":PROG:EDIT:STAR", docstring="start program editing"
@@ -478,7 +495,7 @@ class YokogawaGS200(VisaInstrument):
         # instrument (in a previous session or via the frontpanel).
         self.source_mode()
 
-        self.voltage_range: Parameter = self.add_parameter(
+        self.voltage_range: Parameter[float, Self] = self.add_parameter(
             "voltage_range",
             label="Voltage Source Range",
             unit="V",
@@ -489,10 +506,10 @@ class YokogawaGS200(VisaInstrument):
         )
         """Parameter voltage_range"""
 
-        self.current_range: Parameter = self.add_parameter(
+        self.current_range: Parameter[float, Self] = self.add_parameter(
             "current_range",
             label="Current Source Range",
-            unit="I",
+            unit="A",
             get_cmd=partial(self._get_range, "CURR"),
             set_cmd=partial(self._set_range, "CURR"),
             vals=Enum(1e-3, 10e-3, 100e-3, 200e-3),
@@ -500,7 +517,7 @@ class YokogawaGS200(VisaInstrument):
         )
         """Parameter current_range"""
 
-        self.range: DelegateParameter = self.add_parameter(
+        self.range: DelegateParameter[float] = self.add_parameter(
             "range", parameter_class=DelegateParameter, source=None
         )
         """Parameter range"""
@@ -518,27 +535,27 @@ class YokogawaGS200(VisaInstrument):
         )
         """Parameter auto_range"""
 
-        self.voltage: Parameter = self.add_parameter(
+        self.voltage: Parameter[float, Self] = self.add_parameter(
             "voltage",
             label="Voltage",
             unit="V",
-            set_cmd=partial(self._get_set_output, "VOLT"),
-            get_cmd=partial(self._get_set_output, "VOLT"),
+            set_cmd=partial(self._set_output_level, "VOLT"),
+            get_cmd=partial(self._get_output_level, "VOLT"),
             snapshot_exclude=self.source_mode() == "CURR",
         )
         """Parameter voltage"""
 
-        self.current: Parameter = self.add_parameter(
+        self.current: Parameter[float, Self] = self.add_parameter(
             "current",
             label="Current",
-            unit="I",
-            set_cmd=partial(self._get_set_output, "CURR"),
-            get_cmd=partial(self._get_set_output, "CURR"),
+            unit="A",
+            set_cmd=partial(self._set_output_level, "CURR"),
+            get_cmd=partial(self._get_output_level, "CURR"),
             snapshot_exclude=self.source_mode() == "VOLT",
         )
         """Parameter current"""
 
-        self.output_level: DelegateParameter = self.add_parameter(
+        self.output_level: DelegateParameter[float] = self.add_parameter(
             "output_level", parameter_class=DelegateParameter, source=None
         )
         """Parameter output_level"""
@@ -575,7 +592,7 @@ class YokogawaGS200(VisaInstrument):
         self.current_limit: Parameter[float, Self] = self.add_parameter(
             "current_limit",
             label="Current Protection Limit",
-            unit="I",
+            unit="A",
             vals=Numbers(1e-3, 200e-3),
             get_cmd=":SOUR:PROT:CURR?",
             set_cmd=":SOUR:PROT:CURR {:.3f}",
@@ -660,7 +677,7 @@ class YokogawaGS200(VisaInstrument):
         )
         """returns the oldest unread error message from the event log and removes it from the log."""
 
-        self.status_byte: Parameter = self.add_parameter(
+        self.status_byte: Parameter[StatusByte, Self] = self.add_parameter(
             "status_byte",
             get_cmd="*STB?",
             get_parser=lambda x: StatusByte(int(x)),
@@ -668,27 +685,33 @@ class YokogawaGS200(VisaInstrument):
         )
         """Query the instrument status byte."""
 
-        self.standard_event_register: Parameter = self.add_parameter(
-            "standard_event_register",
-            get_cmd="*ESR?",
-            get_parser=lambda x: StandardEventRegister(int(x)),
-            label="Standard Event Register",
+        self.standard_event_register: Parameter[StandardEventRegister, Self] = (
+            self.add_parameter(
+                "standard_event_register",
+                get_cmd="*ESR?",
+                get_parser=lambda x: StandardEventRegister(int(x)),
+                label="Standard Event Register",
+            )
         )
         """Query the instrument standard event register."""
 
-        self.extended_event_register: Parameter = self.add_parameter(
-            "extended_event_register",
-            get_cmd=":STAT:EVEN?",
-            get_parser=lambda x: ExtendedEventRegister(int(x)),
-            label="Extended Event Register",
+        self.extended_event_register: Parameter[ExtendedEventRegister, Self] = (
+            self.add_parameter(
+                "extended_event_register",
+                get_cmd=":STAT:EVEN?",
+                get_parser=lambda x: ExtendedEventRegister(int(x)),
+                label="Extended Event Register",
+            )
         )
         """Query the instrument extended event register."""
 
-        self.condition_register: Parameter = self.add_parameter(
-            "condition_register",
-            get_cmd=":STAT:COND?",
-            get_parser=lambda x: ConditionRegister(int(x)),
-            label="Condition Register",
+        self.condition_register: Parameter[ConditionRegister, Self] = (
+            self.add_parameter(
+                "condition_register",
+                get_cmd=":STAT:COND?",
+                get_parser=lambda x: ConditionRegister(int(x)),
+                label="Condition Register",
+            )
         )
         """Query the instrument condition register."""
 
@@ -724,7 +747,7 @@ class YokogawaGS200(VisaInstrument):
             "ramp_rate",
             ManualParameter,
             label="Ramp Rate",
-            unit="V/s",
+            unit="V/s" if self.source_mode() == "VOLT" else "A/s",
             vals=Numbers(1e-3 / 3600, float("inf")),
             initial_value=10e-3 if self.source_mode() == "VOLT" else 100e-6,
         )
@@ -734,11 +757,17 @@ class YokogawaGS200(VisaInstrument):
             "ramp_step",
             ManualParameter,
             label="Ramp step",
-            unit="V",
+            unit="V" if self.source_mode() == "VOLT" else "A",
             vals=Numbers(0, float("inf")),
             initial_value=0,
         )
         """The ramp step when :attr:`ramp_mode` is set to ``"SOFTWARE"``.
+
+        As for :attr:`Parameter.step`, a step of 0 (the default) means that
+        no steps are taken: setting the output in ``"SOFTWARE"`` mode then
+        jumps to the new value. :meth:`ramp_voltage` and :meth:`ramp_current`
+        with ``ramp_mode="SOFTWARE"`` require a positive step and raise a
+        ``ValueError`` otherwise.
 
         When :attr:`ramp_mode` is ``"HARDWARE"``, defines the output delta
         above which a ramp is used. If the delta is below this value,
@@ -788,6 +817,18 @@ class YokogawaGS200(VisaInstrument):
         else:
             return self.ramp_step()
 
+    @staticmethod
+    def _check_software_ramp_step(
+        step: float, ramp_mode: Literal["HARDWARE", "SOFTWARE"]
+    ) -> None:
+        # A step of 0 disables stepping, which would turn an explicitly
+        # requested software ramp into a jump.
+        if ramp_mode == "SOFTWARE" and step <= 0:
+            raise ValueError(
+                "A software ramp requires a positive ramp step. Set ramp_step "
+                "to a positive value."
+            )
+
     def ramp_voltage(
         self,
         ramp_to: float,
@@ -804,16 +845,19 @@ class YokogawaGS200(VisaInstrument):
             delay: The time between finishing one step and
                 starting another in seconds. Deprecated.
             ramp_mode: Use hardware or software ramps. See :attr:`ramp_mode`.
+                A software ramp requires a positive :attr:`ramp_step`.
 
         """
         step = self._parse_step(step)
         rate = self._parse_delay(delay, step)
 
         self._assert_mode("VOLT")
+        self._check_software_ramp_step(step, ramp_mode)
         with (
             self.ramp_step.set_to(step),
             self.ramp_rate.set_to(rate),
-            self.ramp_mode.set_to(ramp_mode),
+            # A software ramp temporarily switches ramp_mode to "JUMP".
+            self.ramp_mode.set_to(ramp_mode, allow_changes=True),
             self.ramp_blocking.set_to(True),
         ):
             self._ramp_source(ramp_to)
@@ -830,20 +874,23 @@ class YokogawaGS200(VisaInstrument):
 
         Args:
             ramp_to: The ramp target in Ampere
-            step: The ramp steps in Volt. Deprecated.
+            step: The ramp steps in Ampere. Deprecated.
             delay: The time between finishing one step and
                 starting another in seconds. Deprecated.
             ramp_mode: Use hardware or software ramps. See :attr:`ramp_mode`.
+                A software ramp requires a positive :attr:`ramp_step`.
 
         """
         step = self._parse_step(step)
         rate = self._parse_delay(delay, step)
 
         self._assert_mode("CURR")
+        self._check_software_ramp_step(step, ramp_mode)
         with (
             self.ramp_step.set_to(step),
             self.ramp_rate.set_to(rate),
-            self.ramp_mode.set_to(ramp_mode),
+            # A software ramp temporarily switches ramp_mode to "JUMP".
+            self.ramp_mode.set_to(ramp_mode, allow_changes=True),
             self.ramp_blocking.set_to(True),
         ):
             self._ramp_source(ramp_to)
@@ -920,6 +967,9 @@ class YokogawaGS200(VisaInstrument):
                     # Sleep between 2 and 100 ms before checking again.
                     time.sleep(max(min(slope_time / 10, 100e-3), 2e-3))
             case "SOFTWARE":
+                # Check the target before changing the output, so that an
+                # out-of-range target does not leave the output partway.
+                self._validate_output_level(ramp_to)
                 saved_step = self.output_level.step
                 saved_inter_delay = self.output_level.inter_delay
 
@@ -936,27 +986,54 @@ class YokogawaGS200(VisaInstrument):
             case _:
                 raise ValueError(f"Unknown ramp mode: {self.ramp_mode()}")
 
-    def _get_set_output(
-        self, mode: ModeType, output_level: float | None = None
-    ) -> float | None:
+    def _get_output_level(self, mode: ModeType) -> float:
         """
-        Get or set the output level.
+        Get the output level.
 
         Args:
-            mode: "CURR" or "VOLT"
-            output_level: If missing, we assume that we are getting the
-                current level. Else we are setting it
+            mode: "CURR" or "VOLT". Raises a ValueError if the instrument
+                is in the other source mode.
 
         """
         self._assert_mode(mode)
-        if output_level is not None:
-            self._ramp_source(output_level)
-            return None
         return float(self.ask(":SOUR:LEV?"))
+
+    def _set_output_level(self, mode: ModeType, output_level: float) -> None:
+        """
+        Set the output level according to :attr:`ramp_mode`.
+
+        Args:
+            mode: "CURR" or "VOLT". Raises a ValueError if the instrument
+                is in the other source mode.
+            output_level: The output level in Volt or Ampere.
+
+        """
+        self._assert_mode(mode)
+        self._ramp_source(output_level)
 
     def _set_output(self, output_level: float) -> None:
         """
         Set the output of the instrument.
+
+        Args:
+            output_level: output level in Volt or Ampere, depending
+                on the current mode.
+
+        """
+        self._validate_output_level(output_level)
+
+        if self.auto_range():
+            auto_str = ":AUTO"
+        else:
+            auto_str = ""
+        cmd_str = f":SOUR:LEV{auto_str} {output_level:.5e}"
+        self.write(cmd_str)
+
+    def _validate_output_level(self, output_level: float) -> None:
+        """
+        Raise a ValueError if the output level is outside of the generated
+        output range of the present source range, or of the largest range if
+        auto range is enabled.
 
         Args:
             output_level: output level in Volt or Ampere, depending
@@ -1004,13 +1081,6 @@ class YokogawaGS200(VisaInstrument):
                     "Desired output level not in range"
                     f" [-{self_range:.3}, {self_range:.3}]"
                 )
-
-        if auto_enabled:
-            auto_str = ":AUTO"
-        else:
-            auto_str = ""
-        cmd_str = f":SOUR:LEV{auto_str} {output_level:.5e}"
-        self.write(cmd_str)
 
     def _get_output_limit(self, source_range: float) -> float:
         """Return the generated output limit for a nominal source range.
