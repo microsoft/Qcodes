@@ -10,7 +10,7 @@ import pytest
 import uncertainties  # type: ignore[import-untyped]
 
 import qcodes as qc
-from qcodes.dataset import load_by_id, new_data_set
+from qcodes.dataset import load_by_id, new_data_set, new_experiment
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.data_set_in_memory import DataSetInMem, load_from_netcdf
 from qcodes.dataset.database_extract_runs import extract_runs_into_db
@@ -199,6 +199,25 @@ def test_create_run(experiment: Experiment, raw: str | None) -> None:
     )
     dataset = DataSet(run_id=run_id, conn=experiment.conn)
     assert dataset.snapshot_raw == raw
+
+
+@pytest.mark.parametrize("compression", ["none", "zstd"])
+@pytest.mark.usefixtures("empty_temp_db")
+def test_snapshot_read_by_run_id_with_shared_table_name(compression: str) -> None:
+    qc.config.dataset.raw_data_backend = "sqlite_per_dataset_db"
+    qc.config.dataset.snapshot_compression = compression
+    new_experiment("shared", "sample", format_string="results")
+    first = new_data_set("first")
+    second = new_data_set("second")
+    assert first.table_name == second.table_name
+    first.add_snapshot('{"run": 1}')
+    second.add_snapshot('{"run": 2}')
+    assert first.snapshot == {"run": 1}
+    assert second.snapshot == {"run": 2}
+    assert first.path_to_db is not None
+    with closing(connect(first.path_to_db, read_only=True)) as conn:
+        loaded = load_by_id(second.run_id, conn=conn)
+        assert loaded.snapshot == {"run": 2}
 
 
 def test_default_writes_uncompressed_text(dataset: DataSet) -> None:
