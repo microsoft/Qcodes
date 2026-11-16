@@ -28,6 +28,7 @@ from qcodes.dataset.sqlite.database import (
     conn_from_dbpath_or_conn,
 )
 from qcodes.dataset.sqlite.query_helpers import is_column_in_table
+from qcodes.dataset.sqlite.snapshot_storage import decode_snapshot
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -283,6 +284,8 @@ def get_db_overview(
                 extra = {
                     col: row[n_fixed + i] for i, col in enumerate(valid_extra_columns)
                 }
+                if "snapshot" in extra:
+                    extra["snapshot"] = decode_snapshot(extra["snapshot"])
                 # The keys of ``extra`` are only known at runtime (they are the
                 # user-supplied ``extra_columns``), so they cannot be part of
                 # the closed ``RunOverviewDict`` definition.
