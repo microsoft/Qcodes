@@ -79,7 +79,6 @@ jobs:
           PYRIGHT_VERSION=$(jq -r '.devDependencies.pyright' < package.json)
           echo $PYRIGHT_VERSION
           echo "version=$PYRIGHT_VERSION" >> $GITHUB_OUTPUT
-        working-directory: .github
         shell: bash
 
       - name: install pyright
