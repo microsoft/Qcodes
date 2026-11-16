@@ -35,7 +35,7 @@ updates:
 
 
 - package-ecosystem: npm
-  directory: /.github
+  directory: "/"
   schedule:
     interval: daily
   cooldown:
