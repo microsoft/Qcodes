@@ -35,8 +35,13 @@ class InstrumentProtocol(Protocol):
 class _InstrumentState(Enum):
     """The stages of the lifecycle of an :class:`Instrument`."""
 
+    CREATED = auto()
+    """
+    The instrument has been created, but ``Instrument.__init__`` has not
+    completed, so it has no name, parameters or logger yet.
+    """
     OPEN = auto()
-    """The instrument is being initialized or has been initialized."""
+    """``Instrument.__init__`` has completed and the instrument is not closed."""
     CLOSED = auto()
     """
     The instrument has been closed and its attributes stripped, or its
@@ -82,12 +87,13 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
     _type: type[Instrument] | None = None
     _instances: ClassVar[weakref.WeakSet[Instrument]] = weakref.WeakSet()
     # Name mangled so that it cannot clash with attributes of subclasses.
-    __state: _InstrumentState = _InstrumentState.OPEN
+    __state: _InstrumentState = _InstrumentState.CREATED
 
     def __init__(self, name: str, **kwargs: Unpack[InstrumentBaseKWArgs]) -> None:
         self._t0 = time.time()
 
         super().__init__(name=name, **kwargs)
+        self.__state = _InstrumentState.OPEN
 
         self.IDN = self.add_parameter("IDN", get_cmd=self.get_idn, vals=Anything())
         """
@@ -261,9 +267,17 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         sees why the initialization failed. Closing is not retried when the
         instrument is garbage collected, since it would most likely fail in the
         same way.
+
+        An instrument whose initialization failed before
+        ``Instrument.__init__`` completed, e.g. because a driver validates its
+        arguments before calling it, is not closed: it has no name, parameters
+        or logger, which close methods rely on, so closing it would only fail
+        too.
         """
-        if self.__state is _InstrumentState.CLOSED:
-            # e.g. closed by the subclass itself before raising
+        if self.__state is not _InstrumentState.OPEN:
+            # Either closed by the subclass itself before raising, or
+            # Instrument.__init__ has not completed.
+            self.__state = _InstrumentState.CLOSED
             return
         try:
             self.close()

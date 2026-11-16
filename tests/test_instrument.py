@@ -12,7 +12,7 @@ import re
 import socket
 import sys
 import weakref
-from typing import TYPE_CHECKING, Any, assert_type
+from typing import TYPE_CHECKING, Any, assert_type, cast
 from weakref import WeakValueDictionary
 
 import pytest
@@ -40,6 +40,7 @@ from qcodes.parameters import Function, Parameter
 from qcodes.utils import strip_attrs
 
 if TYPE_CHECKING:
+    from abc import ABCMeta
     from collections.abc import Iterator, Sequence
 
     from qcodes.metadatable.metadatable_base import Snapshot, SnapshotUpdate
@@ -89,18 +90,6 @@ def _close_before_and_after() -> Iterator[None]:
         yield
     finally:
         Instrument.close_all()
-
-
-@pytest.fixture(name="automatic_gc_disabled", scope="function")
-def _automatic_gc_disabled() -> Iterator[None]:
-    """Disable automatic garbage collection so that only the test triggers it."""
-    was_enabled = gc.isenabled()
-    gc.disable()
-    try:
-        yield
-    finally:
-        if was_enabled:
-            gc.enable()
 
 
 def test_instrument_type(request: pytest.FixtureRequest) -> None:
@@ -854,6 +843,67 @@ def test_instrument_whose_new_returns_another_object_returns_it() -> None:
             return other
 
     assert OtherInstrument("other") is other
+
+
+def test_instrument_whose_new_returns_virtual_subclass_returns_it() -> None:
+    """
+    Like for other classes, an object of a virtual subclass, i.e. one that is
+    registered with the ABCMeta rather than inheriting from the class, that
+    ``__new__`` returns is returned as is, without initializing it again.
+    """
+
+    class Foreign:
+        def __init__(self, *args: Any) -> None:
+            self.init_args = args
+
+    foreign = Foreign("original")
+
+    class ForeignInstrument(Instrument):
+        def __new__(cls, *args: Any, **kwargs: Any) -> Any:
+            return foreign
+
+    # Instrument's metaclass is an ABCMeta, which type checkers do not see
+    cast("ABCMeta", ForeignInstrument).register(Foreign)
+
+    assert ForeignInstrument("foreign") is foreign
+    assert foreign.init_args == ("original",)
+    assert not Instrument.exist("foreign")
+
+
+@pytest.mark.usefixtures("close_before_and_after", "automatic_gc_disabled")
+def test_instrument_that_fails_before_instrument_init_is_not_closed() -> None:
+    """
+    An instrument that fails before ``Instrument.__init__`` has completed,
+    e.g. because it validates its arguments first, is not closed, neither right
+    away nor when garbage collected, since it has no name, parameters or
+    logger that close methods rely on. Closing it could therefore only fail
+    and add a misleading note to the error.
+    """
+    closed: list[str] = []
+    created: list[weakref.ref[Instrument]] = []
+
+    class ValidatesFirst(Instrument):
+        def __init__(self, name: str, address: str) -> None:
+            created.append(weakref.ref(self))
+            if "::" not in address:
+                raise ValueError(f"Malformed address {address!r}")
+            super().__init__(name)
+
+        def close(self) -> None:
+            closed.append(self.name)
+            super().close()
+
+    with pytest.raises(ValueError, match="Malformed address") as exc_info:
+        ValidatesFirst("validates_first", "not-an-address")
+
+    assert getattr(exc_info.value, "__notes__", None) is None
+    # the traceback of the error refers to the instrument
+    del exc_info
+    gc.collect()
+
+    (instrument,) = created
+    assert instrument() is None
+    assert closed == []
 
 
 @pytest.mark.usefixtures("close_before_and_after")

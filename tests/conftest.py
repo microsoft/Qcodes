@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import gc
 import os
 import sys
 import threading
@@ -125,6 +126,18 @@ def reset_state_on_exit() -> Generator[None, None, None]:
                 thread.stop()
         Instrument.close_all()
         Station.default = None
+
+
+@pytest.fixture(scope="function", name="automatic_gc_disabled")
+def _automatic_gc_disabled() -> Generator[None, None, None]:
+    """Disable automatic garbage collection so that only the test triggers it."""
+    was_enabled = gc.isenabled()
+    gc.disable()
+    try:
+        yield
+    finally:
+        if was_enabled:
+            gc.enable()
 
 
 @pytest.fixture(scope="function", autouse=True)

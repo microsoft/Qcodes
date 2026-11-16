@@ -40,7 +40,10 @@ class InstrumentMeta(ABCMeta):
         # checkers would resolve it to the __new__ of this metaclass.
         instrument_class: Any = cls
         new_inst = instrument_class.__new__(cls, *args, **kwargs)
-        if not issubclass(type(new_inst), cls):
+        # Like type.__call__, only initialize actual instances of cls, which
+        # unlike issubclass excludes virtual subclasses registered with the
+        # ABCMeta.
+        if cls not in type(new_inst).__mro__:
             return new_inst
         try:
             result = type(new_inst).__init__(new_inst, *args, **kwargs)
