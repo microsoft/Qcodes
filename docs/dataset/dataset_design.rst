@@ -87,8 +87,9 @@ SQL NULL continues to mean no snapshot. The write policy is controlled by::
 
     qcodes.config.dataset.snapshot_compression = "zstd"
 
-The default, ``"none"``, writes uncompressed JSON TEXT as previous QCoDeS
-versions do. ``"zstd"`` writes lossless Zstandard level 1 BLOBs. The policy
+The default, ``"none"``, writes uncompressed JSON TEXT, which all QCoDeS
+versions can read. ``"zstd"`` writes lossless Zstandard level 1 BLOBs, which
+can only be read by QCoDeS 0.64.0 and later. The policy
 applies to each new write, including overwrites, database copies and imported
 metadata; it never rewrites existing snapshots, so one database may contain
 both representations. No database schema change or upgrade is involved;
@@ -113,16 +114,16 @@ background result writers do not change the snapshot format or startup order.
 CPython 3.14 and newer use ``compression.zstd``; earlier supported Python
 versions use the declared ``backports.zstd`` runtime dependency.
 
-Compressed snapshots are opt-in because QCoDeS versions without this support
-cannot decode them. Such versions still open the database, and runs with
-uncompressed snapshots are unaffected. For runs written with ``"zstd"``, older
-versions can still read the measured data and other metadata, but accessing
+Compressed snapshots are opt-in because QCoDeS versions before 0.64.0 cannot
+decode them. Those versions still open the database, and runs with
+uncompressed snapshots are unaffected. For runs written with ``"zstd"``, they
+can still read the measured data and other metadata, but accessing
 the snapshot, exporting to xarray or NetCDF and extracting the run into another
 database fail; ``get_metadata("snapshot")`` returns the raw bytes; and runs
 without a results table, such as those written by ``DataSetInMem``, cannot be
 loaded at all. Direct SQL consumers must handle BLOBs explicitly rather than
-passing them to SQLite JSON functions. Exporting to NetCDF with a compatible
-QCoDeS version retains the snapshot as JSON for interchange with older software.
+passing them to SQLite JSON functions. Exporting to NetCDF with QCoDeS 0.64.0 or
+later retains the snapshot as JSON for interchange with earlier versions.
 
 .. _sec:design_split_storage:
 
