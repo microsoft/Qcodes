@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import time
 import weakref
+from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, overload
 
 from qcodes.utils import strip_attrs
@@ -29,6 +30,29 @@ class InstrumentProtocol(Protocol):
     def ask(self, cmd: str) -> str: ...
 
     def write(self, cmd: str) -> None: ...
+
+
+class _InstrumentState(Enum):
+    """The stages of the lifecycle of an :class:`Instrument`."""
+
+    CREATED = auto()
+    """
+    The instrument has been created, but ``Instrument.__init__`` has not
+    completed, so it has no name, parameters or logger yet.
+    """
+    OPEN = auto()
+    """``Instrument.__init__`` has completed and the instrument is not closed."""
+    CLOSED = auto()
+    """
+    The instrument has been closed and its attributes stripped, or its
+    initialization failed and closing it has been attempted.
+    """
+    FINALIZING = auto()
+    """
+    The instrument is being closed by the garbage collector, which runs at an
+    arbitrary point in time and on any thread, possibly in the middle of other
+    logging, so the instrument must not log.
+    """
 
 
 # a metaclass that overrides __call__ means that we lose
@@ -62,11 +86,14 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
     )
     _type: type[Instrument] | None = None
     _instances: ClassVar[weakref.WeakSet[Instrument]] = weakref.WeakSet()
+    # Name mangled so that it cannot clash with attributes of subclasses.
+    __state: _InstrumentState = _InstrumentState.CREATED
 
     def __init__(self, name: str, **kwargs: Unpack[InstrumentBaseKWArgs]) -> None:
         self._t0 = time.time()
 
         super().__init__(name=name, **kwargs)
+        self.__state = _InstrumentState.OPEN
 
         self.IDN = self.add_parameter("IDN", get_cmd=self.get_idn, vals=Anything())
         """
@@ -148,8 +175,35 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         """Simplified repr giving just the class and name."""
         return f"<{type(self).__name__}: {self.name}>"
 
-    def __del__(self) -> None:
-        """Close the instrument and remove its instance record."""
+    def __del__(
+        self,
+        # Bound as default arguments, like e.g. subprocess.Popen.__del__ does,
+        # so that this also works late in the interpreter shutdown, when the
+        # globals of modules may already have been cleared.
+        _closed: _InstrumentState = _InstrumentState.CLOSED,
+        _finalizing: _InstrumentState = _InstrumentState.FINALIZING,
+    ) -> None:
+        """
+        Close the instrument if it is garbage collected without having been
+        closed, so that its resources are freed.
+
+        Do not rely on this: always close instruments explicitly with
+        :meth:`close` (or :meth:`close_all`). As instruments reference
+        themselves through their parameters, they are normally only garbage
+        collected when the cyclic garbage collector runs, which may be much
+        later and on any thread. At that point, connections that are closed by
+        a finalizer, such as the VISA handle of a :class:`.VisaInstrument`, may
+        already have been closed, so :meth:`close` may no longer be able to
+        communicate with the instrument.
+        """
+        if self.__state is _closed:
+            # Closing it again would rerun the close methods of subclasses at
+            # an arbitrary point in time, possibly after the name or the
+            # resources of the instrument have been reused.
+            return
+        # This disables the instrument loggers while closing the instrument, see
+        # _being_closed_by_garbage_collector.
+        self.__state = _finalizing
         try:
             self.close()
         except BaseException:  # noqa: BLE001, S110
@@ -159,13 +213,24 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
             # however that would require careful testing.
             pass
 
+    @property
+    def _being_closed_by_garbage_collector(self) -> bool:
+        return self.__state is _InstrumentState.FINALIZING
+
     def close(self) -> None:
         """
         Irreversibly stop this instrument and free its resources.
 
+        Closing an instrument that has already been closed does nothing.
+
         Subclasses should override this if they have other specific
-        resources to close.
+        resources to close, and call this method at the end. Their close
+        methods must also work if the instrument has already been closed,
+        i.e. its attributes have been stripped, or if its initialization
+        failed before all its attributes were set.
         """
+        if self.__state is _InstrumentState.CLOSED:
+            return
         if hasattr(self, "connection") and hasattr(self.connection, "close"):
             self.connection.close()
 
@@ -184,7 +249,50 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
                 for channel in channellist:
                     strip_attrs(channel, whitelist=["_short_name", "_parent"])
 
-        strip_attrs(self, whitelist=["_short_name"])
+        # Keep the state while stripping the attributes, so that the instrument
+        # loggers stay disabled if the garbage collector is closing the
+        # instrument, e.g. when deleting an attribute runs code that logs.
+        strip_attrs(self, whitelist=["_short_name", "_Instrument__state"])
+        self.__state = _InstrumentState.CLOSED
+
+    def _close_after_failed_initialization(self, error: BaseException) -> None:
+        """
+        Close the instrument after its initialization raised ``error``.
+
+        This is called by the metaclass, also if registering the instrument
+        failed, so that the resources that the
+        instrument acquired before the failure are freed right away. As the
+        instrument may only be partly initialized, closing it may fail too.
+        That is noted on ``error`` rather than raised, so that the caller still
+        sees why the initialization failed. Closing is not retried when the
+        instrument is garbage collected, since it would most likely fail in the
+        same way.
+
+        An instrument whose initialization failed before
+        ``Instrument.__init__`` completed, e.g. because a driver validates its
+        arguments before calling it, is not closed: it has no name, parameters
+        or logger, which close methods rely on, so closing it would only fail
+        too.
+        """
+        if self.__state is not _InstrumentState.OPEN:
+            # Either closed by the subclass itself before raising, or
+            # Instrument.__init__ has not completed.
+            self.__state = _InstrumentState.CLOSED
+            return
+        try:
+            self.close()
+        except Exception as close_error:  # noqa: BLE001
+            # Any failure is added to the error of the initialization, which
+            # is what the caller needs to see. A KeyboardInterrupt or other
+            # BaseException raised while closing, e.g. by pressing Ctrl+C
+            # again, propagates instead, with the error of the initialization
+            # as its context.
+            error.add_note(
+                f"Closing the {type(self).__name__} instrument after its failed "
+                f"initialization also failed: {close_error!r}"
+            )
+        finally:
+            self.__state = _InstrumentState.CLOSED
 
     @classmethod
     def close_all(
@@ -290,14 +398,19 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         """
         if weakref.getweakrefcount(instance) == 0:
             # Instances are only recorded through weak references, so there is
-            # nothing to remove. This is the case when the garbage collector
-            # finalizes the instance, since it clears all weak references to
-            # the instance before that. Leave the records alone then: before
-            # Python 3.14, weak containers postpone removing dead entries while
-            # being iterated over, but most of their methods apply postponed
-            # removals right away. That would make an iteration that the
-            # garbage collection interrupted fail with
+            # nothing to remove. Leave the records alone then, since this is
+            # also the case when the garbage collector finalizes (and thereby
+            # closes) the instance in the middle of another operation, which
+            # may be an iteration over the records. Before Python 3.14, weak
+            # containers postpone removing dead entries while being iterated
+            # over, but most of their methods apply postponed removals right
+            # away, which would make the interrupted iteration fail with
             # "RuntimeError: dictionary changed size during iteration".
+            # Those Python versions clear all weak references to an object
+            # before finalizing it. Python 3.15 keeps weak references without
+            # callbacks until after finalizing (python/cpython#135552), but
+            # from Python 3.14 weak containers iterate over a copy
+            # (python/cpython#89967), so updating the records is safe there.
             return
 
         if instance in getattr(cls, "_instances", weakref.WeakSet()):

@@ -1,0 +1,5 @@
+The ``SignalHoundUSBSA124B`` driver now logs through its instrument logger, so that it does not log
+while the garbage collector closes it. Its log records are therefore emitted by the
+``qcodes.instrument.instrument_base`` logger with the name of the instrument, rather than by the
+logger of the driver module. ``SignalHoundUSBSA124B.check_for_error`` is therefore no longer a
+static method, so it can no longer be called on the class without an instance.

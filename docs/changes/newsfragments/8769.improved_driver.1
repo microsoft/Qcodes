@@ -1,0 +1,3 @@
+``GalilMotionController`` and the MiniCircuits USB HID drivers (``MiniCircuitsHIDMixin`` subclasses)
+now fully close the instrument in ``close``. Previously, they only closed the connection, so the
+instrument stayed registered and its name could not be reused until it was garbage collected.

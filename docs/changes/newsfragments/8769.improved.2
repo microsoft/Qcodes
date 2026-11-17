@@ -1,0 +1,11 @@
+Instruments whose initialization fails are now closed right away, so that the resources they
+acquired before the failure, such as an open VISA connection, are freed immediately rather than
+when the instrument is garbage collected. Previously, retrying to create an instrument for a
+resource that can only be opened once could fail until the garbage collector had run.
+This also applies to instruments that cannot be registered, e.g. because their name is already in
+use, or that have abstract parameters, and to instruments whose ``__init__`` returns a value (which
+raises a ``TypeError``).
+If closing the instrument fails too, this is added as a note to the error of the initialization.
+Instruments that fail before ``Instrument.__init__`` has completed, e.g. because a driver validates
+its arguments first, are not closed, since close methods rely on the name, parameters and logger
+that it sets up.

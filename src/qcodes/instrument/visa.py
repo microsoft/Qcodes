@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 import warnings
 from importlib.resources import as_file, files
 from typing import TYPE_CHECKING, Any, Literal, Self, TypedDict
@@ -29,22 +28,16 @@ if TYPE_CHECKING:
 
 VISA_LOGGER = f"{InstrumentBase.__module__}.com.visa"
 
-log = logging.getLogger(__name__)
 
-
-def _close_visa_handle(
-    handle: pyvisa.resources.MessageBasedResource, name: str
-) -> None:
+def _close_visa_handle(handle: pyvisa.resources.MessageBasedResource) -> None:
+    # This runs inside the garbage collector, i.e. at an arbitrary point in
+    # time and on any thread, possibly in the middle of other logging, so it
+    # must not log. It may also run at interpreter exit, when logging may
+    # already have been shut down.
     try:
         if (
             handle.session is not None
         ):  # pyvisa sets the session of a handle to None when it is closed
-            log.info(
-                "Closing VISA handle to %s as there are no non weak "
-                "references to the instrument.",
-                name,
-            )
-
             handle.close()
     except InvalidSession:
         # the resource is already closed
@@ -213,7 +206,7 @@ class VisaInstrument(Instrument):
                 visa_handle = self._connect_and_handle_error(address, visalib)
         else:
             visa_handle = self._connect_and_handle_error(address, visalib)
-        finalize(self, _close_visa_handle, visa_handle, str(self.name))
+        finalize(self, _close_visa_handle, visa_handle)
 
         self._visa_handle: pyvisa.resources.MessageBasedResource = visa_handle
 
@@ -271,8 +264,8 @@ class VisaInstrument(Instrument):
         try:
             visa_handle = self._open_resource(address, visalib)
         except Exception:
+            # the instrument is closed when its initialization fails
             self.visa_log.exception(f"Could not connect at {address}")
-            self.close()
             raise
         return visa_handle
 

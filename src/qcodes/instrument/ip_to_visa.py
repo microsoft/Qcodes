@@ -5,14 +5,12 @@ from typing import Any
 
 import qcodes.validators as vals
 from qcodes.logger import get_instrument_logger
-from qcodes.utils import strip_attrs
 
 from .instrument import Instrument
 from .ip import IPInstrument
 
-# previous to introducing the `InstrumentLoggerAdapter` the IPToVisa instrument
-# was logging in the name of the `VisaInstrument`. To maintain that behaviour
-# import the `instrument.visa.log` and log to this one.
+# Like a VisaInstrument, the IPToVisa instrument logs its VISA communication
+# to a logger named after VISA_LOGGER.
 from .visa import VISA_LOGGER, VisaInstrument
 
 # This module provides a class to make an IPInstrument behave like a
@@ -108,9 +106,5 @@ class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore[misc]
                 # https://github.com/pyvisa/pyvisa-sim/issues/82
                 self.resource_manager.visalib._init()
 
-        # Instrument close
-        if hasattr(self, "connection") and hasattr(self.connection, "close"):
-            self.connection.close()
-
-        self.remove_instance(self)
-        strip_attrs(self, whitelist=["_short_name"])
+        # skip the close method of IPInstrument
+        Instrument.close(self)

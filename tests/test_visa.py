@@ -1,5 +1,4 @@
 import gc
-import logging
 import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -142,7 +141,8 @@ def _make_mock_visa() -> "Generator[MockVisa, None, None]":
         mv.close()
 
 
-def test_visa_gc_closes_connection(caplog: pytest.LogCaptureFixture) -> None:
+@pytest.mark.usefixtures("automatic_gc_disabled")
+def test_visa_gc_closes_connection() -> None:
     def use_magnet() -> pyvisa.ResourceManager:
         x = AMIModel430(
             "x",
@@ -158,23 +158,38 @@ def test_visa_gc_closes_connection(caplog: pytest.LogCaptureFixture) -> None:
 
     # ensure that any unused instruments that have not been gced are gced before running
     gc.collect()
-    caplog.clear()
-    with caplog.at_level(logging.INFO, logger="qcodes.instrument.visa"):
-        rm = use_magnet()
-        gc.collect()
+    rm = use_magnet()
+    gc.collect()
     # at this stage the instrument created in use_magnet has gone out of scope
-    # and we have triggered an explicit gc so the weakref.finalize function
-    # has been triggered. We test this
+    # and we have triggered an explicit gc, so the VISA handle should be closed
     # and the instrument should no longer be in the instrument registry
     assert len(Instrument._all_instruments) == 0
     assert len(rm.list_opened_resources()) == 0
-    # the order of the log messages depends on the pyvisa version but regardless
-    # of which version we should see the message about closing the handle
-    assert any(
-        record.message
-        == "Closing VISA handle to x as there are no non weak references to the instrument."
-        for record in caplog.records
-    )
+
+
+@pytest.mark.usefixtures("automatic_gc_disabled")
+def test_visa_handle_is_closed_right_away_if_initialization_fails() -> None:
+    """
+    If the initialization of a VISA instrument fails after it has connected,
+    the VISA handle is closed right away rather than when the instrument is
+    garbage collected, so that the resource can be opened again.
+    """
+    handles: list[pyvisa.resources.MessageBasedResource] = []
+
+    class FailsAfterConnecting(VisaInstrument):
+        def __init__(self, name: str, address: str, **kwargs: Any) -> None:
+            super().__init__(name, address, **kwargs)
+            handles.append(self.visa_handle)
+            raise RuntimeError("Unexpected reply")
+
+    with pytest.raises(RuntimeError, match="Unexpected reply"):
+        FailsAfterConnecting(
+            "x", address="GPIB::1::INSTR", pyvisa_sim_file="AMI430.yaml"
+        )
+    (handle,) = handles
+    resource_manager = handle.visalib.resource_manager
+    assert resource_manager is not None
+    assert resource_manager.list_opened_resources() == []
 
 
 def test_ask_write_local(mock_visa: MockVisa) -> None:

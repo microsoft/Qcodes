@@ -29,7 +29,9 @@ class InstrumentLoggerAdapter(logging.LoggerAdapter[logging.Logger]):
 
     Here it is used to add the instruments full name to the log records so that
     they can be filtered (using the :class:`InstrumentFilter`) by instrument
-    instance.
+    instance. It also does not log while the instrument is being closed by
+    the garbage collector, since that runs at an arbitrary point in time and on
+    any thread, possibly in the middle of other logging.
 
     The context data gets stored in the `extra` dictionary as a property of the
     Adapter. It is filled by the ``__init__`` method::
@@ -69,6 +71,16 @@ class InstrumentLoggerAdapter(logging.LoggerAdapter[logging.Logger]):
                 extra,
             )
             self.merge_extra = merge_extra
+
+    def isEnabledFor(self, level: int) -> bool:
+        """
+        Whether a message of the given level would be logged, which is never
+        the case while the instrument is being closed by the garbage collector.
+        """
+        instrument = None if self.extra is None else self.extra.get("instrument")
+        if getattr(instrument, "_being_closed_by_garbage_collector", False):
+            return False
+        return super().isEnabledFor(level)
 
     def process(
         self, msg: str, kwargs: MutableMapping[str, Any]

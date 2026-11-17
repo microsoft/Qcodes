@@ -1,0 +1,7 @@
+Closing a ``DynaCool``, ``GalilMotionController``, ``KeysightM960x``, ``KeysightM9336A``,
+``SignalHoundUSBSA124B`` or MiniCircuits USB HID instrument that has already been closed no longer
+raises an ``AttributeError``. Closing them after their initialization failed before connecting no
+longer fails either. ``KeysightM960x``, ``KeysightM9336A`` and ``SignalHoundUSBSA124B`` no longer try
+to close a session or device that failed to open, and ``DynaCool`` now closes its VISA connection also
+if telling the server that it closes the connection fails, e.g. because the VISA session has already
+been closed.

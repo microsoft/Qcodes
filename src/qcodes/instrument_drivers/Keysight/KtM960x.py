@@ -61,7 +61,6 @@ class KeysightM960x(Instrument):
 
         self._address = bytes(address, "ascii")
         self._options = bytes(options, "ascii")
-        self._session = ctypes.c_int(0)
         self._dll_loc = dll_path
         self._dll = ctypes.cdll.LoadLibrary(self._dll_loc)
 
@@ -159,16 +158,25 @@ class KeysightM960x(Instrument):
             self._get_vi_string, KtM960xDefs.KTM960X_ATTR_INSTRUMENT_MANUFACTURER
         )
 
-        self._connect()
+        # Only assign the session once it has been opened successfully, so that
+        # close does not try to close a session that is not open.
+        self._session = self._connect()
 
         self.connect_message()
 
-    def _connect(self) -> None:
+    def _connect(self) -> ctypes.c_int:
+        """Open a session with the instrument and return it."""
+        session = ctypes.c_int(0)
         status = self._dll.KtM960x_InitWithOptions(
-            self._address, 1, 1, self._options, ctypes.byref(self._session)
+            self._address, 1, 1, self._options, ctypes.byref(session)
         )
         if status:
+            # The session may have been opened anyway, e.g. if the status is a
+            # (positive) warning. As the instrument is not created, close it.
+            if session.value:
+                self._dll.KtM960x_close(session)
             raise SystemError(f"connection to device failed! error: {status}")
+        return session
 
     def get_idn(self) -> dict[str, str | None]:
         """Generates the ``*IDN`` dictionary for qcodes"""
@@ -295,5 +303,8 @@ class KeysightM960x(Instrument):
         return int(v.value)
 
     def close(self) -> None:
-        self._dll.KtM960x_close(self._session)
+        # The instrument may already have been closed, or its initialization may
+        # have failed before opening the session.
+        if getattr(self, "_session", None) is not None:
+            self._dll.KtM960x_close(self._session)
         super().close()

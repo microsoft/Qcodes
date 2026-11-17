@@ -1,0 +1,7 @@
+The instrument loggers (``self.log`` and ``self.visa_log`` of instruments, channels and other
+instrument modules) no longer log while the garbage collector closes an instrument that was not
+closed, since the garbage collector runs at an arbitrary point in time and on any thread, possibly
+in the middle of other logging, where logging is not safe with all log handlers.
+``IPInstrument`` now logs through its instrument logger, so that this also applies to it. Its log
+records are therefore emitted by the ``qcodes.instrument.instrument_base`` logger with the name of
+the instrument, rather than by the ``qcodes.instrument.ip`` logger.
