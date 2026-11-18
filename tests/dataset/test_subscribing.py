@@ -1,5 +1,6 @@
 # Test some subscription scenarios
 import logging
+import threading
 from numbers import Number
 from typing import TYPE_CHECKING, Any
 
@@ -255,6 +256,92 @@ def test_subscriber_length_matches_delivered_results(dataset: "DataSet") -> None
         delivered += n_delivered
         assert length == delivered
     assert delivered == n_results
+
+
+def test_result_inserted_during_callback_is_delivered(dataset: "DataSet") -> None:
+    """
+    A result that is inserted while the callback runs is delivered by the
+    subscriber thread, without another insert or completing the dataset.
+    """
+    xparam = ParamSpecBase(name="x", paramtype="numeric")
+    yparam = ParamSpecBase(name="y", paramtype="numeric")
+    dataset.set_interdependencies(InterDependencies_(dependencies={yparam: (xparam,)}))
+    dataset.mark_started()
+
+    first_callback_entered = threading.Event()
+    release_first_callback = threading.Event()
+    all_delivered = threading.Event()
+    received: list[tuple[VALUE, ...]] = []
+
+    def subscriber(
+        results: "list[tuple[VALUE, ...]]", length: int, state: None
+    ) -> None:
+        if not first_callback_entered.is_set():
+            first_callback_entered.set()
+            release_first_callback.wait(timeout=10)
+        received.extend(results)
+        if len(received) == 2:
+            all_delivered.set()
+
+    dataset.subscribe(subscriber, min_wait=0, min_count=1)
+
+    dataset.add_results([{"x": 0, "y": 0}])
+    assert first_callback_entered.wait(timeout=10)
+    dataset.add_results([{"x": 1, "y": 1}])
+    release_first_callback.set()
+
+    assert all_delivered.wait(timeout=10)
+    assert received == [(0, 0), (1, 1)]
+
+
+def test_completion_waits_for_callback_in_progress(dataset: "DataSet") -> None:
+    """
+    Completing the dataset while the subscriber thread is in its callback waits
+    for that callback to finish before delivering the remaining results, so
+    the callbacks never overlap and every result has been delivered, in order,
+    once the dataset is completed.
+    """
+    xparam = ParamSpecBase(name="x", paramtype="numeric")
+    yparam = ParamSpecBase(name="y", paramtype="numeric")
+    dataset.set_interdependencies(InterDependencies_(dependencies={yparam: (xparam,)}))
+    dataset.mark_started()
+
+    first_callback_entered = threading.Event()
+    release_first_callback = threading.Event()
+    callbacks_in_progress = 0
+    callbacks_overlapped = False
+    received: list[tuple[VALUE, ...]] = []
+
+    def subscriber(
+        results: "list[tuple[VALUE, ...]]", length: int, state: None
+    ) -> None:
+        nonlocal callbacks_in_progress, callbacks_overlapped
+        callbacks_in_progress += 1
+        callbacks_overlapped |= callbacks_in_progress > 1
+        try:
+            if not first_callback_entered.is_set():
+                first_callback_entered.set()
+                release_first_callback.wait(timeout=10)
+            received.extend(results)
+        finally:
+            callbacks_in_progress -= 1
+
+    dataset.subscribe(subscriber, min_wait=0, min_count=1)
+
+    dataset.add_results([{"x": 0, "y": 0}])
+    assert first_callback_entered.wait(timeout=10)
+    dataset.add_results([{"x": 1, "y": 1}])
+
+    # Release the callback in progress only once the completion below has
+    # had time to try to deliver the remaining result.
+    release_timer = threading.Timer(0.2, release_first_callback.set)
+    release_timer.start()
+    try:
+        dataset.mark_completed()
+        assert not callbacks_overlapped
+        assert received == [(0, 0), (1, 1)]
+    finally:
+        release_timer.join()
 
 
 @pytest.mark.usefixtures("working_subscriber_config")
