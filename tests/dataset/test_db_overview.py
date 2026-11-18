@@ -169,9 +169,9 @@ def test_get_db_overview_decodes_snapshot_extra_column(
 
     overview = get_db_overview(conn=db_conn, extra_columns=["snapshot"])
 
-    assert overview[1]["snapshot"] == '{"plain": true}'  # type: ignore[typeddict-item]
-    assert overview[2]["snapshot"] == '{"compressed": true}'  # type: ignore[typeddict-item]
-    assert overview[3]["snapshot"] is None  # type: ignore[typeddict-item]
+    assert overview[1]["snapshot"] == '{"plain": true}'  # type: ignore[typeddict-item]  # ty: ignore[invalid-typed-dict-key]
+    assert overview[2]["snapshot"] == '{"compressed": true}'  # type: ignore[typeddict-item]  # ty: ignore[invalid-typed-dict-key]
+    assert overview[3]["snapshot"] is None  # type: ignore[typeddict-item]  # ty: ignore[invalid-typed-dict-key]
 
 
 def test_get_db_overview_accepts_connection(db_conn: AtomicConnection) -> None:

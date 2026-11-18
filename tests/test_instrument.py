@@ -911,7 +911,7 @@ def test_instrument_whose_init_returns_a_value_raises_and_is_closed() -> None:
         def __init__(self, name: str) -> None:
             super().__init__(name)
             # deliberately returns a value, which __init__ must not
-            return 1  # type: ignore[return-value]  # noqa: PLE0101
+            return 1  # type: ignore[return-value]  # ty: ignore[invalid-explicit-return]  # noqa: PLE0101
 
         def close(self) -> None:
             closed.append(self.name)
