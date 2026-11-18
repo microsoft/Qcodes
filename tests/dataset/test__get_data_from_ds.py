@@ -107,7 +107,9 @@ def test_datasaver_multidimarrayparameter_as_array(
             else:
                 raise RuntimeError(f"Unexpected datadict item {datadict['name']}")
             expected_data = expected_data.reshape(expected_shape)
-            assert_allclose(datadict["data"], expected_data)
+            # ty infers the dtype of the tiled setpoints as generic[object]
+            # rather than as unknown, since array_param is not typed
+            assert_allclose(datadict["data"], expected_data)  # ty: ignore[no-matching-overload]
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
@@ -164,7 +166,9 @@ def test_datasaver_multidimarrayparameter_as_numeric(
                 expected_data = inserted_data.ravel()
             else:
                 raise RuntimeError(f"Unexpected datadict item {datadict['name']}")
-            assert_allclose(datadict["data"], expected_data)
+            # ty infers the dtype of the tiled setpoints as generic[object]
+            # rather than as unknown, since array_param is not typed
+            assert_allclose(datadict["data"], expected_data)  # ty: ignore[no-matching-overload]
 
 
 @settings(

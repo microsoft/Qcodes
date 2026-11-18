@@ -83,5 +83,5 @@ def test_invalid_parameter_paths_raise(
         DelegateInstrument(
             name=name,
             station=station,
-            parameters={"X": 42},  # type: ignore[dict-item]
+            parameters={"X": 42},  # type: ignore[dict-item]  # ty: ignore[invalid-argument-type]
         )

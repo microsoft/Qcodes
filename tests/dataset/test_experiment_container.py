@@ -169,7 +169,7 @@ def test_experiment_read_only_properties(experiment: "Experiment") -> None:
 @pytest.mark.parametrize("non_existing_id", (1, 0, -1, "number#42"))
 def test_create_experiment_from_non_existing_id(non_existing_id: int | str) -> None:
     with pytest.raises(ValueError, match="No such experiment in the database"):
-        _ = Experiment(exp_id=non_existing_id)  # pyright: ignore[reportArgumentType]
+        _ = Experiment(exp_id=non_existing_id)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
 
 @pytest.mark.usefixtures("empty_temp_db")
@@ -183,7 +183,7 @@ def test_load_experiment_from_non_existing_id(non_existing_id: "int") -> None:
 @pytest.mark.parametrize("bad_id", (None, "number#42"))
 def test_load_experiment_from_bad_id(bad_id: str | None) -> None:
     with pytest.raises(ValueError, match="Experiment ID must be an integer"):
-        _ = load_experiment(bad_id)  # pyright: ignore[reportArgumentType]
+        _ = load_experiment(bad_id)  # pyright: ignore[reportArgumentType]  # ty: ignore[invalid-argument-type]
 
 
 def test_format_string(empty_temp_db: "None") -> None:

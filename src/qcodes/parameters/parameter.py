@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING, Any, Generic, Literal
 
 from typing_extensions import TypedDict
 
+from qcodes.utils import qcodes_abstractmethod
+
 from .command import Command
 from .parameter_base import (
     InstrumentTypeVar_co,
@@ -286,6 +288,12 @@ class Parameter(
 
     """
 
+    _get_raw_impl: Callable[[], ParamRawDataType] | None = None
+    """Implementation of ``get_raw`` generated from ``get_cmd``, if any."""
+
+    _set_raw_impl: Callable[[ParamRawDataType], None] | None = None
+    """Implementation of ``set_raw`` generated from ``set_cmd``, if any."""
+
     def __init__(
         self,
         name: str,
@@ -382,9 +390,9 @@ class Parameter(
                 " get_raw is an error."
             )
         elif not self._implements_get_raw and get_cmd is not False:
+            get_raw_impl: Callable[[], ParamRawDataType]
             if get_cmd is None:
-                # ignore typeerror since mypy does not allow setting a method dynamically
-                self.get_raw = MethodType(_get_manual_parameter, self)  # type: ignore[method-assign]
+                get_raw_impl = MethodType(_get_manual_parameter, self)
             else:
                 if isinstance(get_cmd, str) and instrument is None:
                     raise TypeError(
@@ -396,14 +404,14 @@ class Parameter(
                 exec_str_ask = getattr(instrument, "ask", None) if instrument else None
                 # TODO get_raw should also be a method here. This should probably be done by wrapping
                 # it with MethodType like above
-                # ignore typeerror since mypy does not allow setting a method dynamically
-                self.get_raw = Command(  # type: ignore[method-assign]
+                get_raw_impl = Command(
                     arg_count=0,
                     cmd=get_cmd,
                     exec_str=exec_str_ask,
                 )
+            self._get_raw_impl = get_raw_impl
             self._gettable = True
-            self.get = self._wrap_get(self.get_raw)
+            self.get = self._wrap_get(get_raw_impl)
 
         if self._implements_set_raw and set_cmd not in (None, False):
             raise TypeError(
@@ -412,9 +420,9 @@ class Parameter(
                 " set_raw is an error."
             )
         elif not self._implements_set_raw and set_cmd is not False:
+            set_raw_impl: Callable[[ParamRawDataType], None]
             if set_cmd is None:
-                # ignore typeerror since mypy does not allow setting a method dynamically
-                self.set_raw = MethodType(_set_manual_parameter, self)  # type: ignore[method-assign]
+                set_raw_impl = MethodType(_set_manual_parameter, self)
             else:
                 if isinstance(set_cmd, str) and instrument is None:
                     raise TypeError(
@@ -426,14 +434,14 @@ class Parameter(
                 exec_str_write = (
                     getattr(instrument, "write", None) if instrument else None
                 )
-                # TODO get_raw should also be a method here. This should probably be done by wrapping
+                # TODO set_raw should also be a method here. This should probably be done by wrapping
                 # it with MethodType like above
-                # ignore typeerror since mypy does not allow setting a method dynamically
-                self.set_raw = Command(  # type: ignore[assignment]
+                set_raw_impl = Command(
                     arg_count=1, cmd=set_cmd, exec_str=exec_str_write
                 )
+            self._set_raw_impl = set_raw_impl
             self._settable = True
-            self.set = self._wrap_set(self.set_raw)
+            self.set = self._wrap_set(set_raw_impl)
 
         self._meta_attrs.extend(["label", "unit", "vals"])
 
@@ -458,6 +466,31 @@ class Parameter(
 
         self._docstring = docstring
         self.__doc__ = self._build__doc__()
+
+    @qcodes_abstractmethod
+    def get_raw(self) -> ParamRawDataType:
+        """
+        Call the ``get_raw`` implementation generated from ``get_cmd``.
+
+        This method stays marked as abstract so that
+        :attr:`~ParameterBase._implements_get_raw` keeps reporting ``False``
+        for :class:`Parameter` itself: a subclass is still expected to either
+        override ``get_raw`` or supply a ``get_cmd``.
+        """
+        if self._get_raw_impl is None:
+            raise NotImplementedError
+        return self._get_raw_impl()
+
+    @qcodes_abstractmethod
+    def set_raw(self, value: ParamRawDataType) -> None:
+        """
+        Call the ``set_raw`` implementation generated from ``set_cmd``.
+
+        See :meth:`get_raw` for why this method stays marked as abstract.
+        """
+        if self._set_raw_impl is None:
+            raise NotImplementedError
+        self._set_raw_impl(value)
 
     def _build__doc__(self) -> str:
         if len(self.validators) == 0:
@@ -521,7 +554,7 @@ class Parameter(
         """
         # this method only works with parameters that support addition
         # however we don't currently enforce that via typing
-        self.set(self.get() + value)  # type: ignore[operator]
+        self.set(self.get() + value)  # type: ignore[operator]  # ty: ignore[unsupported-operator]
 
     def sweep(
         self,

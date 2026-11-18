@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel
 
 if TYPE_CHECKING:
+    from collections.abc import Collection
     from typing import Unpack
 
     from .keysight_34980a import Keysight34980A
@@ -43,7 +44,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel["Keysight34980A"]):
         raise NotImplementedError("Please subclass this")
 
     def to_channel_list(
-        self, paths: list[tuple[int, int]], wiring_config: str | None = None
+        self, paths: "Collection[tuple[int, int]]", wiring_config: str | None = None
     ) -> str:
         """
         Convert the (row, column) pair to a 4-digit channel number 'sxxx', where
@@ -125,7 +126,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel["Keysight34980A"]):
         channel = self.to_channel_list([(row, column)])
         self.write(f"ROUT:OPEN {channel}")
 
-    def connect_paths(self, paths: list[tuple[int, int]]) -> None:
+    def connect_paths(self, paths: "Collection[tuple[int, int]]") -> None:
         """
         To connect/close the specified channels.
 
@@ -138,7 +139,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel["Keysight34980A"]):
         channel_list_str = self.to_channel_list(paths)
         self.write(f"ROUTe:CLOSe {channel_list_str}")
 
-    def disconnect_paths(self, paths: list[tuple[int, int]]) -> None:
+    def disconnect_paths(self, paths: "Collection[tuple[int, int]]") -> None:
         """
         To disconnect/open the specified channels.
 
@@ -151,7 +152,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel["Keysight34980A"]):
         channel_list_str = self.to_channel_list(paths)
         self.write(f"ROUTe:OPEN {channel_list_str}")
 
-    def are_closed(self, paths: list[tuple[int, int]]) -> list[bool]:
+    def are_closed(self, paths: "Collection[tuple[int, int]]") -> list[bool]:
         """
         To check if a list of channels is closed/connected
 
@@ -170,7 +171,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel["Keysight34980A"]):
         messages = self.ask(f"ROUTe:CLOSe? {channel_list_str}")
         return [bool(int(message)) for message in messages.split(",")]
 
-    def are_open(self, paths: list[tuple[int, int]]) -> list[bool]:
+    def are_open(self, paths: "Collection[tuple[int, int]]") -> list[bool]:
         """
         To check if a list of channels is open/disconnected
 
