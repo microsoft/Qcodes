@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import re
+from math import prod
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -2733,6 +2734,31 @@ def test_netcdf_compression_encoding_chunks_are_capped_to_target_size() -> None:
     assert chunksizes[1] == n_columns
     assert chunksizes[0] * n_columns * 8 <= _TARGET_CHUNK_SIZE_BYTES
     assert (chunksizes[0] + 1) * n_columns * 8 > _TARGET_CHUNK_SIZE_BYTES
+
+
+@pytest.mark.parametrize(
+    ("shape", "expected_chunks"),
+    [
+        # a single row is larger than the target so the row itself is split
+        ((10, 1_000_000), (1, _TARGET_CHUNK_SIZE_BYTES // 8)),
+        # the two trailing dimensions are larger than the target together
+        ((3, 4, 1024**2 // 8), (1, 4, 1024**2 // 8)),
+        ((3, 8, 1024**2), (1, 1, 1024**2 // 2)),
+    ],
+)
+def test_netcdf_compression_encoding_chunks_split_large_rows(
+    shape: tuple[int, ...], expected_chunks: tuple[int, ...]
+) -> None:
+    """Rows larger than the target are split so chunks never exceed the target."""
+    # broadcast_to avoids allocating the full (large) array
+    data = np.broadcast_to(np.zeros(1), shape)
+    dims = tuple(f"d{i}" for i in range(len(shape)))
+    ds = xr.Dataset({"z": (dims, data)})
+    encoding = _netcdf_compression_encoding(ds, complevel=4)
+
+    chunksizes = encoding["z"]["chunksizes"]
+    assert chunksizes == expected_chunks
+    assert prod(chunksizes) * 8 <= _TARGET_CHUNK_SIZE_BYTES
 
 
 @pytest.mark.parametrize("complevel", [0, 4])

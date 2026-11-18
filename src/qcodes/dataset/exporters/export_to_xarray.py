@@ -45,19 +45,32 @@ def _variable_chunksizes(
     """
     Calculate the HDF5 chunk shape to use for a given variable.
 
-    The trailing dimensions are kept whole and the leading dimension is sized
-    such that a chunk is approximately ``target_bytes`` large. Returns None for
-    scalars and for variables with a zero sized dimension since those cannot be
-    chunked.
+    Chunks are approximately ``target_bytes`` large and never larger, unless a
+    single element is. Dimensions are chunked from the leading dimension
+    onwards: leading dimensions get a chunk size of 1 for as long as the
+    remaining trailing dimensions are larger than the target. The first
+    dimension for which the trailing dimensions fit is sized to fill the
+    target and all dimensions after it are kept whole. This keeps chunks well
+    below the 4 GiB HDF5 chunk size limit even for very large rows.
+
+    Returns None for scalars and for variables with a zero sized dimension
+    since those cannot be chunked.
     """
     shape = variable.shape
     if len(shape) == 0 or 0 in shape:
         return None
 
-    bytes_per_leading_element = max(prod(shape[1:]), 1) * variable.dtype.itemsize
-    leading_chunk = target_bytes // max(bytes_per_leading_element, 1)
-    leading_chunk = max(1, min(int(leading_chunk), shape[0]))
-    return (leading_chunk, *shape[1:])
+    itemsize = max(variable.dtype.itemsize, 1)
+    chunks: list[int] = []
+    for i, size in enumerate(shape):
+        trailing_bytes = prod(shape[i + 1 :]) * itemsize
+        if trailing_bytes > target_bytes:
+            chunks.append(1)
+            continue
+        chunks.append(max(1, min(size, target_bytes // trailing_bytes)))
+        chunks.extend(shape[i + 1 :])
+        break
+    return tuple(chunks)
 
 
 def _netcdf_compression_encoding(
