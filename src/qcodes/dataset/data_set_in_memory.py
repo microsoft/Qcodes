@@ -50,6 +50,7 @@ from .dataset_helpers import _add_run_to_runs_table
 from .descriptions.versioning import serialization as serial
 from .experiment_settings import get_default_experiment_id
 from .exporters.export_info import ExportInfo
+from .exporters.netcdf_snapshot import _resolve_netcdf_snapshot_raw
 from .linked_datasets.links import str_to_links
 
 if TYPE_CHECKING:
@@ -318,7 +319,7 @@ class DataSetInMem(BaseDataSet):
                 rundescriber=serial.from_json_to_current(loaded_data.run_description),
                 parent_dataset_links=parent_dataset_links,
                 export_info=export_info,
-                snapshot=loaded_data.snapshot,
+                snapshot=_resolve_netcdf_snapshot_raw(path, loaded_data.snapshot),
             )
             ds._cache = DataSetCacheDeferred(ds, path)
 

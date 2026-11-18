@@ -42,6 +42,7 @@ from .experiment_container import (
 )
 from .experiment_settings import get_default_experiment_id, reset_default_experiment_id
 from .export_config import get_data_export_path
+from .exporters.netcdf_snapshot import snapshot_from_netcdf
 from .guid_helpers import guids_from_dbs, guids_from_dir, guids_from_list_str
 from .legacy_import import import_dat_file
 from .measurement_extensions import (
@@ -134,5 +135,6 @@ __all__ = [
     "purge_orphaned_datasets",
     "reset_default_experiment_id",
     "rundescriber_from_json",
+    "snapshot_from_netcdf",
     "update_raw_data_paths",
 ]

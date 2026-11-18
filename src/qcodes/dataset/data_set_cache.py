@@ -18,6 +18,7 @@ from .exporters.export_to_xarray import (
     load_to_xarray_dataset,
     load_to_xarray_dataset_dict,
 )
+from .exporters.netcdf_snapshot import _resolve_netcdf_snapshot_raw
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -506,6 +507,10 @@ class DataSetCacheDeferred(DataSetCacheInMem):
 
         loaded_data = xr.load_dataset(self._xr_dataset_path, engine="h5netcdf")
         loaded_data = cf_xr.coding.decode_compress_to_multi_index(loaded_data)
+        if "snapshot" in loaded_data.attrs:
+            loaded_data.attrs["snapshot"] = _resolve_netcdf_snapshot_raw(
+                self._xr_dataset_path, loaded_data.attrs["snapshot"]
+            )
         export_info = ExportInfo.from_str(loaded_data.attrs.get("export_info", ""))
         export_info.export_paths["nc"] = str(self._xr_dataset_path)
         loaded_data.attrs["export_info"] = export_info.to_str()
