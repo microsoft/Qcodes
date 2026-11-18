@@ -23,6 +23,7 @@ license = "MIT"
 readme = "README.rst"
 requires-python = ">=3.12"
 dependencies = [
+    "backports.zstd>=1.0.0; python_version < '3.14'",
     "broadbean>=0.11.0",
     "h5netcdf>=1.3.0",
     "h5py>=3.10.0",

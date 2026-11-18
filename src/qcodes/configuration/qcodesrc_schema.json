@@ -303,6 +303,12 @@
         "dataset": {
             "type": "object",
             "properties": {
+                "snapshot_compression": {
+                    "type": "string",
+                    "enum": ["none", "zstd"],
+                    "default": "none",
+                    "description": "Snapshot write policy: uncompressed JSON TEXT, readable by all QCoDeS versions, or lossless Zstandard level 1 BLOBs, readable by QCoDeS 0.64.0 and later. Reads support both independently of this setting."
+                },
                 "write_in_background": {
                     "type": "boolean",
                     "default": false,

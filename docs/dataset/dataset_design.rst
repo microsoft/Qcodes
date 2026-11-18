@@ -76,6 +76,55 @@ SQLite database. This is not an intrinsic limitation of the dataset and
 measurement layer. It is possible that at a future state support for writing
 to a different backend will be added.
 
+.. _sec:design_snapshot_storage:
+
+Snapshot storage
+================
+
+The ``runs.snapshot`` column holds either JSON TEXT or a versioned, compressed
+BLOB. Both are read transparently, independent of the current write policy;
+SQL NULL continues to mean no snapshot. The write policy is controlled by::
+
+    qcodes.config.dataset.snapshot_compression = "zstd"
+
+The default, ``"none"``, writes uncompressed JSON TEXT, which all QCoDeS
+versions can read. ``"zstd"`` writes lossless Zstandard level 1 BLOBs, which
+can only be read by QCoDeS 0.64.0 and later. The policy
+applies to each new write, including overwrites, database copies and imported
+metadata; it never rewrites existing snapshots, so one database may contain
+both representations. No database schema change or upgrade is involved;
+SQLite already allows BLOB values in this column.
+
+The BLOB format is the ASCII bytes ``QCoDeS.snapshot``, a NUL byte, a version
+byte (currently ``0x01``), then exactly one Zstandard frame with a checksum.
+The frame contains the original JSON string encoded as UTF-8. Compression
+does not parse or re-encode JSON, drop fields, deduplicate values, or change
+NumPy/custom encoder, complex number, uncertainty or non-finite float semantics.
+Unknown versions, truncated or corrupt frames, checksum failures and invalid
+UTF-8 raise exceptions; there is no fallback to an empty or legacy snapshot.
+JSON parsing remains the responsibility of the decoded snapshot API, so
+malformed JSON can still be stored/read raw and raises when decoded.
+
+``DataSet.snapshot`` returns complete decoded contents; ``snapshot_raw``,
+``_snapshot_raw``, ``get_metadata("snapshot")`` and low-level raw run attributes
+return JSON strings, never compressed bytes. Xarray and NetCDF exports also
+contain JSON strings. In-memory datasets retain JSON strings and use this write
+policy when persisting snapshot metadata. Results backends and foreground or
+background result writers do not change the snapshot format or startup order.
+CPython 3.14 and newer use ``compression.zstd``; earlier supported Python
+versions use the declared ``backports.zstd`` runtime dependency.
+
+Compressed snapshots are opt-in because QCoDeS versions before 0.64.0 cannot
+decode them. Those versions still open the database, and runs with
+uncompressed snapshots are unaffected. For runs written with ``"zstd"``, they
+can still read the measured data and other metadata, but accessing
+the snapshot, exporting to xarray or NetCDF and extracting the run into another
+database fail; ``get_metadata("snapshot")`` returns the raw bytes; and runs
+without a results table, such as those written by ``DataSetInMem``, cannot be
+loaded at all. Direct SQL consumers must handle BLOBs explicitly rather than
+passing them to SQLite JSON functions. Exporting to NetCDF with QCoDeS 0.64.0 or
+later retains the snapshot as JSON for interchange with earlier versions.
+
 .. _sec:design_split_storage:
 
 Split Raw Data Storage

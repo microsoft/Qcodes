@@ -1,0 +1,6 @@
+Snapshots can be stored losslessly using versioned, checksummed Zstandard
+level 1 compression by setting ``dataset.snapshot_compression`` to ``"zstd"``.
+Compressed and uncompressed snapshots are always readable, and snapshot APIs and
+NetCDF exports return the complete JSON. Uncompressed snapshots, the default,
+can be read by all QCoDeS versions; compressed snapshots can only be read by
+QCoDeS 0.64.0 and later. No database upgrade is required.

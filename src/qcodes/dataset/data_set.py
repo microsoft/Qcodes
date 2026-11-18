@@ -84,6 +84,7 @@ from qcodes.dataset.sqlite.query_helpers import (
     insert_many_values,
     select_one_where,
 )
+from qcodes.dataset.sqlite.snapshot_storage import decode_snapshot
 from qcodes.utils import (
     NumpyJSONEncoder,
     QCoDeSDeprecationWarning,
@@ -497,11 +498,9 @@ class DataSet(BaseDataSet):
     @property
     def _snapshot_raw(self) -> str | None:
         """Snapshot of the run as a JSON-formatted string (or None)"""
-        snapshot_raw = select_one_where(
-            self.conn, "runs", "snapshot", "run_id", self.run_id
-        )
-        assert isinstance(snapshot_raw, (str, type(None)))
-        return snapshot_raw
+        stored = select_one_where(self.conn, "runs", "snapshot", "run_id", self.run_id)
+        assert isinstance(stored, (str, bytes, type(None)))
+        return decode_snapshot(stored)
 
     @property
     def snapshot_raw(self) -> str | None:

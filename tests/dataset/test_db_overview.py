@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+import qcodes as qc
 from qcodes.dataset import (
     get_db_overview,
     load_or_create_experiment,
@@ -153,6 +154,24 @@ def test_get_db_overview_extra_columns(db_conn: AtomicConnection) -> None:
     # ... while a non-existent column is silently skipped.
     overview = get_db_overview(conn=db_conn, extra_columns=["does_not_exist"])
     assert "does_not_exist" not in overview[1]
+
+
+def test_get_db_overview_decodes_snapshot_extra_column(
+    db_conn: AtomicConnection,
+) -> None:
+    exp = load_or_create_experiment("exp", sample_name="sample", conn=db_conn)
+    plain = new_data_set("plain", exp_id=exp.exp_id, conn=db_conn)
+    plain.add_snapshot('{"plain": true}')
+    qc.config.dataset.snapshot_compression = "zstd"
+    compressed = new_data_set("compressed", exp_id=exp.exp_id, conn=db_conn)
+    compressed.add_snapshot('{"compressed": true}')
+    new_data_set("no_snapshot", exp_id=exp.exp_id, conn=db_conn)
+
+    overview = get_db_overview(conn=db_conn, extra_columns=["snapshot"])
+
+    assert overview[1]["snapshot"] == '{"plain": true}'  # type: ignore[typeddict-item]
+    assert overview[2]["snapshot"] == '{"compressed": true}'  # type: ignore[typeddict-item]
+    assert overview[3]["snapshot"] is None  # type: ignore[typeddict-item]
 
 
 def test_get_db_overview_accepts_connection(db_conn: AtomicConnection) -> None:
