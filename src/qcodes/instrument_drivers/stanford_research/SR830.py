@@ -1046,20 +1046,29 @@ class GeneratedSetPoints(Parameter):
         """
         assert isinstance(self.root_instrument, SR830)
         SR = self.root_instrument.buffer_SR.get()
+        sweep_unit, sweep_label = self._sweep_unit_and_label()
         if SR != "Trigger":
-            if self._saved_sweep_unit_and_label is None:
-                self._saved_sweep_unit_and_label = (self.unit, self.label)
+            self._saved_sweep_unit_and_label = (sweep_unit, sweep_label)
             self.unit = "s"
             self.label = "Time"
-        elif self._saved_sweep_unit_and_label is not None:
-            saved_unit, saved_label = self._saved_sweep_unit_and_label
-            # keep a unit or label that was assigned directly while the
-            # sample times were shown
-            if self.unit == "s":
-                self.unit = saved_unit
-            if self.label == "Time":
-                self.label = saved_label
+        else:
             self._saved_sweep_unit_and_label = None
+            self.unit = sweep_unit
+            self.label = sweep_label
+
+    def _sweep_unit_and_label(self) -> tuple[str, str]:
+        """
+        The current unit and label of the sweep. While the sample times are
+        shown, a unit or label other than "s" / "Time" was assigned directly
+        and replaces the saved one.
+        """
+        if self._saved_sweep_unit_and_label is None:
+            return self.unit, self.label
+        saved_unit, saved_label = self._saved_sweep_unit_and_label
+        return (
+            saved_unit if self.unit == "s" else self.unit,
+            saved_label if self.label == "Time" else self.label,
+        )
 
     def set_raw(self, value: Iterable[float | int]) -> None:
         self.sweep_array = value
