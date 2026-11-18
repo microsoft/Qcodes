@@ -780,7 +780,11 @@ class DataSet(BaseDataSet):
                 "main thread. You cannot mix."
             )
         if start_bg_writer and (self.subscribers or self._pending_subscribers):
-            raise NotImplementedError(_SUBSCRIBERS_WITH_BACKGROUND_WRITING_ERROR)
+            raise NotImplementedError(
+                f"{_SUBSCRIBERS_WITH_BACKGROUND_WRITING_ERROR} The subscribers of "
+                "this DataSet keep running until they are removed with "
+                "unsubscribe_all()."
+            )
 
         with atomic(self.conn) as conn:
             for spec in paramspecs:

@@ -94,6 +94,29 @@ class DataSaver:
 
     default_callback: dict[Any, Any] | None = None
 
+    @staticmethod
+    def _default_callback_config() -> dict[Any, Any] | None:
+        """
+        The configuration of the default callback that a DataSaver subscribes
+        to the :class:`.DataSet` that it saves to, if it is set.
+        """
+        if (
+            DataSaver.default_callback is not None
+            and "run_tables_subscription_callback" in DataSaver.default_callback
+        ):
+            return DataSaver.default_callback
+        return None
+
+    @staticmethod
+    def _adds_default_subscribers() -> bool:
+        """
+        Whether a DataSaver subscribes the default callback or the default
+        subscribers from the config to the :class:`.DataSet` that it saves to.
+        """
+        return DataSaver._default_callback_config() is not None or bool(
+            qc.config.subscription.default_subscribers
+        )
+
     def __init__(
         self,
         dataset: DataSetProtocol,
@@ -105,13 +128,11 @@ class DataSaver:
         self._span = span
         self._dataset = dataset
         self._add_result_time_ns = 0
-        if (
-            DataSaver.default_callback is not None
-            and "run_tables_subscription_callback" in DataSaver.default_callback
-        ):
-            callback = DataSaver.default_callback["run_tables_subscription_callback"]
-            min_wait = DataSaver.default_callback["run_tables_subscription_min_wait"]
-            min_count = DataSaver.default_callback["run_tables_subscription_min_count"]
+        default_callback = DataSaver._default_callback_config()
+        if default_callback is not None:
+            callback = default_callback["run_tables_subscription_callback"]
+            min_wait = default_callback["run_tables_subscription_min_wait"]
+            min_count = default_callback["run_tables_subscription_min_count"]
             snapshot = dataset.metadata["snapshot"]
             if isinstance(self._dataset, DataSet):
                 self._dataset.subscribe(
@@ -608,17 +629,11 @@ class Runner:
     def __enter__(self) -> DataSaver:
         # Fail before creating the run: subscribing to a DataSet that is
         # written in the background is not supported, and raising only once
-        # the run is started would leave it incomplete. The DataSaver also
-        # adds the default callback and the default subscribers from the config.
+        # the run is started would leave it incomplete.
         if (
             self._write_in_background
             and self._dataset_class is DataSetType.DataSet
-            and (
-                self.subscribers
-                or qc.config.subscription.default_subscribers
-                or "run_tables_subscription_callback"
-                in (DataSaver.default_callback or {})
-            )
+            and (self.subscribers or DataSaver._adds_default_subscribers())
         ):
             raise NotImplementedError(_SUBSCRIBERS_WITH_BACKGROUND_WRITING_ERROR)
 

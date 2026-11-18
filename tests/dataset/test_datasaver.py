@@ -100,7 +100,10 @@ def test_default_callback_with_background_writing_not_supported() -> None:
             interdeps=InterDependencies_(),
             registered_parameters=[],
         )
-        with pytest.raises(NotImplementedError, match="written in the background"):
+        with pytest.raises(
+            NotImplementedError,
+            match=r"written in the background.*removed with unsubscribe_all\(\)",
+        ):
             test_set.mark_started(start_bg_writer=True)
         assert test_set.pristine
     finally:

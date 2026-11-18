@@ -2,4 +2,7 @@ Fixed two race conditions in ``DataSet`` subscribers. A result inserted while a 
 callback was running could be held back until the next insert, and when a dataset was
 completed, its final callback could run concurrently with one already in progress on the
 subscriber thread, delivering results out of order. Subscriber callbacks now never overlap
-and always receive results in the order they were inserted.
+and always receive results in the order they were inserted. The length passed to a
+subscriber callback is now always the number of results in the dataset up to and including
+the ones passed along with it. Previously it could be off when results were inserted while
+the callback was being called.
