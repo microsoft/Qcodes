@@ -4,4 +4,6 @@ driver now only accept the filter cutoffs that the instrument has: ``cutoff_lo``
 also accepted 30 kHz to 1 MHz, and ``cutoff_hi`` accepted ``"DC"``.
 
 ``SR86x.external_reference_trigger_input_resistance`` now returns ``"50OHMS"`` or ``"1MEG"``
-instead of ``0`` or ``1``. Setting it to ``0`` or ``1`` still works.
+instead of ``0`` or ``1``. Setting it to ``0`` or ``1`` still works at runtime, but type
+checkers now reject it since the parameter is annotated as ``Parameter[str, Self]``; set it to
+``"50"`` / ``"50OHMS"`` or ``"1M"`` / ``"1MEG"`` instead.
