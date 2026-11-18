@@ -39,8 +39,8 @@ def _driver_module_with_fake_gclib(
     monkeypatch: pytest.MonkeyPatch,
 ) -> "Generator[types.ModuleType, None, None]":
     fake_gclib = types.ModuleType("gclib")
-    fake_gclib.py = _FakeGclibConnection  # type: ignore[attr-defined]
-    fake_gclib.GclibError = Exception  # type: ignore[attr-defined]
+    fake_gclib.py = _FakeGclibConnection  # type: ignore[attr-defined]  # ty: ignore[missing-attribute]
+    fake_gclib.GclibError = Exception  # type: ignore[attr-defined]  # ty: ignore[missing-attribute]
     monkeypatch.setitem(sys.modules, "gclib", fake_gclib)
     for name in ("qcodes.instrument_drivers.Galil", _DRIVER_MODULE):
         monkeypatch.delitem(sys.modules, name, raising=False)

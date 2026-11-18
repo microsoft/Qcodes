@@ -261,18 +261,18 @@ def test_set_interdependencies_override_is_deprecated() -> None:
 
     match = "The `override` argument of `DataSet.set_interdependencies` is deprecated"
     with pytest.warns(QCoDeSDeprecationWarning, match=match):
-        ds.set_interdependencies(idps, override=True)  # pyright: ignore[reportDeprecated]
+        ds.set_interdependencies(idps, override=True)  # pyright: ignore[reportDeprecated]  # ty: ignore[deprecated]
     assert isinstance(ds.description.interdeps, FrozenInterDependencies_)
     assert ds.description.interdeps == idps
 
     with pytest.warns(QCoDeSDeprecationWarning, match=match):
-        ds.set_interdependencies(idps, None, True)  # pyright: ignore[reportDeprecated]
+        ds.set_interdependencies(idps, None, True)  # pyright: ignore[reportDeprecated]  # ty: ignore[deprecated]
 
     with (
         pytest.warns(QCoDeSDeprecationWarning, match=match),
         pytest.raises(RuntimeError, match="has been started"),
     ):
-        ds.set_interdependencies(idps, override=False)  # pyright: ignore[reportDeprecated]
+        ds.set_interdependencies(idps, override=False)  # pyright: ignore[reportDeprecated]  # ty: ignore[deprecated]
 
 
 @pytest.mark.usefixtures("experiment")
