@@ -1791,7 +1791,10 @@ class DataSet(BaseDataSet):
                         },
                     )
                     xarray_to_h5netcdf_with_complex_numbers(
-                        data, file_path, compute=False
+                        data,
+                        file_path,
+                        compute=False,
+                        snapshot_in_group=qcodes.config.dataset.export_snapshot_in_group,
                     )
                 finally:
                     data.close()

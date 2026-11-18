@@ -18,6 +18,11 @@ from .export_to_pandas import (
     _data_to_dataframe,
     _generate_pandas_index,
 )
+from .netcdf_snapshot import (
+    _SNAPSHOT_POINTER,
+    _should_write_snapshot_to_group,
+    _write_snapshot_to_group,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Hashable, Mapping
@@ -681,6 +686,7 @@ def xarray_to_h5netcdf_with_complex_numbers(
     file_path: str | Path,
     compute: bool = True,
     compression_level: int | None = None,
+    snapshot_in_group: bool = False,
 ) -> None:
     """
     Write an xarray dataset to a netcdf file using the h5netcdf engine.
@@ -693,6 +699,9 @@ def xarray_to_h5netcdf_with_complex_numbers(
         compression_level: Deflate compression level between 0 and 9 where 0
             means no compression. If None the level is read from
             ``qcodes.config.dataset.export_netcdf_compression_level``.
+        snapshot_in_group: If True the snapshot is stored as a variable in the
+            ``qcodes_metadata`` group, compressed with ``compression_level``,
+            and the ``snapshot`` attribute is replaced by a pointer to it.
 
     """
     import cf_xarray as cf_xr
@@ -700,6 +709,12 @@ def xarray_to_h5netcdf_with_complex_numbers(
 
     if compression_level is None:
         compression_level = int(qcodes.config.dataset.export_netcdf_compression_level)
+
+    snapshot_attr = xarray_dataset.attrs.get("snapshot")
+    group_snapshot: str | None = None
+    if snapshot_in_group and _should_write_snapshot_to_group(snapshot_attr):
+        group_snapshot = snapshot_attr
+        xarray_dataset = xarray_dataset.assign_attrs(snapshot=_SNAPSHOT_POINTER)
 
     has_multi_index = any(
         isinstance(xarray_dataset.indexes[index_name], MultiIndex)
@@ -773,3 +788,10 @@ def xarray_to_h5netcdf_with_complex_numbers(
                     extra={"file_name": str(file_path)},
                 )
                 maybe_write_job.compute()
+    if group_snapshot is not None:
+        _write_snapshot_to_group(
+            file_path,
+            group_snapshot,
+            compression_level=compression_level,
+            chunk_size_bytes=_TARGET_CHUNK_SIZE_BYTES,
+        )

@@ -9,6 +9,7 @@ from math import prod
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+import h5netcdf  # type: ignore[import-untyped]
 import numpy as np
 import pandas as pd
 import pytest
@@ -30,6 +31,7 @@ from qcodes.dataset import (
     load_by_id,
     load_from_netcdf,
     new_data_set,
+    snapshot_from_netcdf,
 )
 from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
@@ -1246,6 +1248,74 @@ def test_export_dataset_delayed_complex(
     assert loaded_ds.z.shape == (10, 11)
     assert_allclose(loaded_ds.z, expected_z)
     _assert_xarray_metadata_is_as_expected(loaded_ds, mock_dataset_numpy_complex)
+
+
+@pytest.mark.parametrize("chunked", [False, True])
+@pytest.mark.parametrize("snapshot_in_group", [False, True])
+def test_export_snapshot_in_group_round_trips(
+    tmp_path: Path, mock_dataset_grid: DataSet, chunked: bool, snapshot_in_group: bool
+) -> None:
+    snapshot = {"station": {"instruments": {"dac": {"value": 1.5, "unit": "\u03bcV"}}}}
+    mock_dataset_grid.add_snapshot(json.dumps(snapshot))
+    qcodes.config.dataset.export_snapshot_in_group = snapshot_in_group
+    qcodes.config.dataset.export_chunked_export_of_large_files_enabled = chunked
+    qcodes.config.dataset.export_chunked_threshold = 0
+    mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
+    file_path = mock_dataset_grid.export_info.export_paths["nc"]
+
+    raw_attr = xr.load_dataset(file_path).attrs["snapshot"]
+    with h5netcdf.File(file_path, "r") as nc_file:
+        assert ("qcodes_metadata" in nc_file.groups) is snapshot_in_group
+        if snapshot_in_group:
+            snapshot_var = nc_file.groups["qcodes_metadata"].variables["snapshot"]
+            assert snapshot_var.compression == "gzip"
+    if snapshot_in_group:
+        assert json.loads(raw_attr) == {
+            "__qcodes_snapshot_location__": "qcodes_metadata/snapshot"
+        }
+    else:
+        assert raw_attr == mock_dataset_grid.snapshot_raw
+
+    assert snapshot_from_netcdf(file_path) == snapshot
+    loaded = load_from_netcdf(file_path)
+    assert loaded.snapshot == snapshot
+    reloaded_xr = loaded.to_xarray_dataset()
+    assert reloaded_xr.attrs["snapshot"] == mock_dataset_grid.snapshot_raw
+    assert list(reloaded_xr.data_vars) == ["z"]
+
+
+def test_export_snapshot_in_group_without_snapshot(
+    tmp_path: Path, mock_dataset_grid: DataSet
+) -> None:
+    qcodes.config.dataset.export_snapshot_in_group = True
+    mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
+    file_path = mock_dataset_grid.export_info.export_paths["nc"]
+
+    with h5netcdf.File(file_path, "r") as nc_file:
+        assert "qcodes_metadata" not in nc_file.groups
+    assert xr.load_dataset(file_path).attrs["snapshot"] == "null"
+    assert snapshot_from_netcdf(file_path) is None
+    assert load_from_netcdf(file_path).snapshot is None
+
+
+@pytest.mark.parametrize("compression_level", [0, 9])
+def test_export_snapshot_in_group_uses_compression_level(
+    tmp_path: Path, mock_dataset_grid: DataSet, compression_level: int
+) -> None:
+    mock_dataset_grid.add_snapshot(json.dumps({"station": {"value": 1}}))
+    qcodes.config.dataset.export_snapshot_in_group = True
+    qcodes.config.dataset.export_netcdf_compression_level = compression_level
+    mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
+    file_path = mock_dataset_grid.export_info.export_paths["nc"]
+
+    with h5netcdf.File(file_path, "r") as nc_file:
+        snapshot_var = nc_file.groups["qcodes_metadata"].variables["snapshot"]
+        if compression_level == 0:
+            assert snapshot_var.compression is None
+        else:
+            assert snapshot_var.compression == "gzip"
+            assert snapshot_var.compression_opts == compression_level
+    assert snapshot_from_netcdf(file_path) == {"station": {"value": 1}}
 
 
 def test_export_non_grid_dataset_xarray(mock_dataset_non_grid: DataSet) -> None:
