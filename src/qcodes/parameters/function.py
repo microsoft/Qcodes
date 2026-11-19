@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from functools import cached_property
 from typing import TYPE_CHECKING, Any
 
 from qcodes.metadatable import MetadatableWithName
@@ -181,7 +180,7 @@ class Function(MetadatableWithName):
         """
         return self.name
 
-    @cached_property
+    @property
     def full_name(self) -> str:
         """
         Name of the function including the name of the instrument and

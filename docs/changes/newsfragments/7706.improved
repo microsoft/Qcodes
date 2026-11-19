@@ -1,0 +1,9 @@
+The ``full_name`` of an instrument, instrument module, ``ChannelTuple`` or parameter, and
+thereby the ``name`` of an instrument, is now cached on first access. Resolving these names
+walked up the chain of parent instruments on every access, which was a significant part of the
+time spent taking a snapshot of a station, e.g. at the start of every measurement. Taking a
+snapshot of a station with a few thousand parameters on nested instrument modules is now around
+25% faster. The name is only cached if it is built by the default implementations of
+``name_parts`` and ``short_name`` of the component and all its parents, since these only depend
+on attributes set when the component is created. Components where any of these are overridden,
+and therefore may change name after creation, still compute ``full_name`` on every access.

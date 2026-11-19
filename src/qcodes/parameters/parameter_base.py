@@ -1328,14 +1328,41 @@ class ParameterBase(
         full name refer to :meth:`full_name`."""
         return self._short_name
 
-    @cached_property
+    @property
     def full_name(self) -> str:
         """
         Name of the parameter including the name of the instrument and
         submodule that the parameter may be bound to. The names are separated
         by underscores, like this: ``instrument_submodule_parameter``.
+
+        The name is cached on first access if it is built by the default
+        implementations of :attr:`name_parts`, :attr:`short_name` and
+        :attr:`instrument`, and the name of the instrument is cached too.
+        Otherwise, the name is computed on every access.
         """
-        return "_".join(self.name_parts)
+        full_name: str | None = self.__dict__.get("_cached_full_name")
+        if full_name is None:
+            full_name = "_".join(self.name_parts)
+            if self._has_static_name:
+                self.__dict__["_cached_full_name"] = full_name
+        return full_name
+
+    @cached_property
+    def _has_static_name(self) -> bool:
+        """
+        Whether :attr:`full_name` cannot change after the parameter
+        has been created.
+        """
+        cls = type(self)
+        return (
+            cls.name_parts is ParameterBase.name_parts
+            and cls.short_name is ParameterBase.short_name
+            and cls.instrument is ParameterBase.instrument
+            and (
+                self._instrument is None
+                or getattr(self._instrument, "_has_static_name", False) is True
+            )
+        )
 
     @property
     def register_name(self) -> str:

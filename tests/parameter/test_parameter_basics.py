@@ -164,6 +164,20 @@ def test_str_representation() -> None:
     assert str(p) == "astro_wilma"
 
 
+def test_full_name_is_not_cached_if_name_parts_is_overridden() -> None:
+    class ParameterWithPrefix(Parameter):
+        prefix = "a"
+
+        @property
+        def name_parts(self) -> list[str]:
+            return [self.prefix, self.short_name]
+
+    p = ParameterWithPrefix("p")
+    assert p.full_name == "a_p"
+    p.prefix = "b"
+    assert p.full_name == "b_p"
+
+
 def test_bad_name() -> None:
     with pytest.raises(ValueError):
         Parameter("p with space")

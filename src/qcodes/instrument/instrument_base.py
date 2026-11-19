@@ -737,15 +737,39 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         """
         return [self.short_name]
 
-    @cached_property
+    @property
     def full_name(self) -> str:
         """
         Full name of the instrument.
 
         For an :class:`InstrumentModule` this includes
-        all parents separated by ``_``
+        all parents separated by ``_``.
+
+        The name is cached on first access if it is built by the default
+        implementations of :attr:`name_parts` and :attr:`short_name` of this
+        instrument and all its parents, since those only depend on attributes
+        that are set when the instrument is created. If a subclass overrides
+        either of them, the name is computed on every access.
         """
-        return "_".join(self.name_parts)
+        full_name: str | None = self.__dict__.get("_cached_full_name")
+        if full_name is None:
+            full_name = "_".join(self.name_parts)
+            if self._has_static_name:
+                self.__dict__["_cached_full_name"] = full_name
+        return full_name
+
+    @cached_property
+    def _has_static_name(self) -> bool:
+        """
+        Whether :attr:`full_name` cannot change after the instrument has
+        been created, which is the case if it is built by the default
+        implementations of :attr:`name_parts` and :attr:`short_name`.
+        """
+        cls = type(self)
+        return (
+            cls.name_parts is InstrumentBase.name_parts
+            and cls.short_name is InstrumentBase.short_name
+        )
 
     @property
     def name(self) -> str:
