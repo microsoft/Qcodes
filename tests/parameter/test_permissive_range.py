@@ -106,3 +106,29 @@ def test_numpy_integer_full_span(dtype: type[np.integer], ascending: bool) -> No
     expected = list(range(start, stop, step if ascending else -step))
     assert permissive_range(dtype(start), dtype(stop), step) == expected
     assert permissive_range(dtype(start), dtype(stop), -step) == expected
+
+
+# numpy promotes a 64 bit integer combined with a narrower float to float64.
+# Converting the integers to Python ints must not lose that promotion, or
+# 2**24 + 1 and 2**24 + 3 fall back to float32 and the steps are uneven.
+numpy_integer_float_args = [
+    (
+        (np.int64(2**24), np.int64(2**24 + 4), np.float32(1)),
+        [2**24, 2**24 + 1, 2**24 + 2, 2**24 + 3],
+    ),
+    (
+        (np.uint32(2**24 + 4), np.uint32(2**24), np.float32(1)),
+        [2**24 + 4, 2**24 + 3, 2**24 + 2, 2**24 + 1],
+    ),
+    (
+        (np.float32(2**24), np.int64(2**24 + 4), np.int64(1)),
+        [2**24, 2**24 + 1, 2**24 + 2, 2**24 + 3],
+    ),
+]
+
+
+@pytest.mark.parametrize("args,result", numpy_integer_float_args)
+def test_numpy_integer_with_numpy_float(args, result) -> None:
+    # compare as Python floats: comparing np.float32 to a Python int is done
+    # in float32, where 2**24 + 1 == 2**24
+    assert [float(value) for value in permissive_range(*args)] == result
