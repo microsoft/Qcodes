@@ -219,6 +219,15 @@ class _WriterStatus:
 
 _WRITERS: dict[str, _WriterStatus] = {}
 
+# The SQL function that a subscriber's trigger calls only exists on the
+# DataSet's own connection, so inserts made by the background writer, which
+# uses its own connection, would fail.
+_SUBSCRIBERS_WITH_BACKGROUND_WRITING_ERROR = (
+    "Subscribers are not supported for a DataSet that is written in the "
+    "background. Write the DataSet in the main thread "
+    "(write_in_background=False) to subscribe to it."
+)
+
 
 class DataSet(BaseDataSet):
     # the "persistent traits" are the attributes/properties of the DataSet
@@ -834,6 +843,12 @@ class DataSet(BaseDataSet):
                 "be written either in the background or in the "
                 "main thread. You cannot mix."
             )
+        if start_bg_writer and (self.subscribers or self._pending_subscribers):
+            raise NotImplementedError(
+                f"{_SUBSCRIBERS_WITH_BACKGROUND_WRITING_ERROR} The subscribers of "
+                "this DataSet keep running until they are removed with "
+                "unsubscribe_all()."
+            )
 
         with atomic(self.conn) as conn:
             for spec in paramspecs:
@@ -1312,6 +1327,15 @@ class DataSet(BaseDataSet):
         state: Any | None = None,
         callback_kwargs: Mapping[str, Any] | None = None,
     ) -> str:
+        writer_status = self._writer_status
+        # Background writing is tracked per database, so also check that it is
+        # this run that is being written. A dataset that has not been started
+        # can be subscribed to; starting it in the background then raises.
+        if (
+            writer_status.write_in_background
+            and self.run_id in writer_status.active_datasets
+        ):
+            raise NotImplementedError(_SUBSCRIBERS_WITH_BACKGROUND_WRITING_ERROR)
         subscriber_id = uuid.uuid4().hex
         if not self._results_table_exists:
             # The results table does not exist yet - this happens with split

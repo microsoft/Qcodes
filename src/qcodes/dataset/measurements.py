@@ -26,7 +26,11 @@ from opentelemetry import trace
 
 import qcodes as qc
 import qcodes.validators as vals
-from qcodes.dataset.data_set import DataSet, load_by_guid
+from qcodes.dataset.data_set import (
+    _SUBSCRIBERS_WITH_BACKGROUND_WRITING_ERROR,
+    DataSet,
+    load_by_guid,
+)
 from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.data_set_protocol import (
     DataSetProtocol,
@@ -90,6 +94,29 @@ class DataSaver:
 
     default_callback: dict[Any, Any] | None = None
 
+    @staticmethod
+    def _default_callback_config() -> dict[Any, Any] | None:
+        """
+        The configuration of the default callback that a DataSaver subscribes
+        to the :class:`.DataSet` that it saves to, if it is set.
+        """
+        if (
+            DataSaver.default_callback is not None
+            and "run_tables_subscription_callback" in DataSaver.default_callback
+        ):
+            return DataSaver.default_callback
+        return None
+
+    @staticmethod
+    def _adds_default_subscribers() -> bool:
+        """
+        Whether a DataSaver subscribes the default callback or the default
+        subscribers from the config to the :class:`.DataSet` that it saves to.
+        """
+        return DataSaver._default_callback_config() is not None or bool(
+            qc.config.subscription.default_subscribers
+        )
+
     def __init__(
         self,
         dataset: DataSetProtocol,
@@ -101,13 +128,11 @@ class DataSaver:
         self._span = span
         self._dataset = dataset
         self._add_result_time_ns = 0
-        if (
-            DataSaver.default_callback is not None
-            and "run_tables_subscription_callback" in DataSaver.default_callback
-        ):
-            callback = DataSaver.default_callback["run_tables_subscription_callback"]
-            min_wait = DataSaver.default_callback["run_tables_subscription_min_wait"]
-            min_count = DataSaver.default_callback["run_tables_subscription_min_count"]
+        default_callback = DataSaver._default_callback_config()
+        if default_callback is not None:
+            callback = default_callback["run_tables_subscription_callback"]
+            min_wait = default_callback["run_tables_subscription_min_wait"]
+            min_count = default_callback["run_tables_subscription_min_count"]
             snapshot = dataset.metadata["snapshot"]
             if isinstance(self._dataset, DataSet):
                 self._dataset.subscribe(
@@ -602,6 +627,16 @@ class Runner:
         return float(write_period)
 
     def __enter__(self) -> DataSaver:
+        # Fail before creating the run: subscribing to a DataSet that is
+        # written in the background is not supported, and raising only once
+        # the run is started would leave it incomplete.
+        if (
+            self._write_in_background
+            and self._dataset_class is DataSetType.DataSet
+            and (self.subscribers or DataSaver._adds_default_subscribers())
+        ):
+            raise NotImplementedError(_SUBSCRIBERS_WITH_BACKGROUND_WRITING_ERROR)
+
         # multiple runners can be active at the same time.
         # If we just activate them in order the first one
         # would be the parent of the next one but that is wrong
@@ -1458,6 +1493,9 @@ class Measurement:
         """
         Add a subscriber to the dataset of the measurement.
 
+        Subscribers are not supported when the dataset is written in the
+        background, see the ``write_in_background`` argument of :meth:`run`.
+
         Args:
             func: A function taking three positional arguments: a list of
                 tuples of parameter values, an integer, a mutable variable
@@ -1497,7 +1535,10 @@ class Measurement:
                 will be stored in background, without blocking the
                 main thread that is executing the context manager.
                 By default the setting for write in background will be
-                read from the ``qcodesrc.json`` config file.
+                read from the ``qcodesrc.json`` config file. Subscribers
+                are not supported when writing in the background for the
+                default ``DataSet`` class, so entering the context manager
+                raises a ``NotImplementedError`` if any are set up.
             in_memory_cache: Should measured data be keep in memory
                 and available as part of the `dataset.cache` object.
             dataset_class: Enum representing the Class used to store data

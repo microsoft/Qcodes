@@ -1,0 +1,5 @@
+Subscribing to a ``DataSet`` that is written in the background (``write_in_background=True``)
+now raises a ``NotImplementedError``. This combination never worked: the background writer
+failed to insert the first results and the measurement then hung. ``Measurement.run`` raises
+the error before the run is created if subscribers are set up via ``Measurement.add_subscriber``,
+the ``subscription.default_subscribers`` config option or ``DataSaver.default_callback``.

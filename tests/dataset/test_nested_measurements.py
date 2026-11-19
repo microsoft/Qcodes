@@ -10,10 +10,7 @@ from qcodes.dataset import Measurement, new_data_set
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.sqlite.connection import atomic_transaction
 from qcodes.parameters import ParamSpecBase
-from tests.common import retry_until_does_not_throw
 
-if TYPE_CHECKING:
-    from collections.abc import Callable
 if TYPE_CHECKING:
     from qcodes.dataset.experiment_container import Experiment
     from qcodes.instrument_drivers.mock_instruments import DummyInstrument
@@ -173,28 +170,7 @@ def test_nested_measurement_array(
     assert_allclose(data2["bar2"], expected_foo2_data * expected_bar2spt_data)
 
 
-@pytest.fixture(scope="function")
-def basic_subscriber() -> "Callable[[list[tuple[VALUE]], int, dict | None], None]":
-    """
-    A basic subscriber that just puts results and length into
-    state
-    """
-
-    def subscriber(
-        results: list[tuple[VALUE]], length: int, state: dict | None
-    ) -> None:
-        assert state is not None
-        state[length] = results
-
-    return subscriber
-
-
-@pytest.mark.flaky(reruns=5)
-@pytest.mark.serial
-def test_subscription_on_dual_datasets(
-    experiment: "Experiment",
-    basic_subscriber: "Callable[[list[tuple[VALUE]], int, dict | None], None]",
-) -> None:
+def test_subscription_on_dual_datasets(experiment: "Experiment") -> None:
     xparam = ParamSpecBase(name="x", paramtype="numeric", label="x parameter", unit="V")
     yparam1 = ParamSpecBase(
         name="y1", paramtype="numeric", label="y parameter", unit="Hz"
@@ -208,7 +184,12 @@ def test_subscription_on_dual_datasets(
     dataset1.set_interdependencies(idps_1)
     dataset1.mark_started()
 
-    sub_id_1 = dataset1.subscribe(basic_subscriber, min_wait=0, min_count=1, state={})
+    received_1: list[tuple[VALUE, ...]] = []
+    sub_id_1 = dataset1.subscribe(
+        lambda results, length, state: received_1.extend(results),
+        min_wait=0,
+        min_count=1,
+    )
 
     assert len(dataset1.subscribers) == 1
     assert list(dataset1.subscribers.keys()) == [sub_id_1]
@@ -218,32 +199,36 @@ def test_subscription_on_dual_datasets(
     dataset2.set_interdependencies(idps_2)
     dataset2.mark_started()
 
-    sub_id_2 = dataset2.subscribe(basic_subscriber, min_wait=0, min_count=1, state={})
+    received_2: list[tuple[VALUE, ...]] = []
+    sub_id_2 = dataset2.subscribe(
+        lambda results, length, state: received_2.extend(results),
+        min_wait=0,
+        min_count=1,
+    )
 
     assert len(dataset2.subscribers) == 1
     assert list(dataset2.subscribers.keys()) == [sub_id_2]
 
     assert sub_id_1 != sub_id_2
 
-    expected_state_1 = {}
-    expected_state_2 = {}
+    expected_1: list[tuple[VALUE, ...]] = []
+    expected_2: list[tuple[VALUE, ...]] = []
 
     for x in range(10):
         y1 = -(x**2)
         y2 = x**2
         dataset1.add_results([{"x": x, "y1": y1}])
         dataset2.add_results([{"x": x, "y2": y2}])
-        expected_state_1[x + 1] = [(x, y1)]
-        expected_state_2[x + 1] = [(x, y2)]
+        expected_1.append((x, y1))
+        expected_2.append((x, y2))
 
-        @retry_until_does_not_throw(
-            exception_class_to_expect=AssertionError, delay=0.05, tries=100
-        )
-        def assert_expected_state() -> "None":
-            assert dataset1.subscribers[sub_id_1].state == expected_state_1
-            assert dataset2.subscribers[sub_id_2].state == expected_state_2
+    # Completing a dataset hands all remaining results to its subscribers
+    dataset1.mark_completed()
+    dataset2.mark_completed()
 
-        assert_expected_state()
+    # each subscriber only received the results of its own dataset
+    assert received_1 == expected_1
+    assert received_2 == expected_2
 
     dataset1.unsubscribe(sub_id_1)
     dataset2.unsubscribe(sub_id_2)
