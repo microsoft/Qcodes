@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 from collections.abc import Callable, Iterable, Iterator, MutableSequence, Sequence
+from functools import cached_property
 from typing import TYPE_CHECKING, Any, Generic, Self, cast, overload
 
 from typing_extensions import TypeVar
@@ -94,6 +95,15 @@ class InstrumentModule(InstrumentBase, Generic[_TIB_co]):
         name_parts = list(self._parent.name_parts)
         name_parts.append(self.short_name)
         return name_parts
+
+    @cached_property
+    def _has_static_name(self) -> bool:
+        cls = type(self)
+        return (
+            cls.name_parts is InstrumentModule.name_parts
+            and cls.short_name is InstrumentBase.short_name
+            and getattr(self._parent, "_has_static_name", False) is True
+        )
 
     @property
     def _logger_name_parts(self) -> list[str]:
@@ -307,7 +317,25 @@ class ChannelTuple[InstrumentModuleType: "InstrumentModule"](
 
     @property
     def full_name(self) -> str:
-        return "_".join(self.name_parts)
+        full_name: str | None = self.__dict__.get("_cached_full_name")
+        if full_name is None:
+            full_name = "_".join(self.name_parts)
+            if self._has_static_name:
+                self.__dict__["_cached_full_name"] = full_name
+        return full_name
+
+    @cached_property
+    def _has_static_name(self) -> bool:
+        """
+        Whether :attr:`full_name` cannot change after the ``ChannelTuple``
+        has been created. See :attr:`InstrumentBase.full_name`.
+        """
+        cls = type(self)
+        return (
+            cls.name_parts is ChannelTuple.name_parts
+            and cls.short_name is ChannelTuple.short_name
+            and getattr(self._parent, "_has_static_name", False) is True
+        )
 
     @property
     def name_parts(self) -> list[str]:

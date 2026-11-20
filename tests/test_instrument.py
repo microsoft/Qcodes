@@ -19,6 +19,7 @@ import pytest
 from pytest import FixtureRequest
 
 from qcodes.instrument import (
+    ChannelTuple,
     Instrument,
     InstrumentBase,
     InstrumentChannel,
@@ -660,6 +661,94 @@ def test_closing_instrument_again_keeps_new_instrument_with_same_name() -> None:
 
     assert Instrument.find_instrument("dummy") is new_dummy
     new_dummy.close()
+
+
+def test_names_are_resolved_after_close(
+    testdummychannelinstr: DummyChannelInstrument,
+) -> None:
+    """
+    Closing an instrument strips its attributes and those of its modules,
+    including the cached ``full_name``. The names should still be correct
+    afterwards, since they are recomputed from the attributes that are kept.
+    """
+    channel = testdummychannelinstr.channels[0]
+    parameter = channel.temperature
+    assert testdummychannelinstr.full_name == "testdummy"
+    assert channel.full_name == "testdummy_ChanA"
+    assert parameter.full_name == "testdummy_ChanA_temperature"
+    assert vars(channel)["_cached_full_name"] == "testdummy_ChanA"
+
+    testdummychannelinstr.close()
+
+    assert "_cached_full_name" not in vars(testdummychannelinstr)
+    assert "_cached_full_name" not in vars(channel)
+    assert testdummychannelinstr.full_name == "testdummy"
+    assert channel.full_name == "testdummy_ChanA"
+    assert channel.name == "testdummy_ChanA"
+    assert parameter.full_name == "testdummy_ChanA_temperature"
+
+
+class _ModuleWithDynamicShortName(InstrumentModule):
+    """
+    A module whose name changes after its parameters and submodules have
+    been created, by overriding ``short_name``.
+    """
+
+    def __init__(self, parent: InstrumentBase, name: str) -> None:
+        self.suffix = "_init"
+        super().__init__(parent, name)
+        self.add_parameter("param", get_cmd=None, set_cmd=None)
+        self.add_submodule("sub", InstrumentModule(self, "sub"))
+        self.add_submodule("channels", ChannelTuple(self, "channels", InstrumentModule))
+        self.suffix = ""
+
+    @property
+    def short_name(self) -> str:
+        return self._short_name + self.suffix
+
+
+class _ModuleWithDynamicNameParts(_ModuleWithDynamicShortName):
+    """
+    A module whose name changes after its parameters and submodules have
+    been created, by overriding ``name_parts``.
+    """
+
+    @property
+    def short_name(self) -> str:
+        return self._short_name
+
+    @property
+    def name_parts(self) -> list[str]:
+        return [*self._parent.name_parts, self.short_name + self.suffix]
+
+
+@pytest.mark.parametrize(
+    "module_class", [_ModuleWithDynamicShortName, _ModuleWithDynamicNameParts]
+)
+def test_full_name_is_not_cached_if_naming_is_overridden(
+    module_class: type[_ModuleWithDynamicShortName], request: FixtureRequest
+) -> None:
+    instrument = Instrument("instr")
+    request.addfinalizer(instrument.close)
+    module = instrument.add_submodule("module", module_class(instrument, "module"))
+    parameter = module.parameters["param"]
+    submodule = module.submodules["sub"]
+    channels = module.submodules["channels"]
+
+    assert module.full_name == "instr_module"
+    assert parameter.full_name == "instr_module_param"
+    assert submodule.full_name == "instr_module_sub"
+    assert channels.full_name == "instr_module_channels"
+
+    module.suffix = "_renamed"
+
+    assert module.full_name == "instr_module_renamed"
+    assert module.name == "instr_module_renamed"
+    assert parameter.full_name == "instr_module_renamed_param"
+    assert submodule.full_name == "instr_module_renamed_sub"
+    assert channels.full_name == "instr_module_renamed_channels"
+    assert instrument.full_name == "instr"
+    assert "_cached_full_name" in vars(instrument)
 
 
 def test_instrument_metadata(request: FixtureRequest) -> None:
