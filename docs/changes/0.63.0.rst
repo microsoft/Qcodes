@@ -170,5 +170,3 @@ Under the hood:
   source of each class only once instead of once for every attribute documented on it. (:pr:`8742`)
 - All temporary files created by the test suite are now placed under pytest's temporary directory
   root, so setting ``PYTEST_DEBUG_TEMPROOT`` (or ``--basetemp``) relocates all of them. (:pr:`8749`)
-- The test suite runs faster, especially on Windows: test databases are now opened with SQLite's
-  ``PRAGMA synchronous=OFF`` so that commits are not flushed to disk.
