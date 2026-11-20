@@ -10,6 +10,7 @@ import numpy.typing as npt
 import pytest
 from hypothesis import HealthCheck, given, settings
 
+from qcodes.dataset.data_set_protocol import DataSetType
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.measurements import Measurement
 
@@ -1115,6 +1116,65 @@ def _assert_parameter_data_is_identical(
                 np.testing.assert_array_equal(
                     expected_np_array.ravel(), actual_np_array.ravel()
                 )
+
+
+@pytest.mark.parametrize(
+    "dataset_class", [DataSetType.DataSet, DataSetType.DataSetInMem]
+)
+def test_cache_append_without_shape_does_not_copy_collected_data(
+    experiment: Experiment, dataset_class: DataSetType
+) -> None:
+    meas = Measurement(exp=experiment)
+    meas.register_custom_parameter("x")
+    meas.register_custom_parameter("t", paramtype="array")
+    meas.register_custom_parameter("y", paramtype="array", setpoints=("x", "t"))
+    t = np.linspace(0, 1, 32)
+    collected = []
+    n_copies = 0
+    before: npt.NDArray | None = None
+    with meas.run(dataset_class=dataset_class) as datasaver:
+        for i in range(100):
+            y = np.full(32, float(i))
+            collected.append(y)
+            datasaver.add_result(("x", i), ("t", t), ("y", y))
+            after = datasaver.dataset.cache.data()["y"]["y"]
+            if before is not None:
+                n_copies += not np.shares_memory(before, after)
+            before = after
+        dataset = datasaver.dataset
+    # the buffer grows by a factor of 1.5: about log(100) / log(1.5) copies
+    assert n_copies <= 12
+    np.testing.assert_array_equal(
+        dataset.cache.data()["y"]["y"].ravel(), np.concatenate(collected)
+    )
+    _assert_parameter_data_is_identical(
+        dataset.get_parameter_data(), dataset.cache.data()
+    )
+
+
+@pytest.mark.parametrize(
+    "dataset_class", [DataSetType.DataSet, DataSetType.DataSetInMem]
+)
+def test_cache_append_without_shape_promotes_dtype_and_keeps_input_arrays(
+    experiment: Experiment, dataset_class: DataSetType
+) -> None:
+    meas = Measurement(exp=experiment)
+    meas.register_custom_parameter("x", paramtype="array")
+    meas.register_custom_parameter("y", paramtype="array", setpoints=("x",))
+    # the values of x are views of a larger array, which must not be written to
+    source = np.arange(100.0)
+    with meas.run(dataset_class=dataset_class) as datasaver:
+        for i in range(20):
+            y = np.full(4, i) if i < 10 else np.full(4, i + 0.5)
+            datasaver.add_result(("x", source[4 * i : 4 * i + 4]), ("y", y))
+        dataset = datasaver.dataset
+    np.testing.assert_array_equal(source, np.arange(100.0))
+    data = dataset.cache.data()["y"]
+    np.testing.assert_array_equal(data["x"].ravel(), np.arange(80.0))
+    assert data["y"].dtype == np.float64
+    np.testing.assert_array_equal(
+        data["y"].ravel(), np.repeat([i if i < 10 else i + 0.5 for i in range(20)], 4)
+    )
 
 
 def _array_param_used_in_tree(measurement: Measurement) -> bool:

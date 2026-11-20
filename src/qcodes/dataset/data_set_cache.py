@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import weakref
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
@@ -414,6 +415,58 @@ def _create_new_data_dict(
         return new_values, new_values.size
 
 
+# Without a shape, the cache stores each array as a view of the beginning of a
+# larger buffer allocated by ``_append_rows``, so that appending a result does not
+# copy all data collected before it. This maps the id of each such buffer to the
+# number of its rows that contain data. An entry is removed when its buffer is
+# garbage collected.
+_buffer_rows: dict[int, int] = {}
+
+
+def _append_rows(
+    existing_values: npt.NDArray, new_values: npt.NDArray
+) -> npt.NDArray | None:
+    """
+    Append ``new_values`` to ``existing_values`` along the first axis, with the
+    result of ``np.append``, but into spare rows behind ``existing_values`` if it
+    is a view of a buffer allocated here. The cost of an append then does not
+    grow with the number of rows collected before it. A buffer without enough
+    spare rows is replaced by one with 1.5 times the rows required.
+
+    Returns None if ``np.append`` would change the dtype or the shape after the
+    first axis, or for arrays of objects; these are left to ``np.append``.
+    ``new_values`` and arrays not allocated here are never written to.
+    """
+    if (
+        existing_values.ndim == 0
+        or existing_values.dtype == object
+        or new_values.ndim != existing_values.ndim
+        or new_values.shape[1:] != existing_values.shape[1:]
+        or np.result_type(existing_values.dtype, new_values.dtype)
+        != existing_values.dtype
+    ):
+        return None
+    n_existing = existing_values.shape[0]
+    n_rows = n_existing + new_values.shape[0]
+    buffer = existing_values.base
+    if not (
+        isinstance(buffer, np.ndarray)
+        and _buffer_rows.get(id(buffer)) == n_existing
+        and buffer.shape[1:] == existing_values.shape[1:]
+        and buffer.ctypes.data == existing_values.ctypes.data
+        and buffer.shape[0] >= n_rows
+    ):
+        buffer = np.empty(
+            (max(n_rows + n_rows // 2, 16), *existing_values.shape[1:]),
+            dtype=existing_values.dtype,
+        )
+        buffer[:n_existing] = existing_values
+        weakref.finalize(buffer, _buffer_rows.pop, id(buffer), None)
+    buffer[n_existing:n_rows] = new_values
+    _buffer_rows[id(buffer)] = n_rows
+    return buffer[:n_rows]
+
+
 def _insert_into_data_dict(
     existing_values: npt.NDArray,
     new_values: npt.NDArray,
@@ -424,6 +477,9 @@ def _insert_into_data_dict(
         return existing_values, write_status
 
     if shape is None or write_status is None:
+        appended = _append_rows(existing_values, new_values)
+        if appended is not None:
+            return appended, None
         try:
             data = np.append(existing_values, new_values, axis=0)
         except ValueError:
