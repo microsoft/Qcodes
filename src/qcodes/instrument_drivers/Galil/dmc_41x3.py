@@ -166,8 +166,9 @@ class GalilMotionController(Instrument):
         Asks/Reads data from Galil motion controller
 
         Under rapid polling gclib can return the bare ``:`` prompt or an
-        empty string instead of the reply. Such replies are retried a few
-        times before giving up. The prompt is removed from the reply.
+        empty string instead of the reply. Such replies are logged as a
+        warning and retried a few times before giving up. The prompt is
+        removed from the reply.
 
         Raises:
             RuntimeError: if the controller keeps returning empty replies.
@@ -185,10 +186,15 @@ class GalilMotionController(Instrument):
     def _ask_once(self, cmd: str) -> str:
         """
         Ask once without retrying an empty reply. The ``:`` prompt is removed
-        from the reply.
+        from the reply, and an empty reply is logged as a warning.
         """
         # gclib appends the carriage return that terminates the command
-        return _strip_prompt(self.g.GCommand(cmd))
+        response = _strip_prompt(self.g.GCommand(cmd))
+        if not response:
+            # Empty replies are not expected and may mean that replies no
+            # longer match their commands, so make them visible.
+            self.log.warning("Got an empty reply to %r from the controller", cmd)
+        return response
 
     def timeout(self, val: int) -> None:
         """
@@ -706,12 +712,13 @@ class GalilDMC4133Controller(GalilMotionController):
         Wait until none of the given axes is moving
 
         The controller is polled at a fixed interval. Transient empty replies
-        are treated as "not yet finished". Each query's I/O timeout is capped
-        by the remaining motion timeout (rounded up to milliseconds), and the
-        original I/O timeout is restored afterward. I/O errors before the
-        motion deadline are propagated. If the I/O timeout is -1, the initial
-        connection timeout is not exposed by gclib, so only the remaining
-        motion timeout and the 32767 ms API limit bound the query.
+        are logged as a warning and treated as "not yet finished". Each
+        query's I/O timeout is capped by the remaining motion timeout (rounded
+        up to milliseconds), and the original I/O timeout is restored
+        afterward. I/O errors before the motion deadline are propagated. If
+        the I/O timeout is -1, the initial connection timeout is not exposed
+        by gclib, so only the remaining motion timeout and the 32767 ms API
+        limit bound the query.
 
         Args:
             axes: axis letters to wait for, e.g. ``"AB"``.

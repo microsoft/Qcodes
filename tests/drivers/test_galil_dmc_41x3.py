@@ -5,6 +5,7 @@ from PyPI, so it is replaced by a minimal fake that records the calls made.
 """
 
 import importlib
+import logging
 import sys
 import types
 from typing import TYPE_CHECKING
@@ -98,6 +99,22 @@ def _connection(galil: "GalilDMC4133Controller") -> _FakeGclibConnection:
     return galil.g
 
 
+def _empty_reply_warnings(caplog: pytest.LogCaptureFixture) -> list[str]:
+    return [
+        record.getMessage()
+        for record in caplog.records
+        if record.levelno == logging.WARNING and "empty reply" in record.getMessage()
+    ]
+
+
+def _empty_reply_warning(cmd: str) -> str:
+    # the instrument logger prefixes the message with the instrument
+    return (
+        "[galil(GalilDMC4133Controller)] "
+        f"Got an empty reply to {cmd!r} from the controller"
+    )
+
+
 def test_close_closes_connection_and_unregisters_instrument(
     driver_module: types.ModuleType,
 ) -> None:
@@ -170,14 +187,24 @@ def test_unparsable_reply_raises(galil: "GalilDMC4133Controller") -> None:
         galil.motor_a.on_off_status()
 
 
-def test_parameters_retry_empty_replies(galil: "GalilDMC4133Controller") -> None:
+def test_parameters_retry_empty_replies(
+    galil: "GalilDMC4133Controller", caplog: pytest.LogCaptureFixture
+) -> None:
     # every query retries empty replies, not only the ones that used to
     # have their own retry loop
     _connection(galil).replies["MG _SPA"] = ["", ":", "2000.0000"]
     _connection(galil).replies["VS ?"] = [":", "4000.0000:"]
 
-    assert galil.motor_a.speed() == 2000
-    assert galil.plane_ab.vector_speed() == 4000
+    with caplog.at_level(logging.WARNING):
+        assert galil.motor_a.speed() == 2000
+        assert galil.plane_ab.vector_speed() == 4000
+
+    # each empty reply is logged, so that it is noticed
+    assert _empty_reply_warnings(caplog) == [
+        _empty_reply_warning("MG _SPA"),
+        _empty_reply_warning("MG _SPA"),
+        _empty_reply_warning("VS ?"),
+    ]
 
 
 def test_malformed_position_raises(galil: "GalilDMC4133Controller") -> None:
@@ -187,7 +214,9 @@ def test_malformed_position_raises(galil: "GalilDMC4133Controller") -> None:
         galil.absolute_position()
 
 
-def test_wait_till_motion_complete(galil: "GalilDMC4133Controller") -> None:
+def test_wait_till_motion_complete(
+    galil: "GalilDMC4133Controller", caplog: pytest.LogCaptureFixture
+) -> None:
     # an empty reply while waiting counts as "not yet finished" and is polled
     # again; the wait ends when every axis reports 0
     connection = _connection(galil)
@@ -195,11 +224,16 @@ def test_wait_till_motion_complete(galil: "GalilDMC4133Controller") -> None:
     connection.replies["MG _BGB"] = ["0.0000"] * 3
     connection.replies["MG _BGC"] = [":", "0.0000", "0.0000"]
 
-    galil.wait_till_motion_complete(timeout_s=5)
+    with caplog.at_level(logging.WARNING):
+        galil.wait_till_motion_complete(timeout_s=5)
 
     assert connection.commands.count("MG _BGA") == 3
     # the I/O timeout is restored after polling
     assert connection.timeout == 5000
+    assert _empty_reply_warnings(caplog) == [
+        _empty_reply_warning("MG _BGC"),
+        _empty_reply_warning("MG _BGA"),
+    ]
 
 
 def test_commands_are_sent_without_carriage_return(
