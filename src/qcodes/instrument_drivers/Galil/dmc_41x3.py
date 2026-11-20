@@ -158,7 +158,8 @@ class GalilMotionController(Instrument):
         """
         Write for Galil motion controller
         """
-        self.g.GCommand(cmd + "\r")
+        # gclib appends the carriage return that terminates the command
+        self.g.GCommand(cmd)
 
     def ask_raw(self, cmd: str) -> str:
         """
@@ -186,7 +187,8 @@ class GalilMotionController(Instrument):
         Ask once without retrying an empty reply. The ``:`` prompt is removed
         from the reply.
         """
-        return _strip_prompt(self.g.GCommand(cmd + "\r"))
+        # gclib appends the carriage return that terminates the command
+        return _strip_prompt(self.g.GCommand(cmd))
 
     def timeout(self, val: int) -> None:
         """

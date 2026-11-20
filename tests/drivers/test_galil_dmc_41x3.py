@@ -48,7 +48,10 @@ class _FakeGclibConnection:
         return "192.168.1.2, DMC4133 Rev 1.0b, 12345"
 
     def GCommand(self, command: str) -> str:
-        command = command.removesuffix("\r")
+        # gclib appends the carriage return itself, so a command that already
+        # ends with one is sent as two commands
+        if command.endswith(("\r", "\n")):
+            raise ValueError(f"Command {command!r} must not end with a line break")
         self.commands.append(command)
         replies = self.replies.get(command)
         return replies.pop(0) if replies else ""
@@ -197,3 +200,17 @@ def test_wait_till_motion_complete(galil: "GalilDMC4133Controller") -> None:
     assert connection.commands.count("MG _BGA") == 3
     # the I/O timeout is restored after polling
     assert connection.timeout == 5000
+
+
+def test_commands_are_sent_without_carriage_return(
+    galil: "GalilDMC4133Controller",
+) -> None:
+    # gclib appends the carriage return, so the driver must not add another
+    connection = _connection(galil)
+    connection.replies["MG _SPA"] = ["2000.0000"]
+    connection.commands.clear()
+
+    galil.motor_a.servo_here()
+    galil.motor_a.speed()
+
+    assert connection.commands == ["SH A", "MG _SPA"]
