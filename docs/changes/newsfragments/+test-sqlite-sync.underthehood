@@ -1,0 +1,2 @@
+The test suite runs faster, especially on Windows: test databases are now opened with SQLite's
+``PRAGMA synchronous=OFF`` so that commits are not flushed to disk.
