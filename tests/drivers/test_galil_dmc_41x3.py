@@ -5,6 +5,7 @@ from PyPI, so it is replaced by a minimal fake that records the calls made.
 """
 
 import importlib
+import logging
 import sys
 import types
 from typing import TYPE_CHECKING
@@ -17,12 +18,26 @@ from qcodes.instrument import Instrument
 if TYPE_CHECKING:
     from collections.abc import Generator
 
+    from qcodes.instrument_drivers.Galil.dmc_41x3 import GalilDMC4133Controller
+
 _DRIVER_MODULE = "qcodes.instrument_drivers.Galil.dmc_41x3"
 
 
+class _FakeGclibError(Exception):
+    pass
+
+
 class _FakeGclibConnection:
+    """
+    Fake of ``gclib.py``. Queries are answered from ``replies``, a list of
+    replies per command that are returned in turn.
+    """
+
     def __init__(self) -> None:
         self.is_open = False
+        self.replies: dict[str, list[str]] = {}
+        self.commands: list[str] = []
+        self.timeout = 5000
 
     def GOpen(self, address: str) -> None:
         self.is_open = True
@@ -33,6 +48,18 @@ class _FakeGclibConnection:
     def GInfo(self) -> str:
         return "192.168.1.2, DMC4133 Rev 1.0b, 12345"
 
+    def GCommand(self, command: str) -> str:
+        # gclib appends the carriage return itself, so a command that already
+        # ends with one is sent as two commands
+        if command.endswith(("\r", "\n")):
+            raise ValueError(f"Command {command!r} must not end with a line break")
+        self.commands.append(command)
+        replies = self.replies.get(command)
+        return replies.pop(0) if replies else ""
+
+    def GTimeout(self, timeout: int) -> None:
+        self.timeout = timeout
+
 
 @pytest.fixture(name="driver_module")
 def _driver_module_with_fake_gclib(
@@ -40,7 +67,7 @@ def _driver_module_with_fake_gclib(
 ) -> "Generator[types.ModuleType, None, None]":
     fake_gclib = types.ModuleType("gclib")
     fake_gclib.py = _FakeGclibConnection  # type: ignore[attr-defined]
-    fake_gclib.GclibError = Exception  # type: ignore[attr-defined]
+    fake_gclib.GclibError = _FakeGclibError  # type: ignore[attr-defined]
     monkeypatch.setitem(sys.modules, "gclib", fake_gclib)
     for name in ("qcodes.instrument_drivers.Galil", _DRIVER_MODULE):
         monkeypatch.delitem(sys.modules, name, raising=False)
@@ -54,6 +81,38 @@ def _driver_module_with_fake_gclib(
             sys.modules.pop(name, None)
         if hasattr(qcodes.instrument_drivers, "Galil"):
             delattr(qcodes.instrument_drivers, "Galil")
+
+
+@pytest.fixture(name="galil")
+def _make_galil(
+    driver_module: types.ModuleType,
+) -> "Generator[GalilDMC4133Controller, None, None]":
+    driver = driver_module.GalilDMC4133Controller("galil", address="192.168.1.2")
+    try:
+        yield driver
+    finally:
+        driver.close()
+
+
+def _connection(galil: "GalilDMC4133Controller") -> _FakeGclibConnection:
+    assert isinstance(galil.g, _FakeGclibConnection)
+    return galil.g
+
+
+def _empty_reply_warnings(caplog: pytest.LogCaptureFixture) -> list[str]:
+    return [
+        record.getMessage()
+        for record in caplog.records
+        if record.levelno == logging.WARNING and "empty reply" in record.getMessage()
+    ]
+
+
+def _empty_reply_warning(cmd: str) -> str:
+    # the instrument logger prefixes the message with the instrument
+    return (
+        "[galil(GalilDMC4133Controller)] "
+        f"Got an empty reply to {cmd!r} from the controller"
+    )
 
 
 def test_close_closes_connection_and_unregisters_instrument(
@@ -71,3 +130,121 @@ def test_close_closes_connection_and_unregisters_instrument(
     controller.close()
     # the name can be reused once the instrument has been closed
     driver_module.GalilMotionController("galil", address="192.168.1.2").close()
+
+
+def test_idn(galil: "GalilDMC4133Controller") -> None:
+    assert galil.IDN() == {
+        "vendor": "Galil Motion Control, Inc.",
+        "model": "DMC4133",
+        "serial": "12345",
+        "firmware": "1.0b",
+    }
+
+
+def test_absolute_position(galil: "GalilDMC4133Controller") -> None:
+    _connection(galil).replies["PA ?,?,?"] = [":", "100, 200, 300:"]
+
+    assert galil.absolute_position() == {"A": 100, "B": 200, "C": 300}
+
+
+def test_absolute_position_is_read_only(galil: "GalilDMC4133Controller") -> None:
+    # setting the absolute position used to only update the cached value
+    # without moving the motors
+    assert not galil.absolute_position.settable
+    with pytest.raises(NotImplementedError):
+        galil.absolute_position({"A": 1, "B": 2, "C": 3})
+
+
+@pytest.mark.parametrize(
+    ("reply", "expected"),
+    [
+        ("1.0000", "off"),
+        ("0.0000", "on"),
+        # with LZ0 the controller does not strip leading zeros
+        ("0000000001.0000", "off"),
+    ],
+)
+def test_on_off_status(
+    galil: "GalilDMC4133Controller", reply: str, expected: str
+) -> None:
+    # gclib can return an empty reply or the bare ':' prompt under rapid
+    # polling, which is retried
+    _connection(galil).replies["MG _MOA"] = ["", ":", reply]
+
+    assert galil.motor_a.on_off_status() == expected
+
+
+def test_off_when_error_occurs(galil: "GalilDMC4133Controller") -> None:
+    _connection(galil).replies["MG _OEA"] = [":", "3.0000"]
+
+    assert galil.motor_a.off_when_error_occurs() == "enable for all"
+
+
+def test_unparsable_reply_raises(galil: "GalilDMC4133Controller") -> None:
+    _connection(galil).replies["MG _MOA"] = [":"] * 20
+
+    with pytest.raises(RuntimeError, match="Got only empty replies to 'MG _MOA'"):
+        galil.motor_a.on_off_status()
+
+
+def test_parameters_retry_empty_replies(
+    galil: "GalilDMC4133Controller", caplog: pytest.LogCaptureFixture
+) -> None:
+    # every query retries empty replies, not only the ones that used to
+    # have their own retry loop
+    _connection(galil).replies["MG _SPA"] = ["", ":", "2000.0000"]
+    _connection(galil).replies["VS ?"] = [":", "4000.0000:"]
+
+    with caplog.at_level(logging.WARNING):
+        assert galil.motor_a.speed() == 2000
+        assert galil.plane_ab.vector_speed() == 4000
+
+    # each empty reply is logged, so that it is noticed
+    assert _empty_reply_warnings(caplog) == [
+        _empty_reply_warning("MG _SPA"),
+        _empty_reply_warning("MG _SPA"),
+        _empty_reply_warning("VS ?"),
+    ]
+
+
+def test_malformed_position_raises(galil: "GalilDMC4133Controller") -> None:
+    _connection(galil).replies["PA ?,?,?"] = ["100, 200"]
+
+    with pytest.raises(ValueError, match="Expected three positions"):
+        galil.absolute_position()
+
+
+def test_wait_till_motion_complete(
+    galil: "GalilDMC4133Controller", caplog: pytest.LogCaptureFixture
+) -> None:
+    # an empty reply while waiting counts as "not yet finished" and is polled
+    # again; the wait ends when every axis reports 0
+    connection = _connection(galil)
+    connection.replies["MG _BGA"] = ["1.0000", "", "0.0000"]
+    connection.replies["MG _BGB"] = ["0.0000"] * 3
+    connection.replies["MG _BGC"] = [":", "0.0000", "0.0000"]
+
+    with caplog.at_level(logging.WARNING):
+        galil.wait_till_motion_complete(timeout_s=5)
+
+    assert connection.commands.count("MG _BGA") == 3
+    # the I/O timeout is restored after polling
+    assert connection.timeout == 5000
+    assert _empty_reply_warnings(caplog) == [
+        _empty_reply_warning("MG _BGC"),
+        _empty_reply_warning("MG _BGA"),
+    ]
+
+
+def test_commands_are_sent_without_carriage_return(
+    galil: "GalilDMC4133Controller",
+) -> None:
+    # gclib appends the carriage return, so the driver must not add another
+    connection = _connection(galil)
+    connection.replies["MG _SPA"] = ["2000.0000"]
+    connection.commands.clear()
+
+    galil.motor_a.servo_here()
+    galil.motor_a.speed()
+
+    assert connection.commands == ["SH A", "MG _SPA"]
