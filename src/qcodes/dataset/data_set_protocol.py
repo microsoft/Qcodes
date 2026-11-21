@@ -18,6 +18,7 @@ from typing import (
 import numpy as np
 import numpy.typing as npt
 
+import qcodes
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec
 from qcodes.dataset.export_config import (
@@ -432,7 +433,11 @@ class BaseDataSet(DataSetProtocol, Protocol):
         """Export data as netcdf to a given path with file prefix"""
         file_path = path / file_name
         xarr_dataset = self.to_xarray_dataset()
-        xarray_to_h5netcdf_with_complex_numbers(xarr_dataset, file_path)
+        xarray_to_h5netcdf_with_complex_numbers(
+            xarr_dataset,
+            file_path,
+            snapshot_in_group=qcodes.config.dataset.export_snapshot_in_group,
+        )
         return file_path
 
     def _export_as_csv(self, path: Path, file_name: str) -> Path:

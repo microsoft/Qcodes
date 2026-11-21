@@ -78,6 +78,8 @@
         "export_name_elements": ["captured_run_id", "guid"],
         "export_chunked_export_of_large_files_enabled": false,
         "export_chunked_threshold": 1000,
+        "export_netcdf_compression_level": 4,
+        "export_snapshot_in_group": false,
         "in_memory_cache": true,
         "load_from_exported_file": false,
         "raw_data_backend": "sqlite_main_db",
