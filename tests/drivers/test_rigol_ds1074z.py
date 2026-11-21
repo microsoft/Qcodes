@@ -85,3 +85,25 @@ def test_get_data_source(driver: RigolDS1074Z) -> None:
 def test_time_axis_is_spaced_by_xincrement(driver: RigolDS1074Z) -> None:
     driver.waveform_npoints(5)
     assert driver.time_axis() == pytest.approx([0, 0.1, 0.2, 0.3, 0.4])
+
+
+def test_pattern_trigger_levels_are_independent(driver: RigolDS1074Z) -> None:
+    driver.trigger_mode("pattern")
+    levels = (0.16, -0.25, 0.0, 0.75)
+    for channel, level in zip(driver.channels, levels, strict=True):
+        channel.pattern_trigger_level(level)
+
+    assert [ch.pattern_trigger_level() for ch in driver.channels] == pytest.approx(
+        levels
+    )
+
+
+@pytest.mark.parametrize("mode", ["pattern", "PATT"])
+def test_pattern_trigger_level_requires_a_channel(
+    driver: RigolDS1074Z, mode: str
+) -> None:
+    driver.write(f":TRIGger:MODE {mode}")
+    with pytest.raises(ValueError, match="pattern_trigger_level"):
+        driver.trigger_level()
+    with pytest.raises(ValueError, match="pattern_trigger_level"):
+        driver.trigger_level(0.16)
