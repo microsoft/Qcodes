@@ -1,3 +1,4 @@
+import io
 import json
 from collections import OrderedDict, UserDict
 
@@ -7,7 +8,7 @@ import pytest
 import uncertainties  # type: ignore[import-untyped]
 from hypothesis import given
 
-from qcodes.utils import NumpyJSONEncoder
+from qcodes.utils import NumpyJSONDecoder, NumpyJSONEncoder
 from qcodes.utils.types import numpy_complex, numpy_floats, numpy_ints
 
 
@@ -186,3 +187,84 @@ def test_bytes_array(bytes_to_encode: bytes) -> None:
     # encoding bytes is the same as using the
     # default encode on the str value of the bytes array
     assert v == default_encoder.encode(str(value))
+
+
+def test_numpy_json_decoder_complex() -> None:
+    encoded = json.dumps(
+        {"c1": complex(1.0, 2.5), "c2": 3 - 4j},
+        cls=NumpyJSONEncoder,
+    )
+    decoded = json.loads(encoded, cls=NumpyJSONDecoder)
+
+    assert decoded["c1"] == complex(1.0, 2.5)
+    assert isinstance(decoded["c1"], complex)
+    assert decoded["c2"] == 3 - 4j
+    assert isinstance(decoded["c2"], complex)
+
+
+def test_numpy_json_decoder_ufloat() -> None:
+    u = uncertainties.ufloat(2.5, 0.1)
+    encoded = json.dumps({"measurement": u}, cls=NumpyJSONEncoder)
+    decoded = json.loads(encoded, cls=NumpyJSONDecoder)
+
+    assert isinstance(decoded["measurement"], uncertainties.UFloat)
+    assert decoded["measurement"].nominal_value == u.nominal_value
+    assert decoded["measurement"].std_dev == u.std_dev
+
+
+def test_numpy_json_decoder_roundtrip_examplemetadata() -> None:
+    encoded = json.dumps(
+        EXAMPLEMETADATA,
+        cls=NumpyJSONEncoder,
+    )
+    decoded = json.loads(encoded, cls=NumpyJSONDecoder)
+
+    assert decoded["name"] == "Rapunzel"
+    assert decoded["age"] == 12
+    assert decoded["height"] == 112.234
+    assert decoded["scores"] == [0, 21, 42]
+    assert decoded["RapunzelNumber"] == complex(4.89, 0.11)
+    assert isinstance(decoded["RapunzelNumber"], complex)
+    assert decoded["verisimilitude"] == 1j
+    assert isinstance(decoded["verisimilitude"], complex)
+    assert decoded["myuserdict"] == {"a": 1}
+
+
+def test_numpy_json_decoder_custom_object_hook() -> None:
+    def custom_hook(d: dict[str, object]) -> object:
+        if "custom_tag" in d:
+            return "hooked"
+        return d
+
+    data = '{"custom_tag": 1, "c": {"__dtype__": "complex", "re": 1.0, "im": 2.0}}'
+    decoded = json.loads(data, cls=NumpyJSONDecoder, object_hook=custom_hook)
+    assert decoded == "hooked"
+
+
+def test_numpy_json_decoder_direct_object_hook() -> None:
+    u = uncertainties.ufloat(10.0, 0.2)
+    encoded = json.dumps(
+        {"c": 1.0 + 2.0j, "u": u},
+        cls=NumpyJSONEncoder,
+    )
+    decoded = json.loads(encoded, object_hook=NumpyJSONDecoder.default_object_hook)
+
+    assert decoded["c"] == 1.0 + 2.0j
+    assert isinstance(decoded["c"], complex)
+    assert isinstance(decoded["u"], uncertainties.UFloat)
+    assert decoded["u"].nominal_value == 10.0
+    assert decoded["u"].std_dev == 0.2
+
+
+def test_numpy_json_decoder_load_from_stream() -> None:
+    encoded = json.dumps({"val": 3.0 + 4.0j}, cls=NumpyJSONEncoder)
+    stream = io.StringIO(encoded)
+    decoded = json.load(stream, cls=NumpyJSONDecoder)
+
+    assert decoded["val"] == 3.0 + 4.0j
+    assert isinstance(decoded["val"], complex)
+
+
+def test_numpy_json_decoder_unrecognized_dict() -> None:
+    regular_dict = {"a": 1, "b": "hello", "c": [1, 2, 3]}
+    assert NumpyJSONDecoder.default_object_hook(regular_dict) == regular_dict
