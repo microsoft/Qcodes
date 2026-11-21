@@ -80,3 +80,8 @@ def test_get_data_source(driver: RigolDS1074Z) -> None:
     assert driver.data_source() == "ch1"
     driver.data_source("ch2")
     assert driver.data_source() == "ch2"
+
+
+def test_time_axis_is_spaced_by_xincrement(driver: RigolDS1074Z) -> None:
+    driver.waveform_npoints(5)
+    assert driver.time_axis() == pytest.approx([0, 0.1, 0.2, 0.3, 0.4])
