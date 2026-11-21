@@ -1,0 +1,3 @@
+Added parameters that are controlled by a ParameterWithSetpoints setpoints to
+``ParameterWithSetpoints.unpack_self``. Dependent parameters will now be
+automatically saved in the correct shape alike the corresponding setpoints.
