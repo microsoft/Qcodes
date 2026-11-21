@@ -1,0 +1,47 @@
+QCoDeS 0.62.0 (2026-10-26)
+==========================
+
+Improved:
+---------
+
+- ``qcodes.utils.is_qcodes_installed_editably`` no longer shells out to ``pip`` to detect an
+  editable install. The editable status is now read directly from the installed package
+  metadata (the :pep:`610` ``direct_url.json`` file), which both ``pip`` and ``uv`` write.
+  This means the check also works in environments where ``pip`` is not installed, such as
+  environments managed by ``uv``, and it no longer requires spawning a subprocess. (:pr:`8580`)
+- Add :func:`qcodes.dataset.get_open_connections` and
+  :func:`qcodes.dataset.close_all_connections` to inspect and close tracked database
+  connections. Connections owned by the exiting thread are also closed automatically
+  at interpreter shutdown. Test cleanup closes connections opened during each test
+  without closing connections owned by broader-scoped fixtures or other threads. (:pr:`8626`)
+- The type annotations of ``Station.load_all_instruments`` now accept calling it without
+  arguments or with only one of ``only_names`` and ``only_types``. Previously these valid
+  calls matched none of the overloads and were rejected by static type checkers. (:pr:`8644`)
+
+
+Improved Drivers:
+-----------------
+
+- Allow the Yokogawa GS200 driver to use the documented generated output ranges,
+  including 12 V on the 10 V source range, while retaining the 32 V and 200 mA
+  maximum output limits for direct output and ramps. (:pr:`8577`)
+- ``AlazarTechATS.acquire`` is now annotated to accept any ``AcquisitionInterface`` as
+  ``acquisition_controller``, not only an ``AcquisitionController``, matching what it supports
+  at runtime. ``AcquisitionController`` now passes its type parameter on to
+  ``AcquisitionInterface``, so the return type of ``acquire`` is inferred from the
+  ``post_acquire`` return type of the controller. Subclasses of ``AcquisitionController[T]``
+  whose ``post_acquire`` does not return ``T`` will now be reported by static type checkers. (:pr:`8644`)
+- Added missing type annotations to the optional arguments of the Keysight B1500
+  ``MessageBuilder`` methods ``ercmaio``, ``lst_query``, ``pch_query``, ``sprm``, ``tc``
+  and ``wat``. (:pr:`8644`)
+- The Galil DMC-41x3 driver now retries empty or malformed controller replies when polling motion status and axis positions, and waiting for motion to complete is bounded by a timeout (300 s by default) that raises ``TimeoutError``. Each motion-status query is limited by the remaining motion timeout, with millisecond resolution, and restores the original I/O timeout afterward. Connecting now falls back through the ``--direct -s ALL`` and ``-s ALL`` options before using the bare address. Pressing Ctrl-C while waiting for motion now calls ``abort()`` and then turns the axes off with ``MO``. (:pr:`8647`)
+
+
+Under the hood:
+---------------
+
+- QCoDeS is now tested against Python 3.15 on Linux. The ``zhinst-qcodes`` test dependency is not installed
+  on Python 3.15 since ``zhinst-core`` does not yet provide wheels for it. (:pr:`8581`)
+- The minimum supported version of ``typing_extensions`` is now 4.12.0. Older versions do not
+  apply the default of a ``TypeVar``, so subscripting a parameter with only its value type at
+  runtime, e.g. ``Parameter[int]``, failed with ``TypeError: Too few arguments`` on Python 3.12. (:pr:`8644`)

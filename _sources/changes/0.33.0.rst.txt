@@ -1,0 +1,68 @@
+QCoDeS 0.33.0 (2022-03-08)
+==========================
+
+New:
+----
+
+- Added a function ``qcodes.dataset.get_guids_by_run_spec`` to look up dataset guids
+  from run specficiations. This replaces the now deprecated semi-public method
+  ``get_guids_from_run_spec``. It has a better handling of connections and more filtering options matching
+  ``load_by_run_spec``. (:pr:`3863`)
+- A new set of validators ``MultiTypeAnd`` and ``MultiTypeOr`` that allows combination of
+  other validators with And and Or were added. For backwards compatibility the existing
+  ``MultiType`` validator takes a ``combiner`` argument defaulting to Or. (:pr:`3917`)
+
+
+Improved:
+---------
+
+- Fixed a typo in legacy PyqtGraph plot preventing correct handling of custom units.
+  Regression from 0.32.0 (:pr:`3773`)
+- The warning triggered when a parameter is added to the snapshot incorrectly has been improved to include the
+  name of the full instrument and two levels of stack information. This should make it easier to find the
+  problematic parameter. (:pr:`3884`)
+- Development versions of QCoDeS are now formatted as
+  ``{version}.dev{distance}+{branch}{vcs}{rev}.dirty``
+  e.g. ``0.32.0.dev14+name.of.branch.gxxxxx(.dirty)``
+  rather than "{version}+{distance}.{vcs}{rev}". This is
+  done since pip in some cases considers the later equal to the released
+  version and include more info to let you easily identify the
+  branch installed from. Note that due to limitations in characters
+  in version numbers `/_-` are normalized to `.` e.g. a branch named
+  ``myname/my_branch-name`` becomes `myname.my.branch.name` in the
+  version number. (:pr:`3890`)
+- ``ChannelTuple`` now has a repr that correctly identifies it as a ``ChannelTuple``
+  and not a ``ChannelList`` (:pr:`3911`)
+- ``Parameter.unit`` is now a settable property rather than an attribute.
+  This should have few implications for user facing code but makes it possible
+  to do the same in a parameter subclass implementing validation or other functionality
+  as needed. (:pr:`3929`)
+- Metadata added after ``DataSet`` ``export`` to a netcdf file is now also added
+  to that exported netcdf file (unless the exported netcdf file has been moved
+  to a new location and ``set_netcdf_location`` was not called with that new
+  location of the file) (:pr:`3932`)
+- In the interactive widget the total time of a run is now correctly calculated as
+  end-time - start-time not the other way around. (:pr:`3944`)
+- Loading a 2 or higher dimentional qcodes dataset back from a netcdf file has been corrected to
+  show the dataset in the correct shape.
+  QCoDeS dataset are now always written to netcdf files from the cache with the same order of axis as in memory. (:pr:`3945`)
+- Datasets now correctly preserve the shape information when exported to another database. (:pr:`3956`)
+- Functions and classes marked deprecated with the QCoDes Deprecation decorator will now trigger
+  warnings that reflect where they are called from and not the location of the deprecation decorator. (:pr:`3959`)
+
+
+Improved Drivers:
+-----------------
+
+- AMI430 3D magnet power supply driver: restore ramp rates of individual magnet
+  axes after simultaneous ramp via calling ``wait_while_all_axes_ramping`` or
+  automatically if ``block_during_ramp`` is ``True``. (:pr:`3885`)
+- Update the Keysight Infiniium oscilloscope driver to use ParameterWithSetpoints and also make the driver
+  work without needing to run prepare_curvedata before measurement. Measurement subsystem is updated to be
+  channel aware so it is possible to run measurements on multiple channels in a single qcodes measurement.
+  For multiple traces, added the option to control automatic sweeping, similar to the N52xx driver. We can
+  now take data from multiple channels with a single digitize. (:pr:`3916`)
+- Fix baud rate of QDevil and QDev QDac's to be 460800 (:pr:`3931`)
+- The Zurich instrument driver stubs in ``qcodes.instrument_drivers.zurich_instruments`` have been updated
+  to use the 0.3 version of ``zhinst-qcodes`` (:pr:`3969`)
+- Fixed a typo that prevented initialization of Agilent 34400A (:pr:`3981`)

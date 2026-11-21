@@ -1,0 +1,180 @@
+QCoDeS 0.59.0 (2026-08-24)
+==========================
+
+Breaking Changes:
+-----------------
+
+- Legacy backwards-compatibility aliases across the ``instrument_drivers`` module that were
+  deprecated in QCoDeS 0.57.0 have been removed. This includes deprecated class aliases and
+  deprecated module shims for AlazarTech, Basel, Galil, HP, Ithaco, Keithley, Keysight,
+  Mini-Circuits, Oxford Instruments, Rigol, Rohde & Schwarz, Signal Hound,
+  Stanford Research Systems, Tektronix, Weinschel, and Yokogawa drivers. Users should
+  migrate to the canonical class names listed in the 0.57.0 changelog. (:pr:`8060`)
+- Several module-level ``TypeVar`` definitions and type aliases that are no longer used
+  internally have been deprecated. Importing them will emit a ``QCoDeSDeprecationWarning``.
+  They will be removed in a future version. (:pr:`8096`)
+- Removed deprecated VISA-related APIs from
+  :class:`~qcodes.instrument.visa.VisaInstrument`: the ``_address`` property
+  (use ``address`` instead) and the ``visalib`` property (use ``visabackend``
+  instead). The unused and deprecated ``MockAMI430`` mocker class has also been
+  removed. (:pr:`8103`)
+- Importing the short hand aliases (such as ``Parameter``, ``Measurement``,
+  ``Instrument``, ``Monitor`` and ``Station``) from the top level ``qcodes``
+  namespace is now deprecated and emits a ``QCoDeSDeprecationWarning``. Import
+  these names from their respective submodules (for example ``qcodes.parameters``,
+  ``qcodes.dataset`` or ``qcodes.station``) instead. The submodules themselves
+  (such as ``qcodes.dataset`` and ``qcodes.instrument``) remain accessible from the
+  top level ``qcodes`` namespace and are not deprecated.
+
+  Similarly, importing the parameter classes (such as ``Parameter``, ``ManualParameter`` and
+  ``DelegateParameter``) from ``qcodes.instrument`` is now deprecated and emits a
+  ``QCoDeSDeprecationWarning``. Import these names from ``qcodes.parameters``
+  instead. The names remain available from ``qcodes.instrument`` at runtime for
+  backwards compatibility but are hidden from static type checkers, so importing
+  them from ``qcodes.instrument`` is reported as an unknown attribute. (:pr:`8252`)
+- The default format of ``DataSetProtocol.run_timestamp``,
+  ``DataSetProtocol.completed_timestamp`` and
+  ``qcodes.dataset.sqlite.queries.raw_time_to_str_time`` changed from
+  ``"%Y-%m-%d %H:%M:%S"`` to ``"%Y-%m-%d %H:%M:%S%z"``, i.e. the rendered
+  timestamps now include the UTC offset of the local timezone, e.g.
+  ``"2026-07-31 10:27:25+0200"``.
+
+  Timestamps are stored in the QCoDeS database as POSIX timestamps, which do not
+  capture the timezone in which the measurement was performed. They are therefore
+  still rendered in the local timezone of the machine reading the dataset, but
+  the resulting string is no longer ambiguous. This also applies to the
+  ``run_timestamp`` and ``completed_timestamp`` attributes written when exporting
+  a dataset to NetCDF or xarray.
+
+  Pass an explicit ``fmt`` argument to restore the previous behaviour.
+
+  Parameter cache timestamps are now timezone aware. ``ParameterBase.cache.timestamp``
+  (and therefore ``Parameter.get_latest.get_timestamp()``) returns a
+  ``datetime`` with ``tzinfo`` set to the local timezone rather than a naive
+  ``datetime``. Code that compares these timestamps to naive ``datetime`` objects
+  will raise ``TypeError`` and must be updated to use timezone aware datetimes.
+
+  Consequently the ``"ts"`` field of a parameter snapshot changed from
+  ``"%Y-%m-%d %H:%M:%S"`` to ISO 8601 format including the UTC offset, e.g.
+  ``"2026-07-31 10:27:25+02:00"``. Snapshots can be parsed with
+  ``datetime.datetime.fromisoformat``. (:pr:`8345`)
+- The default value of the ``update`` argument of ``snapshot``, ``snapshot_base``
+  and ``print_readable_snapshot`` (on every :class:`.Metadatable`, including
+  instruments, channels and parameters) is now ``"Only_invalid"``. Previously
+  calling e.g. ``instrument.snapshot()`` or ``parameter.snapshot()`` without an
+  argument effectively defaulted to the equivalent of ``"Never"`` and never
+  refreshed anything. As a result, ``snapshot()`` (and ``print_readable_snapshot()``)
+  will now call ``get()`` on parameters whose cache is invalid, which may query the
+  underlying instrument. Pass ``update="Never"`` explicitly to restore the previous
+  "do not update" behavior, or ``update="All"`` to force a full update.
+
+  Relatedly, the station snapshot that :class:`.Measurement` stores before a
+  measurement starts is now taken with ``update="Only_invalid"`` (previously the
+  equivalent of ``"Never"``), so parameters with an invalid cache are refreshed via
+  a single ``get`` while parameters with a valid cache keep their cached value.
+
+  The legacy ``True`` / ``None`` / ``False`` values of the ``update`` argument are
+  now deprecated aliases for ``"All"`` / ``"Only_invalid"`` / ``"Never"``. They keep
+  working (no runtime warning is raised), but type checkers will flag their use;
+  prefer the string values instead. (:pr:`8354`)
+
+
+Improved:
+---------
+
+- :meth:`.Instrument.close_all` gained an ``only_subclasses`` keyword argument. When
+  set to ``True``, only instruments that are instances of the class (or its subclasses)
+  on which ``close_all`` is called are closed, leaving other registered instruments open.
+  The ``log_status`` and ``only_subclasses`` arguments are now keyword-only. (:pr:`8312`)
+
+
+Improved Drivers:
+-----------------
+
+- Fixed three bugs in :class:`qcodes.instrument_drivers.QuantumDesign.DynaCoolPPMS.DynaCool.DynaCool`
+  that prevented the driver from instantiating and from updating the
+  ``temperature_setpoint`` cache:
+
+  - ``block_while_ramping_temperature`` is now created with ``set_cmd=None`` /
+    ``get_cmd=None`` so it behaves as a settable cache-only parameter, instead of
+    ``set_cmd=False`` / ``get_cmd=False`` which made it read-only and rejected
+    the supplied ``initial_value``.
+  - Removed the duplicate ``instrument=self`` argument from the
+    ``blocking_t_state_check_interval`` parameter creation, which is supplied
+    automatically by ``add_parameter`` and was raising on construction.
+  - Fixed an ``AttributeError`` when setting the temperature: the cache update
+    in ``_set_temperature_and_state`` now correctly references
+    ``self.temperature_setpoint`` rather than the non-existent ``self.setpoint``. (:pr:`8097`)
+- Correct the lower bound of the span parameter validator of the KeysightPNABase driver to 0 Hz. (:pr:`8195`)
+- Referring to the:
+
+  - `Keysight Trueform Series Operating and Service Guide`_
+  - `Agilent 33210A 10 MHz Function / Arbitrary Waveform Generator User's Guide`_
+  - `Agilent 33250A 80 MHz Function / Arbitrary Waveform Generator`_
+
+  Improvements:
+
+  - Expanded the list of supported devices for the KeysightAgilent_33XXX driver
+  - Added implementations of SCPI commands for working with: ARB signals, edges of Pulse function, output termination, voltage autoranging
+  - Created tests for new commands and update sim file
+
+  .. _`Keysight Trueform Series Operating and Service Guide`: https://www.keysight.com/us/en/assets/9018-03714/service-manuals/9018-03714.pdf
+  .. _`Agilent 33210A 10 MHz Function / Arbitrary Waveform Generator User's Guide`: https://www.keysight.com/us/en/support/33210A/33210a-waveform-and-function-generator.html
+  .. _`Agilent 33250A 80 MHz Function / Arbitrary Waveform Generator`: https://www.keysight.com/us/en/support/33250A/function--arbitrary-waveform-generator-80-mhz.html (:pr:`8254`)
+- Fixed the timezone offset written into the waveform and sequence files
+  generated by the Tektronix AWG70000A drivers. The offset was computed manually
+  from ``time.timezone``, which gave the offset the wrong sign and ignored
+  daylight saving time, so e.g. a machine in UTC+02:00 wrote ``-02:00``. The
+  offset is now taken from the local timezone of the timestamp itself. (:pr:`8345`)
+- The QDev QDac driver now honors the ``"Only_invalid"`` snapshot ``update`` mode:
+  when snapshotting, the bulk status read that refreshes the channel
+  ``v``/``i``/``irange``/``vrange`` caches is only performed for ``update="All"``,
+  or for ``update="Only_invalid"`` when one of those channel caches is actually
+  invalid. Previously the bulk read was performed on every snapshot that was not
+  ``"Never"``, which made repeated snapshots unnecessarily expensive even when the
+  channel caches were already valid. (:pr:`8354`)
+
+
+New:
+----
+
+- Added :func:`qcodes.dataset.get_db_overview`, a fast way to list the runs in a
+  QCoDeS database. It fetches run metadata (experiment/sample names, timestamps,
+  record counts and guids) via a single ``JOIN`` query on the ``runs`` and
+  ``experiments`` tables, without instantiating a ``DataSet`` object per run,
+  making it possible to list databases with many thousands of runs almost
+  instantly. The returned :class:`qcodes.dataset.RunOverviewDict` is also exported
+  on the public ``qcodes.dataset`` namespace. The function does not return
+  snapshots as they can be large and slow down building the database overview.
+  The number of results in each dataset is taken from shape information when
+  available, and otherwise falls back to a best-effort count of the rows in the
+  so-called results table that exists for every dataset, which may NOT be as
+  precise as ``DataSet.number_of_results``. (:pr:`8266`)
+- The ``update`` argument of ``snapshot`` and ``snapshot_base`` (available on every
+  :class:`.Metadatable`, including instruments, channels and parameters) now accepts
+  the explicit string values ``"All"``, ``"Only_invalid"`` and ``"Never"``:
+
+  * ``"All"`` forces an update of every value (calls ``get()`` on each parameter).
+  * ``"Only_invalid"`` only refreshes parameters whose cache is invalid, via a
+    single ``get`` (``cache.get(get_if_invalid=True)``), and uses the cached value
+    for everything else.
+  * ``"Never"`` never updates and uses the latest values already in memory.
+
+  The new public helper :func:`qcodes.metadatable.normalize_snapshot_update` and the
+  :data:`qcodes.metadatable.SnapshotUpdate` type are exported for drivers that
+  override ``snapshot_base`` and need to interpret the ``update`` argument. (:pr:`8354`)
+
+
+Under the hood:
+---------------
+
+- Importing the top level ``qcodes`` namespace no longer eagerly imports the
+  ``dataset``, ``instrument``, ``parameters``, ``monitor``, ``station`` and
+  ``validators`` submodules. The discouraged short hand aliases (such as
+  ``qcodes.Parameter`` and ``qcodes.Measurement``) as well as ``qcodes.validators``
+  are still available at runtime via a lazy module level ``__getattr__``, but they
+  are intentionally hidden from static type checkers and are now reported as
+  unknown attributes rather than typed as ``Any``; import the names from their
+  respective submodules to retain type information. This breaks a large import
+  cycle spanning the parameters, dataset and instrument packages that triggered an
+  internal error in ``mypy`` 2.2. (:pr:`8252`)
