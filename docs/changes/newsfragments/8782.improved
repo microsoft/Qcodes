@@ -1,0 +1,4 @@
+A ``DelegateParameter`` now forwards the dependencies of its source, e.g. the setpoints
+of a ``ParameterWithSetpoints``. Measuring such a ``DelegateParameter`` now also stores the
+setpoints, and using it as a setpoint of another ``ParameterWithSetpoints`` raises the same
+error as using the source directly, rather than silently dropping the source's setpoints.

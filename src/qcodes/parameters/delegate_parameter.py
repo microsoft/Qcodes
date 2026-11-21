@@ -7,19 +7,21 @@ from typing_extensions import TypeVar
 from qcodes.metadatable import normalize_snapshot_update
 
 from .parameter import Parameter, ParameterKWArgs
-from .parameter_base import InstrumentTypeVar_co, ParameterDataTypeVar
+from .parameter_base import InstrumentTypeVar_co, ParameterDataTypeVar, ParameterSet
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from datetime import datetime
     from typing import Unpack
 
+    from qcodes.dataset.data_set_protocol import ValuesType
     from qcodes.instrument import InstrumentBase
     from qcodes.metadatable import SnapshotUpdate
     from qcodes.validators.validators import Validator
 
     from .parameter_base import (
         ParamDataType,
+        ParameterBase,
         ParamRawDataType,
     )
 
@@ -245,6 +247,26 @@ class DelegateParameter(
     @source.setter
     def source(self, source: Parameter | None) -> None:
         self._source: Parameter | None = source
+
+    @property
+    def depends_on(self) -> ParameterSet:
+        """
+        The parameters that the source depends on, e.g. the setpoints of a
+        :class:`.ParameterWithSetpoints`. Empty if there is no source.
+        """
+        if self.source is None:
+            return ParameterSet()
+        return self.source.depends_on
+
+    def unpack_self(self, value: ValuesType) -> list[tuple[ParameterBase, ValuesType]]:
+        if self.source is None or len(self.source.depends_on) == 0:
+            return super().unpack_self(value)
+        # Let the source add its dependencies (e.g. setpoint values), then
+        # store the value itself under this parameter rather than the source.
+        return [
+            (self if param is self.source else param, param_value)
+            for param, param_value in self.source.unpack_self(value)
+        ]
 
     @property
     def snapshot_value(self) -> bool:
