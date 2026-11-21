@@ -25,6 +25,16 @@ devices:
         setter:
           q: "OUTP {}"
 
+      phase:
+        # *RST value according to the E8257D/67D SCPI command reference;
+        # the query returns radians
+        default: "+0.00000000E+000"
+        getter:
+          q: "PHASE?"
+          r: "{}"
+        setter:
+          q: "PHASE {}"
+
 resources:
   GPIB::1::INSTR:
     device: device 1
