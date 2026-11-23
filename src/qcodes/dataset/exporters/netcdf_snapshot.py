@@ -1,4 +1,4 @@
-"""Storage of the dataset snapshot in a compressed group of exported NetCDF files.
+"""Storage of the dataset snapshot in a group of exported NetCDF files.
 
 By default the snapshot is stored as the JSON string attribute ``snapshot`` on
 the root group of the NetCDF file. HDF5 attributes cannot be compressed and are
@@ -89,7 +89,7 @@ def _write_snapshot_to_group(
 
 
 def _read_snapshot_from_group(file_path: str | Path, location: str) -> str:
-    import h5netcdf  # type: ignore[import-untyped]
+    import h5netcdf  # pyright: ignore[reportMissingTypeStubs]
 
     with h5netcdf.File(file_path, mode="r") as nc_file:
         variable = nc_file[location]
@@ -113,7 +113,7 @@ def snapshot_from_netcdf(path: str | Path) -> dict[str, Any] | None:
     Read the snapshot of a dataset exported to NetCDF by QCoDeS.
 
     This works both for files where the snapshot is stored as the ``snapshot``
-    attribute and for files where it is stored in a compressed group (see
+    attribute and for files where it is stored in the ``qcodes_metadata`` group (see
     ``qcodes.config.dataset.export_snapshot_in_group``). Unlike
     :func:`qcodes.dataset.load_from_netcdf` this does not require access to a
     QCoDeS database.
@@ -125,7 +125,7 @@ def snapshot_from_netcdf(path: str | Path) -> dict[str, Any] | None:
         The snapshot as a dictionary or None if the dataset has no snapshot.
 
     """
-    import h5netcdf  # type: ignore[import-untyped]
+    import h5netcdf  # pyright: ignore[reportMissingTypeStubs]
 
     with h5netcdf.File(path, mode="r") as nc_file:
         snapshot_attr = nc_file.attrs.get(SNAPSHOT_VARIABLE)

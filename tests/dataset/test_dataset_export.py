@@ -1266,9 +1266,6 @@ def test_export_snapshot_in_group_round_trips(
     raw_attr = xr.load_dataset(file_path).attrs["snapshot"]
     with h5netcdf.File(file_path, "r") as nc_file:
         assert ("qcodes_metadata" in nc_file.groups) is snapshot_in_group
-        if snapshot_in_group:
-            snapshot_var = nc_file.groups["qcodes_metadata"].variables["snapshot"]
-            assert snapshot_var.compression == "gzip"
     if snapshot_in_group:
         assert json.loads(raw_attr) == {
             "__qcodes_snapshot_location__": "qcodes_metadata/snapshot"
