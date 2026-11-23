@@ -132,7 +132,7 @@ def _rechunk_to_match_encoding(
     per dimension would leave dask blocks much smaller than the HDF5 chunks.
     Variables that are not dask backed are left unmodified.
     """
-    rechunked: dict[Hashable, xr.Variable] = {}
+    rechunked: dict[str, xr.Variable] = {}
     for name, variable_encoding in encoding.items():
         chunksizes = variable_encoding.get("chunksizes")
         variable = dataset.variables[name]
