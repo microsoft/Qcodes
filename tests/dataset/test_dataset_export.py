@@ -2841,6 +2841,36 @@ def test_export_netcdf_level_0_clears_inherited_compression(tmp_path: Path) -> N
     )
 
 
+def test_export_netcdf_compression_preserves_inherited_encoding(
+    tmp_path: Path,
+) -> None:
+    """Enabling compression keeps packing and fill value settings of a variable."""
+    h5py = pytest.importorskip("h5py")
+    original = xr.Dataset({"z": (("x",), np.array([0.0, 0.5, np.nan, 1.5]))})
+    original.z.encoding = {"dtype": "int16", "scale_factor": 0.5, "_FillValue": -1}
+    packed_path = tmp_path / "packed.nc"
+    xarray_to_h5netcdf_with_complex_numbers(original, packed_path, compression_level=0)
+    loaded = xr.load_dataset(packed_path, engine="h5netcdf")
+    loaded_encoding = dict(loaded.z.encoding)
+
+    compressed_path = tmp_path / "compressed.nc"
+    xarray_to_h5netcdf_with_complex_numbers(
+        loaded, compressed_path, compression_level=4
+    )
+
+    with h5py.File(compressed_path, "r") as file:
+        z = file["z"]
+        assert z.compression == "gzip"
+        assert z.dtype == np.int16
+        assert z.attrs["scale_factor"] == 0.5
+        assert z.attrs["_FillValue"] == -1
+    # the encoding of the input dataset is left untouched
+    assert loaded.z.encoding == loaded_encoding
+    xr.testing.assert_identical(
+        xr.load_dataset(compressed_path, engine="h5netcdf").z, loaded.z
+    )
+
+
 def test_export_netcdf_compression_of_complex_data(
     tmp_path_factory: TempPathFactory, mock_dataset_numpy_complex: DataSet
 ) -> None:

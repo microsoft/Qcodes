@@ -175,9 +175,10 @@ def _without_inherited_compression(dataset: xr.Dataset) -> xr.Dataset:
 
     A dataset loaded from a compressed netcdf file keeps the compression settings
     in the encoding of each variable and xarray reuses them when writing the
-    dataset again. Removing them ensures that writing without compression really
-    produces an uncompressed file. Other encoding settings such as the dtype and
-    fill value are preserved and the input dataset is not modified.
+    dataset again. Removing them ensures that only the compression requested for
+    this export is applied, and in particular that writing without compression
+    really produces an uncompressed file. Other encoding settings such as the
+    dtype and fill value are preserved and the input dataset is not modified.
     """
     dataset = dataset.copy(deep=False)
     for variable in dataset.variables.values():
@@ -729,12 +730,16 @@ def xarray_to_h5netcdf_with_complex_numbers(
         xarray_too_old or h5netcdf_too_old
     )
 
+    # The compression options are merged into the encoding of each variable
+    # rather than passed as the encoding argument of to_netcdf, since that
+    # replaces the existing encoding of a variable and would drop settings such
+    # as dtype, scale_factor and _FillValue of a dataset loaded from file.
+    internal_ds = _without_inherited_compression(internal_ds)
     if compression_level > 0:
         encoding = _netcdf_compression_encoding(internal_ds, compression_level)
+        for name, variable_encoding in encoding.items():
+            internal_ds.variables[name].encoding.update(variable_encoding)
         internal_ds = _rechunk_to_match_encoding(internal_ds, encoding)
-    else:
-        internal_ds = _without_inherited_compression(internal_ds)
-        encoding = {}
 
     with warnings.catch_warnings():
         # see http://xarray.pydata.org/en/stable/howdoi.html
@@ -751,7 +756,6 @@ def xarray_to_h5netcdf_with_complex_numbers(
             engine="h5netcdf",
             invalid_netcdf=allow_invalid_netcdf,
             compute=compute,
-            encoding=encoding,
         )
         if not compute and maybe_write_job is not None:
             # Dask and therefor tqdm.dask is slow to
