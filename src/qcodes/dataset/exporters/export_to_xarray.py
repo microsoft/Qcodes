@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+import itertools
 import logging
 import warnings
 from importlib.metadata import version
 from math import prod
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 from packaging import version as p_version
 
+import qcodes
 from qcodes.dataset.linked_datasets.links import links_to_str
 
 from ..descriptions.versioning import serialization as serial
@@ -28,6 +30,168 @@ if TYPE_CHECKING:
     from qcodes.dataset.data_set_protocol import DataSetProtocol, ParameterData
 
 _LOGGER = logging.getLogger(__name__)
+
+# Target size in bytes of a single HDF5 chunk when compression is enabled.
+# The chunk size matters a lot for how well the data compresses since each chunk
+# is compressed independently. The auto chunking performed by h5py picks chunks
+# that are significantly smaller than this which results in noticeably worse
+# compression ratios for typical QCoDeS data.
+_TARGET_CHUNK_SIZE_BYTES = 4 * 1024**2
+
+
+def _variable_chunksizes(
+    variable: xr.DataArray, target_bytes: int = _TARGET_CHUNK_SIZE_BYTES
+) -> tuple[int, ...] | None:
+    """
+    Calculate the HDF5 chunk shape to use for a given variable.
+
+    Chunks are approximately ``target_bytes`` large and never larger, unless a
+    single element is. Dimensions are chunked from the leading dimension
+    onwards: leading dimensions get a chunk size of 1 for as long as the
+    remaining trailing dimensions are larger than the target. The first
+    dimension for which the trailing dimensions fit is sized to fill the
+    target and all dimensions after it are kept whole. This keeps chunks well
+    below the 4 GiB HDF5 chunk size limit even for very large rows.
+
+    Returns None for scalars and for variables with a zero sized dimension
+    since those cannot be chunked.
+    """
+    shape = variable.shape
+    if len(shape) == 0 or 0 in shape:
+        return None
+
+    itemsize = max(variable.dtype.itemsize, 1)
+    chunks: list[int] = []
+    for i, size in enumerate(shape):
+        trailing_bytes = prod(shape[i + 1 :]) * itemsize
+        if trailing_bytes > target_bytes:
+            chunks.append(1)
+            continue
+        chunks.append(max(1, min(size, target_bytes // trailing_bytes)))
+        chunks.extend(shape[i + 1 :])
+        break
+    return tuple(chunks)
+
+
+def _netcdf_compression_encoding(
+    dataset: xr.Dataset, complevel: int
+) -> dict[str, dict[str, Any]]:
+    """
+    Build a per variable netcdf encoding dict enabling deflate compression.
+
+    The shuffle filter is only enabled for non complex data. QCoDeS stores
+    complex numbers as an HDF5 compound type of two floats and byte shuffling
+    such a compound type destroys the byte patterns that deflate relies on,
+    roughly halving the compression ratio.
+
+    Args:
+        dataset: The dataset that is about to be written.
+        complevel: Deflate compression level between 1 and 9.
+
+    Returns:
+        A mapping from variable name to netcdf encoding options. Variables that
+        cannot be compressed, such as variable length strings, are omitted.
+
+    """
+    encoding: dict[str, dict[str, Any]] = {}
+
+    for name in itertools.chain(dataset.data_vars, dataset.coords):
+        variable = dataset[name]
+        # Compression filters can only be applied to numeric and boolean data.
+        # Variable length strings and object arrays are written without filters.
+        if variable.dtype.kind not in "buifc":
+            continue
+
+        variable_encoding: dict[str, Any] = {
+            "zlib": True,
+            "complevel": complevel,
+            "shuffle": variable.dtype.kind != "c",
+        }
+        chunksizes = _variable_chunksizes(variable)
+        if chunksizes is not None:
+            variable_encoding["chunksizes"] = chunksizes
+        encoding[str(name)] = variable_encoding
+
+    return encoding
+
+
+def _rechunk_to_match_encoding(
+    dataset: xr.Dataset, encoding: Mapping[str, Mapping[str, Any]]
+) -> xr.Dataset:
+    """
+    Align the dask chunks of a dataset with the HDF5 chunks it will be written to.
+
+    Writing a dask backed dataset is only performed one dask block at a time. If
+    a block covers less than a full HDF5 chunk, that chunk has to be read,
+    decompressed, updated and recompressed again for every block, which is very
+    slow.
+
+    Each variable is rechunked using its own HDF5 chunk layout. Variables that
+    share a dimension may have different chunk sizes along it, for example when
+    the dimensions are ordered differently, so a single dataset wide chunk size
+    per dimension would leave dask blocks much smaller than the HDF5 chunks.
+    Variables that are not dask backed are left unmodified.
+    """
+    rechunked: dict[str, xr.Variable] = {}
+    for name, variable_encoding in encoding.items():
+        chunksizes = variable_encoding.get("chunksizes")
+        variable = dataset.variables[name]
+        if chunksizes is None or variable.chunks is None:
+            continue
+        rechunked[name] = variable.chunk(
+            dict(zip(variable.dims, chunksizes, strict=True))
+        )
+
+    if not rechunked:
+        return dataset
+    dataset = dataset.copy(deep=False)
+    for name, variable in rechunked.items():
+        dataset.variables[name].data = variable.data
+    return dataset
+
+
+# Encoding keys that control compression or chunking of a netcdf variable.
+# original_shape is included since xarray discards the requested chunksizes when
+# it differs from the shape of the variable, which happens for a dataset combined
+# from multiple files with open_mfdataset as in the chunked export.
+_COMPRESSION_ENCODING_KEYS = frozenset(
+    {
+        "blosc",
+        "bzip2",
+        "chunksizes",
+        "complevel",
+        "compression",
+        "compression_opts",
+        "contiguous",
+        "original_shape",
+        "preferred_chunks",
+        "shuffle",
+        "szip",
+        "zlib",
+        "zstd",
+    }
+)
+
+
+def _without_inherited_compression(dataset: xr.Dataset) -> xr.Dataset:
+    """
+    Return a shallow copy of a dataset without compression in its encoding.
+
+    A dataset loaded from a compressed netcdf file keeps the compression settings
+    in the encoding of each variable and xarray reuses them when writing the
+    dataset again. Removing them ensures that only the compression requested for
+    this export is applied, and in particular that writing without compression
+    really produces an uncompressed file. Other encoding settings such as the
+    dtype and fill value are preserved and the input dataset is not modified.
+    """
+    dataset = dataset.copy(deep=False)
+    for variable in dataset.variables.values():
+        variable.encoding = {
+            key: value
+            for key, value in variable.encoding.items()
+            if key not in _COMPRESSION_ENCODING_KEYS
+        }
+    return dataset
 
 
 def _calculate_index_shape(idx: pd.Index | pd.MultiIndex) -> dict[Hashable, int]:
@@ -513,10 +677,29 @@ def _paramspec_dict_with_extras(
 
 
 def xarray_to_h5netcdf_with_complex_numbers(
-    xarray_dataset: xr.Dataset, file_path: str | Path, compute: bool = True
+    xarray_dataset: xr.Dataset,
+    file_path: str | Path,
+    compute: bool = True,
+    compression_level: int | None = None,
 ) -> None:
+    """
+    Write an xarray dataset to a netcdf file using the h5netcdf engine.
+
+    Args:
+        xarray_dataset: The dataset to write.
+        file_path: Path of the netcdf file to write.
+        compute: If False the write is returned as a Dask delayed job which is
+            computed with a progress bar rather than written eagerly.
+        compression_level: Deflate compression level between 0 and 9 where 0
+            means no compression. If None the level is read from
+            ``qcodes.config.dataset.export_netcdf_compression_level``.
+
+    """
     import cf_xarray as cf_xr
     from pandas import MultiIndex
+
+    if compression_level is None:
+        compression_level = int(qcodes.config.dataset.export_netcdf_compression_level)
 
     has_multi_index = any(
         isinstance(xarray_dataset.indexes[index_name], MultiIndex)
@@ -550,6 +733,17 @@ def xarray_to_h5netcdf_with_complex_numbers(
     allow_invalid_netcdf = dataset_has_complex_vals and (
         xarray_too_old or h5netcdf_too_old
     )
+
+    # The compression options are merged into the encoding of each variable
+    # rather than passed as the encoding argument of to_netcdf, since that
+    # replaces the existing encoding of a variable and would drop settings such
+    # as dtype, scale_factor and _FillValue of a dataset loaded from file.
+    internal_ds = _without_inherited_compression(internal_ds)
+    if compression_level > 0:
+        encoding = _netcdf_compression_encoding(internal_ds, compression_level)
+        for name, variable_encoding in encoding.items():
+            internal_ds.variables[name].encoding.update(variable_encoding)
+        internal_ds = _rechunk_to_match_encoding(internal_ds, encoding)
 
     with warnings.catch_warnings():
         # see http://xarray.pydata.org/en/stable/howdoi.html

@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import re
+from math import prod
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -36,8 +37,12 @@ from qcodes.dataset.descriptions.versioning import serialization as serial
 from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.exporters.export_to_pandas import _generate_pandas_index
 from qcodes.dataset.exporters.export_to_xarray import (
+    _TARGET_CHUNK_SIZE_BYTES,
     _calculate_index_shape,
+    _netcdf_compression_encoding,
+    _rechunk_to_match_encoding,
     _xarray_data_set_direct,
+    xarray_to_h5netcdf_with_complex_numbers,
 )
 from qcodes.dataset.linked_datasets.links import links_to_str
 from qcodes.parameters import ManualParameter, Parameter, ParamSpecBase
@@ -2689,3 +2694,274 @@ def test_incomplete_measurement_with_shared_setpoint(
     assert "signal_1d" in xr_ds.data_vars
     assert "signal_2d" in xr_ds.data_vars
     assert "x" in xr_ds.coords
+
+
+def test_netcdf_compression_encoding_helper() -> None:
+    """Compression is applied per variable with shuffle disabled for complex data."""
+    ds = xr.Dataset(
+        {
+            "real": (("x", "y"), np.zeros((100, 7))),
+            "complex": (("x", "y"), np.zeros((100, 7), dtype=np.complex128)),
+            "text": ("x", np.array(["a"] * 100, dtype=object)),
+            "scalar": ((), 1.0),
+        },
+        coords={"x": np.arange(100.0), "y": np.arange(7.0)},
+    )
+    encoding = _netcdf_compression_encoding(ds, complevel=4)
+
+    # object/string variables cannot be compressed and are left out
+    assert "text" not in encoding
+    assert set(encoding) == {"real", "complex", "scalar", "x", "y"}
+
+    assert encoding["real"] == {
+        "zlib": True,
+        "complevel": 4,
+        "shuffle": True,
+        "chunksizes": (100, 7),
+    }
+    # shuffle destroys the byte layout of the complex compound type
+    assert encoding["complex"]["shuffle"] is False
+    assert encoding["complex"]["chunksizes"] == (100, 7)
+    # scalars cannot be chunked
+    assert "chunksizes" not in encoding["scalar"]
+
+
+def test_netcdf_compression_encoding_chunks_are_capped_to_target_size() -> None:
+    """The leading dimension is sized to give chunks of about the target size."""
+    n_columns = 128
+    ds = xr.Dataset({"z": (("x", "y"), np.zeros((10000, n_columns)))})
+    encoding = _netcdf_compression_encoding(ds, complevel=4)
+
+    chunksizes = encoding["z"]["chunksizes"]
+    assert chunksizes[1] == n_columns
+    assert chunksizes[0] * n_columns * 8 <= _TARGET_CHUNK_SIZE_BYTES
+    assert (chunksizes[0] + 1) * n_columns * 8 > _TARGET_CHUNK_SIZE_BYTES
+
+
+@pytest.mark.parametrize(
+    ("shape", "expected_chunks"),
+    [
+        # a single row is larger than the target so the row itself is split
+        ((10, 1_000_000), (1, _TARGET_CHUNK_SIZE_BYTES // 8)),
+        # the two trailing dimensions are larger than the target together
+        ((3, 4, 1024**2 // 8), (1, 4, 1024**2 // 8)),
+        ((3, 8, 1024**2), (1, 1, 1024**2 // 2)),
+    ],
+)
+def test_netcdf_compression_encoding_chunks_split_large_rows(
+    shape: tuple[int, ...], expected_chunks: tuple[int, ...]
+) -> None:
+    """Rows larger than the target are split so chunks never exceed the target."""
+    # broadcast_to avoids allocating the full (large) array
+    data = np.broadcast_to(np.zeros(1), shape)
+    dims = tuple(f"d{i}" for i in range(len(shape)))
+    ds = xr.Dataset({"z": (dims, data)})
+    encoding = _netcdf_compression_encoding(ds, complevel=4)
+
+    chunksizes = encoding["z"]["chunksizes"]
+    assert chunksizes == expected_chunks
+    assert prod(chunksizes) * 8 <= _TARGET_CHUNK_SIZE_BYTES
+
+
+@pytest.mark.parametrize("complevel", [0, 4])
+def test_export_netcdf_compression_config(
+    tmp_path_factory: TempPathFactory, mock_dataset_grid: DataSet, complevel: int
+) -> None:
+    """The compression level from the config is applied to the exported file."""
+    h5py = pytest.importorskip("h5py")
+    tmp_path = tmp_path_factory.mktemp("export_netcdf_compression")
+    qcodes.config.dataset.export_netcdf_compression_level = complevel
+
+    mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
+    file_path = mock_dataset_grid.export_info.export_paths["nc"]
+
+    with h5py.File(file_path, "r") as file:
+        z = file["z"]
+        if complevel == 0:
+            assert z.compression is None
+        else:
+            assert z.compression == "gzip"
+            assert z.compression_opts == complevel
+            assert z.shuffle is True
+            assert z.chunks == (10, 5)
+
+    loaded_ds = xr.load_dataset(file_path, engine="h5netcdf")
+    assert_allclose(loaded_ds.z, mock_dataset_grid.to_xarray_dataset().z)
+
+
+def test_rechunk_to_match_encoding_uses_per_variable_chunks() -> None:
+    """Variables sharing dimensions in a different order keep their own chunks."""
+    ds = xr.Dataset(
+        {
+            "a": (("x", "y"), np.zeros((20, 30))),
+            "b": (("y", "x"), np.zeros((30, 20))),
+            "in_memory": (("x",), np.zeros(20)),
+        }
+    )
+    ds = ds.assign(a=ds.a.chunk({"x": 1, "y": 1}), b=ds.b.chunk({"x": 1, "y": 1}))
+    encoding = {
+        "a": {"chunksizes": (2, 30)},
+        "b": {"chunksizes": (3, 20)},
+        "in_memory": {"chunksizes": (5,)},
+    }
+
+    rechunked = _rechunk_to_match_encoding(ds, encoding)
+
+    assert rechunked.a.data.chunksize == (2, 30)
+    assert rechunked.b.data.chunksize == (3, 20)
+    assert isinstance(rechunked.in_memory.data, np.ndarray)
+    # the input dataset is not modified
+    assert ds.a.data.chunksize == (1, 1)
+
+
+def test_export_netcdf_level_0_clears_inherited_compression(tmp_path: Path) -> None:
+    """Re-exporting a loaded compressed file with level 0 writes it uncompressed."""
+    h5py = pytest.importorskip("h5py")
+    rng = np.random.default_rng(0)
+    original = xr.Dataset({"z": (("x",), np.round(rng.normal(size=1000), 2))})
+    compressed_path = tmp_path / "compressed.nc"
+    xarray_to_h5netcdf_with_complex_numbers(
+        original, compressed_path, compression_level=4
+    )
+    loaded = xr.load_dataset(compressed_path, engine="h5netcdf")
+    assert loaded.z.encoding["zlib"] is True
+
+    uncompressed_path = tmp_path / "uncompressed.nc"
+    xarray_to_h5netcdf_with_complex_numbers(
+        loaded, uncompressed_path, compression_level=0
+    )
+
+    with h5py.File(uncompressed_path, "r") as file:
+        assert file["z"].compression is None
+        assert file["z"].chunks is None
+    # the encoding of the input dataset is left untouched
+    assert loaded.z.encoding["zlib"] is True
+    xr.testing.assert_equal(
+        xr.load_dataset(uncompressed_path, engine="h5netcdf"), original
+    )
+
+
+def test_export_netcdf_compression_preserves_inherited_encoding(
+    tmp_path: Path,
+) -> None:
+    """Enabling compression keeps packing and fill value settings of a variable."""
+    h5py = pytest.importorskip("h5py")
+    original = xr.Dataset({"z": (("x",), np.array([0.0, 0.5, np.nan, 1.5]))})
+    original.z.encoding = {"dtype": "int16", "scale_factor": 0.5, "_FillValue": -1}
+    packed_path = tmp_path / "packed.nc"
+    xarray_to_h5netcdf_with_complex_numbers(original, packed_path, compression_level=0)
+    loaded = xr.load_dataset(packed_path, engine="h5netcdf")
+    loaded_encoding = dict(loaded.z.encoding)
+
+    compressed_path = tmp_path / "compressed.nc"
+    xarray_to_h5netcdf_with_complex_numbers(
+        loaded, compressed_path, compression_level=4
+    )
+
+    with h5py.File(compressed_path, "r") as file:
+        z = file["z"]
+        assert z.compression == "gzip"
+        assert z.dtype == np.int16
+        assert z.attrs["scale_factor"] == 0.5
+        assert z.attrs["_FillValue"] == -1
+    # the encoding of the input dataset is left untouched
+    assert loaded.z.encoding == loaded_encoding
+    xr.testing.assert_identical(
+        xr.load_dataset(compressed_path, engine="h5netcdf").z, loaded.z
+    )
+
+
+def test_export_netcdf_compression_of_chunked_export(
+    tmp_path_factory: TempPathFactory, experiment: Experiment
+) -> None:
+    """The file combined from the temporary per row files gets the target chunks."""
+    h5py = pytest.importorskip("h5py")
+    dataset = new_data_set("chunked")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "array")
+    zparam = ParamSpecBase("z", "array")
+    dataset.set_interdependencies(
+        InterDependencies_(dependencies={zparam: (xparam, yparam)})
+    )
+    n_rows, n_points = 50, 2000
+    y_values = np.arange(n_points, dtype=float)
+    dataset.mark_started()
+    for x in range(n_rows):
+        dataset.add_results([{"x": x, "y": y_values, "z": x + y_values}])
+    dataset.mark_completed()
+
+    tmp_path = tmp_path_factory.mktemp("export_netcdf_compression_chunked")
+    qcodes.config.dataset.export_netcdf_compression_level = 4
+    qcodes.config.dataset.export_chunked_threshold = 0
+    qcodes.config.dataset.export_chunked_export_of_large_files_enabled = True
+
+    dataset.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
+    file_path = dataset.export_info.export_paths["nc"]
+
+    with h5py.File(file_path, "r") as file:
+        z = file["z"]
+        assert z.compression == "gzip"
+        # the whole variable is below the target size so it is a single chunk
+        assert z.chunks == (n_rows, n_points)
+
+    loaded_ds = xr.load_dataset(file_path, engine="h5netcdf")
+    assert_array_equal(loaded_ds.z, dataset.to_xarray_dataset().z)
+
+
+def test_export_netcdf_compression_of_complex_data(
+    tmp_path_factory: TempPathFactory, mock_dataset_numpy_complex: DataSet
+) -> None:
+    """Complex data is compressed but not shuffled and round trips exactly."""
+    h5py = pytest.importorskip("h5py")
+    tmp_path = tmp_path_factory.mktemp("export_netcdf_compression_complex")
+    qcodes.config.dataset.export_netcdf_compression_level = 4
+
+    mock_dataset_numpy_complex.export(
+        export_type="netcdf", path=tmp_path, prefix="qcodes_"
+    )
+    file_path = mock_dataset_numpy_complex.export_info.export_paths["nc"]
+
+    with h5py.File(file_path, "r") as file:
+        z = file["z"]
+        assert z.compression == "gzip"
+        assert z.shuffle is False
+
+    original = mock_dataset_numpy_complex.to_xarray_dataset()
+    loaded_ds = xr.load_dataset(file_path, engine="h5netcdf")
+    assert_array_equal(loaded_ds.z, original.z)
+
+
+def test_export_netcdf_compression_reduces_file_size(
+    tmp_path_factory: TempPathFactory, experiment: Experiment
+) -> None:
+    """Compression gives a significantly smaller file for realistic data."""
+    dataset = new_data_set("compressible")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    zparam = ParamSpecBase("z", "numeric")
+    dataset.set_interdependencies(
+        InterDependencies_(dependencies={zparam: (xparam, yparam)})
+    )
+    dataset.mark_started()
+    y_values = np.linspace(-1, 1, 200)
+    for i in range(100):
+        # quantized as a real instrument would return it
+        z_values = np.round(np.sin(i / 10) * np.exp(-(y_values**2)) * 32767) / 32767
+        dataset.add_results(
+            [{"x": i, "y": y, "z": z} for y, z in zip(y_values, z_values, strict=True)]
+        )
+    dataset.mark_completed()
+
+    sizes = {}
+    for complevel in (0, 4):
+        qcodes.config.dataset.export_netcdf_compression_level = complevel
+        path = tmp_path_factory.mktemp(f"compression_size_{complevel}")
+        dataset.export(export_type="netcdf", path=path, prefix="qcodes_")
+        sizes[complevel] = Path(dataset.export_info.export_paths["nc"]).stat().st_size
+
+    assert sizes[4] < sizes[0] / 1.3
+
+    loaded_ds = xr.load_dataset(
+        dataset.export_info.export_paths["nc"], engine="h5netcdf"
+    )
+    assert_array_equal(loaded_ds.z, dataset.to_xarray_dataset().z)
