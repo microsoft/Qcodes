@@ -180,7 +180,7 @@ def test_off_when_error_occurs(galil: "GalilDMC4133Controller") -> None:
     assert galil.motor_a.off_when_error_occurs() == "enable for all"
 
 
-def test_unparsable_reply_raises(galil: "GalilDMC4133Controller") -> None:
+def test_empty_reply_raises(galil: "GalilDMC4133Controller") -> None:
     _connection(galil).replies["MG _MOA"] = [":"] * 20
 
     with pytest.raises(RuntimeError, match="Got only empty replies to 'MG _MOA'"):
