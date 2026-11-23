@@ -1315,6 +1315,46 @@ def test_export_snapshot_in_group_uses_compression_level(
     assert snapshot_from_netcdf(file_path) == {"station": {"value": 1}}
 
 
+@pytest.mark.parametrize("snapshot_in_group", [False, True])
+def test_export_rejects_unresolved_snapshot_pointer(
+    tmp_path: Path, snapshot_in_group: bool
+) -> None:
+    source = tmp_path / "source.nc"
+    xr_ds = xr.Dataset(
+        {"y": ("x", np.arange(3.0))},
+        coords={"x": np.arange(3)},
+        attrs={"snapshot": json.dumps({"value": 1})},
+    )
+    xarray_to_h5netcdf_with_complex_numbers(xr_ds, source, snapshot_in_group=True)
+    destination = tmp_path / "destination.nc"
+
+    with pytest.raises(ValueError, match="snapshot_from_netcdf"):
+        xarray_to_h5netcdf_with_complex_numbers(
+            xr.load_dataset(source), destination, snapshot_in_group=snapshot_in_group
+        )
+    assert not destination.exists()
+
+
+def test_export_snapshot_in_group_falls_back_on_name_clash(
+    tmp_path: Path, caplog: LogCaptureFixture
+) -> None:
+    snapshot = {"value": 1}
+    xr_ds = xr.Dataset(
+        {"qcodes_metadata": ("x", np.arange(3.0))},
+        coords={"x": np.arange(3)},
+        attrs={"snapshot": json.dumps(snapshot)},
+    )
+    file_path = tmp_path / "clash.nc"
+    with caplog.at_level(logging.WARNING):
+        xarray_to_h5netcdf_with_complex_numbers(
+            xr_ds, file_path, snapshot_in_group=True
+        )
+
+    assert "Cannot store the snapshot in the 'qcodes_metadata' group" in caplog.text
+    assert json.loads(xr.load_dataset(file_path).attrs["snapshot"]) == snapshot
+    assert snapshot_from_netcdf(file_path) == snapshot
+
+
 def test_export_non_grid_dataset_xarray(mock_dataset_non_grid: DataSet) -> None:
     xr_ds = mock_dataset_non_grid.to_xarray_dataset()
     assert xr_ds.sizes == {"multi_index": 50}

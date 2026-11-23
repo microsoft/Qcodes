@@ -20,7 +20,10 @@ from .export_to_pandas import (
 )
 from .netcdf_snapshot import (
     _SNAPSHOT_POINTER,
+    SNAPSHOT_GROUP,
+    SNAPSHOT_LOCATION,
     _should_write_snapshot_to_group,
+    _snapshot_pointer_location,
     _write_snapshot_to_group,
 )
 
@@ -711,10 +714,31 @@ def xarray_to_h5netcdf_with_complex_numbers(
         compression_level = int(qcodes.config.dataset.export_netcdf_compression_level)
 
     snapshot_attr = xarray_dataset.attrs.get("snapshot")
+    if _snapshot_pointer_location(snapshot_attr) is not None:
+        # The pointer refers to a group in the file the dataset was read from,
+        # which is not copied, so writing it would leave a dangling reference.
+        raise ValueError(
+            "The snapshot attribute of this dataset is a pointer to the "
+            f"{SNAPSHOT_LOCATION!r} group of the NetCDF file it was loaded from. "
+            "Load the file with qcodes.dataset.load_from_netcdf or set the "
+            "snapshot attribute to the output of "
+            "qcodes.dataset.snapshot_from_netcdf before exporting it."
+        )
     group_snapshot: str | None = None
     if snapshot_in_group and _should_write_snapshot_to_group(snapshot_attr):
-        group_snapshot = snapshot_attr
-        xarray_dataset = xarray_dataset.assign_attrs(snapshot=_SNAPSHOT_POINTER)
+        if SNAPSHOT_GROUP in xarray_dataset.variables or (
+            SNAPSHOT_GROUP in xarray_dataset.dims
+        ):
+            _LOGGER.warning(
+                "Cannot store the snapshot in the %r group since the dataset "
+                "has a variable or dimension with that name. Storing it as the "
+                "snapshot attribute instead.",
+                SNAPSHOT_GROUP,
+                extra={"file_name": str(file_path)},
+            )
+        else:
+            group_snapshot = snapshot_attr
+            xarray_dataset = xarray_dataset.assign_attrs(snapshot=_SNAPSHOT_POINTER)
 
     has_multi_index = any(
         isinstance(xarray_dataset.indexes[index_name], MultiIndex)
