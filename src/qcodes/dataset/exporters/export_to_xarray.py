@@ -151,6 +151,9 @@ def _rechunk_to_match_encoding(
 
 
 # Encoding keys that control compression or chunking of a netcdf variable.
+# original_shape is included since xarray discards the requested chunksizes when
+# it differs from the shape of the variable, which happens for a dataset combined
+# from multiple files with open_mfdataset as in the chunked export.
 _COMPRESSION_ENCODING_KEYS = frozenset(
     {
         "blosc",
@@ -160,6 +163,7 @@ _COMPRESSION_ENCODING_KEYS = frozenset(
         "compression",
         "compression_opts",
         "contiguous",
+        "original_shape",
         "preferred_chunks",
         "shuffle",
         "szip",

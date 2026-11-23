@@ -2871,6 +2871,43 @@ def test_export_netcdf_compression_preserves_inherited_encoding(
     )
 
 
+def test_export_netcdf_compression_of_chunked_export(
+    tmp_path_factory: TempPathFactory, experiment: Experiment
+) -> None:
+    """The file combined from the temporary per row files gets the target chunks."""
+    h5py = pytest.importorskip("h5py")
+    dataset = new_data_set("chunked")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "array")
+    zparam = ParamSpecBase("z", "array")
+    dataset.set_interdependencies(
+        InterDependencies_(dependencies={zparam: (xparam, yparam)})
+    )
+    n_rows, n_points = 50, 2000
+    y_values = np.arange(n_points, dtype=float)
+    dataset.mark_started()
+    for x in range(n_rows):
+        dataset.add_results([{"x": x, "y": y_values, "z": x + y_values}])
+    dataset.mark_completed()
+
+    tmp_path = tmp_path_factory.mktemp("export_netcdf_compression_chunked")
+    qcodes.config.dataset.export_netcdf_compression_level = 4
+    qcodes.config.dataset.export_chunked_threshold = 0
+    qcodes.config.dataset.export_chunked_export_of_large_files_enabled = True
+
+    dataset.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
+    file_path = dataset.export_info.export_paths["nc"]
+
+    with h5py.File(file_path, "r") as file:
+        z = file["z"]
+        assert z.compression == "gzip"
+        # the whole variable is below the target size so it is a single chunk
+        assert z.chunks == (n_rows, n_points)
+
+    loaded_ds = xr.load_dataset(file_path, engine="h5netcdf")
+    assert_array_equal(loaded_ds.z, dataset.to_xarray_dataset().z)
+
+
 def test_export_netcdf_compression_of_complex_data(
     tmp_path_factory: TempPathFactory, mock_dataset_numpy_complex: DataSet
 ) -> None:
