@@ -36,15 +36,22 @@ _DEFAULT_MOTION_TIMEOUT_S = 300.0
 _REPLY_RETRIES = 10
 
 
+def _strip_prompt(response: str) -> str:
+    """
+    Remove whitespace and the ``:`` prompt that gclib can leave around a reply.
+    """
+    return response.strip().strip(":").strip()
+
+
 def _parse_motion_flag(response: str) -> int | None:
     """
-    Parse the reply to ``MG _BG<axis>``.
+    Parse a single reply to ``MG _BG<axis>`` while polling for motion.
 
     Under rapid polling gclib can return the bare ``:`` prompt or an empty
     string instead of a number. Return ``None`` for such transient or
-    otherwise unparsable replies so that the caller can retry.
+    otherwise unparsable replies so that the caller can poll again.
     """
-    cleaned = response.strip().strip(":").strip()
+    cleaned = _strip_prompt(response)
     if not cleaned:
         return None
     try:
@@ -53,24 +60,22 @@ def _parse_motion_flag(response: str) -> int | None:
         return None
 
 
-def _parse_position_reply(response: str) -> dict[str, int] | None:
+def _parse_position_reply(response: str) -> dict[str, int]:
     """
     Parse the reply to ``PA ?,?,?`` into a dictionary with keys ``"A"``,
     ``"B"`` and ``"C"``.
 
-    The controller returns exactly three numeric positions separated by commas and
-    sometimes terminated by the ``:`` prompt, e.g. ``"100, 200, 300"``.
-    Return ``None`` for a bare ``:`` prompt, an empty reply or a malformed
-    reply so that the caller can retry.
+    The controller returns exactly three numeric positions separated by
+    commas, e.g. ``"100, 200, 300"``.
+
+    Raises:
+        ValueError: if the reply does not contain three numbers.
+
     """
-    cleaned = response.strip().removesuffix(":").strip()
-    parts = cleaned.split(",")
+    parts = _strip_prompt(response).split(",")
     if len(parts) != 3:
-        return None
-    try:
-        a, b, c = (int(float(part)) for part in parts)
-    except (ValueError, OverflowError):
-        return None
+        raise ValueError(f"Expected three positions, got {response!r}")
+    a, b, c = (int(float(part)) for part in parts)
     return {"A": a, "B": b, "C": c}
 
 
@@ -153,13 +158,43 @@ class GalilMotionController(Instrument):
         """
         Write for Galil motion controller
         """
-        self.g.GCommand(cmd + "\r")
+        # gclib appends the carriage return that terminates the command
+        self.g.GCommand(cmd)
 
     def ask_raw(self, cmd: str) -> str:
         """
         Asks/Reads data from Galil motion controller
+
+        Under rapid polling gclib can return the bare ``:`` prompt or an
+        empty string instead of the reply. Such replies are logged as a
+        warning and retried a few times before giving up. The prompt is
+        removed from the reply.
+
+        Raises:
+            RuntimeError: if the controller keeps returning empty replies.
+
         """
-        return self.g.GCommand(cmd + "\r")
+        for _ in range(_REPLY_RETRIES):
+            response = self._ask_once(cmd)
+            if response:
+                return response
+            time.sleep(_POLL_INTERVAL_S)
+        raise RuntimeError(
+            f"Got only empty replies to {cmd!r} after {_REPLY_RETRIES} attempts"
+        )
+
+    def _ask_once(self, cmd: str) -> str:
+        """
+        Ask once without retrying an empty reply. The ``:`` prompt is removed
+        from the reply, and an empty reply is logged as a warning.
+        """
+        # gclib appends the carriage return that terminates the command
+        response = _strip_prompt(self.g.GCommand(cmd))
+        if not response:
+            # Empty replies are not expected and may mean that replies no
+            # longer match their commands, so make them visible.
+            self.log.warning("Got an empty reply to %r from the controller", cmd)
+        return response
 
     def timeout(self, val: int) -> None:
         """
@@ -451,9 +486,7 @@ class GalilDMC4133Motor(InstrumentChannel["GalilDMC4133Controller"]):
         Gets the status if motor is automatically set to turn off when error
         occurs.
         """
-        val = self.ask(f"MG _OE{self._axis}")
-
-        return int(val[0])
+        return int(float(self.ask(f"MG _OE{self._axis}")))
 
     def _set_off_when_error_occurs(self, val: int) -> None:
         """
@@ -461,25 +494,25 @@ class GalilDMC4133Motor(InstrumentChannel["GalilDMC4133Controller"]):
         """
         self.write(f"OE{self._axis}={val}")
 
-    def _set_deceleration(self, val: str) -> None:
+    def _set_deceleration(self, val: int) -> None:
         """
         Set deceleration for the motor's motion
         """
         self.write(f"DC{self._axis}={val}")
 
-    def _set_acceleration(self, val: str) -> None:
+    def _set_acceleration(self, val: int) -> None:
         """
         Set acceleration for the motor's motion
         """
         self.write(f"AC{self._axis}={val}")
 
-    def _set_speed(self, val: str) -> None:
+    def _set_speed(self, val: int) -> None:
         """
         Sets speed for motor's motion
         """
         self.write(f"SP{self._axis}={val}")
 
-    def _set_relative_position(self, val: str) -> None:
+    def _set_relative_position(self, val: int) -> None:
         """
         Sets relative position
         """
@@ -495,8 +528,7 @@ class GalilDMC4133Motor(InstrumentChannel["GalilDMC4133Controller"]):
         """
         Tells motor on off status
         """
-        val = self.ask(f"MG _MO{self._axis}")
-        if val[0] == "1":
+        if int(float(self.ask(f"MG _MO{self._axis}"))) == 1:
             return "off"
         else:
             return "on"
@@ -517,20 +549,8 @@ class GalilDMC4133Motor(InstrumentChannel["GalilDMC4133Controller"]):
         """
         Checks if the motor is in motion or not. return 1, if motor is in
         motion otherwise 0
-
-        Transient empty replies of the controller are retried.
         """
-        response = ""
-        for _ in range(_REPLY_RETRIES):
-            response = self.ask(f"MG _BG{self._axis}")
-            flag = _parse_motion_flag(response)
-            if flag is not None:
-                return flag
-            time.sleep(_POLL_INTERVAL_S)
-        raise RuntimeError(
-            f"Could not parse motion flag of axis {self._axis} after retries: "
-            f"{response!r}"
-        )
+        return int(float(self.ask(f"MG _BG{self._axis}")))
 
     def wait_till_motor_motion_complete(
         self, timeout_s: float = _DEFAULT_MOTION_TIMEOUT_S
@@ -582,10 +602,10 @@ class GalilDMC4133Controller(GalilMotionController):
         )
         """sets number of decimals in the format of the position"""
 
-        self.absolute_position: Parameter = self.add_parameter(
+        self.absolute_position: Parameter[dict[str, int], Self] = self.add_parameter(
             "absolute_position",
             get_cmd=self._get_absolute_position,
-            set_cmd=None,
+            set_cmd=False,
             unit="quadrature counts",
             docstring="gets absolute position of the motors from the set origin",
         )
@@ -640,19 +660,8 @@ class GalilDMC4133Controller(GalilMotionController):
     def _get_absolute_position(self) -> dict[str, int]:
         """
         Gets absolution position of the motors from the defined origin
-
-        Transient empty replies of the controller are retried.
         """
-        response = ""
-        for _ in range(_REPLY_RETRIES):
-            response = self.ask("PA ?,?,?")
-            parsed = _parse_position_reply(response)
-            if parsed is not None:
-                return parsed
-            time.sleep(_POLL_INTERVAL_S)
-        raise RuntimeError(
-            f"Could not parse absolute position reply after retries: {response!r}"
-        )
+        return _parse_position_reply(self.ask("PA ?,?,?"))
 
     def end_program(self) -> None:
         """
@@ -703,12 +712,13 @@ class GalilDMC4133Controller(GalilMotionController):
         Wait until none of the given axes is moving
 
         The controller is polled at a fixed interval. Transient empty replies
-        are treated as "not yet finished". Each query's I/O timeout is capped
-        by the remaining motion timeout (rounded up to milliseconds), and the
-        original I/O timeout is restored afterward. I/O errors before the
-        motion deadline are propagated. If the I/O timeout is -1, the initial
-        connection timeout is not exposed by gclib, so only the remaining
-        motion timeout and the 32767 ms API limit bound the query.
+        are logged as a warning and treated as "not yet finished". Each
+        query's I/O timeout is capped by the remaining motion timeout (rounded
+        up to milliseconds), and the original I/O timeout is restored
+        afterward. I/O errors before the motion deadline are propagated. If
+        the I/O timeout is -1, the initial connection timeout is not exposed
+        by gclib, so only the remaining motion timeout and the 32767 ms API
+        limit bound the query.
 
         Args:
             axes: axis letters to wait for, e.g. ``"AB"``.
@@ -735,7 +745,9 @@ class GalilDMC4133Controller(GalilMotionController):
                         query_timeout_ms = min(query_timeout_ms, original_timeout)
                     try:
                         self.timeout(query_timeout_ms)
-                        response = self.ask(f"MG _BG{axis}")
+                        # poll once per query; an empty reply is treated as
+                        # "not yet finished" and polled again until the deadline
+                        response = self._ask_once(f"MG _BG{axis}")
                     except gclib.GclibError as e:
                         if time.monotonic() >= deadline:
                             raise TimeoutError(
