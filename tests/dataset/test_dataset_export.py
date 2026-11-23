@@ -40,7 +40,9 @@ from qcodes.dataset.exporters.export_to_xarray import (
     _TARGET_CHUNK_SIZE_BYTES,
     _calculate_index_shape,
     _netcdf_compression_encoding,
+    _rechunk_to_match_encoding,
     _xarray_data_set_direct,
+    xarray_to_h5netcdf_with_complex_numbers,
 )
 from qcodes.dataset.linked_datasets.links import links_to_str
 from qcodes.parameters import ManualParameter, Parameter, ParamSpecBase
@@ -2785,6 +2787,58 @@ def test_export_netcdf_compression_config(
 
     loaded_ds = xr.load_dataset(file_path, engine="h5netcdf")
     assert_allclose(loaded_ds.z, mock_dataset_grid.to_xarray_dataset().z)
+
+
+def test_rechunk_to_match_encoding_uses_per_variable_chunks() -> None:
+    """Variables sharing dimensions in a different order keep their own chunks."""
+    ds = xr.Dataset(
+        {
+            "a": (("x", "y"), np.zeros((20, 30))),
+            "b": (("y", "x"), np.zeros((30, 20))),
+            "in_memory": (("x",), np.zeros(20)),
+        }
+    )
+    ds = ds.assign(a=ds.a.chunk({"x": 1, "y": 1}), b=ds.b.chunk({"x": 1, "y": 1}))
+    encoding = {
+        "a": {"chunksizes": (2, 30)},
+        "b": {"chunksizes": (3, 20)},
+        "in_memory": {"chunksizes": (5,)},
+    }
+
+    rechunked = _rechunk_to_match_encoding(ds, encoding)
+
+    assert rechunked.a.data.chunksize == (2, 30)
+    assert rechunked.b.data.chunksize == (3, 20)
+    assert isinstance(rechunked.in_memory.data, np.ndarray)
+    # the input dataset is not modified
+    assert ds.a.data.chunksize == (1, 1)
+
+
+def test_export_netcdf_level_0_clears_inherited_compression(tmp_path: Path) -> None:
+    """Re-exporting a loaded compressed file with level 0 writes it uncompressed."""
+    h5py = pytest.importorskip("h5py")
+    rng = np.random.default_rng(0)
+    original = xr.Dataset({"z": (("x",), np.round(rng.normal(size=1000), 2))})
+    compressed_path = tmp_path / "compressed.nc"
+    xarray_to_h5netcdf_with_complex_numbers(
+        original, compressed_path, compression_level=4
+    )
+    loaded = xr.load_dataset(compressed_path, engine="h5netcdf")
+    assert loaded.z.encoding["zlib"] is True
+
+    uncompressed_path = tmp_path / "uncompressed.nc"
+    xarray_to_h5netcdf_with_complex_numbers(
+        loaded, uncompressed_path, compression_level=0
+    )
+
+    with h5py.File(uncompressed_path, "r") as file:
+        assert file["z"].compression is None
+        assert file["z"].chunks is None
+    # the encoding of the input dataset is left untouched
+    assert loaded.z.encoding["zlib"] is True
+    xr.testing.assert_equal(
+        xr.load_dataset(uncompressed_path, engine="h5netcdf"), original
+    )
 
 
 def test_export_netcdf_compression_of_complex_data(

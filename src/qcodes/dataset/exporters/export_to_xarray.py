@@ -124,26 +124,69 @@ def _rechunk_to_match_encoding(
     Writing a dask backed dataset is only performed one dask block at a time. If
     a block covers less than a full HDF5 chunk, that chunk has to be read,
     decompressed, updated and recompressed again for every block, which is very
-    slow. Datasets that are not dask backed are returned unmodified.
-    """
-    is_dask_backed = any(
-        getattr(dataset[name].data, "chunks", None) is not None
-        for name in dataset.variables
-    )
-    if not is_dask_backed:
-        return dataset
+    slow.
 
-    dim_chunks: dict[Hashable, int] = {}
+    Each variable is rechunked using its own HDF5 chunk layout. Variables that
+    share a dimension may have different chunk sizes along it, for example when
+    the dimensions are ordered differently, so a single dataset wide chunk size
+    per dimension would leave dask blocks much smaller than the HDF5 chunks.
+    Variables that are not dask backed are left unmodified.
+    """
+    rechunked: dict[Hashable, xr.Variable] = {}
     for name, variable_encoding in encoding.items():
         chunksizes = variable_encoding.get("chunksizes")
-        if chunksizes is None:
+        variable = dataset.variables[name]
+        if chunksizes is None or variable.chunks is None:
             continue
-        for dim, chunksize in zip(dataset[name].dims, chunksizes, strict=True):
-            dim_chunks[dim] = min(dim_chunks.get(dim, chunksize), chunksize)
+        rechunked[name] = variable.chunk(
+            dict(zip(variable.dims, chunksizes, strict=True))
+        )
 
-    if not dim_chunks:
+    if not rechunked:
         return dataset
-    return dataset.chunk(dim_chunks)
+    dataset = dataset.copy(deep=False)
+    for name, variable in rechunked.items():
+        dataset.variables[name].data = variable.data
+    return dataset
+
+
+# Encoding keys that control compression or chunking of a netcdf variable.
+_COMPRESSION_ENCODING_KEYS = frozenset(
+    {
+        "blosc",
+        "bzip2",
+        "chunksizes",
+        "complevel",
+        "compression",
+        "compression_opts",
+        "contiguous",
+        "preferred_chunks",
+        "shuffle",
+        "szip",
+        "zlib",
+        "zstd",
+    }
+)
+
+
+def _without_inherited_compression(dataset: xr.Dataset) -> xr.Dataset:
+    """
+    Return a shallow copy of a dataset without compression in its encoding.
+
+    A dataset loaded from a compressed netcdf file keeps the compression settings
+    in the encoding of each variable and xarray reuses them when writing the
+    dataset again. Removing them ensures that writing without compression really
+    produces an uncompressed file. Other encoding settings such as the dtype and
+    fill value are preserved and the input dataset is not modified.
+    """
+    dataset = dataset.copy(deep=False)
+    for variable in dataset.variables.values():
+        variable.encoding = {
+            key: value
+            for key, value in variable.encoding.items()
+            if key not in _COMPRESSION_ENCODING_KEYS
+        }
+    return dataset
 
 
 def _calculate_index_shape(idx: pd.Index | pd.MultiIndex) -> dict[Hashable, int]:
@@ -690,6 +733,7 @@ def xarray_to_h5netcdf_with_complex_numbers(
         encoding = _netcdf_compression_encoding(internal_ds, compression_level)
         internal_ds = _rechunk_to_match_encoding(internal_ds, encoding)
     else:
+        internal_ds = _without_inherited_compression(internal_ds)
         encoding = {}
 
     with warnings.catch_warnings():
