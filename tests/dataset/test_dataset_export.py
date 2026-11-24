@@ -1334,6 +1334,13 @@ def test_export_rejects_unresolved_snapshot_pointer(
         )
     assert not destination.exists()
 
+    reloaded = xr.load_dataset(source)
+    reloaded.attrs["snapshot"] = json.dumps(snapshot_from_netcdf(source))
+    xarray_to_h5netcdf_with_complex_numbers(
+        reloaded, destination, snapshot_in_group=snapshot_in_group
+    )
+    assert snapshot_from_netcdf(destination) == {"value": 1}
+
 
 def test_export_snapshot_in_group_falls_back_on_name_clash(
     tmp_path: Path, caplog: LogCaptureFixture

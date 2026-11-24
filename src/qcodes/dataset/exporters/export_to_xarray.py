@@ -721,8 +721,9 @@ def xarray_to_h5netcdf_with_complex_numbers(
             "The snapshot attribute of this dataset is a pointer to the "
             f"{SNAPSHOT_LOCATION!r} group of the NetCDF file it was loaded from. "
             "Load the file with qcodes.dataset.load_from_netcdf or set the "
-            "snapshot attribute to the output of "
-            "qcodes.dataset.snapshot_from_netcdf before exporting it."
+            "snapshot attribute to the JSON string "
+            "json.dumps(qcodes.dataset.snapshot_from_netcdf(path)) before "
+            "exporting it."
         )
     group_snapshot: str | None = None
     if snapshot_in_group and _should_write_snapshot_to_group(snapshot_attr):
