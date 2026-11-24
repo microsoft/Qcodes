@@ -259,7 +259,7 @@ class Stahl(VisaInstrument):
                 "with a QCoDeS core developer"
             )
 
-        converters: dict[str, Callable[..., Any]] = OrderedDict(
+        converters = OrderedDict[str, Callable[..., Any]](
             {
                 "model": str,
                 "serial_number": str,
