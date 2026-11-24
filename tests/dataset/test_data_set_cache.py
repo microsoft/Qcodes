@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from math import ceil
 from string import ascii_uppercase
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -1130,7 +1130,10 @@ def _prepare_setpoints_1d(
     channel_array_instrument: DummyChannelInstrument,
     n_points: int,
     setpoints_type: Literal["numeric", "text"],
-) -> tuple[Parameter[float] | Parameter[str], npt.NDArray[np.float64] | list[str]]:
+) -> tuple[Parameter[Any], npt.NDArray[np.float64] | list[str]]:
+    # The parameter is either numeric or text, matching the type of the returned
+    # values. A union of the two parameter types would not allow calling ``set``
+    # with the values since the type checker cannot relate the two return values.
     if setpoints_type == "numeric":
         setpoints_param = DAC.ch1
         setpoints_values = np.linspace(-1, 1, n_points)

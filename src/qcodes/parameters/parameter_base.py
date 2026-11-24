@@ -9,7 +9,7 @@ from collections.abc import Iterator, MutableSet
 from contextlib import contextmanager
 from datetime import datetime
 from functools import cached_property, wraps
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Protocol, overload
 
 import numpy as np
 from typing_extensions import TypedDict, TypeVar
@@ -72,6 +72,17 @@ InstrumentTypeVar_co = TypeVar(
 )
 
 LOG = logging.getLogger(__name__)
+
+
+class _SetFunction[ValueT](Protocol):
+    """
+    Signature of the ``set`` method that ``ParameterBase`` generates by
+    wrapping ``set_raw``. Unlike ``Callable[..., None]`` this keeps the type
+    of the value so that ``parameter.set(value)`` is type checked in the same
+    way as ``parameter(value)``.
+    """
+
+    def __call__(self, value: ValueT, **kwargs: Any) -> None: ...
 
 
 class _SetParamContext:
@@ -571,7 +582,7 @@ class ParameterBase(
                 f"{self.full_name} is not allowed."
             )
 
-        self.set: Callable[..., None]
+        self.set: _SetFunction[ParameterDataTypeVar]
         self._settable: bool = False
         if self._implements_set_raw:
             self.set = self._wrap_set(self.set_raw)
@@ -1031,7 +1042,9 @@ class ParameterBase(
 
         return get_wrapper
 
-    def _wrap_set(self, set_function: Callable[..., None]) -> Callable[..., None]:
+    def _wrap_set(
+        self, set_function: Callable[..., None]
+    ) -> _SetFunction[ParameterDataTypeVar]:
         @wraps(set_function)
         def set_wrapper(value: ParameterDataTypeVar, **kwargs: Any) -> None:
             try:

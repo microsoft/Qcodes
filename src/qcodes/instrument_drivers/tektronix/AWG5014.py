@@ -814,12 +814,12 @@ class TektronixAWG5014(VisaInstrument):
         defined waveforms can be ON.
         """
         for ch in self.channels:
-            ch.state.set(1)
+            ch.state.set(True)
 
     def all_channels_off(self) -> None:
         """Set the state of all channels to be OFF."""
         for ch in self.channels:
-            ch.state.set(0)
+            ch.state.set(False)
 
     #####################
     # Sequences section #

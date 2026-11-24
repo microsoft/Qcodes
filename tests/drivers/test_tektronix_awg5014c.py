@@ -209,9 +209,9 @@ def test_DC_output_set(awg: TektronixAWG5014) -> None:
     assert awg.DC_output.get() is True
 
     # the on/off mapping also accepts 0/1 and "on"/"off"
-    awg.DC_output.set(0)
+    awg.DC_output.set(0)  # type: ignore[arg-type]
     assert awg.DC_output.get() is False
-    awg.DC_output.set("on")
+    awg.DC_output.set("on")  # type: ignore[arg-type]
     assert awg.DC_output.get() is True
 
 

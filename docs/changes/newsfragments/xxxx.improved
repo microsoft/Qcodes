@@ -1,0 +1,3 @@
+The ``set`` method of a ``Parameter`` is now typed with the parameter's data type, so that
+type checkers report ``parameter.set(value)`` calls with a value of the wrong type in the same
+way as they already did for ``parameter(value)``. Previously ``set`` accepted any arguments.
