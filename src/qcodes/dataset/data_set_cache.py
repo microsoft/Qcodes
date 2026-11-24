@@ -457,7 +457,7 @@ def _append_rows(
         and buffer.shape[0] >= n_rows
     ):
         buffer = np.empty(
-            (max(n_rows + n_rows // 2, 16), *existing_values.shape[1:]),
+            (n_rows + n_rows // 2, *existing_values.shape[1:]),
             dtype=existing_values.dtype,
         )
         buffer[:n_existing] = existing_values
