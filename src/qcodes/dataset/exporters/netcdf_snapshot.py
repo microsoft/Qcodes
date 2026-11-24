@@ -32,15 +32,21 @@ _SNAPSHOT_POINTER = json.dumps({_POINTER_KEY: SNAPSHOT_LOCATION})
 
 
 def _snapshot_pointer_location(snapshot_attr: object) -> str | None:
-    """Return the location of the snapshot if the attribute is a pointer to it."""
+    """Return the location of the snapshot if the attribute is a pointer to it.
+
+    Only a JSON object with the pointer key as its single entry is recognized,
+    so a regular snapshot is never mistaken for a pointer.
+    """
     # The size guard avoids parsing a full JSON snapshot just to detect a pointer.
-    if (
-        not isinstance(snapshot_attr, str)
-        or len(snapshot_attr) > 1000
-        or not snapshot_attr.startswith(f'{{"{_POINTER_KEY}"')
-    ):
+    if not isinstance(snapshot_attr, str) or len(snapshot_attr) > 1000:
         return None
-    location = json.loads(snapshot_attr).get(_POINTER_KEY)
+    try:
+        decoded = json.loads(snapshot_attr)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(decoded, dict) or decoded.keys() != {_POINTER_KEY}:
+        return None
+    location = decoded[_POINTER_KEY]
     return location if isinstance(location, str) else None
 
 

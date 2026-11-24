@@ -1770,8 +1770,12 @@ class DataSet(BaseDataSet):
                 num_digits = len(str(num_files))
                 file_name_template = f"ds_{{:0{num_digits}d}}.nc"
                 for i in trange(num_files, desc="Writing individual files"):
+                    row_dataset = self.to_xarray_dataset(start=i + 1, end=i + 1)
+                    # the snapshot is added once to the combined file below
+                    # rather than written to every temporary file
+                    row_dataset.attrs["snapshot"] = "null"
                     xarray_to_h5netcdf_with_complex_numbers(
-                        self.to_xarray_dataset(start=i + 1, end=i + 1),
+                        row_dataset,
                         temp_path / file_name_template.format(i),
                         # these files are temporary and immediately recombined
                         # into the final file so compressing them only costs time
@@ -1779,6 +1783,7 @@ class DataSet(BaseDataSet):
                     )
                 files = tuple(temp_path.glob("*.nc"))
                 data = xr.open_mfdataset(files)
+                data.attrs["snapshot"] = self._snapshot_raw or "null"
                 try:
                     log.info(
                         "Combining temp files into one file.",

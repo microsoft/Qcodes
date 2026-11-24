@@ -46,6 +46,10 @@ from qcodes.dataset.exporters.export_to_xarray import (
     _xarray_data_set_direct,
     xarray_to_h5netcdf_with_complex_numbers,
 )
+from qcodes.dataset.exporters.netcdf_snapshot import (
+    _resolve_netcdf_snapshot_raw,
+    _snapshot_pointer_location,
+)
 from qcodes.dataset.linked_datasets.links import links_to_str
 from qcodes.parameters import ManualParameter, Parameter, ParamSpecBase
 
@@ -1253,8 +1257,16 @@ def test_export_dataset_delayed_complex(
 @pytest.mark.parametrize("chunked", [False, True])
 @pytest.mark.parametrize("snapshot_in_group", [False, True])
 def test_export_snapshot_in_group_round_trips(
-    tmp_path: Path, mock_dataset_grid: DataSet, chunked: bool, snapshot_in_group: bool
+    tmp_path: Path,
+    mock_dataset_grid: DataSet,
+    chunked: bool,
+    snapshot_in_group: bool,
+    mocker: MockerFixture,
 ) -> None:
+    write_spy = mocker.patch(
+        "qcodes.dataset.data_set.xarray_to_h5netcdf_with_complex_numbers",
+        side_effect=xarray_to_h5netcdf_with_complex_numbers,
+    )
     snapshot = {"station": {"instruments": {"dac": {"value": 1.5, "unit": "\u03bcV"}}}}
     mock_dataset_grid.add_snapshot(json.dumps(snapshot))
     qcodes.config.dataset.export_snapshot_in_group = snapshot_in_group
@@ -1262,6 +1274,11 @@ def test_export_snapshot_in_group_round_trips(
     qcodes.config.dataset.export_chunked_threshold = 0
     mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
     file_path = mock_dataset_grid.export_info.export_paths["nc"]
+    if chunked:
+        # only the combined file should contain the snapshot
+        *row_calls, _ = write_spy.call_args_list
+        assert len(row_calls) == len(mock_dataset_grid)
+        assert all(call.args[0].attrs["snapshot"] == "null" for call in row_calls)
 
     raw_attr = xr.load_dataset(file_path).attrs["snapshot"]
     with h5netcdf.File(file_path, "r") as nc_file:
@@ -1313,6 +1330,45 @@ def test_export_snapshot_in_group_uses_compression_level(
             assert snapshot_var.compression == "gzip"
             assert snapshot_var.compression_opts == compression_level
     assert snapshot_from_netcdf(file_path) == {"station": {"value": 1}}
+
+
+@pytest.mark.parametrize(
+    ("snapshot_attr", "expected"),
+    [
+        (
+            '{"__qcodes_snapshot_location__": "qcodes_metadata/snapshot"}',
+            "qcodes_metadata/snapshot",
+        ),
+        ('{\n  "__qcodes_snapshot_location__": "a/b"\n}', "a/b"),
+        ('{"__qcodes_snapshot_location__": "a/b", "station": {}}', None),
+        ('{"__qcodes_snapshot_location__": 1}', None),
+        ('{"__qcodes_snapshot_location__": ', None),
+        ('{"station": {}}', None),
+        ("null", None),
+    ],
+)
+def test_snapshot_pointer_detection(snapshot_attr: str, expected: str | None) -> None:
+    assert _snapshot_pointer_location(snapshot_attr) == expected
+
+
+def test_deferred_cache_does_not_read_grouped_snapshot(
+    tmp_path: Path, mock_dataset_grid: DataSet, mocker: MockerFixture
+) -> None:
+    mock_dataset_grid.add_snapshot(json.dumps({"value": 1}))
+    qcodes.config.dataset.export_snapshot_in_group = True
+    mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
+    loaded = load_from_netcdf(mock_dataset_grid.export_info.export_paths["nc"])
+    read_spy = mocker.patch(
+        "qcodes.dataset.data_set_cache._resolve_netcdf_snapshot_raw",
+        side_effect=_resolve_netcdf_snapshot_raw,
+    )
+
+    assert "z" in loaded.cache.data()
+    read_spy.assert_not_called()
+    assert loaded.cache.to_xarray_dataset().attrs["snapshot"] == json.dumps(
+        {"value": 1}
+    )
+    read_spy.assert_called_once()
 
 
 @pytest.mark.parametrize("snapshot_in_group", [False, True])
