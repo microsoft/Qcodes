@@ -123,7 +123,47 @@ database fail; ``get_metadata("snapshot")`` returns the raw bytes; and runs
 without a results table, such as those written by ``DataSetInMem``, cannot be
 loaded at all. Direct SQL consumers must handle BLOBs explicitly rather than
 passing them to SQLite JSON functions. Exporting to NetCDF with QCoDeS 0.64.0 or
-later retains the snapshot as JSON for interchange with earlier versions.
+later retains the snapshot as JSON for interchange with earlier versions,
+unless the snapshot is stored in a separate group as described below.
+
+.. _sec:design_netcdf_snapshot_storage:
+
+Snapshot storage in NetCDF exports
+----------------------------------
+
+By default the snapshot of a dataset exported to NetCDF is stored as the JSON
+string attribute ``snapshot`` of the root group. HDF5 attributes cannot be
+compressed and are read in full whenever a file is opened, which is costly for
+large snapshots. The layout is controlled by::
+
+    qcodes.config.dataset.export_snapshot_in_group = True
+
+When enabled (the default is ``False``), the exported file is laid out as
+follows:
+
+- The variable ``/qcodes_metadata/snapshot`` holds the JSON snapshot encoded as
+  UTF-8 in a one-dimensional ``uint8`` array along the dimension
+  ``snapshot_bytes``. It is compressed with deflate (gzip) at
+  ``qcodes.config.dataset.export_netcdf_compression_level``, the same level as
+  the data, and is stored uncompressed if that level is ``0``.
+- The root ``snapshot`` attribute contains a pointer to that variable, the JSON
+  object ``{"__qcodes_snapshot_location__": "qcodes_metadata/snapshot"}``.
+- Datasets without a snapshot keep the attribute ``"null"`` and get no group.
+- If the dataset has a variable or dimension named ``qcodes_metadata``, the
+  snapshot is stored as the attribute instead and a warning is logged.
+
+The group is standard netCDF4, readable by netCDF-C and h5py, and is not part
+of ``xarray.open_dataset(path)``, so the snapshot is only read when needed.
+``load_from_netcdf`` follows the pointer, so loaded datasets and their
+``to_xarray_dataset()`` output contain the snapshot as JSON as before. To read
+the snapshot from either layout without a QCoDeS database, use
+``qcodes.dataset.snapshot_from_netcdf(path)``. Tools that read the ``snapshot``
+attribute directly see only the pointer and must be updated; older QCoDeS
+versions still load the data of such files, but their snapshot contains only the
+pointer. Exporting an xarray dataset opened directly from such a file raises an
+error rather than writing a pointer without its group; load it with
+``load_from_netcdf`` or replace the attribute with
+``json.dumps(snapshot_from_netcdf(path))`` first.
 
 .. _sec:design_split_storage:
 
