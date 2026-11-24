@@ -501,6 +501,15 @@ include = [
 [tool.ty.overrides.rules]
 import-not-found = "ignore"
 
+# backports.zstd is only installed on Python versions older than 3.14, where
+# compression.zstd is not available. ty checks the code for the oldest Python
+# version supported, so it resolves this import even when ty runs on 3.14 or
+# newer.
+[[tool.ty.overrides]]
+include = ["src/qcodes/dataset/sqlite/snapshot_storage.py"]
+[tool.ty.overrides.analysis]
+allowed-unresolved-imports = ["backports"]
+
 [tool.towncrier]
 package = "qcodes"
 name = "QCoDeS"
