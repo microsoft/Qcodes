@@ -10,6 +10,7 @@ import numpy.typing as npt
 import pytest
 from hypothesis import HealthCheck, given, settings
 
+from qcodes.dataset.data_set_cache import _append_rows
 from qcodes.dataset.data_set_protocol import DataSetType
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.measurements import Measurement
@@ -1161,7 +1162,8 @@ def test_cache_append_without_shape_promotes_dtype_and_keeps_input_arrays(
     meas = Measurement(exp=experiment)
     meas.register_custom_parameter("x", paramtype="array")
     meas.register_custom_parameter("y", paramtype="array", setpoints=("x",))
-    # the values of x are views of a larger array, which must not be written to
+    # the values of x are views of a larger array, which must not be written to;
+    # add_result copies them, so _append_rows is also tested on its own below
     source = np.arange(100.0)
     with meas.run(dataset_class=dataset_class) as datasaver:
         for i in range(20):
@@ -1174,6 +1176,22 @@ def test_cache_append_without_shape_promotes_dtype_and_keeps_input_arrays(
     assert data["y"].dtype == np.float64
     np.testing.assert_array_equal(
         data["y"].ravel(), np.repeat([i if i < 10 else i + 0.5 for i in range(20)], 4)
+    )
+
+
+def test_append_rows_does_not_write_to_arrays_it_did_not_allocate() -> None:
+    # a view of the first rows of an array not allocated by _append_rows, with
+    # spare rows behind it that the new values would fit into
+    source = np.array(np.arange(40.0).reshape(10, 4))
+    expected_source = source.copy()
+    existing = source[:3]
+    new_values = np.full((2, 4), -1.0)
+    appended = _append_rows(existing, new_values)
+    assert appended is not None
+    np.testing.assert_array_equal(source, expected_source)
+    assert not np.shares_memory(appended, source)
+    np.testing.assert_array_equal(
+        appended, np.append(expected_source[:3], new_values, axis=0)
     )
 
 
