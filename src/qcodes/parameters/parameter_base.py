@@ -51,7 +51,7 @@ ParamRawDataType = Any
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Iterable, Mapping, Sequence, Sized
     from types import TracebackType
-    from typing import NotRequired
+    from typing import Concatenate, NotRequired
 
     from qcodes.dataset.data_set_protocol import ValuesType
     from qcodes.instrument import InstrumentBase
@@ -1043,7 +1043,7 @@ class ParameterBase(
         return get_wrapper
 
     def _wrap_set(
-        self, set_function: Callable[..., None]
+        self, set_function: Callable[Concatenate[ParamRawDataType, ...], None]
     ) -> _SetFunction[ParameterDataTypeVar]:
         @wraps(set_function)
         def set_wrapper(value: ParameterDataTypeVar, **kwargs: Any) -> None:
