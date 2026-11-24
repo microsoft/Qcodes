@@ -220,6 +220,19 @@ def test_parameter_call() -> None:
         p(2, value=2)  # type: ignore[call-overload]
 
 
+def test_parameter_set_is_typed() -> None:
+    p: Parameter[int] = Parameter("test", get_cmd=None, set_cmd=None, vals=vals.Ints())
+
+    p.set(1)
+    assert p.get() == 1
+
+    # ``set`` is type checked in the same way as calling the parameter directly
+    with pytest.raises(TypeError, match="is not an int"):
+        p.set("a")  # type: ignore[arg-type]
+    with pytest.raises(TypeError, match="is not an int"):
+        p("a")  # type: ignore[call-overload]
+
+
 def test_parameter_set_extra_kwargs() -> None:
     class ParameterWithSetKwargs(Parameter):
         def set_raw(

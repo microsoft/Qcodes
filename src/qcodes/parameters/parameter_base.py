@@ -9,7 +9,7 @@ from collections.abc import Iterator, MutableSet
 from contextlib import contextmanager
 from datetime import datetime
 from functools import cached_property, wraps
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Protocol, overload
 
 import numpy as np
 from typing_extensions import TypedDict, TypeVar
@@ -51,7 +51,7 @@ ParamRawDataType = Any
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Iterable, Mapping, Sequence, Sized
     from types import TracebackType
-    from typing import NotRequired
+    from typing import Concatenate, NotRequired
 
     from qcodes.dataset.data_set_protocol import ValuesType
     from qcodes.instrument import InstrumentBase
@@ -72,6 +72,17 @@ InstrumentTypeVar_co = TypeVar(
 )
 
 LOG = logging.getLogger(__name__)
+
+
+class _SetFunction[ValueT](Protocol):
+    """
+    Signature of the ``set`` method that ``ParameterBase`` generates by
+    wrapping ``set_raw``. Unlike ``Callable[..., None]`` this keeps the type
+    of the value so that ``parameter.set(value)`` is type checked in the same
+    way as ``parameter(value)``.
+    """
+
+    def __call__(self, value: ValueT, **kwargs: Any) -> None: ...
 
 
 class _SetParamContext:
@@ -571,7 +582,7 @@ class ParameterBase(
                 f"{self.full_name} is not allowed."
             )
 
-        self.set: Callable[..., None]
+        self.set: _SetFunction[ParameterDataTypeVar]
         self._settable: bool = False
         if self._implements_set_raw:
             self.set = self._wrap_set(self.set_raw)
@@ -1031,7 +1042,17 @@ class ParameterBase(
 
         return get_wrapper
 
-    def _wrap_set(self, set_function: Callable[..., None]) -> Callable[..., None]:
+    def _wrap_set(
+        self, set_function: Callable[Concatenate[ParamRawDataType, ...], None]
+    ) -> _SetFunction[ParameterDataTypeVar]:
+        # ``set_function`` (normally ``set_raw``) is called with the raw value
+        # followed by any keyword arguments given to ``set``. It is deliberately
+        # not typed as ``_SetFunction[ParamRawDataType]``: that protocol requires
+        # accepting arbitrary keyword arguments, which ``set_raw`` as declared on
+        # this class, and as overridden by most drivers, does not. Requiring
+        # ``**kwargs`` would either reject those implementations or force
+        # ``_SetFunction`` to drop ``**kwargs``, rejecting ``set`` calls with
+        # keyword arguments for parameters whose ``set_raw`` does accept them.
         @wraps(set_function)
         def set_wrapper(value: ParameterDataTypeVar, **kwargs: Any) -> None:
             try:

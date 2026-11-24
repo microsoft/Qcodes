@@ -45,7 +45,7 @@ def test_external_reference_trigger_input_resistance_int_alias(
 ) -> None:
     # The instrument's integer values are still accepted for backwards
     # compatibility, but get always returns the name.
-    sr860.external_reference_trigger_input_resistance.set(value)
+    sr860.external_reference_trigger_input_resistance.set(value)  # type: ignore[arg-type]
     assert sr860.external_reference_trigger_input_resistance() == expected
 
 
