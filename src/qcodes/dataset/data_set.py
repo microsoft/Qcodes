@@ -1799,7 +1799,7 @@ class DataSet(BaseDataSet):
                         data,
                         file_path,
                         compute=False,
-                        snapshot_in_group=qcodes.config.dataset.export_snapshot_in_group,
+                        snapshot_in_group=qcodes.config.dataset.export_netcdf_snapshot_in_group,
                     )
                 finally:
                     data.close()

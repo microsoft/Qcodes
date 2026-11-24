@@ -1256,7 +1256,7 @@ def test_export_dataset_delayed_complex(
 
 @pytest.mark.parametrize("chunked", [False, True])
 @pytest.mark.parametrize("snapshot_in_group", [False, True])
-def test_export_snapshot_in_group_round_trips(
+def test_export_netcdf_snapshot_in_group_round_trips(
     tmp_path: Path,
     mock_dataset_grid: DataSet,
     chunked: bool,
@@ -1269,7 +1269,7 @@ def test_export_snapshot_in_group_round_trips(
     )
     snapshot = {"station": {"instruments": {"dac": {"value": 1.5, "unit": "\u03bcV"}}}}
     mock_dataset_grid.add_snapshot(json.dumps(snapshot))
-    qcodes.config.dataset.export_snapshot_in_group = snapshot_in_group
+    qcodes.config.dataset.export_netcdf_snapshot_in_group = snapshot_in_group
     qcodes.config.dataset.export_chunked_export_of_large_files_enabled = chunked
     qcodes.config.dataset.export_chunked_threshold = 0
     mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
@@ -1298,10 +1298,10 @@ def test_export_snapshot_in_group_round_trips(
     assert list(reloaded_xr.data_vars) == ["z"]
 
 
-def test_export_snapshot_in_group_without_snapshot(
+def test_export_netcdf_snapshot_in_group_without_snapshot(
     tmp_path: Path, mock_dataset_grid: DataSet
 ) -> None:
-    qcodes.config.dataset.export_snapshot_in_group = True
+    qcodes.config.dataset.export_netcdf_snapshot_in_group = True
     mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
     file_path = mock_dataset_grid.export_info.export_paths["nc"]
 
@@ -1313,11 +1313,11 @@ def test_export_snapshot_in_group_without_snapshot(
 
 
 @pytest.mark.parametrize("compression_level", [0, 9])
-def test_export_snapshot_in_group_uses_compression_level(
+def test_export_netcdf_snapshot_in_group_uses_compression_level(
     tmp_path: Path, mock_dataset_grid: DataSet, compression_level: int
 ) -> None:
     mock_dataset_grid.add_snapshot(json.dumps({"station": {"value": 1}}))
-    qcodes.config.dataset.export_snapshot_in_group = True
+    qcodes.config.dataset.export_netcdf_snapshot_in_group = True
     qcodes.config.dataset.export_netcdf_compression_level = compression_level
     mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
     file_path = mock_dataset_grid.export_info.export_paths["nc"]
@@ -1355,7 +1355,7 @@ def test_deferred_cache_does_not_read_grouped_snapshot(
     tmp_path: Path, mock_dataset_grid: DataSet, mocker: MockerFixture
 ) -> None:
     mock_dataset_grid.add_snapshot(json.dumps({"value": 1}))
-    qcodes.config.dataset.export_snapshot_in_group = True
+    qcodes.config.dataset.export_netcdf_snapshot_in_group = True
     mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
     loaded = load_from_netcdf(mock_dataset_grid.export_info.export_paths["nc"])
     read_spy = mocker.patch(
@@ -1402,7 +1402,7 @@ def test_load_from_netcdf_with_missing_snapshot_group(
     tmp_path: Path, mock_dataset_grid: DataSet, caplog: LogCaptureFixture
 ) -> None:
     mock_dataset_grid.add_snapshot(json.dumps({"value": 1}))
-    qcodes.config.dataset.export_snapshot_in_group = True
+    qcodes.config.dataset.export_netcdf_snapshot_in_group = True
     mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
     file_path = mock_dataset_grid.export_info.export_paths["nc"]
     # simulate a file where the snapshot group was never written
@@ -1440,7 +1440,7 @@ def test_export_removes_file_if_snapshot_group_write_fails(
     assert not file_path.exists()
 
 
-def test_export_snapshot_in_group_falls_back_on_name_clash(
+def test_export_netcdf_snapshot_in_group_falls_back_on_name_clash(
     tmp_path: Path, caplog: LogCaptureFixture
 ) -> None:
     snapshot = {"value": 1}

@@ -4,7 +4,7 @@ By default the snapshot is stored as the JSON string attribute ``snapshot`` on
 the root group of the NetCDF file. HDF5 attributes cannot be compressed and are
 always read when the file is opened, which is costly for large snapshots.
 
-When ``qcodes.config.dataset.export_snapshot_in_group`` is enabled the snapshot
+When ``qcodes.config.dataset.export_netcdf_snapshot_in_group`` is enabled the snapshot
 is instead stored as a ``uint8`` variable containing the UTF-8 encoded JSON in
 the ``qcodes_metadata`` group, compressed with the same deflate level as the
 data (``qcodes.config.dataset.export_netcdf_compression_level``). The root
@@ -137,7 +137,7 @@ def snapshot_from_netcdf(path: str | Path) -> dict[str, Any] | None:
 
     This works both for files where the snapshot is stored as the ``snapshot``
     attribute and for files where it is stored in the ``qcodes_metadata`` group (see
-    ``qcodes.config.dataset.export_snapshot_in_group``). Unlike
+    ``qcodes.config.dataset.export_netcdf_snapshot_in_group``). Unlike
     :func:`qcodes.dataset.load_from_netcdf` this does not require access to a
     QCoDeS database.
 

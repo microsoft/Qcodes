@@ -436,7 +436,7 @@ class BaseDataSet(DataSetProtocol, Protocol):
         xarray_to_h5netcdf_with_complex_numbers(
             xarr_dataset,
             file_path,
-            snapshot_in_group=qcodes.config.dataset.export_snapshot_in_group,
+            snapshot_in_group=qcodes.config.dataset.export_netcdf_snapshot_in_group,
         )
         return file_path
 

@@ -136,7 +136,7 @@ string attribute ``snapshot`` of the root group. HDF5 attributes cannot be
 compressed and are read in full whenever a file is opened, which is costly for
 large snapshots. The layout is controlled by::
 
-    qcodes.config.dataset.export_snapshot_in_group = True
+    qcodes.config.dataset.export_netcdf_snapshot_in_group = True
 
 When enabled (the default is ``False``), the exported file is laid out as
 follows:

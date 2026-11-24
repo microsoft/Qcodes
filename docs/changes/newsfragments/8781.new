@@ -1,4 +1,4 @@
-Added the config option ``qcodes.config.dataset.export_snapshot_in_group``. When enabled, the snapshot of datasets
+Added the config option ``qcodes.config.dataset.export_netcdf_snapshot_in_group``. When enabled, the snapshot of datasets
 exported to NetCDF is stored as a variable in the ``qcodes_metadata`` group, compressed with the same
 ``qcodes.config.dataset.export_netcdf_compression_level`` as the data, rather than as the
 ``snapshot`` attribute. The snapshot is then only read when needed, which reduces the time it takes to open
