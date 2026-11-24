@@ -51,6 +51,7 @@ jobs:
         # we need full history with tags for the version number
         fetch-depth: '0'
     - name: set-sphinx-opts
+      shell: bash
       run: |
         echo "SPHINX_OPTS=-W -v --keep-going -j 2" >> $GITHUB_ENV
       if: ${{ fromJSON(env.SPHINX_WARNINGS_AS_ERROR) }}
@@ -64,11 +65,25 @@ jobs:
       run: |
         for ($attempt = 1; $attempt -le 5; $attempt++) {
           choco install pandoc --yes --no-progress
-          if ($LASTEXITCODE -in 0, 1641, 3010) {
-            exit 0
+          $installExitCode = $LASTEXITCODE
+          $verification = "Pandoc verification skipped because installation failed."
+          if ($installExitCode -in 0, 1641, 3010) {
+            $env:Path = "$env:Path;$([Environment]::GetEnvironmentVariable('Path', 'Machine'));$([Environment]::GetEnvironmentVariable('Path', 'User'))"
+            $pandoc = Get-Command pandoc -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+            $verification = "Pandoc executable not found on PATH."
+            if ($null -ne $pandoc) {
+              & $pandoc.Source --version
+              $pandocExitCode = $LASTEXITCODE
+              if ($pandocExitCode -eq 0) {
+                Split-Path -Parent $pandoc.Source | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+                exit 0
+              }
+              $verification = "pandoc --version failed with exit code $pandocExitCode."
+            }
           }
+          Write-Warning "Pandoc attempt ${attempt}: Chocolatey exit code ${installExitCode}. $verification"
           if ($attempt -eq 5) {
-            throw "Pandoc installation failed after 5 attempts (exit code $LASTEXITCODE)."
+            throw "Pandoc installation failed after 5 attempts (Chocolatey exit code ${installExitCode}). $verification"
           }
           Start-Sleep -Seconds 1
         }

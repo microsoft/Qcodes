@@ -1,4 +1,5 @@
 @ECHO OFF
+setlocal
 
 pushd %~dp0
 
@@ -24,6 +25,7 @@ if errorlevel 9009 (
 	echo.
 	echo.If you don't have Sphinx installed, grab it from
 	echo.http://sphinx-doc.org/
+	popd
 	exit /b 1
 )
 
@@ -56,4 +58,6 @@ goto end
 goto end
 
 :end
+set "SPHINX_EXIT_CODE=%ERRORLEVEL%"
 popd
+endlocal & exit /b %SPHINX_EXIT_CODE%

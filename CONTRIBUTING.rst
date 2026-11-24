@@ -352,6 +352,8 @@ on Linux and on Windows.
 - Build the documentation using Sphinx with Sphinx warnings as errors. This includes execution of all example notebooks
   that are not explicitly marked as not to be executed. Please see here_ for information on how to disable execution of a
   notebook.
+  Build errors and Sphinx warnings fail the documentation jobs on both Linux and Windows.
+  The Windows Pandoc installation is retried up to five times and must provide a working executable before the build starts.
 - A number of smaller static checks implemented using `pre-commit <https://pre-commit.com/>`_ hooks. You may want to
   consider installing the pre-commit hooks in your local git config to have these checks performed automatically when
   you commit.
