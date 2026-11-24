@@ -5,6 +5,7 @@ import logging
 import warnings
 from importlib.metadata import version
 from math import prod
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
@@ -29,7 +30,6 @@ from .netcdf_snapshot import (
 
 if TYPE_CHECKING:
     from collections.abc import Hashable, Mapping
-    from pathlib import Path
 
     import numpy.typing as npt
     import pandas as pd
@@ -814,9 +814,15 @@ def xarray_to_h5netcdf_with_complex_numbers(
                 )
                 maybe_write_job.compute()
     if group_snapshot is not None:
-        _write_snapshot_to_group(
-            file_path,
-            group_snapshot,
-            compression_level=compression_level,
-            chunk_size_bytes=_TARGET_CHUNK_SIZE_BYTES,
-        )
+        try:
+            _write_snapshot_to_group(
+                file_path,
+                group_snapshot,
+                compression_level=compression_level,
+                chunk_size_bytes=_TARGET_CHUNK_SIZE_BYTES,
+            )
+        except BaseException:
+            # The file already contains the pointer, so remove it rather than
+            # leave a file whose snapshot cannot be read.
+            Path(file_path).unlink(missing_ok=True)
+            raise

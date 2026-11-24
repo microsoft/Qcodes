@@ -151,6 +151,10 @@ follows:
 - Datasets without a snapshot keep the attribute ``"null"`` and get no group.
 - If the dataset has a variable or dimension named ``qcodes_metadata``, the
   snapshot is stored as the attribute instead and a warning is logged.
+- If writing the group fails, the partially written file is removed. When
+  reading a file whose pointer refers to a missing variable, a warning is
+  logged and the dataset is treated as having no snapshot, so its data can
+  still be loaded.
 
 The group is standard netCDF4, readable by netCDF-C and h5py, and is not part
 of ``xarray.open_dataset(path)``, so the snapshot is only read when needed.

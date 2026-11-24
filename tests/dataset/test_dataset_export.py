@@ -1398,6 +1398,48 @@ def test_export_rejects_unresolved_snapshot_pointer(
     assert snapshot_from_netcdf(destination) == {"value": 1}
 
 
+def test_load_from_netcdf_with_missing_snapshot_group(
+    tmp_path: Path, mock_dataset_grid: DataSet, caplog: LogCaptureFixture
+) -> None:
+    mock_dataset_grid.add_snapshot(json.dumps({"value": 1}))
+    qcodes.config.dataset.export_snapshot_in_group = True
+    mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
+    file_path = mock_dataset_grid.export_info.export_paths["nc"]
+    # simulate a file where the snapshot group was never written
+    with h5netcdf.File(file_path, "r+") as nc_file:
+        nc_file.attrs["snapshot"] = json.dumps(
+            {"__qcodes_snapshot_location__": "missing/snapshot"}
+        )
+
+    with caplog.at_level(logging.WARNING):
+        loaded = load_from_netcdf(file_path)
+        assert snapshot_from_netcdf(file_path) is None
+    assert loaded.snapshot is None
+    assert "z" in loaded.cache.data()
+    assert "no such variable exists" in caplog.text
+
+
+def test_export_removes_file_if_snapshot_group_write_fails(
+    tmp_path: Path, mocker: MockerFixture
+) -> None:
+    mocker.patch(
+        "qcodes.dataset.exporters.export_to_xarray._write_snapshot_to_group",
+        side_effect=OSError("disk full"),
+    )
+    xr_ds = xr.Dataset(
+        {"y": ("x", np.arange(3.0))},
+        coords={"x": np.arange(3)},
+        attrs={"snapshot": json.dumps({"value": 1})},
+    )
+    file_path = tmp_path / "failed.nc"
+
+    with pytest.raises(OSError, match="disk full"):
+        xarray_to_h5netcdf_with_complex_numbers(
+            xr_ds, file_path, snapshot_in_group=True
+        )
+    assert not file_path.exists()
+
+
 def test_export_snapshot_in_group_falls_back_on_name_clash(
     tmp_path: Path, caplog: LogCaptureFixture
 ) -> None:

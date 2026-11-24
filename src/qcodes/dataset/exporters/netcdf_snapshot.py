@@ -16,12 +16,15 @@ users to the location of the snapshot.
 from __future__ import annotations
 
 import json
+import logging
 from typing import TYPE_CHECKING, Any, TypeGuard
 
 import numpy as np
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+_LOGGER = logging.getLogger(__name__)
 
 SNAPSHOT_GROUP = "qcodes_metadata"
 SNAPSHOT_VARIABLE = "snapshot"
@@ -95,14 +98,28 @@ def _write_snapshot_to_group(
 
 
 def _read_snapshot_from_group(file_path: str | Path, location: str) -> str:
+    """
+    Read the snapshot that the pointer in the ``snapshot`` attribute refers to.
+
+    If the pointer does not refer to a variable, e.g. because the export was
+    interrupted before the snapshot was written, a warning is logged and
+    ``"null"`` is returned such that the rest of the file can still be loaded.
+    """
     import h5netcdf  # pyright: ignore[reportMissingTypeStubs]
 
     with h5netcdf.File(file_path, mode="r") as nc_file:
-        variable = nc_file[location]
+        try:
+            variable = nc_file[location]
+        except KeyError:
+            variable = None
         if not isinstance(variable, h5netcdf.Variable):
-            raise TypeError(
-                f"Expected the snapshot at {location!r} in {file_path} to be a variable."
+            _LOGGER.warning(
+                "The snapshot attribute of %s refers to %r but no such variable "
+                "exists in the file. Treating the dataset as having no snapshot.",
+                file_path,
+                location,
             )
+            return "null"
         return variable[...].tobytes().decode("utf-8")
 
 
