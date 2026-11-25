@@ -417,10 +417,11 @@ def _create_new_data_dict(
 
 # Without a shape, the cache stores each array as a view of the beginning of a
 # larger buffer allocated by ``_append_rows``, so that appending a result does not
-# copy all data collected before it. This maps the id of each such buffer to the
-# number of its rows that contain data. An entry is removed when its buffer is
-# garbage collected.
-_buffer_rows: dict[int, int] = {}
+# copy all data collected before it. This maps the id of each such buffer to a
+# weak reference to the array last returned for it. Only that array is extended
+# in place; any other array, including another view of the same buffer, is
+# copied. An entry is removed when its buffer is garbage collected.
+_buffer_tails: dict[int, weakref.ref[npt.NDArray]] = {}
 
 
 def _append_rows(
@@ -429,7 +430,7 @@ def _append_rows(
     """
     Append ``new_values`` to ``existing_values`` along the first axis, with the
     result of ``np.append``, but into spare rows behind ``existing_values`` if it
-    is a view of a buffer allocated here. The cost of an append then does not
+    is the array this function returned last for a buffer. The cost of an append then does not
     grow with the number of rows collected before it. A buffer without enough
     spare rows is replaced by one with 1.5 times the rows required.
 
@@ -449,11 +450,11 @@ def _append_rows(
     n_existing = existing_values.shape[0]
     n_rows = n_existing + new_values.shape[0]
     buffer = existing_values.base
+    tail = _buffer_tails.get(id(buffer))
     if not (
         isinstance(buffer, np.ndarray)
-        and _buffer_rows.get(id(buffer)) == n_existing
-        and buffer.shape[1:] == existing_values.shape[1:]
-        and buffer.ctypes.data == existing_values.ctypes.data
+        and tail is not None
+        and tail() is existing_values
         and buffer.shape[0] >= n_rows
     ):
         buffer = np.empty(
@@ -461,10 +462,11 @@ def _append_rows(
             dtype=existing_values.dtype,
         )
         buffer[:n_existing] = existing_values
-        weakref.finalize(buffer, _buffer_rows.pop, id(buffer), None)
+        weakref.finalize(buffer, _buffer_tails.pop, id(buffer), None)
     buffer[n_existing:n_rows] = new_values
-    _buffer_rows[id(buffer)] = n_rows
-    return buffer[:n_rows]
+    appended = buffer[:n_rows]
+    _buffer_tails[id(buffer)] = weakref.ref(appended)
+    return appended
 
 
 def _insert_into_data_dict(

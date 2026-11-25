@@ -16,6 +16,8 @@ from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measuremen
 from qcodes.dataset.measurements import Measurement
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from qcodes.dataset.data_set_protocol import ParameterData
     from qcodes.dataset.experiment_container import Experiment
     from qcodes.instrument_drivers.mock_instruments import (
@@ -1193,6 +1195,52 @@ def test_append_rows_does_not_write_to_arrays_it_did_not_allocate() -> None:
     np.testing.assert_array_equal(
         appended, np.append(expected_source[:3], new_values, axis=0)
     )
+
+
+def _every_second_row(appended: npt.NDArray) -> npt.NDArray:
+    buffer = appended.base
+    assert isinstance(buffer, np.ndarray)
+    buffer[2] = [5.0, 6.0]  # the spare row, so that the view has known values
+    return buffer[::2]
+
+
+@pytest.mark.parametrize(
+    "make_view",
+    [
+        pytest.param(lambda appended: appended.T, id="transposed"),
+        pytest.param(lambda appended: appended.view(np.int64), id="reinterpreted"),
+        pytest.param(_every_second_row, id="strided"),
+    ],
+)
+def test_append_rows_extends_only_the_array_it_returned_last(
+    make_view: Callable[[npt.NDArray], npt.NDArray],
+) -> None:
+    # a buffer of 3 rows, 2 of them filled; each view starts at the first element
+    # of the buffer and has as many rows as are filled, but another layout or dtype
+    appended = _append_rows(np.array([[1.0, 2.0]]), np.array([[3.0, 4.0]]))
+    assert appended is not None
+    view = make_view(appended)
+    new_values = np.full((1, 2), 9, dtype=view.dtype)
+    expected = np.append(view, new_values, axis=0)
+    result = _append_rows(view, new_values)
+    assert result is not None
+    assert result.dtype == expected.dtype
+    np.testing.assert_array_equal(result, expected)
+
+
+def test_append_rows_extends_a_shared_array_only_once() -> None:
+    # two caches holding the same array: only the first append may use the spare
+    # rows behind it, the second must copy
+    shared = _append_rows(np.zeros((1, 2)), np.ones((1, 2)))
+    assert shared is not None
+    first = _append_rows(shared, np.full((1, 2), 5.0))
+    second = _append_rows(shared, np.full((1, 2), 7.0))
+    assert first is not None and second is not None
+    assert np.shares_memory(first, shared)
+    assert not np.shares_memory(second, shared)
+    np.testing.assert_array_equal(first, [[0, 0], [1, 1], [5, 5]])
+    np.testing.assert_array_equal(second, [[0, 0], [1, 1], [7, 7]])
+    np.testing.assert_array_equal(shared, [[0, 0], [1, 1]])
 
 
 def _array_param_used_in_tree(measurement: Measurement) -> bool:
