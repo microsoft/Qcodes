@@ -26,6 +26,12 @@ devices:
         r: null_response
       - q: "TRIGger:LEVel DEF"
         r: null_response
+      # The instrument turns these keywords into a number. The simulator cannot,
+      # so they are accepted without changing the stored numeric resolution,
+      # which keeps reading the resolution back working.
+      - q: "VOLT:DC:RES MIN"
+      - q: "VOLT:DC:RES MAX"
+      - q: "VOLT:DC:RES DEF"
       - q: "*RST"
       - q: "*OPC?"
         r: null_response

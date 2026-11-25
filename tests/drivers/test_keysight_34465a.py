@@ -180,6 +180,11 @@ def test_set_resolution_to_mnemonic(
     driver.resolution(value)
 
     write_raw.assert_any_call(f"VOLT:DC:RES {value}")
+    # the keyword stays in the cache until the resolution is read again,
+    # which returns the number chosen by the instrument
+    assert driver.resolution.cache() == value
+    assert isinstance(driver.resolution(), float)
+    assert isinstance(driver.resolution.cache(), float)
 
 
 def test_set_resolution_to_number(
