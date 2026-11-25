@@ -4,7 +4,6 @@ import itertools
 import logging
 import os
 import shutil
-import tempfile
 import uuid
 import warnings
 from importlib.metadata import version
@@ -688,24 +687,52 @@ def _paramspec_dict_with_extras(
     return paramspec_dict
 
 
-def _commit_new_file(staged: Path, destination: Path) -> None:
+def _create_staged_file(directory: Path) -> tuple[Path, int]:
+    """
+    Create an empty staging file in ``directory`` that only its owner can access.
+
+    Returns the path of the file and the permission bits a new file in that
+    directory gets by default, which are applied once the export is committed
+    to a new destination.
+    """
+    path = directory / f".qcodes-{uuid.uuid4().hex}.nc"
+    with open(path, "x"):
+        pass
+    default_mode = path.stat().st_mode
+    path.chmod(0o600)
+    return path, default_mode
+
+
+def _commit_new_file(staged: Path, destination: Path, default_mode: int) -> None:
     """
     Move a staged file to a destination that did not exist when staging began.
 
-    A hard link is used since it fails rather than overwrites if another writer
+    The staged file is only accessible by its owner until it is committed. A
+    hard link is used since it fails rather than overwrites if another writer
     created the destination in the meantime. In that case the destination is
     replaced with the permission bits of the file created by the other writer.
+    Otherwise the file gets the default permissions of a new file.
     """
     try:
         os.link(staged, destination)
     except FileExistsError:
         shutil.copymode(destination, staged)
         os.replace(staged, destination)
+        return
     except OSError:
-        # the file system does not support hard links
+        # The file system does not support hard links, so the replace cannot
+        # detect a file created by another writer meanwhile. The permissions
+        # are only widened if no such file existed just before the replace,
+        # and are otherwise taken from that file, so its data is never
+        # exposed by this commit.
+        if destination.exists():
+            shutil.copymode(destination, staged)
+            os.replace(staged, destination)
+            return
         os.replace(staged, destination)
     else:
         staged.unlink()
+    destination.chmod(default_mode)
 
 
 def xarray_to_h5netcdf_with_complex_numbers(
@@ -820,17 +847,11 @@ def xarray_to_h5netcdf_with_complex_numbers(
         destination = destination.resolve()
     stage = group_snapshot is not None
     replaces_existing = stage and destination.exists()
-    if replaces_existing:
-        # mkstemp creates the file readable only by the owner, so the staged
-        # data is never more accessible than the file it replaces.
-        fd, staged_name = tempfile.mkstemp(
-            dir=destination.parent, prefix=".qcodes-", suffix=".nc"
-        )
-        os.close(fd)
-        write_path = Path(staged_name)
-    elif stage:
-        # a new file is created by the writer with the default permissions
-        write_path = destination.with_name(f".qcodes-{uuid.uuid4().hex}.nc")
+    default_mode = 0
+    if stage:
+        # the staged file is only accessible by its owner while being written,
+        # so the staged data is never more accessible than a file it replaces
+        write_path, default_mode = _create_staged_file(destination.parent)
     else:
         write_path = destination
     try:
@@ -873,7 +894,7 @@ def xarray_to_h5netcdf_with_complex_numbers(
                 shutil.copymode(destination, write_path)
                 os.replace(write_path, destination)
             else:
-                _commit_new_file(write_path, destination)
+                _commit_new_file(write_path, destination, default_mode)
     except BaseException:
         if stage:
             write_path.unlink(missing_ok=True)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import errno
 import json
 import logging
 import os
@@ -1548,6 +1549,55 @@ def test_grouped_export_keeps_permissions_of_file_created_concurrently(
     assert snapshot_from_netcdf(file_path) == {"value": 1}
     if os.name != "nt":
         assert file_path.stat().st_mode & 0o777 == 0o600
+
+
+def _no_hard_links(*args: object, **kwargs: object) -> None:
+    raise OSError(errno.EPERM, "hard links are not supported")
+
+
+def test_grouped_export_without_hard_links_keeps_concurrent_permissions(
+    tmp_path: Path, mocker: MockerFixture
+) -> None:
+    file_path = tmp_path / "shared.nc"
+    mocker.patch("qcodes.dataset.exporters.export_to_xarray.os.link", _no_hard_links)
+
+    def other_writer_creates(*args: Any, **kwargs: Any) -> None:
+        # simulate another export creating a restricted destination meanwhile
+        xarray_to_h5netcdf_with_complex_numbers(_grouped_snapshot_dataset(2), file_path)
+        file_path.chmod(0o600)
+        _write_snapshot_to_group(*args, **kwargs)
+
+    mocker.patch(
+        "qcodes.dataset.exporters.export_to_xarray._write_snapshot_to_group",
+        side_effect=other_writer_creates,
+    )
+    xarray_to_h5netcdf_with_complex_numbers(
+        _grouped_snapshot_dataset(1), file_path, snapshot_in_group=True
+    )
+    assert [p.name for p in tmp_path.iterdir()] == ["shared.nc"]
+    assert snapshot_from_netcdf(file_path) == {"value": 1}
+    if os.name != "nt":
+        assert file_path.stat().st_mode & 0o777 == 0o600
+
+
+@pytest.mark.parametrize("hard_links", [True, False])
+def test_grouped_export_of_new_file_gets_default_permissions(
+    tmp_path: Path, mocker: MockerFixture, hard_links: bool
+) -> None:
+    if not hard_links:
+        mocker.patch(
+            "qcodes.dataset.exporters.export_to_xarray.os.link", _no_hard_links
+        )
+    reference = tmp_path / "reference.nc"
+    xarray_to_h5netcdf_with_complex_numbers(_grouped_snapshot_dataset(1), reference)
+    file_path = tmp_path / "new.nc"
+
+    xarray_to_h5netcdf_with_complex_numbers(
+        _grouped_snapshot_dataset(1), file_path, snapshot_in_group=True
+    )
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["new.nc", "reference.nc"]
+    assert file_path.stat().st_mode == reference.stat().st_mode
+    assert snapshot_from_netcdf(file_path) == {"value": 1}
 
 
 def test_load_from_netcdf_expands_user(
