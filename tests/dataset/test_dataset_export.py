@@ -1555,6 +1555,66 @@ def _no_hard_links(*args: object, **kwargs: object) -> None:
     raise OSError(errno.EPERM, "hard links are not supported")
 
 
+@pytest.mark.skipif(os.name == "nt", reason="POSIX permission bits")
+@pytest.mark.parametrize("replaces_existing", [False, True])
+def test_grouped_export_stages_data_owner_only(
+    tmp_path: Path, mocker: MockerFixture, replaces_existing: bool
+) -> None:
+    file_path = tmp_path / "out.nc"
+    if replaces_existing:
+        xarray_to_h5netcdf_with_complex_numbers(_grouped_snapshot_dataset(1), file_path)
+    staged_modes: list[int] = []
+    create_spy = mocker.patch(
+        "qcodes.dataset.exporters.export_to_xarray.os.open", wraps=os.open
+    )
+
+    def record_mode(path: Path, *args: Any, **kwargs: Any) -> None:
+        # the data has been written to the staged file at this point
+        staged_modes.append(Path(path).stat().st_mode & 0o777)
+        _write_snapshot_to_group(path, *args, **kwargs)
+
+    mocker.patch(
+        "qcodes.dataset.exporters.export_to_xarray._write_snapshot_to_group",
+        side_effect=record_mode,
+    )
+    xarray_to_h5netcdf_with_complex_numbers(
+        _grouped_snapshot_dataset(2), file_path, snapshot_in_group=True
+    )
+    staged_creations = [
+        call for call in create_spy.call_args_list if ".qcodes-" in str(call.args[0])
+    ]
+    assert [call.args[2] for call in staged_creations] == [0o600]
+    assert staged_modes == [0o600]
+    assert snapshot_from_netcdf(file_path) == {"value": 2}
+
+
+def test_grouped_export_does_not_chmod_destination_replaced_after_commit(
+    tmp_path: Path, mocker: MockerFixture
+) -> None:
+    file_path = tmp_path / "shared.nc"
+    real_link = os.link
+
+    def link_then_other_writer_replaces(src: Any, dst: Any) -> None:
+        real_link(src, dst)
+        # another export replaces the destination with a private file
+        other = tmp_path / "other.nc"
+        xarray_to_h5netcdf_with_complex_numbers(_grouped_snapshot_dataset(2), other)
+        other.chmod(0o600)
+        os.replace(other, dst)
+
+    mocker.patch(
+        "qcodes.dataset.exporters.export_to_xarray.os.link",
+        link_then_other_writer_replaces,
+    )
+    xarray_to_h5netcdf_with_complex_numbers(
+        _grouped_snapshot_dataset(1), file_path, snapshot_in_group=True
+    )
+    assert [p.name for p in tmp_path.iterdir()] == ["shared.nc"]
+    assert snapshot_from_netcdf(file_path) == {"value": 2}
+    if os.name != "nt":
+        assert file_path.stat().st_mode & 0o777 == 0o600
+
+
 def test_grouped_export_without_hard_links_keeps_concurrent_permissions(
     tmp_path: Path, mocker: MockerFixture
 ) -> None:

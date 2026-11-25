@@ -695,11 +695,19 @@ def _create_staged_file(directory: Path) -> tuple[Path, int]:
     directory gets by default, which are applied once the export is committed
     to a new destination.
     """
-    path = directory / f".qcodes-{uuid.uuid4().hex}.nc"
-    with open(path, "x"):
+    # The default permissions are measured on a separate empty file, so the
+    # file that will hold the data is never accessible to others, not even
+    # briefly before restricting it.
+    probe = directory / f".qcodes-{uuid.uuid4().hex}.mode"
+    with open(probe, "x"):
         pass
-    default_mode = path.stat().st_mode
-    path.chmod(0o600)
+    try:
+        default_mode = probe.stat().st_mode
+    finally:
+        probe.unlink()
+    path = directory / f".qcodes-{uuid.uuid4().hex}.nc"
+    # the mode is applied atomically on creation; the umask can only narrow it
+    os.close(os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600))
     return path, default_mode
 
 
@@ -712,27 +720,30 @@ def _commit_new_file(staged: Path, destination: Path, default_mode: int) -> None
     created the destination in the meantime. In that case the destination is
     replaced with the permission bits of the file created by the other writer.
     Otherwise the file gets the default permissions of a new file.
+
+    Permissions are only ever changed through the staged path, which refers to
+    this export's own file, never through the destination path, which another
+    writer may have replaced meanwhile.
     """
     try:
         os.link(staged, destination)
     except FileExistsError:
         shutil.copymode(destination, staged)
         os.replace(staged, destination)
-        return
     except OSError:
         # The file system does not support hard links, so the replace cannot
         # detect a file created by another writer meanwhile. The permissions
-        # are only widened if no such file existed just before the replace,
-        # and are otherwise taken from that file, so its data is never
-        # exposed by this commit.
+        # are taken from such a file if it exists just before the replace, so
+        # its permissions are kept and its data is never exposed by this commit.
         if destination.exists():
             shutil.copymode(destination, staged)
-            os.replace(staged, destination)
-            return
+        else:
+            staged.chmod(default_mode)
         os.replace(staged, destination)
     else:
+        # the staged path and the destination now refer to the same file
+        staged.chmod(default_mode)
         staged.unlink()
-    destination.chmod(default_mode)
 
 
 def xarray_to_h5netcdf_with_complex_numbers(
