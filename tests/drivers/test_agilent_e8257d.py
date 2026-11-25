@@ -143,3 +143,19 @@ def test_limits_from_options(e8257d: AgilentE8257D) -> None:
     e8257d.power.validate(-135)
     with pytest.raises(ValueError):
         e8257d.power.validate(11)
+
+
+def test_phase_is_float_in_degrees(
+    e8257d: AgilentE8257D, mocker: "MockerFixture"
+) -> None:
+    assert e8257d.phase.unit == "deg"
+
+    phase = e8257d.phase()
+    assert isinstance(phase, float)
+    assert phase == 0.0
+
+    # the instrument takes and returns the phase in radians
+    write_raw = mocker.spy(e8257d, "write_raw")
+    e8257d.phase(90)
+    write_raw.assert_called_once_with("PHASE 1.57079633")
+    assert e8257d.phase() == pytest.approx(90, abs=1e-6)
