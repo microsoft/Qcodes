@@ -444,7 +444,7 @@ def test_other_exception() -> None:
         # in order to raise an unexpected exception, and make sure it is
         # passed through the call stack, let's pass an empty dict instead
         # of a string with instrument name
-        _ = find_or_create_instrument(DummyInstrument, {})  #  type: ignore[arg-type]
+        _ = find_or_create_instrument(DummyInstrument, {})  #  type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 @pytest.mark.usefixtures("close_before_and_after")
@@ -558,7 +558,7 @@ def test_close_all_no_log_by_default(caplog: pytest.LogCaptureFixture) -> None:
 def test_close_all_only_accepts_keyword_arguments() -> None:
     """The ``close_all`` options are keyword-only."""
     with pytest.raises(TypeError):
-        Instrument.close_all(True)  # type: ignore[misc]
+        Instrument.close_all(True)  # type: ignore[misc]  # ty: ignore[too-many-positional-arguments]
 
 
 class _RegistryCollectingGarbageWhenIterated(WeakValueDictionary[str, Instrument]):
@@ -911,7 +911,7 @@ def test_instrument_whose_init_returns_a_value_raises_and_is_closed() -> None:
         def __init__(self, name: str) -> None:
             super().__init__(name)
             # deliberately returns a value, which __init__ must not
-            return 1  # type: ignore[return-value]  # noqa: PLE0101
+            return 1  # type: ignore[return-value]  # ty: ignore[invalid-explicit-return]  # noqa: PLE0101
 
         def close(self) -> None:
             closed.append(self.name)

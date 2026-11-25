@@ -15,7 +15,7 @@ def test_type() -> None:
 
     v2 = 234
     with pytest.raises(TypeError):
-        list_validator.validate(v2)  # type: ignore[arg-type]
+        list_validator.validate(v2)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 def test_elt_vals() -> None:
@@ -25,7 +25,7 @@ def test_elt_vals() -> None:
 
     v2 = [0, 1, 11]
     with pytest.raises(ValueError):
-        list_validator.validate(v2)  # type: ignore[arg-type]
+        list_validator.validate(v2)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 def test_valid_values() -> None:

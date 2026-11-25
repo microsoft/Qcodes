@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 def test_wrong_input_type_raises() -> None:
     for interdeps in ("interdeps", ["p1", "p2"], 0):
         with pytest.raises(ValueError):
-            RunDescriber(interdeps=interdeps)  # type: ignore[arg-type]
+            RunDescriber(interdeps=interdeps)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 def test_equality(

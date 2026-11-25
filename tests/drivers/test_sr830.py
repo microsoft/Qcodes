@@ -247,7 +247,7 @@ def test_channel_buffer_requires_sr830(not_an_sr830: DummyInstrument) -> None:
     ):
         ChannelBuffer(
             "ch1_databuffer",
-            instrument=not_an_sr830,  # type: ignore[arg-type]
+            instrument=not_an_sr830,  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
             channel=1,
         )
 
@@ -267,6 +267,6 @@ def test_buffer_parameters_reject_invalid_channel(
     with pytest.raises(ValueError, match=match):
         ChannelBuffer(
             f"ch{channel}_databuffer",
-            instrument=not_an_sr830,  # type: ignore[arg-type]
+            instrument=not_an_sr830,  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
             channel=channel,
         )
