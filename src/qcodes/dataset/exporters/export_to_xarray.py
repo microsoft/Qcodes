@@ -3,7 +3,8 @@ from __future__ import annotations
 import itertools
 import logging
 import os
-import uuid
+import shutil
+import tempfile
 import warnings
 from importlib.metadata import version
 from math import prod
@@ -787,16 +788,26 @@ def xarray_to_h5netcdf_with_complex_numbers(
             internal_ds.variables[name].encoding.update(variable_encoding)
         internal_ds = _rechunk_to_match_encoding(internal_ds, encoding)
 
-    # A grouped snapshot is appended after the data has been written, so the
-    # export is staged next to the destination and only moved into place once
-    # both writes have succeeded. This ensures that a failure never leaves a
-    # file with a dangling snapshot pointer or removes an existing file.
+    # A grouped snapshot is appended after the data has been written. When this
+    # replaces an existing file, the export is staged in a temporary file next
+    # to it and only moved into place once both writes have succeeded, so a
+    # failure never removes or corrupts the existing file. A symlinked
+    # destination is resolved so that its target rather than the link is
+    # replaced.
     destination = Path(file_path)
-    write_path = (
-        destination
-        if group_snapshot is None
-        else destination.with_name(f".{destination.name}.{uuid.uuid4().hex}.tmp")
-    )
+    if destination.is_symlink():
+        destination = destination.resolve()
+    stage = group_snapshot is not None and destination.exists()
+    if stage:
+        # mkstemp creates the file readable only by the owner, so the staged
+        # data is never more accessible than the file it replaces.
+        fd, staged_name = tempfile.mkstemp(
+            dir=destination.parent, prefix=".qcodes-", suffix=".nc"
+        )
+        os.close(fd)
+        write_path = Path(staged_name)
+    else:
+        write_path = destination
     try:
         with warnings.catch_warnings():
             # see http://xarray.pydata.org/en/stable/howdoi.html
@@ -833,8 +844,14 @@ def xarray_to_h5netcdf_with_complex_numbers(
                 compression_level=compression_level,
                 chunk_size_bytes=_TARGET_CHUNK_SIZE_BYTES,
             )
-            os.replace(write_path, destination)
+            if stage:
+                shutil.copymode(destination, write_path)
+                os.replace(write_path, destination)
     except BaseException:
-        if write_path != destination:
+        if stage:
             write_path.unlink(missing_ok=True)
+        elif group_snapshot is not None:
+            # the destination did not exist before this export, so remove the
+            # incomplete file rather than leave a dangling snapshot pointer
+            destination.unlink(missing_ok=True)
         raise

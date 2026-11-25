@@ -1464,6 +1464,48 @@ def test_export_leaves_no_file_if_snapshot_group_write_fails(
     assert list(tmp_path.iterdir()) == []
 
 
+def _grouped_snapshot_dataset(value: int) -> xr.Dataset:
+    return xr.Dataset(
+        {"y": ("x", np.arange(3.0) * value)},
+        coords={"x": np.arange(3)},
+        attrs={"snapshot": json.dumps({"value": value})},
+    )
+
+
+def test_export_snapshot_in_group_replaces_symlink_target(tmp_path: Path) -> None:
+    target = tmp_path / "target.nc"
+    link = tmp_path / "link.nc"
+    xarray_to_h5netcdf_with_complex_numbers(
+        _grouped_snapshot_dataset(1), target, snapshot_in_group=True
+    )
+    try:
+        link.symlink_to(target)
+    except OSError:
+        pytest.skip("Creating symlinks is not permitted on this system")
+
+    xarray_to_h5netcdf_with_complex_numbers(
+        _grouped_snapshot_dataset(2), link, snapshot_in_group=True
+    )
+    assert link.is_symlink()
+    assert snapshot_from_netcdf(target) == {"value": 2}
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["link.nc", "target.nc"]
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX permission bits")
+def test_export_snapshot_in_group_preserves_permissions(tmp_path: Path) -> None:
+    file_path = tmp_path / "restricted.nc"
+    xarray_to_h5netcdf_with_complex_numbers(
+        _grouped_snapshot_dataset(1), file_path, snapshot_in_group=True
+    )
+    file_path.chmod(0o600)
+
+    xarray_to_h5netcdf_with_complex_numbers(
+        _grouped_snapshot_dataset(2), file_path, snapshot_in_group=True
+    )
+    assert file_path.stat().st_mode & 0o777 == 0o600
+    assert snapshot_from_netcdf(file_path) == {"value": 2}
+
+
 def test_export_netcdf_snapshot_in_group_falls_back_on_name_clash(
     tmp_path: Path, caplog: LogCaptureFixture
 ) -> None:
