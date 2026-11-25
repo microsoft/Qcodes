@@ -241,6 +241,8 @@ class DataSetInMem(BaseDataSet):
         # reading them back results in a numpy array of one element
         import xarray as xr
 
+        # h5netcdf, used to read a grouped snapshot, does not expand ``~``
+        path = os.path.abspath(os.path.expanduser(path))
         with xr.open_dataset(path, engine="h5netcdf") as loaded_data:
             parent_dataset_links = str_to_links(
                 loaded_data.attrs.get("parent_dataset_links", "[]")
@@ -260,9 +262,6 @@ class DataSetInMem(BaseDataSet):
             else:
                 run_id = int(loaded_data.captured_run_id)
                 counter = int(loaded_data.captured_counter)
-
-            path = str(path)
-            path = os.path.abspath(path)
 
             export_info = ExportInfo.from_str(loaded_data.attrs.get("export_info", ""))
             export_info.export_paths["nc"] = path

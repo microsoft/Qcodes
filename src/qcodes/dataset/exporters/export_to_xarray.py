@@ -688,6 +688,26 @@ def _paramspec_dict_with_extras(
     return paramspec_dict
 
 
+def _commit_new_file(staged: Path, destination: Path) -> None:
+    """
+    Move a staged file to a destination that did not exist when staging began.
+
+    A hard link is used since it fails rather than overwrites if another writer
+    created the destination in the meantime. In that case the destination is
+    replaced with the permission bits of the file created by the other writer.
+    """
+    try:
+        os.link(staged, destination)
+    except FileExistsError:
+        shutil.copymode(destination, staged)
+        os.replace(staged, destination)
+    except OSError:
+        # the file system does not support hard links
+        os.replace(staged, destination)
+    else:
+        staged.unlink()
+
+
 def xarray_to_h5netcdf_with_complex_numbers(
     xarray_dataset: xr.Dataset,
     file_path: str | Path,
@@ -851,7 +871,9 @@ def xarray_to_h5netcdf_with_complex_numbers(
             )
             if replaces_existing:
                 shutil.copymode(destination, write_path)
-            os.replace(write_path, destination)
+                os.replace(write_path, destination)
+            else:
+                _commit_new_file(write_path, destination)
     except BaseException:
         if stage:
             write_path.unlink(missing_ok=True)

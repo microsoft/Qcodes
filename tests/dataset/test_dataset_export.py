@@ -49,6 +49,7 @@ from qcodes.dataset.exporters.export_to_xarray import (
 from qcodes.dataset.exporters.netcdf_snapshot import (
     _resolve_netcdf_snapshot_raw,
     _snapshot_pointer_location,
+    _write_snapshot_to_group,
 )
 from qcodes.dataset.linked_datasets.links import links_to_str
 from qcodes.parameters import ManualParameter, Parameter, ParamSpecBase
@@ -1523,6 +1524,48 @@ def test_failed_grouped_export_keeps_file_created_concurrently(
         )
     assert [p.name for p in tmp_path.iterdir()] == ["shared.nc"]
     assert snapshot_from_netcdf(file_path) == {"value": 2}
+
+
+def test_grouped_export_keeps_permissions_of_file_created_concurrently(
+    tmp_path: Path, mocker: MockerFixture
+) -> None:
+    file_path = tmp_path / "shared.nc"
+
+    def other_writer_creates(*args: Any, **kwargs: Any) -> None:
+        # simulate another export creating a restricted destination meanwhile
+        xarray_to_h5netcdf_with_complex_numbers(_grouped_snapshot_dataset(2), file_path)
+        file_path.chmod(0o600)
+        _write_snapshot_to_group(*args, **kwargs)
+
+    mocker.patch(
+        "qcodes.dataset.exporters.export_to_xarray._write_snapshot_to_group",
+        side_effect=other_writer_creates,
+    )
+    xarray_to_h5netcdf_with_complex_numbers(
+        _grouped_snapshot_dataset(1), file_path, snapshot_in_group=True
+    )
+    assert [p.name for p in tmp_path.iterdir()] == ["shared.nc"]
+    assert snapshot_from_netcdf(file_path) == {"value": 1}
+    if os.name != "nt":
+        assert file_path.stat().st_mode & 0o777 == 0o600
+
+
+def test_load_from_netcdf_expands_user(
+    tmp_path: Path,
+    mock_dataset_grid: DataSet,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    mock_dataset_grid.add_snapshot(json.dumps({"value": 1}))
+    qcodes.config.dataset.export_netcdf_snapshot_in_group = True
+    mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
+    file_name = Path(mock_dataset_grid.export_info.export_paths["nc"]).name
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+
+    loaded = load_from_netcdf(f"~/{file_name}")
+    assert loaded.snapshot == {"value": 1}
+    assert "z" in loaded.cache.data()
+    assert loaded.export_info.export_paths["nc"] == str(tmp_path / file_name)
 
 
 @pytest.mark.skipif(os.name == "nt", reason="POSIX permission bits")
