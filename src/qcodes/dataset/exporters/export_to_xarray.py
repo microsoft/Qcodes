@@ -5,6 +5,7 @@ import logging
 import os
 import shutil
 import tempfile
+import uuid
 import warnings
 from importlib.metadata import version
 from math import prod
@@ -788,17 +789,18 @@ def xarray_to_h5netcdf_with_complex_numbers(
             internal_ds.variables[name].encoding.update(variable_encoding)
         internal_ds = _rechunk_to_match_encoding(internal_ds, encoding)
 
-    # A grouped snapshot is appended after the data has been written. When this
-    # replaces an existing file, the export is staged in a temporary file next
-    # to it and only moved into place once both writes have succeeded, so a
-    # failure never removes or corrupts the existing file. A symlinked
-    # destination is resolved so that its target rather than the link is
-    # replaced.
-    destination = Path(file_path)
+    # A grouped snapshot is appended after the data has been written, so such
+    # an export is staged in a temporary file owned by this call and only moved
+    # into place once both writes have succeeded. A failure therefore never
+    # removes or corrupts an existing file or another writer's file. ``~`` is
+    # expanded since not all backends do so, and a symlinked destination is
+    # resolved so that its target rather than the link is replaced.
+    destination = Path(file_path).expanduser()
     if destination.is_symlink():
         destination = destination.resolve()
-    stage = group_snapshot is not None and destination.exists()
-    if stage:
+    stage = group_snapshot is not None
+    replaces_existing = stage and destination.exists()
+    if replaces_existing:
         # mkstemp creates the file readable only by the owner, so the staged
         # data is never more accessible than the file it replaces.
         fd, staged_name = tempfile.mkstemp(
@@ -806,6 +808,9 @@ def xarray_to_h5netcdf_with_complex_numbers(
         )
         os.close(fd)
         write_path = Path(staged_name)
+    elif stage:
+        # a new file is created by the writer with the default permissions
+        write_path = destination.with_name(f".qcodes-{uuid.uuid4().hex}.nc")
     else:
         write_path = destination
     try:
@@ -844,14 +849,10 @@ def xarray_to_h5netcdf_with_complex_numbers(
                 compression_level=compression_level,
                 chunk_size_bytes=_TARGET_CHUNK_SIZE_BYTES,
             )
-            if stage:
+            if replaces_existing:
                 shutil.copymode(destination, write_path)
-                os.replace(write_path, destination)
+            os.replace(write_path, destination)
     except BaseException:
         if stage:
             write_path.unlink(missing_ok=True)
-        elif group_snapshot is not None:
-            # the destination did not exist before this export, so remove the
-            # incomplete file rather than leave a dangling snapshot pointer
-            destination.unlink(missing_ok=True)
         raise

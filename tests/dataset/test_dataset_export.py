@@ -1491,6 +1491,40 @@ def test_export_snapshot_in_group_replaces_symlink_target(tmp_path: Path) -> Non
     assert sorted(p.name for p in tmp_path.iterdir()) == ["link.nc", "target.nc"]
 
 
+def test_export_snapshot_in_group_expands_user(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+    xarray_to_h5netcdf_with_complex_numbers(
+        _grouped_snapshot_dataset(1), "~/out.nc", snapshot_in_group=True
+    )
+    assert [p.name for p in tmp_path.iterdir()] == ["out.nc"]
+    assert snapshot_from_netcdf(tmp_path / "out.nc") == {"value": 1}
+
+
+def test_failed_grouped_export_keeps_file_created_concurrently(
+    tmp_path: Path, mocker: MockerFixture
+) -> None:
+    file_path = tmp_path / "shared.nc"
+
+    def other_writer_wins(*args: object, **kwargs: object) -> None:
+        # simulate another export creating the destination meanwhile
+        xarray_to_h5netcdf_with_complex_numbers(_grouped_snapshot_dataset(2), file_path)
+        raise OSError("disk full")
+
+    mocker.patch(
+        "qcodes.dataset.exporters.export_to_xarray._write_snapshot_to_group",
+        side_effect=other_writer_wins,
+    )
+    with pytest.raises(OSError, match="disk full"):
+        xarray_to_h5netcdf_with_complex_numbers(
+            _grouped_snapshot_dataset(1), file_path, snapshot_in_group=True
+        )
+    assert [p.name for p in tmp_path.iterdir()] == ["shared.nc"]
+    assert snapshot_from_netcdf(file_path) == {"value": 2}
+
+
 @pytest.mark.skipif(os.name == "nt", reason="POSIX permission bits")
 def test_export_snapshot_in_group_preserves_permissions(tmp_path: Path) -> None:
     file_path = tmp_path / "restricted.nc"
