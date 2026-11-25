@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import errno
 import json
 import logging
 import os
@@ -9,6 +10,7 @@ from math import prod
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+import h5netcdf  # type: ignore[import-untyped]
 import numpy as np
 import pandas as pd
 import pytest
@@ -30,6 +32,7 @@ from qcodes.dataset import (
     load_by_id,
     load_from_netcdf,
     new_data_set,
+    snapshot_from_netcdf,
 )
 from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
@@ -43,6 +46,11 @@ from qcodes.dataset.exporters.export_to_xarray import (
     _rechunk_to_match_encoding,
     _xarray_data_set_direct,
     xarray_to_h5netcdf_with_complex_numbers,
+)
+from qcodes.dataset.exporters.netcdf_snapshot import (
+    _resolve_netcdf_snapshot_raw,
+    _snapshot_pointer_location,
+    _write_snapshot_to_group,
 )
 from qcodes.dataset.linked_datasets.links import links_to_str
 from qcodes.parameters import ManualParameter, Parameter, ParamSpecBase
@@ -1246,6 +1254,463 @@ def test_export_dataset_delayed_complex(
     assert loaded_ds.z.shape == (10, 11)
     assert_allclose(loaded_ds.z, expected_z)
     _assert_xarray_metadata_is_as_expected(loaded_ds, mock_dataset_numpy_complex)
+
+
+@pytest.mark.parametrize("chunked", [False, True])
+@pytest.mark.parametrize("snapshot_in_group", [False, True])
+def test_export_netcdf_snapshot_in_group_round_trips(
+    tmp_path: Path,
+    mock_dataset_grid: DataSet,
+    chunked: bool,
+    snapshot_in_group: bool,
+    mocker: MockerFixture,
+) -> None:
+    write_spy = mocker.patch(
+        "qcodes.dataset.data_set.xarray_to_h5netcdf_with_complex_numbers",
+        side_effect=xarray_to_h5netcdf_with_complex_numbers,
+    )
+    snapshot = {"station": {"instruments": {"dac": {"value": 1.5, "unit": "\u03bcV"}}}}
+    mock_dataset_grid.add_snapshot(json.dumps(snapshot))
+    qcodes.config.dataset.export_netcdf_snapshot_in_group = snapshot_in_group
+    qcodes.config.dataset.export_chunked_export_of_large_files_enabled = chunked
+    qcodes.config.dataset.export_chunked_threshold = 0
+    mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
+    file_path = mock_dataset_grid.export_info.export_paths["nc"]
+    if chunked:
+        # only the combined file should contain the snapshot
+        *row_calls, _ = write_spy.call_args_list
+        assert len(row_calls) == len(mock_dataset_grid)
+        assert all(call.args[0].attrs["snapshot"] == "null" for call in row_calls)
+
+    raw_attr = xr.load_dataset(file_path).attrs["snapshot"]
+    with h5netcdf.File(file_path, "r") as nc_file:
+        assert ("qcodes_metadata" in nc_file.groups) is snapshot_in_group
+    if snapshot_in_group:
+        assert json.loads(raw_attr) == {
+            "__qcodes_snapshot_location__": "qcodes_metadata/snapshot"
+        }
+    else:
+        assert raw_attr == mock_dataset_grid.snapshot_raw
+
+    assert snapshot_from_netcdf(file_path) == snapshot
+    loaded = load_from_netcdf(file_path)
+    assert loaded.snapshot == snapshot
+    reloaded_xr = loaded.to_xarray_dataset()
+    assert reloaded_xr.attrs["snapshot"] == mock_dataset_grid.snapshot_raw
+    assert list(reloaded_xr.data_vars) == ["z"]
+
+
+def test_export_netcdf_snapshot_in_group_without_snapshot(
+    tmp_path: Path, mock_dataset_grid: DataSet
+) -> None:
+    qcodes.config.dataset.export_netcdf_snapshot_in_group = True
+    mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
+    file_path = mock_dataset_grid.export_info.export_paths["nc"]
+
+    with h5netcdf.File(file_path, "r") as nc_file:
+        assert "qcodes_metadata" not in nc_file.groups
+    assert xr.load_dataset(file_path).attrs["snapshot"] == "null"
+    assert snapshot_from_netcdf(file_path) is None
+    assert load_from_netcdf(file_path).snapshot is None
+
+
+@pytest.mark.parametrize("compression_level", [0, 9])
+def test_export_netcdf_snapshot_in_group_uses_compression_level(
+    tmp_path: Path, mock_dataset_grid: DataSet, compression_level: int
+) -> None:
+    mock_dataset_grid.add_snapshot(json.dumps({"station": {"value": 1}}))
+    qcodes.config.dataset.export_netcdf_snapshot_in_group = True
+    qcodes.config.dataset.export_netcdf_compression_level = compression_level
+    mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
+    file_path = mock_dataset_grid.export_info.export_paths["nc"]
+
+    with h5netcdf.File(file_path, "r") as nc_file:
+        snapshot_var = nc_file.groups["qcodes_metadata"].variables["snapshot"]
+        if compression_level == 0:
+            assert snapshot_var.compression is None
+        else:
+            assert snapshot_var.compression == "gzip"
+            assert snapshot_var.compression_opts == compression_level
+    assert snapshot_from_netcdf(file_path) == {"station": {"value": 1}}
+
+
+@pytest.mark.parametrize(
+    ("snapshot_attr", "expected"),
+    [
+        (
+            '{"__qcodes_snapshot_location__": "qcodes_metadata/snapshot"}',
+            "qcodes_metadata/snapshot",
+        ),
+        ('{\n  "__qcodes_snapshot_location__": "a/b"\n}', "a/b"),
+        ('{"__qcodes_snapshot_location__": "a/b", "station": {}}', None),
+        ('{"__qcodes_snapshot_location__": 1}', None),
+        ('{"__qcodes_snapshot_location__": ', None),
+        ('{"station": {}}', None),
+        ("null", None),
+    ],
+)
+def test_snapshot_pointer_detection(snapshot_attr: str, expected: str | None) -> None:
+    assert _snapshot_pointer_location(snapshot_attr) == expected
+
+
+def test_deferred_cache_does_not_read_grouped_snapshot(
+    tmp_path: Path, mock_dataset_grid: DataSet, mocker: MockerFixture
+) -> None:
+    mock_dataset_grid.add_snapshot(json.dumps({"value": 1}))
+    qcodes.config.dataset.export_netcdf_snapshot_in_group = True
+    mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
+    loaded = load_from_netcdf(mock_dataset_grid.export_info.export_paths["nc"])
+    read_spy = mocker.patch(
+        "qcodes.dataset.data_set_cache._resolve_netcdf_snapshot_raw",
+        side_effect=_resolve_netcdf_snapshot_raw,
+    )
+
+    assert "z" in loaded.cache.data()
+    read_spy.assert_not_called()
+    assert loaded.cache.to_xarray_dataset().attrs["snapshot"] == json.dumps(
+        {"value": 1}
+    )
+    read_spy.assert_called_once()
+
+
+@pytest.mark.parametrize("snapshot_in_group", [False, True])
+def test_export_rejects_unresolved_snapshot_pointer(
+    tmp_path: Path, snapshot_in_group: bool
+) -> None:
+    source = tmp_path / "source.nc"
+    xr_ds = xr.Dataset(
+        {"y": ("x", np.arange(3.0))},
+        coords={"x": np.arange(3)},
+        attrs={"snapshot": json.dumps({"value": 1})},
+    )
+    xarray_to_h5netcdf_with_complex_numbers(xr_ds, source, snapshot_in_group=True)
+    destination = tmp_path / "destination.nc"
+
+    with pytest.raises(ValueError, match="snapshot_from_netcdf"):
+        xarray_to_h5netcdf_with_complex_numbers(
+            xr.load_dataset(source), destination, snapshot_in_group=snapshot_in_group
+        )
+    assert not destination.exists()
+
+    reloaded = xr.load_dataset(source)
+    reloaded.attrs["snapshot"] = json.dumps(snapshot_from_netcdf(source))
+    xarray_to_h5netcdf_with_complex_numbers(
+        reloaded, destination, snapshot_in_group=snapshot_in_group
+    )
+    assert snapshot_from_netcdf(destination) == {"value": 1}
+
+
+def test_load_from_netcdf_with_missing_snapshot_group(
+    tmp_path: Path, mock_dataset_grid: DataSet, caplog: LogCaptureFixture
+) -> None:
+    mock_dataset_grid.add_snapshot(json.dumps({"value": 1}))
+    qcodes.config.dataset.export_netcdf_snapshot_in_group = True
+    mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
+    file_path = mock_dataset_grid.export_info.export_paths["nc"]
+    # simulate a file where the snapshot group was never written
+    with h5netcdf.File(file_path, "r+") as nc_file:
+        nc_file.attrs["snapshot"] = json.dumps(
+            {"__qcodes_snapshot_location__": "missing/snapshot"}
+        )
+
+    with caplog.at_level(logging.WARNING):
+        loaded = load_from_netcdf(file_path)
+        assert snapshot_from_netcdf(file_path) is None
+    assert loaded.snapshot is None
+    assert "z" in loaded.cache.data()
+    assert "no such variable exists" in caplog.text
+
+
+def test_export_keeps_existing_file_if_snapshot_group_write_fails(
+    tmp_path: Path, mocker: MockerFixture
+) -> None:
+    xr_ds = xr.Dataset(
+        {"y": ("x", np.arange(3.0))},
+        coords={"x": np.arange(3)},
+        attrs={"snapshot": json.dumps({"value": 1})},
+    )
+    file_path = tmp_path / "existing.nc"
+    xarray_to_h5netcdf_with_complex_numbers(xr_ds, file_path, snapshot_in_group=True)
+    mocker.patch(
+        "qcodes.dataset.exporters.export_to_xarray._write_snapshot_to_group",
+        side_effect=OSError("disk full"),
+    )
+
+    with pytest.raises(OSError, match="disk full"):
+        xarray_to_h5netcdf_with_complex_numbers(
+            xr_ds.assign(y=xr_ds.y * 2), file_path, snapshot_in_group=True
+        )
+    assert list(tmp_path.iterdir()) == [file_path]
+    assert_allclose(xr.load_dataset(file_path).y, np.arange(3.0))
+    assert snapshot_from_netcdf(file_path) == {"value": 1}
+
+
+def test_export_leaves_no_file_if_snapshot_group_write_fails(
+    tmp_path: Path, mocker: MockerFixture
+) -> None:
+    mocker.patch(
+        "qcodes.dataset.exporters.export_to_xarray._write_snapshot_to_group",
+        side_effect=OSError("disk full"),
+    )
+    xr_ds = xr.Dataset(
+        {"y": ("x", np.arange(3.0))},
+        coords={"x": np.arange(3)},
+        attrs={"snapshot": json.dumps({"value": 1})},
+    )
+    file_path = tmp_path / "failed.nc"
+
+    with pytest.raises(OSError, match="disk full"):
+        xarray_to_h5netcdf_with_complex_numbers(
+            xr_ds, file_path, snapshot_in_group=True
+        )
+    assert list(tmp_path.iterdir()) == []
+
+
+def _grouped_snapshot_dataset(value: int) -> xr.Dataset:
+    return xr.Dataset(
+        {"y": ("x", np.arange(3.0) * value)},
+        coords={"x": np.arange(3)},
+        attrs={"snapshot": json.dumps({"value": value})},
+    )
+
+
+def test_export_snapshot_in_group_replaces_symlink_target(tmp_path: Path) -> None:
+    target = tmp_path / "target.nc"
+    link = tmp_path / "link.nc"
+    xarray_to_h5netcdf_with_complex_numbers(
+        _grouped_snapshot_dataset(1), target, snapshot_in_group=True
+    )
+    try:
+        link.symlink_to(target)
+    except OSError:
+        pytest.skip("Creating symlinks is not permitted on this system")
+
+    xarray_to_h5netcdf_with_complex_numbers(
+        _grouped_snapshot_dataset(2), link, snapshot_in_group=True
+    )
+    assert link.is_symlink()
+    assert snapshot_from_netcdf(target) == {"value": 2}
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["link.nc", "target.nc"]
+
+
+def test_export_snapshot_in_group_expands_user(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+    xarray_to_h5netcdf_with_complex_numbers(
+        _grouped_snapshot_dataset(1), "~/out.nc", snapshot_in_group=True
+    )
+    assert [p.name for p in tmp_path.iterdir()] == ["out.nc"]
+    assert snapshot_from_netcdf(tmp_path / "out.nc") == {"value": 1}
+
+
+def test_failed_grouped_export_keeps_file_created_concurrently(
+    tmp_path: Path, mocker: MockerFixture
+) -> None:
+    file_path = tmp_path / "shared.nc"
+
+    def other_writer_wins(*args: object, **kwargs: object) -> None:
+        # simulate another export creating the destination meanwhile
+        xarray_to_h5netcdf_with_complex_numbers(_grouped_snapshot_dataset(2), file_path)
+        raise OSError("disk full")
+
+    mocker.patch(
+        "qcodes.dataset.exporters.export_to_xarray._write_snapshot_to_group",
+        side_effect=other_writer_wins,
+    )
+    with pytest.raises(OSError, match="disk full"):
+        xarray_to_h5netcdf_with_complex_numbers(
+            _grouped_snapshot_dataset(1), file_path, snapshot_in_group=True
+        )
+    assert [p.name for p in tmp_path.iterdir()] == ["shared.nc"]
+    assert snapshot_from_netcdf(file_path) == {"value": 2}
+
+
+def test_grouped_export_keeps_permissions_of_file_created_concurrently(
+    tmp_path: Path, mocker: MockerFixture
+) -> None:
+    file_path = tmp_path / "shared.nc"
+
+    def other_writer_creates(*args: Any, **kwargs: Any) -> None:
+        # simulate another export creating a restricted destination meanwhile
+        xarray_to_h5netcdf_with_complex_numbers(_grouped_snapshot_dataset(2), file_path)
+        file_path.chmod(0o600)
+        _write_snapshot_to_group(*args, **kwargs)
+
+    mocker.patch(
+        "qcodes.dataset.exporters.export_to_xarray._write_snapshot_to_group",
+        side_effect=other_writer_creates,
+    )
+    xarray_to_h5netcdf_with_complex_numbers(
+        _grouped_snapshot_dataset(1), file_path, snapshot_in_group=True
+    )
+    assert [p.name for p in tmp_path.iterdir()] == ["shared.nc"]
+    assert snapshot_from_netcdf(file_path) == {"value": 1}
+    if os.name != "nt":
+        assert file_path.stat().st_mode & 0o777 == 0o600
+
+
+def _no_hard_links(*args: object, **kwargs: object) -> None:
+    raise OSError(errno.EPERM, "hard links are not supported")
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX permission bits")
+@pytest.mark.parametrize("replaces_existing", [False, True])
+def test_grouped_export_stages_data_owner_only(
+    tmp_path: Path, mocker: MockerFixture, replaces_existing: bool
+) -> None:
+    file_path = tmp_path / "out.nc"
+    if replaces_existing:
+        xarray_to_h5netcdf_with_complex_numbers(_grouped_snapshot_dataset(1), file_path)
+    staged_modes: list[int] = []
+    create_spy = mocker.patch(
+        "qcodes.dataset.exporters.export_to_xarray.os.open", wraps=os.open
+    )
+
+    def record_mode(path: Path, *args: Any, **kwargs: Any) -> None:
+        # the data has been written to the staged file at this point
+        staged_modes.append(Path(path).stat().st_mode & 0o777)
+        _write_snapshot_to_group(path, *args, **kwargs)
+
+    mocker.patch(
+        "qcodes.dataset.exporters.export_to_xarray._write_snapshot_to_group",
+        side_effect=record_mode,
+    )
+    xarray_to_h5netcdf_with_complex_numbers(
+        _grouped_snapshot_dataset(2), file_path, snapshot_in_group=True
+    )
+    staged_creations = [
+        call for call in create_spy.call_args_list if ".qcodes-" in str(call.args[0])
+    ]
+    assert [call.args[2] for call in staged_creations] == [0o600]
+    assert staged_modes == [0o600]
+    assert snapshot_from_netcdf(file_path) == {"value": 2}
+
+
+def test_grouped_export_does_not_chmod_destination_replaced_after_commit(
+    tmp_path: Path, mocker: MockerFixture
+) -> None:
+    file_path = tmp_path / "shared.nc"
+    real_link = os.link
+
+    def link_then_other_writer_replaces(src: Any, dst: Any) -> None:
+        real_link(src, dst)
+        # another export replaces the destination with a private file
+        other = tmp_path / "other.nc"
+        xarray_to_h5netcdf_with_complex_numbers(_grouped_snapshot_dataset(2), other)
+        other.chmod(0o600)
+        os.replace(other, dst)
+
+    mocker.patch(
+        "qcodes.dataset.exporters.export_to_xarray.os.link",
+        link_then_other_writer_replaces,
+    )
+    xarray_to_h5netcdf_with_complex_numbers(
+        _grouped_snapshot_dataset(1), file_path, snapshot_in_group=True
+    )
+    assert [p.name for p in tmp_path.iterdir()] == ["shared.nc"]
+    assert snapshot_from_netcdf(file_path) == {"value": 2}
+    if os.name != "nt":
+        assert file_path.stat().st_mode & 0o777 == 0o600
+
+
+def test_grouped_export_without_hard_links_keeps_concurrent_permissions(
+    tmp_path: Path, mocker: MockerFixture
+) -> None:
+    file_path = tmp_path / "shared.nc"
+    mocker.patch("qcodes.dataset.exporters.export_to_xarray.os.link", _no_hard_links)
+
+    def other_writer_creates(*args: Any, **kwargs: Any) -> None:
+        # simulate another export creating a restricted destination meanwhile
+        xarray_to_h5netcdf_with_complex_numbers(_grouped_snapshot_dataset(2), file_path)
+        file_path.chmod(0o600)
+        _write_snapshot_to_group(*args, **kwargs)
+
+    mocker.patch(
+        "qcodes.dataset.exporters.export_to_xarray._write_snapshot_to_group",
+        side_effect=other_writer_creates,
+    )
+    xarray_to_h5netcdf_with_complex_numbers(
+        _grouped_snapshot_dataset(1), file_path, snapshot_in_group=True
+    )
+    assert [p.name for p in tmp_path.iterdir()] == ["shared.nc"]
+    assert snapshot_from_netcdf(file_path) == {"value": 1}
+    if os.name != "nt":
+        assert file_path.stat().st_mode & 0o777 == 0o600
+
+
+@pytest.mark.parametrize("hard_links", [True, False])
+def test_grouped_export_of_new_file_gets_default_permissions(
+    tmp_path: Path, mocker: MockerFixture, hard_links: bool
+) -> None:
+    if not hard_links:
+        mocker.patch(
+            "qcodes.dataset.exporters.export_to_xarray.os.link", _no_hard_links
+        )
+    reference = tmp_path / "reference.nc"
+    xarray_to_h5netcdf_with_complex_numbers(_grouped_snapshot_dataset(1), reference)
+    file_path = tmp_path / "new.nc"
+
+    xarray_to_h5netcdf_with_complex_numbers(
+        _grouped_snapshot_dataset(1), file_path, snapshot_in_group=True
+    )
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["new.nc", "reference.nc"]
+    assert file_path.stat().st_mode == reference.stat().st_mode
+    assert snapshot_from_netcdf(file_path) == {"value": 1}
+
+
+def test_load_from_netcdf_expands_user(
+    tmp_path: Path,
+    mock_dataset_grid: DataSet,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    mock_dataset_grid.add_snapshot(json.dumps({"value": 1}))
+    qcodes.config.dataset.export_netcdf_snapshot_in_group = True
+    mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
+    file_name = Path(mock_dataset_grid.export_info.export_paths["nc"]).name
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+
+    loaded = load_from_netcdf(f"~/{file_name}")
+    assert loaded.snapshot == {"value": 1}
+    assert "z" in loaded.cache.data()
+    assert loaded.export_info.export_paths["nc"] == str(tmp_path / file_name)
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX permission bits")
+def test_export_snapshot_in_group_preserves_permissions(tmp_path: Path) -> None:
+    file_path = tmp_path / "restricted.nc"
+    xarray_to_h5netcdf_with_complex_numbers(
+        _grouped_snapshot_dataset(1), file_path, snapshot_in_group=True
+    )
+    file_path.chmod(0o600)
+
+    xarray_to_h5netcdf_with_complex_numbers(
+        _grouped_snapshot_dataset(2), file_path, snapshot_in_group=True
+    )
+    assert file_path.stat().st_mode & 0o777 == 0o600
+    assert snapshot_from_netcdf(file_path) == {"value": 2}
+
+
+def test_export_netcdf_snapshot_in_group_falls_back_on_name_clash(
+    tmp_path: Path, caplog: LogCaptureFixture
+) -> None:
+    snapshot = {"value": 1}
+    xr_ds = xr.Dataset(
+        {"qcodes_metadata": ("x", np.arange(3.0))},
+        coords={"x": np.arange(3)},
+        attrs={"snapshot": json.dumps(snapshot)},
+    )
+    file_path = tmp_path / "clash.nc"
+    with caplog.at_level(logging.WARNING):
+        xarray_to_h5netcdf_with_complex_numbers(
+            xr_ds, file_path, snapshot_in_group=True
+        )
+
+    assert "Cannot store the snapshot in the 'qcodes_metadata' group" in caplog.text
+    assert json.loads(xr.load_dataset(file_path).attrs["snapshot"]) == snapshot
+    assert snapshot_from_netcdf(file_path) == snapshot
 
 
 def test_export_non_grid_dataset_xarray(mock_dataset_non_grid: DataSet) -> None:

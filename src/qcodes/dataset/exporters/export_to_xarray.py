@@ -2,9 +2,13 @@ from __future__ import annotations
 
 import itertools
 import logging
+import os
+import shutil
+import uuid
 import warnings
 from importlib.metadata import version
 from math import prod
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
@@ -18,10 +22,17 @@ from .export_to_pandas import (
     _data_to_dataframe,
     _generate_pandas_index,
 )
+from .netcdf_snapshot import (
+    _SNAPSHOT_POINTER,
+    SNAPSHOT_GROUP,
+    SNAPSHOT_LOCATION,
+    _should_write_snapshot_to_group,
+    _snapshot_pointer_location,
+    _write_snapshot_to_group,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Hashable, Mapping
-    from pathlib import Path
 
     import numpy.typing as npt
     import pandas as pd
@@ -676,11 +687,71 @@ def _paramspec_dict_with_extras(
     return paramspec_dict
 
 
+def _create_staged_file(directory: Path) -> tuple[Path, int]:
+    """
+    Create an empty staging file in ``directory`` that only its owner can access.
+
+    Returns the path of the file and the permission bits a new file in that
+    directory gets by default, which are applied once the export is committed
+    to a new destination.
+    """
+    # The default permissions are measured on a separate empty file, so the
+    # file that will hold the data is never accessible to others, not even
+    # briefly before restricting it.
+    probe = directory / f".qcodes-{uuid.uuid4().hex}.mode"
+    with open(probe, "x"):
+        pass
+    try:
+        default_mode = probe.stat().st_mode
+    finally:
+        probe.unlink()
+    path = directory / f".qcodes-{uuid.uuid4().hex}.nc"
+    # the mode is applied atomically on creation; the umask can only narrow it
+    os.close(os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600))
+    return path, default_mode
+
+
+def _commit_new_file(staged: Path, destination: Path, default_mode: int) -> None:
+    """
+    Move a staged file to a destination that did not exist when staging began.
+
+    The staged file is only accessible by its owner until it is committed. A
+    hard link is used since it fails rather than overwrites if another writer
+    created the destination in the meantime. In that case the destination is
+    replaced with the permission bits of the file created by the other writer.
+    Otherwise the file gets the default permissions of a new file.
+
+    Permissions are only ever changed through the staged path, which refers to
+    this export's own file, never through the destination path, which another
+    writer may have replaced meanwhile.
+    """
+    try:
+        os.link(staged, destination)
+    except FileExistsError:
+        shutil.copymode(destination, staged)
+        os.replace(staged, destination)
+    except OSError:
+        # The file system does not support hard links, so the replace cannot
+        # detect a file created by another writer meanwhile. The permissions
+        # are taken from such a file if it exists just before the replace, so
+        # its permissions are kept and its data is never exposed by this commit.
+        if destination.exists():
+            shutil.copymode(destination, staged)
+        else:
+            staged.chmod(default_mode)
+        os.replace(staged, destination)
+    else:
+        # the staged path and the destination now refer to the same file
+        staged.chmod(default_mode)
+        staged.unlink()
+
+
 def xarray_to_h5netcdf_with_complex_numbers(
     xarray_dataset: xr.Dataset,
     file_path: str | Path,
     compute: bool = True,
     compression_level: int | None = None,
+    snapshot_in_group: bool = False,
 ) -> None:
     """
     Write an xarray dataset to a netcdf file using the h5netcdf engine.
@@ -693,6 +764,9 @@ def xarray_to_h5netcdf_with_complex_numbers(
         compression_level: Deflate compression level between 0 and 9 where 0
             means no compression. If None the level is read from
             ``qcodes.config.dataset.export_netcdf_compression_level``.
+        snapshot_in_group: If True the snapshot is stored as a variable in the
+            ``qcodes_metadata`` group, compressed with ``compression_level``,
+            and the ``snapshot`` attribute is replaced by a pointer to it.
 
     """
     import cf_xarray as cf_xr
@@ -700,6 +774,34 @@ def xarray_to_h5netcdf_with_complex_numbers(
 
     if compression_level is None:
         compression_level = int(qcodes.config.dataset.export_netcdf_compression_level)
+
+    snapshot_attr = xarray_dataset.attrs.get("snapshot")
+    if _snapshot_pointer_location(snapshot_attr) is not None:
+        # The pointer refers to a group in the file the dataset was read from,
+        # which is not copied, so writing it would leave a dangling reference.
+        raise ValueError(
+            "The snapshot attribute of this dataset is a pointer to the "
+            f"{SNAPSHOT_LOCATION!r} group of the NetCDF file it was loaded from. "
+            "Load the file with qcodes.dataset.load_from_netcdf or set the "
+            "snapshot attribute to the JSON string "
+            "json.dumps(qcodes.dataset.snapshot_from_netcdf(path)) before "
+            "exporting it."
+        )
+    group_snapshot: str | None = None
+    if snapshot_in_group and _should_write_snapshot_to_group(snapshot_attr):
+        if SNAPSHOT_GROUP in xarray_dataset.variables or (
+            SNAPSHOT_GROUP in xarray_dataset.dims
+        ):
+            _LOGGER.warning(
+                "Cannot store the snapshot in the %r group since the dataset "
+                "has a variable or dimension with that name. Storing it as the "
+                "snapshot attribute instead.",
+                SNAPSHOT_GROUP,
+                extra={"file_name": str(file_path)},
+            )
+        else:
+            group_snapshot = snapshot_attr
+            xarray_dataset = xarray_dataset.assign_attrs(snapshot=_SNAPSHOT_POINTER)
 
     has_multi_index = any(
         isinstance(xarray_dataset.indexes[index_name], MultiIndex)
@@ -745,31 +847,66 @@ def xarray_to_h5netcdf_with_complex_numbers(
             internal_ds.variables[name].encoding.update(variable_encoding)
         internal_ds = _rechunk_to_match_encoding(internal_ds, encoding)
 
-    with warnings.catch_warnings():
-        # see http://xarray.pydata.org/en/stable/howdoi.html
-        # for how to export complex numbers
-        if allow_invalid_netcdf:
-            warnings.filterwarnings(
-                "ignore",
-                module="h5netcdf",
-                message="You are writing invalid netcdf features",
-                category=UserWarning,
-            )
-        maybe_write_job = internal_ds.to_netcdf(
-            path=file_path,
-            engine="h5netcdf",
-            invalid_netcdf=allow_invalid_netcdf,
-            compute=compute,
-        )
-        if not compute and maybe_write_job is not None:
-            # Dask and therefor tqdm.dask is slow to
-            # import and only used here so defer the import
-            # to when required.
-            from tqdm.dask import TqdmCallback
-
-            with TqdmCallback(desc="Combining files"):
-                _LOGGER.info(
-                    "Writing netcdf file using Dask delayed writer.",
-                    extra={"file_name": str(file_path)},
+    # A grouped snapshot is appended after the data has been written, so such
+    # an export is staged in a temporary file owned by this call and only moved
+    # into place once both writes have succeeded. A failure therefore never
+    # removes or corrupts an existing file or another writer's file. ``~`` is
+    # expanded since not all backends do so, and a symlinked destination is
+    # resolved so that its target rather than the link is replaced.
+    destination = Path(file_path).expanduser()
+    if destination.is_symlink():
+        destination = destination.resolve()
+    stage = group_snapshot is not None
+    replaces_existing = stage and destination.exists()
+    default_mode = 0
+    if stage:
+        # the staged file is only accessible by its owner while being written,
+        # so the staged data is never more accessible than a file it replaces
+        write_path, default_mode = _create_staged_file(destination.parent)
+    else:
+        write_path = destination
+    try:
+        with warnings.catch_warnings():
+            # see http://xarray.pydata.org/en/stable/howdoi.html
+            # for how to export complex numbers
+            if allow_invalid_netcdf:
+                warnings.filterwarnings(
+                    "ignore",
+                    module="h5netcdf",
+                    message="You are writing invalid netcdf features",
+                    category=UserWarning,
                 )
-                maybe_write_job.compute()
+            maybe_write_job = internal_ds.to_netcdf(
+                path=write_path,
+                engine="h5netcdf",
+                invalid_netcdf=allow_invalid_netcdf,
+                compute=compute,
+            )
+            if not compute and maybe_write_job is not None:
+                # Dask and therefor tqdm.dask is slow to
+                # import and only used here so defer the import
+                # to when required.
+                from tqdm.dask import TqdmCallback
+
+                with TqdmCallback(desc="Combining files"):
+                    _LOGGER.info(
+                        "Writing netcdf file using Dask delayed writer.",
+                        extra={"file_name": str(file_path)},
+                    )
+                    maybe_write_job.compute()
+        if group_snapshot is not None:
+            _write_snapshot_to_group(
+                write_path,
+                group_snapshot,
+                compression_level=compression_level,
+                chunk_size_bytes=_TARGET_CHUNK_SIZE_BYTES,
+            )
+            if replaces_existing:
+                shutil.copymode(destination, write_path)
+                os.replace(write_path, destination)
+            else:
+                _commit_new_file(write_path, destination, default_mode)
+    except BaseException:
+        if stage:
+            write_path.unlink(missing_ok=True)
+        raise

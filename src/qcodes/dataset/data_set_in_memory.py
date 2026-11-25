@@ -50,6 +50,7 @@ from .dataset_helpers import _add_run_to_runs_table
 from .descriptions.versioning import serialization as serial
 from .experiment_settings import get_default_experiment_id
 from .exporters.export_info import ExportInfo
+from .exporters.netcdf_snapshot import _resolve_netcdf_snapshot_raw
 from .linked_datasets.links import str_to_links
 
 if TYPE_CHECKING:
@@ -240,6 +241,8 @@ class DataSetInMem(BaseDataSet):
         # reading them back results in a numpy array of one element
         import xarray as xr
 
+        # h5netcdf, used to read a grouped snapshot, does not expand ``~``
+        path = os.path.abspath(os.path.expanduser(path))
         with xr.open_dataset(path, engine="h5netcdf") as loaded_data:
             parent_dataset_links = str_to_links(
                 loaded_data.attrs.get("parent_dataset_links", "[]")
@@ -259,9 +262,6 @@ class DataSetInMem(BaseDataSet):
             else:
                 run_id = int(loaded_data.captured_run_id)
                 counter = int(loaded_data.captured_counter)
-
-            path = str(path)
-            path = os.path.abspath(path)
 
             export_info = ExportInfo.from_str(loaded_data.attrs.get("export_info", ""))
             export_info.export_paths["nc"] = path
@@ -318,7 +318,7 @@ class DataSetInMem(BaseDataSet):
                 rundescriber=serial.from_json_to_current(loaded_data.run_description),
                 parent_dataset_links=parent_dataset_links,
                 export_info=export_info,
-                snapshot=loaded_data.snapshot,
+                snapshot=_resolve_netcdf_snapshot_raw(path, loaded_data.snapshot),
             )
             ds._cache = DataSetCacheDeferred(ds, path)
 
