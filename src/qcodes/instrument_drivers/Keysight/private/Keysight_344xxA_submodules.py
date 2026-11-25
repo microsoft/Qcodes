@@ -283,7 +283,7 @@ class Keysight344xxASample(InstrumentChannel["Keysight344xxA"]):
         else:
             _max_sample_count = int(1e6)
 
-        self.count: Parameter[int | str, Self] = self.add_parameter(
+        self.count: Parameter[float | str, Self] = self.add_parameter(
             "count",
             label="Sample Count",
             set_cmd="SAMPle:COUNt {}",
@@ -307,9 +307,10 @@ class Keysight344xxASample(InstrumentChannel["Keysight344xxA"]):
 
             Besides a number, the count can be set to "MIN", "MAX" or "DEF",
             which the instrument converts to the corresponding number. Getting
-            the parameter always returns a number, but until it is read again,
-            the cached value is the string that was set. The value is therefore
-            annotated as ``int | str``."""
+            the parameter always returns an integer, but until it is read
+            again, the cached value is the value that was set, which can be
+            one of these strings or a float such as ``1e3``. The value is
+            therefore annotated as ``float | str``."""
             ),
         )
         """Specifies the number of measurements (samples) the instrument
@@ -325,9 +326,10 @@ not depend on the pretrigger count.
 
 Besides a number, the count can be set to "MIN", "MAX" or "DEF",
 which the instrument converts to the corresponding number. Getting
-the parameter always returns a number, but until it is read again,
-the cached value is the string that was set. The value is therefore
-annotated as ``int | str``."""
+the parameter always returns an integer, but until it is read
+again, the cached value is the value that was set, which can be
+one of these strings or a float such as ``1e3``. The value is
+therefore annotated as ``float | str``."""
 
         if self.parent.has_DIG or (self.parent.model == "34411A"):
             if self.parent.model == "34411A":
@@ -337,7 +339,7 @@ annotated as ``int | str``."""
             else:
                 _max_pretrig_count = int(5e4) - 1
 
-            self.pretrigger_count: Parameter[int | str, Self] = self.add_parameter(
+            self.pretrigger_count: Parameter[float | str, Self] = self.add_parameter(
                 "pretrigger_count",
                 label="Sample Pretrigger Count",
                 set_cmd="SAMPle:COUNt:PRETrigger {}",
@@ -360,9 +362,10 @@ annotated as ``int | str``."""
 
                 Besides a number, the count can be set to "MIN", "MAX" or
                 "DEF", which the instrument converts to the corresponding
-                number. Getting the parameter always returns a number, but
-                until it is read again, the cached value is the string that
-                was set. The value is therefore annotated as ``int | str``."""
+                number. Getting the parameter always returns an integer, but
+                until it is read again, the cached value is the value that was
+                set, which can be one of these strings or a float such as
+                ``1e3``. The value is therefore annotated as ``float | str``."""
                 ),
             )
             """Allows collection of the data being digitized the trigger.
@@ -377,9 +380,10 @@ number of sample counts.
 
 Besides a number, the count can be set to "MIN", "MAX" or
 "DEF", which the instrument converts to the corresponding
-number. Getting the parameter always returns a number, but
-until it is read again, the cached value is the string that
-was set. The value is therefore annotated as ``int | str``."""
+number. Getting the parameter always returns an integer, but
+until it is read again, the cached value is the value that was
+set, which can be one of these strings or a float such as
+``1e3``. The value is therefore annotated as ``float | str``."""
 
         if self.parent.is_34465A_34470A or self.parent.is_34410A_34411A:
             self.source: Parameter[str, Self] = self.add_parameter(
