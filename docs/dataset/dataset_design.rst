@@ -151,7 +151,9 @@ follows:
 - Datasets without a snapshot keep the attribute ``"null"`` and get no group.
 - If the dataset has a variable or dimension named ``qcodes_metadata``, the
   snapshot is stored as the attribute instead and a warning is logged.
-- If writing the group fails, the partially written file is removed. When
+- If writing the group fails, the export is discarded and an existing file at
+  the destination is left unchanged, since the file is written to a temporary
+  file next to the destination and only moved into place once complete. When
   reading a file whose pointer refers to a missing variable, a warning is
   logged and the dataset is treated as having no snapshot, so its data can
   still be loaded.

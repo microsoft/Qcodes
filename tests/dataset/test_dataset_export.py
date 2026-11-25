@@ -1419,7 +1419,31 @@ def test_load_from_netcdf_with_missing_snapshot_group(
     assert "no such variable exists" in caplog.text
 
 
-def test_export_removes_file_if_snapshot_group_write_fails(
+def test_export_keeps_existing_file_if_snapshot_group_write_fails(
+    tmp_path: Path, mocker: MockerFixture
+) -> None:
+    xr_ds = xr.Dataset(
+        {"y": ("x", np.arange(3.0))},
+        coords={"x": np.arange(3)},
+        attrs={"snapshot": json.dumps({"value": 1})},
+    )
+    file_path = tmp_path / "existing.nc"
+    xarray_to_h5netcdf_with_complex_numbers(xr_ds, file_path, snapshot_in_group=True)
+    mocker.patch(
+        "qcodes.dataset.exporters.export_to_xarray._write_snapshot_to_group",
+        side_effect=OSError("disk full"),
+    )
+
+    with pytest.raises(OSError, match="disk full"):
+        xarray_to_h5netcdf_with_complex_numbers(
+            xr_ds.assign(y=xr_ds.y * 2), file_path, snapshot_in_group=True
+        )
+    assert list(tmp_path.iterdir()) == [file_path]
+    assert_allclose(xr.load_dataset(file_path).y, np.arange(3.0))
+    assert snapshot_from_netcdf(file_path) == {"value": 1}
+
+
+def test_export_leaves_no_file_if_snapshot_group_write_fails(
     tmp_path: Path, mocker: MockerFixture
 ) -> None:
     mocker.patch(
@@ -1437,7 +1461,7 @@ def test_export_removes_file_if_snapshot_group_write_fails(
         xarray_to_h5netcdf_with_complex_numbers(
             xr_ds, file_path, snapshot_in_group=True
         )
-    assert not file_path.exists()
+    assert list(tmp_path.iterdir()) == []
 
 
 def test_export_netcdf_snapshot_in_group_falls_back_on_name_clash(
