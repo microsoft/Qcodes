@@ -15,8 +15,64 @@ devices:
         r: "001"
       - q: "*IDN?"
         r: "Keysight Technologies,E4980A,MY46516036,A.02.10"
+      # The readings are fixed: they do not depend on the measurement function,
+      # the frequency or any other setting. They correspond to a 8.4 nF
+      # capacitor measured at 1 MHz.
+      # <primary value>,<secondary value>,<status>, here Cp and D as for CPD
+      - q: ":FETCH:IMPedance:FORMatted?"
+        r: "+8.40000E-09,+1.20000E-03,+0"
+      # resistance and reactance
+      - q: ":FETCH:IMPedance:CORRected?"
+        r: "+3.50000E-02,-1.89470E+01"
 
     properties:
+
+      frequency:
+        # preset value according to the E4980A/AL user's guide
+        default: "+1.00000E+03"
+        getter:
+          q: ":FREQuency?"
+          r: "{}"
+        setter:
+          q: ":FREQuency {}"
+        specs:
+          type: float
+          min: 20
+          max: 2000000
+
+      measurement_function:
+        default: "CPD"
+        getter:
+          q: ":FUNCtion:IMPedance?"
+          r: "{}"
+        setter:
+          q: ":FUNCtion:IMPedance {}"
+        specs:
+          type: str
+          valid: [CPD, CPQ, CPG, CPRP, CSD, CSQ, CSRS, LPD, LPQ, LPG, LPRP, LPRD,
+                  LSD, LSQ, LSRS, LSRD, RX, ZTD, ZTR, GB, YTD, YTR, VDID]
+
+      correction_open_state:
+        default: 0
+        getter:
+          q: ":CORRection:OPEN:STATe?"
+          r: "{}"
+        setter:
+          q: ":CORRection:OPEN:STATe {}"
+        specs:
+          type: int
+          valid: [0, 1]
+
+      correction_short_state:
+        default: 0
+        getter:
+          q: ":CORRection:SHORt:STATe?"
+          r: "{}"
+        setter:
+          q: ":CORRection:SHORt:STATe {}"
+        specs:
+          type: int
+          valid: [0, 1]
 
       voltage_level:
         default: 0
