@@ -10,10 +10,14 @@ import numpy.typing as npt
 import pytest
 from hypothesis import HealthCheck, given, settings
 
+from qcodes.dataset.data_set_cache import _append_rows
+from qcodes.dataset.data_set_protocol import DataSetType
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.measurements import Measurement
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from qcodes.dataset.data_set_protocol import ParameterData
     from qcodes.dataset.experiment_container import Experiment
     from qcodes.instrument_drivers.mock_instruments import (
@@ -1115,6 +1119,128 @@ def _assert_parameter_data_is_identical(
                 np.testing.assert_array_equal(
                     expected_np_array.ravel(), actual_np_array.ravel()
                 )
+
+
+@pytest.mark.parametrize(
+    "dataset_class", [DataSetType.DataSet, DataSetType.DataSetInMem]
+)
+def test_cache_append_without_shape_does_not_copy_collected_data(
+    experiment: Experiment, dataset_class: DataSetType
+) -> None:
+    meas = Measurement(exp=experiment)
+    meas.register_custom_parameter("x")
+    meas.register_custom_parameter("t", paramtype="array")
+    meas.register_custom_parameter("y", paramtype="array", setpoints=("x", "t"))
+    t = np.linspace(0, 1, 32)
+    collected = []
+    n_copies = 0
+    before: npt.NDArray | None = None
+    with meas.run(dataset_class=dataset_class) as datasaver:
+        for i in range(100):
+            y = np.full(32, float(i))
+            collected.append(y)
+            datasaver.add_result(("x", i), ("t", t), ("y", y))
+            after = datasaver.dataset.cache.data()["y"]["y"]
+            if before is not None:
+                n_copies += not np.shares_memory(before, after)
+            before = after
+        dataset = datasaver.dataset
+    # the buffer grows by a factor of 1.5: about log(100) / log(1.5) copies
+    assert n_copies <= 12
+    np.testing.assert_array_equal(
+        dataset.cache.data()["y"]["y"].ravel(), np.concatenate(collected)
+    )
+    _assert_parameter_data_is_identical(
+        dataset.get_parameter_data(), dataset.cache.data()
+    )
+
+
+@pytest.mark.parametrize(
+    "dataset_class", [DataSetType.DataSet, DataSetType.DataSetInMem]
+)
+def test_cache_append_without_shape_promotes_dtype_and_keeps_input_arrays(
+    experiment: Experiment, dataset_class: DataSetType
+) -> None:
+    meas = Measurement(exp=experiment)
+    meas.register_custom_parameter("x", paramtype="array")
+    meas.register_custom_parameter("y", paramtype="array", setpoints=("x",))
+    # the values of x are views of a larger array, which must not be written to;
+    # add_result copies them, so _append_rows is also tested on its own below
+    source = np.arange(100.0)
+    with meas.run(dataset_class=dataset_class) as datasaver:
+        for i in range(20):
+            y = np.full(4, i) if i < 10 else np.full(4, i + 0.5)
+            datasaver.add_result(("x", source[4 * i : 4 * i + 4]), ("y", y))
+        dataset = datasaver.dataset
+    np.testing.assert_array_equal(source, np.arange(100.0))
+    data = dataset.cache.data()["y"]
+    np.testing.assert_array_equal(data["x"].ravel(), np.arange(80.0))
+    assert data["y"].dtype == np.float64
+    np.testing.assert_array_equal(
+        data["y"].ravel(), np.repeat([i if i < 10 else i + 0.5 for i in range(20)], 4)
+    )
+
+
+def test_append_rows_does_not_write_to_arrays_it_did_not_allocate() -> None:
+    # a view of the first rows of an array not allocated by _append_rows, with
+    # spare rows behind it that the new values would fit into
+    source = np.array(np.arange(40.0).reshape(10, 4))
+    expected_source = source.copy()
+    existing = source[:3]
+    new_values = np.full((2, 4), -1.0)
+    appended = _append_rows(existing, new_values)
+    assert appended is not None
+    np.testing.assert_array_equal(source, expected_source)
+    assert not np.shares_memory(appended, source)
+    np.testing.assert_array_equal(
+        appended, np.append(expected_source[:3], new_values, axis=0)
+    )
+
+
+def _every_second_row(appended: npt.NDArray) -> npt.NDArray:
+    buffer = appended.base
+    assert isinstance(buffer, np.ndarray)
+    buffer[2] = [5.0, 6.0]  # the spare row, so that the view has known values
+    return buffer[::2]
+
+
+@pytest.mark.parametrize(
+    "make_view",
+    [
+        pytest.param(lambda appended: appended.T, id="transposed"),
+        pytest.param(lambda appended: appended.view(np.int64), id="reinterpreted"),
+        pytest.param(_every_second_row, id="strided"),
+    ],
+)
+def test_append_rows_extends_only_the_array_it_returned_last(
+    make_view: Callable[[npt.NDArray], npt.NDArray],
+) -> None:
+    # a buffer of 3 rows, 2 of them filled; each view starts at the first element
+    # of the buffer and has as many rows as are filled, but another layout or dtype
+    appended = _append_rows(np.array([[1.0, 2.0]]), np.array([[3.0, 4.0]]))
+    assert appended is not None
+    view = make_view(appended)
+    new_values = np.full((1, 2), 9, dtype=view.dtype)
+    expected = np.append(view, new_values, axis=0)
+    result = _append_rows(view, new_values)
+    assert result is not None
+    assert result.dtype == expected.dtype
+    np.testing.assert_array_equal(result, expected)
+
+
+def test_append_rows_extends_a_shared_array_only_once() -> None:
+    # two caches holding the same array: only the first append may use the spare
+    # rows behind it, the second must copy
+    shared = _append_rows(np.zeros((1, 2)), np.ones((1, 2)))
+    assert shared is not None
+    first = _append_rows(shared, np.full((1, 2), 5.0))
+    second = _append_rows(shared, np.full((1, 2), 7.0))
+    assert first is not None and second is not None
+    assert np.shares_memory(first, shared)
+    assert not np.shares_memory(second, shared)
+    np.testing.assert_array_equal(first, [[0, 0], [1, 1], [5, 5]])
+    np.testing.assert_array_equal(second, [[0, 0], [1, 1], [7, 7]])
+    np.testing.assert_array_equal(shared, [[0, 0], [1, 1]])
 
 
 def _array_param_used_in_tree(measurement: Measurement) -> bool:
