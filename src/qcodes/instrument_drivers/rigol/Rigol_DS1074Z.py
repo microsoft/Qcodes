@@ -46,6 +46,15 @@ class RigolDS1074ZChannel(InstrumentChannel["RigolDS1074Z"]):
         )
         """Parameter vertical_scale"""
 
+        self.pattern_trigger_level: Parameter[float, Self] = self.add_parameter(
+            "pattern_trigger_level",
+            get_cmd=f":TRIGger:PATTern:LEVel? CHANnel{channel}",
+            set_cmd=f":TRIGger:PATTern:LEVel CHANnel{channel},{{}}",
+            get_parser=float,
+            vals=Numbers(),
+        )
+        """Pattern trigger threshold in this channel's current amplitude unit."""
+
         self.trace: ParameterWithSetpoints = self.add_parameter(
             "trace",
             get_cmd=self._get_full_trace,
@@ -165,7 +174,8 @@ class RigolDS1074Z(VisaInstrument):
             set_cmd=self._set_trigger_level,
             vals=Numbers(),
         )
-        """Parameter trigger_level"""
+        """Trigger level for the current mode. For pattern triggers, use a channel's
+        ``pattern_trigger_level`` instead."""
 
         self.trigger_edge_source: Parameter[str, Self] = self.add_parameter(
             "trigger_edge_source",
@@ -234,9 +244,15 @@ class RigolDS1074Z(VisaInstrument):
         xdata = xorigin + xincrem * np.arange(npts)
         return xdata
 
+    def _trigger_level_command(self) -> str:
+        mode = self.trigger_mode()
+        if mode.upper() in ("PATT", "PATTERN"):
+            raise ValueError("Use a channel's pattern_trigger_level in pattern mode.")
+        return f":TRIGger:{mode}:LEVel"
+
     def _get_trigger_level(self) -> float:
         # returned in scientific notation, e.g. 1.600000e-01
-        return float(self.ask(f":TRIGger:{self.trigger_mode()}:LEVel?"))
+        return float(self.ask(f"{self._trigger_level_command()}?"))
 
     def _set_trigger_level(self, value: float) -> None:
-        self.write(f":TRIGger:{self.trigger_mode()}:LEVel {value}")
+        self.write(f"{self._trigger_level_command()} {value}")
