@@ -1,0 +1,4 @@
+When a ``VisaInstrument`` cannot connect because the VISA interface in its address is not
+configured (``VI_ERROR_INTF_NUM_NCONFIG``) or no instrument is found at its address
+(``VI_ERROR_RSRC_NFOUND``), the raised ``VisaIOError`` now has a note that names the likely
+cause on the PC, e.g. a GPIB board that is not configured in NI MAX or Keysight Connection Expert.

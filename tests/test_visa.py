@@ -192,6 +192,48 @@ def test_visa_handle_is_closed_right_away_if_initialization_fails() -> None:
     assert resource_manager.list_opened_resources() == []
 
 
+@pytest.mark.parametrize(
+    ("error_code", "hint"),
+    [
+        (
+            pyvisa.constants.StatusCode.error_interface_number_not_configured,
+            "interface .* is not configured in VISA",
+        ),
+        (
+            pyvisa.constants.StatusCode.error_resource_not_found,
+            "VISA found no instrument at this address",
+        ),
+    ],
+)
+def test_connect_error_has_hint(
+    mocker: "MockerFixture", error_code: pyvisa.constants.StatusCode, hint: str
+) -> None:
+    mocker.patch.object(
+        MockVisa, "_open_resource", side_effect=pyvisa.VisaIOError(error_code)
+    )
+
+    with pytest.raises(pyvisa.VisaIOError) as exc_info:
+        MockVisa("dummy", address="GPIB0::1::INSTR")
+
+    assert exc_info.value.error_code == error_code
+    (note,) = exc_info.value.__notes__
+    assert note.startswith("Could not connect to GPIB0::1::INSTR: ")
+    assert re.search(hint, note)
+
+
+def test_connect_error_without_hint_is_unchanged(mocker: "MockerFixture") -> None:
+    mocker.patch.object(
+        MockVisa,
+        "_open_resource",
+        side_effect=pyvisa.VisaIOError(pyvisa.constants.StatusCode.error_timeout),
+    )
+
+    with pytest.raises(pyvisa.VisaIOError) as exc_info:
+        MockVisa("dummy", address="GPIB0::1::INSTR")
+
+    assert not hasattr(exc_info.value, "__notes__")
+
+
 def test_ask_write_local(mock_visa: MockVisa) -> None:
     # test normal ask and write behavior
     mock_visa.state.set(2)

@@ -10,7 +10,7 @@ from weakref import finalize
 import pyvisa
 import pyvisa.constants as vi_const
 import pyvisa.resources
-from pyvisa.errors import InvalidSession
+from pyvisa.errors import InvalidSession, VisaIOError
 
 import qcodes.validators as vals
 from qcodes.logger import get_instrument_logger
@@ -27,6 +27,20 @@ if TYPE_CHECKING:
     from qcodes.parameters.parameter import Parameter
 
 VISA_LOGGER = f"{InstrumentBase.__module__}.com.visa"
+
+# The messages of these VISA errors describe the failure but not its usual
+# cause, which is in the setup of the PC rather than in the instrument.
+_VISA_CONNECT_ERROR_HINTS: dict[int, str] = {
+    vi_const.StatusCode.error_interface_number_not_configured: (
+        "the interface (e.g. the GPIB board) in the address is not configured "
+        "in VISA on this PC. Check that the interface exists in NI MAX or "
+        "Keysight Connection Expert, and that the address uses its number."
+    ),
+    vi_const.StatusCode.error_resource_not_found: (
+        "VISA found no instrument at this address. Check the address, and that "
+        "the instrument is switched on and connected to this PC."
+    ),
+}
 
 
 def _close_visa_handle(handle: pyvisa.resources.MessageBasedResource) -> None:
@@ -263,9 +277,13 @@ class VisaInstrument(Instrument):
     ) -> pyvisa.resources.MessageBasedResource:
         try:
             visa_handle = self._open_resource(address, visalib)
-        except Exception:
+        except Exception as error:
             # the instrument is closed when its initialization fails
             self.visa_log.exception(f"Could not connect at {address}")
+            if isinstance(error, VisaIOError):
+                hint = _VISA_CONNECT_ERROR_HINTS.get(error.error_code)
+                if hint is not None:
+                    error.add_note(f"Could not connect to {address}: {hint}")
             raise
         return visa_handle
 
