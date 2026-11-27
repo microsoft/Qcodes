@@ -1,0 +1,53 @@
+QCoDeS 0.58.0 (2026-05-04)
+==========================
+
+This will be the last version to support Python 3.11. Python 3.12 will be required starting from QCoDeS 0.59.0.
+
+Breaking Changes:
+-----------------
+
+- All arguments to Parameter classes and subclasses, except ``name``, are now keyword-only.
+  Previously deprecated positional arguments have been removed. (:pr:`7911`)
+- Yokogawa GS200: The `step` and `delay` arguments of `ramp_voltage` and `ramp_current` have been deprecated in favor of the `ramp_step` and `ramp_rate` instrument parameters. (:pr:`8025`)
+
+
+Improved:
+---------
+
+- Errors raised inside a ``@property`` getter on a subclass of
+  :class:`~qcodes.utils.DelegateAttributes` (such as :class:`~qcodes.instrument.Instrument`)
+  are now surfaced with their original traceback, instead of being masked by a
+  generic ``AttributeError: ... object and its delegates have no attribute ...``
+  message. The underlying cause of the failure is now visible in the traceback,
+  making misbehaving properties much easier to debug. (:pr:`5518`)
+- Parameters using ``has_control_of`` are now correctly handled when exporting to
+  xarray. Controlled parameters are no longer treated as independent top-level
+  parameters, preventing duplicate data rows. Additionally, inferred parameters
+  are now included as data variables in the xarray dataset when exporting via the
+  pandas-based path, and a warning is logged when the inferred parameter data size
+  does not match the expected xarray dataset dimensions. (:pr:`7725`)
+- Add ``ParameterBaseKWArgs`` and ``ParameterKWArgs`` TypedDicts for typing ``**kwargs``
+  forwarded through the ``Parameter`` class hierarchy. Subclasses of ``Parameter`` can now
+  use ``**kwargs: Unpack[ParameterKWArgs]`` for statically checked kwargs forwarding. (:pr:`8024`)
+- Added calibration due date to Keithley calibration utility functions. (:pr:`8040`)
+- Fixed ``_get_data_from_ds`` to correctly handle datasets with incorrect multi-index structure during export by adding a fallback data lookup. (:pr:`8080`)
+
+
+Improved Drivers:
+-----------------
+
+- The ``TektronixAWG5014`` driver has been refactored to use ``InstrumentChannel``
+  submodules. Per-channel parameters (e.g. ``amp``, ``offset``, ``state``) are now
+  accessed via ``awg.ch1.amp`` instead of ``awg.ch1_amp``, and marker parameters
+  via ``awg.ch1.m1.high`` instead of ``awg.ch1_m1_high``. The old flat attribute
+  names still work but emit a deprecation warning. The example notebook has been
+  updated accordingly. (:pr:`7996`)
+- Keysight 344xxA: Add SCPI mnemonics (`'MIN'`, `'MAX'`, `'DEF'`) to allowed values where allowed
+  Oxford Mercury IPS: Allow setting current ramp rate and target
+  Oxford Triton: Also assume magnet is not available if there is a communication timeout
+  Yokagawa GS200 Program: Validate program times on multiples of the internal clock rate of 0.1s
+  Yokagawa GS200 Program: Only add trigger parameter if monitor option is installed
+  Yokagawa GS200 Program: Add get parser to `count`; allow setting to SCPI mnemonics `'MIN'`, `'MAX'`.
+  Yokagawa GS200 Program: Add `hold()`, `pause()`, `cont()` methods.
+  Yokagawa GS200: Add parameters reading out device registers (`status_byte`, `standard_event_register`, `extended_event_register`, `condition_register`)
+  Yokagawa GS200: Implement hardware ramps. `ramp_mode` parameter switches the mode of output sets between `"JUMP"`, `"SOFTWARE"`, and `"HARDWARE"`. The last uses a program to ramp, software corresponds to the previous ramp implementation. `ramp_step`, `ramp_rate`, `ramp_blocking` configure the way ramps behave. (:pr:`8025`)

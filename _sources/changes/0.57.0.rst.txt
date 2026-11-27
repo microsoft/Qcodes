@@ -1,0 +1,249 @@
+QCoDeS 0.57.0 (2026-04-07)
+==========================
+
+Breaking Changes:
+-----------------
+
+- Legacy backwards-compatibility aliases across the ``instrument_drivers`` module have been
+  deprecated. Users should migrate to the canonical class names listed below. All deprecated
+  names will be removed in a future release.
+
+  **AlazarTech**
+
+  - Class ``AlazarTech_ATS9360`` is deprecated. Use ``AlazarTechATS9360`` instead.
+  - Class ``AlazarTech_ATS9373`` is deprecated. Use ``AlazarTechATS9373`` instead.
+  - Class ``AlazarTech_ATS9440`` is deprecated. Use ``AlazarTechATS9440`` instead.
+  - Class ``AlazarTech_ATS9870`` is deprecated. Use ``AlazarTechATS9870`` instead.
+  - Class ``Demodulation_AcquisitionController`` is deprecated. Use ``DemodulationAcquisitionController`` instead.
+
+  **Basel**
+
+  - Module ``qcodes.instrument_drivers.basel.sp983c`` is deprecated. Import from ``qcodes.instrument_drivers.basel`` instead.
+  - Module ``qcodes.instrument_drivers.basel.sp983c_remote`` is deprecated. Import from ``qcodes.instrument_drivers.basel`` instead.
+
+  **Galil**
+
+  - Class ``VectorMode`` is deprecated. Use ``GalilDMC4133VectorMode`` instead.
+  - Class ``Motor`` is deprecated. Use ``GalilDMC4133Motor`` instead.
+  - Class ``DMC4133Controller`` is deprecated. Use ``GalilDMC4133Controller`` instead.
+  - Class ``Arm`` is deprecated. Use ``GalilDMC4133Arm`` instead.
+
+  **HP**
+
+  - Module ``qcodes.instrument_drivers.HP.HP8133A`` is deprecated. Import from ``qcodes.instrument_drivers.HP`` instead.
+  - Module ``qcodes.instrument_drivers.HP.HP8753D`` is deprecated. Import from ``qcodes.instrument_drivers.HP`` instead.
+  - Class ``HP_83650A`` is deprecated. Use ``HP83650A`` instead.
+
+  **Ithaco**
+
+  - Class ``Ithaco_1211`` is deprecated. Use ``Ithaco1211`` instead.
+
+  **Keithley / Tektronix**
+
+  - Module ``qcodes.instrument_drivers.tektronix.Keithley_2450`` is deprecated. Import from ``qcodes.instrument_drivers.Keithley`` instead.
+  - Module ``qcodes.instrument_drivers.tektronix.keithley_7510`` is deprecated. Import from ``qcodes.instrument_drivers.Keithley`` instead.
+  - Module ``qcodes.instrument_drivers.tektronix.Keithley_s46`` is deprecated. Import from ``qcodes.instrument_drivers.Keithley`` instead.
+  - Class ``Keithley_2000`` is deprecated. Use ``Keithley2000`` instead.
+  - Class ``Keithley_2400`` is deprecated. Use ``Keithley2400`` instead.
+  - Class ``Keithley_2600`` is deprecated. Use ``Keithley2600`` instead.
+  - Class ``Keithley_3706A`` is deprecated. Use ``Keithley3706A`` instead.
+  - Class ``Keithley_6500`` is deprecated. Use ``Keithley6500`` instead.
+  - Class ``S46`` is deprecated. Use ``KeithleyS46`` instead.
+
+  **Keysight**
+
+  - Class ``B2962A`` is deprecated. Use ``KeysightB2962A`` instead.
+  - Class ``MeasurementPair`` is deprecated. Use ``KeysightE4980AMeasurementPair`` instead.
+  - Class ``E4980AMeasurements`` is deprecated. Use ``KeysightE4980AMeasurements`` instead.
+  - Class ``Correction4980A`` is deprecated. Use ``KeysightE4980ACorrection`` instead.
+  - Class ``BoundMeasurement`` is deprecated. Use ``KeysightInfiniiumBoundMeasurement`` instead.
+  - Class ``UnboundMeasurement`` is deprecated. Use ``KeysightInfiniiumUnboundMeasurement`` instead.
+  - Class ``InfiniiumFunction`` is deprecated. Use ``KeysightInfiniiumFunction`` instead.
+  - Class ``InfiniiumChannel`` is deprecated. Use ``KeysightInfiniiumChannel`` instead.
+  - Class ``Infiniium`` is deprecated. Use ``KeysightInfiniium`` instead.
+  - Class ``N5173B`` is deprecated. Use ``KeysightN5173B`` instead.
+  - Class ``N5183B`` is deprecated. Use ``KeysightN5183B`` instead.
+  - Class ``N5222B`` is deprecated. Use ``KeysightN5222B`` instead.
+  - Class ``N5230C`` is deprecated. Use ``KeysightN5230C`` instead.
+  - Class ``N5245A`` is deprecated. Use ``KeysightN5245A`` instead.
+  - Class ``N6705BChannel`` is deprecated. Use ``KeysightN6705BChannel`` instead.
+  - Class ``N6705B`` is deprecated. Use ``KeysightN6705B`` instead.
+  - Class ``N9030B`` is deprecated. Use ``KeysightN9030B`` instead.
+  - Class ``P9374A`` is deprecated. Use ``KeysightP9374A`` instead.
+  - Class ``KtM960x`` is deprecated. Use ``KeysightM960x`` instead.
+  - Class ``KtMAWGChannel`` is deprecated. Use ``KeysightM9336AAWGChannel`` instead.
+  - Class ``KtMAwg`` is deprecated. Use ``KeysightM9336A`` instead.
+
+  **Keysight B1500**
+
+  - Class ``B1511B`` is deprecated. Use ``KeysightB1511B`` instead.
+  - Class ``IVSweeper`` is deprecated. Use ``KeysightB1500IVSweeper`` instead.
+  - Class ``B1517A`` is deprecated. Use ``KeysightB1517A`` instead.
+  - Class ``CVSweeper`` is deprecated. Use ``KeysightB1500CVSweeper`` instead.
+  - Class ``B1520A`` is deprecated. Use ``KeysightB1520A`` instead.
+  - Class ``CVSweepMeasurement`` is deprecated. Use ``KeysightB1500CVSweepMeasurement`` instead.
+  - Class ``Correction`` is deprecated. Use ``KeysightB1500Correction`` instead.
+  - Class ``FrequencyList`` is deprecated. Use ``KeysightB1500FrequencyList`` instead.
+  - Class ``B1530A`` is deprecated. Use ``KeysightB1530A`` instead.
+
+  **Mini-Circuits**
+
+  - Class ``MC_channel`` (RC_SP4T) is deprecated. Use ``MiniCircuitsRCSP4TChannel`` instead.
+  - Class ``RC_SP4T`` is deprecated. Use ``MiniCircuitsRCSP4T`` instead.
+  - Class ``MC_channel`` (RC_SPDT) is deprecated. Use ``MiniCircuitsRCSPDTChannel`` instead.
+  - Class ``RC_SPDT`` is deprecated. Use ``MiniCircuitsRCSPDT`` instead.
+  - Class ``SwitchChannelUSB`` is deprecated. Use ``MiniCircuitsUsbSPDTSwitchChannel`` instead.
+  - Class ``USB_SPDT`` is deprecated. Use ``MiniCircuitsUsbSPDT`` instead.
+  - Class ``RUDAT_13G_90`` is deprecated. Use ``MiniCircuitsRudat13G90Base`` instead.
+  - Class ``RUDAT_13G_90_USB`` is deprecated. Use ``MiniCircuitsRudat13G90Usb`` instead.
+
+  **Oxford Instruments**
+
+  - Class ``Triton`` is deprecated. Use ``OxfordTriton`` instead.
+  - Class ``MercuryWorkerPS`` is deprecated. Use ``OxfordMercuryWorkerPS`` instead.
+  - Class ``MercuryiPS`` is deprecated. Use ``OxfordMercuryiPS`` instead.
+
+  **Rigol**
+
+  - Module ``qcodes.instrument_drivers.rigol.DG1062`` is deprecated. Import from ``qcodes.instrument_drivers.rigol`` instead.
+  - Module ``qcodes.instrument_drivers.rigol.DG4000`` is deprecated. Import from ``qcodes.instrument_drivers.rigol`` instead.
+  - Module ``qcodes.instrument_drivers.rigol.DP821`` is deprecated. Import from ``qcodes.instrument_drivers.rigol`` instead.
+  - Module ``qcodes.instrument_drivers.rigol.DP831`` is deprecated. Import from ``qcodes.instrument_drivers.rigol`` instead.
+  - Module ``qcodes.instrument_drivers.rigol.DP832`` is deprecated. Import from ``qcodes.instrument_drivers.rigol`` instead.
+  - Module ``qcodes.instrument_drivers.rigol.DS1074Z`` is deprecated. Import from ``qcodes.instrument_drivers.rigol`` instead.
+  - Module ``qcodes.instrument_drivers.rigol.DS4000`` is deprecated. Import from ``qcodes.instrument_drivers.rigol`` instead.
+
+  **Rohde & Schwarz**
+
+  - Class ``RohdeSchwarz_SGS100A`` is deprecated. Use ``RohdeSchwarzSGS100A`` instead.
+
+  **Signal Hound**
+
+  - Class ``SignalHound_USB_SA124B`` is deprecated. Use ``SignalHoundUSBSA124B`` instead.
+
+  **Stanford Research Systems**
+
+  - Class ``SRS_SG384`` is deprecated. Use ``SG384`` instead.
+
+  **Tektronix**
+
+  - Class ``AWG5208`` is deprecated. Use ``TektronixAWG5208`` instead.
+  - Class ``AWG70002A`` is deprecated. Use ``TektronixAWG70002A`` instead.
+  - Class ``AWGChannel`` is deprecated. Use ``Tektronix70000AWGChannel`` instead.
+  - Class ``Tektronix_AWG5014`` is deprecated. Use ``TektronixAWG5014`` instead.
+  - Class ``ModeError`` is deprecated. Use ``TektronixDPOModeError`` instead.
+
+  **Weinschel**
+
+  - Class ``Weinschel_8320`` is deprecated. Use ``Weinschel8320`` instead.
+
+  **Yokogawa**
+
+  - Class ``GS200Exception`` is deprecated. Use ``YokogawaGS200Exception`` instead.
+  - Class ``GS200_Monitor`` is deprecated. Use ``YokogawaGS200Monitor`` instead.
+  - Class ``GS200Program`` is deprecated. Use ``YokogawaGS200Program`` instead.
+  - Class ``GS200`` is deprecated. Use ``YokogawaGS200`` instead. (:pr:`7292`)
+- Refactored ``Keithley2600`` driver parameter ``fastsweep`` to be a
+  ``ParameterWithSetpoints`` instead of relying on deprecated ``qcodes_loop`` code.
+  Contains breaking change since method ``doFastSweep`` has been replaced with
+  ``setup_fastsweep(...)`` helper. (:pr:`7851`)
+- The following deprecated modules, drivers, and APIs have been removed.
+
+  **Removed Modules:**
+
+
+  The following deprecated compatibility modules have been removed. Please import from the locations listed in the
+  `API documentation <https://microsoft.github.io/Qcodes/api/index.html>`_ instead:
+
+  - ``qcodes.utils.command``
+  - ``qcodes.utils.dataset`` (including ``qcodes.utils.dataset.doNd``)
+  - ``qcodes.utils.helpers``
+  - ``qcodes.utils.installation`` (use ``qcodes.extensions`` instead)
+  - ``qcodes.utils.metadata``
+  - ``qcodes.utils.plotting``
+  - ``qcodes.utils.threading``
+  - ``qcodes.utils.validators`` (use ``qcodes.validators`` instead)
+  - ``qcodes.instrument.base``
+  - ``qcodes.instrument.delegate.grouped_parameter`` (use ``qcodes.parameters`` instead)
+  - ``qcodes.instrument.function`` (use ``qcodes.parameters`` instead)
+  - ``qcodes.instrument.group_parameter`` (use ``qcodes.parameters`` instead)
+  - ``qcodes.instrument.parameter`` (use ``qcodes.parameters`` instead)
+  - ``qcodes.instrument.specialized_parameters`` (use ``qcodes.parameters`` instead)
+  - ``qcodes.instrument.sweep_values`` (use ``qcodes.parameters`` instead)
+
+  **Removed Drivers:**
+
+  The following deprecated driver aliases have been removed. Use the replacement drivers listed below:
+
+  - ``qcodes.instrument_drivers.Lakeshore.Model_325`` — use ``LakeshoreModel325`` instead.
+  - ``qcodes.instrument_drivers.Lakeshore.Model_336`` — use ``LakeshoreModel336`` instead.
+  - ``qcodes.instrument_drivers.Lakeshore.Model_372`` — use ``LakeshoreModel372`` instead.
+
+  **Other Changes:**
+
+  - ``DataSet.to_xarray_dataarray_dict``, ``DataSetInMem.to_xarray_dataarray_dict``, and
+    ``DataSetCache.to_xarray_dataarray_dict`` have been removed. Use ``to_xarray_dataset_dict`` instead.
+  - ``load_to_xarray_dataarray_dict`` in ``qcodes.dataset.exporters.export_to_xarray`` has been removed.
+    Use ``load_to_xarray_dataset_dict`` instead.
+  - ``InterDependencies_.non_dependencies`` property has been removed. Use ``top_level_parameters`` instead.
+  - ``ChannelTuple.get_channel_by_name`` no longer accepts multiple names. Pass a single name to get a single
+    channel. Use ``get_channels_by_name`` for multiple channels. The argument name has changed from `names` to `name`
+    to reflect this.
+  - The ``has_current_rating`` keyword argument to ``AMIModel430`` has been removed as it had no effect.
+  - The deprecated import of ``qcodes.utils.validators`` from ``qcodes.utils.__init__`` has been removed. (:pr:`7934`)
+- ``qcodes.instrument.mockers.ami430.MockAMI430`` has been deprecated. This class is unused
+  within QCoDeS and is not expected to be used externally. (:pr:`7972`)
+- A new ``resource`` parameter has been added that accepts an already-opened
+  ``pyvisa.resources.MessageBasedResource``, allowing a ``VisaInstrument`` to be
+  constructed from an existing PyVISA resource handle. The ``resource`` parameter
+  cannot be combined with ``address``, ``visalib`` or ``pyvisa_sim_file``. These arguments
+  are only used to construct a new resource.
+
+  The ``resource_manager``, ``visabackend`` and ``visalib`` ``visa_handle`` attributes of
+  :class:`.VisaInstrument` have been converted to read-only properties.
+
+  The ``_address`` property is deprecated in favour of ``address``.
+  The ``visalib`` property is deprecated in favour of ``visabackend``.
+
+  The method ``set_address`` now takes visalib as an argument. If this
+  is not supplied the default visa library will be used. (:pr:`7978`)
+
+
+Improved:
+---------
+
+- Fixed ``to_xarray_dataset`` failing with a ``MergeError`` when exporting
+  incomplete measurements where a shared setpoint parameter was treated as a
+  coordinate in some sub-datasets and a data variable in others. This could
+  happen when the actual data shape did not match the declared shape (e.g. a
+  measurement that was interrupted before completion) and one of the sweep axes
+  had non-unique values, causing different export code paths to disagree on the
+  role of the shared setpoint. (:pr:`7960`)
+- ``initialise_database``, ``initialise_or_create_database_at``, and ``initialised_database_at``
+  now accept more consistent arguments:
+
+  - ``initialise_database`` accepts a new ``db_path`` parameter to specify the database file
+    location directly, instead of always reading from the config.
+  - ``initialised_database_at`` accepts a new ``journal_mode`` parameter, consistent with
+    ``initialise_database`` and ``initialise_or_create_database_at``. (:pr:`7967`)
+- The Minicircuits USB SPDT driver now has a ``minicircuits_usb_spdt`` optional dependency target,
+  allowing installation via ``pip install qcodes[minicircuits_usb_spdt]``. At the moment this is only
+  supported on Windows since the vendor only ships a driver for Windows. (:pr:`7986`)
+
+
+Improved Drivers:
+-----------------
+
+- Converted ``get_error``, ``ramp``, ``pause``, ``zero``, ``reset_quench``, ``set_quenched``,
+  and ``reset`` on ``AMIModel430`` from QCoDeS functions (``add_function``) to proper methods.
+  The ``zero`` method now invalidates the ``field`` parameter cache and updates the parent
+  ``AMIModel4303D`` driver's internal setpoint tracking when called on a child instrument.
+  Fixed ``AMIModel4303D`` to properly set ``_parent_instrument`` on child ``AMIModel430``
+  instruments during initialization, enabling the safety-check delegation path in
+  ``set_field``. Also fixed ``_request_field_change`` to correctly call ``_set_setpoints``
+  instead of non-existent ``_set_x``/``_set_y``/``_set_z`` methods. (:pr:`7923`)
+- Add parameter to Keithley2600 driver to enable/disable four-wire measurements. (:pr:`7942`)
+- The ``AMI430SwitchHeater`` snapshot now skips updating heater-specific parameters
+  (``state``, ``in_persistent_mode``, ``current``, ``heat_time``, ``cool_time``) when
+  the switch heater is not enabled. This prevents VISA query failures on real hardware
+  when the heater is not installed. (:pr:`8009`)

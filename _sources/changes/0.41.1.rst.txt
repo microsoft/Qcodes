@@ -1,0 +1,8 @@
+QCoDeS 0.41.1 (2023-10-19)
+==========================
+
+Improved:
+---------
+
+- Corrected a bug where non integer step sizes were incorrectly rejected
+  from parameters without integer validators. (:pr:`5446`)

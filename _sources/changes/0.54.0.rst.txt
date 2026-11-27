@@ -1,0 +1,177 @@
+QCoDeS 0.54.0 (2025-10-01)
+==========================
+
+Breaking Changes:
+-----------------
+
+- **Removal of deprecated code**
+
+  **Removed modules:**
+
+  - Removed the deprecated ``qcodes.instrument_drivers.american_magnetics.AMI430`` module. Use ``AMIModel4303D`` from ``qcodes.instrument_drivers.american_magnetics`` instead.
+  - Removed the deprecated ``qcodes.utils.spyder_utils`` module containing the ``add_to_spyder_UMR_excludelist`` function. This utility was known to not work with latest Spyder versions and was unused in QCoDeS.
+
+  **Removed classes:**
+
+  - Removed the deprecated ``AMI430_3D`` and ``AMI430`` classes from ``qcodes.instrument_drivers.american_magnetics.AMI430``. Use ``AMIModel4303D`` and ``AMIModel430`` from ``qcodes.instrument_drivers.american_magnetics`` instead.
+  - Removed deprecated methods from ``AMI430SwitchHeater``
+  - Removed deprecated ``AMI430_VISA`` class from ``ip_to_visa.py``.
+  - Removed the deprecated ``ConnectionPlus`` class from ``qcodes.dataset.sqlite.connection``. Use ``AtomicConnection`` class instead.
+  - Removed the deprecated ``AlazarTech_ATS`` class. Use ``AlazarTechATS`` instead.
+  - Removed the deprecated ``WaveformGenerator_33XXX`` class. Use ``Keysight33xxx`` instead.
+  - Removed the following deprecated Keysight classes:
+    - ``Keysight_34410A``, use ``Keysight34410A`` instead
+    - ``Keysight_34411A``, use ``Keysight34411A`` instead
+    - ``Keysight_34460A``, use ``Keysight34460A`` instead
+    - ``Keysight_34461A``, use ``Keysight344xxA`` instead
+    - ``Keysight_34465A``, use ``Keysight34465A`` instead
+    - ``Keysight_34470A``, use ``Keysight34470A`` instead
+    - ``N51x1``, use ``KeysightN51x1`` instead
+    - ``PNABase``, use ``KeysightPNABase`` instead
+    - ``PNAxBase``, use ``KeysightPNAxBase`` instead
+    - ``KeysightSubModule``, use ``Keysight34980ASwitchMatrixSubModule`` instead
+    - ``KeysightSwitchMatrixSubModule``, use ``Keysight34980ASwitchMatrixSubModule`` instead
+    - ``B1500Module``, use ``KeysightB1500Module`` instead
+    - ``_Keysight_344xxA``, use ``Keysight344xxA`` instead
+  - Removed the deprecated Keysight submodules:
+    - ``Trigger``, use ``Keysight344xxATrigger`` instead
+    - ``Sample``, use ``Keysight344xxASample`` instead
+    - ``Display``, use ``Keysight344xxADisplay`` instead
+  - Removed the deprecated MiniCircuits classes:
+    - ``SwitchChannelBase``, use ``MiniCircuitsSPDTSwitchChannelBase`` instead
+    - ``SPDT_Base``, use ``MiniCircuitsSPDTBase`` instead
+  - Removed the deprecated ``USBHIDMixin`` class
+
+  **Removed functions:**
+
+  - Removed from ``qcodes.utils.deprecate``:
+    - ``deprecation_message``
+    - ``issue_deprecation_warning``
+    - ``deprecate`` decorator (use ``typing_extensions.deprecated`` instead)
+    - ``_catch_deprecation_warnings``
+    - ``assert_not_deprecated``
+    - ``assert_deprecated``
+  - Removed ``make_connection_plus_from`` function from ``qcodes.dataset.sqlite.connection`` (:pr:`7122`)
+- The following modules have been deprecated in this release and will be removed in a future version:
+
+  - ``qcodes.instrument.delegate.grouped_parameter``
+  - ``qcodes.instrument.function``
+  - ``qcodes.instrument.group_parameter``
+  - ``qcodes.instrument.specialized_parameters``
+  - ``qcodes.instrument.sweep_values``
+  - ``qcodes.instrument.base``
+  - ``qcodes.instrument.parameter``
+  - ``qcodes.utils.command``
+  - ``qcodes.utils.dataset``
+  - ``qcodes.utils.installation``
+  - ``qcodes.utils.helpers``
+  - ``qcodes.utils.metadata``
+  - ``qcodes.utils.plotting``
+  - ``qcodes.utils.threading``
+  - ``qcodes.utils.validators``
+
+  Please consult the API documentation at :ref:`Api` for alternatives and migration paths. (:pr:`7262`)
+- The methods ``InstrumentBase.__getitem__``, ``InstrumentBase.get``, ``InstrumentBase.set``, ``InstrumentBase.call`` are now deprecated
+  with a PendingDeprecationWarning rather than a QCoDeSDeprecationWarning. This better reflects the state where there is no plan to remove
+  them but usage is discouraged. The PendingDeprecationWarning is not printed to console by default. (:pr:`7318`)
+- Registration and Unpacking interfaces created in ParameterBse
+
+  ``ParameterBase`` now implements new `depends_on``, ``is_controlled_by``, and ``has_control_of``properties that allow subclasses to define ``InterDependencies_`` relationships directly
+  ``ParameterBase.unpack_self`` allows subclasses to unpack themselves during ``DataSaver.add_result``, which removes the requirement for users to add pre-defined ``InterDependencies_`` results explicitly
+  ``Measurement.register_parameter`` has been refactored to follow the relationship links defined in parameter subclasses and automatically register related parameters with the appropriate relationships
+  ``DataSaver.add_result`` has been refactored to take advantage of the new ``unpack_self`` method
+
+  Breaking Changes
+  - A dependent parameter registered with an independent parameter as its ``setpoints`` no longer requires that the independent parameter be registered first, if the independent parameter is ParameterBase subclass and not a str
+  - Previously, a ParameterWithSetpoints whose setpoints values were explicitly added in add_result would use the explicit version. Now, an error is raised if the explicit values are not within some tolerance of the internal values (as with other duplication).
+  - ``DataSaver.add_result`` signature has changed from ``*res_tuple`` to ``*result_tuples`` (:pr:`7346`)
+- The method ``to_xarray_dataarray_dict`` on the classes ``DataSet`` and ``DataSetInMem``
+  have been deprecated and replaced by ``to_xarray_dataset_dict``. This new method allows
+  export of datasets that still only contain one measured parameter but can contain
+  related coordinates such as these given by an inferred relationship. (:pr:`7432`)
+- ``ChannelTuple/ChannelList.get_channel_by_name`` support for getting more than one channel has been deprecated. To get more than one channel use ``get_channels_by_name``.
+  ``get_channels_by_name`` is guaranteed to always return an instance of the class it was called on independently of the number of channels supplied. In the future
+  ``get_channel_by_name`` will be updated to ensure that it always returns a single channel. The Exception raised when
+  no argument is given to ``get_channel_by_name`` has changed from ``Exception`` to ``TypeError`` in line with how functions behave when an argument is missing. (:pr:`7486`)
+
+
+Improved:
+---------
+
+- Add a read-only option to sqlite connection (:pr:`4783`)
+- Fix ``load_from_netcdf`` failing for non-completed datasets due to missing ``completed_timestamp_raw`` or ``run_timestamp_raw`` attribute. (:pr:`7221`)
+- The QCoDeS dataset now correctly captures data for inferred parameters when added via ``datasaver.add_result``. Previously these were discarded due to an oversight.
+  Any parameters added in this way are available via ``DataSetProtocol.get_parameter_data`` but not exported to xarray or pandas.
+  Future improvements to these parameters are planned and tracked `here <https://github.com/microsoft/Qcodes/issues/7060>`_.
+
+  The property ``InterDependencies_.non_dependencies`` has been deprecated and replaced by ``InterDependencies_.top_level_parameters`` that correctly includes inferred parameters.
+  The ``InterDependencies_`` object has gained two additional methods ``find_all_parameters_in_tree`` and ``all_parameters_in_tree_by_group``.
+
+  The not documented but publicly importable functions ``qcodes.dataset.exporters.export_to_pandas.load_to_concatenated_dataframe`` and ``qcodes.dataset.exporters.export_to_pandas.load_to_dataframe_dict``
+  now require an extra argument in the form of an ``InterDependencies_`` object. Users are discouraged from using anything not documented in `the QCoDeS API documentation <https://microsoft.github.io/Qcodes/api/index.html>`_ outside QCoDeS. (:pr:`7240`)
+- Fix NetCDF export for datasets with None timestamp_raw values by using sentinel values (-1) during export and converting them back to None on import. This ensures NetCDF compatibility while preserving the original None values through round-trip export/import operations. (:pr:`7333`)
+- When exporting Datasets to xarray where the shape is known, either by the use
+  of utilities such as `dond` or manually specified, inferred parameters related
+  to the setpoints and measured parameters are now included in the XArray Dataset. (:pr:`7432`)
+- Exporting datasets to XArray no longer warns if two or more variables are exported with different setpoint names and/or values.
+  No functionality of the export has changed.
+  If the setpoints for different measured parameters have the same name, missing values will be replaced by NaN such that the
+  measured parameters have the same coordinates in XArray. If different setpoint names
+  are used, the exporter will automatically handle merging coordinates so each data variable is assigned its own coordinates. (:pr:`7442`)
+- Fixed a bug where omitting data for one or more variables could result in an inconsistent dataset cache. Missing data is now filled with appropriate empty values (0, "" or NaN depending on the data type) (:pr:`7502`)
+- ``ChannelList`` and ``AutoLoadableChannelList`` can now correctly infer the type of channels in the list
+  when indexed using ``__get_item`` e.g. ``mychannellist[0]`` For consistency with the base classes the parent type
+  in  ``AutoLoadableChannelList`` has changed from ``Instrument`` to ``InstrumentBase`` which may require downstream
+  changes for type checking to work correctly. (:pr:`7520`)
+
+
+Improved Drivers:
+-----------------
+
+- Added operation mode in the SGS100A instrument to be able to change between NORMal and BBBYpass operation modes. Defaults to NORMal. (:pr:`7344`)
+- Corrected power range for Keysight P5004B (:pr:`7360`)
+- Changes to Cryomagnetics 4G Driver
+
+  1. Added missing initialization of `self._RETRY_WRITE_ASK` and `self._RETRY_TIME` in the `write_raw` method to handle communication retries on VisaIOError.
+  2. Updated `set_field` to correctly recognize Standby as a valid final state when setting the magnetic field to 0 T.
+  3. Modified `wait_while_ramping` to check the actual magnetic field value via `self._get_field()` instead of relying on the status byte, since the instrument may stay in the Ramping state even after reaching the target field.
+  4. Fixed unit parsing to handle unexpected trailing characters in the instrument's response. (e.g., "\r").
+  5. Fixed get_parser for `Vmag`, `Iout`, and `Vout` to remove units and return float.
+  6. Added timeout condition to `wait_while_ramping` to prevent infinite loop. Will trigger Exception if timeout occurs.
+  7. Fixed conversion calculations in `_set_rate` and `_get_rate`.
+  8. Added function `get_rates` to return rates for all ranges in Tesla/min as a dictionary.
+  9. Modified `_set_rate` to update all ranges (0-4) on the instrument (picks min value between set rate and maximum current limit for each range)
+  10. Add small sleep (0.1 seconds) between write calls during `max_current_limit` initialization.
+  11. Fixed/added unit tests to accurately reflect code changes.
+  12. Modified `set_field()` to allow users to control the strictness of `wait_while_ramping()` timeout condition (1e-4 was too precise and was triggering false timeouts). (:pr:`7405`)
+- Keysight 33xxx drivers now have statically assigned channels. This improves documentation
+  and makes it possible for type checkers and IDEs to detect class member variables without
+  instantiating the driver. (:pr:`7521`)
+
+
+New:
+----
+
+- Added :func:`qcodes.dataset.export_datasets_and_create_metadata_db` function to export all datasets from a database to NetCDF files and create a new metadata-only database. This enables users to maintain lightweight databases for metadata while relying on NetCDF files for data analysis, significantly reducing storage requirements for large experimental datasets. (:pr:`7212`)
+
+
+New Drivers:
+------------
+
+- Added Keysight P5002B driver (:pr:`7360`)
+- Added Cryomagnetics TM-620 driver (:pr:`7398`)
+- Added Copper Mountain Technologies M5065 driver
+  Added Copper Mountain Technologies M5180 driver (:pr:`7497`)
+
+
+Under the hood:
+---------------
+
+- Refactors the `InterDependencies_` class to simplify reasoning about and query of the ParamSpecBase
+  relationships by embedding them in a NetworkX Directional Graph (DiGraph)
+
+  Resolves #7079 (:pr:`7256`)
+- In dond, only process get_after_set in the loop instances where the parameter is actually being set (:pr:`7307`)
+- ``DataSetProtocol.to_xarray_dataset`` and ``DataSetProtocol.to_xarray_dataarray_dict`` now avoids creating a Pandas MultiIndex to infer the
+  correct dataset shape if the shape is already known. This will resolve issues where datasets are exported with incorrect array shapes due to
+  round off errors in the setpoints (coordinates). (:pr:`7413`)

@@ -1,0 +1,5 @@
+QCoDeS 0.35.2 (2022-10-05)
+==========================
+
+This is a bugfix to fix an issue where the ``qcodes.utils.helpers`` module had an unexpected dependency
+on ``pytest``.
